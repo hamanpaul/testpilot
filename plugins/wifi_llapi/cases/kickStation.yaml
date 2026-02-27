@@ -1,0 +1,86 @@
+id: "wifi-llapi-kickStation"
+name: "kickStation() disconnect and verify AuthenticationState"
+version: "1.0"
+
+source:
+  report: "6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx"
+  sheet: "Wifi_LLAPI"
+  row: 2
+  object: "WiFi.AccessPoint.{i}."
+  api: "kickStation()"
+
+platform:
+  prplos: "4.0.3"
+  bdk: "6.3.1"
+
+topology:
+  links:
+    - from: STA
+      to: DUT
+      band: "5g"
+
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      config:
+        - iface: "5g"
+          mode: ap
+          ssid: "{{SSID_5G}}"
+          key: "{{KEY_5G}}"
+
+    STA:
+      role: sta
+      transport: adb
+      config:
+        - iface: "5g"
+          mode: sta
+          ssid: "{{SSID_5G}}"
+          key: "{{KEY_5G}}"
+
+env_verify:
+  - action: ping
+    from: STA
+    to: DUT
+    expect: pass
+
+steps:
+  - id: verify_connected
+    action: exec
+    target: DUT
+    command: |
+      ubus-cli WiFi.AccessPoint.1.? | grep -E 'Associated.1.MACAddress|AuthenticationState'
+    capture: pre_kick_state
+
+  - id: kick_station
+    action: exec
+    target: DUT
+    command: |
+      ubus-cli "WiFi.AccessPoint.1.kickStation(macaddress={{STA_MAC}})"
+    depends_on: verify_connected
+
+  - id: wait_disconnect
+    action: wait
+    target: DUT
+    duration: 3
+    depends_on: kick_station
+
+  - id: verify_disconnected
+    action: exec
+    target: DUT
+    command: |
+      ubus-cli WiFi.AccessPoint.1.? | grep -E 'Associated.1.MACAddress|AuthenticationState'
+    capture: post_kick_state
+    depends_on: wait_disconnect
+
+pass_criteria:
+  - field: pre_kick_state.AuthenticationState
+    operator: "=="
+    value: "1"
+    description: "kick 前 STA 應為已認證狀態"
+  - field: post_kick_state.AuthenticationState
+    operator: "=="
+    value: "0"
+    description: "kick 後 STA 應為未認證狀態"
+
+bands: ["5g", "6g", "2.4g"]

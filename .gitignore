@@ -1,0 +1,28 @@
+# Byte-compiled
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# Test reports (auto-generated)
+reports/*.md
+reports/*.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets — never commit
+configs/testbed.yaml

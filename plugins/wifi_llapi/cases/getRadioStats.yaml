@@ -1,0 +1,92 @@
+id: "wifi-llapi-getRadioStats"
+name: "getRadioStats() BroadcastPacketsReceived counter verification"
+version: "1.0"
+
+source:
+  report: "6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx"
+  sheet: "Wifi_LLAPI"
+  row: 191
+  object: "WiFi.Radio.{i}."
+  api: "getRadioStats()"
+
+platform:
+  prplos: "4.0.3"
+  bdk: "6.3.1"
+
+topology:
+  links:
+    - from: STA
+      to: DUT
+      band: "5g"
+    - from: DUT
+      to: EndpointPC
+      interface: eth1
+
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      config:
+        - iface: "5g"
+          mode: ap
+          ssid: "{{SSID_5G}}"
+          key: "{{KEY_5G}}"
+          mlo: false
+
+    STA:
+      role: sta
+      transport: adb
+      config:
+        - iface: "5g"
+          mode: sta
+          ssid: "{{SSID_5G}}"
+          key: "{{KEY_5G}}"
+
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+      config:
+        - iface: eth0
+          speed: "1G"
+
+env_verify:
+  - action: ping
+    from: STA
+    to: DUT
+    expect: pass
+  - action: ping
+    from: DUT
+    to: EndpointPC
+    expect: pass
+
+steps:
+  - id: record_initial
+    action: exec
+    target: DUT
+    command: |
+      ubus-cli "WiFi.Radio.*.getRadioStats()" | grep BroadcastPacketsReceived
+    capture: initial_counters
+
+  - id: generate_traffic
+    action: exec
+    target: STA
+    command: |
+      arping -I {{STA_WIFI_IF}} -c 200 {{DUT_IP}}
+    depends_on: record_initial
+    timeout: 60
+
+  - id: record_final
+    action: exec
+    target: DUT
+    command: |
+      ubus-cli "WiFi.Radio.*.getRadioStats()" | grep BroadcastPacketsReceived
+    capture: final_counters
+    depends_on: generate_traffic
+
+pass_criteria:
+  - field: final_counters.BroadcastPacketsReceived
+    operator: ">"
+    reference: initial_counters.BroadcastPacketsReceived
+    description: "BroadcastPacketsReceived 計數器應在產生廣播流量後增加"
+
+bands: ["5g", "6g", "2.4g"]
