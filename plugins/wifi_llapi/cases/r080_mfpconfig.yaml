@@ -1,0 +1,57 @@
+id: wifi-llapi-r080-accesspoint_security-mfpconfig
+name: MFPConfig — WiFi.AccessPoint.{i}.Security
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 80
+  object: WiFi.AccessPoint.{i}.Security
+  api: MFPConfig
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Security.MFPConfig=Disabled
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.? | grep Security.MFPConfig
+  capture: result
+  note: root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep Security.MFPConfig
+pass_criteria:
+- field: result.MFPConfig
+  operator: contains
+  value: Disabled
+  description: MFPConfig 應回傳包含 MFPConfig=Disabled
+verification_command: 'cat /tmp/wl0_hapd.conf |grep ieee80211w
+
+
+  root@prplOS:/# cat /tmp/wl0_hapd.conf |grep ieee80211w
+
+  ieee80211w=2
+
+  root@prplOS:/# cat /tmp/wl1_hapd.conf |grep ieee80211w
+
+  ieee80211w=2
+
+  root@prplOS:/# cat /tmp/wl2_hapd.conf |grep ieee80211w
+
+  ieee80211w=2'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API always return "Disabled"'
+  v4.0.3:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: hardcode in pwhm

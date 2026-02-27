@@ -1,0 +1,79 @@
+id: wifi-llapi-r260-ssid_stats-unicastpacketssent
+name: UnicastPacketsSent — WiFi.SSID.{i}.Stats.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 260
+  object: WiFi.SSID.{i}.Stats.
+  api: UnicastPacketsSent
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.SSID.{i}.Stats.UnicastPacketsSent=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station to GW SSID4, SSID6 and SSID8
+- id: step2
+  action: exec
+  target: DUT
+  command: Run Ping between station's
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.SSID.*.Stats.UnicastPacketsSent?
+  capture: result
+  depends_on: step2
+  note: Get stats Unicast packet sent
+pass_criteria:
+- field: result.UnicastPacketsSent
+  operator: contains
+  value: '0'
+  description: UnicastPacketsSent 應回傳包含 UnicastPacketsSent=0
+verification_command: 'cat /proc/net/dev | grep wl0
+
+
+  root@prplOS:/# cat /proc/net/dev
+
+  Inter-| Receive | Transmit
+
+  face |bytes packets errs drop fifo frame compressed multicast|bytes packets errs drop fifo colls carrier compressed
+
+  wl0: 99866942 866493 0 20 0 0 0 2868 3712561892 2791288 0 27 0 0 0 0
+
+  wl1: 0 0 0 10 0 0 0 0 6767195 23823 0 10 0 0 0 0
+
+  wl2: 0 0 0 23 0 0 0 0 6765565 23804 0 14 0 0 0 0'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API always return "0"'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

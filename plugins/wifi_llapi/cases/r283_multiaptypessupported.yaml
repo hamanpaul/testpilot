@@ -1,0 +1,51 @@
+id: wifi-llapi-r283-radio-multiaptypessupported
+name: MultiAPTypesSupported — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 283
+  object: WiFi.Radio.{i}.
+  api: MultiAPTypesSupported
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.MultiAPTypesSupported="FronthaulBSS,BackhaulBSS,BackhaulSTA"
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.MultiAPTypesSupported?
+  note: Get MultiAP type Supported mode
+- id: step2
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.Radio.*.MultiAPTypesSupported="BackhaulBSS"
+
+    ubus-cli WiFi.Radio.1.MultiAPTypesSupported="BackhaulBSS"'
+  capture: result
+  depends_on: step1
+  note: Try set to one of the supported type.
+pass_criteria:
+- field: result.MultiAPTypesSupported
+  operator: contains
+  value: FronthaulBSS,BackhaulBSS,BackhaulSTA
+  description: MultiAPTypesSupported 應回傳包含 MultiAPTypesSupported=FronthaulBSS,BackhaulBSS,BackhaulSTA
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : Could not set base on the supported mode'
+  v4.0.3:
+    5g: skip
+    6g: skip
+    2.4g: skip
+    comment: this parameter is a prpl-specific extension (custom parameter) and hardcoding in pwhm

@@ -1,0 +1,44 @@
+id: wifi-llapi-r143-radio_driverconfig-amsdu
+name: Amsdu — WiFi.Radio.{i}.DriverConfig.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 143
+  object: WiFi.Radio.{i}.DriverConfig.
+  api: Amsdu
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.DriverConfig.Amsdu=-1
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.DriverConfig.Amsdu?
+  capture: result
+  note: 'Get Amsdu default value:'
+pass_criteria:
+- field: result.Amsdu
+  operator: contains
+  value: '-1'
+  description: Amsdu 應回傳包含 Amsdu=-1
+verification_command: wl -i wl0 amsdu
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

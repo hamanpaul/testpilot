@@ -1,0 +1,75 @@
+id: wifi-llapi-r094-accesspoint_wps-enable
+name: Enable — WiFi.AccessPoint.{i}.WPS.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 94
+  object: WiFi.AccessPoint.{i}.WPS.
+  api: Enable
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.WPS.Enable=1
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.AccessPoint.1.WPS.Enable=1
+
+    ubus-cli WiFi.AccessPoint.3.WPS.Enable=1
+
+    ubus-cli WiFi.AccessPoint.5.WPS.Enable=1'
+  note: Set GW WPS to Enable
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.? | grep .WPS.Enable=
+  capture: result
+  depends_on: step1
+  note: Verify GW WPS Setting
+pass_criteria:
+- field: result.Enable
+  operator: contains
+  value: '1'
+  description: Enable 應回傳包含 Enable=1
+verification_command: 'cat /tmp/wl0_hapd.conf |grep wps_state
+
+
+  root@prplOS:/# cat /tmp/wl0_hapd.conf |grep wps_state
+
+  wps_state=0
+
+  wps_state=2
+
+  root@prplOS:/# cat /tmp/wl2_hapd.conf |grep wps_state
+
+  wps_state=0
+
+  wps_state=2
+
+  root@prplOS:/# cat /tmp/wl1_hapd.conf |grep wps_state
+
+  wps_state=0
+
+  wps_state=0
+
+  root@prplOS:/#'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Not Supported
+    2.4g: Fail
+    comment: 'ARC : 5G Primary and 2.4G Primary state shows "0"'
+  v4.0.3:
+    5g: pass
+    6g: Not Supported
+    2.4g: pass
+    comment: ''

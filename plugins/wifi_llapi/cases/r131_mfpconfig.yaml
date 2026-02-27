@@ -1,0 +1,42 @@
+id: wifi-llapi-r131-endpoint_profile_wps_security-mfpconfig
+name: MFPConfig — WiFi.EndPoint.{i}.Profile.WPS.Security.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 131
+  object: WiFi.EndPoint.{i}.Profile.WPS.Security.
+  api: MFPConfig
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.EndPoint.{i}.Profile.WPS.Security.MFPConfig=Disabled
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: query
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.EndPoint.{i}.Profile.WPS.Security.MFPConfig
+  capture: result
+pass_criteria:
+- field: result.MFPConfig
+  operator: contains
+  value: Disabled
+  description: MFPConfig 應回傳包含 MFPConfig=Disabled
+results_reference:
+  v4.0.1:
+    5g: Skip
+    6g: Skip
+    2.4g: Skip
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

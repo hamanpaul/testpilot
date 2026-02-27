@@ -1,0 +1,55 @@
+id: wifi-llapi-r264-radio_sensing-enable
+name: Enable — WiFi.Radio.{i}.Sensing.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 264
+  object: WiFi.Radio.{i}.Sensing.
+  api: Enable
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.Sensing.Enable
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.Sensing.Enable?
+  note: 'Check API default value:'
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.Sensing.Enable=0
+  depends_on: step1
+  note: 'Modify the value to 0:'
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.Sensing.Enable?
+  capture: result
+  depends_on: step2
+  note: 'Check the API value again, make sure it is correctly set:'
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: Enable 執行不應回傳 error
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

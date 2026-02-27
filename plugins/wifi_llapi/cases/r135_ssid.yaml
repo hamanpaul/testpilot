@@ -1,0 +1,42 @@
+id: wifi-llapi-r135-endpoint_profile_wps-ssid
+name: SSID — WiFi.EndPoint.{i}.Profile.WPS.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 135
+  object: WiFi.EndPoint.{i}.Profile.WPS.
+  api: SSID
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.EndPoint.{i}.Profile.WPS.SSID=InternetBox_DK
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: query
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.EndPoint.{i}.Profile.WPS.SSID
+  capture: result
+pass_criteria:
+- field: result.SSID
+  operator: contains
+  value: InternetBox_DK
+  description: SSID 應回傳包含 SSID=InternetBox_DK
+results_reference:
+  v4.0.1:
+    5g: Skip
+    6g: Skip
+    2.4g: Skip
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

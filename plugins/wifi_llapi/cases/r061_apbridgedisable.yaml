@@ -1,0 +1,91 @@
+id: wifi-llapi-r061-accesspoint-apbridgedisable
+name: APBridgeDisable — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 61
+  object: WiFi.AccessPoint.{i}.
+  api: APBridgeDisable
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.APBridgeDisable=0
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station to GW
+- id: step2
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.AccessPoint.1.APBridgeDisable=1
+
+    ubus-cli WiFi.AccessPoint.3.APBridgeDisable=1
+
+    ubus-cli WiFi.AccessPoint.5.APBridgeDisable=1
+
+    ubus-cli WiFi.AccessPoint.*.APBridgeDisable?'
+  depends_on: step1
+  note: Set APBridgeDisable to 1
+- id: step3
+  action: exec
+  target: DUT
+  command: run Ping between station
+  capture: result
+  depends_on: step2
+pass_criteria:
+- field: result.APBridgeDisable
+  operator: contains
+  value: '0'
+  description: APBridgeDisable 應回傳包含 APBridgeDisable=0
+verification_command: 'cat /tmp/wl0_hapd.conf |grep ap_isolate
+
+
+  root@prplOS:/# cat /tmp/wl0_hapd.conf |grep ap_isolate
+
+  ap_isolate=0
+
+  ap_isolate=0
+
+  root@prplOS:/# cat /tmp/wl1_hapd.conf |grep ap_isolate
+
+  ap_isolate=0
+
+  ap_isolate=0
+
+  root@prplOS:/# cat /tmp/wl2_hapd.conf |grep ap_isolate
+
+  ap_isolate=0
+
+  ap_isolate=0'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'BRCM: CSP CS00012439197'
+  v4.0.3:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: not supported by pwhm

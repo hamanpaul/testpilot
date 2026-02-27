@@ -1,0 +1,90 @@
+id: wifi-llapi-r046-accesspoint_associateddevice-supportedmcs
+name: SupportedMCS — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 46
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: SupportedMCS
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.SupportedMCS=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station to GW
+- id: step2
+  action: exec
+  target: DUT
+  command: Run Iperf3 between GW and Station
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: Get Station SupportedMCS
+  capture: result
+  depends_on: step2
+pass_criteria:
+- field: result.SupportedMCS
+  operator: contains
+  value: 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+  description: SupportedMCS 應回傳包含 SupportedMCS=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+verification_command: 'wl -i wl0 sta_info ${STA_MAC}
+
+
+  root@prplOS:/# wl -i wl0 sta_info e6:60:17:eb:a9:86 | grep eht
+
+  eht mcs 11 Nss 2 Tx Exp 2 bw160 txbf ldpc 2xLTF GI 1.6us auto
+
+  eht mcs 13 Nss 2 Tx Exp 0 bw160 ldpc 4xLTF GI 3.2us auto
+
+
+  root@prplOS:/# wl -i wl1 sta_info 38:06:e6:92:b0:4a | grep eht
+
+  eht mcs 9 Nss 4 Tx Exp 0 bw160 ldpc 2xLTF GI 1.6us auto
+
+  eht mcs 9 Nss 4 Tx Exp 0 bw160 ldpc 2xLTF GI 0.8us auto
+
+
+  root@prplOS:/# wl -i wl2 sta_info 34:19:4d:a4:b4:33 | grep eht
+
+  eht mcs 9 Nss 4 Tx Exp 0 bw20 ldpc 2xLTF GI 0.8'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API return empty'
+  v4.0.3:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: wld_assocDev_copyAssocDevInfoFromIEs, IE is from hostapd

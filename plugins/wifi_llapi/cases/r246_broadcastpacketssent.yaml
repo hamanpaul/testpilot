@@ -1,0 +1,65 @@
+id: wifi-llapi-r246-ssid_stats-broadcastpacketssent
+name: BroadcastPacketsSent — WiFi.SSID.{i}.Stats.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 246
+  object: WiFi.SSID.{i}.Stats.
+  api: BroadcastPacketsSent
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.SSID.{i}.Stats.BroadcastPacketsSent=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station to SSID4, SSID6 and SSID8
+- id: step2
+  action: exec
+  target: DUT
+  command: Run Ping between Station and check BroadcastPacketsSent.
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.SSID.? | grep .Stats.BroadcastPacketsSent
+  capture: result
+  depends_on: step2
+  note: Disconnect WiFi Station and clear ARP then run Ping again.
+pass_criteria:
+- field: result.BroadcastPacketsSent
+  operator: contains
+  value: '0'
+  description: BroadcastPacketsSent 應回傳包含 BroadcastPacketsSent=0
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API always return "0"'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

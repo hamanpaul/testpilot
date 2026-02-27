@@ -1,0 +1,103 @@
+id: wifi-llapi-r039-accesspoint_associateddevice-rxunicastpacketcount
+name: RxUnicastPacketCount — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 39
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: RxUnicastPacketCount
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.RxUnicastPacketCount=187900
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi station to GW SSID4, SSID6 and SSID8
+- id: step2
+  action: exec
+  target: DUT
+  command: Run Ping between Station
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.RxUnicastPacketCount?
+  capture: result
+  depends_on: step2
+  note: Verify RxUnicastPacketCount
+pass_criteria:
+- field: result.RxUnicastPacketCount
+  operator: contains
+  value: '187900'
+  description: RxUnicastPacketCount 應回傳包含 RxUnicastPacketCount=187900
+verification_command: 'iw wl0 station dump
+
+
+  "wl -i wl0 sta_info ${STA_MAC}
+
+  root@prplOS:/# wl -i wl0 sta_info 34:19:4d:a4:b5:09 | grep pkts
+
+  tx total pkts: 121
+
+  tx ucast pkts: 121
+
+  tx mcast/bcast pkts: 0
+
+  rx data pkts: 171
+
+  rx ucast pkts: 114
+
+  rx mcast/bcast pkts: 57
+
+  tx data pkts retried: 0
+
+  tx total pkts sent: 121
+
+  tx pkts retries: 26
+
+  tx pkts retry exhausted: 0
+
+  rx total pkts retried: 19
+
+  tx acked pkts: 121
+
+  root@prplOS:/# wl -i wl1 sta_info 38:06:E6:92:B0:4A | grep pkts
+
+  tx total pkts: 340127
+
+  tx ucast pkts: 340127
+
+  tx mcast/bcast'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API return "0" while in wl command " rx ucast pkts" not equal to "0"'
+  v4.0.3:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: Vendor Module supports to get.wld_nl80211_stationInfo_t doesn't support

@@ -1,0 +1,44 @@
+id: wifi-llapi-r261-ssid_stats-unknownprotopacketsreceived
+name: UnknownProtoPacketsReceived — WiFi.SSID.{i}.Stats.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 261
+  object: WiFi.SSID.{i}.Stats.
+  api: UnknownProtoPacketsReceived
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.SSID.{i}.Stats.UnknownProtoPacketsReceived=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: query
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.SSID.{i}.Stats.UnknownProtoPacketsReceived
+  capture: result
+pass_criteria:
+- field: result.UnknownProtoPacketsReceived
+  operator: contains
+  value: '0'
+  description: UnknownProtoPacketsReceived 應回傳包含 UnknownProtoPacketsReceived=0
+verification_command: cat /proc/net/dev | grep wl0
+results_reference:
+  v4.0.1:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: In our test environment, no Wi-Fi station capable of generating manipulated 802.11 frame, and Scapy could not
+      be used to generate such frames due to WiFi station limitations.
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

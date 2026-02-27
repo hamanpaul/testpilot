@@ -1,0 +1,43 @@
+id: wifi-llapi-r063-accesspoint-discoverymethodenabled
+name: DiscoveryMethodEnabled — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 63
+  object: WiFi.AccessPoint.{i}.
+  api: DiscoveryMethodEnabled
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.DiscoveryMethodEnabled=FILS
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled="FILS"
+  capture: result
+  note: root@prplOS:/# ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled="FILS"
+pass_criteria:
+- field: result.DiscoveryMethodEnabled
+  operator: contains
+  value: FILS
+  description: DiscoveryMethodEnabled 應回傳包含 DiscoveryMethodEnabled=FILS
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : Cannot set DiscoveryMethodEnabled to FILS'
+  v4.0.3:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: not supported by pwhm.can set with ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled="FILSDiscovery"

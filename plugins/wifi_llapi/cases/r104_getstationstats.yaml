@@ -1,0 +1,73 @@
+id: wifi-llapi-r104-accesspoint-getstationstats
+name: getStationStats() — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 104
+  object: WiFi.AccessPoint.{i}.
+  api: getStationStats()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli WiFi.AccessPoint.{i}.getStationStats() ConnectionDuration : 25,'
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi station to GW
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.AccessPoint.*.getStationStats()" | grep -E 'ConnectionDuration|MACAddress'
+  capture: result
+  depends_on: step1
+  note: Verify Station ConnectionDuration
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getStationStats() 執行不應回傳 error
+verification_command: 'root@prplOS:/# wl -i wl0 sta_info 34:19:4D:A4:B5:09 | grep network
+
+  in network 764 seconds
+
+  root@prplOS:/# wl -i wl1 sta_info 38:06:E6:92:B0:4A | grep network
+
+  in network 2843 seconds
+
+  root@prplOS:/# wl -i wl2 sta_info 34:19:4D:A4:B4:33 | grep network
+
+  in network 1010 seconds
+
+  root@prplOS:/#'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: ' '
+    6g: ' '
+    2.4g: ' '
+    comment: ''

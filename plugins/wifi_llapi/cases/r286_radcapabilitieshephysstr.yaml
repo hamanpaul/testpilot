@@ -1,0 +1,48 @@
+id: wifi-llapi-r286-radio-radcapabilitieshephysstr
+name: RadCapabilitiesHePhysStr — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 286
+  object: WiFi.Radio.{i}.
+  api: RadCapabilitiesHePhysStr
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.RadCapabilitiesHePhysStr="40MHZ_2_4GHZ"
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.RadCapabilitiesHePhysStr?
+  note: get RadCapabilitiesHePhysStr
+- id: step2
+  action: exec
+  target: DUT
+  command: Verify Beacon packet supprt HE
+  capture: result
+  depends_on: step1
+pass_criteria:
+- field: result.RadCapabilitiesHePhysStr
+  operator: contains
+  value: 40MHZ_2_4GHZ
+  description: RadCapabilitiesHePhysStr 應回傳包含 RadCapabilitiesHePhysStr=40MHZ_2_4GHZ
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

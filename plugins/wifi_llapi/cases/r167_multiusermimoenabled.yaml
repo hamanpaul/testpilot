@@ -1,0 +1,94 @@
+id: wifi-llapi-r167-radio-multiusermimoenabled
+name: MultiUserMIMOEnabled — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 167
+  object: WiFi.Radio.{i}.
+  api: MultiUserMIMOEnabled
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.MultiUserMIMOEnabled=1
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.MultiUserMIMOEnabled?
+  note: Check MIMO enabled or not
+- id: step2
+  action: exec
+  target: DUT
+  command: iperf3 -c 192.168.1.1 -P 10 -t 60
+  depends_on: step1
+  note: Connect WiFi Station then rune IPERF3
+- id: step3
+  action: exec
+  target: DUT
+  command: . Check Actual Spatial Streams (NSS) in Use
+  depends_on: step2
+- id: step4
+  action: exec
+  target: DUT
+  command: Confirm MIMO Capabilities from sta_info
+  depends_on: step3
+- id: step5
+  action: exec
+  target: DUT
+  command: AP RF Chain Capability (txchain / rxchain)
+  capture: result
+  depends_on: step4
+pass_criteria:
+- field: result.MultiUserMIMOEnabled
+  operator: contains
+  value: '1'
+  description: MultiUserMIMOEnabled 應回傳包含 MultiUserMIMOEnabled=1
+verification_command: 'root@prplOS:/# wl -i wl0 mu_features
+
+  1
+
+  root@prplOS:/# wl -i wl1 mu_features
+
+  1
+
+  root@prplOS:/# wl -i wl1 mu_features
+
+  1'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: 'Note: 2.4GHz mu features are disable by default "need clarification why it is disabled by default because 5G
+      and 6G are enabled."'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

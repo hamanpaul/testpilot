@@ -1,0 +1,63 @@
+id: wifi-llapi-r300-radio-txbeamformingcapsenabled
+name: TxBeamformingCapsEnabled — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 300
+  object: WiFi.Radio.{i}.
+  api: TxBeamformingCapsEnabled
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.TxBeamformingCapsEnabled="DEFAULT"
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.TxBeamformingCapsEnabled?
+  note: 'Check API default value:'
+- id: step2
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.Radio.*.TxBeamformingCapsEnabled="On"
+
+    ubus-cli WiFi.Radio.*.TxBeamformingCapsEnabled="Off"
+
+    ubus-cli WiFi.Radio.*.TxBeamformingCapsEnabled="Auto"'
+  depends_on: step1
+  note: Modify the API value to "Auto"、"On、"Off"
+- id: step3
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.Radio.*.TxBeamformingCapsEnabled?
+
+    ubus-cli WiFi.Radio.*.TxBeamformingCapsEnabled?
+
+    ubus-cli WiFi.Radio.*.TxBeamformingCapsEnabled?'
+  capture: result
+  depends_on: step2
+  note: Check API value again, when value="On" it will get 1 and "Off" will be 0.
+pass_criteria:
+- field: result.TxBeamformingCapsEnabled
+  operator: contains
+  value: DEFAULT
+  description: TxBeamformingCapsEnabled 應回傳包含 TxBeamformingCapsEnabled=DEFAULT
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

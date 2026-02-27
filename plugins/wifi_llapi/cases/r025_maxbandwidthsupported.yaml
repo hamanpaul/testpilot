@@ -1,0 +1,80 @@
+id: wifi-llapi-r025-accesspoint_associateddevice-maxbandwidthsupported
+name: MaxBandwidthSupported — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 25
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: MaxBandwidthSupported
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.MaxBandwidthSupported=160MHz
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station and check Station MaxBandwidthSupported
+  capture: result
+pass_criteria:
+- field: result.MaxBandwidthSupported
+  operator: contains
+  value: 160MHz
+  description: MaxBandwidthSupported 應回傳包含 MaxBandwidthSupported=160MHz
+verification_command: 'wl -i wl0 sta_info ${STA_MAC}
+
+  VHT SET : 0x1 1x1 2x1 3x1 4x1 5x1 6x1 7x1 8x1 9x1
+
+  : 0x2 1x2 2x2 3x2 4x2 5x2 6x2 7x2 8x2 9x2
+
+  HE SET :
+
+  20/40/80 MHz:
+
+  NSS1 Tx: 0-11 Rx: 0-11
+
+  NSS2 Tx: 0-11 Rx: ---
+
+  EHT SET :
+
+  20/40/80 MHz:
+
+
+  VHT (Wi-Fi 5) → channel widths up to 80 MHz
+
+  HE (Wi-Fi 6) → supports 20/40/80 MHz
+
+  EHT (Wi-Fi 7) → supports 20/40/80 MHz
+
+  No 160 MHz or 320 MHz channels shown → max supported bandwidth is 80 MHz'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Fail
+    2.4g: Pass
+    comment: 'ARC : 6G Radio return "Unknown"'
+  v4.0.3:
+    5g: Pass
+    6g: Fail
+    2.4g: Pass
+    comment: swl_bandwidth_e wld_util_getMaxBwCap(wld_assocDev_capabilities_t* caps) only support HT/HE, not EHT

@@ -1,0 +1,42 @@
+id: wifi-llapi-r269-accesspoint-mboassocdisallowreason
+name: MBOAssocDisallowReason — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 269
+  object: WiFi.AccessPoint.{i}.
+  api: MBOAssocDisallowReason
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.MBOAssocDisallowReason="Off"
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: query
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.{i}.MBOAssocDisallowReason
+  capture: result
+pass_criteria:
+- field: result.MBOAssocDisallowReason
+  operator: contains
+  value: 'Off'
+  description: MBOAssocDisallowReason 應回傳包含 MBOAssocDisallowReason=Off
+results_reference:
+  v4.0.1:
+    5g: ''
+    6g: ''
+    2.4g: ''
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

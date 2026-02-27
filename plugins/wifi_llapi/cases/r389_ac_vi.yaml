@@ -1,0 +1,90 @@
+id: wifi-llapi-r389-ssid_stats_wmmpacketsreceived-ac_vi
+name: AC_VI — WiFi.SSID.{i}.Stats.WmmPacketsReceived.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 389
+  object: WiFi.SSID.{i}.Stats.WmmPacketsReceived.
+  api: AC_VI
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.SSID.{i}.Stats.WmmPacketsReceived.AC_VI=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi station (use another WiFi7 GW as station with built-in IPERF3)
+- id: step2
+  action: exec
+  target: DUT
+  command: Run IPERF "iperf3 -c <server> -u -b 20M --tos 0x88"
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.SSID.*.Stats.WmmPacketsReceived.AC_VI?
+  capture: result
+  depends_on: step2
+  note: Verify SSID stats WmmPacketsReceived.AC_VI=0
+pass_criteria:
+- field: result.AC_VI
+  operator: contains
+  value: '0'
+  description: AC_VI 應回傳包含 AC_VI=0
+verification_command: '=== wl0 ===
+
+  AC_VI: tx frames: 34558 bytes: 51766446 failed frames: 0 failed bytes: 0
+
+  rx frames: 17205 bytes: 26495350 failed frames: 0 failed bytes: 0
+
+
+  === wl1 ===
+
+  AC_VI: tx frames: 34536 bytes: 51733490 failed frames: 0 failed bytes: 0
+
+  rx frames: 17244 bytes: 26555510 failed frames: 0 failed bytes: 0
+
+
+  === wl2 ===
+
+  AC_VI: tx frames: 34902 bytes: 52281758 failed frames: 0 failed bytes: 0
+
+  rx frames: 13274 bytes: 20441610 failed frames: 0 failed bytes: 0'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API return "0"'
+  v4.0.3:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: not support per ssid

@@ -1,0 +1,82 @@
+id: wifi-llapi-r342-radio_ieee80211ax-srginformationvalid
+name: SRGInformationValid — WiFi.Radio.{i}.IEEE80211ax.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 342
+  object: WiFi.Radio.{i}.IEEE80211ax.
+  api: SRGInformationValid
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.IEEE80211ax.SRGInformationValid=0
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.IEEE80211ax.SRGInformationValid?
+  note: 'Check API defualt value:'
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.IEEE80211ax.SRGInformationValid=1
+  depends_on: step1
+  note: 'Set the value to 1(enbaled):'
+- id: step3
+  action: exec
+  target: DUT
+  command: Check the radio beacons included SRC district from air.
+  capture: result
+  depends_on: step2
+pass_criteria:
+- field: result.SRGInformationValid
+  operator: contains
+  value: '0'
+  description: SRGInformationValid 應回傳包含 SRGInformationValid=0
+verification_command: '(SRGInformationValid=0)
+
+  root@prplOS:/# wl -i wl0 sr_config options
+
+  options 0
+
+  root@prplOS:/# wl -i wl1 sr_config options
+
+  options 0
+
+  root@prplOS:/# wl -i wl2 sr_config options
+
+  options 0
+
+
+  (SRGInformationValid=1)
+
+  root@prplOS:/# wl -i wl0 sr_config options
+
+  options 1
+
+  root@prplOS:/# wl -i wl1 sr_config options
+
+  options 1
+
+  root@prplOS:/# wl -i wl2 sr_config options
+
+  options 1'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

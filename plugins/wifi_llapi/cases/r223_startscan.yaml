@@ -1,0 +1,67 @@
+id: wifi-llapi-r223-radio-startscan
+name: startScan() — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 223
+  object: WiFi.Radio.{i}.
+  api: startScan()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.startScan(SSID:string, channels:string):void
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: 'ubus-cli "WiFi.Radio.1.startScan()"
+
+    ubus-cli "WiFi.Radio.1.startScan()"
+
+    ubus-cli "WiFi.Radio.2.startScan()"
+
+    ubus-cli "WiFi.Radio.3.startScan()"'
+  note: 'Start startScan() function once, record the result:'
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.Radio.*.getScanResults()"
+  depends_on: step1
+  note: 'Check with getScanResult():'
+- id: step3
+  action: exec
+  target: DUT
+  command: '- ubus: - [ubus-cli] (0)
+
+    - ubus: - [ubus-cli] (4)
+
+    - ubus: - [ubus-cli] (4)
+
+    - ubus: - [ubus-cli] (4)'
+  capture: result
+  depends_on: step2
+  note: 'Try the function with parameters:'
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: startScan() 執行不應回傳 error
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : any parameters in ".scan(SSID:string, channels:string, min_rssi:int)" will always return syntex error.'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: Need to check(Leon)

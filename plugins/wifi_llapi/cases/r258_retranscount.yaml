@@ -1,0 +1,96 @@
+id: wifi-llapi-r258-ssid_stats-retranscount
+name: RetransCount — WiFi.SSID.{i}.Stats.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 258
+  object: WiFi.SSID.{i}.Stats.
+  api: RetransCount
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.SSID.{i}.Stats.RetransCount=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect one WiFi station to SSID4, SSID6 and SSID8 of the GW (DUT)
+- id: step2
+  action: exec
+  target: DUT
+  command: Run Iperf from Station to GW and between Station
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: Setup neighbour GW near the GW (DUT)
+  depends_on: step2
+- id: step4
+  action: exec
+  target: DUT
+  command: Place Neighbor GW nearby
+  depends_on: step3
+- id: step5
+  action: exec
+  target: DUT
+  command: Set same channel + bandwidth
+  depends_on: step4
+- id: step6
+  action: exec
+  target: DUT
+  command: Connect STA(s) to Neighbor GW
+  depends_on: step5
+- id: step7
+  action: exec
+  target: DUT
+  command: Run Iperf simultaneously
+  depends_on: step6
+- id: step8
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.SSID.*.Stats.RetransCount?
+  capture: result
+  depends_on: step7
+  note: Check Stats.RetransCount in DUT
+pass_criteria:
+- field: result.RetransCount
+  operator: contains
+  value: '0'
+  description: RetransCount 應回傳包含 RetransCount=0
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API always return "0"'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

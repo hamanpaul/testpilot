@@ -1,0 +1,85 @@
+id: wifi-llapi-r159-radio-ieee80211henabled
+name: IEEE80211hEnabled — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 159
+  object: WiFi.Radio.{i}.
+  api: IEEE80211hEnabled
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.IEEE80211hEnabled=1
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.IEEE80211hEnabled?
+  note: 'Check API default value:'
+- id: step2
+  action: exec
+  target: DUT
+  command: Compare with driver settings, this API is not able to modify.
+  capture: result
+  depends_on: step1
+pass_criteria:
+- field: result.IEEE80211hEnabled
+  operator: contains
+  value: '1'
+  description: IEEE80211hEnabled 應回傳包含 IEEE80211hEnabled=1
+verification_command: 'root@prplOS:/# wl -i wl0 spect
+
+  Loose interpretation of 11h spec - may join non 11h AP.
+
+  root@prplOS:/# wl -i wl1 spect
+
+  Off
+
+  root@prplOS:/# wl -i wl2 spect
+
+  Off
+
+
+  root@prplOS:/# wl -i wl0 radar
+
+  1
+
+  root@prplOS:/# wl -i wl1 radar
+
+  0
+
+  root@prplOS:/# wl -i wl2 radar
+
+  0
+
+
+  root@prplOS:/# cat /tmp/wl0_hapd.conf |grep ieee80211h
+
+  ieee80211h=1
+
+  root@prplOS:/# cat /tmp/wl1_hapd.conf |grep ieee80211h
+
+  ieee80211h=0
+
+  root@prplOS:/# cat /tmp/wl2_hapd.conf |grep ieee80211h
+
+  ieee80211h=0'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

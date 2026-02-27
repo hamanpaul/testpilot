@@ -1,0 +1,43 @@
+id: wifi-llapi-r181-radio-transmitpowersupported
+name: TransmitPowerSupported — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 181
+  object: WiFi.Radio.{i}.
+  api: TransmitPowerSupported
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.TransmitPowerSupported=0,25,50,75,100,-1
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.1.TransmitPowerSupported?
+  capture: result
+  note: root@prplOS:/# ubus-cli WiFi.Radio.1.TransmitPowerSupported?
+pass_criteria:
+- field: result.TransmitPowerSupported
+  operator: contains
+  value: 0,25,50,75,100,-1
+  description: TransmitPowerSupported 應回傳包含 TransmitPowerSupported=0,25,50,75,100,-1
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

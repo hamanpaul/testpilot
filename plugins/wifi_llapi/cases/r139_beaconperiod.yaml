@@ -1,0 +1,71 @@
+id: wifi-llapi-r139-radio-beaconperiod
+name: BeaconPeriod — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 139
+  object: WiFi.Radio.{i}.
+  api: BeaconPeriod
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.BeaconPeriod=100
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.BeaconPeriod?
+  note: 'Get BeaconPeriod default value:'
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.BeaconPeriod=1000
+  depends_on: step1
+  note: 'Set BeaconPeriod to 1000:'
+- id: step3
+  action: exec
+  target: DUT
+  command: Using Wireshark, capture beacon packets and check the beacon interval at which the gateway broadcasts.
+  capture: result
+  depends_on: step2
+pass_criteria:
+- field: result.BeaconPeriod
+  operator: contains
+  value: '100'
+  description: BeaconPeriod 應回傳包含 BeaconPeriod=100
+verification_command: 'root@prplOS:/# cat /tmp/wl0_hapd.conf |grep beacon_int
+
+  beacon_int=1000
+
+  beacon_int=1000
+
+  root@prplOS:/# cat /tmp/wl1_hapd.conf |grep beacon_int
+
+  beacon_int=1000
+
+  beacon_int=1000
+
+  root@prplOS:/# cat /tmp/wl2_hapd.conf |grep beacon_int
+
+  beacon_int=1000
+
+  beacon_int=1000'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

@@ -1,0 +1,85 @@
+id: wifi-llapi-r076-accesspoint-multiaptype
+name: MultiAPType — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 76
+  object: WiFi.AccessPoint.{i}.
+  api: MultiAPType
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.MultiAPType=BackhaulBSS
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.MultiAPType?
+  note: Check Default settinh
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.MultiAPType= FronthaulBSS
+  depends_on: step1
+  note: Set MultiAPType to FronthaulBSS only
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.MultiAPType?
+  capture: result
+  depends_on: step2
+  note: Check the settings
+pass_criteria:
+- field: result.MultiAPType
+  operator: contains
+  value: BackhaulBSS
+  description: MultiAPType 應回傳包含 MultiAPType=BackhaulBSS
+verification_command: 'wl -i wl0 map
+
+  cat /tmp/wl0_hapd.conf | grep multi_ap
+
+
+  root@prplOS:~# cat /tmp/wl0_hapd.conf | grep multi_ap
+
+  multi_ap=2
+
+  multi_ap=2
+
+  root@prplOS:~# cat /tmp/wl2_hapd.conf | grep multi_ap
+
+  multi_ap=2
+
+  multi_ap=2
+
+  root@prplOS:~# cat /tmp/wl1_hapd.conf | grep multi_ap
+
+  multi_ap=2
+
+  multi_ap=2
+
+  root@prplOS:~# wl -i wl0 map
+
+  0x1: Fronthaul-BSS
+
+  root@prplOS:~#'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: '-Test only FronthaulBSS.
+
+      -Will test the BH when MESH are ready'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

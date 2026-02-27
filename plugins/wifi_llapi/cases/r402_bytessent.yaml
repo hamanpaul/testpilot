@@ -1,0 +1,57 @@
+id: wifi-llapi-r402-accesspoint_associateddevice_affiliatedsta-bytessent
+name: BytesSent — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.​{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 402
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.​{i}.
+  api: BytesSent
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.​AssociatedDevice.{i}.AffiliatedSTA.​{i}.BytesSent
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.AffiliatedSta.1.?
+  capture: result
+  note: root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.AffiliatedSta.1.?
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: BytesSent 執行不應回傳 error
+verification_command: iw dev wl0 station dump
+results_reference:
+  v4.0.1:
+    5g: Skip
+    6g: Skip
+    2.4g: Skip
+    comment: 'ARC : GW sees the device as “connected” but no real traffic goes through the affiliated link, keeping its stats
+      at zero.'
+  v4.0.3:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: no txbytes in wl_scb_mlo_stats_v2_t

@@ -1,0 +1,63 @@
+id: wifi-llapi-r060-accesspoint_associateddevice-vhtcapabilities
+name: VhtCapabilities — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 60
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: VhtCapabilities
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.VhtCapabilities=SGI80,SGI160,SU-BFE,MU-BFE
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep VhtCapabi
+  capture: result
+  note: root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep VhtCapabi
+pass_criteria:
+- field: result.VhtCapabilities
+  operator: contains
+  value: SGI80,SGI160,SU-BFE,MU-BFE
+  description: VhtCapabilities 應回傳包含 VhtCapabilities=SGI80,SGI160,SU-BFE,MU-BFE
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: 'SGI = short guard interval (more speed)
+
+      80/160 = channel width
+
+      SU-BF = single-user beamforming (one client)
+
+      MU-BF = multi-user beamforming / MU-MIMO (multiple clients)
+
+      This capability set indicates a very capable 802.11ac Wave 2 client, supporting 160 MHz, SGI, and both SU/MU beamforming.'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: wld_assocDev_copyAssocDevInfoFromIEs, IE is from hostapd

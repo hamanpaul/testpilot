@@ -1,0 +1,71 @@
+id: wifi-llapi-r062-accesspoint-bridgeinterface
+name: BridgeInterface — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 62
+  object: WiFi.AccessPoint.{i}.
+  api: BridgeInterface
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.BridgeInterface=bridge
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.? | grep BridgeInterface
+  capture: result
+  note: root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep BridgeInterface
+pass_criteria:
+- field: result.BridgeInterface
+  operator: contains
+  value: bridge
+  description: BridgeInterface 應回傳包含 BridgeInterface=bridge
+verification_command: 'cat /tmp/wl0_hapd.conf |grep bridge
+
+
+  root@prplOS:/# brctl show
+
+  bridge name bridge id STP enabled interfaces
+
+  br-lcm 8000.6c15db74c0b3 no
+
+  br-lan 8000.6c15db74c0b1 no wl0.1
+
+  eth3
+
+  wl1
+
+  eth1
+
+  wl2.1
+
+  wl2
+
+  eth2
+
+  wl0
+
+  wl1.1
+
+  br-guest 8000.6c15db74c0b2 no'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

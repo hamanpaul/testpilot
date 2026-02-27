@@ -1,0 +1,46 @@
+id: wifi-llapi-r162-radio-ieee80211rsupported
+name: IEEE80211rSupported — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 162
+  object: WiFi.Radio.{i}.
+  api: IEEE80211rSupported
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.IEEE80211rSupported=1
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.IEEE80211rSupported?
+  capture: result
+  note: Read-only API, defines whether each radio supported 802.11r standard. Check the API value and compare them with driver
+    c
+pass_criteria:
+- field: result.IEEE80211rSupported
+  operator: contains
+  value: '1'
+  description: IEEE80211rSupported 應回傳包含 IEEE80211rSupported=1
+verification_command: '(Fast Transition / Mabolity Domain included in beacon packet, IE: 54)'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'BRCM: CSP CS00012439197'
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: "this parameter is a prpl-specific extension (custom parameter)  and enable by default(hardcoding in pwhm). \n\
+      If you want beacon including MDE IE, you need to set parameters in WiFi.AccessPoint.{i}.IEEE80211r. object"

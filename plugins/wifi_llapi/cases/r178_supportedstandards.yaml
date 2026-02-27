@@ -1,0 +1,44 @@
+id: wifi-llapi-r178-radio-supportedstandards
+name: SupportedStandards — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 178
+  object: WiFi.Radio.{i}.
+  api: SupportedStandards
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.SupportedStandards=a,n,an,ac,ax
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.SupportedStandards?
+  capture: result
+  note: 'Read-only API, defines each radio supported standard. Check the API value and make sure the standard matches the
+    band:'
+pass_criteria:
+- field: result.SupportedStandards
+  operator: contains
+  value: a,n,an,ac,ax
+  description: SupportedStandards 應回傳包含 SupportedStandards=a,n,an,ac,ax
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

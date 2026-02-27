@@ -1,0 +1,75 @@
+id: wifi-llapi-r205-radio-getscanresults
+name: getScanResults() — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 205
+  object: WiFi.Radio.{i}.
+  api: getScanResults()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli WiFi.Radio.{i}.getScanResults()Bandwidth : 20,'
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: 'ubus-cli "WiFi.Radio.*.getScanResults()" | grep -i 1C:F4:3F:73:C7
+
+    ubus-cli "WiFi.Radio.2.getScanResults()" | grep -i 18:60:41:00:0'
+  capture: result
+  note: Setup another AP as a data collecting target, try collect the target's Wi-Fi air radio info. Compare the acture value
+    an
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getScanResults() 執行不應回傳 error
+verification_command: '[2.4GHz]
+
+  root@prplOS:/# iw dev wl2 scan | grep 1c:f4:3f:73:c7:40 -A150
+
+  BSS 1c:f4:3f:73:c7:40(on wl2)
+
+  TSF: 14499627031 usec (0d, 04:01:39)
+
+  freq: 2472
+
+  beacon interval: 100 TUs
+
+  capability: ESS Privacy ShortPreamble ShortSlotTime APSD RadioMeasure (0x1c31)
+
+  signal: -36.00 dBm
+
+  last seen: 121 ms ago
+
+  SSID: AAAAA_S7-24
+
+  Supported rates: 1.0* 2.0* 5.5* 11.0* 9.0 18.0 36.0 54.0
+
+  DS Parameter set: channel 13
+
+  TIM: DTIM Count 0 DTIM Period 1 Bitmap Control 0x0 Bitmap[0] 0x0
+
+  Country: DE Environment: bogus
+
+  Channe'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

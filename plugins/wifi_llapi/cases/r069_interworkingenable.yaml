@@ -1,0 +1,63 @@
+id: wifi-llapi-r069-accesspoint_ieee80211u-interworkingenable
+name: InterworkingEnable — WiFi.AccessPoint.{i}.IEEE80211u
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 69
+  object: WiFi.AccessPoint.{i}.IEEE80211u
+  api: InterworkingEnable
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.IEEE80211u.InterworkingEnable=0
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.AccessPoint.{i}.IEEE80211u.InterworkingEnable=1
+
+    ubus-cli WiFi.AccessPoint.? | grep IEEE80211u.InterworkingEnable'
+  capture: result
+  note: //Set IEEE80211u.InterworkingEnable=1
+pass_criteria:
+- field: result.InterworkingEnable
+  operator: contains
+  value: '0'
+  description: InterworkingEnable 應回傳包含 InterworkingEnable=0
+verification_command: 'Check Beacon packets:
+
+  IEEE 802.11 Management Frame
+
+  Tagged parameters
+
+  Interworking (Tag: 107)
+
+
+  **Access Network Type = Public, Private, Private with Guest, etc.
+
+  **Internet Availability = "0 = not available, 1 = available"
+
+  **ASRA (Access Network Query Protocol Service)= Automatic association rejection support
+
+  **Venue Info = Optional: airport, hotel, cafe, etc.
+
+  **HESSID = Optional: Homogenous ESS ID (for roaming)'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'BRCM: CSP CS00012439197'
+  v4.0.3:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: ''

@@ -1,0 +1,49 @@
+id: wifi-llapi-r070-accesspoint_ieee80211u-qosmapset
+name: QoSMapSet — WiFi.AccessPoint.{i}.IEEE80211u
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 70
+  object: WiFi.AccessPoint.{i}.IEEE80211u
+  api: QoSMapSet
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.IEEE80211u.QoSMapSet=
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.IEEE80211u.QoSMapSet="0,7,8,15,255,25
+  note: Set QoSMapSet
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.IEEE80211u.QoSMapSet?
+  capture: result
+  depends_on: step1
+  note: Get QoSMapSet to check the settings
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: QoSMapSet 執行不應回傳 error
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'BRCM: CSP CS00012439197'
+  v4.0.3:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: not supported by wlcfg80211

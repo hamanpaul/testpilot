@@ -1,0 +1,48 @@
+id: wifi-llapi-r287-radio-radcapabilitieshtstr
+name: RadCapabilitiesHTStr — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 287
+  object: WiFi.Radio.{i}.
+  api: RadCapabilitiesHTStr
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.RadCapabilitiesHTStr="LPDC,CAP_40,POWER_SAVE,GREEN_FIELD,SHORT_GI_20,SHORT_GI_40,TX_STBC,MAX_AMSDU"
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.RadCapabilitiesHTStr?
+  note: get RadCapabilitiesHTStr
+- id: step2
+  action: exec
+  target: DUT
+  command: Verify beacon packet supprt HT.
+  capture: result
+  depends_on: step1
+pass_criteria:
+- field: result.RadCapabilitiesHTStr
+  operator: contains
+  value: LPDC,CAP_40,POWER_SAVE,GREEN_FIELD,SHORT_GI_20,SHORT_GI_40,TX_STBC,MAX_AMSDU
+  description: RadCapabilitiesHTStr 應回傳包含 RadCapabilitiesHTStr=LPDC,CAP_40,POWER_SAVE,GREEN_FIELD,SHORT_GI_20,SHORT_GI_40,TX_STBC,MAX_AMSDU
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Not Supported
+    2.4g: Pass
+    comment: 6 GHz (radio2) does not support HT (802.11n)
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: pBand->htCapabilities is from nl80211 to pwhm

@@ -1,0 +1,84 @@
+id: wifi-llapi-r048-accesspoint_associateddevice-tx_retransmissions
+name: Tx_Retransmissions — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 48
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: Tx_Retransmissions
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.Tx_Retransmissions=5893
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi station to GW SSID4, SSID6 and SSID8
+- id: step2
+  action: exec
+  target: DUT
+  command: Run Ping between Station
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.Tx_Retransmissions?
+  capture: result
+  depends_on: step2
+  note: Verify Tx_Retransmissions
+pass_criteria:
+- field: result.Tx_Retransmissions
+  operator: contains
+  value: '5893'
+  description: Tx_Retransmissions 應回傳包含 Tx_Retransmissions=5893
+verification_command: 'root@prplOS:/# wl -i wl0 sta_info e6:60:17:eb:a9:86 | grep pkts
+
+  tx pkts retries: 393
+
+  tx pkts retry exhausted: 43
+
+
+  root@prplOS:/# wl -i wl1 sta_info 38:06:e6:92:b0:4a | grep pkts
+
+  tx pkts retries: 93
+
+  tx pkts retry exhausted: 1
+
+
+  root@prplOS:/# wl -i wl2 sta_info 34:19:4d:a4:b4:33 | grep pkts
+
+  tx pkts retries: 196
+
+  tx pkts retry exhausted: 0'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API return "0" while in wl Station info the counter increase'
+  v4.0.3:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: Vendor Module supports to get.wld_nl80211_stationInfo_t doesn't support

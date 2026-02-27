@@ -1,0 +1,85 @@
+id: wifi-llapi-r255-ssid_stats-multicastpacketssent
+name: MulticastPacketsSent — WiFi.SSID.{i}.Stats.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 255
+  object: WiFi.SSID.{i}.Stats.
+  api: MulticastPacketsSent
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.SSID.{i}.Stats.MulticastPacketsSent=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi station to GW
+- id: step2
+  action: exec
+  target: DUT
+  command: Create Multicast group and send Multicast Data between station's and GW
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.SSID.*.Stats.MulticastPacketsSent?
+  capture: result
+  depends_on: step2
+  note: Check MulticastPacketsSent
+pass_criteria:
+- field: result.MulticastPacketsSent
+  operator: contains
+  value: '0'
+  description: MulticastPacketsSent 應回傳包含 MulticastPacketsSent=0
+verification_command: 'cat /proc/net/dev | grep wl0
+
+
+  root@prplOS:/# cat /proc/net/dev
+
+  Inter-| Receive | Transmit
+
+  face |bytes packets errs drop fifo frame compressed multicast|bytes packets errs drop fifo colls carrier compressed
+
+  wl0: 6395774 33265 0 27 0 0 0 1207 153744631 225100 0 102 0 0 0 0
+
+  wl1: 1606749304 1091082 0 10 0 0 0 13511 156618564 251946 0 83 0 0 0 0
+
+  wl2: 903667 2955 0 41 0 0 0 56 52065676 146033 0 180 0 0 0 0'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'BRCM: CSP CS00012439197'
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: check cat proc/net/dev_extstats. But netlink can't get full ext stats

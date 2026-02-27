@@ -1,0 +1,49 @@
+id: wifi-llapi-r180-radio-transmitpower
+name: TransmitPower — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 180
+  object: WiFi.Radio.{i}.
+  api: TransmitPower
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.TransmitPower=100
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: The return from "wl -i wl[i] txpwr_percent"will always be 100.
+  capture: result
+pass_criteria:
+- field: result.TransmitPower
+  operator: contains
+  value: '100'
+  description: TransmitPower 應回傳包含 TransmitPower=100
+verification_command: 'wl -i wl0 txpwr_percent
+
+
+  wl -i wl1 txpwr_percent
+
+
+  wl -i wl2 txpwr_percent'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : The return from "wl -i wl[i] txpwr_percent"will always be 100.'
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: Commited

@@ -1,0 +1,75 @@
+id: wifi-llapi-r102-accesspoint-getstationstats
+name: getStationStats() — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 102
+  object: WiFi.AccessPoint.{i}.
+  api: getStationStats()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli WiFi.AccessPoint.{i}.getStationStats() AvgSignalStrength : -67,'
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station to GW.
+- id: step2
+  action: exec
+  target: DUT
+  command: 'ubus-cli "WiFi.AccessPoint.*.getStationStats()" | grep AvgSignalStrength
+
+    ubus-cli "WiFi.AccessPoint.*.getStationStats()" | grep -E ''MACAdd'
+  capture: result
+  depends_on: step1
+  note: Verify connected Station AvgSignalStrength
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getStationStats() 執行不應回傳 error
+verification_command: 'root@prplOS:/#
+
+  root@prplOS:/# wl -i wl0 sta_info e6:60:17:eb:a9:86 | grep smoothed
+
+  smoothed rssi: -37
+
+  root@prplOS:/# wl -i wl1 sta_info 38:06:e6:92:b0:4a | grep smoothed
+
+  smoothed rssi: -36
+
+  root@prplOS:/# wl -i wl2 sta_info 34:19:4d:a4:b4:33 | grep smoothed
+
+  smoothed rssi: -19'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API return "0"'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

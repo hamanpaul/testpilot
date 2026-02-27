@@ -1,0 +1,93 @@
+id: wifi-llapi-r081-accesspoint_security-modeenabled
+name: ModeEnabled — WiFi.AccessPoint.{i}.Security
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 81
+  object: WiFi.AccessPoint.{i}.Security
+  api: ModeEnabled
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Security.ModeEnabled=WPA3-Personal
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.Security.ModeEnabled=WPA3-Personal
+  note: Set security mode to WPA3-Personal
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.? | grep .Security.ModeEnabled
+  capture: result
+  depends_on: step1
+  note: Verify security mode
+pass_criteria:
+- field: result.ModeEnabled
+  operator: contains
+  value: WPA3-Personal
+  description: ModeEnabled 應回傳包含 ModeEnabled=WPA3-Personal
+verification_command: 'cat /tmp/wl0_hapd.conf | grep wpa
+
+  and other related parameters
+
+
+  root@prplOS:/# cat /tmp/wl0_hapd.conf | grep wpa
+
+  wpa=2
+
+  wpa_key_mgmt=SAE FT-SAE
+
+  wpa_pairwise=CCMP
+
+  wpa_group_rekey=0
+
+  wpa_ptk_rekey=0
+
+  wpa_passphrase=87654321
+
+  wpa_disable_eapol_key_retries=0
+
+  wpa_group_update_count=8
+
+  wpa_pairwise_update_count=8
+
+  wpa=2
+
+  wpa_key_mgmt=WPA-PSK
+
+  wpa_pairwise=CCMP
+
+  wpa_passphrase=password
+
+  wpa_group_rekey=0
+
+  wpa_ptk_rekey=0
+
+  wpa_disable_eapol_key_retries=0
+
+  wpa_group_update_count=8
+
+  wpa_pairwise_update_count=8
+
+  multi_ap'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

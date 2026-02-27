@@ -1,0 +1,73 @@
+id: wifi-llapi-r203-radio-getradiostats
+name: getRadioStats() — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 203
+  object: WiFi.Radio.{i}.
+  api: getRadioStats()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli WiFi.Radio.{i}.getRadioStats()UnicastPacketsReceived : 0,'
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.Radio.*.getRadioStats()"
+  capture: result
+  note: Connect STA to DUT, try ping or setup iperf3 data flow. The counter should accumulate.
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getRadioStats() 執行不應回傳 error
+verification_command: 'cat /proc/net/dev | grep wl*
+
+
+  Inter-| Receive | Transmit
+
+  face |bytes packets errs drop fifo frame compressed multicast|bytes packets errs drop fifo colls carrier compressed
+
+  wl0: 328702143 393004 0 10 0 0 0 7699 1772998999 1329734 0 16 0 0 0 0
+
+  wl1: 0 0 0 10 0 0 0 0 68957781 153593 0 13 0 0 0 0
+
+  wl2: 1573662029 1060133 0 21 0 0 0 349 238968041 405397 0 4 0 0 0 0'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'BRCM: CSP CS00012439197'
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

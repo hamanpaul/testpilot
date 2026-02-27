@@ -1,0 +1,59 @@
+id: wifi-llapi-r242-ssid-bssid
+name: BSSID — WiFi.SSID.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 242
+  object: WiFi.SSID.{i}.
+  api: BSSID
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.SSID.{i}.BSSID=98:42:65:2d:0f:e4
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.SSID.? | grep .\BSSID
+  note: get SSID BSSID
+- id: step2
+  action: exec
+  target: DUT
+  command: Capture Beacon packet and verify the BSSID
+  capture: result
+  depends_on: step1
+pass_criteria:
+- field: result.BSSID
+  operator: contains
+  value: 98:42:65:2d:0f:e4
+  description: BSSID 應回傳包含 BSSID=98:42:65:2d:0f:e4
+verification_command: 'root@prplOS:/# iw dev wl0 info | grep addr
+
+  addr 6c:15:db:74:c0:b5
+
+  root@prplOS:/# iw dev wl1 info | grep addr
+
+  addr 6c:15:db:74:c0:b6
+
+  root@prplOS:/# iw dev wl2 info | grep addr
+
+  addr 6c:15:db:74:c0:c7'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

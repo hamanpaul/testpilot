@@ -1,0 +1,80 @@
+id: wifi-llapi-r310-accesspoint_associateddevice-rrmonchannelmaxduration
+name: RrmOnChannelMaxDuration — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 310
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: RrmOnChannelMaxDuration
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.RrmOnChannelMaxDuration=4
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station to GW with one station 802.11k Enable and the other one 802.11k Disable.
+- id: step2
+  action: exec
+  target: DUT
+  command: Verify Station station 802.11k Enable
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: 'wl sta_info 02:10:5E:BA:A9:00 | grep -i rrm
+
+    wl sta_info 02:10:5E:8B:5B:00 | grep -i rrm'
+  depends_on: step2
+  note: 'Check Station capabilities: wl sta_info <MAC> | grep -i rrm'
+- id: step4
+  action: exec
+  target: DUT
+  command: Try to set Station 802.11k from Enable to Disable and Disble to Enable then re-connect station.
+  depends_on: step3
+- id: step5
+  action: exec
+  target: DUT
+  command: 'wl sta_info 02:10:5E:BA:A9:00 | grep -i rrm
+
+    wl sta_info 02:10:5E:8B:5B:00 | grep -i rrm'
+  capture: result
+  depends_on: step4
+  note: 'Check Station capabilities: wl sta_info <MAC> | grep -i rrm'
+pass_criteria:
+- field: result.RrmOnChannelMaxDuration
+  operator: contains
+  value: '4'
+  description: RrmOnChannelMaxDuration 應回傳包含 RrmOnChannelMaxDuration=4
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

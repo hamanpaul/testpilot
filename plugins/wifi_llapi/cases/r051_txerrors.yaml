@@ -1,0 +1,109 @@
+id: wifi-llapi-r051-accesspoint_associateddevice-txerrors
+name: TxErrors — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 51
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: TxErrors
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.TxErrors=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi station to GW SSID4, SSID6 and SSID8
+- id: step2
+  action: exec
+  target: DUT
+  command: Run IPERF between Stations
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: Verify TxErrors
+  capture: result
+  depends_on: step2
+pass_criteria:
+- field: result.TxErrors
+  operator: contains
+  value: '0'
+  description: TxErrors 應回傳包含 TxErrors=0
+verification_command: 'root@prplOS:/# wl -i wl0 sta_info DE:B4:40:A6:40:D5 | grep tx
+
+  OMI 0x1201: 20Mhz rx=2ss tx=2ss ER_SU_DISABLE
+
+  tx total pkts: 86710
+
+  tx total bytes: 168156952
+
+  tx ucast pkts: 86710
+
+  tx ucast bytes: 168156952
+
+  tx mcast/bcast pkts: 0
+
+  tx mcast/bcast bytes: 0
+
+  tx failures: 392
+
+  rate of last tx pkt: 325000 kbps - 216660 kbps
+
+  median tx rate: 0 kbps
+
+  tx data pkts retried: 0
+
+  tx total pkts sent: 86291
+
+  tx pkts retries: 5517
+
+  tx pkts retry exhausted: 392
+
+  tx acked pkts: 85899
+
+
+  root@prplOS:/# wl -i wl1 sta_info 38:06:E'
+results_reference:
+  v4.0.1:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: '
+
+      These counters increment only when Wi-Fi frames experience transmission error.
+
+      In our test environment, no Wi-Fi station capable of generating manipulated 802.11e error frame, and Scapy could not
+      be used to generate such frames due to WiFi station limitations.'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: Commit

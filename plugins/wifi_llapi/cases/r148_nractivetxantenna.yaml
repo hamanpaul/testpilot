@@ -1,0 +1,67 @@
+id: wifi-llapi-r148-radio_driverstatus-nractivetxantenna
+name: NrActiveTxAntenna — WiFi.Radio.{i}.DriverStatus.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 148
+  object: WiFi.Radio.{i}.DriverStatus.
+  api: NrActiveTxAntenna
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.DriverStatus.NrActiveTxAntenna=4
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.DriverStatus.NrActiveTxAntenna?
+  capture: result
+  note: Check GW Radio DriverStatus.NrActiveTxAntenna
+pass_criteria:
+- field: result.NrActiveTxAntenna
+  operator: contains
+  value: '4'
+  description: NrActiveTxAntenna 應回傳包含 NrActiveTxAntenna=4
+verification_command: 'wl -i wl0 txchain
+
+
+  root@prplOS:/# wl -i wl0 txchain
+
+  15 (0xf)
+
+  root@prplOS:/# wl -i wl1 txchain
+
+  15 (0xf)
+
+  root@prplOS:/# wl -i wl2 txchain
+
+  15 (0xf)
+
+  Value _x0001_Hex_x0001_Meaning
+
+  1 0x1_x0001_1×1 (chain 0 only)
+
+  3 0x3_x0001_2×2 (chains 0–1)
+
+  7 0x7_x0001_3×3 (chains 0–2)
+
+  15 0xF_x0001_4×4 (chains 0–3)'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API should return 4'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: need to check(Leon)

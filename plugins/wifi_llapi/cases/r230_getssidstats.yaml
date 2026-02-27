@@ -1,0 +1,71 @@
+id: wifi-llapi-r230-ssid-getssidstats
+name: getSSIDStats() — WiFi.SSID.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 230
+  object: WiFi.SSID.{i}.
+  api: getSSIDStats()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli WiFi.SSID.{i}.getSSIDStats() DiscardPacketsSent : 485,'
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station to GW
+- id: step2
+  action: exec
+  target: DUT
+  command: Run Iperf overnight between station
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: Get stats
+  capture: result
+  depends_on: step2
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getSSIDStats() 執行不應回傳 error
+verification_command: cat /proc/net/dev | grep wl0
+results_reference:
+  v4.0.1:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

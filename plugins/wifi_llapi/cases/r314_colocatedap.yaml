@@ -1,0 +1,42 @@
+id: wifi-llapi-r314-accesspoint_neighbour-colocatedap
+name: ColocatedAP — WiFi.AccessPoint.{i}.Neighbour.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 314
+  object: WiFi.AccessPoint.{i}.Neighbour.{i}.
+  api: ColocatedAP
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Neighbour.{i}.ColocatedAP=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: query
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.{i}.Neighbour.{i}.ColocatedAP
+  capture: result
+pass_criteria:
+- field: result.ColocatedAP
+  operator: contains
+  value: '0'
+  description: ColocatedAP 應回傳包含 ColocatedAP=0
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

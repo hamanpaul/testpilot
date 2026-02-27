@@ -1,0 +1,60 @@
+id: wifi-llapi-r399-radio-getspectruminfo
+name: getSpectrumInfo() — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 399
+  object: WiFi.Radio.{i}.
+  api: getSpectrumInfo()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.getSpectrumInfo() ourUsage
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi station to GW and run IPER3
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.Radio.*.getSpectrumInfo() ourUsage"
+  capture: result
+  depends_on: step1
+  note: Check ourUsage (channel busy % by our BSS) or ourUsage ≈ tx + rx
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getSpectrumInfo() 執行不應回傳 error
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API return "empty"'
+  v4.0.3:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: wifi driver need to support survey feature

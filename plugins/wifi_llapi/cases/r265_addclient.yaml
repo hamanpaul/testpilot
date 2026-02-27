@@ -1,0 +1,57 @@
+id: wifi-llapi-r265-radio_sensing-addclient
+name: addClient() — WiFi.Radio.{i}.Sensing.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 265
+  object: WiFi.Radio.{i}.Sensing.
+  api: addClient()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.Sensing.addClient(MACAddress )
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: 'ubus-cli "WiFi.Radio.1.Sensing.addClient(MACAddress=''A0:29:42:60:23:BD'', MonitorInterval=100)"
+
+    ubus-cli "WiFi.Radio.1.Sensing.addClient(MACAddress=''14:85:7F:20:18:44'', MonitorInterval=10)"
+
+    ubus-cli "WiFi.Radio.2.Sensing.addClient(MACAddress=''00:90:4C:55:20:A8'', MonitorInterval=1000)"
+
+    ubus-cli "WiFi.Radio.2.Sensing.addClient(MACAddress=''64:75:DA:4E:51:76'', MonitorInterval=100)"
+
+    ubus-cli "WiFi.Radio.2.Sensing.addClient(MACAddress=''18:60:41:00:2B:AE'', MonitorInterval=10)"
+
+    ubus-cli "WiFi.Radio.3.Sensing.addClient(MACAddress=''8A:10:18:1E:D9:14'', MonitorInterval=1000)"
+
+    ubus-cli "WiFi.Radio.3.Sensing.addClient(MACAddress=''70:97:41:29:FD:9E'', MonitorInterval=100)"
+
+    ubus-cli "WiFi.Radio.3.Sensing.addClient(MACAddress=''6E:15:DB:33:D7:D8'', MonitorInterval=10)"'
+  capture: result
+  note: 'Try add a sensing client by API:'
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: addClient() 執行不應回傳 error
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

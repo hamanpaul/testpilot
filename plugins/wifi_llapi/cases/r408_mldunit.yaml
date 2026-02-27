@@ -1,0 +1,88 @@
+id: wifi-llapi-r408-ssid-mldunit
+name: MLDUnit — WiFi.SSID.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 408
+  object: WiFi.SSID.{i}.
+  api: MLDUnit
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.SSID.{i}.MLDUnit
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Power ON the GW
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.SSID.*.MLDUnit?
+  capture: result
+  depends_on: step1
+  note: Verify MLDUnit
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: MLDUnit 執行不應回傳 error
+verification_command: 'root@prplOS:/# wl -i wl0 mld_unit
+
+  0
+
+  root@prplOS:/# wl -i wl1 mld_unit
+
+  0
+
+  root@prplOS:/# wl -i wl2 mld_unit
+
+  0
+
+
+  root@prplOS:/# wl -i wl1 mlo scb_stats 02:10:5E:8B:5B:00
+
+  [VER 2] STA 02:10:5E:8B:5B:00
+
+  link_id : 0 1 2
+
+  Tx Stats:
+
+  tx_pkts_acked : 5947 2339 112251
+
+  phy_tx_errors : 0 0 0
+
+  tx_pkts_total : 6340 2620 112539
+
+  tx_rate (kbps) : 516170 541660 688230
+
+  Rx Stats:
+
+  rx_pkts : 83626314 97400714 73
+
+  rx_bytes : 126644820520 147511472682 4970
+
+  rx_mcast_pkts : 17 40 0
+
+  rx_mcast_bytes : 3155 9722 0
+
+  rx_rate (kbps) :'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

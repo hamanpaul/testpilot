@@ -1,0 +1,75 @@
+id: wifi-llapi-r067-accesspoint_ieee80211r-ftoverdsenable
+name: FTOverDSEnable — WiFi.AccessPoint.{i}.IEEE80211r.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 67
+  object: WiFi.AccessPoint.{i}.IEEE80211r.
+  api: FTOverDSEnable
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.IEEE80211r.FTOverDSEnable=0
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=1
+
+    ubus-cli WiFi.AccessPoint.? | grep .IEEE80211r.FTOverDSEnable=1'
+  capture: result
+  note: //Set IEEE80211r.Enabled=1
+pass_criteria:
+- field: result.FTOverDSEnable
+  operator: contains
+  value: '0'
+  description: FTOverDSEnable 應回傳包含 FTOverDSEnable=0
+verification_command: 'cat /tmp/wl0_hapd.conf |grep ft_over_ds
+
+
+  Beacon Packet should include:
+
+  Mobility Domain
+
+  Mobility Domain ID: xxxx
+
+  FT Capability and Policy: 0x0? (bitmask)
+
+
+  0000 .... = FT-over-DS: 0 (not supported)
+
+  .... 000. = FT-over-Air: 1 (supported)
+
+
+  Key line:
+
+  FT-over-DS: 1 → FT-over-DS enabled
+
+  FT-over-DS: 0 → FT-over-DS disabled'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: 'Function need to check
+
+      To check function, make sure to enable the following
+
+      IEEE80211r.Enabled=1
+
+      IEEE80211r.FTOverDSEnable=1
+
+      IEEE80211r.MobilityDomain=xxxx'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

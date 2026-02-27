@@ -1,0 +1,42 @@
+id: wifi-llapi-r343-radio-rxbeamformingcapsenabled
+name: RxBeamformingCapsEnabled — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 343
+  object: WiFi.Radio.{i}.
+  api: RxBeamformingCapsEnabled
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.RxBeamformingCapsEnabled="DEFAULT"
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: query
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.{i}.RxBeamformingCapsEnabled
+  capture: result
+pass_criteria:
+- field: result.RxBeamformingCapsEnabled
+  operator: contains
+  value: DEFAULT
+  description: RxBeamformingCapsEnabled 應回傳包含 RxBeamformingCapsEnabled=DEFAULT
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

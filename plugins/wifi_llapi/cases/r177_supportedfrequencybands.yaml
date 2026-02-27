@@ -1,0 +1,43 @@
+id: wifi-llapi-r177-radio-supportedfrequencybands
+name: SupportedFrequencyBands — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 177
+  object: WiFi.Radio.{i}.
+  api: SupportedFrequencyBands
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.SupportedFrequencyBands=6GHz
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.SupportedFrequencyBands?
+  capture: result
+  note: 'Read-only API, defines each radio supported standard. Check the API value and make sure matches the band:'
+pass_criteria:
+- field: result.SupportedFrequencyBands
+  operator: contains
+  value: 6GHz
+  description: SupportedFrequencyBands 應回傳包含 SupportedFrequencyBands=6GHz
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

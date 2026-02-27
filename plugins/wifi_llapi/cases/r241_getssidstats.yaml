@@ -1,0 +1,44 @@
+id: wifi-llapi-r241-ssid-getssidstats
+name: getSSIDStats() — WiFi.SSID.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 241
+  object: WiFi.SSID.{i}.
+  api: getSSIDStats()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli WiFi.SSID.{i}.getSSIDStats() UnknownProtoPacketsReceived : 0,'
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: query
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.SSID.{i}.getSSIDStats() UnknownProtoPacketsReceived : 0,'
+  capture: result
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getSSIDStats() 執行不應回傳 error
+verification_command: cat /proc/net/dev | grep wl0
+results_reference:
+  v4.0.1:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: In our test environment, no Wi-Fi station capable of generating manipulated 802.11 frame, and Scapy could not
+      be used to generate such frames due to WiFi station limitations.
+  v4.0.3:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: only per radio

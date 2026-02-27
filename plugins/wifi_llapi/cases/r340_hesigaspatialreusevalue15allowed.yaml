@@ -1,0 +1,91 @@
+id: wifi-llapi-r340-radio_ieee80211ax-hesigaspatialreusevalue15allowed
+name: HESIGASpatialReuseValue15Allowed — WiFi.Radio.{i}.IEEE80211ax.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 340
+  object: WiFi.Radio.{i}.IEEE80211ax.
+  api: HESIGASpatialReuseValue15Allowed
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.IEEE80211ax.HESIGASpatialReuseValue15Allowed=0
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.IEEE80211ax.HESIGASpatialReuseValue15Allowed=1
+  note: 'Set this value to 1:'
+- id: step2
+  action: exec
+  target: DUT
+  command: 'Check the beacon from Wireshark, there should be an IE recording this :'
+  capture: result
+  depends_on: step1
+pass_criteria:
+- field: result.HESIGASpatialReuseValue15Allowed
+  operator: contains
+  value: '0'
+  description: HESIGASpatialReuseValue15Allowed 應回傳包含 HESIGASpatialReuseValue15Allowed=0
+verification_command: '(HESIGASpatialReuseValue15Allowed=0)
+
+  root@prplOS:/# wl -i wl0 he sr
+
+
+  HE Spatial Reuse Parameter Set element:
+
+
+  <DISABLED>
+
+  root@prplOS:/# wl -i wl1 he sr
+
+
+  HE Spatial Reuse Parameter Set element:
+
+
+  <DISABLED>
+
+  root@prplOS:/# wl -i wl2 he sr
+
+
+  HE Spatial Reuse Parameter Set element:
+
+
+  <DISABLED>
+
+
+  (HESIGASpatialReuseValue15Allowed=1)
+
+  root@prplOS:/# wl -i wl0 he sr
+
+
+  HE Spatial Reuse Parameter Set element:
+
+
+  <Enabled>
+
+
+  SR Control:
+
+  - HESIGA_Spatial_reuse_value15_allowed (is SET)
+
+  root@prplOS:/# wl -i wl1 he s'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

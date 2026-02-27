@@ -1,0 +1,48 @@
+id: wifi-llapi-r409-radio_capabilities_wifi7aprole-emlmrsupport
+name: EMLMRSupport — WiFi.Radio.{i}.Capabilities.WiFi7APRole.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 409
+  object: WiFi.Radio.{i}.Capabilities.WiFi7APRole.
+  api: EMLMRSupport
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.Capabilities.WiFi7APRole.EMLMRSupport
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.Capabilities.WiFi7APRole.EMLMRSupport?
+  note: Verify EMLMRSupport set 1 = supported
+- id: step2
+  action: exec
+  target: DUT
+  command: Check Beacon Packet => here it does not show EMLM
+  capture: result
+  depends_on: step1
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: EMLMRSupport 執行不應回傳 error
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

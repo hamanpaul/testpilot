@@ -1,0 +1,87 @@
+id: wifi-llapi-r152-radio-enable
+name: Enable — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 152
+  object: WiFi.Radio.{i}.
+  api: Enable
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.Enable=1
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.Enable?
+  note: 'Check API default value:'
+- id: step2
+  action: exec
+  target: DUT
+  command: Make sure all radios(SSID) can be scanned from air.
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.Enable=0
+  depends_on: step2
+  note: 'Set this API to 0 to disable radio:'
+- id: step4
+  action: exec
+  target: DUT
+  command: Make sure all radios(SSID) do not exit in air anymore.
+  capture: result
+  depends_on: step3
+pass_criteria:
+- field: result.Enable
+  operator: contains
+  value: '1'
+  description: Enable 應回傳包含 Enable=1
+verification_command: '(API Enable= 1):
+
+  wl -i wl0 bss
+
+  up
+
+  wl -i wl1 bss
+
+  up
+
+  wl -i wl2 bss
+
+  up
+
+
+  (API Enable= 0):
+
+  wl -i wl0 bss
+
+  down
+
+  wl -i wl1 bss
+
+  down
+
+  wl -i wl2 bss
+
+  down'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

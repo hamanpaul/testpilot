@@ -1,0 +1,56 @@
+id: wifi-llapi-r321-accesspoint_security-owetransitioninterface
+name: OWETransitionInterface — WiFi.AccessPoint.{i}.Security.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 321
+  object: WiFi.AccessPoint.{i}.Security.
+  api: OWETransitionInterface
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Security.OWETransitionInterface=""
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.AccessPoint.3.Security.OWETransitionInterface="wl0"
+
+    ubus-cli WiFi.AccessPoint.1.Security.OWETransitionInterface="wl1"'
+  note: Set OWETransitionInterface
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.? | grep OWETransitionInterface
+  capture: result
+  depends_on: step1
+  note: Verify OWE OWETransitionInterface
+pass_criteria:
+- field: result.OWETransitionInterface
+  operator: contains
+  value: ''
+  description: OWETransitionInterface 應回傳包含 OWETransitionInterface=
+verification_command: 'root@prplOS:/# cat /tmp/wl0_hapd.conf |grep owe_transition_ifname
+
+  root@prplOS:/# cat /tmp/wl1_hapd.conf |grep owe_transition_ifname
+
+  root@prplOS:/#'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : "owe_transition_ifname" does not return the configured interface name.'
+  v4.0.3:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: not supported by pwhm

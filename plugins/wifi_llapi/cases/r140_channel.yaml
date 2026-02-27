@@ -1,0 +1,73 @@
+id: wifi-llapi-r140-radio-channel
+name: Channel — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 140
+  object: WiFi.Radio.{i}.
+  api: Channel
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.Channel=37
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: 'Test Procedure:'
+- id: step2
+  action: exec
+  target: DUT
+  command: 'Set Command: ubus-cli WiFi.Radio.{i}.Channel=xx
+
+    Get Command: ubus-cli WiFi.Radio.{i}.Channel?'
+  capture: result
+  depends_on: step1
+  note: Set/Get Channel
+pass_criteria:
+- field: result.Channel
+  operator: contains
+  value: '37'
+  description: Channel 應回傳包含 Channel=37
+verification_command: 'wl -i wl0 channel
+
+  current mac channel 36
+
+  target channel 36
+
+  wl -i wl1 channel
+
+  current mac channel 141
+
+  target channel 141
+
+  wl -i wl2 channel
+
+  current mac channel 6
+
+  target channel 6'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: '1.under 40 MHz
+
+      2.analyzer can''t show the channel 169-177 for 5G
+
+      3.analyzer can''t capture 6G now, so only use wl command to check channel
+
+      4.analyzer can''t show the channel 14 for 2.4G'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

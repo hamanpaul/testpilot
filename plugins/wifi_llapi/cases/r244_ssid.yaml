@@ -1,0 +1,59 @@
+id: wifi-llapi-r244-ssid-ssid
+name: SSID — WiFi.SSID.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 244
+  object: WiFi.SSID.{i}.
+  api: SSID
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.SSID.{i}.SSID=InternetBox_DK
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.SSID.? | grep \.SSID=
+  note: get SSID BSSID
+- id: step2
+  action: exec
+  target: DUT
+  command: Use WiFi analyzer to verify the SSID broadcast from GW
+  capture: result
+  depends_on: step1
+pass_criteria:
+- field: result.SSID
+  operator: contains
+  value: InternetBox_DK
+  description: SSID 應回傳包含 SSID=InternetBox_DK
+verification_command: 'root@prplOS:/# iw dev wl0 info | grep ssid
+
+  ssid !!5OpenWrt_1
+
+  root@prplOS:/# iw dev wl1 info | grep ssid
+
+  ssid 6OpenWrt_1
+
+  root@prplOS:/# iw dev wl2 info | grep ssid
+
+  ssid !!24OpenWrt_1'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

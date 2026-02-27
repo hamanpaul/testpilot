@@ -1,0 +1,73 @@
+id: wifi-llapi-r044-accesspoint_associateddevice-supportedhe160mcs
+name: SupportedHe160MCS — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 44
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: SupportedHe160MCS
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.SupportedHe160MCS=
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: query
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.SupportedHe160MCS
+  capture: result
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: SupportedHe160MCS 執行不應回傳 error
+results_reference:
+  v4.0.1:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: 'Does SupportedHe160MCS equal to rx/txSupportedHe160MCS as shown below
+
+
+      root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep Supported
+
+      He160MCS.
+
+      WiFi.AccessPoint.1.AssociatedDevice.1.RxSupportedHe160MCS="11,11,11,11"
+
+      WiFi.AccessPoint.1.AssociatedDevice.1.TxSupportedHe160MCS="11,11,11,11"
+
+      WiFi.AccessPoint.3.AssociatedDevice.1.RxSupportedHe160MCS="11,11,11,11"
+
+      WiFi.AccessPoint.3.AssociatedDevice.1.TxSupportedHe160MCS="11,11,11,11"
+
+      WiFi.AccessPoint.5.AssociatedDevice.1.RxSupportedHe160MCS=""
+
+      WiFi.AccessPoint.5.AssociatedDevice.1.TxSupportedHe160MCS=""
+
+      2.4G not supported 160MHz WiFi.Radio.3.SupportedOperatingChannelBandwidth="Auto,20MHz,40MHz"'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: wld_assocDev_copyAssocDevInfoFromIEs, IE is from hostapd

@@ -1,0 +1,69 @@
+id: wifi-llapi-r200-radio-getradiostats
+name: getRadioStats() — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 200
+  object: WiFi.Radio.{i}.
+  api: getRadioStats()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli WiFi.Radio.{i}.getRadioStats()MulticastPacketsSent : 205869,'
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli ""WiFi.Radio.*.getRadioStats()"" | grep MulticastPacketsSe
+  note: 'Record MulticastPacketsReceived:'
+- id: step2
+  action: exec
+  target: DUT
+  command: Connect STA for every radio, ping mDNS(224.0.0.251) or SSDP(239.255.255.250) from individual STAs.
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli ""WiFi.Radio.*.getRadioStats()"" | grep MulticastPacketsSe
+  capture: result
+  depends_on: step2
+  note: 'Read MulticastPacketsReceived again:'
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getRadioStats() 執行不應回傳 error
+verification_command: 'cat /proc/net/dev | grep wl
+
+  (not included in /proc/net/dev )'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : The API always return 0 and it is not listed in "/proc/net/dev".'
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

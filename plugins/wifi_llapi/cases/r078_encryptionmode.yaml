@@ -1,0 +1,75 @@
+id: wifi-llapi-r078-accesspoint_security-encryptionmode
+name: EncryptionMode — WiFi.AccessPoint.{i}.Security
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 78
+  object: WiFi.AccessPoint.{i}.Security
+  api: EncryptionMode
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Security.EncryptionMode=Default
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled="WPA3-Personal"
+  note: Set security mode to WPA3
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.? | grep .Security.EncryptionMode
+  capture: result
+  depends_on: step1
+  note: Get AccessPoint.1.Security.EncryptionMode
+pass_criteria:
+- field: result.EncryptionMode
+  operator: contains
+  value: Default
+  description: EncryptionMode 應回傳包含 EncryptionMode=Default
+verification_command: 'cat /tmp/wl0_hapd.conf
+
+
+  root@prplOS:/# grep -Ei "ccmp|tkip|wep|sae" /tmp/wl0_hapd.conf
+
+  wpa_key_mgmt=SAE FT-SAE
+
+  wpa_pairwise=CCMP
+
+  rsn_pairwise=CCMP
+
+  sae_password=12345678
+
+  sae_require_mfp=1
+
+  sae_anti_clogging_threshold=5
+
+  sae_sync=5
+
+  sae_groups=19 20 21
+
+  sae_pwe=2
+
+  wpa_pairwise=CCMP
+
+  rsn_pairwise=CCMP'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API return "Default"'
+  v4.0.3:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: hardcode in pwhm

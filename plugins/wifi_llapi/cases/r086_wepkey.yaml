@@ -1,0 +1,46 @@
+id: wifi-llapi-r086-accesspoint_security-wepkey
+name: WEPKey — WiFi.AccessPoint.{i}.Security
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 86
+  object: WiFi.AccessPoint.{i}.Security
+  api: WEPKey
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Security.WEPKey=
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: 'Set Command: ubus-cli WiFi.AccessPoint.{i}.Security.WEPKey=""
+
+    Get Command: ubus-cli WiFi.AccessPoint.{i}.Security.WEPKey?'
+  capture: result
+  note: 'Test Procedure:'
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: WEPKey 執行不應回傳 error
+verification_command: cat /tmp/wl0_hapd.conf |grep wep_key
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Not Supported
+    2.4g: Pass
+    comment: '*6G is not support WEP'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

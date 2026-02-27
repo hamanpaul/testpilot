@@ -1,0 +1,91 @@
+id: wifi-llapi-r082-accesspoint_security-modessupported
+name: ModesSupported — WiFi.AccessPoint.{i}.Security
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 82
+  object: WiFi.AccessPoint.{i}.Security
+  api: ModesSupported
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Security.ModesSupported=None,WEP-64,WEP-128,WEP-128iv,WPA-Personal,WPA2-Personal,WPA-WPA2-Personal,WPA3-Personal,WPA2-WPA3-Personal,E-None,WPA-Enterprise,WPA2-Enterprise,WPA-WPA2-Enterprise
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: '"Test Procedure:'
+- id: step2
+  action: exec
+  target: DUT
+  command: 'Set Command: ubus-cli WiFi.AccessPoint.{i}.Security.KeyPassPhrase=""12345678""
+
+    Get command: ubus-cli WiFi.AccessPoint.{i}.Security.KeyPassPhrase?'
+  depends_on: step1
+  note: Set/Get Security Key PassPhrase
+- id: step3
+  action: exec
+  target: DUT
+  command: 'Set Command: ubus-cli WiFi.AccessPoint.{i}.Security.ModeEnabled=""""
+
+    Get command: ubus-cli WiFi.AccessPoint.{i}.Security.ModeEnabled?'
+  depends_on: step2
+  note: Set/Get Security Mode
+- id: step4
+  action: exec
+  target: DUT
+  command: Connect WiFi Station
+  depends_on: step3
+- id: step5
+  action: exec
+  target: DUT
+  command: 'Command: ubus-cli WiFi.AccessPoint.{i}.? | grep \SecurityModeEnabled='
+  depends_on: step4
+  note: Connect WiFi Station and Check Security Mode
+- id: step6
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.AccessPoint.{i}.Security.WEPKey=""12345678""
+
+    ubus-cli WiFi.AccessPoint.{i}.Security.KeyPassPhrase=""12345678""
+
+    ubus-cli WiFi.AccessPoint.{i}.Security.SAEPassphrase=""12345678"""_x0001__x0001__x0001__x0001__x0001__x0001__x0001__x0001__x0001_'
+  capture: result
+  depends_on: step5
+  note: Repeat step 2 and 4 ""set to other supported Security Mode""
+pass_criteria:
+- field: result.ModesSupported
+  operator: contains
+  value: None,WEP-64,WEP-128,WEP-128iv,WPA-Personal,WPA2-Personal,WPA-WPA2-Personal,WPA3-Personal,WPA2-WPA3-Personal,E-None,WPA-Enterprise,WPA2-Enterprise,WPA-WPA2-Enterprise
+  description: ModesSupported 應回傳包含 ModesSupported=None,WEP-64,WEP-128,WEP-128iv,WPA-Personal,WPA2-Personal,WPA-WPA2-Personal,WPA3-Personal,WPA2-WPA3-Personal,E-None,WPA-Enterprise,WPA2-Enterprise,WPA-WPA2-Enterprise
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Fail
+    2.4g: Fail
+    comment: 'BRCM: CSP CS00012439197'
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

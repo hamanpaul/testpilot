@@ -1,0 +1,67 @@
+id: wifi-llapi-r066-accesspoint-enable
+name: Enable — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 66
+  object: WiFi.AccessPoint.{i}.
+  api: Enable
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Enable=1
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: WiFi.AccessPoint.1.Enable=1
+  capture: result
+pass_criteria:
+- field: result.Enable
+  operator: contains
+  value: '1'
+  description: Enable 應回傳包含 Enable=1
+verification_command: 'root@prplOS:/# wl -e bss
+
+  --- wl0 5G
+
+  up
+
+  --- wl0.1 5G
+
+  up
+
+  --- wl1 6G
+
+  up
+
+  --- wl1.1 6G
+
+  up
+
+  --- wl2 2G
+
+  up
+
+  --- wl2.1 2G
+
+  up'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

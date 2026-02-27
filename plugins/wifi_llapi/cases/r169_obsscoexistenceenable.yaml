@@ -1,0 +1,58 @@
+id: wifi-llapi-r169-radio-obsscoexistenceenable
+name: ObssCoexistenceEnable — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 169
+  object: WiFi.Radio.{i}.
+  api: ObssCoexistenceEnable
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.ObssCoexistenceEnable=0
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: '1.ubus-cli WiFi.Radio.3.ObssCoexistenceEnable=1
+
+    2.ubus-cli WiFi.Radio.3.OperatingChannelBandwidth="40MHz”
+
+    4.ubus-cli WiFi.Radio.3.ObssCoexistenceEnable=0'
+  capture: result
+  note: 1.ubus-cli WiFi.Radio.3.ObssCoexistenceEnable=1
+pass_criteria:
+- field: result.ObssCoexistenceEnable
+  operator: contains
+  value: '0'
+  description: ObssCoexistenceEnable 應回傳包含 ObssCoexistenceEnable=0
+verification_command: 'root@prplOS:/# wl -i wl0 obss_coex
+
+  0
+
+  root@prplOS:/# wl -i wl1 obss_coex
+
+  0
+
+  root@prplOS:/# wl -i wl2 obss_coex
+
+  1'
+results_reference:
+  v4.0.1:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Pass
+    comment: '*OBSS Coexistence is supported only on 2.4 GHz, and is not supported on 5 GHz or 6 GHz'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

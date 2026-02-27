@@ -1,0 +1,95 @@
+id: wifi-llapi-r098-accesspoint-getstationstats
+name: getStationStats() — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 98
+  object: WiFi.AccessPoint.{i}.
+  api: getStationStats()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.getStationStats()
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi station to GW
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.AccessPoint.*.getStationStats()"
+  capture: result
+  depends_on: step1
+  note: Get Station Stats
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getStationStats() 執行不應回傳 error
+verification_command: 'root@prplOS:/# hostapd_cli -i wl0 STA 34:19:4D:A4:B5:09
+
+  34:19:4d:a4:b5:09
+
+  flags=[AUTH][ASSOC][AUTHORIZED][WMM][MFP][HT]
+
+  aid=2
+
+  capability=0x0
+
+  listen_interval=0
+
+  supported_rates=8c 12 18 24 b0 48 60 6c
+
+  timeout_next=NULLFUNC POLL
+
+  dot11RSNAStatsSTAAddress=34:19:4d:a4:b5:09
+
+  dot11RSNAStatsVersion=1
+
+  dot11RSNAStatsSelectedPairwiseCipher=00-0f-ac-4
+
+  dot11RSNAStatsTKIPLocalMICFailures=0
+
+  dot11RSNAStatsTKIPRemoteMICFailures=0
+
+  wpa=2
+
+  AKMSuiteSelector=00-0f-ac-8
+
+  hostapdWPAPTKState=11
+
+  hostapdWPAPTKGroupState=0
+
+  rx'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

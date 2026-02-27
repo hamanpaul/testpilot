@@ -1,0 +1,54 @@
+id: wifi-llapi-r141-radio-channelload
+name: ChannelLoad — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 141
+  object: WiFi.Radio.{i}.
+  api: ChannelLoad
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.ChannelLoad=5
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.ChannelLoad?
+  note: 'Check the ChannelLoad in the air:'
+- id: step2
+  action: exec
+  target: DUT
+  command: Compare it with driver survey dump, calculate (channel active time/busy time). The two values should be approximately
+    equal.
+  capture: result
+  depends_on: step1
+pass_criteria:
+- field: result.ChannelLoad
+  operator: contains
+  value: '5'
+  description: ChannelLoad 應回傳包含 ChannelLoad=5
+verification_command: 'root@prplOS:/# iw dev wl0 survey dump
+
+  root@prplOS:/# iw dev wl1 survey dump
+
+  root@prplOS:/# iw dev wl2 survey dump'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API will always return 0'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: wld_rad_nl80211_getSurveyInfo

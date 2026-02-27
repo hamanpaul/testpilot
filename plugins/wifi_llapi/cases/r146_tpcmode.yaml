@@ -1,0 +1,51 @@
+id: wifi-llapi-r146-radio_driverconfig-tpcmode
+name: TPCMode — WiFi.Radio.{i}.DriverConfig.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 146
+  object: WiFi.Radio.{i}.DriverConfig.
+  api: TPCMode
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.DriverConfig.TPCMode=Auto
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: query
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.{i}.DriverConfig.TPCMode
+  capture: result
+pass_criteria:
+- field: result.TPCMode
+  operator: contains
+  value: Auto
+  description: TPCMode 應回傳包含 TPCMode=Auto
+verification_command: 'wl -i wl0 tpc_mode
+
+  tpc_mode
+
+  Enable/disable AP TPC.
+
+  Usage: wl tpc_mode <mode>
+
+  0 - disable, 1 - BSS power control, 2 - AP power control, 3 - Both (1) and (2)'
+results_reference:
+  v4.0.1:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: not sure which to use

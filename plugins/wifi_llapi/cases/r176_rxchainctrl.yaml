@@ -1,0 +1,90 @@
+id: wifi-llapi-r176-radio-rxchainctrl
+name: RxChainCtrl — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 176
+  object: WiFi.Radio.{i}.
+  api: RxChainCtrl
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.RxChainCtrl=-1
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.1.RxChainCtrl?
+  note: 'Get API default value:'
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.RxChainCtrl=3
+  depends_on: step1
+  note: 'Modify the API to any other value:'
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.RxChainCtrl?
+  capture: result
+  depends_on: step2
+  note: 'Check the API again and compare with driver return value:'
+pass_criteria:
+- field: result.RxChainCtrl
+  operator: contains
+  value: '-1'
+  description: RxChainCtrl 應回傳包含 RxChainCtrl=-1
+verification_command: 'wl -i wl0 rxchain
+
+  wl -i wl1 rxchain
+
+  wl -i wl2 rxchain
+
+
+  (default)
+
+  root@prplOS:/# wl -i wl0 rxchain
+
+  15 (0xf)
+
+  root@prplOS:/# wl -i wl1 rxchain
+
+  1
+
+  root@prplOS:/# wl -i wl2 rxchain
+
+  1
+
+
+  (RxChainCtrl = any others)
+
+  root@prplOS:/# wl -i wl0 rxchain
+
+  15 (0xf)
+
+  root@prplOS:/# wl -i wl1 rxchain
+
+  15 (0xf)
+
+  root@prplOS:/# wl -i wl2 rxchain
+
+  15 (0xf)'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API and embedded command value mismatch.'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: Need to check(Leon)

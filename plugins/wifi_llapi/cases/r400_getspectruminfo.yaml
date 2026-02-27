@@ -1,0 +1,67 @@
+id: wifi-llapi-r400-radio-getspectruminfo
+name: getSpectrumInfo() — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 400
+  object: WiFi.Radio.{i}.
+  api: getSpectrumInfo()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.getSpectrumInfo() availability
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.Radio.1.getSpectrumInfo() availability"
+  capture: result
+  note: root@prplOS:/# ubus-cli "WiFi.Radio.1.getSpectrumInfo() availability"
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getSpectrumInfo() 執行不應回傳 error
+verification_command: 'root@prplOS:/# wl -i wl0 chanspec 100/80
+
+  Chanspec set to 0xe06a
+
+  root@prplOS:/# wl -i wl0 up
+
+  dhd_hwa_event: Dongle(wl0) schedule hwa event
+
+  dhd_hwa_event_handler: Dongle(wl0) hwa event scheduled
+
+  wl_host_event: WLC_E_BSSCFG_UP for idx[0] ifname[wl0] mld_unit[0]
+
+  root@prplOS:/# wl_host_event: WLC_E_BSSCFG_UP for idx[0] ifname[wl0] mld_unit[0]
+
+  wl_host_event: WLC_E_BSSCFG_UP for idx[1] ifname[wl0.1] mld_unit[255]
+
+
+  root@prplOS:/# wl -i wl0 radar 1
+
+  root@prplOS:/# wl radar_status
+
+  NO RADAR DETECTED
+
+  root@pr'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API return "empty" / Radar simulation not working'
+  v4.0.3:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: wifi driver need to support survey feature

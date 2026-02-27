@@ -1,0 +1,78 @@
+id: wifi-llapi-r050-accesspoint_associateddevice-txbytes
+name: TxBytes — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 50
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: TxBytes
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.TxBytes=1210933346
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi station to GW SSID4, SSID6 and SSID8
+- id: step2
+  action: exec
+  target: DUT
+  command: Run IPERF between Stations
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: Verify TxBytes_x0001_
+  capture: result
+  depends_on: step2
+pass_criteria:
+- field: result.TxBytes
+  operator: contains
+  value: '1210933346'
+  description: TxBytes 應回傳包含 TxBytes=1210933346
+verification_command: 'wl -i wl0 sta_info ${STA_MAC}
+
+
+  tx total bytes: 12792
+
+  tx ucast bytes: 12792
+
+  tx mcast/bcast bytes: 0'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

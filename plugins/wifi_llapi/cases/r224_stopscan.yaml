@@ -1,0 +1,66 @@
+id: wifi-llapi-r224-radio-stopscan
+name: stopScan() — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 224
+  object: WiFi.Radio.{i}.
+  api: stopScan()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.stopScan():void
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: 'ubus-cli "WiFi.Radio.1.startScan()"
+
+    ubus-cli "WiFi.Radio.1.startScan()"
+
+    ubus-cli "WiFi.Radio.2.startScan()"
+
+    ubus-cli "WiFi.Radio.3.startScan()"'
+  note: 'Start startScan() function once, record the result:'
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.Radio.*.getScanResults()"
+  depends_on: step1
+  note: 'Check with getScanResult():'
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli
+  depends_on: step2
+  note: Use startScan() and stopScan() at the same time
+- id: step4
+  action: exec
+  target: DUT
+  command: Check getScanResult() again, the list should not change.
+  capture: result
+  depends_on: step3
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: stopScan() 執行不應回傳 error
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

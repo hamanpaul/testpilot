@@ -1,0 +1,67 @@
+id: wifi-llapi-r058-accesspoint_associateddevice-uplinkshortguard
+name: UplinkShortGuard — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 58
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: UplinkShortGuard
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.UplinkShortGuard=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station and check Station UplinkShortGuard_x0001_
+  capture: result
+pass_criteria:
+- field: result.UplinkShortGuard
+  operator: contains
+  value: '0'
+  description: UplinkShortGuard 應回傳包含 UplinkShortGuard=0
+verification_command: 'wl -i wl0 sta_info ${STA_MAC}
+
+  rx nrate
+
+  eht mcs 4 Nss 1 Tx Exp 0 bw20 ldpc 2xLTF GI 0.8us auto
+
+  rx nrate = last packet received from the STA (uplink)
+
+
+  GI 0.8us → short guard interval
+
+
+  So UplinkShortGuard = true / yes'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API result always "0"'
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: pStationInfo->rxRate

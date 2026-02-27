@@ -1,0 +1,43 @@
+id: wifi-llapi-r333-radio-getradiostats
+name: getRadioStats() — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 333
+  object: WiFi.Radio.{i}.
+  api: getRadioStats()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.getRadioStats()Noise
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.Radio.*.getRadioStats()" | grep Noise
+  capture: result
+  note: 'See if the air noise will change through time:'
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getRadioStats() 執行不應回傳 error
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'BRCM: CSP CS00012439197'
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: Committed

@@ -1,0 +1,74 @@
+id: wifi-llapi-r282-radio-mcs
+name: MCS — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 282
+  object: WiFi.Radio.{i}.
+  api: MCS
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.MCS=11
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.MCS?
+  capture: result
+  note: Verify MCS of the Radio
+pass_criteria:
+- field: result.MCS
+  operator: contains
+  value: '11'
+  description: MCS 應回傳包含 MCS=11
+verification_command: 'root@prplOS:/# wl -i wl0 status
+
+  SSID: "5G-123"
+
+  Mode: Managed RSSI: 0 dBm SNR: 0 dB noise: -92 dBm Channel: 48/160
+
+  BSSID: 64:75:DA:4E:51:75 Capability: ESS RRM
+
+  Beacon Interval: 100 msecs
+
+  Supported Rates: [ 6(b) 9 12 18 24(b) 36 48 54 ]
+
+  Extended Capabilities: Not_Available
+
+  MLO: MLD Address: 64:75:DA:4E:51:75
+
+  EHT Capable:
+
+  Chanspec: 5GHz channel 50 160MHz (0xeb32)
+
+  Primary channel: 48
+
+  HT Capabilities: 40MHz SGI20 SGI40
+
+  Supported HT MCS : 0-31
+
+  Supported VHT MCS:
+
+  NSS1 Tx: 0-11 Rx: 0-11
+
+  NSS2 Tx: 0-11 Rx'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API always return "0"'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: Keep auto, too many factors on rate setting, not only rely on mcs, easy to boken wireless

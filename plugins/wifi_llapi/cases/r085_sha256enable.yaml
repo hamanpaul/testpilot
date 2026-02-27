@@ -1,0 +1,44 @@
+id: wifi-llapi-r085-accesspoint_security-sha256enable
+name: SHA256Enable — WiFi.AccessPoint.{i}.Security
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 85
+  object: WiFi.AccessPoint.{i}.Security
+  api: SHA256Enable
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Security.SHA256Enable=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: cat /tmp/wlx_hapd.conf"
+  capture: result
+  note: '"Test Procedure:'
+pass_criteria:
+- field: result.SHA256Enable
+  operator: contains
+  value: '0'
+  description: SHA256Enable 應回傳包含 SHA256Enable=0
+verification_command: cat /tmp/wl0_hapd.conf |grep sae_password
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : wl[i]_hapd.conf always return 0'
+  v4.0.3:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: not supported by pwhm

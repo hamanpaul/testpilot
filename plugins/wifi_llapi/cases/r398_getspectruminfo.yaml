@@ -1,0 +1,49 @@
+id: wifi-llapi-r398-radio-getspectruminfo
+name: getSpectrumInfo() — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 398
+  object: WiFi.Radio.{i}.
+  api: getSpectrumInfo()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.getSpectrumInfo() accesspoints
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Power On the GW
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.Radio.1.getSpectrumInfo() accesspoints"?
+  capture: result
+  depends_on: step1
+  note: Check Accesspoints (OBSS count)
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getSpectrumInfo() 執行不應回傳 error
+verification_command: wl -i wlx scanresults
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API return "empty"'
+  v4.0.3:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: wifi driver need to support survey feature

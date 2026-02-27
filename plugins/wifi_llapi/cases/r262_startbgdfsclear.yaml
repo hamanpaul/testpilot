@@ -1,0 +1,42 @@
+id: wifi-llapi-r262-wpsdefparam-startbgdfsclear
+name: startBgDfsClear() — WiFi.wps_DefParam.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 262
+  object: WiFi.wps_DefParam.
+  api: startBgDfsClear()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.wps_DefParam.startBgDfsClear(channel:int, bandwidth:int):void
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: query
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.wps_DefParam.startBgDfsClear(channel:int, bandwidth:int):void
+  capture: result
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: startBgDfsClear() 執行不應回傳 error
+results_reference:
+  v4.0.1:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

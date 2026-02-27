@@ -1,0 +1,66 @@
+id: wifi-llapi-r138-radio-activeantennactrl
+name: ActiveAntennaCtrl — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 138
+  object: WiFi.Radio.{i}.
+  api: ActiveAntennaCtrl
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.ActiveAntennaCtrl=-1
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.ActiveAntennaCtrl?
+  capture: result
+  note: 'Check GW radio ActiveAntennaCtrl:'
+pass_criteria:
+- field: result.ActiveAntennaCtrl
+  operator: contains
+  value: '-1'
+  description: ActiveAntennaCtrl 應回傳包含 ActiveAntennaCtrl=-1
+verification_command: 'root@prplOS:/# wl -i wl0 txchain
+
+  15 (0xf)
+
+  root@prplOS:/# wl -i wl0 rxchain
+
+  15 (0xf)
+
+  root@prplOS:/# wl -i wl1 txchain
+
+  15 (0xf)
+
+  root@prplOS:/# wl -i wl1 rxchain
+
+  1
+
+  root@prplOS:/# wl -i wl2 txchain
+
+  15 (0xf)
+
+  root@prplOS:/# wl -i wl2 rxchain
+
+  1'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API return -1'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: commit

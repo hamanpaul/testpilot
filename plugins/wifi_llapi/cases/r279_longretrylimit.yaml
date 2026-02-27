@@ -1,0 +1,83 @@
+id: wifi-llapi-r279-radio-longretrylimit
+name: LongRetryLimit — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 279
+  object: WiFi.Radio.{i}.
+  api: LongRetryLimit
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.LongRetryLimit=6
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.LongRetryLimit?
+  note: 'Check API default value:'
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.LongRetryLimit=10
+  depends_on: step1
+  note: 'Try modify the API to any other value:'
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.LongRetryLimit?
+  capture: result
+  depends_on: step2
+  note: 'Check API value again and compare with driver return value:'
+pass_criteria:
+- field: result.LongRetryLimit
+  operator: contains
+  value: '6'
+  description: LongRetryLimit 應回傳包含 LongRetryLimit=6
+verification_command: '(default)
+
+  root@prplOS:/# iw phy phy0 info | grep "Retry long limit"
+
+  Retry long limit: 4
+
+  root@prplOS:/# iw phy phy1 info | grep "Retry long limit"
+
+  Retry long limit: 4
+
+  root@prplOS:/# iw phy phy2 info | grep "Retry long limit"
+
+  Retry long limit: 4
+
+
+  (LongRetryLimit=10)
+
+  root@prplOS:/# iw phy phy0 info | grep "Retry long limit"
+
+  Retry long limit: 4
+
+  root@prplOS:/# iw phy phy1 info | grep "Retry long limit"
+
+  Retry long limit: 4
+
+  root@prplOS:/# iw phy phy2 info | grep "Retry long limit"
+
+  Retry long limit: 4'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : Command always return "4"'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: wl -i wl0 lrl

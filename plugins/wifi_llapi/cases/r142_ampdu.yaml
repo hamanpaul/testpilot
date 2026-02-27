@@ -1,0 +1,99 @@
+id: wifi-llapi-r142-radio_driverconfig-ampdu
+name: Ampdu — WiFi.Radio.{i}.DriverConfig.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 142
+  object: WiFi.Radio.{i}.DriverConfig.
+  api: Ampdu
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.DriverConfig.Ampdu=-1
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station to GW
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=1
+  depends_on: step1
+  note: Set GW AMPDU to 1 =enable
+- id: step3
+  action: exec
+  target: DUT
+  command: Run Iperf3 from station to GW continously
+  depends_on: step2
+- id: step4
+  action: exec
+  target: DUT
+  command: Check Throughput
+  depends_on: step3
+- id: step5
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=0
+  depends_on: step4
+  note: In GW, Set AMPDU to 0 =Disable
+- id: step6
+  action: exec
+  target: DUT
+  command: Check Throughput
+  capture: result
+  depends_on: step5
+pass_criteria:
+- field: result.Ampdu
+  operator: contains
+  value: '-1'
+  description: Ampdu 應回傳包含 Ampdu=-1
+verification_command: 'AMPDU = Enable
+
+  root@prplOS:/# wl -i wlx ampdu
+
+  1
+
+
+  AMPDU = Disable
+
+  root@prplOS:/# wl -i wlx ampdu
+
+  0'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

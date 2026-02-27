@@ -1,0 +1,70 @@
+id: wifi-llapi-r079-accesspoint_security-keypassphrase
+name: KeyPassPhrase — WiFi.AccessPoint.{i}.Security
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 79
+  object: WiFi.AccessPoint.{i}.Security
+  api: KeyPassPhrase
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Security.KeyPassPhrase=0689388783
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.? | grep .Security.KeyPassPhrase
+  capture: result
+  note: root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep .Security.KeyPassPhrase
+pass_criteria:
+- field: result.KeyPassPhrase
+  operator: contains
+  value: 0689388783
+  description: KeyPassPhrase 應回傳包含 KeyPassPhrase=0689388783
+verification_command: 'cat /tmp/wl0_hapd.conf |grep wpa_pairwise
+
+  cat /tmp/wl0_hapd.conf |grep wpa_passphrase
+
+
+
+  root@prplOS:/# cat /tmp/wl0_hapd.conf |grep wpa_passphrase
+
+  wpa_passphrase=87654321
+
+  root@prplOS:/# cat /tmp/wl1_hapd.conf |grep wpa_passphrase
+
+  wpa_passphrase=87654321
+
+  root@prplOS:/# cat /tmp/wl2_hapd.conf |grep wpa_passphrase
+
+  wpa_passphrase=87654321
+
+  root@prplOS:/#
+
+  root@prplOS:/# cat /tmp/wl0_hapd.conf |grep wpa_pairwise
+
+  wpa_pairwise=CCMP
+
+  root@prplOS:/# cat /tmp/wl1_hapd.conf |grep wpa_pairwise
+
+  wpa_pairwise=CCM'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

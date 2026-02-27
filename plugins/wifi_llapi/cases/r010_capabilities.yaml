@@ -1,0 +1,67 @@
+id: wifi-llapi-r010-accesspoint_associateddevice-capabilities
+name: Capabilities — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 10
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: Capabilities
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.Capabilities=RRM,BTM,QOS_MAP
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station to GW
+- id: step2
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities="RRM,BTM,QOS_MAP,PMF"
+
+    ubus-cli WiFi.AccessPoint.3.AssociatedDevice.1.Capabilities="RRM,BTM,QOS_MAP,PMF"
+
+    ubus-cli WiFi.AccessPoint.5.AssociatedDevice.1.Capabilities="RRM,BTM,QOS_MAP,PMF"'
+  capture: result
+  depends_on: step1
+  note: Verify Associated station Capabilities
+pass_criteria:
+- field: result.Capabilities
+  operator: contains
+  value: RRM,BTM,QOS_MAP
+  description: Capabilities 應回傳包含 Capabilities=RRM,BTM,QOS_MAP
+verification_command: 'root@prplOS:/# wl -i wl0 sta_info 4A:0A:A5:80:23:7B | grep capability
+
+  RRM capability = 0x10843 Link_Measurement Neighbor_Report Beacon_Table Statistics_Measurement AP_Channel_Report'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : Station info does not include QOS_MAP'
+  v4.0.3:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: wld_ad_handleAssocMsg/swl_80211_parseInfoElementsBuffer/wld_assocDev_copyAssocDevInfoFromIEs(old version hostapd)

@@ -1,0 +1,79 @@
+id: wifi-llapi-r238-ssid-getssidstats
+name: getSSIDStats() — WiFi.SSID.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 238
+  object: WiFi.SSID.{i}.
+  api: getSSIDStats()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli WiFi.SSID.{i}.getSSIDStats() RetransCount : 0,'
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station to GW SSID4, SSID6 and SSID8
+- id: step2
+  action: exec
+  target: DUT
+  command: Run Iperf overnight between station
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: 'ubus-cli "WiFi.SSID.8.getSSIDStats()" | grep \.RetransCount
+
+    ubus-cli "WiFi.SSID.6.getSSIDStats()" | grep \.RetransCount
+
+    ubus-cli "WiFi.SSID.4.getSSIDStats()" | grep \.RetransCount'
+  capture: result
+  depends_on: step2
+  note: Get stats RetransCount
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getSSIDStats() 執行不應回傳 error
+verification_command: 'cat /proc/net/dev | grep wl0
+
+
+  /proc/net/dev does not have 802.11-specific retry counters'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API always return "0"'
+  v4.0.3:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: only per radio

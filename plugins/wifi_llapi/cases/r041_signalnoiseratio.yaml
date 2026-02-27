@@ -1,0 +1,55 @@
+id: wifi-llapi-r041-accesspoint_associateddevice-signalnoiseratio
+name: SignalNoiseRatio — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 41
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: SignalNoiseRatio
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.SignalNoiseRatio=53
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.SignalNoiseRatio?
+  capture: result
+  note: root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.SignalNoiseRatio?
+pass_criteria:
+- field: result.SignalNoiseRatio
+  operator: contains
+  value: '53'
+  description: SignalNoiseRatio 應回傳包含 SignalNoiseRatio=53
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API return "0"'
+  v4.0.3:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: Commit

@@ -1,0 +1,43 @@
+id: wifi-llapi-r295-radio_stats-noise
+name: Noise — WiFi.Radio.{i}.Stats.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 295
+  object: WiFi.Radio.{i}.Stats.
+  api: Noise
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.Stats.Noise=-90
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: query
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.{i}.Stats.Noise
+  capture: result
+pass_criteria:
+- field: result.Noise
+  operator: contains
+  value: '-90'
+  description: Noise 應回傳包含 Noise=-90
+verification_command: wl -i wl0 noise
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

@@ -1,0 +1,63 @@
+id: wifi-llapi-r020-accesspoint_associateddevice-inactive
+name: Inactive — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 20
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: Inactive
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.Inactive=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Disconnect WiFi Station and check Station Inactive
+  capture: result
+pass_criteria:
+- field: result.Inactive
+  operator: contains
+  value: '0'
+  description: Inactive 應回傳包含 Inactive=0
+verification_command: 'wl -i wl0 sta ${sta_macaddr}
+
+  = idle xx seconds
+
+  wl -i wl0 assoclist
+
+  idle xx seconds
+
+  = Empty'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

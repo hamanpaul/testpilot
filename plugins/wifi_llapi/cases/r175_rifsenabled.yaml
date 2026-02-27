@@ -1,0 +1,51 @@
+id: wifi-llapi-r175-radio-rifsenabled
+name: RIFSEnabled — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 175
+  object: WiFi.Radio.{i}.
+  api: RIFSEnabled
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.RIFSEnabled=Default
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.RIFSEnabled?
+  note: 'Check the API default value for all radio:'
+- id: step2
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.Radio.*.RIFSEnabled="Auto"
+
+    ubus-cli WiFi.Radio.*.RIFSEnabled?'
+  capture: result
+  depends_on: step1
+  note: 'Modify the API to "Auto"and check the API is correctly set:'
+pass_criteria:
+- field: result.RIFSEnabled
+  operator: contains
+  value: Default
+  description: RIFSEnabled 應回傳包含 RIFSEnabled=Default
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

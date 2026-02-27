@@ -1,0 +1,111 @@
+id: wifi-llapi-r037-accesspoint_associateddevice-rxmulticastpacketcount
+name: RxMulticastPacketCount — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 37
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: RxMulticastPacketCount
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.RxMulticastPacketCount=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi station to GW
+- id: step2
+  action: exec
+  target: DUT
+  command: Create Multicast group and send Multicast Data between station's
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.RxMulticastPacketCount?
+  capture: result
+  depends_on: step2
+  note: Check RxMulticastPacketCount
+pass_criteria:
+- field: result.RxMulticastPacketCount
+  operator: contains
+  value: '0'
+  description: RxMulticastPacketCount 應回傳包含 RxMulticastPacketCount=0
+verification_command: 'iw wl0 station dump
+
+
+
+
+  root@prplOS:/# wl -i wl0 sta_info 34:19:4d:a4:b5:09 | grep pkts
+
+  tx total pkts: 236
+
+  tx ucast pkts: 236
+
+  tx mcast/bcast pkts: 0
+
+  rx data pkts: 56374
+
+  rx ucast pkts: 8323
+
+  rx mcast/bcast pkts: 48051
+
+  tx data pkts retried: 0
+
+  tx total pkts sent: 230
+
+  tx pkts retries: 24
+
+  tx pkts retry exhausted: 6
+
+  rx total pkts retried: 4368
+
+  tx acked pkts: 224
+
+  root@prplOS:/# wl -i wl1 sta_info 38:06:E6:92:B0:4A | grep pkts
+
+  tx total pkts: 316
+
+  tx ucast pkts: 316
+
+  tx mcast/bcast pkts: 0
+
+  rx data pkts: 2102'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API return "0" while in wl command "rx mcast/bcast pkts" not equal to "0"'
+  v4.0.3:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: Vendor Module supports to get.wld_nl80211_stationInfo_t doesn't support

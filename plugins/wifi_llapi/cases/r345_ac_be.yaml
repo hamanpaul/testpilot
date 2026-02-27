@@ -1,0 +1,90 @@
+id: wifi-llapi-r345-radio_stats_wmmbytesreceived-ac_be
+name: AC_BE — WiFi.Radio.{i}.Stats.WmmBytesReceived.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 345
+  object: WiFi.Radio.{i}.Stats.WmmBytesReceived.
+  api: AC_BE
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.Stats.WmmBytesReceived.AC_BE=0
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi station (use another WiFi7 GW as station with built-in IPERF3)
+- id: step2
+  action: exec
+  target: DUT
+  command: Run IPERF "iperf3 -c <server> -u -b 20M"
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.? | grep WmmBytesReceived.AC_BE
+  capture: result
+  depends_on: step2
+  note: Verify Radio Stats.WmmBytesReceived.AC_BE
+pass_criteria:
+- field: result.AC_BE
+  operator: contains
+  value: '0'
+  description: AC_BE 應回傳包含 AC_BE=0
+verification_command: 'root@prplOS:/# wl -i wl0 wme_counters
+
+  AC_BE: tx frames: 23176 bytes: 6830889 failed frames: 0 failed bytes: 0
+
+  rx frames: 17703 bytes: 26181728 failed frames: 0 failed bytes: 0
+
+
+  root@prplOS:/# wl -i wl1 wme_counters
+
+  AC_BE: tx frames: 26313 bytes: 7559061 failed frames: 0 failed bytes: 0
+
+  rx frames: 23892 bytes: 29373003 failed frames: 0 failed bytes: 0
+
+
+  root@prplOS:/# wl -i wl2 wme_counters
+
+  AC_BE: tx frames: 27338 bytes: 10062679 failed frames: 0 failed bytes: 0
+
+  rx frames: 15706 bytes: 12974825 fa'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

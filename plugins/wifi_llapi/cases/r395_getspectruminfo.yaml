@@ -1,0 +1,93 @@
+id: wifi-llapi-r395-radio-getspectruminfo
+name: getSpectrumInfo() — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 395
+  object: WiFi.Radio.{i}.
+  api: getSpectrumInfo()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.getSpectrumInfo() bandwidth
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Power On the GW.
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.Radio.*.getSpectrumInfo() bandwidth"
+  capture: result
+  depends_on: step1
+  note: Verify SpectrumInfo() bandwidth
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getSpectrumInfo() 執行不應回傳 error
+verification_command: 'root@prplOS:/# wl -i wl0 chanspec
+
+  36 (0xd024)
+
+
+  Channel: 36, Band: 5 GHz, Bandwidth: 20 MHz
+
+  Hex breakdown: 0xd024
+
+  Bits_x0001_ Meaning
+
+  0x0024_x0001_Channel 36
+
+  0x1000_x0001_5 GHz band
+
+  0xC000_x0001_20 MHz
+
+
+  root@prplOS:/# wl -i wl1 chanspec
+
+  6g1 (0x5001)
+
+
+  Channel: 1, Band: 6 GHz, Bandwidth: 20 MHz
+
+  Hex breakdown: 0x5001
+
+  Bits_x0001_ Meaning
+
+  0x0001_x0001_Channel 1
+
+  0x4000_x0001_6 GHz band
+
+  0x1000_x0001_20 MHz
+
+
+
+  root@prplOS:/# wl -i wl2 chanspec
+
+  1 (0x1001)
+
+
+  Channel: 1, Band: 2.4 GHz, Bandwidth: 20 MHz
+
+  Hex b'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API return "empty"'
+  v4.0.3:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: wifi driver need to support survey feature in wl_cfg80211

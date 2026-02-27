@@ -1,0 +1,56 @@
+id: wifi-llapi-r093-accesspoint_wps-configured
+name: Configured — WiFi.AccessPoint.{i}.WPS.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 93
+  object: WiFi.AccessPoint.{i}.WPS.
+  api: Configured
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.WPS.Configured=1
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.WPS.Configured ?
+  capture: result
+  note: Get WPS Configured state
+pass_criteria:
+- field: result.Configured
+  operator: contains
+  value: '1'
+  description: Configured 應回傳包含 Configured=1
+verification_command: 'root@prplOS:/# cat /tmp/wl0_hapd.conf |grep wps_state
+
+  wps_state=2
+
+  root@prplOS:/# cat /tmp/wl1_hapd.conf |grep wps_state
+
+  wps_state=0
+
+  root@prplOS:/# cat /tmp/wl2_hapd.conf |grep wps_state
+
+  wps_state=2'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Not Supported
+    2.4g: Pass
+    comment: 'Note: WPS was tested in 5G 11ac and 2G 11n because no wif7 card support WPS
+
+      - 6GHz do not support WPS.'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

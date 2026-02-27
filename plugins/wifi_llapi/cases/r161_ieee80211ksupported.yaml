@@ -1,0 +1,45 @@
+id: wifi-llapi-r161-radio-ieee80211ksupported
+name: IEEE80211kSupported — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 161
+  object: WiFi.Radio.{i}.
+  api: IEEE80211kSupported
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.IEEE80211kSupported=1
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.IEEE80211kSupported?
+  capture: result
+  note: Read-only API, defines whether each radio supported 802.11k standard. Check the API value and compare them with driver
+    c
+pass_criteria:
+- field: result.IEEE80211kSupported
+  operator: contains
+  value: '1'
+  description: IEEE80211kSupported 應回傳包含 IEEE80211kSupported=1
+verification_command: '(RM Enable Capabilities included in beacon packet, IE: 70)'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

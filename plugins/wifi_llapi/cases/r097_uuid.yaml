@@ -1,0 +1,76 @@
+id: wifi-llapi-r097-accesspoint_wps-uuid
+name: UUID — WiFi.AccessPoint.{i}.WPS.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 97
+  object: WiFi.AccessPoint.{i}.WPS.
+  api: UUID
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.WPS.UUID=39383432-3635-f244-f046-453039383432
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.? | grep .WPS.UUID
+  note: Get GW WPS UUID
+- id: step2
+  action: exec
+  target: DUT
+  command: Pair Station to GW via WPS.
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: Verify UUID in EAP message
+  capture: result
+  depends_on: step2
+pass_criteria:
+- field: result.UUID
+  operator: contains
+  value: 39383432-3635-f244-f046-453039383432
+  description: UUID 應回傳包含 UUID=39383432-3635-f244-f046-453039383432
+verification_command: 'cat /tmp/wl0_hapd.conf |grep uuid
+
+  root@prplOS:/# cat /tmp/wl0_hapd.conf |grep uuid
+
+  uuid=4b58464a-5957-fc49-f845-57454b58464a
+
+  root@prplOS:/# cat /tmp/wl1_hapd.conf |grep uuid
+
+  root@prplOS:/# cat /tmp/wl2_hapd.conf |grep uuid
+
+  uuid=4b58464a-5957-fc49-f845-57454b58464a'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Not Supported
+    2.4g: Pass
+    comment: 6G don't support WPS
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

@@ -1,0 +1,64 @@
+id: wifi-llapi-r053-accesspoint_associateddevice-txpacketcount
+name: TxPacketCount — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 53
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: TxPacketCount
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.TxPacketCount=871233
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station and send traffic then check TxPacketCount
+  capture: result
+pass_criteria:
+- field: result.TxPacketCount
+  operator: contains
+  value: '871233'
+  description: TxPacketCount 應回傳包含 TxPacketCount=871233
+verification_command: 'wl -i wl0 sta_info ${STA_MAC}
+
+  TxPacketCount_x0001_tx total pkts_x0001_90
+
+
+  TxUnicastPacketCount_x0001_tx ucast pkts_x0001_90
+
+  TxMulticastPacketCount_x0001_tx mcast/bcast pkts_x0001_0
+
+  TxBroadcastPacketCount_x0001_Included inside tx mcast/bcast pkts_x0001_0'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

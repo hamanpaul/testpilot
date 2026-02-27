@@ -1,0 +1,54 @@
+id: wifi-llapi-r092-accesspoint_wps-configmethodsenabled
+name: ConfigMethodsEnabled — WiFi.AccessPoint.{i}.WPS.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 92
+  object: WiFi.AccessPoint.{i}.WPS.
+  api: ConfigMethodsEnabled
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.WPS.ConfigMethodsEnabled=PushButton,Label,Ethernet
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.? |grep .WPS.ConfigMethodsEnabled
+  capture: result
+  note: Get WPS ConfigMethodsEnabled
+pass_criteria:
+- field: result.ConfigMethodsEnabled
+  operator: contains
+  value: PushButton,Label,Ethernet
+  description: ConfigMethodsEnabled 應回傳包含 ConfigMethodsEnabled=PushButton,Label,Ethernet
+verification_command: 'cat /tmp/wl0_hapd.conf |grep config_methods
+
+  root@prplOS:/# cat /tmp/wl0_hapd.conf |grep config_methods
+
+  config_methods=physical_push_button virtual_push_button
+
+  root@prplOS:/# cat /tmp/wl1_hapd.conf |grep config_methods
+
+  root@prplOS:/# cat /tmp/wl2_hapd.conf |grep config_methods
+
+  config_methods=physical_push_button virtual_push_button'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Fail
+    2.4g: Pass
+    comment: 'ARC : 6GHz should not support WPS'
+  v4.0.3:
+    5g: Pass
+    6g: Fail
+    2.4g: Pass
+    comment: ''

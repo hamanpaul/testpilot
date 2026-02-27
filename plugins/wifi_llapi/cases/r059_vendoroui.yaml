@@ -1,0 +1,61 @@
+id: wifi-llapi-r059-accesspoint_associateddevice-vendoroui
+name: VendorOUI — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 59
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: VendorOUI
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.VendorOUI=00:50:F2
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station and check Station and check VendorOUI
+  capture: result
+pass_criteria:
+- field: result.VendorOUI
+  operator: contains
+  value: 00:50:F2
+  description: VendorOUI 應回傳包含 VendorOUI=00:50:F2
+verification_command: 'wl -i wl0 sta_info ${STA_MAC}
+
+  VENDOR OUI VALUE[0] 00:90:4C
+
+  VENDOR OUI VALUE[1] 00:10:18
+
+  VENDOR OUI VALUE[2] 00:50:F2'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

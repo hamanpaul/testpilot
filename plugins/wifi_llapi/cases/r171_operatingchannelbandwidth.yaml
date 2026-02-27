@@ -1,0 +1,133 @@
+id: wifi-llapi-r171-radio-operatingchannelbandwidth
+name: OperatingChannelBandwidth — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 171
+  object: WiFi.Radio.{i}.
+  api: OperatingChannelBandwidth
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.OperatingChannelBandwidth=160MHz
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.MaxChannelBandwidth?
+  note: 'Check MaxChannelBandwidth for each radio:'
+- id: step2
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.Radio.1.OperatingChannelBandwidth=[20|40|80|160]MHz
+
+    ubus-cli WiFi.Radio.2.OperatingChannelBandwidth=[20|40|80|160|320-1|320-2]MHz
+
+    ubus-cli WiFi.Radio.3.OperatingChannelBandwidth=[20|40]MHz'
+  depends_on: step1
+  note: Set every valid bandwidths for every radio individually.
+- id: step3
+  action: exec
+  target: DUT
+  command: For every valid bandwidth, compare with driver returns value and air beacon packets status.
+  capture: result
+  depends_on: step2
+pass_criteria:
+- field: result.OperatingChannelBandwidth
+  operator: contains
+  value: 160MHz
+  description: OperatingChannelBandwidth 應回傳包含 OperatingChannelBandwidth=160MHz
+verification_command: 'wl -i wl[x] status
+
+
+  wl -i wl0 status
+
+  ...
+
+  Chanspec: 5GHz channel [ch] 20MHz 40MHz 80MHz 160MHz
+
+
+  wl -i wl1 status
+
+  ...
+
+  Chanspec: 6GHz channel [ch] 20MHz 40MHz 80MHz 160MHz 320MHz
+
+
+  wl -i wl2 status
+
+  ...
+
+  Chanspec: 2.4GHz channel [ch] 20MHz 40MHz
+
+
+  -
+
+  wl -i wl[x] chanspecs
+
+
+  root@prplOS:/# wl -i wl0 chanspecs
+
+  36 (0xd024)
+
+  40 (0xd028)
+
+  44 (0xd02c)
+
+  48 (0xd030)
+
+  52 (0xd034)
+
+  56 (0xd038)
+
+  60 (0xd03c)
+
+  64 (0xd040)
+
+  100 (0xd064)
+
+  104 (0xd068)
+
+  108 (0xd06c)
+
+  112 (0xd070)
+
+  116 (0xd074)
+
+  120 (0xd078)
+
+  124 (0xd07c)
+
+  128 (0xd080)'
+results_reference:
+  v4.0.1:
+    5g: ''
+    6g: Pass
+    2.4g: Pass
+    comment: 'BRCM: CSP CS00012439197
+
+
+      --
+
+      Under 6GHz 802.11be, bandwidth unable to set to 320MHz. The API keeps returns:
+
+      ERROR: set WiFi.Radio.2.OperatingChannelBandwidth failed (10 - invalid value)
+
+      Check with "wl -i wl1 chanspecs", 6GHz radio do support bandwidth 320MHz.'
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: 'supported
+
+      ubus-cli WiFi.Radio.1.Channel=121; ubus-cli WiFi.Radio.1.Operatin
+
+      gChannelBandwidth="320MHz-1"'

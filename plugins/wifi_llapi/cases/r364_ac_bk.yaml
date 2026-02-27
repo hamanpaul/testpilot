@@ -1,0 +1,84 @@
+id: wifi-llapi-r364-ssid_stats_wmmbytesreceived-ac_bk
+name: AC_BK — WiFi.SSID.{i}.Stats.WmmBytesReceived.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 364
+  object: WiFi.SSID.{i}.Stats.WmmBytesReceived.
+  api: AC_BK
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.SSID.{i}.Stats.WmmBytesReceived.AC_BK=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect two WiFi station (use another WiFi7 GW as station with built-in IPERF3)
+- id: step2
+  action: exec
+  target: DUT
+  command: Run IPERF iperf3 -c 192.168.1.1 -u -b 20M --tos 0x20
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.SSID.6.? | grep Received.AC_BK
+  capture: result
+  depends_on: step2
+  note: Verify SSID stats WmmBytesReceived.AC_BK
+pass_criteria:
+- field: result.AC_BK
+  operator: contains
+  value: '0'
+  description: AC_BK 應回傳包含 AC_BK=0
+verification_command: 'root@prplOS:/# ubus-cli "WiFi.Radio.*.getRadioStats()"?
+
+  > WiFi.Radio.*.getRadioStats()?
+
+  WiFi.Radio.1.getRadioStats() returned
+
+  [
+
+  {
+
+  WmmBytesReceived = {
+
+  AC_BE = 31127479,'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API always return "0"'
+  v4.0.3:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: not support per ssid

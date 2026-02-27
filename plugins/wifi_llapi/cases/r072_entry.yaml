@@ -1,0 +1,55 @@
+id: wifi-llapi-r072-accesspoint_macfiltering_entry-entry
+name: Entry — WiFi.AccessPoint.{i}.MACFiltering.Entry
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 72
+  object: WiFi.AccessPoint.{i}.MACFiltering.Entry
+  api: Entry
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.MACFiltering.Entry
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.? | grep MACFiltering.Entry
+  capture: result
+  note: root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep MACFiltering.Entry
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: Entry 執行不應回傳 error
+verification_command: 'cat /tmp/wl0_hapd.conf
+
+  accept_mac_file=/tmp/hostap_wl0.acl
+
+  or
+
+  deny_mac_file=/tmp/hostap_wl0.acl
+
+
+  cat /tmp/hostap_wl0.acl
+
+  62:2F:B8:66:BB:82'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

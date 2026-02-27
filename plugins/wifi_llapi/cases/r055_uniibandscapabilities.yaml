@@ -1,0 +1,63 @@
+id: wifi-llapi-r055-accesspoint_associateddevice-uniibandscapabilities
+name: UNIIBandsCapabilities — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 55
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: UNIIBandsCapabilities
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.UNIIBandsCapabilities=U-NII-1,U-NII-2A,U-NII-2C,U-NII-3
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep UNIIBands
+  capture: result
+  note: Connect WiFi Station and check Station UNIIBandsCapabilities
+pass_criteria:
+- field: result.UNIIBandsCapabilities
+  operator: contains
+  value: U-NII-1,U-NII-2A,U-NII-2C,U-NII-3
+  description: UNIIBandsCapabilities 應回傳包含 UNIIBandsCapabilities=U-NII-1,U-NII-2A,U-NII-2C,U-NII-3
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: 'Capability string_x0001_--- Meaning (client-supported U-NII bands)
+
+      5G: U-NII-1,U-NII-2A,U-NII-2C,U-NII-3,U-NII-4_x0001_-- Client supports all 5 GHz UNII bands (UNII-1, 2A, 2C, 3, 4)
+
+
+      6G: U-NII-5,U-NII-6,U-NII-7,U-NII-8_x0001_-- Client supports all 6 GHz UNII bands (U-NII-5/6/7/8 → Wi-Fi 6E/7)
+
+
+      2.4G: U-NII-1,...,U-NII-8 (all of them) --_x0001_Client supports 5 GHz + 6 GHz (multi-band capable)'
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

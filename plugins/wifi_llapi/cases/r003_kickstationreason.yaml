@@ -1,0 +1,76 @@
+id: wifi-llapi-r003-accesspoint-kickstationreason
+name: kickStationReason() — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 3
+  object: WiFi.AccessPoint.{i}.
+  api: kickStationReason()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.kickStationReason(macaddress=string, reason:int):bool
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station to GW
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.5.kickStationReason"(macaddress=7E:04:6
+  depends_on: step1
+  note: Kick connected Station using specified reason codes.
+- id: step3
+  action: exec
+  target: DUT
+  command: Verify system event logs
+  capture: result
+  depends_on: step2
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: kickStationReason() 執行不應回傳 error
+verification_command: 'AuthenticationState=1 "The station has successfully completed the association procedure and is listed
+  in the AP association table"
+
+  root@prplOS:/# wl -i wl0 assoclist
+
+  assoclist 42:33:64:A3:9F:B0
+
+
+  AuthenticationState=0 "The station is not associated with the AP and therefore does not appear in the AP association table."
+
+  root@prplOS:/# wl -i wl0 assoclist'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

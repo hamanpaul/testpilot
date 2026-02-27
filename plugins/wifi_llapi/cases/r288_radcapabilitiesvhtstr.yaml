@@ -1,0 +1,48 @@
+id: wifi-llapi-r288-radio-radcapabilitiesvhtstr
+name: RadCapabilitiesVHTStr — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 288
+  object: WiFi.Radio.{i}.
+  api: RadCapabilitiesVHTStr
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.RadCapabilitiesVHTStr=""
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.RadCapabilitiesVHTStr?
+  note: get RadCapabilitiesVHTStr
+- id: step2
+  action: exec
+  target: DUT
+  command: Verify beacon packet supprt VHT.
+  capture: result
+  depends_on: step1
+pass_criteria:
+- field: result.RadCapabilitiesVHTStr
+  operator: contains
+  value: ''
+  description: RadCapabilitiesVHTStr 應回傳包含 RadCapabilitiesVHTStr=
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: 6 GHz (radio2) and 2.4GHz (Radio3) does not support VHT (802.11ac),
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: Not a issue, vhtCap is from nl80211 to pwhm

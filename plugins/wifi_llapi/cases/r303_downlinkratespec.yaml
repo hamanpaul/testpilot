@@ -1,0 +1,130 @@
+id: wifi-llapi-r303-accesspoint_associateddevice-downlinkratespec
+name: DownlinkRateSpec — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 303
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: DownlinkRateSpec
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.DownlinkRateSpec="he_11_20_2_1600"
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station to GW
+- id: step2
+  action: exec
+  target: DUT
+  command: Check DownlinkRateSpec
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.AccessPoint.1.AssociatedDevice.*.UplinkRateSpec?
+
+    ubus-cli WiFi.AccessPoint.1.AssociatedDevice.*.? | grep -E ''Band|
+
+    iw dev wl0 station dump
+
+    wl -i wl0 sta_info 00:60:f3:25:aa:59'
+  depends_on: step2
+  note: '#5G (11be, 4x4, 160MHz)'
+- id: step4
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.AccessPoint.3.AssociatedDevice.*.UplinkRateSpec?
+
+    ubus-cli WiFi.AccessPoint.3.AssociatedDevice.*.? | grep -E ''Band|SpatialStreams|Bandwidth|Guard''
+
+    iw dev wl1 station dump
+
+    wl -i wl1 sta_info 00:60:f3:31:97:e4'
+  depends_on: step3
+  note: '#6G (11be, 4x4, 320MHz)'
+- id: step5
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.AccessPoint.5.AssociatedDevice.*.UplinkRateSpec?
+
+    ubus-cli WiFi.AccessPoint.5.AssociatedDevice.*.? | grep -E ''Band|
+
+    iw dev wl2 station dump
+
+    wl -i wl2 sta_info c8:15:4e:89:fa:e9'
+  capture: result
+  depends_on: step4
+  note: '#2.4G 6G (11be, 2x2, 40MHz)'
+pass_criteria:
+- field: result.DownlinkRateSpec
+  operator: contains
+  value: he_11_20_2_1600
+  description: DownlinkRateSpec 應回傳包含 DownlinkRateSpec=he_11_20_2_1600
+verification_command: 'root@prplOS:/# iw dev wl0 station dump
+
+  Station 00:60:f3:25:aa:59 (on wl0)
+
+  inactive time: 3000 ms
+
+  rx bytes: 9828
+
+  rx packets: 38
+
+  tx bytes: 152
+
+  tx packets: 14
+
+  signal: -39 [-39] dBm
+
+  signal avg: -38 [-38] dBm
+
+  tx bitrate: 4899.0 MBit/s 160MHz
+
+  rx bitrate: 5187.1 MBit/s 160MHz
+
+  root@prplOS:/# wl -i wl0 sta_info 00:60:f3:25:aa:59
+
+  [VER 8] STA 00:60:F3:25:AA:59:
+
+  OMI 0x32c3: 160Mhz rx=4ss tx=4ss ER_SU_DISABLE
+
+  rx nrate
+
+  eht mcs 12 Nss 4 Tx Exp 0 bw160 ldpc 2xLTF GI 0.8us auto
+
+  link bandwidth = 160 MHZ
+
+  Frequency'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API always return leg_0_20_1_0'
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

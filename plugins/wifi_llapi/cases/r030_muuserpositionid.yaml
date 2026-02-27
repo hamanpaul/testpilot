@@ -1,0 +1,81 @@
+id: wifi-llapi-r030-accesspoint_associateddevice-muuserpositionid
+name: MUUserPositionId — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 30
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: MUUserPositionId
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.MUUserPositionId=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station
+- id: step2
+  action: exec
+  target: DUT
+  command: Run IPERF3 between Station's and GW at the same time
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: 'wl -i wl0 sta_info 34:19:4d:a4:b5:09 | grep ''caps''
+
+    wl -i wl1 sta_info 38:06:E6:92:B0:4A | grep ''caps'''
+  depends_on: step2
+  note: Get station caps
+- id: step4
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.MUUserPositionId?
+  capture: result
+  depends_on: step3
+  note: get MUUserPositionId
+pass_criteria:
+- field: result.MUUserPositionId
+  operator: contains
+  value: '0'
+  description: MUUserPositionId 應回傳包含 MUUserPositionId=0
+verification_command: wl -i wl0 sta_info ${STA_MAC}
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : Stations and GW support MIMO and both stations run IPERF3 at the same time but the MUUserPositionId always
+      return "0"'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: defintion in pwhm only

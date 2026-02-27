@@ -1,0 +1,74 @@
+id: wifi-llapi-r336-radio-getradiostats
+name: getRadioStats() — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 336
+  object: WiFi.Radio.{i}.
+  api: getRadioStats()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.getRadioStats()Temperature
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: 'Record counters at start:'
+- id: step2
+  action: exec
+  target: DUT
+  command: 'ubus-cli "WiFi.Radio.*.getRadioStats()" | grep Temperature
+
+    ubus-cli "WiFi.Radio.*.getRadioStats()" | grep Temperature'
+  capture: result
+  depends_on: step1
+  note: Check Radio Temperature
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getRadioStats() 執行不應回傳 error
+verification_command: 'cat /sys/class/thermal/thermal_zone0/temp
+
+  77195
+
+  root@prplOS:/# for z in /sys/class/thermal/thermal_zone*; do
+
+  > echo "$z: $(cat $z/type 2>/dev/null) $(cat $z/temp 2>/dev/null)"
+
+  > done
+
+  /sys/class/thermal/thermal_zone0: Broadcom_Thermal 76483
+
+
+  root@prplOS:/# wl -i wl0 phy_tempsense
+
+  56 (0x38)
+
+  root@prplOS:/# wl -i wl1 phy_tempsense
+
+  83 (0x53)
+
+  root@prplOS:/# wl -i wl2 phy_tempsense
+
+  76 (0x4c)'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

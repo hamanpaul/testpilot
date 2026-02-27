@@ -1,0 +1,91 @@
+id: wifi-llapi-r004-accesspoint-sendbsstransferrequest
+name: sendBssTransferRequest() — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 4
+  object: WiFi.AccessPoint.{i}.
+  api: sendBssTransferRequest()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.sendBssTransferRequest(mac:string, target:string, class:int, channel:int, wait:int,
+  retries:int, validity:int, disassoc:int, bssidInfo:uint32):bool
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Configure all radios (2.4G/5G/6G) to use the same SSID and Security mode.
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.MBOEnable=1
+  depends_on: step1
+  note: 'Enable MBO (Multi-Band Operation: this Suggest clients move to another band )'
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.{i}.IEEE80211r.MobilityDomain=25
+  depends_on: step2
+  note: Configure AP1, AP3 and AP5 IEEE80211r.MobilityDomain to use the same value
+- id: step4
+  action: exec
+  target: DUT
+  command: Connect WiFi Station to GW
+  depends_on: step3
+- id: step5
+  action: exec
+  target: DUT
+  command: Check and make sure Station support BTM/11v
+  depends_on: step4
+- id: step6
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.AssociatedDevice.? | grep MAC
+  depends_on: step5
+  note: Verify that the station supports IEEE 802.11v (BSS Transition Management).
+- id: step7
+  action: exec
+  target: DUT
+  command: 'ubus-cli "WiFi.AccessPoint.3.sendBssTransferRequest(mac=6A:8C:E6:
+
+    ubus-cli "WiFi.AccessPoint.3.sendBssTransferRequest(mac=6A:8C:E6:'
+  capture: result
+  depends_on: step6
+  note: Trigger the station to transition from the 6 GHz SSID to the 5 GHz SSID using BSS Transition command.
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: sendBssTransferRequest() 執行不應回傳 error
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : Command return error'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: need to check(Leon)

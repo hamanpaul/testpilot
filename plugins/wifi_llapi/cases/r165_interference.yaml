@@ -1,0 +1,43 @@
+id: wifi-llapi-r165-radio-interference
+name: Interference — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 165
+  object: WiFi.Radio.{i}.
+  api: Interference
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.Interference=2
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.Interference?
+  capture: result
+  note: 'Check API default value:'
+pass_criteria:
+- field: result.Interference
+  operator: contains
+  value: '2'
+  description: Interference 應回傳包含 Interference=2
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : The API will always return 0.'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: need to check(Leon)

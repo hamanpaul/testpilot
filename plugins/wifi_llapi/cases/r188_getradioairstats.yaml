@@ -1,0 +1,42 @@
+id: wifi-llapi-r188-radio-getradioairstats
+name: getRadioAirStats() — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 188
+  object: WiFi.Radio.{i}.
+  api: getRadioAirStats()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli WiFi.Radio.{i}.getRadioAirStats() TotalTime : 102,'
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: query
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.Radio.{i}.getRadioAirStats() TotalTime : 102,'
+  capture: result
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getRadioAirStats() 執行不應回傳 error
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : The value is always 0.'
+  v4.0.3:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: need to support survey in driver level(not only in  wl_cfg80211)

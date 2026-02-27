@@ -1,0 +1,43 @@
+id: wifi-llapi-r280-radio-maxbitrate
+name: MaxBitRate — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 280
+  object: WiFi.Radio.{i}.
+  api: MaxBitRate
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.MaxBitRate=0
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.MaxBitRate?
+  capture: result
+  note: 'Read-only API, defines max bitrate for each radio:'
+pass_criteria:
+- field: result.MaxBitRate
+  operator: contains
+  value: '0'
+  description: MaxBitRate 應回傳包含 MaxBitRate=0
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : This API should not be 0'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: whm_brcm_rad_get_maxbitrate has been implemented. Need pwhm to run

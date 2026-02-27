@@ -1,0 +1,82 @@
+id: wifi-llapi-r234-ssid-getssidstats
+name: getSSIDStats() — WiFi.SSID.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 234
+  object: WiFi.SSID.{i}.
+  api: getSSIDStats()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli WiFi.SSID.{i}.getSSIDStats() MulticastPacketsReceived : 29560,'
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station to GW SSID4, SSID6 and SSID8
+- id: step2
+  action: exec
+  target: DUT
+  command: Send Multicast packet between station
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: 'ubus-cli "WiFi.SSID.4.getSSIDStats()" | grep \.MulticastPacketsReceived
+
+    ubus-cli "WiFi.SSID.6.getSSIDStats()" | grep \.MulticastPacketsReceived
+
+    ubus-cli "WiFi.SSID.8.getSSIDStats()" | grep \.MulticastPacketsReceived'
+  capture: result
+  depends_on: step2
+  note: Get stats MulticastPacketsReceived
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getSSIDStats() 執行不應回傳 error
+verification_command: 'cat /proc/net/dev | grep wl0
+
+  root@prplOS:/# cat /proc/net/dev | grep -E ''Inter|face|wl0|wl1|wl2''
+
+  Inter-| Receive | Transmit
+
+  face |bytes packets errs drop fifo frame compressed multicast|bytes packets errs drop fifo colls carrier compressed
+
+  wl0: 2158103 10370 0 10 0 0 0 154 3600502 15896 0 58 0 0 0 0
+
+  wl1: 552654 5906 0 10 0 0 0 350 3676486 15621 0 13 0 0 0 0
+
+  wl2: 11812087 173333 0 18 0 0 0 150 476124582 329604 0 5 0 0 0 0'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

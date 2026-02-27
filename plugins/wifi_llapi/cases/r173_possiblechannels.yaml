@@ -1,0 +1,125 @@
+id: wifi-llapi-r173-radio-possiblechannels
+name: PossibleChannels — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 173
+  object: WiFi.Radio.{i}.
+  api: PossibleChannels
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.PossibleChannels=1,2,5,9,13,17,21,25,29,33,37
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.PossibleChannels?
+  note: 'Check the list of channels supported by each radio:'
+- id: step2
+  action: exec
+  target: DUT
+  command: Compare with driver command "wl -i wl[x] chanspecs"
+  capture: result
+  depends_on: step1
+pass_criteria:
+- field: result.PossibleChannels
+  operator: contains
+  value: 1,2,5,9,13,17,21,25,29,33,37
+  description: PossibleChannels 應回傳包含 PossibleChannels=1,2,5,9,13,17,21,25,29,33,37
+verification_command: 'wl -i wl0 chanspecs
+
+  36 (0xd024)
+
+  40 (0xd028)
+
+  44 (0xd02c)
+
+  48 (0xd030)
+
+  52 (0xd034)
+
+  56 (0xd038)
+
+  60 (0xd03c)
+
+  64 (0xd040)
+
+  100 (0xd064)
+
+  104 (0xd068)
+
+  108 (0xd06c)
+
+  112 (0xd070)
+
+  116 (0xd074)
+
+  120 (0xd078)
+
+  124 (0xd07c)
+
+  128 (0xd080)
+
+  132 (0xd084)
+
+  136 (0xd088)
+
+  140 (0xd08c)
+
+  144 (0xd090)
+
+  149 (0xd095)
+
+  153 (0xd099)
+
+  157 (0xd09d)
+
+  161 (0xd0a1)
+
+  165 (0xd0a5)
+
+  169 (0xd0a9)
+
+  173 (0xd0ad)
+
+  177 (0xd0b1)
+
+  36l (0xd826)
+
+  40u (0xd926)
+
+  44l (0xd82e)
+
+  48u (0xd92e)
+
+  52l (0xd836)
+
+  56u (0xd936)
+
+  60l (0xd83e)
+
+  64u (0xd93e)
+
+  100l (0xd866)
+
+  104u ('
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

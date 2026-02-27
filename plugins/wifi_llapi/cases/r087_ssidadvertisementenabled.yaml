@@ -1,0 +1,60 @@
+id: wifi-llapi-r087-accesspoint-ssidadvertisementenabled
+name: SSIDAdvertisementEnabled — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 87
+  object: WiFi.AccessPoint.{i}.
+  api: SSIDAdvertisementEnabled
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.SSIDAdvertisementEnabled=1
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.? | grep SSIDAdvertisementEnabled
+  note: Get SSIDAdvertisementEnabled value
+- id: step2
+  action: exec
+  target: DUT
+  command: Capture Beacon Packet and Check SSID
+  capture: result
+  depends_on: step1
+pass_criteria:
+- field: result.SSIDAdvertisementEnabled
+  operator: contains
+  value: '1'
+  description: SSIDAdvertisementEnabled 應回傳包含 SSIDAdvertisementEnabled=1
+verification_command: 'root@prplOS:/# cat /tmp/wl0_hapd.conf | grep -E ''broadcast|ssid''
+
+  bssid=6C:15:DB:74:C0:B5
+
+  ssid=5G_Primary-BE
+
+  ignore_broadcast_ssid=2
+
+
+  ignore_broadcast_ssid=0 => "SSID not Hidden"
+
+  ignore_broadcast_ssid=2 => "SSID Hidden"'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

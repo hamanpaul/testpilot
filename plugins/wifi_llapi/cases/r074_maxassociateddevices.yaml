@@ -1,0 +1,99 @@
+id: wifi-llapi-r074-accesspoint-maxassociateddevices
+name: MaxAssociatedDevices — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 74
+  object: WiFi.AccessPoint.{i}.
+  api: MaxAssociatedDevices
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.MaxAssociatedDevices=32
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.? | grep MaxAssociatedDevices
+  note: Get the Maximum Association allowed in SSID
+- id: step2
+  action: exec
+  target: DUT
+  command: Connect 32 WiFi Station to GW 5GHz SSID
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: Check Stations Associated to 5GHz SSID
+  depends_on: step2
+- id: step4
+  action: exec
+  target: DUT
+  command: Repeat step1 to Step3, associate Station to 2.4GHz and 6GHz SSID
+  capture: result
+  depends_on: step3
+pass_criteria:
+- field: result.MaxAssociatedDevices
+  operator: contains
+  value: '32'
+  description: MaxAssociatedDevices 應回傳包含 MaxAssociatedDevices=32
+verification_command: 'cat /tmp/wl0_hapd.conf |grep max_num_sta
+
+  cat /tmp/wl1_hapd.conf |grep max_num_sta
+
+  cat /tmp/wl2_hapd.conf |grep max_num_sta
+
+
+  root@prplOS:/# cat /tmp/wl0_hapd.conf |grep max_num_sta
+
+  root@prplOS:/# cat /tmp/wl1_hapd.conf |grep max_num_sta
+
+  root@prplOS:/# cat /tmp/wl2_hapd.conf |grep max_num_sta
+
+
+  root@prplOS:/# wl -i wl1 assoclist
+
+  assoclist 00:60:F3:31:98:01
+
+  assoclist 00:60:F3:31:97:FE
+
+  assoclist 00:60:F3:31:98:03
+
+  assoclist 00:60:F3:31:97:FB
+
+  assoclist 00:60:F3:31:98:00
+
+  assoclist 00:60:F3:31:97:F8
+
+  asso'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'BRCM: CSP CS00012439197'
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: set max_num_sta to hapd.conf in brcm vendor module to fix this issue

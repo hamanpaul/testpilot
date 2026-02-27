@@ -1,0 +1,135 @@
+id: wifi-llapi-r034-accesspoint_associateddevice-retransmissions
+name: Retransmissions — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 34
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: Retransmissions
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.Retransmissions=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: '"1. Connect one WiFi station to SSID4, SSID6 and SSID8 of the GW (DUT)'
+- id: step2
+  action: exec
+  target: DUT
+  command: Run Iperf from Station to GW and between Station
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: Setup neighbour GW near the GW (DUT)
+  depends_on: step2
+- id: step4
+  action: exec
+  target: DUT
+  command: Place Neighbor GW nearby
+  depends_on: step3
+- id: step5
+  action: exec
+  target: DUT
+  command: Set same channel + bandwidth
+  depends_on: step4
+- id: step6
+  action: exec
+  target: DUT
+  command: Connect STA(s) to Neighbor GW
+  depends_on: step5
+- id: step7
+  action: exec
+  target: DUT
+  command: Run Iperf simultaneously
+  depends_on: step6
+- id: step8
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.Retransmissions?
+  capture: result
+  depends_on: step7
+  note: Check AssociatedDevice Stats.Retransmission
+pass_criteria:
+- field: result.Retransmissions
+  operator: contains
+  value: '0'
+  description: Retransmissions 應回傳包含 Retransmissions=0
+verification_command: 'root@prplOS:/# wl -i wl0 sta_info 34:19:4d:a4:b5:09 | grep pkts
+
+  tx total pkts: 101
+
+  tx ucast pkts: 101
+
+  tx mcast/bcast pkts: 0
+
+  rx data pkts: 844
+
+  rx ucast pkts: 334
+
+  rx mcast/bcast pkts: 510
+
+  tx data pkts retried: 0
+
+  tx total pkts sent: 101
+
+  tx pkts retries: 65
+
+  tx pkts retry exhausted: 0
+
+  rx total pkts retried: 78
+
+  tx acked pkts: 101
+
+  root@prplOS:/# wl -i wl1 sta_info 38:06:E6:92:B0:4A | grep pkts
+
+  tx total pkts: 55010
+
+  tx ucast pkts: 55010
+
+  tx mcast/bcast pkts: 0
+
+  rx data pkts: 69403
+
+  rx ucast pkts: 66319
+
+  rx '
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API counter always 0'
+  v4.0.3:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: Commit

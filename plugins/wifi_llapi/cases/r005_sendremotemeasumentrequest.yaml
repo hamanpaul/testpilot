@@ -1,0 +1,79 @@
+id: wifi-llapi-r005-accesspoint-sendremotemeasumentrequest
+name: sendRemoteMeasumentRequest() — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 5
+  object: WiFi.AccessPoint.{i}.
+  api: sendRemoteMeasumentRequest()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.sendRemoteMeasumentRequest(mac:string, bssid:string, class:uint32, channel:uint32,
+  timeout:uint32):bool
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Configure all radios (2.4G/5G/6G) to use the same SSID and Security mode.
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.{i}.IEEE80211r.MobilityDomain=25
+  depends_on: step1
+  note: Configure AP1, AP3 and AP5 IEEE80211r.MobilityDomain to use the same value
+- id: step3
+  action: exec
+  target: DUT
+  command: Connect Wifi station to GW
+  depends_on: step2
+- id: step4
+  action: exec
+  target: DUT
+  command: Verify that the Station support BTM/11v /802.11k = Radio Resource Management (RRM)
+  depends_on: step3
+- id: step5
+  action: exec
+  target: DUT
+  command: 'ubus-cli "WiFi.AccessPoint.3.sendRemoteMeasumentRequest(mac=6A:8C
+
+    ubus-cli "WiFi.AccessPoint.3.sendRemoteMeasurementRequest(macaddress=6A:8C:E6:7A:18:91,bssid=64:75:da:4e:51:75,class=0,channel=36,time'
+  capture: result
+  depends_on: step4
+  note: Trigger the station to sendRemoteMeasumentRequest
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: sendRemoteMeasumentRequest() 執行不應回傳 error
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : GW does not send sendRemoteMeasumentRequest by using the command.'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: need to check(Leon)

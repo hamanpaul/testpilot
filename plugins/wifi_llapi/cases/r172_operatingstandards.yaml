@@ -1,0 +1,118 @@
+id: wifi-llapi-r172-radio-operatingstandards
+name: OperatingStandards — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 172
+  object: WiFi.Radio.{i}.
+  api: OperatingStandards
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.OperatingStandards=ax
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: 'ubus-cli WiFi.Radio.1.OperatingStandards=be
+
+    ubus-cli WiFi.Radio.2.OperatingStandards=be
+
+    ubus-cli WiFi.Radio.3.OperatingStandards=be'
+  note: 'Try change all radio to BE standard:'
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.OperatingStandards?
+  depends_on: step1
+  note: 'Check standard:'
+- id: step3
+  action: exec
+  target: DUT
+  command: 'Capture air beacon, the EHT IE should contained(Ext Tag: EHT Capabilities (802.11be D3.0) & Ext Tag: EHT Operation
+    (802.11be D3.0)).'
+  depends_on: step2
+- id: step4
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.OperatingStandards=ax
+  depends_on: step3
+  note: 'Change all radio to AX standard:'
+- id: step5
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.OperatingStandards?
+  depends_on: step4
+  note: 'Check standard:'
+- id: step6
+  action: exec
+  target: DUT
+  command: 'Capture air beacon, the EHT IE should not contained(Ext Tag: EHT Capabilities (802.11be D3.0) & Ext Tag: EHT Operation
+    (802.11be D3.0)) and should contained HE IE.'
+  depends_on: step5
+- id: step7
+  action: exec
+  target: DUT
+  command: Switch according to the 802.11 standard supported by each radio and verify each one individually-
+  capture: result
+  depends_on: step6
+pass_criteria:
+- field: result.OperatingStandards
+  operator: contains
+  value: ax
+  description: OperatingStandards 應回傳包含 OperatingStandards=ax
+verification_command: '[BE]
+
+  wl -i wl[i] status
+
+  wl -i wl[i] nmode
+
+  wl -i wl[i] vhtmode
+
+  wl -i wl[i] he features
+
+  wl -i wl[i] eht features
+
+
+  root@prplOS:/# wl -i wl0 status
+
+  SSID: "AAA_ATnT-wl0"
+
+  Mode: Managed RSSI: 0 dBm SNR: 0 dB noise: -99 dBm Channel: 36
+
+  BSSID: 64:75:DA:4E:51:65 Capability: ESS RRM
+
+  Beacon Interval: 100 msecs
+
+  Supported Rates: [ 6(b) 9 12 18 24(b) 36 48 54 ]
+
+  VHT Capable:
+
+  Chanspec: 5GHz channel 36 20MHz (0xd024)
+
+  Primary channel: 36
+
+  HT Capabilities: 40MHz SGI20 SGI40
+
+  Supported HT MCS : 0-31
+
+  Supported VHT MCS:'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Pass
+    2.4g: Fail
+    comment: 'BRCM: CSP CS00012439197'
+  v4.0.3:
+    5g: Fail
+    6g: Pass
+    2.4g: Fail
+    comment: Limitation in current period. Need to spend time to rework

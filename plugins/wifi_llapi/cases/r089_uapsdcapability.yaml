@@ -1,0 +1,56 @@
+id: wifi-llapi-r089-accesspoint-uapsdcapability
+name: UAPSDCapability — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 89
+  object: WiFi.AccessPoint.{i}.
+  api: UAPSDCapability
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.UAPSDCapability=1
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.? | grep .UAPSDCapability
+  note: Get GW UAPSDCapability
+- id: step2
+  action: exec
+  target: DUT
+  command: Check Beacon packet if it include U-APSD WMM/WME
+  capture: result
+  depends_on: step1
+pass_criteria:
+- field: result.UAPSDCapability
+  operator: contains
+  value: '1'
+  description: UAPSDCapability 應回傳包含 UAPSDCapability=1
+verification_command: 'Note: U-APSD is part of WME
+
+  root@prplOS:/# wl -i wl0 cap
+
+  ap sta wet led wme 802.11d 802.11h rm cac mbss8 ampdu ampdu_tx ampdu_rx amsdurx amsdutx rxchain_pwrsave wds dwds vht-prop-rates
+  multi-user-beamformer single-user-beamformer multi-user-beamformee single-user-beamformee 160 dfrts stbc-tx stbc-rx-1ss
+  pspretend probresp_mac_filter mfp wnm bsstrans scanmac ve fbtoverds fbt_adpt ifver bgdfs bgdfs160 spp lpr_scan bkoff_evt
+  awd_data_info monitor cevent traffic_thresh 11ax 11be mlo 320 stamon csimo'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

@@ -1,0 +1,101 @@
+id: wifi-llapi-r151-radio-dtimperiod
+name: DTIMPeriod — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 151
+  object: WiFi.Radio.{i}.
+  api: DTIMPeriod
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.DTIMPeriod=3
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.DTIMPeriod?
+  note: 'Check default DTIMPeriod:'
+- id: step2
+  action: exec
+  target: DUT
+  command: 'Capture air beacons, check DTIM Period: 3'
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.DTIMPeriod=7
+  depends_on: step2
+  note: 'Modify DTIMPeriod to any value:'
+- id: step4
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.DTIMPeriod?
+  capture: result
+  depends_on: step3
+  note: 'Get DTIMPeriod value again, compare them with driver return value and captured beacon packets status:'
+pass_criteria:
+- field: result.DTIMPeriod
+  operator: contains
+  value: '3'
+  description: DTIMPeriod 應回傳包含 DTIMPeriod=3
+verification_command: 'cat /tmp/wl*_hapd.conf |grep dtim
+
+
+  (Default)
+
+  root@prplOS:/# cat /tmp/wl0_hapd.conf |grep dtim
+
+  dtim_period=3
+
+  dtim_period=3
+
+  root@prplOS:/# cat /tmp/wl1_hapd.conf |grep dtim
+
+  dtim_period=3
+
+  dtim_period=3
+
+  root@prplOS:/# cat /tmp/wl2_hapd.conf |grep dtim
+
+  dtim_period=3
+
+  dtim_period=3
+
+
+  (After modify)
+
+  root@prplOS:/# cat /tmp/wl0_hapd.conf |grep dtim
+
+  dtim_period=7
+
+  dtim_period=7
+
+  root@prplOS:/# cat /tmp/wl1_hapd.conf |grep dtim
+
+  dtim_period=7
+
+  dtim_period=7
+
+  root@prplOS:/# cat /tmp/wl2_hapd.conf |grep dtim
+
+  dtim_'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

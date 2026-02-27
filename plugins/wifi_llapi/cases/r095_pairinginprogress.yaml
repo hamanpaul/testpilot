@@ -1,0 +1,54 @@
+id: wifi-llapi-r095-accesspoint_wps-pairinginprogress
+name: PairingInProgress — WiFi.AccessPoint.{i}.WPS.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 95
+  object: WiFi.AccessPoint.{i}.WPS.
+  api: PairingInProgress
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.WPS.PairingInProgress=0
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli -a "WiFi.AccessPoint.1.WPS.InitiateWPSPBC()"
+  note: Initiate WPS pairing between GW and Station
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.? | grep .WPS.PairingInProgress
+  capture: result
+  depends_on: step1
+  note: Check WPS Pairing progress
+pass_criteria:
+- field: result.PairingInProgress
+  operator: contains
+  value: '0'
+  description: PairingInProgress 應回傳包含 PairingInProgress=0
+verification_command: 'root@prplOS:/# hostapd_cli -i wl0 wps_get_status
+
+  PBC Status: Active
+
+  Last WPS result: None'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Not Supported
+    2.4g: Pass
+    comment: 'Note: WPS pairing are tested using 11n station'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

@@ -1,0 +1,53 @@
+id: wifi-llapi-r077-accesspoint-neighbour
+name: Neighbour — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 77
+  object: WiFi.AccessPoint.{i}.
+  api: Neighbour
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Neighbour
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: 'ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:
+
+    ubus-cli "WiFi.AccessPoint.3.setNeighbourAP(BSSID=11:22:33:44:55:
+
+    ubus-cli "WiFi.AccessPoint.5.setNeighbourAP(BSSID=11:22:33:44:55:'
+  note: Add Neighbour AP
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.? | grep -E 'BSSID|Channel'
+  capture: result
+  depends_on: step1
+  note: Get or Check Neigbour AP
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: Neighbour 執行不應回傳 error
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

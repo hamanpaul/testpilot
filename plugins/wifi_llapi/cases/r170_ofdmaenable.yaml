@@ -1,0 +1,81 @@
+id: wifi-llapi-r170-radio-ofdmaenable
+name: OfdmaEnable — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 170
+  object: WiFi.Radio.{i}.
+  api: OfdmaEnable
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.OfdmaEnable=1
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.*.OfdmaEnable?
+  note: Check OfdmaEnable
+- id: step2
+  action: exec
+  target: DUT
+  command: 'Capture Beacon and make sure the following bits map are present:'
+  capture: result
+  depends_on: step1
+pass_criteria:
+- field: result.OfdmaEnable
+  operator: contains
+  value: '1'
+  description: OfdmaEnable 應回傳包含 OfdmaEnable=1
+verification_command: 'root@prplOS:~# wl -i wl0 he features
+
+  63 (0x3f)
+
+  root@prplOS:~# wl -i wl1 he features
+
+  63 (0x3f)
+
+  root@prplOS:~# wl -i wl2 he features
+
+  63 (0x3f)
+
+
+  63 (decimal) = 0x3f (hex)
+
+  0x3f in binary = 0011 1111
+
+  That means bits 0–5 are set, and higher bits are clear.
+
+
+  Bit_x0001_Value_x0001_Meaning (high-level)
+
+  0_x0001_0x01_x0001_HE support enabled
+
+  1_x0001_0x02_x0001_HE SU (Single-User)
+
+  2_x0001_0x04_x0001_HE MU (Multi-User)
+
+  3_x0001_0x08_x0001_OFDMA support
+
+  4_x0001_0x10_x0001_UL OFDMA / Trigger-based features
+
+  5_x0'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

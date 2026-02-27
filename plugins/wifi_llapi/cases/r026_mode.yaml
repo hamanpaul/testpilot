@@ -1,0 +1,55 @@
+id: wifi-llapi-r026-accesspoint_associateddevice-mode
+name: Mode — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 26
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: Mode
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.Mode=ac
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Connect WiFi Station and check Station Mode
+  capture: result
+pass_criteria:
+- field: result.Mode
+  operator: contains
+  value: ac
+  description: Mode 應回傳包含 Mode=ac
+verification_command: wl -i wl0 sta_info ${STA_MAC}
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API and Stat info does not have "Mode"'
+  v4.0.3:
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: mode doesn't exist in odl

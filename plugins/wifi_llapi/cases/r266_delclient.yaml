@@ -1,0 +1,59 @@
+id: wifi-llapi-r266-radio_sensing-delclient
+name: delClient() — WiFi.Radio.{i}.Sensing.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 266
+  object: WiFi.Radio.{i}.Sensing.
+  api: delClient()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.Sensing.delClient(MACAddress )
+llapi_support: Support
+implemented_by: Vendor Module
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: 'ubus-cli "WiFi.Radio.*.Sensing.delClient(MACAddress=''a0:29:42:60:'
+  note: 'Try delete an added client:'
+- id: step2
+  action: exec
+  target: DUT
+  command: 'ubus-cli "WiFi.Radio.*.Sensing.delClient(MACAddress=''00:00:00:00:'
+  capture: result
+  depends_on: step1
+  note: 'Try delete non-existing client:'
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: delClient() 執行不應回傳 error
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: 'Delete a non-added client is also optional so this API should be verified with csiStats().
+
+      The step will be:
+
+      1. Add one client for each radio.
+
+      2. Verify the client will make csiStats()''s counters increasing.
+
+      3. Delete each client.
+
+      4. The csiStats()''s counters should stop increasing.'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

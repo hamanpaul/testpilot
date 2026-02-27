@@ -1,0 +1,61 @@
+id: wifi-llapi-r397-radio-getspectruminfo
+name: getSpectrumInfo() — WiFi.Radio.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 397
+  object: WiFi.Radio.{i}.
+  api: getSpectrumInfo()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.{i}.getSpectrumInfo() noiselevel
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Power On the GW
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.Radio.*.getSpectrumInfo() noiselevel"
+  capture: result
+  depends_on: step1
+  note: Verify "SpectrumInfo() noiselevel"
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getSpectrumInfo() 執行不應回傳 error
+verification_command: 'root@prplOS:/# wl -i wl0 noise
+
+  -99
+
+  root@prplOS:/# wl -i wl1 noise
+
+  -96
+
+  root@prplOS:/# wl -i wl2 noise
+
+  -79
+
+  root@prplOS:/#'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API return "empty"'
+  v4.0.3:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: wifi driver need to support survey feature

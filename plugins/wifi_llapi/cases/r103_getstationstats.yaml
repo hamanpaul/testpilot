@@ -1,0 +1,73 @@
+id: wifi-llapi-r103-accesspoint-getstationstats
+name: getStationStats() — WiFi.AccessPoint.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 103
+  object: WiFi.AccessPoint.{i}.
+  api: getStationStats()
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli WiFi.AccessPoint.{i}.getStationStats() AvgSignalStrengthByChain : -69,'
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep -E 'Active|MAC'
+  note: Connect WiFi Station to GW and make sure the Station is Active
+- id: step2
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.AccessPoint.*.getStationStats() AvgSignalStrengthByChain"? | grep AvgSignalStrengthByChain
+  capture: result
+  depends_on: step1
+  note: Check Station AvgSignalStrengthByChain
+pass_criteria:
+- field: result
+  operator: not_contains
+  value: error
+  description: getStationStats() 執行不應回傳 error
+verification_command: 'root@prplOS:/# wl -i wl0 sta_info E6:D7:D3:EA:CF:15 | grep average
+
+  per antenna average rssi of rx data frames: -43 -53 -46 -49
+
+  root@prplOS:/# wl -i wl1 sta_info 38:06:E6:92:B0:4A | grep average
+
+  per antenna average rssi of rx data frames: -33 -36 -33 -39
+
+  root@prplOS:/# wl -i wl2 sta_info 7E:04:60:D8:FC:6E | grep average
+
+  per antenna average rssi of rx data frames: -38 -45 -33 -40'
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC : API return only one value. note: the Station support 4×4, so the AverageSignalStrengthByChain MUST contain
+      4 values.'
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''

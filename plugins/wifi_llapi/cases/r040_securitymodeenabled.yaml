@@ -1,0 +1,102 @@
+id: wifi-llapi-r040-accesspoint_associateddevice-securitymodeenabled
+name: SecurityModeEnabled — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 40
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: SecurityModeEnabled
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.SecurityModeEnabled=WPA2-Personal
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+    STA:
+      role: sta
+      transport: adb
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: '{{SSID_5G}}'
+        key: '{{KEY_5G}}'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: Set GW security mode to WPA#-Personal
+- id: step2
+  action: exec
+  target: DUT
+  command: Connect WiFi Station
+  depends_on: step1
+- id: step3
+  action: exec
+  target: DUT
+  command: Verify Station SecurityModeEnabled
+  capture: result
+  depends_on: step2
+pass_criteria:
+- field: result.SecurityModeEnabled
+  operator: contains
+  value: WPA2-Personal
+  description: SecurityModeEnabled 應回傳包含 SecurityModeEnabled=WPA2-Personal
+verification_command: 'root@prplOS:/# wl -i wl0 sta_info DE:B4:40:A6:40:D5
+
+  [VER 8] STA DE:B4:40:A6:40:D5:
+
+  chanspec 36 (0xd024)
+
+  aid:9
+
+  rateset [ 6 9 12 18 24 36 48 54 ]
+
+  idle 4 seconds
+
+  in network 52153 seconds
+
+  state: AUTHENTICATED ASSOCIATED AUTHORIZED
+
+  connection: SECURED
+
+  auth: WPA3-SAE-PSK
+
+  crypto: AES_CCM
+
+
+  root@prplOS:/# wl -i wl1 sta_info 38:06:E6:92:B0:4A
+
+  [VER 8] STA 38:06:E6:92:B0:4A:
+
+  chanspec 6g1/160 (0x680f)
+
+  aid:9
+
+  rateset [ 6 9 12 18 24 36 48 54 ]
+
+  idle 1 seconds
+
+  in network 54059 seconds
+
+  state: AUTHENTICATED ASSOCIA'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''

@@ -1,0 +1,53 @@
+id: wifi-llapi-r068-accesspoint_ieee80211r-mobilitydomain
+name: MobilityDomain — WiFi.AccessPoint.{i}.IEEE80211r.
+version: '1.0'
+source:
+  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 68
+  object: WiFi.AccessPoint.{i}.IEEE80211r.
+  api: MobilityDomain
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.IEEE80211r.MobilityDomain=27476
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=1
+  capture: result
+  note: Set MobilityDomain
+pass_criteria:
+- field: result.MobilityDomain
+  operator: contains
+  value: '27476'
+  description: MobilityDomain 應回傳包含 MobilityDomain=27476
+verification_command: '802.11r requires a non-zero Mobility Domain ID (MDID).
+
+  If MDID = 0 → 802.11r will NOT activate, even if Enabled=1.
+
+
+  must set .MobilityDomain to a 16-bit number (1–65535).
+
+  Example:
+
+  ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=4660'
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: ''
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: ''
