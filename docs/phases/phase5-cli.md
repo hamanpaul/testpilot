@@ -8,15 +8,13 @@
 
 1. CLI 已有 `run/list` 與 `wifi-llapi build-template-report`。
 2. Orchestrator 對 `wifi_llapi` 已有專屬流程。
-3. 已定案策略：每個 test case 各自呼叫 agent，並採 sequential 執行。
+3. `wifi_llapi` 已落地每個 test case 各自呼叫 agent（sequential）。
+4. 已落地 retry-aware timeout 與 per-case trace artifact。
 
 ## Gaps
 
 1. 非 `wifi_llapi` plugin 仍為 skeleton run。
-2. integration tests 尚未補齊。
-3. plugin agent-config 的 per-case runtime selector 尚未實作。
-4. retry-aware timeout（依 attempt 調整）尚未實作。
-5. per-case trace artifact writer 尚未實作。
+2. integration tests（mock transport 的 broader coverage）尚未補齊。
 
 ## Acceptance Criteria
 

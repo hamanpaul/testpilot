@@ -3,9 +3,9 @@ name: "getRadioStats() BroadcastPacketsReceived counter verification"
 version: "1.0"
 
 source:
-  report: "6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx"
+  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
   sheet: "Wifi_LLAPI"
-  row: 191
+  row: 265
   object: "WiFi.Radio.{i}."
   api: "getRadioStats()"
 

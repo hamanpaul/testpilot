@@ -125,8 +125,7 @@ pass_criteria:
 
 格式：
 
-> **注意：** 以下 `execution` block 為規劃中格式，runtime 尚未實作。
-> 目前 `wifi_llapi/agent-config.yaml` 僅包含 `version`、`default_mode`、`selection_policy`、`runners`。
+> **注意：** `wifi_llapi` 已實作 `execution` block runtime（per-case/sequential/retry-aware timeout/per-case trace）。
 
 ```yaml
 version: 1

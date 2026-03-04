@@ -3,9 +3,9 @@ name: "kickStation() disconnect and verify AuthenticationState"
 version: "1.0"
 
 source:
-  report: "6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx"
+  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
   sheet: "Wifi_LLAPI"
-  row: 2
+  row: 6
   object: "WiFi.AccessPoint.{i}."
   api: "kickStation()"
 

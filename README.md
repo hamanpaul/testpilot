@@ -11,17 +11,17 @@ TestPilot 採用 `Orchestrator -> Plugin -> YAML Cases` 架構，目標是支援
 1. 可列出 plugin/cases，並執行 `wifi_llapi` 的報告導向流程。
 2. 可從來源 Excel 抽取 `Wifi_LLAPI` 樣板並產出測試報告。
 3. `wifi_llapi` 已有大量 case YAML 與 row/source 對齊治理。
-
-注意：`wifi_llapi` plugin 的 `setup_env/verify_env/execute_step/evaluate` 目前仍屬 stub，尚未完成真實環境執行。
+4. `wifi_llapi` 已支援 per-case agent dispatcher（sequential）與 per-case trace 輸出。
+5. 已支援 retry-aware timeout（依 attempt 調整）與 case fail-and-continue。
+6. `wifi_llapi` plugin `setup_env/verify_env/execute_step/evaluate` 已完成 runtime 實作，可接 transport 執行。
+7. transport 已具備 `serialwrap/adb/ssh/network`，並完成 row-indexed 官方 415 cases 實機全量 run 驗證。
 
 ## Roadmap（Target）
 
 1. 真實 transport（serial/adb/ssh/network）。
 2. env provision/validate 與 monitor。
-3. 改為每個 test case 各自呼叫 agent（非單一 agent 吃完整批）。
-4. case-level retry-aware timeout 與 per-case selection trace。
-5. plugin evaluate + agent audit 合併判讀。
-6. post-run remediation（測後修正/重測）。
+3. plugin evaluate + agent audit 合併判讀。
+4. post-run remediation（測後修正/重測）。
 
 詳見：`docs/plan.md` 與 `docs/todos.md`。
 
@@ -67,8 +67,8 @@ python -m testpilot.cli run wifi_llapi \
 1. 第一優先：`codex + gpt-5.3-codex + high`
 2. 第二優先：`copilot + sonnet-4.6 + high`
 3. 第一優先不可用時，自動降級第二優先（需留 trace）
-4. 執行模式目標：`per_case + sequential(max_concurrency=1)`（文件已校準，實作待完成）
-5. 失敗策略目標：`retry_then_fail_and_continue`，且 timeout 隨 retry attempt 調整
+4. 執行模式：`per_case + sequential(max_concurrency=1)`（已實作）
+5. 失敗策略：`retry_then_fail_and_continue`，timeout 會隨 retry attempt 調整（已實作）
 
 ## 專案結構
 

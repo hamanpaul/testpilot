@@ -3,6 +3,19 @@ default_mode: headless
 selection_policy:
   fallback: automatic
   on_unavailable: next_priority
+execution:
+  scope: per_case
+  mode: sequential
+  max_concurrency: 1
+  failure_policy: retry_then_fail_and_continue
+  retry:
+    max_attempts: 2
+    backoff_seconds: 5
+  timeout:
+    base_seconds: 120
+    per_step_seconds: 45
+    retry_multiplier: 1.25
+    max_seconds: 900
 runners:
   - priority: 1
     cli_agent: codex

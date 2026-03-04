@@ -20,14 +20,18 @@ TestPilot 是一套 plugin-based 嵌入式測試框架，核心目標是：
 2. Orchestrator 可執行 `wifi_llapi` 專屬報表流程（template 生成、alignment gate、run report 輸出）。
 3. `wifi_llapi` case 已大量整理並對齊 Excel `Wifi_LLAPI` row/source（417 可載入 cases，含 2 條 legacy non-row-indexed）。
 4. Excel 報告模組已獨立於 `src/testpilot/reporting/wifi_llapi_excel.py`。
-5. 基礎測試包含 schema/loader 與 wifi llapi excel template 測試。
+5. `wifi_llapi` plugin 執行 hook 已落地（`setup_env/verify_env/execute_step/evaluate`），可接 transport 執行並完成 pass criteria 判讀。
+6. Transport 已有 `serialwrap/adb/ssh/network` 實作與工廠。
+7. plugin `agent-config` runtime 已落地：per-case runner selector、sequential dispatcher、retry-aware timeout、per-case trace artifact。
+8. 已完成 row-indexed 官方 415 cases 實機全量 run 與報告重建（trace 對齊 415/415）。
+9. 測試已擴充到 transport/plugin/orchestrator realistic runtime 與 wifi llapi excel merged-cell 寫入情境。
+10. Wifi_LLAPI 報告欄位映射已對齊新版模板：`G/H`（command/output）、`I/J/K`（result）、`L`（tester=`testpilot`）、`M`（comment）。
 
 ### 2.2 尚未完整落地（仍為 roadmap）
 
-1. `wifi_llapi` plugin 執行 hook（`setup_env/verify_env/execute_step/evaluate`）目前仍為 stub。
-2. `serial/adb/ssh/network` 真實 transport 尚未完成。
-3. monitor / remediation / integration 測試仍待補齊。
-4. plugin `agent-config` 的 runtime selector / case-level dispatcher / trace writer 尚未落地。
+1. monitor / remediation 全流程仍待補齊。
+2. `agent-config` availability 探測與 backoff sleep 仍屬最小版（目前以 selector + trace 為主）。
+3. 2 條 legacy non-row-indexed case（getRadioStats/kickStation）仍為獨立治理項。
 
 ---
 
@@ -66,7 +70,7 @@ TestPilot 是一套 plugin-based 嵌入式測試框架，核心目標是：
 
 ### 4.3 YAML 規格
 
-目前既有格式：
+舊版相容格式（無 `execution`）：
 
 ```yaml
 version: 1
@@ -87,7 +91,7 @@ runners:
     enabled: true
 ```
 
-校準後目標格式（新增 `execution`，尚未實作）：
+目前已落地格式（含 `execution`）：
 
 ```yaml
 version: 1
@@ -127,7 +131,7 @@ runners:
 2. 第一優先不可用時，自動降級到第二優先。
 3. 每次選擇需留存 `selection trace`（選擇結果、降級原因、時間戳）。
 
-### 4.5 Case-Level 執行策略（已定案，待實作）
+### 4.5 Case-Level 執行策略（wifi_llapi 已落地）
 
 1. Agent 呼叫粒度：`per_case`，每個 test case 各自建立一次 agent 執行流程。
 2. 排程模式：`sequential`，`max_concurrency = 1`。
@@ -144,6 +148,7 @@ runners:
 src/testpilot/
   cli.py
   core/
+    agent_runtime.py
     orchestrator.py
     plugin_base.py
     plugin_loader.py
@@ -153,7 +158,12 @@ src/testpilot/
   schema/
     case_schema.py
   transport/
+    adb.py
     base.py
+    factory.py
+    network.py
+    serialwrap.py
+    ssh.py
   env/
     __init__.py           # (empty — roadmap)
 
