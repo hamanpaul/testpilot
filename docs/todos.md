@@ -1,57 +1,72 @@
-# TestPilot — Todo 追蹤
+# TestPilot Todo Board（Single Source of Truth）
 
-## Phase 0: 專案骨架（→ GitHub push）
+## 治理規則
 
-| ID | 項目 | 狀態 |
-|----|------|------|
-| scaffold | 目錄結構、pyproject.toml | done |
-| plugin-base | PluginBase ABC + PluginLoader | done |
-| case-schema | YAML case schema 驗證 | done |
-| testbed-config | testbed.yaml 解析 | done |
-| transport-base | Transport ABC + StubTransport | done |
-| skeleton-cli | 最小 CLI (--version, list-plugins) | done |
-| skeleton-orchestrator | 最小 orchestrator | done |
-| wifi-plugin-stub | wifi_llapi stub + 範例 cases | done |
-| docs-init | docs/ 文件初始化 | done |
-| github-push | git init + push GitHub | pending |
+1. 本檔是專案唯一待辦清單。
+2. 狀態僅允許：`pending`、`in_progress`、`done`、`blocked`。
+3. 非 Plan Mode：不得增減項次，不得調整 ID。
+4. 非 Plan Mode：僅可更新「狀態」與必要註記。
+5. Plan Mode：才允許增減項次、重編排序、調整 phase 結構。
+6. 本檔狀態需對齊 `docs/plan.md` 的「現況快照」與 phase 邊界。
 
-## Phase 1: Transport Layer
+## Phase 0：Scaffold
 
-| ID | 項目 | 狀態 |
-|----|------|------|
-| serial-wrap | serialwrap UART 介面 | pending |
-| adb-transport | ADB 介面 | pending |
-| ssh-transport | SSH 介面 | pending |
-| network-utils | ping/arping/iperf | pending |
+| ID | 項目 | 狀態 | 註記 |
+|---|---|---|---|
+| P0-01 | scaffold（目錄與 pyproject） | done | 已建立 |
+| P0-02 | plugin-base（PluginBase + Loader） | done | 已建立 |
+| P0-03 | case-schema 驗證 | done | 已建立 |
+| P0-04 | testbed-config 解析 | done | 已建立 |
+| P0-05 | transport-base（StubTransport） | done | 已建立 |
+| P0-06 | skeleton-cli | done | 已具備 `list-plugins/list-cases/run` |
+| P0-07 | skeleton-orchestrator | done | 已可載入 plugin/cases |
+| P0-08 | wifi-plugin-stub | done | plugin hook 目前仍為 stub |
+| P0-09 | docs-init | done | 已完成 master plan/todos/phases 對齊 |
+| P0-10 | github-push | pending | 尚未標記完成 |
 
-## Phase 2: 環境管理
+## Phase 1：Transport Layer
 
-| ID | 項目 | 狀態 |
-|----|------|------|
-| topology | 拓撲圖解析 | pending |
-| provisioner | 環境佈建 | pending |
-| validator | 環境自檢 | pending |
+| ID | 項目 | 狀態 | 註記 |
+|---|---|---|---|
+| P1-01 | serial-wrap transport | pending | 尚未實作 |
+| P1-02 | adb transport | pending | 尚未實作 |
+| P1-03 | ssh transport | pending | 尚未實作 |
+| P1-04 | network utils（ping/arping/iperf） | pending | 尚未實作 |
 
-## Phase 3: 核心引擎
+## Phase 2：Environment Management
 
-| ID | 項目 | 狀態 |
-|----|------|------|
-| test-runner | 測試執行迴圈 | pending |
-| monitor | 系統監控 | pending |
-| reporter | 報告產生器 | pending |
+| ID | 項目 | 狀態 | 註記 |
+|---|---|---|---|
+| P2-01 | topology module | pending | `src/testpilot/env/` 目前僅 `__init__.py` |
+| P2-02 | provisioner module | pending | 尚未實作 |
+| P2-03 | validator module | pending | 尚未實作 |
 
-## Phase 4: Wifi_LLAPI Plugin
+## Phase 3：Core Engine
 
-| ID | 項目 | 狀態 |
-|----|------|------|
-| wifi-plugin | 完整實作 | pending |
-| case-getRadioStats | getRadioStats() YAML | done |
-| case-kickStation | kickStation() YAML | done |
+| ID | 項目 | 狀態 | 註記 |
+|---|---|---|---|
+| P3-01 | test-runner loop | in_progress | orchestrator 已有 `wifi_llapi` 路徑 |
+| P3-02 | monitor subsystem | pending | 尚未實作 |
+| P3-03 | reporter（MD/JSON） | in_progress | 已有 Wifi_LLAPI Excel reporter；MD/JSON 尚未完成 |
+| P3-04 | verdict merge policy（plugin + agent） | pending | 規格已定，runtime 尚未落地 |
+| P3-05 | post-run remediation loop | pending | 策略已定，runtime 尚未落地 |
 
-## Phase 5: CLI 與整合
+## Phase 4：Wifi_LLAPI Plugin
 
-| ID | 項目 | 狀態 |
-|----|------|------|
-| cli-full | 完整 CLI 子命令 | pending |
-| orchestrator-full | 完整編排器 | pending |
-| integration-test | 端對端整合測試 | pending |
+| ID | 項目 | 狀態 | 註記 |
+|---|---|---|---|
+| P4-01 | wifi-plugin full implementation | pending | `setup/verify/execute/evaluate` 仍 stub |
+| P4-02 | case-getRadioStats | done | case 已存在 |
+| P4-03 | case-kickStation | done | case 已存在 |
+| P4-04 | 418 case source 對齊治理 | in_progress | 已有 alignment gate，需持續維護 |
+| P4-05 | Wifi_LLAPI Excel report pipeline | done | template + run report 已落地 |
+
+## Phase 5：CLI & Integration
+
+| ID | 項目 | 狀態 | 註記 |
+|---|---|---|---|
+| P5-01 | cli-full | in_progress | 已有 `run/list` + `wifi-llapi build-template-report` |
+| P5-02 | orchestrator-full | in_progress | `wifi_llapi` 專屬流程已整合；其他 plugin 仍 skeleton |
+| P5-03 | integration tests（mock transport） | pending | 尚未補齊 |
+| P5-04 | plugin agent-config schema/runtime | in_progress | `wifi_llapi` 已有 `agent-config.yaml`；runtime selector 未落地 |
+| P5-05 | agent selection trace | pending | fallback trace 尚未實作 |

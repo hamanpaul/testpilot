@@ -1,27 +1,26 @@
-# Phase 0: 專案骨架
+# Phase 0：Scaffold
 
-## 目標
+## Scope
 
-建立 TestPilot 最小可執行骨架，包含：
-- 完整目錄結構與 pyproject.toml
-- PluginBase ABC + PluginLoader 動態載入
-- YAML case schema 驗證
-- Testbed config 解析與變數替換
-- Transport ABC + StubTransport
-- 最小 CLI（`testpilot --version`、`list-plugins`、`list-cases`）
-- 最小 Orchestrator（載入 plugin、列出 cases）
-- wifi_llapi plugin stub + 2 條範例 case YAML
-- docs/ 文件
+建立最小可執行框架：目錄、CLI、plugin base、schema、stub transport、初始文件。
 
-## 驗收標準
+## Current Status
 
-1. `testpilot --version` 正常輸出
-2. `testpilot list-plugins` 列出 wifi_llapi
-3. `testpilot list-cases wifi_llapi` 列出 getRadioStats、kickStation
-4. `pytest` 基礎測試通過
-5. push 至 GitHub
+1. 主要 scaffold 皆已存在。
+2. `wifi_llapi` plugin 已可被 loader 發現。
+3. 基礎測試與文件已可用。
 
-## 交付物
+## Gaps
 
-- `~/testpilot/` 完整專案
-- GitHub repo: `testpilot`
+1. GitHub push 未標記完成。
+2. 仍需持續維護文件與現況一致性。
+
+## Acceptance Criteria
+
+1. `python -m testpilot.cli list-plugins` 可列出 `wifi_llapi`。
+2. `python -m testpilot.cli list-cases wifi_llapi` 可列出 case。
+3. `docs/todos.md` 的 Phase 0 項目狀態可追蹤。
+
+## Related Todo IDs
+
+- `P0-01` ~ `P0-10`

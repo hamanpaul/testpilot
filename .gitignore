@@ -19,6 +19,8 @@ build/
 # Test reports (auto-generated)
 reports/*.md
 reports/*.json
+plugins/wifi_llapi/reports/*.xlsx
+plugins/wifi_llapi/reports/alignment/*.json
 
 # OS
 .DS_Store

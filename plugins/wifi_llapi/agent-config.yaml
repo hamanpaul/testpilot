@@ -1,0 +1,16 @@
+version: 1
+default_mode: headless
+selection_policy:
+  fallback: automatic
+  on_unavailable: next_priority
+runners:
+  - priority: 1
+    cli_agent: codex
+    model: gpt-5.3-codex
+    effort: high
+    enabled: true
+  - priority: 2
+    cli_agent: copilot
+    model: sonnet-4.6
+    effort: high
+    enabled: true

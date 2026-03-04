@@ -2,11 +2,11 @@ id: wifi-llapi-r402-bytessent-associateddevice-affiliatedsta
 name: BytesSent — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.​{i}.
 version: '1.0'
 source:
-  report: 6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx
+  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
   sheet: Wifi_LLAPI
-  row: 402
-  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.​{i}.
-  api: BytesSent
+  row: 579
+  object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.{i}."
+  api: "BytesSent"
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -18,6 +18,38 @@ topology:
     DUT:
       role: ap
       transport: serial
+
+test_environment: |
+  Topology:
+  - DUT: COM0 (B0, AP role)
+  - STA: COM1 (A0, STA role, STA-required cases only)
+  Transport:
+  - serialwrap attach COM0 / COM1
+  Band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4
+  - 6G: DUT wl1 / AP3 / SSID.6
+  - 2.4G: DUT wl2 / AP5 / SSID.8
+  Pre-check:
+  - cat /proc/socinfo | grep Revision | cut -d: -f2
+  - iw dev
+  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
+
+setup_steps: |
+  1) DUT baseline on COM0:
+     ubus-cli WiFi.AccessPoint.1.Enable=1
+     ubus-cli WiFi.AccessPoint.3.Enable=1
+     ubus-cli WiFi.AccessPoint.5.Enable=1
+  2) Apply case command context on DUT:
+     ubus-cli WiFi.AccessPoint.{i}.​AssociatedDevice.{i}.AffiliatedSTA.​{i}.BytesSent
+  3) For pure query cases, keep configuration unchanged and only collect readback evidence.
+
+test_procedure: |
+  1) Execute case command on DUT:
+     ubus-cli WiFi.AccessPoint.{i}.​AssociatedDevice.{i}.AffiliatedSTA.​{i}.BytesSent
+  2) LLAPI readback on DUT:
+     ubus-cli "WiFi.AccessPoint.*.AssociatedDevice.*.AffiliatedSTA.*.BytesSent?"
+  3) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
+
 steps:
 - id: step1
   action: exec

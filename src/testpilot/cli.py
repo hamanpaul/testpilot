@@ -12,6 +12,7 @@ from rich.table import Table
 
 from testpilot import __version__
 from testpilot.core.orchestrator import Orchestrator
+from testpilot.reporting.wifi_llapi_excel import ensure_template_report
 
 console = Console()
 
@@ -91,12 +92,90 @@ def list_cases(ctx: click.Context, plugin_name: str) -> None:
 @main.command("run")
 @click.argument("plugin_name")
 @click.option("--case", "case_ids", multiple=True, help="Specific case IDs to run.")
+@click.option(
+    "--dut-fw-ver",
+    default="DUT-FW-VER",
+    show_default=True,
+    help="DUT firmware version used in report filename.",
+)
+@click.option(
+    "--report-source-xlsx",
+    type=click.Path(exists=True, dir_okay=False),
+    default=None,
+    help="Override source Excel path for wifi_llapi report/template.",
+)
 @click.pass_context
-def run_tests(ctx: click.Context, plugin_name: str, case_ids: tuple[str, ...]) -> None:
+def run_tests(
+    ctx: click.Context,
+    plugin_name: str,
+    case_ids: tuple[str, ...],
+    dut_fw_ver: str,
+    report_source_xlsx: str | None,
+) -> None:
     """Run tests for a plugin (skeleton)."""
     orch: Orchestrator = ctx.obj["orchestrator"]
-    result = orch.run(plugin_name, list(case_ids) if case_ids else None)
+    result = orch.run(
+        plugin_name,
+        list(case_ids) if case_ids else None,
+        dut_fw_ver=dut_fw_ver,
+        report_source_xlsx=report_source_xlsx,
+    )
     console.print(result)
+
+
+@main.group("wifi-llapi")
+def wifi_llapi_group() -> None:
+    """wifi_llapi plugin helper commands."""
+
+
+@wifi_llapi_group.command("build-template-report")
+@click.option(
+    "--source-xlsx",
+    required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help="Source xlsx file containing Wifi_LLAPI sheet.",
+)
+@click.option(
+    "--sheet",
+    default="Wifi_LLAPI",
+    show_default=True,
+    help="Sheet name to extract as report template.",
+)
+@click.option(
+    "--out",
+    "out_template",
+    default=None,
+    type=click.Path(dir_okay=False),
+    help="Output template path. Defaults to plugins/wifi_llapi/reports/templates/wifi_llapi_template.xlsx",
+)
+@click.pass_context
+def build_template_report(
+    ctx: click.Context,
+    source_xlsx: str,
+    sheet: str,
+    out_template: str | None,
+) -> None:
+    """Extract Wifi_LLAPI sheet and clear result/test command columns for template."""
+    root: Path = ctx.obj["root"]
+    default_out = root / "plugins" / "wifi_llapi" / "reports" / "templates" / "wifi_llapi_template.xlsx"
+    out_path = Path(out_template) if out_template else default_out
+    manifest_path = out_path.with_suffix(".manifest.json")
+
+    result = ensure_template_report(
+        source_xlsx=source_xlsx,
+        template_path=out_path,
+        manifest_path=manifest_path,
+        sheet_name=sheet,
+    )
+    console.print(
+        {
+            "status": "ok",
+            "template_path": str(result.template_path),
+            "sheet": result.sheet_name,
+            "total_case_rows": result.total_case_rows,
+            "manifest": str(manifest_path),
+        }
+    )
 
 
 if __name__ == "__main__":

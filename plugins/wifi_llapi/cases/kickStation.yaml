@@ -44,6 +44,49 @@ env_verify:
     to: DUT
     expect: pass
 
+test_environment: |
+  Topology:
+  - DUT: COM0 (B0, AP role)
+  - STA: COM1 (A0, STA role, STA-required cases only)
+  Transport:
+  - serialwrap attach COM0 / COM1
+  Band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4
+  - 6G: DUT wl1 / AP3 / SSID.6
+  - 2.4G: DUT wl2 / AP5 / SSID.8
+  Pre-check:
+  - cat /proc/socinfo | grep Revision | cut -d: -f2
+  - iw dev
+  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
+
+setup_steps: |
+  1) DUT baseline on COM0:
+     ubus-cli WiFi.AccessPoint.1.Enable=1
+     ubus-cli WiFi.AccessPoint.3.Enable=1
+     ubus-cli WiFi.AccessPoint.5.Enable=1
+  2) STA preparation on COM1:
+     iw dev wl0 set type managed; ifconfig wl0 up
+     iw dev wl1 set type managed; ifconfig wl1 up
+     iw dev wl2 set type managed; ifconfig wl2 up
+  3) 6G dependency before wl1 association:
+     ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled="WPA3-Personal"
+     ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase="B0StaTest1234"
+     ubus-cli WiFi.AccessPoint.3.Security.MFPConfig="Required"
+     ubus-cli WiFi.AccessPoint.3.MultiAPType="FronthaulBSS"
+
+test_procedure: |
+  1) Execute case command on DUT:
+     <fill hlapi_command>
+  2) LLAPI readback on DUT:
+     ubus-cli "WiFi.AccessPoint.*.kickStation()"
+  3) For stats/AssociatedDevice cases, generate traffic (ping/iperf) before re-read.
+  4) STA link validation:
+     iw dev wl0 link
+     iw dev wl1 link
+     wpa_cli -i wl1 status
+     iw dev wl2 link
+  5) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
+
 steps:
   - id: verify_connected
     action: exec
@@ -82,5 +125,11 @@ pass_criteria:
     operator: "=="
     value: "0"
     description: "kick 後 STA 應為未認證狀態"
+
+verification_command: |
+  ubus-cli "WiFi.AccessPoint.*.?" | sed -n "1,200p"
+  ubus-cli "WiFi.AccessPoint.*.kickStation?" 2>/dev/null || true
+  wl -i wl0 bss 2>/dev/null || true; wl -i wl1 bss 2>/dev/null || true; wl -i wl2 bss 2>/dev/null || true
+  wl -i wl0 assoclist; wl -i wl1 assoclist; wl -i wl2 assoclist
 
 bands: ["5g", "6g", "2.4g"]
