@@ -26,17 +26,11 @@ DEFAULT_TEMPLATE_NAME = "wifi_llapi_template.xlsx"
 DEFAULT_CLEAR_COLUMNS = (
     "G",   # Test steps
     "H",   # Driver-level verified command output
-    "R",   # Tester (BCM)
-    "S",   # BCM 5g result
-    "T",   # BCM 6g result
-    "U",   # BCM 2.4g result
-    "V",   # BCM comment
-    "W",   # BCM issue type/internal notes
-    "X",   # ARC 5g result
-    "Y",   # ARC 6g result
-    "Z",   # ARC 2.4g result
-    "AA",  # ARC tester
-    "AB",  # ARC comment
+    "I",   # ARC 5g result
+    "J",   # ARC 6g result
+    "K",   # ARC 2.4g result
+    "L",   # ARC tester
+    "M",   # ARC comment
 )
 DATA_START_ROW = 4
 EMPTY_STREAK_STOP = 200
@@ -145,6 +139,30 @@ def _to_col_idx(col: str | int) -> int:
     return column_index_from_string(col)
 
 
+def _set_cell_value_safe(ws, row: int, col: str, value: str) -> None:
+    """Set worksheet cell value with merged-cell fallback.
+
+    Some source rows in Wifi_LLAPI map to vertically merged result cells.
+    openpyxl raises on assigning to non-anchor merged cells, so we resolve
+    to the merge anchor in the same column.
+    """
+    col_idx = _to_col_idx(col)
+    cell = ws.cell(row=row, column=col_idx)
+    if not isinstance(cell, MergedCell):
+        cell.value = value
+        return
+
+    coordinate = cell.coordinate
+    for merged in ws.merged_cells.ranges:
+        if coordinate not in merged:
+            continue
+        if merged.min_col != col_idx:
+            # Horizontal merge (cross-column) cannot keep per-column semantics.
+            return
+        ws.cell(row=merged.min_row, column=col_idx).value = value
+        return
+
+
 def build_template_from_source(
     source_xlsx: Path | str,
     out_template_xlsx: Path | str,
@@ -240,13 +258,13 @@ def fill_case_results(
         if item.source_row <= 0:
             continue
         row = item.source_row
-        ws[f"G{row}"] = item.executed_test_command
-        ws[f"H{row}"] = item.command_output
-        ws[f"R{row}"] = item.tester
-        ws[f"S{row}"] = item.result_5g
-        ws[f"T{row}"] = item.result_6g
-        ws[f"U{row}"] = item.result_24g
-        ws[f"V{row}"] = item.comment
+        _set_cell_value_safe(ws, row, "G", item.executed_test_command)
+        _set_cell_value_safe(ws, row, "H", item.command_output)
+        _set_cell_value_safe(ws, row, "I", item.result_5g)
+        _set_cell_value_safe(ws, row, "J", item.result_6g)
+        _set_cell_value_safe(ws, row, "K", item.result_24g)
+        _set_cell_value_safe(ws, row, "L", item.tester)
+        _set_cell_value_safe(ws, row, "M", item.comment)
 
     wb.save(path)
     wb.close()

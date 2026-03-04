@@ -52,7 +52,7 @@
   - `ensure_template_report`
 - Default sheet: `Wifi_LLAPI`
 - Default clear columns:
-  - `G`, `H`, `R`, `S`, `T`, `U`, `V`, `W`, `X`, `Y`, `Z`, `AA`, `AB`
+  - `G`, `H`, `I`, `J`, `K`, `L`, `M`
 
 ### Orchestrator: `src/testpilot/core/orchestrator.py`
 - Add `wifi_llapi` report source default:
@@ -100,9 +100,9 @@
    - Fill row via `source.row` into columns:
      - `G` test command
      - `H` command output
-     - `S`/`T`/`U` result (5g/6g/2.4g)
-     - `V` comment
-     - `R` tester (`testpilot`)
+     - `I`/`J`/`K` result (5g/6g/2.4g)
+     - `L` tester (`testpilot`)
+     - `M` comment
 5. Finalize `_meta`.
 
 ## Template Generation Rules

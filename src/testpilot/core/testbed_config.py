@@ -14,6 +14,7 @@ log = logging.getLogger(__name__)
 
 class TestbedConfig:
     """解析 testbed.yaml，提供裝置設定與變數替換。"""
+    __test__ = False
 
     def __init__(self, config_path: Path | str) -> None:
         self.path = Path(config_path)

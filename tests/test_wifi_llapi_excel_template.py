@@ -23,28 +23,31 @@ def _create_source_xlsx(path: Path) -> None:
     ws["C2"] = "Parameter Name"
     ws["G2"] = "Test steps"
     ws["H2"] = "Command Output"
-    ws["S2"] = "BCM 5g result"
-    ws["T2"] = "BCM 6g result"
-    ws["U2"] = "BCM 2.4g result"
-    ws["V2"] = "BCM Comment"
+    ws["I2"] = "ARC 4.0.3 Test Result\nWiFi 5g"
+    ws["J2"] = "ARC 4.0.3 Test Result\nWiFi 6g"
+    ws["K2"] = "ARC 4.0.3 Test Result\nWiFi 2.4g"
+    ws["L2"] = "Tester"
+    ws["M2"] = "ARC Comment"
 
     ws["A4"] = "WiFi.AccessPoint.{i}."
     ws["C4"] = "kickStation()"
     ws["G4"] = "old-step"
     ws["H4"] = "old-output"
-    ws["S4"] = "Pass"
-    ws["T4"] = "Pass"
-    ws["U4"] = "Pass"
-    ws["V4"] = "old-comment"
+    ws["I4"] = "Pass"
+    ws["J4"] = "Pass"
+    ws["K4"] = "Pass"
+    ws["L4"] = "old-tester"
+    ws["M4"] = "old-comment"
 
     ws["A5"] = "WiFi.Radio.{i}."
     ws["C5"] = "scan()"
     ws["G5"] = "old-step2"
     ws["H5"] = "old-output2"
-    ws["S5"] = "Fail"
-    ws["T5"] = "Fail"
-    ws["U5"] = "Fail"
-    ws["V5"] = "old-comment2"
+    ws["I5"] = "Fail"
+    ws["J5"] = "Fail"
+    ws["K5"] = "Fail"
+    ws["L5"] = "old-tester2"
+    ws["M5"] = "old-comment2"
 
     wb.save(path)
     wb.close()
@@ -64,7 +67,7 @@ def test_build_template_from_source(tmp_path: Path):
     ws = wb["Wifi_LLAPI"]
     assert ws["C4"].value == "kickStation()"
     assert ws["C5"].value == "scan()"
-    for cell in ("G4", "H4", "S4", "T4", "U4", "V4", "G5", "H5", "S5", "T5", "U5", "V5"):
+    for cell in ("G4", "H4", "I4", "J4", "K4", "L4", "M4", "G5", "H5", "I5", "J5", "K5", "L5", "M5"):
         assert ws[cell].value is None
     wb.close()
 
@@ -97,10 +100,60 @@ def test_fill_case_results(tmp_path: Path):
     ws = wb["Wifi_LLAPI"]
     assert ws["G4"].value == "ubus-cli ...kickStation..."
     assert ws["H4"].value == "assoclist empty"
-    assert ws["S4"].value == "Pass"
-    assert ws["T4"].value == "Pass"
-    assert ws["U4"].value == "Pass"
-    assert ws["V4"].value == "ok"
+    assert ws["I4"].value == "Pass"
+    assert ws["J4"].value == "Pass"
+    assert ws["K4"].value == "Pass"
+    assert ws["L4"].value == "testpilot"
+    assert ws["M4"].value == "ok"
+    wb.close()
+
+
+def test_fill_case_results_with_merged_row(tmp_path: Path):
+    source = tmp_path / "source.xlsx"
+    template = tmp_path / "wifi_llapi_template.xlsx"
+    report = tmp_path / "20260304_BGW720-B0-403_wifi_LLAPI.xlsx"
+    _create_source_xlsx(source)
+
+    wb = load_workbook(source)
+    ws = wb["Wifi_LLAPI"]
+    ws.merge_cells("G4:G5")
+    ws.merge_cells("H4:H5")
+    ws.merge_cells("I4:I5")
+    ws.merge_cells("J4:J5")
+    ws.merge_cells("K4:K5")
+    ws.merge_cells("L4:L5")
+    ws.merge_cells("M4:M5")
+    wb.save(source)
+    wb.close()
+
+    build_template_from_source(source, template)
+    create_run_report_from_template(template, report)
+
+    fill_case_results(
+        report,
+        [
+            WifiLlapiCaseResult(
+                case_id="wifi-llapi-r007-merged",
+                source_row=5,
+                executed_test_command="cmd-from-merged-row",
+                command_output="out-from-merged-row",
+                result_5g="Fail",
+                result_6g="N/A",
+                result_24g="Pass",
+                comment="merged-ok",
+            )
+        ],
+    )
+
+    wb = load_workbook(report)
+    ws = wb["Wifi_LLAPI"]
+    assert ws["G4"].value == "cmd-from-merged-row"
+    assert ws["H4"].value == "out-from-merged-row"
+    assert ws["I4"].value == "Fail"
+    assert ws["J4"].value == "N/A"
+    assert ws["K4"].value == "Pass"
+    assert ws["L4"].value == "testpilot"
+    assert ws["M4"].value == "merged-ok"
     wb.close()
 
 
