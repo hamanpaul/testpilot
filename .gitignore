@@ -21,6 +21,8 @@ reports/*.md
 reports/*.json
 plugins/wifi_llapi/reports/*.xlsx
 plugins/wifi_llapi/reports/alignment/*.json
+plugins/wifi_llapi/reports/templates/*.xlsx
+plugins/wifi_llapi/reports/templates/*.json
 
 # OS
 .DS_Store

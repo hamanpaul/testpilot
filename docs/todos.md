@@ -58,7 +58,7 @@
 | P4-01 | wifi-plugin full implementation | pending | `setup/verify/execute/evaluate` 仍 stub |
 | P4-02 | case-getRadioStats | done | case 已存在 |
 | P4-03 | case-kickStation | done | case 已存在 |
-| P4-04 | 418 case source 對齊治理 | in_progress | 已有 alignment gate，需持續維護 |
+| P4-04 | 417 case source 對齊治理 | in_progress | 已有 alignment gate，需持續維護；另有 2 條 legacy non-row-indexed case（getRadioStats/kickStation） |
 | P4-05 | Wifi_LLAPI Excel report pipeline | done | template + run report 已落地 |
 
 ## Phase 5：CLI & Integration

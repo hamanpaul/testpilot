@@ -1,7 +1,0 @@
-# 全域預設值
-defaults:
-  timeout: 30           # 指令預設逾時（秒）
-  retry: 0              # 失敗重試次數
-  monitor_interval: 10  # 系統監控間隔（秒）
-  report_format: "markdown"  # markdown | json | both
-  bands: ["5g", "6g", "2.4g"]

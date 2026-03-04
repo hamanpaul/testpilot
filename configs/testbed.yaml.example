@@ -1,0 +1,34 @@
+# Testbed configuration example
+# Copy to configs/testbed.yaml and adjust for your lab environment:
+#   cp configs/testbed.yaml.example configs/testbed.yaml
+#
+# configs/testbed.yaml is git-ignored to prevent committing sensitive data.
+
+testbed:
+  name: lab-bench-1
+
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      serial_port: /dev/ttyUSB0
+      baudrate: 115200
+
+    STA:
+      role: sta
+      transport: adb
+      adb_serial: "XXXXXXXX"
+
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+      host: 192.168.1.100
+      user: testpilot
+
+  variables:
+    SSID_5G: TestPilot_5G
+    KEY_5G: testpilot5g
+    SSID_6G: TestPilot_6G
+    KEY_6G: testpilot6g
+    SSID_24G: TestPilot_24G
+    KEY_24G: testpilot24g

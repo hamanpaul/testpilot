@@ -79,6 +79,31 @@ pass_criteria:
 
 變數可用 `{{VAR}}`，由 `testbed.variables` 替換。
 
+### wifi_llapi 擴充欄位
+
+除必要欄位外，`wifi_llapi` plugin 的 case YAML 使用以下擴充欄位：
+
+| 欄位 | 用途 | 範例 |
+|------|------|------|
+| `source.report` | 來源 Excel 檔案名稱 | `0302-AT&T_LLAPI_Test_Report_20260107.xlsx` |
+| `source.sheet` | 來源工作表名稱 | `Wifi_LLAPI` |
+| `source.row` | 對應 Excel 行號（alignment gate 依據） | `6` |
+| `source.object` | TR-181 物件路徑 | `WiFi.AccessPoint.{i}.` |
+| `source.api` | API 名稱 | `kickStation()` |
+| `version` | case 版本 | `1.0` |
+| `platform.prplos` | prplOS 版本 | `4.0.3` |
+| `platform.bdk` | BDK 版本 | `6.3.1` |
+| `hlapi_command` | HLAPI 指令描述 | `ubus-cli "WiFi.AccessPoint.{i}.kickStation(...)"` |
+| `llapi_support` | 支援度標記 | `Support` |
+| `implemented_by` | 實作方識別 | `pWHM` |
+| `bands` | 適用頻段（用於 band-level 結果拆分） | `["5g", "6g"]` |
+| `env_verify` | 環境驗證步驟 | `[{action: ping, from: STA, to: DUT}]` |
+| `test_environment` | 測試環境描述（人類可讀） | multiline string |
+| `setup_steps` | 環境佈建步驟（人類可讀） | multiline string |
+| `topology.links` | 裝置間連線描述 | `[{from: STA, to: DUT, band: 5g}]` |
+
+其他 plugin 可自行定義擴充欄位，不需遵循此表。
+
 ## 3. 判讀責任契約（重要）
 
 1. `plugin.evaluate()`：主判預期內條件（pass_criteria）。
@@ -99,6 +124,9 @@ pass_criteria:
 - `plugins/<plugin>/agent-config.yaml`
 
 格式：
+
+> **注意：** 以下 `execution` block 為規劃中格式，runtime 尚未實作。
+> 目前 `wifi_llapi/agent-config.yaml` 僅包含 `version`、`default_mode`、`selection_policy`、`runners`。
 
 ```yaml
 version: 1
@@ -149,5 +177,6 @@ runners:
 | serial | UART/serialwrap 控 DUT | `transport: serial` |
 | adb | 控制 Android STA | `transport: adb` |
 | ssh | 控制 EndpointPC/遠端設備 | `transport: ssh` |
+| network | ping/arping/iperf 網路層驗證 | `transport: network` |
 
 參考：`plugins/wifi_llapi/cases/_template.yaml`

@@ -32,6 +32,13 @@ cd ~/prj_pri/testpilot
 uv venv && source .venv/bin/activate
 uv pip install -e ".[dev]"
 
+# 設定 testbed（首次需要）
+cp configs/testbed.yaml.example configs/testbed.yaml
+# 依實際環境修改 configs/testbed.yaml
+
+# 驗證安裝
+python -m testpilot.cli --version
+
 # 探索
 python -m testpilot.cli list-plugins
 python -m testpilot.cli list-cases wifi_llapi
@@ -82,6 +89,9 @@ testpilot/
 │       └── reports/
 ├── configs/
 ├── docs/
+├── scripts/
+│   ├── gen_cases.py
+│   └── wifi_llapi_build_template_report.py
 └── tests/
 ```
 

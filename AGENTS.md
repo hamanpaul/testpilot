@@ -18,14 +18,16 @@ src/testpilot/
   env/        # env modules (roadmap)
   schema/     # YAML case schema validation
 plugins/      # each plugin in its own directory
-configs/      # defaults and testbed config
+configs/      # testbed config (see testbed.yaml.example)
 docs/         # plan, todos, phase docs
+scripts/      # utility scripts (gen_cases, build_template_report)
 ```
 
 ## Commands
 
 ```bash
 uv pip install -e ".[dev]"
+cp configs/testbed.yaml.example configs/testbed.yaml   # 首次設定
 python -m testpilot.cli --version
 python -m testpilot.cli list-plugins
 python -m testpilot.cli list-cases wifi_llapi

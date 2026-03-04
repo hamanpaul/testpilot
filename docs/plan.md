@@ -18,7 +18,7 @@ TestPilot 是一套 plugin-based 嵌入式測試框架，核心目標是：
 
 1. CLI 基本入口與子命令：`list-plugins`、`list-cases`、`run`、`wifi-llapi build-template-report`。
 2. Orchestrator 可執行 `wifi_llapi` 專屬報表流程（template 生成、alignment gate、run report 輸出）。
-3. `wifi_llapi` case 已大量整理並對齊 Excel `Wifi_LLAPI` row/source。
+3. `wifi_llapi` case 已大量整理並對齊 Excel `Wifi_LLAPI` row/source（417 可載入 cases，含 2 條 legacy non-row-indexed）。
 4. Excel 報告模組已獨立於 `src/testpilot/reporting/wifi_llapi_excel.py`。
 5. 基礎測試包含 schema/loader 與 wifi llapi excel template 測試。
 
@@ -155,7 +155,7 @@ src/testpilot/
   transport/
     base.py
   env/
-    __init__.py
+    __init__.py           # (empty — roadmap)
 
 plugins/wifi_llapi/
   plugin.py
