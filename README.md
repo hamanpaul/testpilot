@@ -4,28 +4,35 @@ Plugin-based test automation framework for embedded device verification.
 
 ## 概述
 
-TestPilot 採用 `Orchestrator -> Plugin -> YAML Cases` 架構，目標是支援 prplOS/OpenWrt 裝置的可擴充測試流程。
+TestPilot 目前以 `wifi_llapi` 為主要落地路徑，並朝第三次重構方向演進為：
+
+- **Deterministic verdict kernel**：`Orchestrator -> Plugin -> YAML Cases -> Transport -> Structured Evidence -> Report Projection`
+- **Copilot SDK control plane**：`sessions / resume / hooks / custom agents / skills / selective MCP`
+
+這個方向的核心原則是：**Copilot SDK 負責 control plane，不負責最終 verdict**。
 
 ## 目前能力（Current）
 
-1. 可列出 plugin/cases，並執行 `wifi_llapi` 的報告導向流程。
+1. 可列出 plugin / cases，並執行 `wifi_llapi` 的報告導向流程。
 2. 可從來源 Excel 抽取 `Wifi_LLAPI` 樣板並產出測試報告。
 3. `wifi_llapi` 已有大量 case YAML 與 row/source 對齊治理。
-4. `wifi_llapi` 已支援 per-case agent dispatcher（sequential）與 per-case trace 輸出。
+4. `wifi_llapi` 已支援 per-case dispatcher（sequential）與 per-case trace 輸出。
 5. 已支援 retry-aware timeout（依 attempt 調整）與 case fail-and-continue。
-6. `wifi_llapi` plugin `setup_env/verify_env/execute_step/evaluate` 已完成 runtime 實作，可接 transport 執行。
-7. transport 已具備 `serialwrap/adb/ssh/network`，並完成 row-indexed 官方 415 cases 實機全量 run 驗證。
+6. `wifi_llapi` plugin `setup_env / verify_env / execute_step / evaluate` 已完成 runtime 實作，可接 transport 執行。
+7. transport 已具備 `serialwrap / adb / ssh / network`，並完成 row-indexed 官方 415 cases 實機全量 run 驗證。
 8. 報告檔名已帶 `run_id`，避免覆蓋既有 run；xlsx H 欄會自動清理 serialwrap marker/prompt。
-9. 已提供 `wifi-llapi audit-yaml-commands` dry-run 工具，稽核 YAML 中 `&&`/`;` 串接指令。
+9. 已提供 `wifi-llapi audit-yaml-commands` dry-run 工具，稽核 YAML 中 `&&` / `;` 串接指令。
+10. 第三次重構的 Copilot SDK 深度研究已同步到 `docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`。
 
-## Roadmap（Target）
+## 第三次重構方向（Target）
 
-1. 真實 transport（serial/adb/ssh/network）。
-2. env provision/validate 與 monitor。
-3. plugin evaluate + agent audit 合併判讀。
-4. post-run remediation（測後修正/重測）。
+1. 以 Copilot SDK 作為正式 agent runtime / control plane。
+2. 保留 deterministic kernel，避免把 YAML 直接變成主要 prompt。
+3. 將 advisory audit、remediation planning、run summary 交給 Copilot agents。
+4. 保持 `xlsx = Pass/Fail only`、`md/json = richer diagnostics`。
+5. 不再以 Codex CLI 相容性為目標，不引入 workaround code。
 
-詳見：`docs/plan.md` 與 `docs/todos.md`。
+詳見：`docs/plan.md`、`docs/todos.md`、`docs/spec.md`、`docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`。
 
 ## Usage
 
@@ -42,10 +49,10 @@ python -m testpilot.cli --version
 
 ```bash
 cp configs/testbed.yaml.example configs/testbed.yaml
-# 依實際環境修改 configs/testbed.yaml（DUT/STA/Endpoint）
+# 依實際環境修改 configs/testbed.yaml（DUT / STA / Endpoint）
 ```
 
-`wifi_llapi` 常見使用 `DUT: transport: serial`，可用 `serial_port`/`selector`/`alias`/`session_id` 對應 serialwrap session。
+`wifi_llapi` 常見使用 `DUT: transport: serial`，可用 `serial_port` / `selector` / `alias` / `session_id` 對應 serialwrap session。
 
 ### 3) 驗證環境與案例列表
 
@@ -100,32 +107,39 @@ python -m testpilot.cli wifi-llapi audit-yaml-commands \
 會掃描 `command`、`verification_command`、`hlapi_command`、`setup_steps`、`sta_env_setup`，
 找出未被引號包住的 `&&` / `;` 串接，輸出建議拆分結果，不會直接覆寫 case YAML。
 
-### 7) 常見錯誤
+### 8) 常見錯誤
 
 若出現 `ModuleNotFoundError: testpilot`，先確認已執行 `uv pip install -e ".[dev]"`。  
 臨時排查可改用：`PYTHONPATH=src python -m testpilot.cli ...`
 
 ## 報告策略（雙軌）
 
-1. Agent 分析用：Markdown/JSON（規劃中）。
-2. 對外交付用：Excel（`Wifi_LLAPI` 樣式，已落地）。
+1. 對外交付：`xlsx`（`Pass` / `Fail` only）
+2. 內部診斷：`md/json`（規劃中，承載 detailed status / root cause / suggestion / remediation history）
 
-## Plugin Agent/Model 配置
+## 第三次重構目標 Agent / Model Policy
 
-每個 plugin 可於自身目錄放置 `agent-config.yaml`，用於宣告 CLI agent/model 優先序。
+> 此節描述第三次重構的 target policy，而不是舊的 Codex CLI 相容策略。
 
-`wifi_llapi` 目前規格：
-
-1. 第一優先：`codex + gpt-5.3-codex + high`
+1. 第一優先：`copilot + gpt-5.4 + high`
 2. 第二優先：`copilot + sonnet-4.6 + high`
-3. 第一優先不可用時，自動降級第二優先（需留 trace）
-4. 執行模式：`per_case + sequential(max_concurrency=1)`（已實作）
-5. 失敗策略：`retry_then_fail_and_continue`，timeout 會隨 retry attempt 調整（已實作）
+3. 第三優先：`copilot + gpt-5-mini + high`
+4. 執行模式：`per_case + sequential(max_concurrency=1)`
+5. 失敗策略：`retry_then_fail_and_continue`，timeout 會隨 retry attempt 調整
+6. 第一優先不可用時可自動降級，但必須保留 `selection trace`
+7. 不再維持 Codex CLI workaround layer
 
 ## 專案結構
 
 ```text
 testpilot/
+├── README.md
+├── AGENTS.md
+├── docs/
+│   ├── plan.md
+│   ├── spec.md
+│   ├── todos.md
+│   └── copilot-sdk-hooks-skills-session-resume-persistenc.md
 ├── src/testpilot/
 │   ├── cli.py
 │   ├── core/
@@ -140,18 +154,16 @@ testpilot/
 │       ├── cases/
 │       └── reports/
 ├── configs/
-├── docs/
 ├── scripts/
-│   ├── gen_cases.py
-│   └── wifi_llapi_build_template_report.py
 └── tests/
 ```
 
-## 開發說明
+## 開發文件
 
-1. Plugin 開發指南：`docs/plugin-dev-guide.md`
+1. 系統規格：`docs/spec.md`
 2. 主計畫：`docs/plan.md`
 3. 待辦看板：`docs/todos.md`
+4. Copilot SDK 第三次重構研究：`docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`
 
 ## License
 

@@ -6,8 +6,8 @@
 2. 狀態僅允許：`pending`、`in_progress`、`done`、`blocked`。
 3. 非 Plan Mode：不得增減項次，不得調整 ID。
 4. 非 Plan Mode：僅可更新「狀態」與必要註記。
-5. Plan Mode：才允許增減項次、重編排序、調整 phase 結構。
-6. 本檔狀態需對齊 `docs/plan.md` 的「現況快照」與 phase 邊界。
+5. 已核准的重構計畫實作，需對齊 `docs/plan.md` 的 phase 與邊界。
+6. 本檔狀態需同步反映 `docs/plan.md` 的現況快照。
 
 ---
 
@@ -47,7 +47,7 @@
 
 | ID | 項目 | 狀態 | 註記 |
 |---|---|---|---|
-| P3-01 | test-runner loop | in_progress | wifi_llapi per-case dispatcher 已有；其餘 plugin 仍待 |
+| P3-01 | test-runner loop | in_progress | `wifi_llapi` per-case dispatcher 已有；其餘 plugin 仍待 |
 | P3-02 | monitor subsystem | pending | 尚未實作 |
 | P3-03 | reporter（MD/JSON） | in_progress | Excel reporter 已有；MD/JSON 尚未完成 |
 | P3-04 | verdict merge policy | pending | 規格已定，runtime 尚未落地 |
@@ -68,14 +68,14 @@
 | ID | 項目 | 狀態 | 註記 |
 |---|---|---|---|
 | P5-01 | cli-full | done | `run/list` + `wifi-llapi build-template-report` |
-| P5-02 | orchestrator-full | in_progress | wifi_llapi 流程已整合；其他 plugin 仍 skeleton |
+| P5-02 | orchestrator-full | in_progress | `wifi_llapi` 流程已整合；其他 plugin 仍 skeleton |
 | P5-03 | integration tests（mock transport） | done | 已補齊 realistic runtime 測試 |
 | P5-04 | plugin agent-config schema/runtime | done | `agent_runtime.py` |
-| P5-05 | agent selection trace | done | per-case selection/fallback trace |
-| P5-06 | case-agent dispatcher（sequential） | done | per-case dispatcher（max_concurrency=1） |
+| P5-05 | agent selection trace | done | per-case selection / fallback trace |
+| P5-06 | case-agent dispatcher（sequential） | done | `max_concurrency=1` |
 | P5-07 | retry-aware timeout policy | done | 遞增 timeout + 上限 |
 | P5-08 | per-case trace artifact writer | done | `reports/agent_trace/<run_id>/` |
-| P5-09 | integration tests for per-case agent | done | selector/fallback/retry/timeout/trace 全覆蓋 |
+| P5-09 | integration tests for per-case agent | done | selector / fallback / retry / timeout / trace 全覆蓋 |
 
 ---
 
@@ -106,22 +106,29 @@
 | R3-03 | Plugin 拆檔示範 | pending | H6 | executor / evaluator / environment / output_parser |
 | R3-04 | PluginBase 瘦身 | pending | H14 | Executable / EnvironmentManager / Evaluator protocol |
 
-## Phase R4：自然語言執行介面
+## Phase R4：Copilot SDK 控制平面
 
-| ID | 項目 | 狀態 | 對應隱患 | 說明 |
+| ID | 項目 | 狀態 | 對應隱患 / 需求 | 說明 |
 |---|---|---|---|---|
-| R4-01 | Copilot SDK 整合 | pending | 需求 | 取代 dummy agent runtime |
-| R4-02 | 自然語言 case 選擇 | pending | 需求 | 解析自然語言 → case id → 執行 |
-| R4-03 | 自然語言 plugin 建立 | pending | 需求 | agent 從 xlsx 產生 plugin |
-| R4-04 | Hook 確認測試完成 | pending | 需求 | callback 通知 agent |
+| R4-00 | 第三次重構研究 / 文件基線 | done | 需求 | Copilot SDK 深度研究完成，docs / README / AGENTS 已同步基線 |
+| R4-01 | Copilot SDK session foundation | pending | 需求 | create / resume / list / delete / workspace policy |
+| R4-02 | hook policy layer | pending | 需求 | `on_session_start` / `on_pre_tool_use` / `on_post_tool_use` / `on_error_occurred` |
+| R4-03 | custom agents roles | pending | 需求 | operator / case-auditor / remediation-planner / run-summarizer |
+| R4-04 | skills packages | pending | 需求 | diagnostics / remediation policy / report style |
+| R4-05 | advisory agent outputs | pending | 需求 | per-case audit / run summary / md 草稿生成 |
+| R4-06 | remediation planner loop | pending | 需求 | structured JSON plan + whitelist executor + rerun gate |
+| R4-07 | runtime policy alignment | pending | 需求 | `plugins/wifi_llapi/agent-config.yaml` 改為 copilot-only policy |
+| R4-08 | selective MCP integrations | pending | 需求 | 僅限 GitHub / KB / lab inventory 等非熱路徑工具 |
 
 ## Phase R5：可靠性與測試補強
 
 | ID | 項目 | 狀態 | 對應隱患 | 說明 |
 |---|---|---|---|---|
 | R5-01 | serialwrap RC 擷取修正 | done | H7 | `_extract_marker_output()` 改為 FIRST match |
-| R5-02 | Plugin loader 改良 | pending | H9 | 移除 sys.path 污染 |
+| R5-02 | Plugin loader 改良 | pending | H9 | 移除 `sys.path` 污染 |
 | R5-03 | openpyxl API 隔離 | pending | H10 | 封裝進 adapter |
-| R5-04 | Session 解析簡化 | pending | H12 | 減少 fallback 層數 |
+| R5-04 | Session 解析簡化 | pending | H12 | 減少 fallback 層數並嚴格裝置綁定 |
 | R5-05 | 測試覆蓋 >80% | pending | 品質 | 補邊界條件與 CLI integration |
-| R5-06 | MD/JSON report 實作 | pending | H13 | agent 分析用報告 |
+| R5-06 | MD/JSON report 實作 | pending | H13 | canonical result → md/json projector |
+| R5-07 | `execute_step` heuristic 收斂 | pending | 新增 | 減少自由文字 fallback，回到 schema / evidence 驅動 |
+| R5-08 | control-plane / verdict-plane 邊界測試 | pending | 新增 | 確保 Copilot 不直接決定最終 `Pass/Fail` |

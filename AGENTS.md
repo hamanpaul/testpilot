@@ -54,14 +54,16 @@ pytest
 
 ## Plugin Agent Config Policy
 
-1. plugin 若需宣告 CLI agent/model，使用 `plugins/<plugin>/agent-config.yaml`。
-2. `wifi_llapi` 優先序固定為：
-   - Priority 1: `codex + gpt-5.3-codex + high`
+1. plugin 若需宣告 agent/model policy，使用 `plugins/<plugin>/agent-config.yaml`。
+2. `wifi_llapi` 第三次重構目標優先序固定為：
+   - Priority 1: `copilot + gpt-5.4 + high`
    - Priority 2: `copilot + sonnet-4.6 + high`
-3. 第一優先不可用時允許自動降級，且需留 `selection trace`。
-4. `wifi_llapi` 執行策略以 case-level 為主（每個 test case 各自呼叫 agent）。
-5. `wifi_llapi` 排程策略預設為 `sequential`（`max_concurrency=1`）。
-6. case 失敗策略為 `retry_then_fail_and_continue`，且 timeout 需隨 retry attempt 調整。
+   - Priority 3: `copilot + gpt-5-mini + high`
+3. 不再以 `codex CLI` 為相容目標，不為舊 runner policy 增加 workaround code。
+4. 第一優先不可用時允許自動降級，且需留 `selection trace`。
+5. `wifi_llapi` 執行策略以 case-level 為主（每個 test case 各自呼叫 agent）。
+6. `wifi_llapi` 排程策略預設為 `sequential`（`max_concurrency=1`）。
+7. case 失敗策略為 `retry_then_fail_and_continue`，且 timeout 需隨 retry attempt 調整。
 
 ## Code Style
 
