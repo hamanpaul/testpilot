@@ -202,9 +202,19 @@ def _patch_runtime_hooks(monkeypatch, plugin: Any, cases: list[dict[str, Any]]) 
         result = transport.execute(command, timeout=timeout)
         output = str(result.get("stdout", ""))
         if bool(case.get("emit_pass_token")):
-            output = f"{output} {PASS_TOKEN}"
+            output = (
+                "__TP_BEGIN_case__\n"
+                f"root@prplOS:/# {command}\n"
+                f"{output} {PASS_TOKEN}\n"
+                "__TP_RC_case__=0\n>\n"
+            )
         else:
-            output = f"{output} TOKEN_MISSING"
+            output = (
+                "__TP_BEGIN_case__\n"
+                f"root@prplOS:/# {command}\n"
+                f"{output} TOKEN_MISSING\n"
+                "__TP_RC_case__=1\n>\n"
+            )
 
         state["execute_calls"].append(
             {
@@ -306,6 +316,7 @@ def test_realistic_runtime_covers_hooks_and_report_outputs(tmp_path: Path, monke
     trace_dir = Path(result["agent_trace_dir"])
     assert report_path.is_file()
     assert trace_dir.is_dir()
+    assert result["run_id"] in report_path.name
 
     # 1 fail case (2 attempts) + 1 pass case (1 attempt) = 3 executions per hook.
     assert len(state["setup_calls"]) == 3
@@ -317,6 +328,8 @@ def test_realistic_runtime_covers_hooks_and_report_outputs(tmp_path: Path, monke
     wb = load_workbook(report_path)
     ws = wb["Wifi_LLAPI"]
     assert ws["G4"].value == 'ubus-cli "WiFi.AccessPoint.1.kickStation(macaddress=AA:BB:CC:DD:EE:FF)"'
+    assert "__TP_" not in str(ws["H4"].value)
+    assert "root@prplOS" not in str(ws["H4"].value)
     assert ws["I4"].value == "Fail"
     assert ws["J4"].value == "N/A"
     assert ws["K4"].value == "N/A"
@@ -325,6 +338,8 @@ def test_realistic_runtime_covers_hooks_and_report_outputs(tmp_path: Path, monke
 
     assert ws["G5"].value == 'ubus-cli "WiFi.Radio.1.getRadioStats()"'
     assert PASS_TOKEN in str(ws["H5"].value)
+    assert "__TP_" not in str(ws["H5"].value)
+    assert "root@prplOS" not in str(ws["H5"].value)
     assert ws["I5"].value == "N/A"
     assert ws["J5"].value == "Pass"
     assert ws["K5"].value == "N/A"
@@ -369,3 +384,30 @@ def test_fail_and_continue_with_plugin_evaluate_failure(tmp_path: Path, monkeypa
     assert pass_trace["final"]["attempts_used"] == 1
     assert len(pass_trace["attempts"]) == 1
     assert pass_trace["attempts"][0]["status"] == "Pass"
+
+
+def test_realistic_runtime_report_paths_remain_unique_across_runs(tmp_path: Path, monkeypatch):
+    project_root, source_xlsx = _prepare_runtime_project(tmp_path)
+    orch = Orchestrator(
+        project_root=project_root,
+        plugins_dir=project_root / "plugins",
+        config_path=project_root / "configs" / "testbed.yaml",
+    )
+    plugin = orch.loader.load("wifi_llapi")
+    cases = _build_cases()
+    _patch_runtime_hooks(monkeypatch, plugin=plugin, cases=cases)
+
+    first_result = orch.run(
+        "wifi_llapi",
+        case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
+        dut_fw_ver="FW-IT-REALISTIC-1",
+        report_source_xlsx=str(source_xlsx),
+    )
+    second_result = orch.run(
+        "wifi_llapi",
+        case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
+        dut_fw_ver="FW-IT-REALISTIC-1",
+        report_source_xlsx=str(source_xlsx),
+    )
+
+    assert first_result["report_path"] != second_result["report_path"]

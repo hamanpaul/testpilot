@@ -421,11 +421,15 @@ class SerialWrapTransport(TransportBase):
         if end_pos >= 0:
             segment = segment[:end_pos]
 
-        rc_matches = list(re.finditer(re.escape(rc_prefix) + r"(-?\d+)", segment))
+        rc_pattern = re.escape(rc_prefix) + r"(-?\d+)"
         returncode: int | None = None
-        if rc_matches:
-            returncode = int(rc_matches[-1].group(1))
-            segment = re.sub(re.escape(rc_prefix) + r"-?\d+", "", segment)
+        rc_match = re.search(rc_pattern, segment)
+        if rc_match:
+            # Use the first RC marker emitted after the matching begin marker.
+            # Old transcript fragments may replay the same token later in the segment.
+            returncode = int(rc_match.group(1))
+            segment = re.sub(rf"(?m)^[ \t]*{re.escape(rc_prefix)}-?\d+[ \t]*\n?", "", segment)
+            segment = re.sub(rc_pattern, "", segment)
 
         return {"stdout": segment.strip(), "returncode": returncode}
 

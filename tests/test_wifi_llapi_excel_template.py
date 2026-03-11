@@ -11,6 +11,8 @@ from testpilot.reporting.wifi_llapi_excel import (
     create_run_report_from_template,
     fill_case_results,
     generate_report_filename,
+    normalize_command_block,
+    sanitize_report_output,
 )
 
 
@@ -104,8 +106,8 @@ def test_fill_case_results(tmp_path: Path):
             WifiLlapiCaseResult(
                 case_id="wifi-llapi-D004-kickstation",
                 source_row=4,
-                executed_test_command="ubus-cli ...kickStation...",
-                command_output="assoclist empty",
+                executed_test_command="ubus-cli ...kickStation...\n\nwl assoclist",
+                command_output="__TP_BEGIN_abcd__\nroot@prplOS:/# wl assoclist\nassoclist empty\n>\n",
                 result_5g="Pass",
                 result_6g="Pass",
                 result_24g="Pass",
@@ -115,8 +117,8 @@ def test_fill_case_results(tmp_path: Path):
 
     wb = load_workbook(report)
     ws = wb["Wifi_LLAPI"]
-    assert ws["G4"].value == "ubus-cli ...kickStation..."
-    assert ws["H4"].value == "assoclist empty"
+    assert ws["G4"].value == "ubus-cli ...kickStation...\nwl assoclist"
+    assert ws["H4"].value == "wl assoclist\nassoclist empty"
     assert ws["I4"].value == "Pass"
     assert ws["J4"].value == "Pass"
     assert ws["K4"].value == "Pass"
@@ -178,6 +180,41 @@ def test_generate_report_filename():
     assert (
         generate_report_filename(date(2026, 3, 4), "BGW720 B0 403")
         == "20260304_BGW720-B0-403_wifi_LLAPI.xlsx"
+    )
+    assert (
+        generate_report_filename(
+            date(2026, 3, 4),
+            "BGW720 B0 403",
+            unique_suffix="20260304T101112123456",
+        )
+        == "20260304_BGW720-B0-403_wifi_LLAPI_20260304T101112123456.xlsx"
+    )
+
+
+def test_create_run_report_from_template_preserves_existing_report(tmp_path: Path):
+    source = tmp_path / "source.xlsx"
+    template = tmp_path / "wifi_llapi_template.xlsx"
+    report = tmp_path / "20260304_BGW720-B0-403_wifi_LLAPI.xlsx"
+    _create_source_xlsx(source)
+    build_template_from_source(source, template)
+
+    first = create_run_report_from_template(template, report)
+    second = create_run_report_from_template(template, report)
+
+    assert first == report
+    assert second != report
+    assert second.name == "20260304_BGW720-B0-403_wifi_LLAPI_01.xlsx"
+    assert first.is_file()
+    assert second.is_file()
+
+
+def test_report_output_and_command_helpers_clean_noise():
+    assert normalize_command_block("cmd1\n\n cmd2 \n") == "cmd1\ncmd2"
+    assert (
+        sanitize_report_output(
+            "__TP_BEGIN_abcd__\nroot@prplOS:/# wl status\nstatus ok\n__TP_RC_abcd__=0\n>\n"
+        )
+        == "wl status\nstatus ok"
     )
 
 

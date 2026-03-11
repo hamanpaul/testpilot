@@ -15,6 +15,8 @@ TestPilot 採用 `Orchestrator -> Plugin -> YAML Cases` 架構，目標是支援
 5. 已支援 retry-aware timeout（依 attempt 調整）與 case fail-and-continue。
 6. `wifi_llapi` plugin `setup_env/verify_env/execute_step/evaluate` 已完成 runtime 實作，可接 transport 執行。
 7. transport 已具備 `serialwrap/adb/ssh/network`，並完成 row-indexed 官方 415 cases 實機全量 run 驗證。
+8. 報告檔名已帶 `run_id`，避免覆蓋既有 run；xlsx H 欄會自動清理 serialwrap marker/prompt。
+9. 已提供 `wifi-llapi audit-yaml-commands` dry-run 工具，稽核 YAML 中 `&&`/`;` 串接指令。
 
 ## Roadmap（Target）
 
@@ -84,9 +86,19 @@ python -m testpilot.cli run wifi_llapi \
 
 ### 6) 產出檔案
 
-1. Excel 報告：`plugins/wifi_llapi/reports/YYYYMMDD_<FW>_wifi_LLAPI.xlsx`
+1. Excel 報告：`plugins/wifi_llapi/reports/YYYYMMDD_<FW>_wifi_LLAPI_<run_id>.xlsx`
 2. 每 case trace：`plugins/wifi_llapi/reports/agent_trace/<run_id>/`
 3. 對齊失敗報告：`plugins/wifi_llapi/reports/alignment/*_alignment_issues.json`
+
+### 7) YAML 指令稽核（dry-run）
+
+```bash
+python -m testpilot.cli wifi-llapi audit-yaml-commands \
+  --out /tmp/wifi_llapi_command_audit.json
+```
+
+會掃描 `command`、`verification_command`、`hlapi_command`、`setup_steps`、`sta_env_setup`，
+找出未被引號包住的 `&&` / `;` 串接，輸出建議拆分結果，不會直接覆寫 case YAML。
 
 ### 7) 常見錯誤
 
