@@ -42,6 +42,11 @@ DEFAULT_CLEAR_COLUMNS = (
 DATA_START_ROW = 4
 EMPTY_STREAK_STOP = 200
 MAX_SCAN_ROWS = 5000
+_PROMPT_PREFIX_RE = re.compile(r"^(?:root@[^:]+:[^#\n]*#\s*|[>$#]\s*)")
+_SERIALWRAP_MARKER_RE = re.compile(
+    r"__TP_(?:BEGIN|END|RC)_[A-Z0-9a-f_]+__=?[^\s]*",
+    flags=re.IGNORECASE,
+)
 
 
 @dataclass(slots=True)
@@ -99,12 +104,59 @@ def sanitize_fw_version(text: str) -> str:
     return cleaned or "DUT-FW-VER"
 
 
-def generate_report_filename(run_date: date, dut_fw_ver: str) -> str:
+def sanitize_filename_suffix(text: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "-", text.strip())
+    return cleaned.strip("-._")
+
+
+def generate_report_filename(
+    run_date: date,
+    dut_fw_ver: str,
+    *,
+    unique_suffix: str | None = None,
+) -> str:
     """Generate user-required report filename format.
 
     Format: YYYYMMDD_<DUT-FW-VER>_wifi_LLAPI.xlsx
     """
-    return f"{run_date:%Y%m%d}_{sanitize_fw_version(dut_fw_ver)}_wifi_LLAPI.xlsx"
+    base = f"{run_date:%Y%m%d}_{sanitize_fw_version(dut_fw_ver)}_wifi_LLAPI"
+    suffix = sanitize_filename_suffix(unique_suffix or "")
+    if suffix:
+        return f"{base}_{suffix}.xlsx"
+    return f"{base}.xlsx"
+
+
+def sanitize_report_output(text: str | None) -> str:
+    if text is None:
+        return ""
+
+    lines: list[str] = []
+    for raw in str(text).splitlines():
+        line = _SERIALWRAP_MARKER_RE.sub(" ", raw).strip()
+        line = _PROMPT_PREFIX_RE.sub("", line).strip()
+        if not line:
+            continue
+        lines.append(line)
+    return "\n".join(lines).strip()
+
+
+def normalize_command_block(text: str | None) -> str:
+    if text is None:
+        return ""
+    lines = [line.strip() for line in str(text).splitlines() if line.strip()]
+    return "\n".join(lines).strip()
+
+
+def _resolve_report_copy_path(dst: Path) -> Path:
+    if not dst.exists():
+        return dst
+
+    counter = 1
+    while True:
+        candidate = dst.with_name(f"{dst.stem}_{counter:02d}{dst.suffix}")
+        if not candidate.exists():
+            return candidate
+        counter += 1
 
 
 def _get_sheet(wb, preferred_name: str):
@@ -305,7 +357,7 @@ def create_run_report_from_template(
     out_report_xlsx: Path | str,
 ) -> Path:
     src = Path(template_xlsx)
-    dst = Path(out_report_xlsx)
+    dst = _resolve_report_copy_path(Path(out_report_xlsx))
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, dst)
     return dst
@@ -326,8 +378,8 @@ def fill_case_results(
         if item.source_row <= 0:
             continue
         row = item.source_row
-        _set_cell_value_safe(ws, row, "G", item.executed_test_command)
-        _set_cell_value_safe(ws, row, "H", item.command_output)
+        _set_cell_value_safe(ws, row, "G", normalize_command_block(item.executed_test_command))
+        _set_cell_value_safe(ws, row, "H", sanitize_report_output(item.command_output))
         _set_cell_value_safe(ws, row, "I", item.result_5g)
         _set_cell_value_safe(ws, row, "J", item.result_6g)
         _set_cell_value_safe(ws, row, "K", item.result_24g)

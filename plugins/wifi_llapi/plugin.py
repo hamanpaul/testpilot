@@ -48,6 +48,15 @@ class Plugin(PluginBase):
         "false",
         "wpa_supplicant",
     )
+    ROOT_COMMAND_TOKENS = CLI_FALLBACK_TOKENS + (
+        "echo",
+        "printf",
+        "sleep",
+        "killall",
+        "true",
+        "false",
+        "wpa_supplicant",
+    )
 
     def __init__(self) -> None:
         self._transports: dict[str, Any] = {}
@@ -168,21 +177,38 @@ class Plugin(PluginBase):
         return bool(getattr(transport, "is_connected", True))
 
     def _extract_cli_fragment(self, text: str) -> str | None:
-        if not text:
-            return None
-        lines = [line.strip() for line in text.splitlines() if line.strip()]
-        for token in self.CLI_FALLBACK_TOKENS:
-            pattern = re.compile(rf"\b{re.escape(token)}\b")
-            for line in lines:
-                match = pattern.search(line)
-                if not match:
-                    continue
-                fragment = line[match.start():].strip().strip("`'\"")
-                fragment = fragment.rstrip("，。;")
-                fragment = self._sanitize_cli_fragment(fragment)
-                if fragment:
-                    return fragment
+        fragments = self._extract_cli_fragments(text)
+        if fragments:
+            return fragments[0]
         return None
+
+    @staticmethod
+    def _normalize_command_text(text: str) -> str:
+        cleaned = str(text or "").replace("\r", " ")
+        cleaned = re.sub(r"_x[0-9A-Fa-f]{4}_", " ", cleaned)
+        return re.sub(r"\s+", " ", cleaned).strip()
+
+    def _extract_cli_fragments(self, text: str) -> list[str]:
+        if not text:
+            return []
+
+        normalized = self._normalize_command_text(text)
+        token_pattern = "|".join(re.escape(token) for token in self.ROOT_COMMAND_TOKENS)
+        root_pattern = re.compile(rf"(?<![A-Za-z0-9_])(?:{token_pattern})\b")
+        match = root_pattern.search(normalized)
+        if not match:
+            return []
+
+        fragment = normalized[match.start():].strip().strip("`'\"")
+        fragment = fragment.rstrip("，。;")
+        raw_parts = re.split(rf";\s*(?=(?:{token_pattern})\b)", fragment)
+
+        commands: list[str] = []
+        for part in raw_parts:
+            sanitized = self._sanitize_cli_fragment(part)
+            if sanitized and self._looks_executable(sanitized):
+                commands.append(sanitized)
+        return commands
 
     @staticmethod
     def _join_shell_tokens(tokens: list[str]) -> str:
@@ -244,11 +270,10 @@ class Plugin(PluginBase):
         return cleaned
 
     def _sanitize_cli_fragment(self, fragment: str) -> str:
-        text = fragment.strip()
+        text = self._normalize_command_text(fragment)
         if not text:
             return ""
 
-        text = re.sub(r"\s+", " ", text).strip()
         text = text.lstrip("`'\"; ")
 
         # Force single-command execution: truncate transcript wrappers and chained statements.
@@ -272,6 +297,10 @@ class Plugin(PluginBase):
             if right.startswith(("WiFi.", "ERROR", "root@", "__TP_")):
                 text = left.strip()
 
+        # Some Excel-derived prose appends expected samples after a real readback query.
+        if text.count("WiFi.") > 1 or "?" in text or "|" in text:
+            text = re.sub(r"\s+WiFi\.[A-Za-z0-9_.{}-]+\s*=\s*.*$", "", text).strip()
+
         # In malformed transcript strings, quotes are often unbalanced; remove them to recover.
         if text.count('"') % 2 == 1:
             text = text.replace('"', "")
@@ -287,6 +316,88 @@ class Plugin(PluginBase):
         if not trimmed:
             return text
         return self._join_shell_tokens(trimmed)
+
+    @staticmethod
+    def _command_starts_executable(command: str) -> bool:
+        stripped = command.strip()
+        if not stripped:
+            return False
+        return stripped.split(maxsplit=1)[0].strip("`'\"") in Plugin.EXECUTABLE_TOKENS
+
+    @staticmethod
+    def _field_name_from_capture(case: dict[str, Any], capture_name: str) -> str:
+        if not capture_name:
+            return ""
+        prefix = f"{capture_name}."
+        for criterion in case.get("pass_criteria", []):
+            if not isinstance(criterion, dict):
+                continue
+            field = str(criterion.get("field", "")).strip()
+            if not field.startswith(prefix):
+                continue
+            suffix = field[len(prefix):].strip()
+            if suffix:
+                return suffix.rstrip("()").split(".")[-1]
+        return ""
+
+    def _synthesize_readback_command(self, case: dict[str, Any], capture_name: str) -> str | None:
+        source = self._as_mapping(case.get("source"))
+        object_path = str(source.get("object", "")).strip()
+        if not object_path:
+            return None
+        if not object_path.endswith("."):
+            object_path = f"{object_path}."
+        object_path = object_path.replace("{i}", "*")
+
+        field_name = self._field_name_from_capture(case, capture_name)
+        api = field_name or str(source.get("api", "")).strip()
+        if not api:
+            return None
+        if api.endswith("()"):
+            return f'ubus-cli "{object_path}{api}"'
+        return f'ubus-cli "{object_path}{api.rstrip("?")}?"'
+
+    def _prefer_synthesized_readback(
+        self,
+        case: dict[str, Any],
+        step: dict[str, Any],
+        raw_command: str,
+        candidate_commands: list[str],
+    ) -> str | None:
+        capture_name = str(step.get("capture", "")).strip()
+        if not capture_name:
+            return None
+
+        synthesized = self._synthesize_readback_command(case, capture_name)
+        if not synthesized:
+            return None
+
+        normalized = self._normalize_command_text(raw_command).lower()
+        if not self._command_starts_executable(raw_command):
+            return synthesized
+        if len(candidate_commands) > 1:
+            return synthesized
+        if normalized.count("wifi.") >= 3:
+            return synthesized
+        if " > " in normalized and normalized.count("wifi.") >= 2:
+            return synthesized
+        if any(
+            marker in normalized
+            for marker in (
+                "verify ",
+                "read back",
+                "read-only api",
+                "get ",
+                "check ",
+                "using wireshark",
+                "repeat step",
+                "_x0001_",
+            )
+        ):
+            return synthesized
+        if candidate_commands and all("=" in command and "?" not in command for command in candidate_commands):
+            return synthesized
+        return None
 
     def _looks_executable(self, command: str) -> bool:
         stripped = command.strip()
@@ -359,11 +470,27 @@ class Plugin(PluginBase):
         except Exception:
             pass
 
-        pattern = re.compile(r"([A-Za-z0-9_.()/-]+)\s*[:=]\s*\"?([^\"\n,]+)\"?")
-        for line in output.splitlines():
+        logical_lines: list[str] = []
+        pending = ""
+        line_start_pattern = re.compile(r"^[> ]*[A-Za-z0-9_.()/-]+\s*[:=]")
+        for raw in output.splitlines():
+            candidate = raw.strip()
+            if not candidate:
+                continue
+            if pending and not line_start_pattern.match(candidate):
+                pending = f"{pending}{candidate}"
+                continue
+            if pending:
+                logical_lines.append(pending)
+            pending = candidate
+        if pending:
+            logical_lines.append(pending)
+
+        for line in logical_lines:
             line = line.strip()
             if not line:
                 continue
+            line = line.lstrip("> ").strip()
             # Trim serialwrap wrappers/tails so random rc markers do not pollute captured values.
             line = re.sub(r"^['\"];\s*", "", line)
             line = re.sub(
@@ -386,16 +513,19 @@ class Plugin(PluginBase):
             ).strip()
             if not line:
                 continue
-            for key, value in pattern.findall(line):
-                normalized = value.strip().strip("'\"")
-                normalized = re.sub(
-                    r"\s*__tp_(?:rc|end)_[^\s]*.*$",
-                    "",
-                    normalized,
-                    flags=re.IGNORECASE,
-                ).strip().strip("'\"")
-                if normalized:
-                    captured[key] = normalized
+            match = re.match(r"([A-Za-z0-9_.()/-]+)\s*[:=]\s*(.*)$", line)
+            if not match:
+                continue
+            key, value = match.groups()
+            normalized = value.strip().strip("'\"")
+            normalized = re.sub(
+                r"\s*__tp_(?:rc|end)_[^\s]*.*$",
+                "",
+                normalized,
+                flags=re.IGNORECASE,
+            ).strip().strip("'\"")
+            if normalized or value.strip() in {'""', "''"}:
+                captured[key] = normalized
 
         return captured
 
@@ -512,15 +642,17 @@ class Plugin(PluginBase):
         op = operator.strip().lower()
         actual_text = self._stringify(actual)
         expected_text = self._stringify(expected)
+        normalized_actual = actual_text.strip().strip("'\"")
+        normalized_expected = expected_text.strip().strip("'\"")
 
         if op in {"contains"}:
-            return expected_text in actual_text
+            return expected_text in actual_text or normalized_expected in normalized_actual
         if op in {"not_contains"}:
-            return expected_text not in actual_text
+            return expected_text not in actual_text and normalized_expected not in normalized_actual
         if op in {"equals", "==", "eq"}:
-            return actual_text == expected_text
+            return actual_text == expected_text or normalized_actual == normalized_expected
         if op in {"!=", "not_equals", "ne"}:
-            return actual_text != expected_text
+            return actual_text != expected_text and normalized_actual != normalized_expected
         if op in {"regex", "matches"}:
             try:
                 return re.search(expected_text, actual_text) is not None
@@ -704,6 +836,7 @@ class Plugin(PluginBase):
         sta = self._transports.get("STA")
         if sta is None:
             return False
+        wpa_cli = "wpa_cli -p /var/run/wpa_supplicant -i wl1"
 
         # 5G
         five_g_prep = (
@@ -711,6 +844,7 @@ class Plugin(PluginBase):
             "ubus-cli WiFi.AccessPoint.2.Enable=0",
             "killall wpa_supplicant 2>/dev/null || true",
             "iw dev wl0.1 del 2>/dev/null || true",
+            "iw dev wl0 disconnect 2>/dev/null || true",
             "iw dev wl0 set type managed",
             "ifconfig wl0 up",
         )
@@ -738,13 +872,15 @@ class Plugin(PluginBase):
             "ubus-cli WiFi.AccessPoint.3.Enable=0",
             "ubus-cli WiFi.AccessPoint.4.Enable=0",
             "killall wpa_supplicant 2>/dev/null || true",
+            "rm -f /var/run/wpa_supplicant/wl1 2>/dev/null || true",
             "iw dev wl1.1 del 2>/dev/null || true",
+            "iw dev wl1 disconnect 2>/dev/null || true",
             "iw dev wl1 set type managed",
             "ifconfig wl1 up",
-            "printf 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nsae_pwe=2\\n' > /tmp/wpa_wl1.conf",
             "mkdir -p /var/run/wpa_supplicant",
+            "printf 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nsae_pwe=2\\nnetwork={\\nssid=\"B0_6G_AP\"\\nkey_mgmt=SAE\\nsae_password=\"B0StaTest1234\"\\nieee80211w=2\\nscan_ssid=1\\n}\\n' > /tmp/wpa_wl1.conf",
             "wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant",
-            "sleep 2",
+            "sleep 3",
         )
         for idx, cmd in enumerate(six_g_prep, start=1):
             if not self._run_required_command(
@@ -758,35 +894,17 @@ class Plugin(PluginBase):
             transport=sta,
             case_id=case_id,
             label="sta_6g_ctrl",
-            connect_cmd="wpa_cli -i wl1 ping",
-            verify_cmd="wpa_cli -i wl1 ping | grep -q PONG",
+            connect_cmd=f"{wpa_cli} ping",
+            verify_cmd=f"{wpa_cli} ping | grep -q PONG",
             attempts=3,
             sleep_seconds=1,
         ):
             return False
-        six_g_network = (
-            "wpa_cli -i wl1 remove_network all",
-            "wpa_cli -i wl1 add_network",
-            "wpa_cli -i wl1 set_network 0 ssid '\"B0_6G_AP\"'",
-            "wpa_cli -i wl1 set_network 0 key_mgmt SAE",
-            "wpa_cli -i wl1 set_network 0 sae_password '\"B0StaTest1234\"'",
-            "wpa_cli -i wl1 set_network 0 ieee80211w 2",
-            "wpa_cli -i wl1 set_network 0 scan_ssid 1",
-            "wpa_cli -i wl1 enable_network 0",
-        )
-        for idx, cmd in enumerate(six_g_network, start=1):
-            if not self._run_required_command(
-                transport=sta,
-                case_id=case_id,
-                label=f"sta_6g_net.{idx}",
-                command=cmd,
-            ):
-                return False
         if not self._connect_with_retry(
             transport=sta,
             case_id=case_id,
             label="sta_6g",
-            connect_cmd="wpa_cli -i wl1 reconnect",
+            connect_cmd=f"{wpa_cli} reconnect",
             verify_cmd="iw dev wl1 link | grep -q 'Connected to '",
             attempts=3,
             sleep_seconds=8,
@@ -796,7 +914,7 @@ class Plugin(PluginBase):
             transport=sta,
             case_id=case_id,
             label="sta_6g_status",
-            command="wpa_cli -i wl1 status | grep -q 'wpa_state=COMPLETED'",
+            command=f"{wpa_cli} status | grep -q 'wpa_state=COMPLETED'",
             timeout=20.0,
         ):
             return False
@@ -806,6 +924,7 @@ class Plugin(PluginBase):
             "ubus-cli WiFi.AccessPoint.5.Enable=0",
             "ubus-cli WiFi.AccessPoint.6.Enable=0",
             "iw dev wl2.1 del 2>/dev/null || true",
+            "iw dev wl2 disconnect 2>/dev/null || true",
             "iw dev wl2 set type managed",
             "ifconfig wl2 up",
         )
@@ -1087,57 +1206,91 @@ class Plugin(PluginBase):
         raw_command = str(step.get("command", "")).strip()
         resolved_command = self._resolve_text(topology, raw_command)
         command_to_run = resolved_command
+        commands_to_run: list[str] = []
         fallback_reason = ""
 
-        # 若 step 文字中夾帶可執行片段（例如自然語言描述 + ubus-cli），優先抽取可執行部分。
-        extracted = self._extract_cli_fragment(command_to_run)
-        if extracted and extracted != command_to_run:
-            command_to_run = extracted
-            fallback_reason = "extract_from_step_text"
-        command_to_run = self._sanitize_cli_fragment(command_to_run)
+        candidate_commands = [
+            self._resolve_text(topology, command)
+            for command in self._extract_cli_fragments(command_to_run)
+        ]
+        preferred_capture_command = self._prefer_synthesized_readback(
+            case, step, raw_command, candidate_commands
+        )
+        if preferred_capture_command:
+            commands_to_run = [self._resolve_text(topology, preferred_capture_command)]
+            fallback_reason = "synthesized_capture_query"
+        elif candidate_commands:
+            commands_to_run = candidate_commands
+            if len(candidate_commands) > 1 or candidate_commands[0] != command_to_run:
+                fallback_reason = "extract_from_step_text"
+        else:
+            command_to_run = self._sanitize_cli_fragment(command_to_run)
+            if command_to_run:
+                commands_to_run = [command_to_run]
 
-        if not command_to_run or not self._looks_executable(command_to_run):
+        if not commands_to_run or not all(self._looks_executable(command) for command in commands_to_run):
             command_to_run, fallback_reason = self._select_fallback_command(
                 case, raw_command, topology, step_id
             )
             command_to_run = self._sanitize_cli_fragment(command_to_run)
+            commands_to_run = [command_to_run]
 
-        try:
-            result = transport.execute(command_to_run, timeout=timeout)
-        except Exception as exc:
-            log.warning("[%s] execute_step failed: %s.%s err=%s", self.name, case.get("id"), step_id, exc)
-            return {
-                "success": False,
-                "output": str(exc),
-                "captured": {},
-                "timing": 0.0,
-                "command": command_to_run,
-                "fallback_reason": fallback_reason,
-            }
+        outputs: list[str] = []
+        captured: dict[str, Any] = {}
+        total_elapsed = 0.0
+        success = True
+        final_returncode = 0
 
-        if not fallback_reason and self._is_unexecutable_result(self._as_mapping(result)):
-            fallback_command, reason = self._select_fallback_command(case, raw_command, topology, step_id)
-            fallback_command = self._sanitize_cli_fragment(fallback_command)
-            if fallback_command != command_to_run:
-                command_to_run = fallback_command
-                fallback_reason = reason
+        for index, command_to_run in enumerate(commands_to_run, start=1):
+            try:
                 result = transport.execute(command_to_run, timeout=timeout)
+            except Exception as exc:
+                log.warning(
+                    "[%s] execute_step failed: %s.%s[%d] err=%s",
+                    self.name,
+                    case.get("id"),
+                    step_id,
+                    index,
+                    exc,
+                )
+                return {
+                    "success": False,
+                    "output": str(exc),
+                    "captured": {},
+                    "timing": total_elapsed,
+                    "command": "\n".join(commands_to_run).strip(),
+                    "fallback_reason": fallback_reason,
+                }
 
-        result_map = self._as_mapping(result)
-        stdout = str(result_map.get("stdout", ""))
-        stderr = str(result_map.get("stderr", ""))
-        output = "\n".join(chunk for chunk in (stdout, stderr) if chunk).strip()
-        captured = self._extract_key_values(output)
-        elapsed = self._to_float(result_map.get("elapsed"), 0.0)
-        returncode = int(result_map.get("returncode", 1))
+            if index == 1 and len(commands_to_run) == 1 and not fallback_reason and self._is_unexecutable_result(self._as_mapping(result)):
+                fallback_command, reason = self._select_fallback_command(case, raw_command, topology, step_id)
+                fallback_command = self._sanitize_cli_fragment(fallback_command)
+                if fallback_command != command_to_run:
+                    commands_to_run = [fallback_command]
+                    command_to_run = fallback_command
+                    fallback_reason = reason
+                    result = transport.execute(command_to_run, timeout=timeout)
+
+            result_map = self._as_mapping(result)
+            stdout = str(result_map.get("stdout", ""))
+            stderr = str(result_map.get("stderr", ""))
+            output = "\n".join(chunk for chunk in (stdout, stderr) if chunk).strip()
+            if output:
+                outputs.append(output)
+                captured.update(self._extract_key_values(output))
+            total_elapsed += self._to_float(result_map.get("elapsed"), 0.0)
+            final_returncode = int(result_map.get("returncode", 1))
+            success = success and final_returncode == 0
+            if final_returncode != 0:
+                break
 
         return {
-            "success": returncode == 0,
-            "output": output,
+            "success": success,
+            "output": "\n".join(outputs).strip(),
             "captured": captured,
-            "timing": elapsed,
-            "returncode": returncode,
-            "command": command_to_run,
+            "timing": total_elapsed,
+            "returncode": final_returncode,
+            "command": "\n".join(commands_to_run).strip(),
             "fallback_reason": fallback_reason,
         }
 

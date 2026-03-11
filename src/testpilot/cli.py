@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import sys
 from pathlib import Path
@@ -13,6 +14,11 @@ from rich.table import Table
 from testpilot import __version__
 from testpilot.core.orchestrator import Orchestrator
 from testpilot.reporting.wifi_llapi_excel import ensure_template_report
+from testpilot.yaml_command_audit import (
+    DEFAULT_AUDIT_FIELDS,
+    build_yaml_command_audit_report,
+    write_yaml_command_audit_report,
+)
 
 console = Console()
 
@@ -176,6 +182,63 @@ def build_template_report(
             "manifest": str(manifest_path),
         }
     )
+
+
+@wifi_llapi_group.command("audit-yaml-commands")
+@click.option(
+    "--cases-dir",
+    default=None,
+    type=click.Path(exists=True, file_okay=False),
+    help="Cases directory to scan. Defaults to plugins/wifi_llapi/cases under --root.",
+)
+@click.option(
+    "--field",
+    "fields",
+    multiple=True,
+    help="Field name to audit. Repeatable. Defaults to command/verification_command/hlapi_command/setup_steps/sta_env_setup.",
+)
+@click.option(
+    "--limit",
+    default=50,
+    show_default=True,
+    type=click.IntRange(min=1),
+    help="Maximum matches printed to stdout. Full report can be written with --out.",
+)
+@click.option(
+    "--out",
+    default=None,
+    type=click.Path(dir_okay=False),
+    help="Optional JSON output path for the full dry-run report.",
+)
+@click.pass_context
+def audit_yaml_commands(
+    ctx: click.Context,
+    cases_dir: str | None,
+    fields: tuple[str, ...],
+    limit: int,
+    out: str | None,
+) -> None:
+    """Scan wifi_llapi YAML for chained shell commands and suggest split commands."""
+    root: Path = ctx.obj["root"]
+    target_dir = Path(cases_dir) if cases_dir else root / "plugins" / "wifi_llapi" / "cases"
+    target_fields = tuple(fields) if fields else DEFAULT_AUDIT_FIELDS
+
+    report = build_yaml_command_audit_report(
+        target_dir,
+        target_fields=target_fields,
+    )
+    if out:
+        write_yaml_command_audit_report(out, report)
+
+    matches = list(report.get("matches", []))
+    preview = dict(report)
+    preview["matches_returned"] = min(limit, len(matches))
+    preview["truncated"] = len(matches) > limit
+    preview["matches"] = matches[:limit]
+    if out:
+        preview["report_path"] = str(Path(out))
+
+    click.echo(json.dumps(preview, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":

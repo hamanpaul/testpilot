@@ -83,10 +83,10 @@
 
 | ID | 項目 | 狀態 | 對應隱患 | 說明 |
 |---|---|---|---|---|
-| R1-01 | Report 保存不覆蓋 | pending | H3 | 檔名加 run_id，舊報告保留 |
-| R1-02 | xlsx report output 清理 marker | pending | H4 | sanitize_output() 清除 `__TP_*`、`root@prplOS` |
-| R1-03 | xlsx report cmd 欄單行化 | pending | 需求 | G 欄每條指令一行 |
-| R1-04 | YAML 指令單行化工具 | pending | H5 | 批次拆 `&&`/`;` 串接 |
+| R1-01 | Report 保存不覆蓋 | done | H3 | 報告檔名加 `run_id`，copy 另有 `_01/_02` 防呆 |
+| R1-02 | xlsx report output 清理 marker | done | H4 | `sanitize_report_output()` 清除 `__TP_*`、`root@prplOS` |
+| R1-03 | xlsx report cmd 欄單行化 | done | 需求 | G 欄改為單行一條指令 |
+| R1-04 | YAML 指令單行化工具 | done | H5 | 新增 `wifi-llapi audit-yaml-commands` dry-run 稽核 |
 
 ## Phase R2：Orchestrator 解耦
 
@@ -119,7 +119,7 @@
 
 | ID | 項目 | 狀態 | 對應隱患 | 說明 |
 |---|---|---|---|---|
-| R5-01 | serialwrap RC 擷取修正 | pending | H7 | FIRST match 取代 LAST |
+| R5-01 | serialwrap RC 擷取修正 | done | H7 | `_extract_marker_output()` 改為 FIRST match |
 | R5-02 | Plugin loader 改良 | pending | H9 | 移除 sys.path 污染 |
 | R5-03 | openpyxl API 隔離 | pending | H10 | 封裝進 adapter |
 | R5-04 | Session 解析簡化 | pending | H12 | 減少 fallback 層數 |

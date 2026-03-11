@@ -699,9 +699,12 @@ class Orchestrator:
 
         run_date = date.today()
         fw_ver = dut_fw_ver or "DUT-FW-VER"
-        report_name = generate_report_filename(run_date, fw_ver)
+        report_name = generate_report_filename(run_date, fw_ver, unique_suffix=run_id)
         report_path = reports_root / report_name
-        create_run_report_from_template(template_xlsx=template_path, out_report_xlsx=report_path)
+        report_path = create_run_report_from_template(
+            template_xlsx=template_path,
+            out_report_xlsx=report_path,
+        )
 
         case_results: list[WifiLlapiCaseResult] = []
         pass_count = 0
@@ -816,8 +819,8 @@ class Orchestrator:
                 WifiLlapiCaseResult(
                     case_id=case_id,
                     source_row=source_row,
-                    executed_test_command="\n\n".join(commands).strip(),
-                    command_output="\n\n".join(outputs).strip(),
+                    executed_test_command="\n".join(commands).strip(),
+                    command_output="\n".join(outputs).strip(),
                     result_5g=result_5g,
                     result_6g=result_6g,
                     result_24g=result_24g,

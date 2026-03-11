@@ -320,6 +320,27 @@ def test_execute_stdout_fallback_when_tail_empty(monkeypatch: pytest.MonkeyPatch
     assert state["status_calls"] == 1
 
 
+def test_extract_marker_output_prefers_first_rc_match() -> None:
+    transport = SerialWrapTransport({"binary": "/tmp/serialwrap", "selector": "COM0"})
+    marker = {
+        "begin": "__TP_BEGIN_abcd1234__",
+        "end": "__TP_END_abcd1234__",
+        "rc_prefix": "__TP_RC_abcd1234__=",
+    }
+    output = (
+        "__TP_BEGIN_abcd1234__\n"
+        "hello world\n"
+        "__TP_RC_abcd1234__=7\n"
+        "replayed transcript __TP_RC_abcd1234__=99\n"
+        "__TP_END_abcd1234__\n"
+    )
+
+    parsed = transport._extract_marker_output(output, marker)
+
+    assert parsed["returncode"] == 7
+    assert parsed["stdout"] == "hello world\nreplayed transcript"
+
+
 def test_read_last_seq_from_mirror_parses_tail_line(tmp_path: Path) -> None:
     mirror = tmp_path / "raw.mirror.log"
     mirror.write_text(

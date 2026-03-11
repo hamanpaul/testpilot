@@ -30,7 +30,9 @@ TestPilot 是一套 plugin-based 嵌入式測試框架，核心目標是：
 5. Per-case agent dispatcher + retry-aware timeout + selection trace。
 6. 6G STA 穩定流程已驗證，415 YAML 批次更新。
 7. Case ID 已對齊 `wifi-llapi-D###-*` 命名規則（舊 `r###` 保留為 alias）。
-8. 38 tests 通過。
+8. 46 tests 通過。
+9. Report 檔名已帶 `run_id`，避免覆蓋既有結果；H 欄輸出已清理 serialwrap marker/prompt。
+10. 已新增 `wifi-llapi audit-yaml-commands` dry-run 稽核工具，協助治理 YAML 串接指令。
 
 ### 2.2 尚未落地
 
