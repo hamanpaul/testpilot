@@ -121,8 +121,12 @@ pass_criteria:
 verification_command: |
   ubus-cli "WiFi.AccessPoint.*.?" | sed -n "1,200p"
   ubus-cli "WiFi.AccessPoint.*.MBOAssocDisallowReason?" 2>/dev/null || true
-  wl -i wl0 bss 2>/dev/null || true; wl -i wl1 bss 2>/dev/null || true; wl -i wl2 bss 2>/dev/null || true
-  wl -i wl0 assoclist; wl -i wl1 assoclist; wl -i wl2 assoclist
+  wl -i wl0 bss 2>/dev/null || true
+  wl -i wl1 bss 2>/dev/null || true
+  wl -i wl2 bss 2>/dev/null || true
+  wl -i wl0 assoclist
+  wl -i wl1 assoclist
+  wl -i wl2 assoclist
 
 results_reference:
   v4.0.1:

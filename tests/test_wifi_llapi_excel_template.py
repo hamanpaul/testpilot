@@ -107,7 +107,7 @@ def test_fill_case_results(tmp_path: Path):
                 case_id="wifi-llapi-D004-kickstation",
                 source_row=4,
                 executed_test_command="ubus-cli ...kickStation...\n\nwl assoclist",
-                command_output="__TP_BEGIN_abcd__\nroot@prplOS:/# wl assoclist\nassoclist empty\n>\n",
+                command_output="root@prplOS:/# wl assoclist\nassoclist empty\n>\n",
                 result_5g="Pass",
                 result_6g="Pass",
                 result_24g="Pass",
@@ -212,7 +212,7 @@ def test_report_output_and_command_helpers_clean_noise():
     assert normalize_command_block("cmd1\n\n cmd2 \n") == "cmd1\ncmd2"
     assert (
         sanitize_report_output(
-            "__TP_BEGIN_abcd__\nroot@prplOS:/# wl status\nstatus ok\n__TP_RC_abcd__=0\n>\n"
+            "root@prplOS:/# wl status\nstatus ok\n>\n"
         )
         == "wl status\nstatus ok"
     )

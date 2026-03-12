@@ -81,13 +81,13 @@ TestPilot 的主目標是：
 | ID | 項目 | 輸出 | 狀態 |
 |---|---|---|---|
 | R4-00 | 第三次重構研究 / 文件基線 | 研究報告與 docs sync 完成 | done |
-| R4-01 | Copilot SDK session foundation | create / resume / list / delete / workspace policy | pending |
+| R4-01 | Copilot SDK session foundation | create / resume / list / delete / workspace policy | in_progress |
 | R4-02 | hook policy layer | `on_session_start` / `on_pre_tool_use` / `on_post_tool_use` / `on_error_occurred` | pending |
 | R4-03 | custom agents roles | operator / case-auditor / remediation-planner / run-summarizer | pending |
 | R4-04 | skills packages | diagnostics / remediation policy / report style | pending |
 | R4-05 | advisory agent outputs | per-case audit / run summary / md draft generation | pending |
 | R4-06 | remediation planner loop | structured JSON plan + whitelist executor + rerun gate | pending |
-| R4-07 | runtime policy alignment | plugin agent-config / runner policy 改為 copilot-only order | pending |
+| R4-07 | runtime policy alignment | plugin agent-config / runner policy 改為 copilot-only order | done |
 | R4-08 | selective MCP | GitHub / KB / lab inventory 等非熱路徑工具 | pending |
 
 ### Phase R5：Deterministic kernel 補強

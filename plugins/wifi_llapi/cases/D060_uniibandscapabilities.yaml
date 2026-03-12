@@ -56,9 +56,12 @@ setup_steps: |
      ubus-cli WiFi.AccessPoint.3.Enable=1
      ubus-cli WiFi.AccessPoint.5.Enable=1
   2) STA preparation on COM1:
-     iw dev wl0 set type managed; ifconfig wl0 up
-     iw dev wl1 set type managed; ifconfig wl1 up
-     iw dev wl2 set type managed; ifconfig wl2 up
+     iw dev wl0 set type managed
+     ifconfig wl0 up
+     iw dev wl1 set type managed
+     ifconfig wl1 up
+     iw dev wl2 set type managed
+     ifconfig wl2 up
   3) 6G dependency before wl1 association:
      ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled="WPA3-Personal"
      ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase="B0StaTest1234"
@@ -147,13 +150,14 @@ pass_criteria:
 
 verification_command: |
   # Generate traffic before readback for stats-like AssociatedDevice fields.
-  STA_MAC="$(wl -i wl0 assoclist 2>/dev/null | awk "NR==1{print $2}")"
-  [ -z "$STA_MAC" ] && STA_MAC="$(wl -i wl1 assoclist 2>/dev/null | awk "NR==1{print $2}")"
-  [ -z "$STA_MAC" ] && STA_MAC="$(wl -i wl2 assoclist 2>/dev/null | awk "NR==1{print $2}")"
-  wl -i wl0 assoclist; wl -i wl1 assoclist; wl -i wl2 assoclist
+  wl -i wl0 assoclist
+  wl -i wl1 assoclist
+  wl -i wl2 assoclist
   ubus-cli "WiFi.AccessPoint.*.AssociatedDevice.*.?" | sed -n "1,120p"
   ubus-cli "WiFi.AccessPoint.*.AssociatedDevice.*.UNIIBandsCapabilities?" 2>/dev/null || true
-  [ -n "$STA_MAC" ] && wl -i wl0 sta_info "$STA_MAC" | sed -n "1,120p"
+  wl -i wl0 sta_info "$(wl -i wl0 assoclist 2>/dev/null | awk 'NR==1{print $2}')" 2>/dev/null | sed -n "1,120p" || true
+  wl -i wl1 sta_info "$(wl -i wl1 assoclist 2>/dev/null | awk 'NR==1{print $2}')" 2>/dev/null | sed -n "1,120p" || true
+  wl -i wl2 sta_info "$(wl -i wl2 assoclist 2>/dev/null | awk 'NR==1{print $2}')" 2>/dev/null | sed -n "1,120p" || true
   iw dev wl0 station dump 2>/dev/null | sed -n "1,120p"
 
 results_reference:

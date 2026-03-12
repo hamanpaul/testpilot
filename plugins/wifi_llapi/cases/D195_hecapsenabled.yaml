@@ -114,11 +114,15 @@ steps:
 - id: step1
   action: exec
   target: DUT
-  command: 'Enable OFDMA then set HeCapsEnabled for all radios: ubus-cli WiFi.Radio.1.OfdmaEnable=1; ubus-cli WiFi.Radio.2.OfdmaEnable=1; ubus-cli WiFi.Radio.3.OfdmaEnable=1; ubus-cli WiFi.Radio.*.HeCapsEnabled="DL_OFDMA,UL_OFDMA,DL_MUMIMO"'
+  command: |
+    ubus-cli WiFi.Radio.1.OfdmaEnable=1
+    ubus-cli WiFi.Radio.2.OfdmaEnable=1
+    ubus-cli WiFi.Radio.3.OfdmaEnable=1
+    ubus-cli WiFi.Radio.*.HeCapsEnabled="DL_OFDMA,UL_OFDMA,DL_MUMIMO"
 - id: step2
   action: exec
   target: DUT
-  command: 'Check the settings: ubus-cli WiFi.Radio.*.HeCapsEnabled? > WiFi.Radio.*.HeCapsEnabled? WiFi.Radio.1.HeCapsEnabled="DL_OFDMA,UL_OFDMA,DL_MUMIMO" WiFi.Radio.2.HeCapsEnabled="DL_OFDMA,UL_OFDMA,DL_MUMIMO" WiFi.Radio.3.HeCapsEnabled="DL_OFDMA,UL_OFDMA,DL_MUMIMO"'
+  command: 'ubus-cli "WiFi.Radio.*.HeCapsEnabled?"'
   depends_on: step1
   capture: result
 pass_criteria:

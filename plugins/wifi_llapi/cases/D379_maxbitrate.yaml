@@ -47,8 +47,9 @@ setup_steps: |
      ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase="B0StaTest1234"
      ubus-cli WiFi.AccessPoint.3.Security.MFPConfig="Required"
      ubus-cli WiFi.AccessPoint.3.MultiAPType="FronthaulBSS"
-  3) MaxBitRate is read-only; do not attempt to set it.
-  4) Collect readback while the radios are up and while wl1 has an authenticated 6G STA when possible.
+  3) MaxBitRate is read-only.
+  4) Do not attempt to set it.
+  5) Collect readback while the radios are up and while wl1 has an authenticated 6G STA when possible.
 
 sta_env_setup: |
   STA env setup baseline (COM1 / A0, serialwrap):
@@ -112,7 +113,12 @@ steps:
 - id: step1
   action: exec
   target: DUT
-  command: Ensure DUT radios are up and, for wl1, associate COM1 to B0_6G_AP with the sta_env_setup SAE flow before reading MaxBitRate.
+  command: |
+    wl -i wl0 status
+    wl -i wl1 status
+    wl -i wl2 status
+    wpa_cli -i wl1 status
+    ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.*.AuthenticationState?"
 - id: step2
   action: exec
   target: DUT

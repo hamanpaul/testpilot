@@ -121,8 +121,12 @@ pass_criteria:
 verification_command: |
   ubus-cli "WiFi.Radio.*.?" | sed -n "1,200p"
   ubus-cli "WiFi.Radio.*.SRGBSSColorBitmap?" 2>/dev/null || true
-  wl -i wl0 status; wl -i wl1 status; wl -i wl2 status
-  wl -i wl0 channel 2>/dev/null || true; wl -i wl1 channel 2>/dev/null || true; wl -i wl2 channel 2>/dev/null || true
+  wl -i wl0 status
+  wl -i wl1 status
+  wl -i wl2 status
+  wl -i wl0 channel 2>/dev/null || true
+  wl -i wl1 channel 2>/dev/null || true
+  wl -i wl2 channel 2>/dev/null || true
 
 results_reference:
   v4.0.1:

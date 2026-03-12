@@ -84,7 +84,7 @@
 | ID | 項目 | 狀態 | 對應隱患 | 說明 |
 |---|---|---|---|---|
 | R1-01 | Report 保存不覆蓋 | done | H3 | 報告檔名加 `run_id`，copy 另有 `_01/_02` 防呆 |
-| R1-02 | xlsx report output 清理 marker | done | H4 | `sanitize_report_output()` 清除 `__TP_*`、`root@prplOS` |
+| R1-02 | xlsx report output 清理 marker | done | H4 | `sanitize_report_output()` 清除舊 serial prompt / marker 汙染 |
 | R1-03 | xlsx report cmd 欄單行化 | done | 需求 | G 欄改為單行一條指令 |
 | R1-04 | YAML 指令單行化工具 | done | H5 | 新增 `wifi-llapi audit-yaml-commands` dry-run 稽核 |
 
@@ -111,13 +111,13 @@
 | ID | 項目 | 狀態 | 對應隱患 / 需求 | 說明 |
 |---|---|---|---|---|
 | R4-00 | 第三次重構研究 / 文件基線 | done | 需求 | Copilot SDK 深度研究完成，docs / README / AGENTS 已同步基線 |
-| R4-01 | Copilot SDK session foundation | pending | 需求 | create / resume / list / delete / workspace policy |
+| R4-01 | Copilot SDK session foundation | in_progress | 需求 | thin SDK adapter、session ID policy、create/resume/list/delete 已落地；尚未接入正式 run path |
 | R4-02 | hook policy layer | pending | 需求 | `on_session_start` / `on_pre_tool_use` / `on_post_tool_use` / `on_error_occurred` |
 | R4-03 | custom agents roles | pending | 需求 | operator / case-auditor / remediation-planner / run-summarizer |
 | R4-04 | skills packages | pending | 需求 | diagnostics / remediation policy / report style |
 | R4-05 | advisory agent outputs | pending | 需求 | per-case audit / run summary / md 草稿生成 |
 | R4-06 | remediation planner loop | pending | 需求 | structured JSON plan + whitelist executor + rerun gate |
-| R4-07 | runtime policy alignment | pending | 需求 | `plugins/wifi_llapi/agent-config.yaml` 改為 copilot-only policy |
+| R4-07 | runtime policy alignment | done | 需求 | `plugins/wifi_llapi/agent-config.yaml` 已改為 copilot-only policy |
 | R4-08 | selective MCP integrations | pending | 需求 | 僅限 GitHub / KB / lab inventory 等非熱路徑工具 |
 
 ## Phase R5：可靠性與測試補強

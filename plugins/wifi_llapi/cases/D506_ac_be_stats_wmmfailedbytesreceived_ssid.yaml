@@ -56,9 +56,12 @@ setup_steps: |
      ubus-cli WiFi.AccessPoint.3.Enable=1
      ubus-cli WiFi.AccessPoint.5.Enable=1
   2) STA preparation on COM1:
-     iw dev wl0 set type managed; ifconfig wl0 up
-     iw dev wl1 set type managed; ifconfig wl1 up
-     iw dev wl2 set type managed; ifconfig wl2 up
+     iw dev wl0 set type managed
+     ifconfig wl0 up
+     iw dev wl1 set type managed
+     ifconfig wl1 up
+     iw dev wl2 set type managed
+     ifconfig wl2 up
   3) 6G dependency before wl1 association:
      ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled="WPA3-Personal"
      ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase="B0StaTest1234"

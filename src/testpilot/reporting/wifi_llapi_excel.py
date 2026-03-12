@@ -43,10 +43,6 @@ DATA_START_ROW = 4
 EMPTY_STREAK_STOP = 200
 MAX_SCAN_ROWS = 5000
 _PROMPT_PREFIX_RE = re.compile(r"^(?:root@[^:]+:[^#\n]*#\s*|[>$#]\s*)")
-_SERIALWRAP_MARKER_RE = re.compile(
-    r"__TP_(?:BEGIN|END|RC)_[A-Z0-9a-f_]+__=?[^\s]*",
-    flags=re.IGNORECASE,
-)
 
 
 @dataclass(slots=True)
@@ -132,8 +128,7 @@ def sanitize_report_output(text: str | None) -> str:
 
     lines: list[str] = []
     for raw in str(text).splitlines():
-        line = _SERIALWRAP_MARKER_RE.sub(" ", raw).strip()
-        line = _PROMPT_PREFIX_RE.sub("", line).strip()
+        line = _PROMPT_PREFIX_RE.sub("", raw).strip()
         if not line:
             continue
         lines.append(line)

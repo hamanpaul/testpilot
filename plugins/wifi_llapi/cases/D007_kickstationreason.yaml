@@ -26,14 +26,14 @@ topology:
       transport: serial
       selector: COM1
       config:
-      - iface: 5g
+      - iface: 2.4g
         mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
+        ssid: '{{SSID_24G}}'
+        key: '{{KEY_24G}}'
   links:
   - from: STA
     to: DUT
-    band: 5g
+    band: 2.4g
 
 test_environment: |
   Topology:
@@ -51,72 +51,39 @@ test_environment: |
   - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
 
 setup_steps: |
-  1) DUT baseline on COM0:
-     ubus-cli WiFi.AccessPoint.1.Enable=1
-     ubus-cli WiFi.AccessPoint.3.Enable=1
-     ubus-cli WiFi.AccessPoint.5.Enable=1
-  2) STA preparation on COM1:
-     iw dev wl0 set type managed; ifconfig wl0 up
-     iw dev wl1 set type managed; ifconfig wl1 up
-     iw dev wl2 set type managed; ifconfig wl2 up
-  3) 6G dependency before wl1 association:
-     ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled="WPA3-Personal"
-     ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase="B0StaTest1234"
-     ubus-cli WiFi.AccessPoint.3.Security.MFPConfig="Required"
-     ubus-cli WiFi.AccessPoint.3.MultiAPType="FronthaulBSS"
+  1) DUT 2.4G baseline:
+     - set Radio.3/SSID.8 for the 2.4G AP under test
+     - configure AP5 as open with MFP disabled
+     - enable AP5 before station association
+  2) STA 2.4G preparation:
+     - disable local AP5/AP6 on A0
+     - clear wl2 AP child interface and switch wl2 to managed mode
+     - connect wl2 to {{SSID_24G}}
+  3) Association evidence:
+     - A0: iw dev wl2 link
+     - B0: wl -i wl2 assoclist
 
 sta_env_setup: |
-  STA env setup baseline (COM1 / A0, serialwrap):
-  1) Enable STA radios:
-     ubus-cli WiFi.Radio.1.Enable=1
-     ubus-cli WiFi.Radio.2.Enable=1
-     ubus-cli WiFi.Radio.3.Enable=1
-  2) 5G connect verify (wl0 -> B0_5G_AP):
-     ubus-cli WiFi.AccessPoint.1.Enable=0
-     ubus-cli WiFi.AccessPoint.2.Enable=0
-     killall wpa_supplicant 2>/dev/null || true
-     iw dev wl0.1 del 2>/dev/null || true
-     iw dev wl0 set type managed
-     ifconfig wl0 up
-     iw dev wl0 connect B0_5G_AP
-     sleep 3
-     iw dev wl0 link
-  3) 6G connect verify (wl1 -> B0_6G_AP, SAE):
-     wpa_cli terminate 2>/dev/null || true
-     sleep 1
-     iw dev wl1.1 del 2>/dev/null || true
-     iw dev wl1 disconnect 2>/dev/null || true
-     iw dev wl1 set type managed
-     ifconfig wl1 up
-     printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\n' > /tmp/wpa_wl1.conf
-     wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf
-     sleep 2
-     wpa_cli -i wl1 remove_network all
-     wpa_cli -i wl1 add_network
-     wpa_cli -i wl1 set_network 0 ssid '"B0_6G_AP"'
-     wpa_cli -i wl1 set_network 0 key_mgmt SAE
-     wpa_cli -i wl1 set_network 0 sae_password '"B0StaTest1234"'
-     wpa_cli -i wl1 set_network 0 ieee80211w 2
-     wpa_cli -i wl1 set_network 0 scan_ssid 1
-     wpa_cli -i wl1 enable_network 0
-     wpa_cli -i wl1 reconnect
-     sleep 15
-     iw dev wl1 link
-     wpa_cli -i wl1 status
-  4) 2.4G connect verify (wl2 -> B0_24G_AP):
-     ubus-cli WiFi.AccessPoint.5.Enable=0
-     ubus-cli WiFi.AccessPoint.6.Enable=0
-     killall wpa_supplicant 2>/dev/null || true
-     iw dev wl2.1 del 2>/dev/null || true
-     iw dev wl2 set type managed
-     ifconfig wl2 up
-     iw dev wl2 connect B0_24G_AP
-     sleep 3
-     iw dev wl2 link
-  5) DUT association evidence (COM0):
-     wl -i wl0 assoclist
-     wl -i wl1 assoclist
-     wl -i wl2 assoclist
+  DUT 2.4G AP baseline:
+    ubus-cli WiFi.Radio.3.Enable=1
+    ubus-cli WiFi.SSID.8.SSID={{SSID_24G}}
+    ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=None
+    ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled
+    ubus-cli WiFi.AccessPoint.5.Enable=1
+  STA 2.4G preparation:
+    ubus-cli WiFi.AccessPoint.5.Enable=0
+    ubus-cli WiFi.AccessPoint.6.Enable=0
+    killall wpa_supplicant 2>/dev/null || true
+    iw dev wl2.1 del 2>/dev/null || true
+    iw dev wl2 disconnect 2>/dev/null || true
+    iw dev wl2 set type managed
+    ifconfig wl2 up
+  STA 2.4G connect verify:
+    iw dev wl2 connect {{SSID_24G}}
+    sleep 2
+    iw dev wl2 link
+  DUT 2.4G association evidence:
+    wl -i wl2 assoclist
 
 test_procedure: |
   1) Execute case command on DUT:
@@ -125,49 +92,36 @@ test_procedure: |
      ubus-cli "WiFi.AccessPoint.*.kickStationReason()"
   3) For stats/AssociatedDevice cases, generate traffic (ping/iperf) before re-read.
   4) STA link validation:
-     iw dev wl0 link
-     iw dev wl1 link
-     wpa_cli -i wl1 status
-     iw dev wl2 link
+      iw dev wl2 link
   5) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
 
 steps:
 - id: step1
   action: exec
   target: DUT
-  command: 1. Connect WiFi Station to GW
+  command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.*.MACAddress?"'
 - id: step2
   action: exec
   target: DUT
-  command: Kick connected Station using specified reason codes. CodeMeaning 1 Unspecified 5 Disassociated because AP is busy
-    8 Deauthenticated because STA is leaving 34 Insufficient resources ubus-cli WiFi.AccessPoint.5.kickStationReason"(macaddress=7E:04:6
-    0:D8:FC:6E,reason=1)" > WiFi.AccessPoint.5.kickStationReason(macaddress=7E:04:60:D8:FC:6E,reason=1) WiFi.AccessPoint.5.kickStationReason()
-    returned [ "" ]
+  command: |
+    MAC="$(wl -i wl2 assoclist 2>/dev/null | awk 'NR==1{print $2}')"
+    ubus-cli "WiFi.AccessPoint.5.kickStationReason(macaddress=$MAC,reason=1)"
   depends_on: step1
 - id: step3
   action: exec
   target: DUT
-  command: 'Verify system event logs - Confirm that the event log reports the station disconnection. - Expected log message
-    includes: * Station MAC address 42:33:64:A3:9F:B0 * Disconnection indication such as: “disassociated” or “deauthenticated”  CONSOLE[wl2]:
-    004528.186 wl2: STA 42:33:64:A3:9F:B0 has disassociated tx_type 33'
+  command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.*.AuthenticationState?"'
   depends_on: step2
   capture: result
 pass_criteria:
-- field: result.kickStationReason()
+- field: result.AuthenticationState
   operator: contains
-  value: string, reason:int):bool
-  description: kickStationReason() 應回傳包含 kickStationReason()=string, reason:int):bool
-verification_command: 'AuthenticationState=1 "The station has successfully completed the association procedure and is listed
-  in the AP association table"
-
-  root@prplOS:/# wl -i wl0 assoclist
-
-  assoclist 42:33:64:A3:9F:B0
-
-
-  AuthenticationState=0 "The station is not associated with the AP and therefore does not appear in the AP association table."
-
-  root@prplOS:/# wl -i wl0 assoclist'
+  value: '0'
+  description: kickStationReason 執行後應回傳 AuthenticationState=0
+verification_command: |
+  ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.*.MACAddress?"
+  ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.*.AuthenticationState?"
+  wl -i wl2 assoclist
 results_reference:
   v4.0.1:
     5g: Pass

@@ -79,17 +79,18 @@ python -m testpilot.cli wifi-llapi build-template-report \
 ```bash
 python -m testpilot.cli run wifi_llapi \
   --case wifi-llapi-D006-kickstation \
-  --dut-fw-ver BGW720-B0-403 \
-  --report-source-xlsx "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
+  --dut-fw-ver BGW720-B0-403
 ```
 
 全量執行（預設會跑官方 row-indexed `wifi-llapi-D###`，目前 415 cases）：
 
 ```bash
 python -m testpilot.cli run wifi_llapi \
-  --dut-fw-ver BGW720-B0-403 \
-  --report-source-xlsx "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
+  --dut-fw-ver BGW720-B0-403
 ```
+
+`run wifi_llapi` 會優先使用既有的 `plugins/wifi_llapi/reports/templates/wifi_llapi_template.xlsx`。
+只有在你要第一次建立 / 重新整理 template 時，才需要提供 `--report-source-xlsx <原始 Excel>`。
 
 ### 6) 產出檔案
 

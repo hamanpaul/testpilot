@@ -115,7 +115,10 @@ steps:
 - id: step2
   action: exec
   target: DUT
-  command: Run wl -i wl0 beacon_info, wl -i wl1 beacon_info, and wl -i wl2 beacon_info; compare the HE Capabilities payload with LLAPI and driver state when API=1.
+  command: |
+    wl -i wl0 beacon_info
+    wl -i wl1 beacon_info
+    wl -i wl2 beacon_info
   depends_on: step1
 - id: step3
   action: exec
@@ -131,7 +134,10 @@ steps:
 - id: step5
   action: exec
   target: DUT
-  command: Run wl -i wl0 beacon_info, wl -i wl1 beacon_info, and wl -i wl2 beacon_info again; compare the HE Capabilities payload with LLAPI and driver state when API=0.
+  command: |
+    wl -i wl0 beacon_info
+    wl -i wl1 beacon_info
+    wl -i wl2 beacon_info
   depends_on: step4
 pass_criteria:
 - field: result_on.ExplicitBeamFormingEnabled

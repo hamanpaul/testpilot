@@ -17,6 +17,7 @@ from testpilot.reporting.wifi_llapi_excel import ensure_template_report
 from testpilot.yaml_command_audit import (
     DEFAULT_AUDIT_FIELDS,
     build_yaml_command_audit_report,
+    rewrite_yaml_chained_commands,
     write_yaml_command_audit_report,
 )
 
@@ -108,7 +109,7 @@ def list_cases(ctx: click.Context, plugin_name: str) -> None:
     "--report-source-xlsx",
     type=click.Path(exists=True, dir_okay=False),
     default=None,
-    help="Override source Excel path for wifi_llapi report/template.",
+    help="Optional source Excel path used to (re)build the wifi_llapi template before running.",
 )
 @click.pass_context
 def run_tests(
@@ -235,6 +236,74 @@ def audit_yaml_commands(
     preview["matches_returned"] = min(limit, len(matches))
     preview["truncated"] = len(matches) > limit
     preview["matches"] = matches[:limit]
+    if out:
+        preview["report_path"] = str(Path(out))
+
+    click.echo(json.dumps(preview, indent=2, ensure_ascii=False))
+
+
+@wifi_llapi_group.command("rewrite-yaml-commands")
+@click.option(
+    "--cases-dir",
+    default=None,
+    type=click.Path(exists=True, file_okay=False),
+    help="Cases directory to rewrite. Defaults to plugins/wifi_llapi/cases under --root.",
+)
+@click.option(
+    "--field",
+    "fields",
+    multiple=True,
+    help="Field name to rewrite. Repeatable. Defaults to command/verification_command/hlapi_command/setup_steps/sta_env_setup.",
+)
+@click.option(
+    "--apply",
+    "apply_changes",
+    is_flag=True,
+    help="Write rewritable chained commands back to YAML files. Without this flag, command runs in dry-run mode.",
+)
+@click.option(
+    "--limit",
+    default=20,
+    show_default=True,
+    type=click.IntRange(min=1),
+    help="Maximum rewritten/blocked file records printed to stdout.",
+)
+@click.option(
+    "--out",
+    default=None,
+    type=click.Path(dir_okay=False),
+    help="Optional JSON output path for the full rewrite report.",
+)
+@click.pass_context
+def rewrite_yaml_commands(
+    ctx: click.Context,
+    cases_dir: str | None,
+    fields: tuple[str, ...],
+    apply_changes: bool,
+    limit: int,
+    out: str | None,
+) -> None:
+    """Rewrite safe chained shell commands into single-command YAML lines."""
+    root: Path = ctx.obj["root"]
+    target_dir = Path(cases_dir) if cases_dir else root / "plugins" / "wifi_llapi" / "cases"
+    target_fields = tuple(fields) if fields else DEFAULT_AUDIT_FIELDS
+
+    report = rewrite_yaml_chained_commands(
+        target_dir,
+        target_fields=target_fields,
+        apply_changes=apply_changes,
+    )
+    if out:
+        write_yaml_command_audit_report(out, report)
+
+    preview = dict(report)
+    rewritten_files = list(report.get("rewritten_files", []))
+    blocked_matches = list(report.get("blocked_matches", []))
+    preview["rewritten_files_returned"] = min(limit, len(rewritten_files))
+    preview["blocked_matches_returned"] = min(limit, len(blocked_matches))
+    preview["rewritten_files"] = rewritten_files[:limit]
+    preview["blocked_matches"] = blocked_matches[:limit]
+    preview["truncated"] = len(rewritten_files) > limit or len(blocked_matches) > limit
     if out:
         preview["report_path"] = str(Path(out))
 

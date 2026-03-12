@@ -3,18 +3,16 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import subprocess
 import time
-import uuid
 from typing import Any
 
 from .base import TransportBase
 
 SERIALWRAP_BIN = "/home/paul_chen/.paul_tools/serialwrap"
 TERMINAL_STATUSES = {"done", "failed", "error", "timeout", "cancelled", "canceled"}
-SEQ_PATTERN = re.compile(r"^\S+\s+\S+\s+(\d+)\s+")
+MODE_ALIASES = {"fg": "line", "bg": "background"}
 
 
 class SerialWrapTransport(TransportBase):
@@ -25,16 +23,23 @@ class SerialWrapTransport(TransportBase):
         self._binary = str(self._config.get("binary", SERIALWRAP_BIN))
         self._socket = self._config.get("socket")
         self._source = str(self._config.get("source", "agent:testpilot"))
-        self._mode = str(self._config.get("mode", "fg"))
+        self._mode = self._normalize_mode(str(self._config.get("mode", "line")))
         self._priority = int(self._config.get("priority", 10))
         self._poll_interval = float(self._config.get("poll_interval", 0.2))
-        self._log_limit = int(self._config.get("log_limit", 800))
-        self._use_marker = bool(self._config.get("use_marker", True))
+        connect_timeout = float(self._config.get("connect_timeout", 10.0))
+        self._connect_attempts = max(1, int(self._config.get("connect_attempts", 2)))
+        self._connect_retry_delay = max(
+            0.0, float(self._config.get("connect_retry_delay", 0.5))
+        )
+        self._session_list_timeout = float(
+            self._config.get("session_list_timeout", connect_timeout)
+        )
+        self._session_attach_timeout = float(
+            self._config.get("session_attach_timeout", connect_timeout)
+        )
         self._connected = False
         self._selector: str | None = None
         self._session: dict[str, Any] | None = None
-        self._mirror_path: str | None = None
-        self._wal_path: str | None = None
 
     @property
     def transport_type(self) -> str:
@@ -52,24 +57,34 @@ class SerialWrapTransport(TransportBase):
 
     def connect(self, **kwargs: Any) -> None:
         params = {**self._config, **kwargs}
-        sessions = self._list_sessions()
-        selector, session = self._resolve_session(params, sessions)
-        state = str(session.get("state", "")).upper()
-        if state != "READY":
-            raise RuntimeError(f"serialwrap session not READY: {selector} ({state})")
+        last_error: Exception | None = None
+        for attempt in range(1, self._connect_attempts + 1):
+            try:
+                sessions = self._list_sessions()
+                selector, session = self._resolve_session(params, sessions)
+                session = self._ensure_ready_session(selector, session)
+            except Exception as exc:
+                last_error = exc
+                if attempt >= self._connect_attempts:
+                    raise
+                if self._connect_retry_delay > 0.0:
+                    time.sleep(self._connect_retry_delay)
+                continue
 
-        self._selector = str(
-            session.get("session_id") or session.get("com") or session.get("alias") or selector
-        )
-        self._session = session
-        self._connected = True
+            self._selector = str(
+                session.get("session_id") or session.get("com") or session.get("alias") or selector
+            )
+            self._session = session
+            self._connected = True
+            return
+
+        if last_error is not None:
+            raise last_error
 
     def disconnect(self) -> None:
         self._connected = False
         self._selector = None
         self._session = None
-        self._mirror_path = None
-        self._wal_path = None
 
     def execute(self, command: str, timeout: float = 30.0) -> dict[str, Any]:
         if not self._connected or not self._selector:
@@ -77,10 +92,6 @@ class SerialWrapTransport(TransportBase):
 
         timeout_s = max(float(timeout), 0.1)
         start = time.monotonic()
-        marker = self._new_marker() if self._use_marker else None
-        wrapped_command = self._wrap_command(command, marker) if marker else command
-
-        seq_before = self._get_latest_seq(self._selector)
         submit_payload = self._run_json(
             [
                 "cmd",
@@ -88,7 +99,7 @@ class SerialWrapTransport(TransportBase):
                 "--selector",
                 self._selector,
                 "--cmd",
-                wrapped_command,
+                command,
                 "--source",
                 self._source,
                 "--mode",
@@ -108,43 +119,46 @@ class SerialWrapTransport(TransportBase):
         try:
             status_payload = self._poll_status(cmd_id, timeout_s)
         except TimeoutError as exc:
+            recovery_action = None
+            try:
+                self._attach_session()
+            except Exception:
+                recovery_action = None
+            else:
+                recovery_action = "ATTACH"
             return {
                 "returncode": 124,
                 "stdout": "",
                 "stderr": str(exc),
                 "elapsed": time.monotonic() - start,
+                "cmd_id": cmd_id,
+                "status": "timeout",
+                "partial": False,
+                "execution_mode": self._mode,
+                "background_capture_id": None,
+                "interactive_session_id": None,
+                "recovery_action": recovery_action,
             }
 
         command_status = status_payload.get("command", {})
-        raw_stdout = self._collect_output_after_command(
-            selector=self._selector,
-            seq_before=seq_before,
-            marker=marker,
-            timeout_s=min(max(1.0, timeout_s * 0.2), 4.0),
+        stdout = str(command_status.get("stdout", "") or "").strip()
+        returncode = self._status_to_returncode(
+            str(command_status.get("status", "")),
+            command_status.get("error_code"),
         )
-
-        stdout = raw_stdout
-        returncode: int | None = None
-        if marker is not None:
-            parsed = self._extract_marker_output(raw_stdout, marker)
-            stdout = parsed["stdout"] or raw_stdout
-            returncode = parsed["returncode"]
-
-        if not stdout:
-            stdout = str(command_status.get("command", "")).strip()
-
-        if returncode is None:
-            returncode = self._status_to_returncode(
-                str(command_status.get("status", "")),
-                command_status.get("error_code"),
-            )
-
         stderr = self._build_stderr(command_status)
         return {
             "returncode": returncode,
             "stdout": stdout,
             "stderr": stderr,
             "elapsed": time.monotonic() - start,
+            "cmd_id": cmd_id,
+            "status": command_status.get("status"),
+            "partial": bool(command_status.get("partial", False)),
+            "execution_mode": command_status.get("execution_mode"),
+            "background_capture_id": command_status.get("background_capture_id"),
+            "interactive_session_id": command_status.get("interactive_session_id"),
+            "recovery_action": command_status.get("recovery_action"),
         }
 
     def _build_cli(self, args: list[str]) -> list[str]:
@@ -178,11 +192,55 @@ class SerialWrapTransport(TransportBase):
         if not isinstance(payload, dict):
             raise RuntimeError(f"serialwrap response must be JSON object: {stdout!r}")
         if payload.get("ok") is False:
+            if self._should_retry_with_attach(args, payload):
+                self._attach_session()
+                return self._run_json(args, timeout=timeout)
             raise RuntimeError(f"serialwrap command not ok: {' '.join(args)}: {stdout}")
         return payload
 
+    def _ensure_ready_session(self, selector: str, session: dict[str, Any]) -> dict[str, Any]:
+        state = str(session.get("state", "")).upper()
+        if state == "READY":
+            return session
+
+        self._selector = str(
+            session.get("session_id") or session.get("com") or session.get("alias") or selector
+        )
+        payload = self._attach_session()
+        attached = payload.get("session")
+        if not isinstance(attached, dict):
+            raise RuntimeError(f"serialwrap attach returned no session payload: {selector}")
+        attached_state = str(attached.get("state", "")).upper()
+        if attached_state != "READY":
+            raise RuntimeError(f"serialwrap session not READY: {selector} ({attached_state})")
+        return attached
+
+    def _attach_session(self) -> dict[str, Any]:
+        selector = self._selector
+        if not selector:
+            raise RuntimeError("serialwrap attach requires resolved selector")
+        payload = self._run_json(
+            ["session", "attach", "--selector", selector],
+            timeout=self._session_attach_timeout,
+        )
+        session = payload.get("session")
+        if isinstance(session, dict):
+            self._session = session
+        return payload
+
+    def _should_retry_with_attach(self, args: list[str], payload: dict[str, Any]) -> bool:
+        if len(args) >= 2 and args[:2] == ["session", "attach"]:
+            return False
+        if not self._selector:
+            return False
+        if payload.get("error_code") != "SESSION_NOT_READY":
+            return False
+        if len(args) < 2 or args[:2] == ["session", "list"]:
+            return False
+        return True
+
     def _list_sessions(self) -> list[dict[str, Any]]:
-        payload = self._run_json(["session", "list"], timeout=5.0)
+        payload = self._run_json(["session", "list"], timeout=self._session_list_timeout)
         sessions = payload.get("sessions", [])
         if not isinstance(sessions, list):
             raise RuntimeError("serialwrap session list response missing sessions")
@@ -293,149 +351,9 @@ class SerialWrapTransport(TransportBase):
             if self._poll_interval > 0:
                 time.sleep(self._poll_interval)
 
-    def _get_latest_seq(self, selector: str) -> int | None:
-        mirror_path = self._ensure_mirror_path()
-        if mirror_path:
-            seq = self._read_last_seq_from_mirror(mirror_path)
-            if seq is not None:
-                return seq
-
-        wal_path = self._ensure_wal_path()
-        if wal_path:
-            seq = self._read_last_seq_from_wal(wal_path)
-            if seq is not None:
-                return seq
-
-        # Avoid dangerous fallback to `log tail-text --limit 1`.
-        # serialwrap returns the oldest entries first, which can rewind
-        # baseline seq and replay historical logs unexpectedly.
-        return None
-
-    def _tail_text(self, selector: str, seq_before: int | None) -> dict[str, Any]:
-        args = [
-            "log",
-            "tail-text",
-            "--selector",
-            selector,
-            "--limit",
-            str(self._log_limit),
-        ]
-        if seq_before is not None:
-            args.extend(["--from-seq", str(seq_before + 1)])
-        return self._run_json(args, timeout=5.0)
-
-    def _tail_text_since(
-        self,
-        selector: str,
-        from_seq: int,
-    ) -> tuple[int, list[str]]:
-        payload = self._tail_text(selector, from_seq)
-        lines = payload.get("lines", [])
-        if not isinstance(lines, list):
-            return from_seq, []
-        typed_lines = [line for line in lines if isinstance(line, str)]
-        new_seq = from_seq
-        for line in typed_lines:
-            seq = self._parse_seq(line)
-            if seq is not None and seq > new_seq:
-                new_seq = seq
-        return new_seq, typed_lines
-
-    def _collect_output_after_command(
-        self,
-        *,
-        selector: str,
-        seq_before: int | None,
-        marker: dict[str, str] | None,
-        timeout_s: float,
-    ) -> str:
-        last_seq = seq_before or 0
-        deadline = time.monotonic() + max(timeout_s, 0.5)
-        all_lines: list[str] = []
-        end_marker = marker["end"] if marker else ""
-
-        while True:
-            next_seq, lines = self._tail_text_since(selector, last_seq)
-            if lines:
-                all_lines.extend(lines)
-                last_seq = max(last_seq, next_seq)
-                if end_marker and any(end_marker in line for line in lines):
-                    break
-
-            if time.monotonic() >= deadline:
-                break
-            if self._poll_interval > 0:
-                time.sleep(self._poll_interval)
-            else:
-                time.sleep(0.05)
-
-        return self._extract_text_payload(all_lines)
-
-    def _parse_seq(self, line: str) -> int | None:
-        match = SEQ_PATTERN.match(line)
-        if not match:
-            return None
-        return int(match.group(1))
-
-    def _extract_text_payload(self, lines: list[Any]) -> str:
-        chunks: list[str] = []
-        for line in lines:
-            if not isinstance(line, str):
-                continue
-            if " RX " not in line:
-                continue
-            if "|" in line:
-                chunks.append(line.split("|", 1)[1].lstrip())
-            else:
-                chunks.append(line)
-        return "".join(chunks).strip()
-
-    def _new_marker(self) -> dict[str, str]:
-        token = uuid.uuid4().hex[:12]
-        return {
-            "begin": f"__TP_BEGIN_{token}__",
-            "end": f"__TP_END_{token}__",
-            "rc_prefix": f"__TP_RC_{token}__=",
-        }
-
-    def _wrap_command(self, command: str, marker: dict[str, str]) -> str:
-        begin = marker["begin"]
-        end = marker["end"]
-        rc_prefix = marker["rc_prefix"]
-        return (
-            f"printf '{begin}\\n'; "
-            f"{command}; "
-            "__tp_rc=$?; "
-            f"printf '{rc_prefix}%s\\n{end}\\n' \"$__tp_rc\""
-        )
-
-    def _extract_marker_output(self, output: str, marker: dict[str, str]) -> dict[str, Any]:
-        begin = marker["begin"]
-        end = marker["end"]
-        rc_prefix = marker["rc_prefix"]
-
-        start = output.rfind(begin)
-        segment = output[start + len(begin) :] if start >= 0 else output
-
-        end_pos = segment.find(end)
-        if end_pos >= 0:
-            segment = segment[:end_pos]
-
-        rc_pattern = re.escape(rc_prefix) + r"(-?\d+)"
-        returncode: int | None = None
-        rc_match = re.search(rc_pattern, segment)
-        if rc_match:
-            # Use the first RC marker emitted after the matching begin marker.
-            # Old transcript fragments may replay the same token later in the segment.
-            returncode = int(rc_match.group(1))
-            segment = re.sub(rf"(?m)^[ \t]*{re.escape(rc_prefix)}-?\d+[ \t]*\n?", "", segment)
-            segment = re.sub(rc_pattern, "", segment)
-
-        return {"stdout": segment.strip(), "returncode": returncode}
-
     def _status_to_returncode(self, status: str, error_code: Any) -> int:
         status_lower = status.lower()
-        if status_lower == "done" and not error_code:
+        if status_lower in {"done", "interactive"} and not error_code:
             return 0
         if status_lower == "timeout":
             return 124
@@ -445,14 +363,24 @@ class SerialWrapTransport(TransportBase):
 
     def _build_stderr(self, command_status: dict[str, Any]) -> str:
         details: list[str] = []
+        stderr = str(command_status.get("stderr", "") or "").strip()
         error_code = command_status.get("error_code")
         status = str(command_status.get("status", ""))
 
+        if stderr:
+            details.append(stderr)
         if error_code:
             details.append(str(error_code))
-        if status and status.lower() not in {"done", "running", "accepted"}:
+        if status and status.lower() not in {"done", "running", "accepted", "interactive"}:
             details.append(f"status={status}")
         return "; ".join(details)
+
+    @staticmethod
+    def _normalize_mode(mode: str) -> str:
+        normalized = MODE_ALIASES.get(mode.strip().lower(), mode.strip().lower())
+        if normalized not in {"line", "background", "interactive"}:
+            return "line"
+        return normalized
 
     def _resolve_by_id_from_real_path(self, serial_port: str) -> str | None:
         try:
@@ -478,104 +406,3 @@ class SerialWrapTransport(TransportBase):
         if not match:
             return None
         return f"COM{match.group(1)}"
-
-    def _ensure_mirror_path(self) -> str | None:
-        if self._mirror_path and os.path.exists(self._mirror_path):
-            return self._mirror_path
-        payload = self._daemon_status()
-        if payload is None:
-            return None
-        mirror_path = str(payload.get("mirror_path", "")).strip()
-        if not mirror_path:
-            return None
-        self._mirror_path = mirror_path
-        return mirror_path
-
-    def _ensure_wal_path(self) -> str | None:
-        if self._wal_path and os.path.exists(self._wal_path):
-            return self._wal_path
-        payload = self._daemon_status()
-        if payload is None:
-            return None
-        wal_path = str(payload.get("wal_path", "")).strip()
-        if not wal_path:
-            return None
-        self._wal_path = wal_path
-        return wal_path
-
-    def _daemon_status(self) -> dict[str, Any] | None:
-        try:
-            payload = self._run_json(["daemon", "status"], timeout=5.0)
-        except Exception:
-            return None
-        if not isinstance(payload, dict):
-            return None
-        return payload
-
-    def _read_last_seq_from_mirror(self, path: str) -> int | None:
-        if not os.path.exists(path):
-            return None
-
-        with open(path, "rb") as fp:
-            fp.seek(0, os.SEEK_END)
-            size = fp.tell()
-            if size <= 0:
-                return None
-
-            chunk = bytearray()
-            pos = size - 1
-            while pos >= 0:
-                fp.seek(pos)
-                b = fp.read(1)
-                if b == b"\n" and chunk:
-                    break
-                if b != b"\n":
-                    chunk.extend(b)
-                pos -= 1
-
-        if not chunk:
-            return None
-
-        line = chunk[::-1].decode("utf-8", errors="replace")
-        seq = self._parse_seq(line)
-        if seq is None:
-            return None
-        return seq
-
-    def _read_last_seq_from_wal(self, path: str) -> int | None:
-        if not os.path.exists(path):
-            return None
-
-        with open(path, "rb") as fp:
-            fp.seek(0, os.SEEK_END)
-            size = fp.tell()
-            if size <= 0:
-                return None
-
-            chunk = bytearray()
-            pos = size - 1
-            while pos >= 0:
-                fp.seek(pos)
-                b = fp.read(1)
-                if b == b"\n" and chunk:
-                    break
-                if b != b"\n":
-                    chunk.extend(b)
-                pos -= 1
-
-        if not chunk:
-            return None
-
-        line = chunk[::-1].decode("utf-8", errors="replace")
-        try:
-            payload = json.loads(line)
-        except json.JSONDecodeError:
-            return None
-        if not isinstance(payload, dict):
-            return None
-        seq = payload.get("seq")
-        if isinstance(seq, int):
-            return seq
-        if isinstance(seq, str) and seq.isdigit():
-            return int(seq)
-        return None

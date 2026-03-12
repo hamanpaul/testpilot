@@ -16,6 +16,10 @@ try:
     from testpilot.core import agent_runtime as agent_runtime_module
 except Exception:  # pragma: no cover - optional module during incremental rollout
     agent_runtime_module = None
+try:
+    from testpilot.core.copilot_session import build_case_session_plan
+except Exception:  # pragma: no cover - optional during incremental rollout
+    build_case_session_plan = None
 
 from testpilot.core.plugin_loader import PluginLoader
 from testpilot.core.testbed_config import TestbedConfig
@@ -70,6 +74,21 @@ class Orchestrator:
         config = config_path or self.root / DEFAULT_CONFIG_DIR / "testbed.yaml"
         self.config = TestbedConfig(config)
         self.loader = PluginLoader(self.plugins_dir)
+
+    @staticmethod
+    def _load_wifi_llapi_template_source(manifest_path: Path) -> str | None:
+        if not manifest_path.exists():
+            return None
+        try:
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except Exception:
+            log.warning("failed to read wifi_llapi template manifest: %s", manifest_path)
+            return None
+        source_workbook = payload.get("source_workbook")
+        if not isinstance(source_workbook, str):
+            return None
+        source_text = source_workbook.strip()
+        return source_text or None
 
     def discover_plugins(self) -> list[str]:
         """列出所有可用 plugin。"""
@@ -651,20 +670,40 @@ class Orchestrator:
         reports_root = self.plugins_dir / plugin_name / "reports"
         template_path = reports_root / "templates" / "wifi_llapi_template.xlsx"
         manifest_path = reports_root / "templates" / "wifi_llapi_template.manifest.json"
-        source_xlsx = Path(report_source_xlsx) if report_source_xlsx else Path(DEFAULT_WIFI_LLAPI_SOURCE_XLSX)
+        source_xlsx = Path(report_source_xlsx) if report_source_xlsx else None
+        alignment_xlsx: Path
+        source_report = ""
 
-        if not source_xlsx.exists():
-            raise FileNotFoundError(
-                f"wifi_llapi source report not found: {source_xlsx}"
+        if source_xlsx is not None:
+            if not source_xlsx.exists():
+                raise FileNotFoundError(f"wifi_llapi source report not found: {source_xlsx}")
+            ensure_template_report(
+                source_xlsx=source_xlsx,
+                template_path=template_path,
+                manifest_path=manifest_path,
             )
+            alignment_xlsx = source_xlsx
+            source_report = str(source_xlsx)
+        elif template_path.exists():
+            alignment_xlsx = template_path
+            source_report = self._load_wifi_llapi_template_source(manifest_path) or str(template_path)
+        else:
+            default_source = Path(DEFAULT_WIFI_LLAPI_SOURCE_XLSX)
+            if not default_source.exists():
+                raise FileNotFoundError(
+                    "wifi_llapi template not found. Run "
+                    "`python -m testpilot.cli wifi-llapi build-template-report --source-xlsx <path>` "
+                    "or pass `--report-source-xlsx <path>` to rebuild it."
+                )
+            ensure_template_report(
+                source_xlsx=default_source,
+                template_path=template_path,
+                manifest_path=manifest_path,
+            )
+            alignment_xlsx = default_source
+            source_report = str(default_source)
 
-        template_result = ensure_template_report(
-            source_xlsx=source_xlsx,
-            template_path=template_path,
-            manifest_path=manifest_path,
-        )
-
-        alignment_issues = collect_alignment_issues(cases, source_xlsx)
+        alignment_issues = collect_alignment_issues(cases, alignment_xlsx)
         if alignment_issues:
             alignment_dir = reports_root / "alignment"
             alignment_dir.mkdir(parents=True, exist_ok=True)
@@ -672,7 +711,8 @@ class Orchestrator:
             alignment_path.write_text(
                 json.dumps(
                     {
-                        "source_report": str(source_xlsx),
+                        "source_report": source_report,
+                        "alignment_sheet": str(alignment_xlsx),
                         "issues_count": len(alignment_issues),
                         "issues": alignment_issues,
                     },
@@ -727,6 +767,10 @@ class Orchestrator:
                 case=case,
                 agent_config=agent_config,
             )
+            if callable(build_case_session_plan):
+                session_plan = build_case_session_plan(run_id, case_id, selected_runner)
+                if session_plan is not None:
+                    selection_trace["session_plan"] = session_plan
 
             max_attempts = self._safe_int(
                 execution_policy.get("retry", {}).get("max_attempts"), 1
@@ -834,7 +878,7 @@ class Orchestrator:
             meta=ReportMeta(
                 run_date=run_date,
                 dut_fw_ver=fw_ver,
-                source_excel=str(source_xlsx),
+                source_excel=source_report,
             ),
         )
 
@@ -846,9 +890,9 @@ class Orchestrator:
             "pass_count": pass_count,
             "fail_count": fail_count,
             "status": "completed",
-            "template_path": str(template_result.template_path),
+            "template_path": str(template_path),
             "report_path": str(report_path),
-            "source_report": str(source_xlsx),
+            "source_report": source_report,
             "run_id": run_id,
             "agent_trace_dir": str(agent_trace_dir),
             "agent_trace_count": len(case_trace_files),

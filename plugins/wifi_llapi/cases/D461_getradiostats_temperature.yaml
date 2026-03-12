@@ -56,9 +56,12 @@ setup_steps: |
      ubus-cli WiFi.AccessPoint.3.Enable=1
      ubus-cli WiFi.AccessPoint.5.Enable=1
   2) STA preparation on COM1:
-     iw dev wl0 set type managed; ifconfig wl0 up
-     iw dev wl1 set type managed; ifconfig wl1 up
-     iw dev wl2 set type managed; ifconfig wl2 up
+     iw dev wl0 set type managed
+     ifconfig wl0 up
+     iw dev wl1 set type managed
+     ifconfig wl1 up
+     iw dev wl2 set type managed
+     ifconfig wl2 up
   3) 6G dependency before wl1 association:
      ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled="WPA3-Personal"
      ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase="B0StaTest1234"
@@ -135,13 +138,15 @@ steps:
 - id: step1
   action: exec
   target: DUT
-  command: '1. Record counters at start:'
+  command: |
+    cat /sys/class/thermal/thermal_zone0/temp
+    wl -i wl0 phy_tempsense
+    wl -i wl1 phy_tempsense
+    wl -i wl2 phy_tempsense
 - id: step2
   action: exec
   target: DUT
-  command: Check Radio Temperature ubus-cli "WiFi.Radio.*.getRadioStats()" | grep Temperature Temperature = 81, Temperature
-    = 82, Temperature = 77, ubus-cli "WiFi.Radio.*.getRadioStats()" | grep Temperature Temperature = 56, Temperature = 87,
-    Temperature = 75,
+  command: 'ubus-cli "WiFi.Radio.*.getRadioStats()" | grep Temperature'
   depends_on: step1
   capture: result
 pass_criteria:
@@ -149,30 +154,12 @@ pass_criteria:
   operator: not_contains
   value: error
   description: getRadioStats() 執行不應回傳 error
-verification_command: 'cat /sys/class/thermal/thermal_zone0/temp
-
-  77195
-
-  root@prplOS:/# for z in /sys/class/thermal/thermal_zone*; do
-
-  > echo "$z: $(cat $z/type 2>/dev/null) $(cat $z/temp 2>/dev/null)"
-
-  > done
-
-  /sys/class/thermal/thermal_zone0: Broadcom_Thermal 76483
-
-
-  root@prplOS:/# wl -i wl0 phy_tempsense
-
-  56 (0x38)
-
-  root@prplOS:/# wl -i wl1 phy_tempsense
-
-  83 (0x53)
-
-  root@prplOS:/# wl -i wl2 phy_tempsense
-
-  76 (0x4c)'
+verification_command: |
+  cat /sys/class/thermal/thermal_zone0/type
+  cat /sys/class/thermal/thermal_zone0/temp
+  wl -i wl0 phy_tempsense
+  wl -i wl1 phy_tempsense
+  wl -i wl2 phy_tempsense
 results_reference:
   v4.0.1:
     5g: Pass

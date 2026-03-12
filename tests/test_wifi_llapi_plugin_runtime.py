@@ -68,6 +68,52 @@ class _FakeTransport:
                 "stderr": "",
                 "elapsed": 0.01,
             }
+        if command.startswith("hostapd -t /tmp/wl"):
+            if self.config.get("simulate_hostapd_config_fail") and "wl0" in command:
+                return {
+                    "returncode": 0,
+                    "stdout": (
+                        "Line 21: Invalid qos_map_set '255'\n"
+                        "1 errors found in configuration file '/tmp/wl0_hapd.conf'\n"
+                        "Failed to initialize interface"
+                    ),
+                    "stderr": "",
+                    "elapsed": 0.01,
+                }
+            return {
+                "returncode": 0,
+                "stdout": "",
+                "stderr": "",
+                "elapsed": 0.01,
+            }
+        if command == "/etc/init.d/wld_gen start":
+            if self.config.get("simulate_wld_gen_fail"):
+                return {
+                    "returncode": 1,
+                    "stdout": "wld_gen: failed to apply configuration",
+                    "stderr": "",
+                    "elapsed": 0.01,
+                }
+            return {
+                "returncode": 0,
+                "stdout": "wld_gen: start completed",
+                "stderr": "",
+                "elapsed": 0.01,
+            }
+        if command.startswith("wpa_cli ") and command.endswith(" ping"):
+            return {
+                "returncode": 0,
+                "stdout": "PONG",
+                "stderr": "",
+                "elapsed": 0.01,
+            }
+        if command.startswith("wpa_cli ") and command.endswith(" status"):
+            return {
+                "returncode": 0,
+                "stdout": "wpa_state=COMPLETED",
+                "stderr": "",
+                "elapsed": 0.01,
+            }
         if command.startswith("iw dev wl") and " link" in command:
             if self.config.get("simulate_sta_link_fail") and "wl1" in command:
                 return {
@@ -82,6 +128,20 @@ class _FakeTransport:
                 "stderr": "",
                 "elapsed": 0.01,
             }
+        if command.startswith("wl -i wl") and command.endswith(" bss"):
+            if self.config.get("simulate_bss_down") and "wl0" in command:
+                return {
+                    "returncode": 0,
+                    "stdout": "down",
+                    "stderr": "",
+                    "elapsed": 0.01,
+                }
+            return {
+                "returncode": 0,
+                "stdout": "up",
+                "stderr": "",
+                "elapsed": 0.01,
+            }
         if command.startswith("wl -i wl") and "assoclist" in command:
             if self.config.get("simulate_assoclist_empty") and "wl1" in command:
                 return {
@@ -93,6 +153,20 @@ class _FakeTransport:
             return {
                 "returncode": 0,
                 "stdout": "assoclist 84:0d:8e:aa:bb:cc",
+                "stderr": "",
+                "elapsed": 0.01,
+            }
+        if command.startswith('ubus-cli "WiFi.AccessPoint.') and "AssociatedDevice.*.MACAddress?" in command:
+            if self.config.get("simulate_assoc_query_fail"):
+                return {
+                    "returncode": 0,
+                    "stdout": "No data found",
+                    "stderr": "",
+                    "elapsed": 0.01,
+                }
+            return {
+                "returncode": 0,
+                "stdout": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="84:0d:8e:aa:bb:cc"',
                 "stderr": "",
                 "elapsed": 0.01,
             }
@@ -173,7 +247,7 @@ def test_execute_step_command_fallback_priority(monkeypatch):
     assert "WiFi.Radio.1.?" in result_1["command"]
     assert result_1["fallback_reason"] == "extract_from_step_text"
 
-    # 2) 無可執行片段時，fallback 到 hlapi_command
+    # 2) 無 capture 的純說明步驟不再誤用 verification_command，直接 skip
     result_2 = plugin.execute_step(
         case,
         {
@@ -185,11 +259,10 @@ def test_execute_step_command_fallback_priority(monkeypatch):
         topology=topology,
     )
     assert result_2["success"] is True
-    assert result_2["command"].startswith("ubus-cli")
-    assert "WiFi.Radio.1.?" in result_2["command"]
-    assert result_2["fallback_reason"] == "fallback_hlapi_command"
+    assert "[skip] non-executable step s2" in result_2["command"]
+    assert result_2["fallback_reason"] == "fallback_skip_echo"
 
-    # 3) 無 hlapi_command 時 fallback 到 verification_command
+    # 3) 即使 hlapi_command 被清空，非 capture 的純說明步驟仍維持 skip
     case_no_hlapi = dict(case)
     case_no_hlapi["hlapi_command"] = ""
     result_3 = plugin.execute_step(
@@ -203,8 +276,8 @@ def test_execute_step_command_fallback_priority(monkeypatch):
         topology=topology,
     )
     assert result_3["success"] is True
-    assert result_3["command"] == "iw dev"
-    assert result_3["fallback_reason"] == "fallback_verification_command"
+    assert "[skip] non-executable step s3" in result_3["command"]
+    assert result_3["fallback_reason"] == "fallback_skip_echo"
 
     # 4) 最後 fallback 到可重現 skip echo
     case_skip = dict(case_no_hlapi)
@@ -274,7 +347,7 @@ def test_evaluate_pass_criteria_basic_operators_and_field_fallback(monkeypatch):
     plugin.teardown(case, topology=topology)
 
 
-def test_verify_env_sta_band_gate_pass(monkeypatch):
+def test_setup_env_runs_yaml_sta_env_setup(monkeypatch):
     plugin = _load_plugin()
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -289,21 +362,78 @@ def test_verify_env_sta_band_gate_pass(monkeypatch):
             }
         },
         "sta_env_setup": """
-        STA env setup baseline:
+        DUT 5G setup:
+          ubus-cli WiFi.Radio.1.Enable=1
+          ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+        STA 5G setup:
           iw dev wl0 set type managed
+          ifconfig wl0 up
+          iw dev wl0 link
         DUT association evidence:
           wl -i wl0 assoclist
         """,
+        "verification_command": 'wl -i wl0 assoclist',
+        "pass_criteria": [{"field": "result", "operator": "contains", "value": "OK"}],
+        "steps": [
+            {
+                "id": "s1",
+                "command": 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"',
+            }
+        ],
+    }
+
+    assert plugin.setup_env(case, topology=topology) is True
+    dut = next(
+        transport for transport in recorder.transports if transport.transport_type == "serial"
+    )
+    sta = next(
+        transport for transport in recorder.transports if transport.transport_type == "adb"
+    )
+    assert dut.executed_commands[:3] == [
+        "ubus-cli WiFi.Radio.1.Enable=1",
+        "ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled",
+        "wl -i wl0 assoclist",
+    ]
+    assert sta.executed_commands == [
+        "iw dev wl0 set type managed",
+        "ifconfig wl0 up",
+        "iw dev wl0 link",
+    ]
+    assert plugin.verify_env(case, topology=topology) is True
+    assert "ubus-cli WiFi.Radio.1.RegulatoryDomain=CA" not in dut.executed_commands
+    assert "/etc/init.d/wld_gen start" not in dut.executed_commands
+    assert "wl -i wl0 bss" not in dut.executed_commands
+    plugin.teardown(case, topology=topology)
+
+
+def test_verify_env_only_runs_generic_gates(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+
+    case = {
+        "id": "wifi-llapi-runtime-generic-verify",
+        "topology": {
+            "devices": {
+                "DUT": {"transport": "serial", "simulate_bss_down": True},
+                "STA": {"transport": "adb"},
+            }
+        },
         "pass_criteria": [{"field": "result", "operator": "contains", "value": "OK"}],
         "steps": [{"id": "s1", "command": "echo ok"}],
     }
 
     assert plugin.setup_env(case, topology=topology) is True
     assert plugin.verify_env(case, topology=topology) is True
+    dut = next(
+        transport for transport in recorder.transports if transport.transport_type == "serial"
+    )
+    assert dut.executed_commands == ['echo "__testpilot_env_gate__"']
     plugin.teardown(case, topology=topology)
 
 
-def test_verify_env_sta_band_gate_fail_on_link(monkeypatch):
+def test_setup_env_fails_on_yaml_sta_link_check(monkeypatch):
     plugin = _load_plugin()
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -317,13 +447,121 @@ def test_verify_env_sta_band_gate_fail_on_link(monkeypatch):
                 "STA": {"transport": "adb", "simulate_sta_link_fail": True},
             }
         },
+        "sta_env_setup": """
+        STA 6G verify:
+          iw dev wl1 link
+        """,
         "pass_criteria": [{"field": "result", "operator": "contains", "value": "OK"}],
         "steps": [{"id": "s1", "command": "echo ok"}],
     }
 
-    assert plugin.setup_env(case, topology=topology) is True
-    assert plugin.verify_env(case, topology=topology) is False
+    assert plugin.setup_env(case, topology=topology) is False
     plugin.teardown(case, topology=topology)
+
+
+def test_setup_env_fails_on_yaml_dut_command_failure(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+
+    case = {
+        "id": "wifi-llapi-runtime-sta-band-wld-gen-fail",
+        "topology": {
+            "devices": {
+                "DUT": {"transport": "serial", "simulate_wld_gen_fail": True},
+                "STA": {"transport": "adb"},
+            }
+        },
+        "sta_env_setup": """
+        DUT apply:
+          /etc/init.d/wld_gen start
+        """,
+        "pass_criteria": [{"field": "result", "operator": "contains", "value": "OK"}],
+        "steps": [{"id": "s1", "command": "echo ok"}],
+    }
+
+    assert plugin.setup_env(case, topology=topology) is False
+    plugin.teardown(case, topology=topology)
+
+
+def test_run_required_command_retries_after_recovery_signal():
+    plugin = _load_plugin()
+    calls: list[str] = []
+
+    class _RecoveryTransport:
+        def execute(self, command: str, timeout: float = 30.0) -> dict[str, Any]:
+            del timeout
+            calls.append(command)
+            if len(calls) == 1:
+                return {
+                    "returncode": 1,
+                    "stdout": "^C",
+                    "stderr": "",
+                    "elapsed": 0.01,
+                    "recovery_action": "CTRL_C",
+                }
+            return {
+                "returncode": 0,
+                "stdout": "",
+                "stderr": "",
+                "elapsed": 0.01,
+                "recovery_action": None,
+            }
+
+    ok = plugin._run_required_command(
+        transport=_RecoveryTransport(),
+        case_id="wifi-llapi-env-retry",
+        label="prep.killall",
+        command="killall wpa_supplicant 2>/dev/null || true",
+        timeout=20.0,
+    )
+
+    assert ok is True
+    assert calls == [
+        "killall wpa_supplicant 2>/dev/null || true",
+        "killall wpa_supplicant 2>/dev/null || true",
+    ]
+
+
+def test_run_required_command_retries_multiple_recovery_signals():
+    plugin = _load_plugin()
+    calls: list[str] = []
+
+    class _RecoveryTransport:
+        def execute(self, command: str, timeout: float = 30.0) -> dict[str, Any]:
+            del timeout
+            calls.append(command)
+            if len(calls) < 3:
+                return {
+                    "returncode": 124,
+                    "stdout": "",
+                    "stderr": "serialwrap cmd status timeout: abc",
+                    "elapsed": 0.01,
+                    "recovery_action": "ATTACH",
+                }
+            return {
+                "returncode": 0,
+                "stdout": "",
+                "stderr": "",
+                "elapsed": 0.01,
+                "recovery_action": None,
+            }
+
+    ok = plugin._run_required_command(
+        transport=_RecoveryTransport(),
+        case_id="wifi-llapi-env-retry-multi",
+        label="prep.qosmap",
+        command="ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=",
+        timeout=20.0,
+    )
+
+    assert ok is True
+    assert calls == [
+        "ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=",
+        "ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=",
+        "ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=",
+    ]
 
 
 def test_evaluate_missing_field_does_not_use_transcript_noise(monkeypatch):
@@ -346,7 +584,7 @@ def test_evaluate_missing_field_does_not_use_transcript_noise(monkeypatch):
         "steps": {
             "s1": {
                 "success": True,
-                "output": "__TP_RC_123abc__=1\nroot@prplOS:/#\n>\n",
+                "output": "root@prplOS:/#\n>\n",
                 "captured": {},
                 "timing": 0.01,
             }
@@ -375,11 +613,11 @@ def test_evaluate_ignores_serialwrap_rc_noise_in_captured_field(monkeypatch):
 
     assert plugin.setup_env(case, topology=topology) is True
 
-    # Two outputs differ only by random __TP_RC marker content.
-    # Both must be evaluated consistently and should not pass via random digits.
+    # Two outputs differ only by transcript garbage formatting.
+    # Both must be evaluated consistently and should not pass via noise.
     noisy_outputs = [
-        "\\n'; ubus-cli 'WiFi.AccessPoint.{i}.Security.\\r\\r\\nRekeyingInterval=' Get Command:; __tp_rc=$?; printf '__TP_RC_6c0a68115164__=%s\\n",
-        "\\n'; ubus-cli 'WiFi.AccessPoint.{i}.Security.\\r\\r\\nRekeyingInterval=' Get Command:; __tp_rc=$?; printf '__TP_RC_cf2ad4efe36d__=%s\\n",
+        "\\n'; ubus-cli 'WiFi.AccessPoint.{i}.Security.\\r\\r\\nRekeyingInterval=' Get Command:",
+        "\\n'; ubus-cli 'WiFi.AccessPoint.{i}.Security.\\r\\r\\nRekeyingInterval=' Get Command: root@prplOS:/#",
     ]
 
     for text in noisy_outputs:
@@ -395,6 +633,48 @@ def test_evaluate_ignores_serialwrap_rc_noise_in_captured_field(monkeypatch):
         }
         assert plugin.evaluate(case, results) is False
 
+    plugin.teardown(case, topology=topology)
+
+
+def test_evaluate_ignores_command_echo_with_expected_value(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+
+    case = {
+        "id": "wifi-llapi-runtime-command-echo-noise",
+        "topology": {"devices": {"DUT": {"transport": "serial"}}},
+        "steps": [{"id": "s1", "capture": "result"}],
+        "pass_criteria": [
+            {
+                "field": "result.AssociationTime",
+                "operator": "contains",
+                "value": "2021-06-04T16:05:34Z",
+            },
+        ],
+    }
+
+    assert plugin.setup_env(case, topology=topology) is True
+    results = {
+        "steps": {
+            "s1": {
+                "success": True,
+                "output": (
+                    "ubus-cli 'WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AssociationTime=2021-06-04T16:05:34Z'\n"
+                    "> WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AssociationTime=2021-06-04T16:05:34Z\n"
+                    "ERROR: Syntax error\n"
+                    'ubus-cli "WiFi.AccessPoint.*.AssociatedDevice.*.AssociationTime?"\n'
+                    "> WiFi.AccessPoint.*.AssociatedDevice.*.AssociationTime?\n"
+                    "No data found"
+                ),
+                "captured": {},
+                "timing": 0.01,
+            }
+        }
+    }
+
+    assert plugin.evaluate(case, results) is False
     plugin.teardown(case, topology=topology)
 
 
@@ -446,7 +726,7 @@ def test_execute_step_capture_prefers_synthesized_readback_query(monkeypatch):
     def fake_execute(command: str, timeout: float = 30.0) -> dict[str, Any]:
         del timeout
         dut.executed_commands.append(command)
-        if command == 'ubus-cli "WiFi.AccessPoint.*.AssociatedDevice.*.Capabilities?"':
+        if command == 'ubus-cli "WiFi.AccessPoint.*.?" | grep -E "AssociatedDevice\\.[0-9]+\\.Capabilities"':
             return {
                 "returncode": 0,
                 "stdout": 'WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities="RRM,BTM,QOS_MAP,PMF"',
@@ -460,8 +740,59 @@ def test_execute_step_capture_prefers_synthesized_readback_query(monkeypatch):
 
     assert result["success"] is True
     assert result["fallback_reason"] == "synthesized_capture_query"
-    assert result["command"] == 'ubus-cli "WiFi.AccessPoint.*.AssociatedDevice.*.Capabilities?"'
+    assert result["command"] == (
+        'ubus-cli "WiFi.AccessPoint.*.?" | grep -E "AssociatedDevice\\.[0-9]+\\.Capabilities"'
+    )
     assert result["captured"]["WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities"] == "RRM,BTM,QOS_MAP,PMF"
+    plugin.teardown(case, topology=topology)
+
+
+def test_execute_step_strips_command_echo_before_capture(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+
+    case = {
+        "id": "wifi-llapi-runtime-strip-command-echo",
+        "topology": {"devices": {"DUT": {"transport": "serial"}}},
+        "steps": [
+            {
+                "id": "step1",
+                "action": "exec",
+                "target": "DUT",
+                "capture": "result",
+                "command": 'ubus-cli "WiFi.AccessPoint.1.Security.MFPConfig?"',
+            }
+        ],
+        "pass_criteria": [
+            {"field": "result.MFPConfig", "operator": "equals", "value": "Required"},
+        ],
+    }
+
+    assert plugin.setup_env(case, topology=topology) is True
+    dut = plugin._transports["DUT"]
+
+    def fake_execute(command: str, timeout: float = 30.0) -> dict[str, Any]:
+        del timeout
+        dut.executed_commands.append(command)
+        return {
+            "returncode": 0,
+            "stdout": (
+                'ubus-cli "WiFi.AccessPoint.1.Security.MFPConfig?"\n'
+                "> WiFi.AccessPoint.1.Security.MFPConfig?\n"
+                'WiFi.AccessPoint.1.Security.MFPConfig="Required"\n'
+            ),
+            "stderr": "",
+            "elapsed": 0.01,
+        }
+
+    monkeypatch.setattr(dut, "execute", fake_execute)
+    result = plugin.execute_step(case, case["steps"][0], topology=topology)
+
+    assert result["success"] is True
+    assert result["output"] == 'WiFi.AccessPoint.1.Security.MFPConfig="Required"'
+    assert result["captured"]["WiFi.AccessPoint.1.Security.MFPConfig"] == "Required"
     plugin.teardown(case, topology=topology)
 
 
@@ -550,6 +881,88 @@ def test_sta_env_setup_parser_preserves_wpa_cli_quoted_value():
     assert parsed == [("STA", "wpa_cli -i wl1 set_network 0 sae_password '\"B0StaTest1234\"'")]
 
 
+def test_extract_cli_fragments_prefers_concrete_getter_from_set_get_prose():
+    plugin = _load_plugin()
+    text = (
+        'Set/Get Security Mode Set Command: ubus-cli WiFi.AccessPoint.{i}.Security.ModeEnabled="""" '
+        'Get command: ubus-cli WiFi.AccessPoint.{i}.Security.ModeEnabled?'
+    )
+
+    assert plugin._looks_executable("ubus-cli") is False
+    assert plugin._extract_cli_fragments(text) == [
+        'ubus-cli "WiFi.AccessPoint.{i}.Security.ModeEnabled?"'
+    ]
+
+
+def test_sanitize_cli_fragment_quotes_ubus_operand_with_parentheses():
+    plugin = _load_plugin()
+
+    assert plugin._sanitize_cli_fragment(
+        "ubus-cli WiFi.AccessPoint.1.kickStation(macaddress=AA:BB:CC:DD:EE:FF)"
+    ) == 'ubus-cli "WiFi.AccessPoint.1.kickStation(macaddress=AA:BB:CC:DD:EE:FF)"'
+
+
+def test_sanitize_cli_fragment_truncates_prose_tail_after_ubus_function():
+    plugin = _load_plugin()
+
+    assert plugin._sanitize_cli_fragment(
+        "ubus-cli WiFi.Radio.{i}.getRadioStats()PacketsReceived : 1793,"
+    ) == 'ubus-cli "WiFi.Radio.{i}.getRadioStats()"'
+
+
+def test_synthesize_readback_command_uses_parent_query_for_associated_device():
+    plugin = _load_plugin()
+    case = {
+        "source": {
+            "object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+            "api": "AssociationTime",
+        },
+        "pass_criteria": [
+            {"field": "result.AssociationTime", "operator": "contains", "value": "x"},
+        ],
+    }
+
+    assert plugin._synthesize_readback_command(case, "result") == (
+        'ubus-cli "WiFi.AccessPoint.*.?" | grep -E "AssociatedDevice\\.[0-9]+\\.AssociationTime"'
+    )
+
+
+def test_synthesize_readback_command_skips_non_get_method():
+    plugin = _load_plugin()
+    case = {
+        "source": {
+            "object": "WiFi.AccessPoint.{i}.",
+            "api": "kickStation()",
+        },
+        "pass_criteria": [
+            {"field": "result.kickStation()", "operator": "contains", "value": "x"},
+        ],
+    }
+
+    assert plugin._synthesize_readback_command(case, "result") is None
+
+
+def test_extract_cli_fragments_splits_multi_command_prose_line():
+    plugin = _load_plugin()
+    text = (
+        "Run wl -i wl0 beacon_info, wl -i wl1 beacon_info, and wl -i wl2 beacon_info; "
+        "compare the HE capabilities payload."
+    )
+
+    assert plugin._extract_cli_fragments(text) == [
+        "wl -i wl0 beacon_info",
+        "wl -i wl1 beacon_info",
+        "wl -i wl2 beacon_info",
+    ]
+
+
+def test_extract_cli_fragments_ignores_prose_after_ubus_keyword():
+    plugin = _load_plugin()
+    text = "3) Read back with ubus-cli after each set; do not use wl txpwr_percent as verification."
+
+    assert plugin._extract_cli_fragments(text) == []
+
+
 def test_run_sta_band_connect_sequence_keeps_6g_ctrl_alive(monkeypatch):
     plugin = _load_plugin()
     plugin._transports["STA"] = object()
@@ -596,10 +1009,58 @@ def test_run_sta_band_connect_sequence_keeps_6g_ctrl_alive(monkeypatch):
     assert (
         "sta_6g_ctrl",
         "wpa_cli -p /var/run/wpa_supplicant -i wl1 ping",
-        "wpa_cli -p /var/run/wpa_supplicant -i wl1 ping | grep -q PONG",
+        "wpa_cli -p /var/run/wpa_supplicant -i wl1 ping",
     ) in connect_calls
     assert (
         "sta_6g",
         "wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect",
-        "iw dev wl1 link | grep -q 'Connected to '",
+        "iw dev wl1 link",
     ) in connect_calls
+
+
+def test_run_sta_band_connect_sequence_limits_to_selected_band(monkeypatch):
+    plugin = _load_plugin()
+    plugin._transports["STA"] = object()
+    commands: list[tuple[str, str]] = []
+    connect_calls: list[tuple[str, str, str]] = []
+
+    def fake_run_required_command(*, transport, case_id, label, command, timeout=30.0):
+        del transport, case_id, timeout
+        commands.append((label, command))
+        return True
+
+    def fake_connect_with_retry(
+        *,
+        transport,
+        case_id,
+        label,
+        connect_cmd,
+        verify_cmd,
+        attempts=3,
+        sleep_seconds=3,
+    ):
+        del transport, case_id, attempts, sleep_seconds
+        connect_calls.append((label, connect_cmd, verify_cmd))
+        return True
+
+    monkeypatch.setattr(plugin, "_run_required_command", fake_run_required_command)
+    monkeypatch.setattr(plugin, "_connect_with_retry", fake_connect_with_retry)
+
+    case = {
+        "id": "wifi-llapi-runtime-5g-only",
+        "verification_command": "wl -i wl0 assoclist",
+        "steps": [
+            {
+                "id": "s1",
+                "command": 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"',
+            }
+        ],
+    }
+
+    assert plugin._run_sta_band_connect_sequence(case) is True
+
+    command_values = [command for _, command in commands]
+    assert "iw dev wl0 disconnect 2>/dev/null || true" in command_values
+    assert "iw dev wl1 disconnect 2>/dev/null || true" not in command_values
+    assert "iw dev wl2 disconnect 2>/dev/null || true" not in command_values
+    assert connect_calls == [("sta_5g", "iw dev wl0 connect B0_5G_AP", "iw dev wl0 link")]

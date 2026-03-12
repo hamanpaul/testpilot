@@ -29,9 +29,11 @@ def test_parse_plugin_agent_config_backward_compatible_defaults():
 
     assert cfg.version == 1
     assert cfg.default_mode == "headless"
-    assert [r.priority for r in cfg.runners] == [1, 2]
-    assert cfg.runners[0].cli_agent == "codex"
+    assert [r.priority for r in cfg.runners] == [1, 2, 3]
+    assert cfg.runners[0].cli_agent == "copilot"
     assert cfg.runners[1].cli_agent == "copilot"
+    assert cfg.runners[2].cli_agent == "copilot"
+    assert [r.model for r in cfg.runners] == ["gpt-5.4", "sonnet-4.6", "gpt-5-mini"]
 
     # Legacy config has no execution block; runtime must keep sane defaults.
     assert cfg.execution.scope == DEFAULT_SCOPE
@@ -68,8 +70,8 @@ def test_parse_execution_block():
             "runners": [
                 {
                     "priority": 1,
-                    "cli_agent": "codex",
-                    "model": "gpt-5.3-codex",
+                    "cli_agent": "copilot",
+                    "model": "gpt-5.4",
                     "effort": "high",
                     "enabled": True,
                 }
@@ -99,8 +101,8 @@ def test_select_runner_fallback_with_unavailable_reason():
             "runners": [
                 {
                     "priority": 1,
-                    "cli_agent": "codex",
-                    "model": "gpt-5.3-codex",
+                    "cli_agent": "copilot",
+                    "model": "gpt-5.4",
                     "effort": "high",
                     "enabled": True,
                 },
@@ -117,7 +119,7 @@ def test_select_runner_fallback_with_unavailable_reason():
 
     selected = select_runner(
         cfg,
-        availability={"codex:gpt-5.3-codex": "binary_not_found"},
+        availability={"copilot:gpt-5.4": "binary_not_found"},
     )
 
     assert selected.runner is not None
@@ -134,8 +136,8 @@ def test_select_runner_skips_disabled_runner():
             "runners": [
                 {
                     "priority": 1,
-                    "cli_agent": "codex",
-                    "model": "gpt-5.3-codex",
+                    "cli_agent": "copilot",
+                    "model": "gpt-5.4",
                     "effort": "high",
                     "enabled": False,
                 },
@@ -154,6 +156,7 @@ def test_select_runner_skips_disabled_runner():
 
     assert selected.runner is not None
     assert selected.runner.cli_agent == "copilot"
+    assert selected.runner.model == "sonnet-4.6"
     assert len(selected.trace) == 2
     assert selected.trace[0].status == "unavailable"
     assert selected.trace[0].unavailable_reason == "disabled"
@@ -171,4 +174,3 @@ def test_calculate_attempt_timeout_with_cap():
     assert calculate_attempt_timeout(timeout, steps_count=2, attempt_index=1) == pytest.approx(210)
     assert calculate_attempt_timeout(timeout, steps_count=2, attempt_index=2) == pytest.approx(262.5)
     assert calculate_attempt_timeout(timeout, steps_count=2, attempt_index=4) == pytest.approx(300)
-

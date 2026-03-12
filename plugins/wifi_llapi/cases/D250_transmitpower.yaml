@@ -44,7 +44,8 @@ setup_steps: |
      ubus-cli WiFi.AccessPoint.5.Enable=1
   2) Apply case command context on DUT:
      ubus-cli WiFi.Radio.{i}.TransmitPower=50
-  3) Read back with ubus-cli after each set; do not use wl txpwr_percent as the verification source on BGW720.
+  3) Read back with ubus-cli after each set.
+  4) Do not use wl txpwr_percent as the verification source on BGW720.
 
 sta_env_setup: |
   STA env setup baseline (COM1 / A0, serialwrap):
@@ -108,7 +109,10 @@ steps:
 - id: step1
   action: exec
   target: DUT
-  command: 'Set all radios to 50 percent: ubus-cli WiFi.Radio.1.TransmitPower=50; ubus-cli WiFi.Radio.2.TransmitPower=50; ubus-cli WiFi.Radio.3.TransmitPower=50'
+  command: |
+    ubus-cli WiFi.Radio.1.TransmitPower=50
+    ubus-cli WiFi.Radio.2.TransmitPower=50
+    ubus-cli WiFi.Radio.3.TransmitPower=50
 - id: step2
   action: exec
   target: DUT
@@ -118,7 +122,10 @@ steps:
 - id: step3
   action: exec
   target: DUT
-  command: 'Set all radios back to 100 percent: ubus-cli WiFi.Radio.1.TransmitPower=100; ubus-cli WiFi.Radio.2.TransmitPower=100; ubus-cli WiFi.Radio.3.TransmitPower=100'
+  command: |
+    ubus-cli WiFi.Radio.1.TransmitPower=100
+    ubus-cli WiFi.Radio.2.TransmitPower=100
+    ubus-cli WiFi.Radio.3.TransmitPower=100
   depends_on: step2
 - id: step4
   action: exec

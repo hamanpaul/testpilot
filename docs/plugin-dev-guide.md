@@ -98,11 +98,15 @@ pass_criteria:
 | `implemented_by` | 實作方識別 | `pWHM` |
 | `bands` | 適用頻段（用於 band-level 結果拆分） | `["5g", "6g"]` |
 | `env_verify` | 環境驗證步驟 | `[{action: ping, from: STA, to: DUT}]` |
+| `sta_env_setup` | 實際執行的 DUT/STA 環境佈建命令；用 `DUT ...:` / `STA ...:` 小節切換 target | multiline string |
 | `test_environment` | 測試環境描述（人類可讀） | multiline string |
-| `setup_steps` | 環境佈建步驟（人類可讀） | multiline string |
+| `setup_steps` | 環境佈建摘要（人類可讀）；不要把 runtime baseline 硬編碼在 plugin.py | multiline string |
 | `topology.links` | 裝置間連線描述 | `[{from: STA, to: DUT, band: 5g}]` |
 
 其他 plugin 可自行定義擴充欄位，不需遵循此表。
+
+`wifi_llapi` 的 runtime 不應再注入 band-specific DUT/STA baseline。若 case 需要 AP/STA bring-up，
+請把可執行命令寫在 YAML 的 `sta_env_setup`，並用明確的 `DUT` / `STA` 區塊描述 target。
 
 ## 3. 判讀責任契約（重要）
 

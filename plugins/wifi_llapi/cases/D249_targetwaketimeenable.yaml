@@ -56,9 +56,12 @@ setup_steps: |
      ubus-cli WiFi.AccessPoint.3.Enable=1
      ubus-cli WiFi.AccessPoint.5.Enable=1
   2) STA preparation on COM1:
-     iw dev wl0 set type managed; ifconfig wl0 up
-     iw dev wl1 set type managed; ifconfig wl1 up
-     iw dev wl2 set type managed; ifconfig wl2 up
+     iw dev wl0 set type managed
+     ifconfig wl0 up
+     iw dev wl1 set type managed
+     ifconfig wl1 up
+     iw dev wl2 set type managed
+     ifconfig wl2 up
   3) 6G dependency before wl1 association:
      ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled="WPA3-Personal"
      ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase="B0StaTest1234"
@@ -140,7 +143,10 @@ steps:
 - id: step2
   action: exec
   target: DUT
-  command: Run wl -i wl0 beacon_info, wl -i wl1 beacon_info, and wl -i wl2 beacon_info; compare the HE Capabilities payload against LLAPI TargetWakeTimeEnable=1.
+  command: |
+    wl -i wl0 beacon_info
+    wl -i wl1 beacon_info
+    wl -i wl2 beacon_info
   depends_on: step1
 - id: step3
   action: exec
@@ -156,7 +162,10 @@ steps:
 - id: step5
   action: exec
   target: DUT
-  command: Run wl -i wl0 beacon_info, wl -i wl1 beacon_info, and wl -i wl2 beacon_info again; confirm the HE Capabilities payload changes consistently after TargetWakeTimeEnable=0.
+  command: |
+    wl -i wl0 beacon_info
+    wl -i wl1 beacon_info
+    wl -i wl2 beacon_info
   depends_on: step4
 pass_criteria:
 - field: result_on.TargetWakeTimeEnable

@@ -203,17 +203,15 @@ def _patch_runtime_hooks(monkeypatch, plugin: Any, cases: list[dict[str, Any]]) 
         output = str(result.get("stdout", ""))
         if bool(case.get("emit_pass_token")):
             output = (
-                "__TP_BEGIN_case__\n"
                 f"root@prplOS:/# {command}\n"
                 f"{output} {PASS_TOKEN}\n"
-                "__TP_RC_case__=0\n>\n"
+                ">\n"
             )
         else:
             output = (
-                "__TP_BEGIN_case__\n"
                 f"root@prplOS:/# {command}\n"
                 f"{output} TOKEN_MISSING\n"
-                "__TP_RC_case__=1\n>\n"
+                ">\n"
             )
 
         state["execute_calls"].append(
@@ -282,6 +280,70 @@ def _load_case_traces(trace_dir: Path) -> dict[str, dict[str, Any]]:
     return traces
 
 
+def _report_snapshot(report_path: Path) -> dict[int, dict[str, Any]]:
+    wb = load_workbook(report_path)
+    ws = wb["Wifi_LLAPI"]
+    snapshot = {
+        4: {column: ws[f"{column}4"].value for column in ("G", "H", "I", "J", "K", "L")},
+        5: {column: ws[f"{column}5"].value for column in ("G", "H", "I", "J", "K", "L")},
+    }
+    wb.close()
+    return snapshot
+
+
+def _normalize_trace_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    selection_trace = payload.get("selection_trace", {})
+    attempts = payload.get("attempts", [])
+    session_plan = selection_trace.get("session_plan", {})
+    normalized_attempts = [
+        {
+            "attempt": item.get("attempt"),
+            "timeout_seconds": item.get("timeout_seconds"),
+            "runner": item.get("runner"),
+            "status": item.get("status"),
+            "comment": item.get("comment"),
+            "commands": item.get("commands"),
+            "outputs": item.get("outputs"),
+        }
+        for item in attempts
+    ]
+    return {
+        "case_id": payload.get("case_id"),
+        "source_row": payload.get("source_row"),
+        "execution": payload.get("execution"),
+        "selected": selection_trace.get("selected"),
+        "fallback": selection_trace.get("fallback"),
+        "runtime": {
+            "method": selection_trace.get("runtime", {}).get("method"),
+            "reason": selection_trace.get("runtime", {}).get("reason"),
+            "selection": selection_trace.get("runtime", {}).get("selection"),
+        },
+        "session_plan": {
+            "provider": session_plan.get("provider"),
+            "model": session_plan.get("model"),
+            "reasoning_effort": session_plan.get("reasoning_effort"),
+            "status": session_plan.get("status"),
+        },
+        "attempts": normalized_attempts,
+        "final": payload.get("final"),
+    }
+
+
+def _runtime_snapshot(result: dict[str, Any]) -> dict[str, Any]:
+    trace_dir = Path(result["agent_trace_dir"])
+    traces = _load_case_traces(trace_dir)
+    return {
+        "cases_count": result["cases_count"],
+        "pass_count": result["pass_count"],
+        "fail_count": result["fail_count"],
+        "report": _report_snapshot(Path(result["report_path"])),
+        "traces": {
+            case_id: _normalize_trace_payload(payload)
+            for case_id, payload in sorted(traces.items())
+        },
+    }
+
+
 def _run_realistic_runtime(tmp_path: Path, monkeypatch) -> tuple[dict[str, Any], dict[str, Any]]:
     project_root, source_xlsx = _prepare_runtime_project(tmp_path)
     orch = Orchestrator(
@@ -328,7 +390,6 @@ def test_realistic_runtime_covers_hooks_and_report_outputs(tmp_path: Path, monke
     wb = load_workbook(report_path)
     ws = wb["Wifi_LLAPI"]
     assert ws["G4"].value == 'ubus-cli "WiFi.AccessPoint.1.kickStation(macaddress=AA:BB:CC:DD:EE:FF)"'
-    assert "__TP_" not in str(ws["H4"].value)
     assert "root@prplOS" not in str(ws["H4"].value)
     assert ws["I4"].value == "Fail"
     assert ws["J4"].value == "N/A"
@@ -338,7 +399,6 @@ def test_realistic_runtime_covers_hooks_and_report_outputs(tmp_path: Path, monke
 
     assert ws["G5"].value == 'ubus-cli "WiFi.Radio.1.getRadioStats()"'
     assert PASS_TOKEN in str(ws["H5"].value)
-    assert "__TP_" not in str(ws["H5"].value)
     assert "root@prplOS" not in str(ws["H5"].value)
     assert ws["I5"].value == "N/A"
     assert ws["J5"].value == "Pass"
@@ -384,6 +444,8 @@ def test_fail_and_continue_with_plugin_evaluate_failure(tmp_path: Path, monkeypa
     assert pass_trace["final"]["attempts_used"] == 1
     assert len(pass_trace["attempts"]) == 1
     assert pass_trace["attempts"][0]["status"] == "Pass"
+    assert pass_trace["selection_trace"]["session_plan"]["model"] == "gpt-5.4"
+    assert pass_trace["selection_trace"]["session_plan"]["status"] == "planned"
 
 
 def test_realistic_runtime_report_paths_remain_unique_across_runs(tmp_path: Path, monkeypatch):
@@ -411,3 +473,75 @@ def test_realistic_runtime_report_paths_remain_unique_across_runs(tmp_path: Path
     )
 
     assert first_result["report_path"] != second_result["report_path"]
+
+
+def test_realistic_runtime_results_remain_identical_across_three_runs(tmp_path: Path, monkeypatch):
+    project_root, source_xlsx = _prepare_runtime_project(tmp_path)
+    orch = Orchestrator(
+        project_root=project_root,
+        plugins_dir=project_root / "plugins",
+        config_path=project_root / "configs" / "testbed.yaml",
+    )
+    plugin = orch.loader.load("wifi_llapi")
+    cases = _build_cases()
+    _patch_runtime_hooks(monkeypatch, plugin=plugin, cases=cases)
+
+    first_result = orch.run(
+        "wifi_llapi",
+        case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
+        dut_fw_ver="FW-IT-REALISTIC-1",
+        report_source_xlsx=str(source_xlsx),
+    )
+    second_result = orch.run(
+        "wifi_llapi",
+        case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
+        dut_fw_ver="FW-IT-REALISTIC-1",
+        report_source_xlsx=str(source_xlsx),
+    )
+    third_result = orch.run(
+        "wifi_llapi",
+        case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
+        dut_fw_ver="FW-IT-REALISTIC-1",
+        report_source_xlsx=str(source_xlsx),
+    )
+
+    first_snapshot = _runtime_snapshot(first_result)
+    second_snapshot = _runtime_snapshot(second_result)
+    third_snapshot = _runtime_snapshot(third_result)
+
+    assert first_snapshot == second_snapshot == third_snapshot
+
+
+def test_realistic_runtime_can_rerun_from_existing_template_without_source_xlsx(
+    tmp_path: Path,
+    monkeypatch,
+):
+    project_root, source_xlsx = _prepare_runtime_project(tmp_path)
+    orch = Orchestrator(
+        project_root=project_root,
+        plugins_dir=project_root / "plugins",
+        config_path=project_root / "configs" / "testbed.yaml",
+    )
+    plugin = orch.loader.load("wifi_llapi")
+    cases = _build_cases()
+    _patch_runtime_hooks(monkeypatch, plugin=plugin, cases=cases)
+
+    first_result = orch.run(
+        "wifi_llapi",
+        case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
+        dut_fw_ver="FW-IT-REALISTIC-1",
+        report_source_xlsx=str(source_xlsx),
+    )
+    Path(source_xlsx).unlink()
+
+    second_result = orch.run(
+        "wifi_llapi",
+        case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
+        dut_fw_ver="FW-IT-REALISTIC-1",
+    )
+
+    assert first_result["status"] == "completed"
+    assert second_result["status"] == "completed"
+    assert Path(second_result["template_path"]).is_file()
+    assert Path(second_result["report_path"]).is_file()
+    assert second_result["source_report"] == str(source_xlsx)
