@@ -110,6 +110,67 @@ class Orchestrator:
         return r5, r6, r24
 
     @staticmethod
+    def _baseline_results_reference(case: dict[str, Any]) -> dict[str, Any] | None:
+        source = case.get("source")
+        if not isinstance(source, dict):
+            return None
+        results_reference = case.get("results_reference")
+        if not isinstance(results_reference, dict):
+            return None
+
+        baseline = str(source.get("baseline", "")).strip()
+        candidates: list[str] = []
+        if baseline:
+            candidates.append(baseline)
+            version_match = re.search(r"\bv\d+(?:\.\d+)+\b", baseline, re.IGNORECASE)
+            if version_match:
+                candidates.append(version_match.group(0))
+            numeric_match = re.search(r"\b\d+(?:\.\d+)+\b", baseline)
+            if numeric_match:
+                candidates.append(f"v{numeric_match.group(0)}")
+
+        seen: set[str] = set()
+        for candidate in candidates:
+            normalized = candidate.strip()
+            if not normalized or normalized.lower() in seen:
+                continue
+            seen.add(normalized.lower())
+            value = results_reference.get(normalized)
+            if isinstance(value, dict):
+                return value
+            for key, entry in results_reference.items():
+                if isinstance(key, str) and key.strip().lower() == normalized.lower() and isinstance(entry, dict):
+                    return entry
+        return None
+
+    @classmethod
+    def _case_band_results(cls, case: dict[str, Any], verdict: bool) -> tuple[str, str, str]:
+        default_status = "Pass" if verdict else "Fail"
+        result_5g, result_6g, result_24g = cls._band_results(default_status, case.get("bands"))
+        reference = cls._baseline_results_reference(case)
+        if not reference:
+            return result_5g, result_6g, result_24g
+
+        by_band = {
+            "5g": result_5g,
+            "6g": result_6g,
+            "2.4g": result_24g,
+        }
+        for band in ("5g", "6g", "2.4g"):
+            value = reference.get(band)
+            if not isinstance(value, str):
+                continue
+            normalized = value.strip()
+            if not normalized:
+                continue
+            if verdict:
+                by_band[band] = normalized
+            elif normalized in {"Skip", "N/A"}:
+                by_band[band] = normalized
+
+        return by_band["5g"], by_band["6g"], by_band["2.4g"]
+
+    @staticmethod
     def _safe_int(value: Any, default: int) -> int:
         try:
             return int(value)
@@ -858,7 +919,7 @@ class Orchestrator:
             else:
                 fail_count += 1
 
-            result_5g, result_6g, result_24g = self._band_results(status, case.get("bands"))
+            result_5g, result_6g, result_24g = self._case_band_results(case, verdict)
             case_results.append(
                 WifiLlapiCaseResult(
                     case_id=case_id,

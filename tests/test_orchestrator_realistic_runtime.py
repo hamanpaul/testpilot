@@ -365,6 +365,107 @@ def _run_realistic_runtime(tmp_path: Path, monkeypatch) -> tuple[dict[str, Any],
     return result, state
 
 
+def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
+    tmp_path: Path,
+    monkeypatch,
+):
+    project_root, source_xlsx = _prepare_runtime_project(tmp_path)
+    orch = Orchestrator(
+        project_root=project_root,
+        plugins_dir=project_root / "plugins",
+        config_path=project_root / "configs" / "testbed.yaml",
+    )
+    plugin = orch.loader.load("wifi_llapi")
+    cases = [
+        {
+            "id": "wifi-llapi-D031-mode-reference-pass",
+            "name": "mixed-status-pass",
+            "source": {
+                "row": 4,
+                "object": "WiFi.AccessPoint.{i}.",
+                "api": "kickStation()",
+                "baseline": "BCM v4.0.3",
+            },
+            "steps": [
+                {
+                    "id": "step1",
+                    "target": "DUT",
+                    "command": 'ubus-cli "WiFi.AccessPoint.1.kickStation(macaddress=AA:BB:CC:DD:EE:FF)"',
+                }
+            ],
+            "pass_criteria": [
+                {
+                    "field": "step1.output",
+                    "operator": "contains",
+                    "value": PASS_TOKEN,
+                }
+            ],
+            "emit_pass_token": True,
+            "results_reference": {
+                "v4.0.3": {
+                    "5g": "Not Supported",
+                    "6g": "Skip",
+                    "2.4g": "Not Supported",
+                }
+            },
+        },
+        {
+            "id": "wifi-llapi-D025-inactive-reference-fail",
+            "name": "mixed-status-fail",
+            "source": {
+                "row": 5,
+                "object": "WiFi.Radio.{i}.",
+                "api": "getRadioStats()",
+                "baseline": "BCM v4.0.3",
+            },
+            "steps": [
+                {
+                    "id": "step1",
+                    "target": "DUT",
+                    "command": 'ubus-cli "WiFi.Radio.1.getRadioStats()"',
+                }
+            ],
+            "pass_criteria": [
+                {
+                    "field": "step1.output",
+                    "operator": "contains",
+                    "value": PASS_TOKEN,
+                }
+            ],
+            "emit_pass_token": False,
+            "results_reference": {
+                "v4.0.3": {
+                    "5g": "Pass",
+                    "6g": "Skip",
+                    "2.4g": "Pass",
+                }
+            },
+        },
+    ]
+    _patch_runtime_hooks(monkeypatch, plugin=plugin, cases=cases)
+
+    result = orch.run(
+        "wifi_llapi",
+        case_ids=[case["id"] for case in cases],
+        dut_fw_ver="FW-IT-REALISTIC-REF-1",
+        report_source_xlsx=str(source_xlsx),
+    )
+
+    assert result["status"] == "completed"
+    assert result["pass_count"] == 1
+    assert result["fail_count"] == 1
+
+    wb = load_workbook(Path(result["report_path"]))
+    ws = wb["Wifi_LLAPI"]
+    assert ws["I4"].value == "Not Supported"
+    assert ws["J4"].value == "Skip"
+    assert ws["K4"].value == "Not Supported"
+    assert ws["I5"].value == "Fail"
+    assert ws["J5"].value == "Skip"
+    assert ws["K5"].value == "Fail"
+    wb.close()
+
+
 def test_realistic_runtime_covers_hooks_and_report_outputs(tmp_path: Path, monkeypatch):
     result, state = _run_realistic_runtime(tmp_path, monkeypatch)
 
