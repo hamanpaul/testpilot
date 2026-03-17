@@ -3057,6 +3057,7 @@ def test_d049_supportedhe160mcs_uses_supported_contracts():
     assert d049["id"] == "wifi-llapi-D049-supportedhe160mcs"
     assert d049["source"]["row"] == 49
     assert d049["source"]["baseline"] == "BCM v4.0.3"
+    assert d049["llapi_support"] == "Not Supported"
     assert d049["bands"] == ["5g"]
     assert d049_links == {"5g"}
     assert (

@@ -12,7 +12,7 @@ platform:
   prplos: 4.0.3
   bdk: 6.3.1
 hlapi_command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHe160MCS?"'
-llapi_support: Support
+llapi_support: Not Supported
 implemented_by: pWHM
 bands: ["5g"]
 topology:
