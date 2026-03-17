@@ -171,6 +171,10 @@ class Orchestrator:
         return by_band["5g"], by_band["6g"], by_band["2.4g"]
 
     @staticmethod
+    def _overall_case_status(result_5g: str, result_6g: str, result_24g: str) -> str:
+        return "Fail" if "Fail" in {result_5g, result_6g, result_24g} else "Pass"
+
+    @staticmethod
     def _safe_int(value: Any, default: int) -> int:
         try:
             return int(value)
@@ -861,13 +865,20 @@ class Orchestrator:
                 outputs = [str(x) for x in attempt_result.get("outputs", [])]
                 verdict = bool(attempt_result.get("verdict", False))
                 comment = str(attempt_result.get("comment", ""))
+                attempt_result_5g, attempt_result_6g, attempt_result_24g = self._case_band_results(
+                    case, verdict
+                )
+                attempt_status = self._overall_case_status(
+                    attempt_result_5g, attempt_result_6g, attempt_result_24g
+                )
 
                 attempts_trace.append(
                     {
                         "attempt": attempt_index,
                         "timeout_seconds": attempt_timeout,
                         "runner": self._runner_summary(selected_runner),
-                        "status": "Pass" if verdict else "Fail",
+                        "status": attempt_status,
+                        "evaluation_verdict": "Pass" if verdict else "Fail",
                         "comment": comment,
                         "commands": commands,
                         "outputs": outputs,
@@ -891,6 +902,8 @@ class Orchestrator:
                 else:
                     comment = f"failed after {attempts_used}/{max_attempts} attempts"
 
+            result_5g, result_6g, result_24g = self._case_band_results(case, verdict)
+            status = self._overall_case_status(result_5g, result_6g, result_24g)
             case_trace_path = (
                 agent_trace_dir / f"{self._sanitize_case_id(case_id)}.json"
             )
@@ -905,7 +918,8 @@ class Orchestrator:
                     "selection_trace": selection_trace,
                     "attempts": attempts_trace,
                     "final": {
-                        "status": "Pass" if verdict else "Fail",
+                        "status": status,
+                        "evaluation_verdict": "Pass" if verdict else "Fail",
                         "attempts_used": attempts_used,
                         "comment": comment,
                     },
@@ -913,13 +927,10 @@ class Orchestrator:
             )
             case_trace_files.append(str(case_trace_path))
 
-            status = "Pass" if verdict else "Fail"
-            if verdict:
+            if status == "Pass":
                 pass_count += 1
             else:
                 fail_count += 1
-
-            result_5g, result_6g, result_24g = self._case_band_results(case, verdict)
             case_results.append(
                 WifiLlapiCaseResult(
                     case_id=case_id,

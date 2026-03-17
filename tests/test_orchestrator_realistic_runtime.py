@@ -82,6 +82,8 @@ def _write_source_xlsx(path: Path) -> None:
     ws["C4"] = "kickStation()"
     ws["A5"] = "WiFi.Radio.{i}."
     ws["C5"] = "getRadioStats()"
+    ws["A6"] = "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+    ws["C6"] = "Noise"
 
     wb.save(path)
     wb.close()
@@ -441,6 +443,39 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
                 }
             },
         },
+        {
+            "id": "wifi-llapi-D036-noise-reference-single-band",
+            "name": "single-band-fail",
+            "bands": ["5g"],
+            "source": {
+                "row": 6,
+                "object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+                "api": "Noise",
+                "baseline": "BCM v4.0.3",
+            },
+            "steps": [
+                {
+                    "id": "step1",
+                    "target": "DUT",
+                    "command": 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Noise?"',
+                }
+            ],
+            "pass_criteria": [
+                {
+                    "field": "step1.output",
+                    "operator": "contains",
+                    "value": PASS_TOKEN,
+                }
+            ],
+            "emit_pass_token": True,
+            "results_reference": {
+                "v4.0.3": {
+                    "5g": "Fail",
+                    "6g": "N/A",
+                    "2.4g": "N/A",
+                }
+            },
+        },
     ]
     _patch_runtime_hooks(monkeypatch, plugin=plugin, cases=cases)
 
@@ -453,7 +488,7 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
 
     assert result["status"] == "completed"
     assert result["pass_count"] == 1
-    assert result["fail_count"] == 1
+    assert result["fail_count"] == 2
 
     wb = load_workbook(Path(result["report_path"]))
     ws = wb["Wifi_LLAPI"]
@@ -463,7 +498,17 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
     assert ws["I5"].value == "Fail"
     assert ws["J5"].value == "Skip"
     assert ws["K5"].value == "Fail"
+    assert ws["I6"].value == "Fail"
+    assert ws["J6"].value == "N/A"
+    assert ws["K6"].value == "N/A"
     wb.close()
+
+    traces = _load_case_traces(Path(result["agent_trace_dir"]))
+    single_band_trace = traces["wifi-llapi-D036-noise-reference-single-band"]
+    assert single_band_trace["final"]["status"] == "Fail"
+    assert single_band_trace["final"]["evaluation_verdict"] == "Pass"
+    assert single_band_trace["attempts"][0]["status"] == "Fail"
+    assert single_band_trace["attempts"][0]["evaluation_verdict"] == "Pass"
 
 
 def test_realistic_runtime_covers_hooks_and_report_outputs(tmp_path: Path, monkeypatch):
@@ -536,15 +581,19 @@ def test_fail_and_continue_with_plugin_evaluate_failure(tmp_path: Path, monkeypa
     pass_trace = traces[PASS_CASE_ID]
 
     assert fail_trace["final"]["status"] == "Fail"
+    assert fail_trace["final"]["evaluation_verdict"] == "Fail"
     assert fail_trace["final"]["attempts_used"] == 2
     assert len(fail_trace["attempts"]) == 2
     assert all(item["status"] == "Fail" for item in fail_trace["attempts"])
+    assert all(item["evaluation_verdict"] == "Fail" for item in fail_trace["attempts"])
     assert "pass_criteria not satisfied" in str(fail_trace["final"]["comment"])
 
     assert pass_trace["final"]["status"] == "Pass"
+    assert pass_trace["final"]["evaluation_verdict"] == "Pass"
     assert pass_trace["final"]["attempts_used"] == 1
     assert len(pass_trace["attempts"]) == 1
     assert pass_trace["attempts"][0]["status"] == "Pass"
+    assert pass_trace["attempts"][0]["evaluation_verdict"] == "Pass"
     assert pass_trace["selection_trace"]["session_plan"]["model"] == "gpt-5.4"
     assert pass_trace["selection_trace"]["session_plan"]["status"] == "planned"
 
