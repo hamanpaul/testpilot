@@ -1,12 +1,10 @@
 id: wifi-llapi-D009-sendremotemeasumentrequest
-aliases:
-  - wifi-llapi-r005-sendremotemeasumentrequest
 name: sendRemoteMeasumentRequest() — WiFi.AccessPoint.{i}.
-version: '1.0'
+version: '1.1'
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
+  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
   sheet: Wifi_LLAPI
-  row: 9
+  row: 5
   object: "WiFi.AccessPoint.{i}."
   api: "sendRemoteMeasumentRequest()"
 platform:
@@ -26,211 +24,132 @@ topology:
       role: sta
       transport: serial
       selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
-      - iface: 6g
-        mode: sta
-        ssid: '{{SSID_6G}}'
-        key: '{{KEY_6G}}'
   links:
   - from: STA
     to: DUT
     band: 5g
   - from: STA
     to: DUT
-    band: 6g
+    band: 2.4g
 test_environment: |
   Topology:
-  - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
-  Transport:
-  - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
+  - DUT: COM0 (BGW720-300, AP role)
+  - STA: COM1 (BCM board, STA role)
+  Band mapping (live-verified 2026-03-16):
+  - 5G:   DUT wl0 / AP.1 / BSSID 2c:59:17:00:19:95 / STA MAC 2C:59:17:00:04:85
+  - 6G:   DUT wl1 / AP.3 — BCME_NOTREADY blocker (STA cannot associate)
+  - 2.4G: DUT wl2 / AP.5 / BSSID 2C:59:17:00:19:A7 / STA MAC 2C:59:17:00:04:97
 
-setup_steps: |
-  1) DUT 5G + 6G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
-     - set Radio.2/SSID.6 for the 6G AP under test
-     - configure AP3 for WPA3-SAE with MFP required
-     - enable AP3 before station association
-  2) STA 5G + 6G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
-     - disable local AP3/AP4 on A0
-     - reset wl1 and its wpa_supplicant control socket
-     - connect wl1 to {{SSID_6G}} with SAE
-  3) Association evidence:
-     - A0: iw dev wl0 link ; iw dev wl1 link ; wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-     - B0: wl -i wl0 assoclist ; wl -i wl1 assoclist
-sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
-    ubus-cli WiFi.AccessPoint.1.Enable=1
-  DUT 6G AP baseline:
-    ubus-cli WiFi.Radio.2.Enable=1
-    ubus-cli WiFi.Radio.2.BeaconPeriod=100
-    ubus-cli WiFi.Radio.2.DTIMPeriod=3
-    ubus-cli WiFi.Radio.2.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.2.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.2.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.2.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.2.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.2.OfdmaEnable=1
-    ubus-cli WiFi.Radio.2.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.2.OperatingStandards=ax
-    ubus-cli WiFi.Radio.2.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.2.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.2.Sensing.Enable=1
-    ubus-cli WiFi.Radio.2.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.2.LongRetryLimit=6
-    ubus-cli WiFi.Radio.2.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.2.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.6.SSID={{SSID_6G}}
-    ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.4.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
-    ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase={{KEY_6G}}
-    ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Required
-    ubus-cli WiFi.AccessPoint.3.MultiAPType=FronthaulBSS
-    ubus-cli WiFi.AccessPoint.3.Enable=1
-  STA 5G preparation:
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-  STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
-    iw dev wl0 link
-  STA 6G preparation:
-    ubus-cli WiFi.AccessPoint.3.Enable=0
-    ubus-cli WiFi.AccessPoint.4.Enable=0
-    wpa_cli terminate 2>/dev/null || true
-    sleep 1
-    rm -f /var/run/wpa_supplicant/wl1 2>/dev/null || true
-    iw dev wl1.1 del 2>/dev/null || true
-    iw dev wl1 disconnect 2>/dev/null || true
-    iw dev wl1 set type managed
-    ifconfig wl1 up
-    mkdir -p /var/run/wpa_supplicant
-    printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\nnetwork={\nssid="{{SSID_6G}}"\nkey_mgmt=SAE\nsae_password="{{KEY_6G}}"\nieee80211w=2\nscan_ssid=1\n}\n' > /tmp/wpa_wl1.conf
-    wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant
-    sleep 3
-  STA 6G connect verify:
-    wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect
-    sleep 8
-    iw dev wl1 link
-    wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-  DUT association evidence:
-    wl -i wl0 assoclist
-    wl -i wl1 assoclist
 test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli WiFi.AccessPoint.{i}.sendRemoteMeasumentRequest(mac:string, bssid:string, class:uint32, channel:uint32, timeout:uint32):bool
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.AccessPoint.*.sendRemoteMeasumentRequest()"
-  3) For stats/AssociatedDevice cases, generate traffic (ping/iperf) before re-read.
-  4) STA link validation:
-     iw dev wl0 link
-     iw dev wl1 link
-     wpa_cli -i wl1 status
-     iw dev wl2 link
-  5) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
+  Each band tests AP.{i}.sendRemoteMeasumentRequest() independently.
+  Note: function name is sendRemoteMeasumentRequest (canonical typo - missing 'r').
+        Using sendRemoteMeasurementRequest returns ERROR: function not found.
+        class parameter must be integer 0 (not string uint32).
+  6G is skipped due to BCME_NOTREADY blocker (STA cannot associate to wl1).
+
+  [5G - AP.1 / wl0]
+  Pre-condition: STA 2C:59:17:00:04:85 associated to AP.1 (wl0)
+  DUT:
+    ubus-cli "WiFi.AccessPoint.1.sendRemoteMeasumentRequest(mac=2C:59:17:00:04:85,bssid=2c:59:17:00:19:95,class=0,channel=36,timeout=5)"
+  Expected: returns [ [ ] ]  (empty list = command accepted, async measurement initiated)
+
+  [6G - AP.3 / wl1 - SKIP]
+  Reason: wl1 join fails with WLC_SET_SSID BCME_NOTREADY (-17, cmd=23); STA cannot associate to AP.3.
+
+  [2.4G - AP.5 / wl2]
+  Pre-condition: STA 2C:59:17:00:04:97 associated to AP.5 (wl2)
+  DUT:
+    ubus-cli "WiFi.AccessPoint.5.sendRemoteMeasumentRequest(mac=2C:59:17:00:04:97,bssid=2C:59:17:00:19:A7,class=0,channel=1,timeout=5)"
+  Expected: returns [ [ ] ]  (same as 5G)
 
 steps:
-- id: step1
+- id: step1_5g_sta_join
+  action: exec
+  target: STA
+  band: 5g
+  command: |
+    wl -i wl0 down; sleep 1; wl -i wl0 up; sleep 1
+    wl -i wl0 join TestPilot_5G imode bss; sleep 3
+    wl -i wl0 status
+- id: step2_5g_assoc
   action: exec
   target: DUT
-  command: 1. Configure all radios (2.4G/5G/6G) to use the same SSID and Security mode.
-- id: step2
+  band: 5g
+  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+  depends_on: step1_5g_sta_join
+  capture: assoc_5g
+- id: step3_5g
   action: exec
   target: DUT
-  command: Configure AP1, AP3 and AP5 IEEE80211r.MobilityDomain to use the same value ubus-cli WiFi.AccessPoint.{i}.IEEE80211r.MobilityDomain=25
-  depends_on: step1
-- id: step3
+  band: 5g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.1.sendRemoteMeasumentRequest(mac=2C:59:17:00:04:85,bssid=2c:59:17:00:19:95,class=0,channel=36,timeout=5)"
+  depends_on: step2_5g_assoc
+  capture: result_5g
+- id: step4_6g
+  action: skip
+  target: DUT
+  reason: BCME_NOTREADY - wl1 STA cannot associate; consistent with D006/D007/D008 blocker
+- id: step5_24g_sta_join
+  action: exec
+  target: STA
+  band: 2.4g
+  command: |
+    wl -i wl2 down; sleep 1; wl -i wl2 up; sleep 1
+    wl -i wl2 join TestPilot_24G imode bss; sleep 3
+    wl -i wl2 status
+- id: step6_24g_assoc
   action: exec
   target: DUT
-  command: Connect Wifi station to GW
-  depends_on: step2
-- id: step4
+  band: 2.4g
+  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+  depends_on: step5_24g_sta_join
+  capture: assoc_24g
+- id: step7_24g
   action: exec
   target: DUT
-  command: Verify that the Station support BTM/11v /802.11k = Radio Resource Management (RRM) WiFi.AccessPoint.3.AssociatedDevice.1.Capabilities="RRM,BTM,QOS_MAP,PMF"
-  depends_on: step3
-- id: step5
-  action: exec
-  target: DUT
-  command: 'Trigger the station to sendRemoteMeasumentRequest ubus-cli "WiFi.AccessPoint.3.sendRemoteMeasumentRequest(mac=6A:8C
-    :E6:7A:18:91,bssid=TEST-11r,class=uint32,channel=36,timeout=5)" > WiFi.AccessPoint.3.sendRemoteMeasumentRequest(mac=6A:8C:E6:7A:18:91,bssid=TEST-11r,class=0,channel=36,timeout=5)
-    WiFi.AccessPoint.3.sendRemoteMeasumentRequest() returned [ [ ] ] root@prplOS:~# ubus-cli "WiFi.AccessPoint.3.sendRemoteMeasurementRequest(macaddress=6A:8C:E6:7A:18:91,bssid=64:75:da:4e:51:75,class=0,channel=36,time
-    out=5)" > WiFi.AccessPoint.3.sendRemoteMeasurementRequest(macaddress=6A:8C:E6:7A:18:91,bssid=64:75:da:4e:51:75,class=0,channel=36,timeout=5)
-    ERROR: call (null) failed with status 3 - function not found WiFi.AccessPoint.3.sendRemoteMeasurementRequest() returned
-    [ "", { args = { bssid = "64:75:da:4e:51:75", channel = 36, class = 0, macaddress = "6A:8C:E6:7A:18:91", timeout = 5 }
-    } ] root@prplOS:~# ubus list WiFi.AccessPoint.*.? | grep sendRemoteMeasurementRequest Command failed: Not found'
-  depends_on: step4
-  capture: result
+  band: 2.4g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.5.sendRemoteMeasumentRequest(mac=2C:59:17:00:04:97,bssid=2C:59:17:00:19:A7,class=0,channel=1,timeout=5)"
+  depends_on: step6_24g_assoc
+  capture: result_24g
+
 pass_criteria:
-- field: result
-  operator: not_empty
-  value: ''
-  description: sendRemoteMeasumentRequest() 應回傳非空結果
+- field: assoc_5g.AssocMac5g
+  operator: equals
+  value: 2c:59:17:00:04:85
+  description: "5G: sendRemoteMeasumentRequest() 前必須先確認 wl0 STA 已關聯"
+- field: result_5g
+  operator: not_contains
+  value: ERROR
+  description: "5G: sendRemoteMeasumentRequest() no ERROR"
+- field: result_5g
+  operator: not_contains
+  value: syntax error
+  description: "5G: no syntax error"
+- field: result_5g
+  operator: regex
+  value: '(?s)\[\s*\[\s*\]\s*\]'
+  description: "5G: 成功回傳應維持 [ [ ] ] 的空 list 形狀"
+- field: assoc_24g.AssocMac24g
+  operator: equals
+  value: 2c:59:17:00:04:97
+  description: "2.4G: sendRemoteMeasumentRequest() 前必須先確認 wl2 STA 已關聯"
+- field: result_24g
+  operator: not_contains
+  value: ERROR
+  description: "2.4G: sendRemoteMeasumentRequest() no ERROR"
+- field: result_24g
+  operator: not_contains
+  value: syntax error
+  description: "2.4G: no syntax error"
+- field: result_24g
+  operator: regex
+  value: '(?s)\[\s*\[\s*\]\s*\]'
+  description: "2.4G: 成功回傳應維持 [ [ ] ] 的空 list 形狀"
 
 verification_command: |
-  ubus-cli "WiFi.AccessPoint.*.?" | sed -n "1,200p"
-  ubus-cli "WiFi.AccessPoint.*.sendRemoteMeasumentRequest?" 2>/dev/null || true
-  wl -i wl0 bss 2>/dev/null || true
-  wl -i wl1 bss 2>/dev/null || true
-  wl -i wl2 bss 2>/dev/null || true
   wl -i wl0 assoclist
-  wl -i wl1 assoclist
   wl -i wl2 assoclist
 
 results_reference:
@@ -238,9 +157,13 @@ results_reference:
     5g: Fail
     6g: Fail
     2.4g: Fail
-    comment: 'ARC : GW does not send sendRemoteMeasumentRequest by using the command.'
+    comment: 'ARC: GW does not send sendRemoteMeasumentRequest by using the command.'
   v4.0.3:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: need to check(Leon)
+    5g: Pass
+    6g: Blocker
+    2.4g: Pass
+    comment: >-
+      Live-verified 2026-03-16. Returns [ [ ] ] on both 5G and 2.4G.
+      Function name is sendRemoteMeasumentRequest (canonical typo).
+      class parameter must be integer 0.
+      6G blocked: BCME_NOTREADY (wl1 STA cannot associate).

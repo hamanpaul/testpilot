@@ -10,6 +10,7 @@ from typing import Any
 import yaml
 
 from testpilot.core.plugin_loader import PluginLoader
+from testpilot.schema.case_schema import load_case
 
 
 class _FakeTopology:
@@ -1031,6 +1032,136 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
             and str(criterion.get("value")) == "0"
             for criterion in case_data["pass_criteria"]
         )
+
+
+def test_pending_method_calibration_cases_use_runtime_supported_contracts():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
+    assert {
+        "wifi-llapi-D006-kickstation",
+        "wifi-llapi-D007-kickstationreason",
+        "wifi-llapi-D008-sendbsstransferrequest",
+        "wifi-llapi-D009-sendremotemeasumentrequest",
+    }.issubset(discoverable_ids)
+
+    d006 = load_case(cases_dir / "D006_kickstation.yaml")
+    d006_commands = "\n".join(str(step.get("command", "")) for step in d006["steps"])
+    d006_links = {link["band"] for link in d006["topology"]["links"]}
+    assert "aliases" not in d006
+    assert d006_links == {"5g", "2.4g"}
+    assert "changed_from" not in {str(criterion.get("operator")) for criterion in d006["pass_criteria"]}
+    assert not any("compare_to" in criterion for criterion in d006["pass_criteria"])
+    assert 'WiFi.AccessPoint.1.kickStation(MACAddress=2C:59:17:00:04:85)' in d006_commands
+    assert any(
+        criterion["field"] == "assoc_5g.AssocMac5g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "2c:59:17:00:04:85"
+        for criterion in d006["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "after_5g.DisassociationTime"
+        and criterion["operator"] == "not_equals"
+        and criterion["reference"] == "before_5g.DisassociationTime"
+        for criterion in d006["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "assoc_24g.AssocMac24g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "2c:59:17:00:04:97"
+        for criterion in d006["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "after_24g.DisassociationTime"
+        and criterion["operator"] == "not_equals"
+        and criterion["reference"] == "before_24g.DisassociationTime"
+        for criterion in d006["pass_criteria"]
+    )
+
+    d007 = load_case(cases_dir / "D007_kickstationreason.yaml")
+    d007_commands = "\n".join(str(step.get("command", "")) for step in d007["steps"])
+    d007_links = {link["band"] for link in d007["topology"]["links"]}
+    assert d007_links == {"5g", "2.4g"}
+    assert "changed_from" not in {str(criterion.get("operator")) for criterion in d007["pass_criteria"]}
+    assert not any("compare_to" in criterion for criterion in d007["pass_criteria"])
+    assert "kickStationReason(macaddress=2C:59:17:00:04:85,reason=1)" in d007_commands
+    assert "kickStationReason(macaddress=2C:59:17:00:04:97,reason=1)" in d007_commands
+    assert any(
+        criterion["field"] == "assoc_5g.AssocMac5g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "2c:59:17:00:04:85"
+        for criterion in d007["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "after_5g.DisassociationTime"
+        and criterion["operator"] == "not_equals"
+        and criterion["reference"] == "before_5g.DisassociationTime"
+        for criterion in d007["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "assoc_24g.AssocMac24g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "2c:59:17:00:04:97"
+        for criterion in d007["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "after_24g.DisassociationTime"
+        and criterion["operator"] == "not_equals"
+        and criterion["reference"] == "before_24g.DisassociationTime"
+        for criterion in d007["pass_criteria"]
+    )
+
+    d008 = load_case(cases_dir / "D008_sendbsstransferrequest.yaml")
+    d008_commands = "\n".join(str(step.get("command", "")) for step in d008["steps"])
+    assert "config" not in d008["topology"]["devices"]["STA"]
+    assert "WiFi.AccessPoint.1.MBOEnable=1" in d008_commands
+    assert "WiFi.AccessPoint.5.MBOEnable=1" in d008_commands
+    assert "wl -i wl0 join TestPilot_5G imode bss" in d008_commands
+    assert "wl -i wl2 join TestPilot_24G imode bss" in d008_commands
+    assert any(
+        criterion["field"] == "assoc_5g.AssocMac5g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "2c:59:17:00:04:85"
+        for criterion in d008["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result_5g"
+        and criterion["operator"] == "contains"
+        and criterion["value"] == "[-1]"
+        for criterion in d008["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result_24g"
+        and criterion["operator"] == "contains"
+        and criterion["value"] == "[-1]"
+        for criterion in d008["pass_criteria"]
+    )
+
+    d009 = load_case(cases_dir / "D009_sendremotemeasumentrequest.yaml")
+    d009_commands = "\n".join(str(step.get("command", "")) for step in d009["steps"])
+    assert "config" not in d009["topology"]["devices"]["STA"]
+    assert "sendRemoteMeasumentRequest" in d009_commands
+    assert "sendRemoteMeasurementRequest" not in d009_commands
+    assert "wl -i wl0 join TestPilot_5G imode bss" in d009_commands
+    assert "wl -i wl2 join TestPilot_24G imode bss" in d009_commands
+    assert any(
+        criterion["field"] == "assoc_5g.AssocMac5g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "2c:59:17:00:04:85"
+        for criterion in d009["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result_5g"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == r"(?s)\[\s*\[\s*\]\s*\]"
+        for criterion in d009["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result_24g"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == r"(?s)\[\s*\[\s*\]\s*\]"
+        for criterion in d009["pass_criteria"]
+    )
 
 
 def test_run_required_command_retries_after_recovery_signal():

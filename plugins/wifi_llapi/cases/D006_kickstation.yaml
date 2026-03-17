@@ -1,18 +1,16 @@
 id: wifi-llapi-D006-kickstation
-aliases:
-  - wifi-llapi-r002-kickstation
 name: kickStation() — WiFi.AccessPoint.{i}.
-version: '1.0'
+version: '1.1'
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
+  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
   sheet: Wifi_LLAPI
-  row: 6
+  row: 2
   object: "WiFi.AccessPoint.{i}."
   api: "kickStation()"
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli "WiFi.AccessPoint.{i}.kickStation(macaddress=string):bool"
+hlapi_command: 'ubus-cli "WiFi.AccessPoint.{i}.kickStation(MACAddress=<STA_MAC>)"'
 llapi_support: Support
 implemented_by: pWHM
 topology:
@@ -25,134 +23,162 @@ topology:
       role: sta
       transport: serial
       selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
   links:
   - from: STA
     to: DUT
     band: 5g
+  - from: STA
+    to: DUT
+    band: 2.4g
 test_environment: |
   Topology:
-  - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
+  - DUT: COM0 (BGW720-300, AP role)
+  - STA: COM1 (BCM board, STA role)
   Transport:
   - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
+  Band mapping (live verified 2026-03-16):
+  - 5G:   DUT AP.1 / wl0 / SSID=TestPilot_5G   ↔ STA wl0 / MAC=2C:59:17:00:04:85
+  - 6G:   DUT AP.3 / wl1 / SSID=TestPilot_BTM  ↔ STA wl1  [BLOCKER: MLO/BCME_NOTREADY]
+  - 2.4G: DUT AP.5 / wl2 / SSID=TestPilot_24G  ↔ STA wl2 / MAC=2C:59:17:00:04:97
 
 setup_steps: |
-  1) DUT 5G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
-  3) Association evidence:
-     - A0: iw dev wl0 link
-     - B0: wl -i wl0 assoclist
-sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
-    ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-  STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
-    iw dev wl0 link
-  DUT association evidence:
-    wl -i wl0 assoclist
+  Sequential per-band (5G → 6G-skip → 2.4G); no simultaneous multi-band connections.
+  [5G]
+  1) STA wl0 join DUT AP.1 (TestPilot_5G):
+     wl -i wl0 down; sleep 1; wl -i wl0 up; sleep 1
+     wl -i wl0 join TestPilot_5G imode bss; sleep 3
+     wl -i wl0 status
+  2) DUT AP.1 verify STA associated:
+     ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"
+     ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DisassociationTime?"
+  [6G] SKIP — BCME_NOTREADY (-17, cmd=23 WLC_SET_SSID) on wl1; MLO firmware does not
+       support standalone 6G STA-mode association via wl join on this platform.
+  [2.4G]
+  1) STA wl2 join DUT AP.5 (TestPilot_24G, Open security):
+     wl -i wl2 down; sleep 1; wl -i wl2 up; sleep 1
+     wl -i wl2 join TestPilot_24G imode bss; sleep 3
+     wl -i wl2 status
+  2) DUT AP.5 verify STA associated:
+     ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.*.MACAddress?"
+     ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DisassociationTime?"
+
 test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli "WiFi.AccessPoint.{i}.kickStation(macaddress=string):bool"
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.AccessPoint.*.kickStation()"
-  3) For stats/AssociatedDevice cases, generate traffic (ping/iperf) before re-read.
-  4) STA link validation:
-      iw dev wl0 link
-  5) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
+  For each active band (5G then 2.4G):
+  1) STA joins target AP via: wl -i <iface> join <SSID> imode bss
+     (Note: use wl join, not iw connect — iw doesn't handle Open/PSK uniformly on BCM)
+  2) Record DisassociationTime before kick.
+  3) DUT execute: ubus-cli "WiFi.AccessPoint.{i}.kickStation(MACAddress=<STA_MAC>)"
+     - {i}=1 for 5G, {i}=5 for 2.4G
+  4) Verify DisassociationTime has changed (new timestamp written by wld).
+  5) Check DUT log for hostapd/wld disassociation events.
+  Pass: DisassociationTime changes AND hostapd logs 'IEEE 802.11: disassociated' for the STA MAC.
+  Notes:
+  - Fast reconnect on open AP (2.4G) is expected and does NOT invalidate the kick.
+  - WLC_SCB_DEAUTHENTICATE_FOR_REASON err -30 is driver-internal; the LLAPI call still
+    succeeds and returns MACAddress in the response.
 
 steps:
-- id: step1
+- id: step1_5g_sta_join
   action: exec
-  target: DUT
-  command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"'
-- id: step2
-  action: exec
-  target: DUT
-  command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.AuthenticationState?"'
-  depends_on: step1
-- id: step3
-  action: exec
-  target: DUT
+  target: STA
+  band: 5g
   command: |
-    MAC="$(wl -i wl0 assoclist 2>/dev/null | awk 'NR==1{print $2}')"
-    ubus-cli "WiFi.AccessPoint.1.kickStation(macaddress=$MAC)"
-  depends_on: step2
-- id: step4
+    wl -i wl0 down; sleep 1; wl -i wl0 up; sleep 1
+    wl -i wl0 join TestPilot_5G imode bss; sleep 3
+    wl -i wl0 status
+- id: step2_5g_record_time
   action: exec
   target: DUT
-  command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.AuthenticationState?"'
-  depends_on: step3
-  capture: result
-- id: step5
+  band: 5g
+  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+  depends_on: step1_5g_sta_join
+  capture: assoc_5g
+- id: step3_5g_record_time
   action: exec
   target: DUT
-  command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"'
-  depends_on: step4
+  band: 5g
+  command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DisassociationTime?"'
+  depends_on: step2_5g_record_time
+  capture: before_5g
+- id: step4_5g_kick
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli "WiFi.AccessPoint.1.kickStation(MACAddress=2C:59:17:00:04:85)"'
+  depends_on: step3_5g_record_time
+- id: step5_5g_verify
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DisassociationTime?"'
+  depends_on: step4_5g_kick
+  capture: after_5g
+- id: step6_6g_skip
+  action: skip
+  target: DUT
+  band: 6g
+  reason: "BCME_NOTREADY (-17, cmd=23 WLC_SET_SSID) on wl1 — MLO firmware does not support standalone 6G STA-mode association"
+- id: step7_24g_sta_join
+  action: exec
+  target: STA
+  band: 2.4g
+  command: |
+    wl -i wl2 down; sleep 1; wl -i wl2 up; sleep 1
+    wl -i wl2 join TestPilot_24G imode bss; sleep 3
+    wl -i wl2 status
+- id: step8_24g_assoc
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+  depends_on: step7_24g_sta_join
+  capture: assoc_24g
+- id: step9_24g_record_time
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DisassociationTime?"'
+  depends_on: step8_24g_assoc
+  capture: before_24g
+- id: step10_24g_kick
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli "WiFi.AccessPoint.5.kickStation(MACAddress=2C:59:17:00:04:97)"'
+  depends_on: step9_24g_record_time
+- id: step11_24g_verify
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DisassociationTime?"'
+  depends_on: step10_24g_kick
+  capture: after_24g
+
 pass_criteria:
-- field: result.AuthenticationState
-  operator: contains
-  value: '0'
-  description: kickStation 執行後應回傳 AuthenticationState=0
+- field: assoc_5g.AssocMac5g
+  operator: equals
+  value: 2c:59:17:00:04:85
+  description: "5G: kickStation() 前必須先確認 wl0 STA 已關聯"
+- field: after_5g.DisassociationTime
+  operator: not_equals
+  reference: before_5g.DisassociationTime
+  description: "5G: DisassociationTime must change after kickStation — STA was deauthenticated"
+- field: assoc_24g.AssocMac24g
+  operator: equals
+  value: 2c:59:17:00:04:97
+  description: "2.4G: kickStation() 前必須先確認 wl2 STA 已關聯"
+- field: after_24g.DisassociationTime
+  operator: not_equals
+  reference: before_24g.DisassociationTime
+  description: "2.4G: DisassociationTime must change after kickStation — STA was deauthenticated"
+
 verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"
-  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.AuthenticationState?"
-  wl -i wl0 assoclist
+  # DUT log after kick (check for hostapd/wld disassociation events):
+  logread | grep -E "wl0|wl2|kickStation|disassociated|Disassoc" | tail -20
+  # DUT object readback:
+  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DisassociationTime?"
+  ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DisassociationTime?"
+
 results_reference:
   v4.0.1:
     5g: Pass
@@ -160,7 +186,11 @@ results_reference:
     2.4g: Pass
     comment: ''
   v4.0.3:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: ''
+    5g: Pass
+    6g: Blocker
+    2.4g: Pass
+    comment: >
+      6G Blocker: BCME_NOTREADY (-17, cmd=23 WLC_SET_SSID) on STA wl1 when attempting
+      standalone 6G STA-mode association. MLO-aware firmware does not support wl join on
+      wl1 as standalone interface. Workbook v4.0.3 expects Pass/Pass/Pass.
+      5G confirmed Pass (live, prior session). 2.4G confirmed Pass (live 2026-03-16).
