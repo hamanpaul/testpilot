@@ -1770,6 +1770,112 @@ def test_pending_not_supported_associateddevice_cases_evaluate_live_examples():
     assert plugin.evaluate(d032, d032_fail_results) is False
 
 
+def test_pending_mu_stub_cases_use_supported_contracts():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
+    assert {
+        "wifi-llapi-D033-mumimotxpktscount",
+        "wifi-llapi-D034-mumimotxpktspercentage",
+        "wifi-llapi-D035-muuserpositionid",
+    }.issubset(discoverable_ids)
+
+    mu_cases = {
+        "D033_mumimotxpktscount.yaml": ("MUMimoTxPktsCount", "wifi-llapi-D033-mumimotxpktscount"),
+        "D034_mumimotxpktspercentage.yaml": ("MUMimoTxPktsPercentage", "wifi-llapi-D034-mumimotxpktspercentage"),
+        "D035_muuserpositionid.yaml": ("MUUserPositionId", "wifi-llapi-D035-muuserpositionid"),
+    }
+    for filename, (api_name, case_id) in mu_cases.items():
+        case_data = load_case(cases_dir / filename)
+        commands = "\n".join(str(step.get("command", "")) for step in case_data["steps"])
+        links = {link["band"] for link in case_data["topology"]["links"]}
+        assert case_data["id"] == case_id
+        assert links == {"5g", "2.4g"}
+        assert "wl -i wl0 assoclist" in commands
+        assert "wl -i wl2 assoclist" in commands
+        assert f'WiFi.AccessPoint.1.AssociatedDevice.1.{api_name}?' in commands
+        assert f'WiFi.AccessPoint.5.AssociatedDevice.1.{api_name}?' in commands
+        assert case_data["llapi_support"] == "Not Supported"
+        assert case_data["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
+        assert case_data["results_reference"]["v4.0.3"]["6g"] == "Skip"
+        assert case_data["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
+        assert any(
+            criterion["field"] == "assoc_5g.AssocMac5g"
+            and criterion["operator"] == "equals"
+            and criterion["value"] == "2c:59:17:00:04:85"
+            for criterion in case_data["pass_criteria"]
+        )
+        assert any(
+            criterion["field"] == f"result_5g.{api_name}"
+            and criterion["operator"] == "equals"
+            and str(criterion["value"]) == "0"
+            for criterion in case_data["pass_criteria"]
+        )
+        assert any(
+            criterion["field"] == "assoc_24g.AssocMac24g"
+            and criterion["operator"] == "equals"
+            and criterion["value"] == "2c:59:17:00:04:97"
+            for criterion in case_data["pass_criteria"]
+        )
+        assert any(
+            criterion["field"] == f"result_24g.{api_name}"
+            and criterion["operator"] == "equals"
+            and str(criterion["value"]) == "0"
+            for criterion in case_data["pass_criteria"]
+        )
+
+
+def test_pending_mu_stub_cases_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+
+    mu_cases = {
+        "D033_mumimotxpktscount.yaml": "MUMimoTxPktsCount",
+        "D034_mumimotxpktspercentage.yaml": "MUMimoTxPktsPercentage",
+        "D035_muuserpositionid.yaml": "MUUserPositionId",
+    }
+
+    for filename, api_name in mu_cases.items():
+        case_data = load_case(cases_dir / filename)
+        pass_results = {
+            "steps": {
+                "step1_5g_assoc": {
+                    "success": True,
+                    "output": "AssocMac5g=2c:59:17:00:04:85",
+                    "timing": 0.01,
+                },
+                "step2_5g": {
+                    "success": True,
+                    "output": f'[\n  {{\n    "WiFi.AccessPoint.1.AssociatedDevice.1.{api_name}": 0\n  }}\n]\n',
+                    "timing": 0.01,
+                },
+                "step4_24g_assoc": {
+                    "success": True,
+                    "output": "AssocMac24g=2c:59:17:00:04:97",
+                    "timing": 0.01,
+                },
+                "step5_24g": {
+                    "success": True,
+                    "output": f'[\n  {{\n    "WiFi.AccessPoint.5.AssociatedDevice.1.{api_name}": 0\n  }}\n]\n',
+                    "timing": 0.01,
+                },
+            }
+        }
+        assert plugin.evaluate(case_data, pass_results) is True
+
+        fail_results = {
+            "steps": {
+                **pass_results["steps"],
+                "step5_24g": {
+                    "success": True,
+                    "output": f'[\n  {{\n    "WiFi.AccessPoint.5.AssociatedDevice.1.{api_name}": 1\n  }}\n]\n',
+                    "timing": 0.01,
+                },
+            }
+        }
+        assert plugin.evaluate(case_data, fail_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
