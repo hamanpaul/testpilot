@@ -2416,6 +2416,249 @@ def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
         assert plugin.evaluate(case_data, mismatch_results) is False
 
 
+def test_pending_security_and_signal_associateddevice_cases_use_supported_contracts():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
+    assert {
+        "wifi-llapi-D045-securitymodeenabled",
+        "wifi-llapi-D047-signalstrength-accesspoint-associateddevice",
+    }.issubset(discoverable_ids)
+
+    d045_raw = yaml.safe_load(
+        (cases_dir / "D045_securitymodeenabled.yaml").read_text(encoding="utf-8")
+    )
+    d045 = load_case(cases_dir / "D045_securitymodeenabled.yaml")
+    d045_commands = "\n".join(str(step.get("command", "")) for step in d045["steps"])
+    d045_links = {link["band"] for link in d045["topology"]["links"]}
+
+    assert "aliases" not in d045_raw
+    assert d045["id"] == "wifi-llapi-D045-securitymodeenabled"
+    assert d045["source"]["row"] == 45
+    assert d045["source"]["baseline"] == "BCM v4.0.3"
+    assert d045["bands"] == ["5g"]
+    assert d045_links == {"5g"}
+    assert (
+        d045["hlapi_command"]
+        == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SecurityModeEnabled?"'
+    )
+    assert "MACAddress?" in d045_commands
+    assert "DriverAssocMac=" in d045_commands
+    assert "DriverSecurityModeEnabled=" in d045_commands
+    assert any(
+        criterion["field"] == "driver_security.DriverAssocMac"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "assoc_entry.MACAddress"
+        for criterion in d045["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_security.DriverSecurityModeEnabled"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "WPA3-Personal"
+        for criterion in d045["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.SecurityModeEnabled"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "driver_security.DriverSecurityModeEnabled"
+        for criterion in d045["pass_criteria"]
+    )
+    assert d045["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d045["results_reference"]["v4.0.3"]["6g"] == "N/A"
+    assert d045["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+
+    d047_raw = yaml.safe_load(
+        (cases_dir / "D047_signalstrength_accesspoint_associateddevice.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    d047 = load_case(cases_dir / "D047_signalstrength_accesspoint_associateddevice.yaml")
+    d047_commands = "\n".join(str(step.get("command", "")) for step in d047["steps"])
+    d047_links = {link["band"] for link in d047["topology"]["links"]}
+
+    assert "aliases" not in d047_raw
+    assert d047["id"] == "wifi-llapi-D047-signalstrength-accesspoint-associateddevice"
+    assert d047["source"]["row"] == 47
+    assert d047["source"]["baseline"] == "BCM v4.0.3"
+    assert d047["bands"] == ["5g"]
+    assert d047_links == {"5g"}
+    assert (
+        d047["hlapi_command"]
+        == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SignalStrength?"'
+    )
+    assert "MACAddress?" in d047_commands
+    assert "DriverAssocMac=" in d047_commands
+    assert "DriverSignalStrength=" in d047_commands
+    assert "DriverSignalStrengthMin=" in d047_commands
+    assert "DriverSignalStrengthMax=" in d047_commands
+    assert any(
+        criterion["field"] == "result.SignalStrength"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == "^-[0-9]+$"
+        for criterion in d047["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.SignalStrength"
+        and criterion["operator"] == "<"
+        and str(criterion["value"]) == "0"
+        for criterion in d047["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_signal.DriverAssocMac"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "assoc_entry.MACAddress"
+        for criterion in d047["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_signal.DriverSignalStrength"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == "^-[0-9]+$"
+        for criterion in d047["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_signal.DriverSignalStrength"
+        and criterion["operator"] == "<"
+        and str(criterion["value"]) == "0"
+        for criterion in d047["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.SignalStrength"
+        and criterion["operator"] == ">="
+        and criterion["reference"] == "driver_signal.DriverSignalStrengthMin"
+        for criterion in d047["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.SignalStrength"
+        and criterion["operator"] == "<="
+        and criterion["reference"] == "driver_signal.DriverSignalStrengthMax"
+        for criterion in d047["pass_criteria"]
+    )
+    assert d047["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d047["results_reference"]["v4.0.3"]["6g"] == "N/A"
+    assert d047["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+
+
+def test_pending_security_and_signal_associateddevice_cases_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+
+    d045 = load_case(cases_dir / "D045_securitymodeenabled.yaml")
+    d045_results = {
+        "steps": {
+            "step1": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+                "timing": 0.01,
+            },
+            "step2": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.SecurityModeEnabled="WPA3-Personal"',
+                "timing": 0.01,
+            },
+            "step3": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverSecurityModeEnabled=WPA3-Personal",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d045, d045_results) is True
+
+    d045_fail_results = {
+        "steps": {
+            **d045_results["steps"],
+            "step3": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverSecurityModeEnabled=WPA2-Personal",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d045, d045_fail_results) is False
+
+    d045_mismatch_results = {
+        "steps": {
+            **d045_results["steps"],
+            "step3": {
+                "success": True,
+                "output": "DriverAssocMac=AA:AA:AA:AA:AA:AA\nDriverSecurityModeEnabled=WPA3-Personal",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d045, d045_mismatch_results) is False
+
+    d047 = load_case(cases_dir / "D047_signalstrength_accesspoint_associateddevice.yaml")
+    d047_results = {
+        "steps": {
+            "step1": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+                "timing": 0.01,
+            },
+            "step2": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.SignalStrength=-36",
+                "timing": 0.01,
+            },
+            "step3": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverSignalStrength=-36\nDriverSignalStrengthMin=-38\nDriverSignalStrengthMax=-34",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d047, d047_results) is True
+
+    d047_fail_results = {
+        "steps": {
+            **d047_results["steps"],
+            "step3": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverSignalStrength=-32\nDriverSignalStrengthMin=-34\nDriverSignalStrengthMax=-30",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d047, d047_fail_results) is False
+
+    d047_zero_results = {
+        "steps": {
+            **d047_results["steps"],
+            "step2": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.SignalStrength=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d047, d047_zero_results) is False
+
+    d047_mismatch_results = {
+        "steps": {
+            **d047_results["steps"],
+            "step3": {
+                "success": True,
+                "output": "DriverAssocMac=AA:AA:AA:AA:AA:AA\nDriverSignalStrength=-36\nDriverSignalStrengthMin=-38\nDriverSignalStrengthMax=-34",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d047, d047_mismatch_results) is False
+
+    d047_missing_driver_value_results = {
+        "steps": {
+            **d047_results["steps"],
+            "step3": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverSignalStrengthMin=-38\nDriverSignalStrengthMax=-34",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d047, d047_missing_driver_value_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
@@ -2881,6 +3124,31 @@ def test_sta_env_setup_parser_preserves_wpa_cli_quoted_value():
     assert parsed == [("STA", "wpa_cli -i wl1 set_network 0 sae_password '\"B0StaTest1234\"'")]
 
 
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "D045_securitymodeenabled.yaml",
+        "D047_signalstrength_accesspoint_associateddevice.yaml",
+    ],
+)
+def test_sta_env_setup_parser_preserves_single_line_wpa_supplicant_template(filename: str):
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case_data = load_case(cases_dir / filename)
+
+    parsed = plugin._iter_env_script_commands(case_data["sta_env_setup"])
+    commands = [command for _, command in parsed]
+
+    assert (
+        "printf 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nsae_pwe=2\\nnetwork={\\nssid=\"TestPilot_BTM\"\\nkey_mgmt=SAE\\nsae_password=\"testpilot6g\"\\nieee80211w=2\\nscan_ssid=1\\n}\\n' > /tmp/wpa_wl0.conf"
+        in commands
+    )
+    assert "wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant" in commands
+    assert "update_config=1" not in commands
+    assert "sae_pwe=2" not in commands
+    assert "network={" not in commands
+
+
 def test_extract_cli_fragments_prefers_concrete_getter_from_set_get_prose():
     plugin = _load_plugin()
     text = (
@@ -2970,6 +3238,8 @@ def test_extract_cli_fragments_ignores_prose_after_ubus_keyword():
         ("D039_retransmissions.yaml", 2, "DriverRetransmissions="),
         ("D041_rxbytes.yaml", 2, "DriverRxBytes="),
         ("D042_rxmulticastpacketcount.yaml", 3, "DriverRxMulticastPacketCount="),
+        ("D045_securitymodeenabled.yaml", 2, "DriverSecurityModeEnabled="),
+        ("D047_signalstrength_accesspoint_associateddevice.yaml", 2, "DriverSignalStrength="),
     ],
 )
 def test_sanitize_cli_fragment_preserves_nested_quotes_for_associateddevice_driver_checks(
