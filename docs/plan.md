@@ -1,6 +1,6 @@
 # TestPilot Master Plan
 
-> 更新日期：2026-03-11
+> 更新日期：2026-03-17
 > 基線版本：v0.0.3-draft  
 > 規劃版本：v0.1.0（第三次重構基線）
 
@@ -18,7 +18,7 @@ TestPilot 的主目標是：
 
 ---
 
-## 2. 現況快照（2026-03-11）
+## 2. 現況快照（2026-03-17）
 
 ### 2.1 已落地能力
 
@@ -27,8 +27,9 @@ TestPilot 的主目標是：
 3. Transport：serialwrap / adb / ssh / network 已實作。
 4. Per-case dispatcher、selection trace、retry-aware timeout、attempt trace 已落地。
 5. 正式 hot path 仍由 `setup_env -> verify_env -> execute_step -> evaluate` 決定。
-6. 415 官方 row-indexed cases 已有實機全量驗證基線。
-7. 第三次重構的 Copilot SDK 深度研究已完成，並已複製到 `docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`。
+6. 415 官方 row-indexed cases 已有實機全量驗證基線；兩個 duplicate-row legacy YAML 已改為 underscore-prefixed compatibility fixtures，不再混入 discoverable case inventory。
+7. `wifi_llapi` 目前已固化 102 筆 trusted/calibrated cases，尚餘 313 筆待校正；`D037 OperatingStandard` 仍維持 blocked，等待可信 pass cross-check。
+8. 第三次重構的 Copilot SDK 深度研究已完成，並已複製到 `docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`。
 
 ### 2.2 尚未落地
 

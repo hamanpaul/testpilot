@@ -23,6 +23,12 @@ docs/         # plan, todos, phase docs
 scripts/      # utility scripts (gen_cases, build_template_report)
 ```
 
+## Case Discovery Convention
+
+1. `plugins/wifi_llapi/cases/` 中，官方 discoverable cases 以 workbook row-indexed `D###` YAML 為主。
+2. 檔名 stem 以 `_` 開頭的 YAML 視為 explicit fixtures / legacy compatibility artifacts；`load_cases_dir()` 會排除這類檔案，不得計入 discoverable case inventory。
+3. 若需保留 legacy YAML 供 schema / backward-compat 測試，優先使用 underscore-prefixed fixture 命名，不要沿用會被誤認成正式 case 的 `D###` 命名。
+
 ## Commands
 
 ```bash
