@@ -3582,6 +3582,160 @@ def test_d052_supportedvhtmcs_evaluate_live_examples():
     assert plugin.evaluate(d052, d052_wrong_sta_results) is False
 
 
+def test_d056_txerrors_uses_same_sta_driver_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
+    assert "wifi-llapi-D056-txerrors" in discoverable_ids
+
+    d056_raw = yaml.safe_load((cases_dir / "D056_txerrors.yaml").read_text(encoding="utf-8"))
+    d056 = load_case(cases_dir / "D056_txerrors.yaml")
+    d056_commands = "\n".join(str(step.get("command", "")) for step in d056["steps"])
+    d056_links = {link["band"] for link in d056["topology"]["links"]}
+
+    assert "aliases" not in d056_raw
+    assert d056["id"] == "wifi-llapi-D056-txerrors"
+    assert d056["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d056["source"]["row"] == 56
+    assert d056["source"]["baseline"] == "BCM v4.0.3"
+    assert d056["llapi_support"] == "Support"
+    assert d056["bands"] == ["5g"]
+    assert d056_links == {"5g"}
+    assert d056["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxErrors?"'
+    assert "cat /sys/class/net/wl0/address" in d056_commands
+    assert "MACAddress?" in d056_commands
+    assert 'TxErrors?"' in d056_commands
+    assert "AssocTxErrors=" in d056_commands
+    assert "DriverTxPkts=" in d056_commands
+    assert "DriverTxErrors=" in d056_commands
+    assert "DriverRetries=" in d056_commands
+    assert "DriverRetryExhausted=" in d056_commands
+    assert any(
+        criterion["field"] == "sta_identity.StaMac"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == r"^([0-9A-F]{2}:){5}[0-9A-F]{2}$"
+        for criterion in d056["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "assoc_entry.MACAddress"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "sta_identity.StaMac"
+        for criterion in d056["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.TxErrors"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == r"^[0-9]+$"
+        for criterion in d056["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.TxErrors"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "assoc_snapshot.AssocTxErrors"
+        for criterion in d056["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_capture.DriverAssocMac"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "assoc_entry.MACAddress"
+        for criterion in d056["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.TxErrors"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "driver_capture.DriverTxErrors"
+        for criterion in d056["pass_criteria"]
+    )
+    assert d056["results_reference"]["v4.0.3"]["5g"] == "To be tested"
+    assert d056["results_reference"]["v4.0.3"]["6g"] == "N/A"
+    assert d056["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+
+
+def test_d056_txerrors_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d056 = load_case(cases_dir / "D056_txerrors.yaml")
+
+    d056_results = {
+        "steps": {
+            "step1": {
+                "success": True,
+                "output": "StaMac=2C:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step2": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+                "timing": 0.01,
+            },
+            "step3": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.TxErrors=0",
+                "timing": 0.01,
+            },
+            "step4": {
+                "success": True,
+                "output": "AssocMAC=2C:59:17:00:04:85\nAssocTxErrors=0",
+                "timing": 0.01,
+            },
+            "step5": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverTxPkts=14207\nDriverTxErrors=0\nDriverRetries=29226\nDriverRetryExhausted=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d056, d056_results) is True
+
+    d056_missing_snapshot_results = {
+        "steps": {
+            **d056_results["steps"],
+            "step4": {
+                "success": True,
+                "output": "AssocMAC=2C:59:17:00:04:85",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d056, d056_missing_snapshot_results) is False
+
+    d056_wrong_driver_results = {
+        "steps": {
+            **d056_results["steps"],
+            "step5": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverTxPkts=14207\nDriverTxErrors=1\nDriverRetries=29226\nDriverRetryExhausted=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d056, d056_wrong_driver_results) is False
+
+    d056_wrong_driver_assoc_results = {
+        "steps": {
+            **d056_results["steps"],
+            "step5": {
+                "success": True,
+                "output": "DriverAssocMac=AA:AA:AA:AA:AA:AA\nDriverTxPkts=14207\nDriverTxErrors=0\nDriverRetries=29226\nDriverRetryExhausted=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d056, d056_wrong_driver_assoc_results) is False
+
+    d056_wrong_sta_results = {
+        "steps": {
+            **d056_results["steps"],
+            "step1": {
+                "success": True,
+                "output": "StaMac=AA:AA:AA:AA:AA:AA",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d056, d056_wrong_sta_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
@@ -4058,6 +4212,7 @@ def test_sta_env_setup_parser_preserves_wpa_cli_quoted_value():
         "D049_supportedhe160mcs.yaml",
         "D050_supportedhemcs.yaml",
         "D052_supportedvhtmcs.yaml",
+        "D056_txerrors.yaml",
         "D058_txpacketcount.yaml",
         "D061_uplinkbandwidth.yaml",
         "D060_uniibandscapabilities.yaml",
@@ -4178,6 +4333,7 @@ def test_extract_cli_fragments_ignores_prose_after_ubus_keyword():
         ("D048_signalstrengthbychain.yaml", 3, "DriverSignalStrengthByChain="),
         ("D050_supportedhemcs.yaml", 4, "DriverHeMcsLinePresent="),
         ("D052_supportedvhtmcs.yaml", 4, "DriverVhtSetPresent="),
+        ("D056_txerrors.yaml", 4, "DriverTxErrors="),
         ("D051_supportedmcs.yaml", 2, "DriverMCSSetPresent="),
         ("D058_txpacketcount.yaml", 2, "DriverTxPacketCount="),
         ("D061_uplinkbandwidth.yaml", 2, "DriverUplinkBandwidth="),
@@ -4208,11 +4364,16 @@ def test_sanitize_cli_fragment_preserves_nested_quotes_for_associateddevice_driv
         "D049_supportedhe160mcs.yaml",
         "D050_supportedhemcs.yaml",
         "D052_supportedvhtmcs.yaml",
+        "D056_txerrors.yaml",
     }:
         assert len(verification_commands) == 4
         assert verification_commands[0] == "cat /sys/class/net/wl0/address | tr 'a-f' 'A-F' | sed 's/^/StaMac=/'"
-        assert verification_commands[1].startswith('OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.')
-        assert "SiblingAssocMac=" in verification_commands[2]
+        if filename == "D056_txerrors.yaml":
+            assert verification_commands[1] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxErrors?"'
+            assert "AssocTxErrors=" in verification_commands[2]
+        else:
+            assert verification_commands[1].startswith('OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.')
+            assert "SiblingAssocMac=" in verification_commands[2]
         assert verification_commands[3] == command
     else:
         assert len(verification_commands) == 2
@@ -4283,6 +4444,25 @@ def test_d052_supportedvhtmcs_verification_fragments_preserve_error_and_driver_c
     assert verification_commands[3] == step5_command
 
 
+def test_d056_txerrors_verification_fragments_preserve_snapshot_and_driver_checks():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d056 = load_case(cases_dir / "D056_txerrors.yaml")
+
+    step3_command = d056["steps"][2]["command"]
+    step5_command = d056["steps"][4]["command"]
+    verification_commands = plugin._extract_cli_fragments(d056["verification_command"])
+
+    assert step3_command == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxErrors?"'
+    assert plugin._sanitize_cli_fragment(step5_command) == step5_command
+    assert plugin._extract_cli_fragments(step5_command) == [step5_command]
+    assert len(verification_commands) == 4
+    assert verification_commands[0] == "cat /sys/class/net/wl0/address | tr 'a-f' 'A-F' | sed 's/^/StaMac=/'"
+    assert verification_commands[1] == step3_command
+    assert "AssocTxErrors=" in verification_commands[2]
+    assert verification_commands[3] == step5_command
+
+
 @pytest.mark.parametrize(
     ("filename", "sample_output", "expected_lines"),
     [
@@ -4329,6 +4509,19 @@ def test_d052_supportedvhtmcs_verification_fragments_preserve_error_and_driver_c
                 "SiblingAssocMac=2C:59:17:00:04:85",
                 "DriverRxSupportedVhtMCS=9,9,9,9",
                 "DriverTxSupportedVhtMCS=9,9,9,9",
+            ],
+        ),
+        (
+            "D056_txerrors.yaml",
+            "\n".join(
+                [
+                    'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+                    "WiFi.AccessPoint.1.AssociatedDevice.1.TxErrors=0",
+                ]
+            ),
+            [
+                "AssocMAC=2C:59:17:00:04:85",
+                "AssocTxErrors=0",
             ],
         ),
     ],
