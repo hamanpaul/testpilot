@@ -143,7 +143,7 @@ steps:
   action: exec
   target: DUT
   command: >-
-    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 's/^WiFi\\.AccessPoint\\.1\\.AssociatedDevice\\.1\\.MACAddress="\\([^"]*\\)".*/SiblingAssocMac=\1/p; s/^WiFi\\.AccessPoint\\.1\\.AssociatedDevice\\.1\\.RxSupportedHeMCS="\\([^"]*\\)".*/DriverRxSupportedHeMCS=\1/p; s/^WiFi\\.AccessPoint\\.1\\.AssociatedDevice\\.1\\.TxSupportedHeMCS="\\([^"]*\\)".*/DriverTxSupportedHeMCS=\1/p'
+    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/SiblingAssocMac=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.RxSupportedHeMCS="\([^"]*\)".*/DriverRxSupportedHeMCS=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxSupportedHeMCS="\([^"]*\)".*/DriverTxSupportedHeMCS=\1/p'
   depends_on: step3
   capture: sibling_support
 - id: step5
@@ -209,7 +209,7 @@ pass_criteria:
 verification_command: |
   cat /sys/class/net/wl0/address | tr 'a-f' 'A-F' | sed 's/^/StaMac=/'
   OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHeMCS?" 2>&1); printf '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p'; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
-  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 's/^WiFi\\.AccessPoint\\.1\\.AssociatedDevice\\.1\\.MACAddress="\\([^"]*\\)".*/SiblingAssocMac=\1/p; s/^WiFi\\.AccessPoint\\.1\\.AssociatedDevice\\.1\\.RxSupportedHeMCS="\\([^"]*\\)".*/DriverRxSupportedHeMCS=\1/p; s/^WiFi\\.AccessPoint\\.1\\.AssociatedDevice\\.1\\.TxSupportedHeMCS="\\([^"]*\\)".*/DriverTxSupportedHeMCS=\1/p'
+  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/SiblingAssocMac=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.RxSupportedHeMCS="\([^"]*\)".*/DriverRxSupportedHeMCS=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxSupportedHeMCS="\([^"]*\)".*/DriverTxSupportedHeMCS=\1/p'
   STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'); STA_MAC_LOWER=$(echo "$STA_MAC" | tr 'A-F' 'a-f'); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC_LOWER | awk '/HE caps/ {he=1} /MCS SET/ {mcs=1} /HE SET/ {heset=1} /he mcs/ {hemcs=1} END {if (he) print "DriverHeCapsPresent=1"; if (mcs) print "DriverMCSSetPresent=1"; if (heset) print "DriverHeSetPresent=1"; if (hemcs) print "DriverHeMcsLinePresent=1"}'
 results_reference:
   v4.0.3:

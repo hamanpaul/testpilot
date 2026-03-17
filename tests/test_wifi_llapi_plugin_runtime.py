@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
 import sys
 import types
 from typing import Any
@@ -4280,6 +4281,79 @@ def test_d052_supportedvhtmcs_verification_fragments_preserve_error_and_driver_c
     assert verification_commands[1] == step3_command
     assert "DriverRxSupportedVhtMCS=" in verification_commands[2]
     assert verification_commands[3] == step5_command
+
+
+@pytest.mark.parametrize(
+    ("filename", "sample_output", "expected_lines"),
+    [
+        (
+            "D049_supportedhe160mcs.yaml",
+            "\n".join(
+                [
+                    'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+                    'WiFi.AccessPoint.1.AssociatedDevice.1.RxSupportedHe160MCS="11,11,11,11"',
+                    'WiFi.AccessPoint.1.AssociatedDevice.1.TxSupportedHe160MCS="11,11,11,11"',
+                ]
+            ),
+            [
+                "SiblingAssocMac=2C:59:17:00:04:85",
+                "DriverRxSupportedHe160MCS=11,11,11,11",
+                "DriverTxSupportedHe160MCS=11,11,11,11",
+            ],
+        ),
+        (
+            "D050_supportedhemcs.yaml",
+            "\n".join(
+                [
+                    'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+                    'WiFi.AccessPoint.1.AssociatedDevice.1.RxSupportedHeMCS="11,11,11,11"',
+                    'WiFi.AccessPoint.1.AssociatedDevice.1.TxSupportedHeMCS="11,11,11,11"',
+                ]
+            ),
+            [
+                "SiblingAssocMac=2C:59:17:00:04:85",
+                "DriverRxSupportedHeMCS=11,11,11,11",
+                "DriverTxSupportedHeMCS=11,11,11,11",
+            ],
+        ),
+        (
+            "D052_supportedvhtmcs.yaml",
+            "\n".join(
+                [
+                    'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+                    'WiFi.AccessPoint.1.AssociatedDevice.1.RxSupportedVhtMCS="9,9,9,9"',
+                    'WiFi.AccessPoint.1.AssociatedDevice.1.TxSupportedVhtMCS="9,9,9,9"',
+                ]
+            ),
+            [
+                "SiblingAssocMac=2C:59:17:00:04:85",
+                "DriverRxSupportedVhtMCS=9,9,9,9",
+                "DriverTxSupportedVhtMCS=9,9,9,9",
+            ],
+        ),
+    ],
+)
+def test_associateddevice_sibling_sed_fragments_execute(
+    filename: str, sample_output: str, expected_lines: list[str]
+):
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case_data = load_case(cases_dir / filename)
+    step4_command = case_data["steps"][3]["command"]
+    sed_script = step4_command.split("| sed -n ", 1)[1]
+
+    proc = subprocess.run(
+        [
+            "sh",
+            "-lc",
+            f"cat <<'EOF' | sed -n {sed_script}\n{sample_output}\nEOF",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == expected_lines
 
 
 def test_run_sta_band_connect_sequence_keeps_6g_ctrl_alive(monkeypatch):
