@@ -1635,6 +1635,141 @@ def test_pending_inactive_and_bandwidth_cases_evaluate_live_examples():
     assert plugin.evaluate(d030, d030_fail_results) is False
 
 
+def test_pending_not_supported_associateddevice_cases_use_supported_contracts():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
+    assert {
+        "wifi-llapi-D031-mode-accesspoint-associateddevice",
+        "wifi-llapi-D032-mugroupid",
+    }.issubset(discoverable_ids)
+
+    d031 = load_case(cases_dir / "D031_mode_accesspoint_associateddevice.yaml")
+    d031_commands = "\n".join(str(step.get("command", "")) for step in d031["steps"])
+    d031_links = {link["band"] for link in d031["topology"]["links"]}
+    assert d031_links == {"5g", "2.4g"}
+    assert "wl -i wl0 assoclist" in d031_commands
+    assert "wl -i wl2 assoclist" in d031_commands
+    assert any(
+        criterion["field"] == "result_5g.error"
+        and criterion["operator"] == "equals"
+        and str(criterion["value"]) == "4"
+        for criterion in d031["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result_24g.message"
+        and criterion["operator"] == "contains"
+        and criterion["value"] == "doesn't exist in odl"
+        for criterion in d031["pass_criteria"]
+    )
+    assert d031["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
+    assert d031["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
+
+    d032 = load_case(cases_dir / "D032_mugroupid.yaml")
+    d032_commands = "\n".join(str(step.get("command", "")) for step in d032["steps"])
+    d032_links = {link["band"] for link in d032["topology"]["links"]}
+    assert d032_links == {"5g", "2.4g"}
+    assert "wl -i wl0 assoclist" in d032_commands
+    assert "wl -i wl2 assoclist" in d032_commands
+    assert any(
+        criterion["field"] == "result_5g.MUGroupId"
+        and criterion["operator"] == "equals"
+        and str(criterion["value"]) == "0"
+        for criterion in d032["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "assoc_24g.AssocMac24g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "2c:59:17:00:04:97"
+        for criterion in d032["pass_criteria"]
+    )
+    assert d032["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
+    assert d032["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
+
+
+def test_pending_not_supported_associateddevice_cases_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+
+    d031 = load_case(cases_dir / "D031_mode_accesspoint_associateddevice.yaml")
+    d031_results = {
+        "steps": {
+            "step1_5g_assoc": {
+                "success": True,
+                "output": "AssocMac5g=2c:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step2_5g": {
+                "success": True,
+                "output": '[\n  {\n    "error": 4,\n    "message": "mode doesn\'t exist in odl"\n  }\n]\n',
+                "timing": 0.01,
+            },
+            "step4_24g_assoc": {
+                "success": True,
+                "output": "AssocMac24g=2c:59:17:00:04:97",
+                "timing": 0.01,
+            },
+            "step5_24g": {
+                "success": True,
+                "output": '[\n  {\n    "error": 4,\n    "message": "mode doesn\'t exist in odl"\n  }\n]\n',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d031, d031_results) is True
+
+    d031_fail_results = {
+        "steps": {
+            **d031_results["steps"],
+            "step5_24g": {
+                "success": True,
+                "output": '[\n  {\n    "error": 7,\n    "message": "unexpected error"\n  }\n]\n',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d031, d031_fail_results) is False
+
+    d032 = load_case(cases_dir / "D032_mugroupid.yaml")
+    d032_results = {
+        "steps": {
+            "step1_5g_assoc": {
+                "success": True,
+                "output": "AssocMac5g=2c:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step2_5g": {
+                "success": True,
+                "output": '[\n  {\n    "WiFi.AccessPoint.1.AssociatedDevice.1.MUGroupId": 0\n  }\n]\n',
+                "timing": 0.01,
+            },
+            "step4_24g_assoc": {
+                "success": True,
+                "output": "AssocMac24g=2c:59:17:00:04:97",
+                "timing": 0.01,
+            },
+            "step5_24g": {
+                "success": True,
+                "output": '[\n  {\n    "WiFi.AccessPoint.5.AssociatedDevice.1.MUGroupId": 0\n  }\n]\n',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d032, d032_results) is True
+
+    d032_fail_results = {
+        "steps": {
+            **d032_results["steps"],
+            "step2_5g": {
+                "success": True,
+                "output": '[\n  {\n    "WiFi.AccessPoint.1.AssociatedDevice.1.MUGroupId": 1\n  }\n]\n',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d032, d032_fail_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
