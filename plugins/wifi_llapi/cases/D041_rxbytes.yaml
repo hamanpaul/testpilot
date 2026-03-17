@@ -1,20 +1,20 @@
 id: wifi-llapi-D041-rxbytes
-aliases:
-  - wifi-llapi-r036-rxbytes
-name: RxBytes — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
-version: '1.0'
+name: "RxBytes — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+version: '1.1'
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
   row: 41
-  object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
-  api: "RxBytes"
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: RxBytes
+  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.RxBytes=74058808
+hlapi_command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RxBytes?"'
 llapi_support: Support
 implemented_by: pWHM
+bands: ["5g"]
 topology:
   devices:
     DUT:
@@ -28,42 +28,38 @@ topology:
       config:
       - iface: 5g
         mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
-    EndpointPC:
-      role: endpoint
-      transport: ssh
+        ssid: TestPilot_BTM
+        key: testpilot6g
   links:
   - from: STA
     to: DUT
     band: 5g
 test_environment: |
   Topology:
-  - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
+  - DUT: COM0 (AP role)
+  - STA: COM1 (station role for this case; do not rely on the old A0/B0 heuristic)
   Transport:
   - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
-
+  Live band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4 / TestPilot_BTM
+  - 6G: DUT wl1 / AP3 / SSID.6 / TestPilot_BTM
+  - 2.4G: DUT wl2 / AP5 / SSID.8 / TestPilot_24G
+  Preconditions:
+  - keep only one associated station on AP1 so AssociatedDevice.1 stays deterministic
+  - use the validated 5G single-band WPA3 baseline for this case
 setup_steps: |
   1) DUT 5G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
+     - enable Radio.1 / SSID.4 / AP1
+     - configure AP1 as WPA3-Personal with MFP required
+     - keep the validated live SSID/credential pair as TestPilot_BTM / testpilot6g
   2) STA 5G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
+     - disable local AP1/AP2 on COM1
+     - move COM1 br-lan off 192.168.1.0/24 to avoid bridge self-hit side effects
+     - reset wl0 and its wpa_supplicant control socket
+     - connect wl0 to TestPilot_BTM with SAE
   3) Association evidence:
-     - A0: iw dev wl0 link
-     - B0: wl -i wl0 assoclist
+     - COM1: iw dev wl0 link ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+     - COM0: wl -i wl0 assoclist
 sta_env_setup: |
   DUT 5G AP baseline:
     ubus-cli WiFi.Radio.1.Enable=1
@@ -89,141 +85,101 @@ sta_env_setup: |
     ubus-cli WiFi.Radio.1.LongRetryLimit=6
     ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
     ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
+    ubus-cli WiFi.SSID.4.SSID=TestPilot_BTM
     ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
     ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
+    ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=testpilot6g
+    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Required
     ubus-cli WiFi.AccessPoint.1.Enable=1
   STA 5G preparation:
+    ifconfig br-lan 192.168.88.1 netmask 255.255.255.0 up
     ubus-cli WiFi.AccessPoint.1.Enable=0
     ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
+    wpa_cli terminate 2>/dev/null || true
+    rm -f /var/run/wpa_supplicant/wl0 2>/dev/null || true
     iw dev wl0.1 del 2>/dev/null || true
     iw dev wl0 disconnect 2>/dev/null || true
+    iw dev wl1 disconnect 2>/dev/null || true
+    iw dev wl2 disconnect 2>/dev/null || true
     iw dev wl0 set type managed
     ifconfig wl0 up
+    mkdir -p /var/run/wpa_supplicant
+    printf 'ctrl_interface=/var/run/wpa_supplicant
+  update_config=1
+  sae_pwe=2
+  network={
+  ssid="TestPilot_BTM"
+  key_mgmt=SAE
+  sae_password="testpilot6g"
+  ieee80211w=2
+  scan_ssid=1
+  }
+  ' > /tmp/wpa_wl0.conf
+    wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+    sleep 3
   STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
+    wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+    sleep 10
     iw dev wl0 link
+    wpa_cli -p /var/run/wpa_supplicant -i wl0 status
   DUT association evidence:
     wl -i wl0 assoclist
 test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli WiFi.AccessPoint.{i}.AssociatedDevice.{i}.RxBytes=74058808
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.AccessPoint.*.AssociatedDevice.*.RxBytes?"
-  3) For stats/AssociatedDevice cases, generate traffic (ping/iperf) before re-read.
-  4) STA link validation:
-     iw dev wl0 link
-     iw dev wl1 link
-     wpa_cli -i wl1 status
-     iw dev wl2 link
-  5) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
-
+  1) Confirm the 5G STA is associated to AP1 and resolve its live MAC address.
+  2) Read WiFi.AccessPoint.1.AssociatedDevice.1.RxBytes on DUT.
+  3) Cross-check the same STA against iw dev wl0 station dump `rx bytes`.
+  4) Pass when RxBytes is a positive integer and matches the driver rx-bytes count for the same STA.
 steps:
 - id: step1
   action: exec
   target: DUT
-  command: 1. Connect WiFi station to GW
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+  capture: assoc_entry
 - id: step2
   action: exec
   target: DUT
-  command: Run IPerf3 between Stations and GW
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RxBytes?"
   depends_on: step1
+  capture: result
 - id: step3
   action: exec
   target: DUT
-  command: Get stats of RxBytes using ubus command ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep RxBytes WiFi.AccessPoint.1.AssociatedDevice.1.RxBytes=5058
-    WiFi.AccessPoint.3.AssociatedDevice.1.RxBytes=3877089069 WiFi.AccessPoint.5.AssociatedDevice.1.RxBytes=226182808
+  command: >-
+    STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'); STA_MAC_LOWER=$(echo "$STA_MAC" | tr 'A-F' 'a-f'); [ -n "$STA_MAC" ] && iw dev wl0 station dump | awk -v mac="$STA_MAC_LOWER" -v sta="$STA_MAC" '$1=="Station" && $2==mac {matched=1; print "DriverAssocMac=" sta; next} $1=="Station" {matched=0} matched && $1=="rx" && $2=="bytes:" {print "DriverRxBytes=" $3}'
   depends_on: step2
-  capture: result
+  capture: driver_counter
 pass_criteria:
+- field: assoc_entry.MACAddress
+  operator: regex
+  value: ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$
+  description: AP1 AssociatedDevice.1 must first resolve to the live 5G STA MAC.
 - field: result.RxBytes
-  operator: contains
-  value: '74058808'
-  description: RxBytes 應回傳包含 RxBytes=74058808
-verification_command: 'iw wl0 station dump
-
-
-  root@prplOS:/# iw wl0 station dump
-
-  Station 34:19:4d:a4:b5:09 (on wl0)
-
-  inactive time: 11000 ms
-
-  rx bytes: 5398
-
-  rx packets: 40
-
-  tx bytes: 152
-
-  tx packets: 20
-
-  signal: -35 [-34] dBm
-
-  signal avg: -35 [-33] dBm
-
-  tx bitrate: 4899.0 MBit/s 160MHz
-
-  rx bitrate: 4803.8 MBit/s 160MHz
-
-  root@prplOS:/# iw wl1 station dump
-
-  Station 38:06:e6:92:b0:4a (on wl1)
-
-  inactive time: 2000 ms
-
-  rx bytes: 3877089453
-
-  rx packets: 2784434
-
-  tx bytes: 3107018121
-
-  tx packets: 340103
-
-  tx failed: 3
-
-  signal: -35 [-34] dBm
-
-  signal avg: -35 [-34] dBm
-
-  tx bitrate: 3843.1 MBit/s 160MHz
-
-  rx bitrate: 4537.0 MBit/s 160MHz
-
-  root@prplOS:/# iw wl2 station dump
-
-  Station 34:19:4d:a4:b4:33 (on wl2)
-
-  inactive time: 3000 ms
-
-  rx bytes: 226211195
-
-  rx packets: 203551
-
-  tx bytes: 210402098
-
-  tx packets: 90327
-
-  tx failed: 1355
-
-  signal: -27 [-23] dBm
-
-  signal avg: -27 [-25] dBm
-
-  tx bitrate: 309.7 MBit/s
-
-  rx bitrate: 387.0 MBit/s'
+  operator: regex
+  value: ^[0-9]+$
+  description: RxBytes should be a live non-negative integer counter.
+- field: result.RxBytes
+  operator: '>'
+  value: '0'
+  description: RxBytes should be positive once the 5G STA has completed association traffic.
+- field: driver_counter.DriverAssocMac
+  operator: equals
+  reference: assoc_entry.MACAddress
+  description: Driver sampling must target the same live AssociatedDevice MAC resolved in step1.
+- field: driver_counter.DriverRxBytes
+  operator: '>'
+  value: '0'
+  description: iw station dump must report a positive rx-bytes count for the same STA.
+- field: result.RxBytes
+  operator: equals
+  reference: driver_counter.DriverRxBytes
+  description: LLAPI RxBytes must match iw station dump rx bytes for the same STA.
+verification_command: |
+  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RxBytes?"
+  STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'); STA_MAC_LOWER=$(echo "$STA_MAC" | tr 'A-F' 'a-f'); [ -n "$STA_MAC" ] && iw dev wl0 station dump | awk -v mac="$STA_MAC_LOWER" -v sta="$STA_MAC" '$1=="Station" && $2==mac {matched=1; print "DriverAssocMac=" sta; next} $1=="Station" {matched=0} matched && $1=="rx" && $2=="bytes:" {print "DriverRxBytes=" $3}'
 results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ''
   v4.0.3:
     5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ''
+    6g: N/A
+    2.4g: N/A
+    comment: '5G serialwrap retest returned RxBytes=723 and iw dev wl0 station dump reported DriverRxBytes=723 for the same AssociatedDevice MAC. Non-executed bands remain N/A until separately calibrated.'
