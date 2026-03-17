@@ -1493,6 +1493,148 @@ def test_pending_boolean_and_frequency_cases_evaluate_live_examples():
     assert plugin.evaluate(d022, d022_fail_results) is False
 
 
+def test_pending_inactive_and_bandwidth_cases_use_supported_contracts():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
+    assert {
+        "wifi-llapi-D025-inactive",
+        "wifi-llapi-D030-maxbandwidthsupported",
+    }.issubset(discoverable_ids)
+
+    d025 = load_case(cases_dir / "D025_inactive.yaml")
+    d025_commands = "\n".join(str(step.get("command", "")) for step in d025["steps"])
+    d025_links = {link["band"] for link in d025["topology"]["links"]}
+    assert d025_links == {"5g", "2.4g"}
+    assert "wl -i wl0 assoclist" in d025_commands
+    assert "wl -i wl2 assoclist" in d025_commands
+    assert any(
+        criterion["field"] == "result_5g.Inactive"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == r"^\d+$"
+        for criterion in d025["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result_24g.Inactive"
+        and criterion["operator"] == ">="
+        and str(criterion["value"]) == "0"
+        for criterion in d025["pass_criteria"]
+    )
+
+    d030 = load_case(cases_dir / "D030_maxbandwidthsupported.yaml")
+    d030_commands = "\n".join(str(step.get("command", "")) for step in d030["steps"])
+    d030_links = {link["band"] for link in d030["topology"]["links"]}
+    assert d030_links == {"5g", "2.4g"}
+    assert "wl -i wl0 assoclist" in d030_commands
+    assert "wl -i wl2 assoclist" in d030_commands
+    assert any(
+        criterion["field"] == "result_5g.MaxBandwidthSupported"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "160MHz"
+        for criterion in d030["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result_24g.MaxBandwidthSupported"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == r"^(20MHz|40MHz|80MHz|160MHz|Unknown)$"
+        for criterion in d030["pass_criteria"]
+    )
+    assert d030["results_reference"]["v4.0.3"]["2.4g"] == "STA-Discrepancy"
+
+
+def test_pending_inactive_and_bandwidth_cases_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+
+    d025 = load_case(cases_dir / "D025_inactive.yaml")
+    d025_results = {
+        "steps": {
+            "step1_5g_assoc": {
+                "success": True,
+                "output": "AssocMac5g=2c:59:17:00:04:85",
+                "captured": {"AssocMac5g": "2c:59:17:00:04:85"},
+                "timing": 0.01,
+            },
+            "step2_5g": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.Inactive=14",
+                "captured": {"Inactive": "14"},
+                "timing": 0.01,
+            },
+            "step4_24g_assoc": {
+                "success": True,
+                "output": "AssocMac24g=2c:59:17:00:04:97",
+                "captured": {"AssocMac24g": "2c:59:17:00:04:97"},
+                "timing": 0.01,
+            },
+            "step5_24g": {
+                "success": True,
+                "output": "WiFi.AccessPoint.5.AssociatedDevice.1.Inactive=9",
+                "captured": {"Inactive": "9"},
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d025, d025_results) is True
+
+    d025_fail_results = {
+        "steps": {
+            **d025_results["steps"],
+            "step5_24g": {
+                "success": True,
+                "output": "WiFi.AccessPoint.5.AssociatedDevice.1.Inactive=ERROR",
+                "captured": {"Inactive": "ERROR"},
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d025, d025_fail_results) is False
+
+    d030 = load_case(cases_dir / "D030_maxbandwidthsupported.yaml")
+    d030_results = {
+        "steps": {
+            "step1_5g_assoc": {
+                "success": True,
+                "output": "AssocMac5g=2c:59:17:00:04:85",
+                "captured": {"AssocMac5g": "2c:59:17:00:04:85"},
+                "timing": 0.01,
+            },
+            "step2_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported="160MHz"',
+                "captured": {"MaxBandwidthSupported": "160MHz"},
+                "timing": 0.01,
+            },
+            "step4_24g_assoc": {
+                "success": True,
+                "output": "AssocMac24g=2c:59:17:00:04:97",
+                "captured": {"AssocMac24g": "2c:59:17:00:04:97"},
+                "timing": 0.01,
+            },
+            "step5_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.AssociatedDevice.1.MaxBandwidthSupported="Unknown"',
+                "captured": {"MaxBandwidthSupported": "Unknown"},
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d030, d030_results) is True
+
+    d030_fail_results = {
+        "steps": {
+            **d030_results["steps"],
+            "step2_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported="80MHz"',
+                "captured": {"MaxBandwidthSupported": "80MHz"},
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d030, d030_fail_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
