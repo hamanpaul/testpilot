@@ -2890,6 +2890,156 @@ def test_pending_security_and_signal_associateddevice_cases_evaluate_live_exampl
     assert plugin.evaluate(d047, d047_missing_driver_value_results) is False
 
 
+def test_d048_signalstrengthbychain_uses_supported_contracts():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
+    assert "wifi-llapi-D048-signalstrengthbychain" in discoverable_ids
+
+    d048_raw = yaml.safe_load(
+        (cases_dir / "D048_signalstrengthbychain.yaml").read_text(encoding="utf-8")
+    )
+    d048 = load_case(cases_dir / "D048_signalstrengthbychain.yaml")
+    d048_commands = "\n".join(str(step.get("command", "")) for step in d048["steps"])
+    d048_links = {link["band"] for link in d048["topology"]["links"]}
+
+    assert "aliases" not in d048_raw
+    assert d048["id"] == "wifi-llapi-D048-signalstrengthbychain"
+    assert d048["source"]["row"] == 48
+    assert d048["source"]["baseline"] == "BCM v4.0.3"
+    assert d048["bands"] == ["5g"]
+    assert d048_links == {"5g"}
+    assert (
+        d048["hlapi_command"]
+        == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SignalStrengthByChain?"'
+    )
+    assert "cat /sys/class/net/wl0/address" in d048_commands
+    assert "MACAddress?" in d048_commands
+    assert "DriverAssocMac=" in d048_commands
+    assert "DriverSignalStrengthByChain=" in d048_commands
+    assert "per antenna average rssi of rx data frames" in d048_commands
+    assert "paste -sd, -" in d048_commands
+    assert any(
+        criterion["field"] == "sta_identity.StaMac"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == r"^([0-9A-F]{2}:){5}[0-9A-F]{2}$"
+        for criterion in d048["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "assoc_entry.MACAddress"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "sta_identity.StaMac"
+        for criterion in d048["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.SignalStrengthByChain"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == r"^-[0-9]+\.0,-[0-9]+\.0,-[0-9]+\.0,-[0-9]+\.0$"
+        for criterion in d048["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_signal.DriverAssocMac"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "assoc_entry.MACAddress"
+        for criterion in d048["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_signal.DriverSignalStrengthByChain"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == r"^-[0-9]+\.0,-[0-9]+\.0,-[0-9]+\.0,-[0-9]+\.0$"
+        for criterion in d048["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.SignalStrengthByChain"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "driver_signal.DriverSignalStrengthByChain"
+        for criterion in d048["pass_criteria"]
+    )
+    assert d048["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d048["results_reference"]["v4.0.3"]["6g"] == "N/A"
+    assert d048["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+
+
+def test_d048_signalstrengthbychain_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d048 = load_case(cases_dir / "D048_signalstrengthbychain.yaml")
+
+    d048_results = {
+        "steps": {
+            "step1": {
+                "success": True,
+                "output": "StaMac=2C:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step2": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+                "timing": 0.01,
+            },
+            "step3": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.SignalStrengthByChain="-28.0,-33.0,-36.0,-32.0"',
+                "timing": 0.01,
+            },
+            "step4": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverSignalStrengthByChain=-28.0,-33.0,-36.0,-32.0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d048, d048_results) is True
+
+    d048_fail_results = {
+        "steps": {
+            **d048_results["steps"],
+            "step4": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverSignalStrengthByChain=-28.0,-33.0,-35.0,-32.0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d048, d048_fail_results) is False
+
+    d048_scalar_results = {
+        "steps": {
+            **d048_results["steps"],
+            "step3": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.SignalStrengthByChain="-33.0"',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d048, d048_scalar_results) is False
+
+    d048_mismatch_results = {
+        "steps": {
+            **d048_results["steps"],
+            "step4": {
+                "success": True,
+                "output": "DriverAssocMac=AA:AA:AA:AA:AA:AA\nDriverSignalStrengthByChain=-28.0,-33.0,-36.0,-32.0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d048, d048_mismatch_results) is False
+
+    d048_wrong_sta_results = {
+        "steps": {
+            **d048_results["steps"],
+            "step1": {
+                "success": True,
+                "output": "StaMac=AA:AA:AA:AA:AA:AA",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d048, d048_wrong_sta_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
@@ -3362,6 +3512,7 @@ def test_sta_env_setup_parser_preserves_wpa_cli_quoted_value():
         "D051_supportedmcs.yaml",
         "D045_securitymodeenabled.yaml",
         "D047_signalstrength_accesspoint_associateddevice.yaml",
+        "D048_signalstrengthbychain.yaml",
         "D058_txpacketcount.yaml",
         "D061_uplinkbandwidth.yaml",
         "D060_uniibandscapabilities.yaml",
@@ -3479,6 +3630,7 @@ def test_extract_cli_fragments_ignores_prose_after_ubus_keyword():
         ("D046_signalnoiseratio.yaml", 2, "DriverSignalNoiseRatio="),
         ("D045_securitymodeenabled.yaml", 2, "DriverSecurityModeEnabled="),
         ("D047_signalstrength_accesspoint_associateddevice.yaml", 2, "DriverSignalStrength="),
+        ("D048_signalstrengthbychain.yaml", 3, "DriverSignalStrengthByChain="),
         ("D051_supportedmcs.yaml", 2, "DriverMCSSetPresent="),
         ("D058_txpacketcount.yaml", 2, "DriverTxPacketCount="),
         ("D061_uplinkbandwidth.yaml", 2, "DriverUplinkBandwidth="),
@@ -3500,9 +3652,15 @@ def test_sanitize_cli_fragment_preserves_nested_quotes_for_associateddevice_driv
     assert plugin._extract_cli_fragments(command) == [command]
 
     verification_commands = plugin._extract_cli_fragments(case_data["verification_command"])
-    assert len(verification_commands) == 2
-    assert verification_commands[0].startswith('ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.')
-    assert verification_commands[1] == command
+    if filename == "D048_signalstrengthbychain.yaml":
+        assert len(verification_commands) == 3
+        assert verification_commands[0] == "cat /sys/class/net/wl0/address | tr 'a-f' 'A-F' | sed 's/^/StaMac=/'"
+        assert verification_commands[1].startswith('ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.')
+        assert verification_commands[2] == command
+    else:
+        assert len(verification_commands) == 2
+        assert verification_commands[0].startswith('ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.')
+        assert verification_commands[1] == command
 
 
 def test_run_sta_band_connect_sequence_keeps_6g_ctrl_alive(monkeypatch):
