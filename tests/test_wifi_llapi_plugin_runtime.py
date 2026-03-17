@@ -1847,6 +1847,23 @@ def test_extract_key_values_captures_bare_empty_value():
     assert parsed["WiFi.AccessPoint.5.AssociatedDevice.1.FrequencyCapabilities"] == ""
 
 
+def test_extract_key_values_captures_ubus_json_array_object():
+    plugin = _load_plugin()
+    parsed = plugin._extract_key_values(
+        '[\n  {\n    "WiFi.AccessPoint.1.AssociatedDevice.1.MUGroupId": 0\n  }\n]\n'
+    )
+    assert parsed["WiFi.AccessPoint.1.AssociatedDevice.1.MUGroupId"] == 0
+
+
+def test_extract_key_values_captures_ubus_json_array_error():
+    plugin = _load_plugin()
+    parsed = plugin._extract_key_values(
+        '[\n  {\n    "error": 4,\n    "message": "mode doesn\'t exist in odl"\n  }\n]\n'
+    )
+    assert parsed["error"] == 4
+    assert parsed["message"] == "mode doesn't exist in odl"
+
+
 def test_execute_step_capture_prefers_synthesized_readback_query(monkeypatch):
     plugin = _load_plugin()
     topology = _FakeTopology()

@@ -662,6 +662,11 @@ class Plugin(PluginBase):
             if isinstance(parsed, dict):
                 for key, value in parsed.items():
                     captured[str(key)] = value
+            elif isinstance(parsed, list):
+                for item in parsed:
+                    if isinstance(item, dict):
+                        for key, value in item.items():
+                            captured[str(key)] = value
         except Exception:
             pass
 
