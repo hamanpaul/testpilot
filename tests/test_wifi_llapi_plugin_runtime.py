@@ -2118,7 +2118,6 @@ def test_pending_failure_shaped_associateddevice_cases_evaluate_live_examples():
     }
     assert plugin.evaluate(d042, d042_mismatch_results) is False
 
-
 def test_pending_counter_stub_associateddevice_cases_use_supported_contracts():
     cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
@@ -2269,6 +2268,7 @@ def test_pending_counter_pass_associateddevice_cases_use_supported_contracts():
     assert {
         "wifi-llapi-D041-rxbytes",
         "wifi-llapi-D043-rxpacketcount",
+        "wifi-llapi-D058-txpacketcount",
     }.issubset(discoverable_ids)
 
     pass_cases = {
@@ -2285,6 +2285,13 @@ def test_pending_counter_pass_associateddevice_cases_use_supported_contracts():
             "api": "RxPacketCount",
             "driver_token": "DriverRxPacketCount=",
             "driver_field": "driver_counter.DriverRxPacketCount",
+        },
+        "D058_txpacketcount.yaml": {
+            "id": "wifi-llapi-D058-txpacketcount",
+            "row": 58,
+            "api": "TxPacketCount",
+            "driver_token": "DriverTxPacketCount=",
+            "driver_field": "driver_counter.DriverTxPacketCount",
         },
     }
 
@@ -2354,6 +2361,11 @@ def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
             "driver_output": "DriverRxPacketCount=7",
             "driver_fail_output": "DriverRxPacketCount=0",
         },
+        "D058_txpacketcount.yaml": {
+            "api": "TxPacketCount",
+            "driver_output": "DriverTxPacketCount=12956",
+            "driver_fail_output": "DriverTxPacketCount=0",
+        },
     }
 
     for filename, meta in pass_cases.items():
@@ -2414,6 +2426,209 @@ def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
             }
         }
         assert plugin.evaluate(case_data, mismatch_results) is False
+
+
+def test_pending_d046_d051_d060_associateddevice_cases_use_supported_contracts():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
+    assert {
+        "wifi-llapi-D046-signalnoiseratio",
+        "wifi-llapi-D051-supportedmcs",
+        "wifi-llapi-D060-uniibandscapabilities",
+    }.issubset(discoverable_ids)
+
+    d046_raw = yaml.safe_load((cases_dir / "D046_signalnoiseratio.yaml").read_text(encoding="utf-8"))
+    d046 = load_case(cases_dir / "D046_signalnoiseratio.yaml")
+    d046_commands = "\n".join(str(step.get("command", "")) for step in d046["steps"])
+    assert "aliases" not in d046_raw
+    assert d046["source"]["row"] == 46
+    assert d046["source"]["baseline"] == "BCM v4.0.3"
+    assert d046["bands"] == ["5g"]
+    assert "DriverSignal=" in d046_commands
+    assert "DriverNoise=" in d046_commands
+    assert "DriverSignalNoiseRatio=" in d046_commands
+    assert any(
+        criterion["field"] == "result.SignalNoiseRatio"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == "^[0-9]+$"
+        for criterion in d046["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.SignalNoiseRatio"
+        and criterion["operator"] == ">="
+        and criterion["reference"] == "driver_snr.DriverSignalNoiseRatioMin"
+        for criterion in d046["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.SignalNoiseRatio"
+        and criterion["operator"] == "<="
+        and criterion["reference"] == "driver_snr.DriverSignalNoiseRatioMax"
+        for criterion in d046["pass_criteria"]
+    )
+    assert d046["results_reference"]["v4.0.3"]["5g"] == "Pass"
+
+    d051_raw = yaml.safe_load((cases_dir / "D051_supportedmcs.yaml").read_text(encoding="utf-8"))
+    d051 = load_case(cases_dir / "D051_supportedmcs.yaml")
+    d051_commands = "\n".join(str(step.get("command", "")) for step in d051["steps"])
+    assert "aliases" not in d051_raw
+    assert d051["source"]["row"] == 51
+    assert d051["source"]["baseline"] == "BCM v4.0.3"
+    assert d051["bands"] == ["5g"]
+    assert "DriverHeCapsPresent=1" in d051_commands
+    assert "DriverMCSSetPresent=1" in d051_commands
+    assert "DriverHeSetPresent=1" in d051_commands
+    assert any(
+        criterion["field"] == "result.SupportedMCS"
+        and criterion["operator"] == "empty"
+        for criterion in d051["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_capability.DriverMCSSetPresent"
+        and criterion["operator"] == "equals"
+        and str(criterion["value"]) == "1"
+        for criterion in d051["pass_criteria"]
+    )
+    assert d051["results_reference"]["v4.0.3"]["5g"] == "Fail"
+
+    d060_raw = yaml.safe_load(
+        (cases_dir / "D060_uniibandscapabilities.yaml").read_text(encoding="utf-8")
+    )
+    d060 = load_case(cases_dir / "D060_uniibandscapabilities.yaml")
+    d060_commands = "\n".join(str(step.get("command", "")) for step in d060["steps"])
+    assert "aliases" not in d060_raw
+    assert d060["source"]["row"] == 60
+    assert d060["source"]["baseline"] == "BCM v4.0.3"
+    assert d060["bands"] == ["5g"]
+    assert "DriverUNIIBandsCapabilities=" in d060_commands
+    assert "iw dev wl0 info" in d060_commands
+    assert "tr '[:lower:]' '[:upper:]'" in d060_commands
+    assert any(
+        criterion["field"] == "driver_capability.DriverAssocMac"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "assoc_entry.MACAddress"
+        for criterion in d060["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_capability.DriverUNIIBandsCapabilities"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "U-NII-1,U-NII-2A,U-NII-2C,U-NII-3"
+        for criterion in d060["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.UNIIBandsCapabilities"
+        and criterion["operator"] == "contains"
+        and criterion["reference"] == "driver_capability.DriverUNIIBandsCapabilities"
+        for criterion in d060["pass_criteria"]
+    )
+    assert d060["results_reference"]["v4.0.3"]["5g"] == "Pass"
+
+
+def test_pending_d046_d051_d060_associateddevice_cases_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+
+    d046 = load_case(cases_dir / "D046_signalnoiseratio.yaml")
+    d046_results = {
+        "steps": {
+            "step1": {
+                "success": True,
+                "output": "MACAddress=2C:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step2": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.SignalNoiseRatio=63",
+                "timing": 0.01,
+            },
+            "step3": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverSignal=-36\nDriverNoise=-99\nDriverSignalNoiseRatio=63\nDriverSignalNoiseRatioMin=61\nDriverSignalNoiseRatioMax=65",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d046, d046_results) is True
+
+    d046_fail_results = {
+        "steps": {
+            **d046_results["steps"],
+            "step3": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverSignal=-32\nDriverNoise=-99\nDriverSignalNoiseRatio=67\nDriverSignalNoiseRatioMin=65\nDriverSignalNoiseRatioMax=69",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d046, d046_fail_results) is False
+
+    d051 = load_case(cases_dir / "D051_supportedmcs.yaml")
+    d051_results = {
+        "steps": {
+            "step1": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+                "timing": 0.01,
+            },
+            "step2": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.SupportedMCS=""',
+                "timing": 0.01,
+            },
+            "step3": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverHeCapsPresent=1\nDriverMCSSetPresent=1\nDriverHeSetPresent=1",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d051, d051_results) is True
+
+    d051_fail_results = {
+        "steps": {
+            **d051_results["steps"],
+            "step3": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverHeCapsPresent=1\nDriverMCSSetPresent=1",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d051, d051_fail_results) is False
+
+    d060 = load_case(cases_dir / "D060_uniibandscapabilities.yaml")
+    d060_results = {
+        "steps": {
+            "step1": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+                "timing": 0.01,
+            },
+            "step2": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.UNIIBandsCapabilities="U-NII-1,U-NII-2A,U-NII-2C,U-NII-3,U-NII-4"',
+                "timing": 0.01,
+            },
+            "step3": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverUNIIBandsCapabilities=U-NII-1,U-NII-2A,U-NII-2C,U-NII-3",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d060, d060_results) is True
+
+    d060_fail_results = {
+        "steps": {
+            **d060_results["steps"],
+            "step3": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverUNIIBandsCapabilities=U-NII-1,U-NII-2A,U-NII-2C",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d060, d060_fail_results) is False
 
 
 def test_pending_security_and_signal_associateddevice_cases_use_supported_contracts():
@@ -3127,8 +3342,12 @@ def test_sta_env_setup_parser_preserves_wpa_cli_quoted_value():
 @pytest.mark.parametrize(
     "filename",
     [
+        "D046_signalnoiseratio.yaml",
+        "D051_supportedmcs.yaml",
         "D045_securitymodeenabled.yaml",
         "D047_signalstrength_accesspoint_associateddevice.yaml",
+        "D058_txpacketcount.yaml",
+        "D060_uniibandscapabilities.yaml",
     ],
 )
 def test_sta_env_setup_parser_preserves_single_line_wpa_supplicant_template(filename: str):
@@ -3143,6 +3362,8 @@ def test_sta_env_setup_parser_preserves_single_line_wpa_supplicant_template(file
         "printf 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nsae_pwe=2\\nnetwork={\\nssid=\"TestPilot_BTM\"\\nkey_mgmt=SAE\\nsae_password=\"testpilot6g\"\\nieee80211w=2\\nscan_ssid=1\\n}\\n' > /tmp/wpa_wl0.conf"
         in commands
     )
+    assert "rm -f /var/run/wpa_supplicant/wl0 2>/dev/null || true" in commands
+    assert "mkdir -p /var/run/wpa_supplicant" in commands
     assert "wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant" in commands
     assert "update_config=1" not in commands
     assert "sae_pwe=2" not in commands
@@ -3238,8 +3459,12 @@ def test_extract_cli_fragments_ignores_prose_after_ubus_keyword():
         ("D039_retransmissions.yaml", 2, "DriverRetransmissions="),
         ("D041_rxbytes.yaml", 2, "DriverRxBytes="),
         ("D042_rxmulticastpacketcount.yaml", 3, "DriverRxMulticastPacketCount="),
+        ("D046_signalnoiseratio.yaml", 2, "DriverSignalNoiseRatio="),
         ("D045_securitymodeenabled.yaml", 2, "DriverSecurityModeEnabled="),
         ("D047_signalstrength_accesspoint_associateddevice.yaml", 2, "DriverSignalStrength="),
+        ("D051_supportedmcs.yaml", 2, "DriverMCSSetPresent="),
+        ("D058_txpacketcount.yaml", 2, "DriverTxPacketCount="),
+        ("D060_uniibandscapabilities.yaml", 2, "DriverUNIIBandsCapabilities="),
     ],
 )
 def test_sanitize_cli_fragment_preserves_nested_quotes_for_associateddevice_driver_checks(

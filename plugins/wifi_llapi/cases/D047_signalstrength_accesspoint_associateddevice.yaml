@@ -97,12 +97,14 @@ sta_env_setup: |
     ubus-cli WiFi.AccessPoint.1.Enable=0
     ubus-cli WiFi.AccessPoint.2.Enable=0
     wpa_cli terminate 2>/dev/null || true
+    rm -f /var/run/wpa_supplicant/wl0 2>/dev/null || true
     iw dev wl0.1 del 2>/dev/null || true
     iw dev wl0 disconnect 2>/dev/null || true
     iw dev wl1 disconnect 2>/dev/null || true
     iw dev wl2 disconnect 2>/dev/null || true
     iw dev wl0 set type managed
     ifconfig wl0 up
+    mkdir -p /var/run/wpa_supplicant
     printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\nnetwork={\nssid="TestPilot_BTM"\nkey_mgmt=SAE\nsae_password="testpilot6g"\nieee80211w=2\nscan_ssid=1\n}\n' > /tmp/wpa_wl0.conf
     wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
     sleep 3
