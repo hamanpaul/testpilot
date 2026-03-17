@@ -1471,7 +1471,7 @@ def test_pending_boolean_and_frequency_cases_evaluate_live_examples():
             },
             "step5_24g": {
                 "success": True,
-                "output": 'WiFi.AccessPoint.5.AssociatedDevice.1.FrequencyCapabilities=""',
+                "output": "WiFi.AccessPoint.5.AssociatedDevice.1.FrequencyCapabilities=",
                 "captured": {"FrequencyCapabilities": ""},
                 "timing": 0.01,
             },
@@ -1695,6 +1695,14 @@ def test_extract_key_values_preserves_prompted_comma_separated_value():
         parsed["WiFi.AccessPoint.1.WPS.ConfigMethodsEnabled"]
         == "PhysicalPushButton,VirtualPushButton"
     )
+
+
+def test_extract_key_values_captures_bare_empty_value():
+    plugin = _load_plugin()
+    parsed = plugin._extract_key_values(
+        "WiFi.AccessPoint.5.AssociatedDevice.1.FrequencyCapabilities=\n"
+    )
+    assert parsed["WiFi.AccessPoint.5.AssociatedDevice.1.FrequencyCapabilities"] == ""
 
 
 def test_execute_step_capture_prefers_synthesized_readback_query(monkeypatch):

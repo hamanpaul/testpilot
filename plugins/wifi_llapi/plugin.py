@@ -694,7 +694,7 @@ class Plugin(PluginBase):
                 continue
             key, value = match.groups()
             normalized = value.strip().strip("'\"")
-            if normalized or value.strip() in {'""', "''"}:
+            if normalized or value.strip() in {"", '""', "''"}:
                 captured[key] = normalized
 
         return captured
