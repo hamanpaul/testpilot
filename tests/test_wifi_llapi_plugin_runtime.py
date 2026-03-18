@@ -3736,6 +3736,197 @@ def test_d056_txerrors_evaluate_live_examples():
     assert plugin.evaluate(d056, d056_wrong_sta_results) is False
 
 
+def test_d057_txmulticastpacketcount_uses_same_sta_delivery_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
+    assert "wifi-llapi-D057-txmulticastpacketcount" in discoverable_ids
+
+    d057_raw = yaml.safe_load((cases_dir / "D057_txmulticastpacketcount.yaml").read_text(encoding="utf-8"))
+    d057 = load_case(cases_dir / "D057_txmulticastpacketcount.yaml")
+    d057_commands = "\n".join(str(step.get("command", "")) for step in d057["steps"])
+    d057_links = {link["band"] for link in d057["topology"]["links"]}
+
+    assert "aliases" not in d057_raw
+    assert d057["id"] == "wifi-llapi-D057-txmulticastpacketcount"
+    assert d057["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d057["source"]["row"] == 57
+    assert d057["source"]["baseline"] == "BCM v4.0.3"
+    assert d057["llapi_support"] == "Support"
+    assert d057["bands"] == ["5g"]
+    assert d057_links == {"5g"}
+    assert d057["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount?"'
+    assert "cat /sys/class/net/wl0/address" in d057_commands
+    assert "StaRxPacketsBefore=" in d057_commands
+    assert "StaRxBytesBefore=" in d057_commands
+    assert "MACAddress?" in d057_commands
+    assert "ping -b -I br-lan -c 10 -W 1 192.168.1.255" in d057_commands
+    assert "ProbeTxPackets=" in d057_commands
+    assert "StaRxPacketsAfter=" in d057_commands
+    assert "StaRxBytesAfter=" in d057_commands
+    assert "AssocTxMulticastPacketCount=" in d057_commands
+    assert "DriverTxMulticastPacketCount=" in d057_commands
+    assert "DriverTxMulticastBytes=" in d057_commands
+    assert any(
+        criterion["field"] == "assoc_entry.MACAddress"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "sta_identity.StaMac"
+        for criterion in d057["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "probe.ProbeTxPackets"
+        and criterion["operator"] == ">"
+        and str(criterion["value"]) == "0"
+        for criterion in d057["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "sta_after.StaRxPacketsAfter"
+        and criterion["operator"] == ">"
+        and criterion.get("reference") == "sta_identity.StaRxPacketsBefore"
+        for criterion in d057["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "sta_after.StaRxBytesAfter"
+        and criterion["operator"] == ">"
+        and criterion.get("reference") == "sta_identity.StaRxBytesBefore"
+        for criterion in d057["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.TxMulticastPacketCount"
+        and criterion["operator"] == "equals"
+        and str(criterion["value"]) == "0"
+        for criterion in d057["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.TxMulticastPacketCount"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "assoc_snapshot.AssocTxMulticastPacketCount"
+        for criterion in d057["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_counter.DriverAssocMac"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "assoc_entry.MACAddress"
+        for criterion in d057["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_counter.DriverTxMulticastPacketCount"
+        and criterion["operator"] == "equals"
+        and str(criterion["value"]) == "0"
+        for criterion in d057["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_counter.DriverTxMulticastBytes"
+        and criterion["operator"] == "equals"
+        and str(criterion["value"]) == "0"
+        for criterion in d057["pass_criteria"]
+    )
+    assert d057["results_reference"]["v4.0.3"]["5g"] == "To be tested"
+    assert d057["results_reference"]["v4.0.3"]["6g"] == "N/A"
+    assert d057["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+
+
+def test_d057_txmulticastpacketcount_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d057 = load_case(cases_dir / "D057_txmulticastpacketcount.yaml")
+
+    d057_results = {
+        "steps": {
+            "step1": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "StaMac=2C:59:17:00:04:85",
+                        "StaRxPacketsBefore=136067",
+                        "StaRxBytesBefore=15249537",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+            "step2": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+                "timing": 0.01,
+            },
+            "step3": {
+                "success": True,
+                "output": "10 packets transmitted, 0 received, 100% packet loss, time 9034ms\nProbeTxPackets=10",
+                "timing": 0.01,
+            },
+            "step4": {
+                "success": True,
+                "output": "StaRxPacketsAfter=136077\nStaRxBytesAfter=15250517",
+                "timing": 0.01,
+            },
+            "step5": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount=0",
+                "timing": 0.01,
+            },
+            "step6": {
+                "success": True,
+                "output": "AssocMAC=2C:59:17:00:04:85\nAssocTxMulticastPacketCount=0",
+                "timing": 0.01,
+            },
+            "step7": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverTxMulticastPacketCount=0\nDriverTxMulticastBytes=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d057, d057_results) is True
+
+    d057_no_delivery_results = {
+        "steps": {
+            **d057_results["steps"],
+            "step4": {
+                "success": True,
+                "output": "StaRxPacketsAfter=136067\nStaRxBytesAfter=15249537",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d057, d057_no_delivery_results) is False
+
+    d057_wrong_llapi_results = {
+        "steps": {
+            **d057_results["steps"],
+            "step5": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount=3",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d057, d057_wrong_llapi_results) is False
+
+    d057_wrong_driver_results = {
+        "steps": {
+            **d057_results["steps"],
+            "step7": {
+                "success": True,
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverTxMulticastPacketCount=2\nDriverTxMulticastBytes=196",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d057, d057_wrong_driver_results) is False
+
+    d057_wrong_assoc_results = {
+        "steps": {
+            **d057_results["steps"],
+            "step2": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="AA:AA:AA:AA:AA:AA"',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d057, d057_wrong_assoc_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
@@ -4213,6 +4404,7 @@ def test_sta_env_setup_parser_preserves_wpa_cli_quoted_value():
         "D050_supportedhemcs.yaml",
         "D052_supportedvhtmcs.yaml",
         "D056_txerrors.yaml",
+        "D057_txmulticastpacketcount.yaml",
         "D058_txpacketcount.yaml",
         "D061_uplinkbandwidth.yaml",
         "D060_uniibandscapabilities.yaml",
@@ -4461,6 +4653,58 @@ def test_d056_txerrors_verification_fragments_preserve_snapshot_and_driver_check
     assert verification_commands[1] == step3_command
     assert "AssocTxErrors=" in verification_commands[2]
     assert verification_commands[3] == step5_command
+
+
+def test_d057_txmulticastpacketcount_verification_fragments_preserve_delivery_and_driver_checks():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d057 = load_case(cases_dir / "D057_txmulticastpacketcount.yaml")
+
+    step3_command = d057["steps"][2]["command"]
+    step6_command = d057["steps"][5]["command"]
+    step7_command = d057["steps"][6]["command"]
+    verification_commands = plugin._extract_cli_fragments(d057["verification_command"])
+
+    assert "ProbeTxPackets=" in step3_command
+    assert "AssocTxMulticastPacketCount=" in step6_command
+    assert plugin._sanitize_cli_fragment(step7_command) == step7_command
+    assert plugin._extract_cli_fragments(step7_command) == [step7_command]
+    assert step3_command in verification_commands
+    assert any("StaRxPacketsBefore=" in fragment for fragment in verification_commands)
+    assert any("StaRxPacketsAfter=" in fragment for fragment in verification_commands)
+    assert 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount?"' in verification_commands
+    assert step6_command in verification_commands
+    assert step7_command in verification_commands
+
+
+def test_d057_txmulticastpacketcount_snapshot_sed_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d057 = load_case(cases_dir / "D057_txmulticastpacketcount.yaml")
+    step6_command = d057["steps"][5]["command"]
+    sed_script = step6_command.split("| sed -n ", 1)[1]
+    sample_output = "\n".join(
+        [
+            'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+            "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount=0",
+        ]
+    )
+
+    proc = subprocess.run(
+        [
+            "sh",
+            "-lc",
+            f"cat <<'EOF' | sed -n {sed_script}\n{sample_output}\nEOF",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == [
+        "AssocMAC=2C:59:17:00:04:85",
+        "AssocTxMulticastPacketCount=0",
+    ]
 
 
 @pytest.mark.parametrize(
