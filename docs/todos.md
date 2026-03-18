@@ -60,7 +60,7 @@
 | P4-01 | wifi-plugin full implementation | done | setup/verify/execute/evaluate 已完成 |
 | P4-02 | case-getRadioStats | done | legacy compatibility fixture 已保留，改為 underscore-prefixed explicit fixture，不進 discover_cases |
 | P4-03 | case-kickStation | done | legacy compatibility fixture 已保留，改為 underscore-prefixed explicit fixture，不進 discover_cases |
-| P4-04 | 417 case source 對齊治理 | done | 415 官方 discoverable D### 已對齊；2 legacy duplicate-row YAML 已轉為 explicit fixtures；目前 trusted/calibrated 119、remaining 296，最新單案 checkpoint 到 D059 |
+| P4-04 | 417 case source 對齊治理 | done | 415 官方 discoverable D### 已對齊；2 legacy duplicate-row YAML 已轉為 explicit fixtures；目前 trusted/calibrated 119、remaining 296，最新主 sweep 單案 checkpoint 到 D059，另有 D185 TPCMode targeted source/live fail-shaped checkpoint |
 | P4-05 | Wifi_LLAPI Excel report pipeline | done | template + run report + merged-cell 相容 |
 
 ## Phase 5：CLI & Integration

@@ -97,6 +97,7 @@ If I open only this file in a future session, I should do the following in order
   - `D056 TxErrors` → workbook-aligned `To be tested` checkpoint (`9880918`)
   - `D057 TxMulticastPacketCount` → workbook-aligned `To be tested` checkpoint (`01fd2c3`), plus MAC normalization follow-up (`426de8a`)
   - `D059 TxUnicastPacketCount` → workbook-aligned **Fail-shaped mismatch** (`49640dd`)
+  - `D185 TPCMode` → targeted source/live **Fail-shaped mismatch** checkpoint; main sweep counts stay at 119 / 296 until workbook-side verdict bookkeeping for this retroactive row is reconciled
 - Latest validated commands:
   - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py` → `111 passed`
   - `uv run pytest -q` → `163 passed`
@@ -203,6 +204,10 @@ Current verified live baseline findings from this session:
     - LLAPI direct getter and AssociatedDevice snapshot stay `0`
     - same STA still reports positive sibling `TxPacketCount` and positive driver `tx ucast pkts`
     - workbook verdict is now encoded as `Fail`
+  - `D185` `TPCMode`
+    - WLD ODL enum declares `Auto/Off/Ap/Sta/ApSta`
+    - live DUT rejects `Off`, accepts `Ap/Sta/ApSta` through ubus readback, and still keeps `wl0 tpc_mode=0`
+    - this targeted source/live checkpoint is recorded as a fail-shaped mismatch; primary sweep counts remain unchanged until the workbook verdict ledger is reconciled
 
 ## Per-case operator loop
 
