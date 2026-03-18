@@ -3951,6 +3951,196 @@ def test_d057_txmulticastpacketcount_evaluate_live_examples():
     assert plugin.evaluate(d057, d057_mixed_case_llapi_results) is True
 
 
+def test_d059_txunicastpacketcount_uses_same_sta_failure_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
+    assert "wifi-llapi-D059-txunicastpacketcount" in discoverable_ids
+
+    d059_raw = yaml.safe_load((cases_dir / "D059_txunicastpacketcount.yaml").read_text(encoding="utf-8"))
+    d059 = load_case(cases_dir / "D059_txunicastpacketcount.yaml")
+    d059_commands = "\n".join(str(step.get("command", "")) for step in d059["steps"])
+    d059_links = {link["band"] for link in d059["topology"]["links"]}
+
+    assert "aliases" not in d059_raw
+    assert d059["id"] == "wifi-llapi-D059-txunicastpacketcount"
+    assert d059["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d059["source"]["row"] == 59
+    assert d059["source"]["baseline"] == "BCM v4.0.3"
+    assert d059["llapi_support"] == "Support"
+    assert d059["bands"] == ["5g"]
+    assert d059_links == {"5g"}
+    assert d059["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount?"'
+    assert "cat /sys/class/net/wl0/address" in d059_commands
+    assert "tr 'A-F' 'a-f'" in d059_commands
+    assert "MACAddress?" in d059_commands
+    assert 'TxUnicastPacketCount?"' in d059_commands
+    assert "AssocTxUnicastPacketCount=" in d059_commands
+    assert "AssocTxPacketCount=" in d059_commands
+    assert "DriverTxPacketCount=" in d059_commands
+    assert "DriverTxUnicastPacketCount=" in d059_commands
+    assert "DriverTxBytes=" in d059_commands
+    assert "DriverTxUnicastBytes=" in d059_commands
+    assert any(
+        criterion["field"] == "assoc_entry.MACAddress"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "sta_identity.StaMac"
+        for criterion in d059["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.TxUnicastPacketCount"
+        and criterion["operator"] == "equals"
+        and str(criterion["value"]) == "0"
+        for criterion in d059["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.TxUnicastPacketCount"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "assoc_snapshot.AssocTxUnicastPacketCount"
+        for criterion in d059["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "assoc_snapshot.AssocTxPacketCount"
+        and criterion["operator"] == ">"
+        and str(criterion["value"]) == "0"
+        for criterion in d059["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_capture.DriverAssocMac"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "assoc_entry.MACAddress"
+        for criterion in d059["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_capture.DriverTxPacketCount"
+        and criterion["operator"] == ">"
+        and str(criterion["value"]) == "0"
+        for criterion in d059["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "assoc_snapshot.AssocTxPacketCount"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "driver_capture.DriverTxPacketCount"
+        for criterion in d059["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_capture.DriverTxUnicastPacketCount"
+        and criterion["operator"] == ">"
+        and str(criterion["value"]) == "0"
+        for criterion in d059["pass_criteria"]
+    )
+    assert d059["results_reference"]["v4.0.3"]["5g"] == "Fail"
+    assert d059["results_reference"]["v4.0.3"]["6g"] == "N/A"
+    assert d059["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+
+
+def test_d059_txunicastpacketcount_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d059 = load_case(cases_dir / "D059_txunicastpacketcount.yaml")
+
+    d059_results = {
+        "steps": {
+            "step1": {
+                "success": True,
+                "output": "StaMac=2c:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step2": {
+                "success": True,
+                "output": "MACAddress=2c:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step3": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0",
+                "timing": 0.01,
+            },
+            "step4": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "AssocMAC=2c:59:17:00:04:85",
+                        "AssocTxUnicastPacketCount=0",
+                        "AssocTxPacketCount=90442",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+            "step5": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "DriverAssocMac=2c:59:17:00:04:85",
+                        "DriverTxPacketCount=90442",
+                        "DriverTxUnicastPacketCount=90442",
+                        "DriverTxBytes=0",
+                        "DriverTxUnicastBytes=0",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d059, d059_results) is True
+
+    d059_wrong_llapi_results = {
+        "steps": {
+            **d059_results["steps"],
+            "step3": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=7",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d059, d059_wrong_llapi_results) is False
+
+    d059_missing_total_results = {
+        "steps": {
+            **d059_results["steps"],
+            "step4": {
+                "success": True,
+                "output": "AssocMAC=2c:59:17:00:04:85\nAssocTxUnicastPacketCount=0\nAssocTxPacketCount=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d059, d059_missing_total_results) is False
+
+    d059_wrong_driver_results = {
+        "steps": {
+            **d059_results["steps"],
+            "step5": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "DriverAssocMac=2c:59:17:00:04:85",
+                        "DriverTxPacketCount=90442",
+                        "DriverTxUnicastPacketCount=0",
+                        "DriverTxBytes=0",
+                        "DriverTxUnicastBytes=0",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d059, d059_wrong_driver_results) is False
+
+    d059_wrong_assoc_results = {
+        "steps": {
+            **d059_results["steps"],
+            "step2": {
+                "success": True,
+                "output": "MACAddress=aa:aa:aa:aa:aa:aa",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d059, d059_wrong_assoc_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
@@ -4430,6 +4620,7 @@ def test_sta_env_setup_parser_preserves_wpa_cli_quoted_value():
         "D056_txerrors.yaml",
         "D057_txmulticastpacketcount.yaml",
         "D058_txpacketcount.yaml",
+        "D059_txunicastpacketcount.yaml",
         "D061_uplinkbandwidth.yaml",
         "D060_uniibandscapabilities.yaml",
     ],
@@ -4750,6 +4941,81 @@ def test_d057_txmulticastpacketcount_snapshot_sed_fragment_executes():
     assert proc.stdout.strip().splitlines() == [
         "AssocMAC=2c:59:17:00:04:85",
         "AssocTxMulticastPacketCount=0",
+    ]
+
+
+def test_d059_txunicastpacketcount_verification_fragments_preserve_snapshot_and_driver_checks():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d059 = load_case(cases_dir / "D059_txunicastpacketcount.yaml")
+
+    step3_command = d059["steps"][2]["command"]
+    step4_command = d059["steps"][3]["command"]
+    step5_command = d059["steps"][4]["command"]
+    verification_commands = plugin._extract_cli_fragments(d059["verification_command"])
+
+    assert step3_command == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount?"'
+    assert "AssocTxPacketCount=" in step4_command
+    assert plugin._sanitize_cli_fragment(step5_command) == step5_command
+    assert plugin._extract_cli_fragments(step5_command) == [step5_command]
+    assert len(verification_commands) == 4
+    assert verification_commands[0] == "cat /sys/class/net/wl0/address | tr 'A-F' 'a-f' | sed 's/^/StaMac=/'"
+    assert verification_commands[1] == step3_command
+    assert verification_commands[2] == step4_command
+    assert verification_commands[3] == step5_command
+
+
+def test_d059_txunicastpacketcount_macaddress_fragment_normalizes_case():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d059 = load_case(cases_dir / "D059_txunicastpacketcount.yaml")
+    step2_command = d059["steps"][1]["command"]
+    pipeline = step2_command.split("|", 1)[1].strip()
+    sample_output = 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"'
+
+    proc = subprocess.run(
+        [
+            "sh",
+            "-lc",
+            f"cat <<'EOF' | {pipeline}\n{sample_output}\nEOF",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == "MACAddress=2c:59:17:00:04:85"
+
+
+def test_d059_txunicastpacketcount_snapshot_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d059 = load_case(cases_dir / "D059_txunicastpacketcount.yaml")
+    step4_command = d059["steps"][3]["command"]
+    pipeline = step4_command.split("|", 1)[1].strip()
+    sample_output = "\n".join(
+        [
+            'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+            "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0",
+            "WiFi.AccessPoint.1.AssociatedDevice.1.TxPacketCount=90442",
+        ]
+    )
+
+    proc = subprocess.run(
+        [
+            "sh",
+            "-lc",
+            f"cat <<'EOF' | {pipeline}\n{sample_output}\nEOF",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == [
+        "AssocMAC=2c:59:17:00:04:85",
+        "AssocTxUnicastPacketCount=0",
+        "AssocTxPacketCount=90442",
     ]
 
 
