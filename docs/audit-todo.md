@@ -94,8 +94,8 @@ If I open only this file in a future session, I should do the following in order
 
 ## Current repo handoff snapshot（2026-03-18）
 
-- Trusted/calibrated official cases: **123 / 415**
-- Remaining official cases: **292**
+- Trusted/calibrated official cases: **124 / 415**
+- Remaining official cases: **291**
 - Active blockers:
   - `D037 OperatingStandard`
   - `D054 Tx_RetransmissionsFailed`
@@ -107,17 +107,18 @@ If I open only this file in a future session, I should do the following in order
   - `D060 UNIIBandsCapabilities` → workbook-aligned `Pass` checkpoint (`ff9ada2`, shared batch commit with `D046/D051/D058`)
   - `D061 UplinkBandwidth` → workbook-aligned `Pass` checkpoint (`538a741`)
   - `D062 UplinkMCS` → workbook-aligned `Pass` checkpoint (`c7470b2`)
-  - `D063 UplinkShortGuard` → workbook-aligned `Pass` checkpoint（current checkpoint；5G same-STA post-trigger snapshot + `wl sta_info rx nrate` GI-mapped short-guard equality）
-  - `D185 TPCMode` → targeted source/live **Fail-shaped mismatch** checkpoint outside the 123 / 292 main-sweep counts
+  - `D063 UplinkShortGuard` → workbook-aligned `Pass` checkpoint (`8000121`)
+  - `D064 VendorOUI` → workbook-aligned **Fail-shaped mismatch** checkpoint（current checkpoint；5G same-STA direct getter + snapshot empty string versus non-empty `wl sta_info` vendor OUI list）
+  - `D185 TPCMode` → targeted source/live **Fail-shaped mismatch** checkpoint outside the 124 / 291 main-sweep counts
 - Latest validated commands:
-  - `timeout 30s env PYTHONUNBUFFERED=1 PYTHONPATH=src python - <<'PY' ... load_case(D063) + collect_alignment_issues ... PY` → `alignment_issues=[]`
-  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py` → `118 passed`
-  - `uv run pytest -q` → `171 passed`
+  - `timeout 30s env PYTHONUNBUFFERED=1 PYTHONPATH=src python - <<'PY' ... load_case(D064) + collect_alignment_issues ... PY` → `alignment_issues=[]`
+  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py` → `125 passed`
+  - `uv run pytest -q` → `178 passed`
   - `serialwrap COM0 ubus-cli/hostapd_cli baseline readback` → 5G `testpilot5G` + `WPA2-Personal/00000000`, 6G `testpilot6G` + `WPA3-Personal/SAE/00000000`, 2.4G `testpilot2G` + `WPA2-Personal/00000000`
   - `serialwrap COM1 wl0 reconnect testpilot5G` → `iw dev wl0 link` = connected to `2c:59:17:00:19:95`, `wpa_cli status` = `wpa_state=COMPLETED` / `key_mgmt=WPA2-PSK`
-  - `serialwrap COM0 UplinkShortGuard + wl0 sta_info rx nrate` → same STA `2C:59:17:00:04:85`, `UplinkShortGuard=1`, `DriverUplinkShortGuardGI=1.6us`, `DriverUplinkShortGuard=1`
+  - `serialwrap COM0 VendorOUI + wl0 sta_info vendor OUI` → same STA `2c:59:17:00:04:85`, `VendorOUI=""`, `AssocVendorOUI=`, `DriverVendorOUICount=4`, `DriverVendorOUIList=00:90:4C,00:10:18,00:50:F2,50:6F:9A`
 - Next ready repo handoff case:
-  - `D064 VendorOUI`
+  - `D065 VendorCapabilities`
 - Continuation guard rails:
   - only committed YAML / docs count as trusted handoff state
   - do not infer progress from any local unstaged experiment outside these committed checkpoints
@@ -138,7 +139,8 @@ Current verified live baseline findings from this session:
   - `D060/D061` are already committed 0310/5G-only live-aligned cases and do not need to be re-done before the next handoff step
   - `D062` is now a committed 0310/5G-only live-aligned pass case; use the same-STA post-trigger snapshot + `wl sta_info ... rx nrate` `mcs` equality pattern as the prior art
   - `D063` is now a committed 0310/5G-only live-aligned pass case; reuse its same-STA post-trigger snapshot + driver GI mapping pattern (`0.4us/0.8us/1.6us => 1`, `3.2us => 0`, unknown GI fail-closed) as the immediate prior art
-  - `D064/D065` are more likely hostapd / assoc-IE derived fields than simple driver counters
+  - `D064` is now a committed 0310/5G-only live-aligned fail case; reuse its same-STA direct getter + snapshot empty-string cross-check against non-empty `wl sta_info` vendor OUI list as the immediate prior art
+  - `D065` is more likely hostapd / assoc-IE derived than a simple driver counter
   - `D066-D079` are still old `0302` setter transcripts with row drift against the current BCM summary and should be reworked case-by-case from live/source evidence
 - Critical lab rule:
   - `COM1` is another `prplOS` / B0-class board, not a simple STA dongle

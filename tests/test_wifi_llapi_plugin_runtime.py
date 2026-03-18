@@ -4417,6 +4417,146 @@ def test_d059_txunicastpacketcount_evaluate_live_examples():
     assert plugin.evaluate(d059, d059_wrong_assoc_results) is False
 
 
+def test_d064_vendoroui_uses_same_sta_failure_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
+    assert "wifi-llapi-D064-vendoroui" in discoverable_ids
+
+    d064_raw = yaml.safe_load((cases_dir / "D064_vendoroui.yaml").read_text(encoding="utf-8"))
+    d064 = load_case(cases_dir / "D064_vendoroui.yaml")
+    d064_commands = "\n".join(str(step.get("command", "")) for step in d064["steps"])
+    d064_links = {link["band"] for link in d064["topology"]["links"]}
+
+    assert "aliases" not in d064_raw
+    assert d064["id"] == "wifi-llapi-D064-vendoroui"
+    assert d064["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d064["source"]["row"] == 64
+    assert d064["source"]["baseline"] == "BCM v4.0.3"
+    assert d064["llapi_support"] == "Support"
+    assert d064["bands"] == ["5g"]
+    assert d064_links == {"5g"}
+    assert d064["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI?"'
+    assert "cat /sys/class/net/wl0/address" in d064_commands
+    assert "tr 'A-F' 'a-f'" in d064_commands
+    assert "MACAddress?" in d064_commands
+    assert 'VendorOUI?"' in d064_commands
+    assert "AssocVendorOUI=" in d064_commands
+    assert "DriverVendorOUICount=" in d064_commands
+    assert "DriverVendorOUIList=" in d064_commands
+    assert any(
+        criterion["field"] == "assoc_entry.MACAddress"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "sta_identity.StaMac"
+        for criterion in d064["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.VendorOUI"
+        and criterion["operator"] == "empty"
+        for criterion in d064["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.VendorOUI"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "assoc_snapshot.AssocVendorOUI"
+        for criterion in d064["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_capture.DriverVendorOUICount"
+        and criterion["operator"] == ">"
+        and str(criterion["value"]) == "0"
+        for criterion in d064["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_capture.DriverVendorOUIList"
+        and criterion["operator"] == "not_equals"
+        and criterion.get("reference") == "result.VendorOUI"
+        for criterion in d064["pass_criteria"]
+    )
+    assert d064["results_reference"]["v4.0.3"]["5g"] == "Fail"
+    assert d064["results_reference"]["v4.0.3"]["6g"] == "N/A"
+    assert d064["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+
+
+def test_d064_vendoroui_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d064 = load_case(cases_dir / "D064_vendoroui.yaml")
+
+    d064_results = {
+        "steps": {
+            "step1": {
+                "success": True,
+                "output": "StaMac=2c:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step2": {
+                "success": True,
+                "output": "MACAddress=2c:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step3": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI=""',
+                "timing": 0.01,
+            },
+            "step4": {
+                "success": True,
+                "output": "AssocMAC=2c:59:17:00:04:85\nAssocVendorOUI=",
+                "timing": 0.01,
+            },
+            "step5": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "DriverAssocMac=2c:59:17:00:04:85",
+                        "DriverVendorOUICount=4",
+                        "DriverVendorOUIList=00:90:4C,00:10:18,00:50:F2,50:6F:9A",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d064, d064_results) is True
+
+    d064_wrong_llapi_results = {
+        "steps": {
+            **d064_results["steps"],
+            "step3": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI="00:50:F2"',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d064, d064_wrong_llapi_results) is False
+
+    d064_missing_driver_results = {
+        "steps": {
+            **d064_results["steps"],
+            "step5": {
+                "success": True,
+                "output": "DriverAssocMac=2c:59:17:00:04:85\nDriverVendorOUICount=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d064, d064_missing_driver_results) is False
+
+    d064_wrong_assoc_results = {
+        "steps": {
+            **d064_results["steps"],
+            "step2": {
+                "success": True,
+                "output": "MACAddress=aa:aa:aa:aa:aa:aa",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d064, d064_wrong_assoc_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
@@ -5041,6 +5181,7 @@ def test_extract_cli_fragments_ignores_prose_after_ubus_keyword():
         ("D061_uplinkbandwidth.yaml", 2, "DriverUplinkBandwidth="),
         ("D062_uplinkmcs.yaml", 3, "DriverUplinkMCS="),
         ("D063_uplinkshortguard.yaml", 4, "DriverUplinkShortGuardGI="),
+        ("D064_vendoroui.yaml", 4, "DriverVendorOUIList="),
         ("D060_uniibandscapabilities.yaml", 2, "DriverUNIIBandsCapabilities="),
     ],
 )
@@ -5078,6 +5219,12 @@ def test_sanitize_cli_fragment_preserves_nested_quotes_for_associateddevice_driv
         else:
             assert verification_commands[1].startswith('OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.')
             assert "SiblingAssocMac=" in verification_commands[2]
+        assert verification_commands[3] == command
+    elif filename == "D064_vendoroui.yaml":
+        assert len(verification_commands) == 4
+        assert verification_commands[0] == "cat /sys/class/net/wl0/address | tr 'A-F' 'a-f' | sed 's/^/StaMac=/'"
+        assert verification_commands[1] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI?"'
+        assert "AssocVendorOUI=" in verification_commands[2]
         assert verification_commands[3] == command
     else:
         assert len(verification_commands) == 2
@@ -5313,6 +5460,113 @@ def test_d059_txunicastpacketcount_snapshot_fragment_executes():
         "AssocMAC=2c:59:17:00:04:85",
         "AssocTxUnicastPacketCount=0",
         "AssocTxPacketCount=90442",
+    ]
+
+
+def test_d064_vendoroui_verification_fragments_preserve_snapshot_and_driver_checks():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d064 = load_case(cases_dir / "D064_vendoroui.yaml")
+
+    step1_command = d064["steps"][0]["command"]
+    step3_command = d064["steps"][2]["command"]
+    step4_command = d064["steps"][3]["command"]
+    step5_command = d064["steps"][4]["command"]
+    verification_commands = plugin._extract_cli_fragments(d064["verification_command"])
+
+    assert step3_command == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI?"'
+    assert "AssocVendorOUI=" in step4_command
+    assert plugin._sanitize_cli_fragment(step5_command) == step5_command
+    assert plugin._extract_cli_fragments(step5_command) == [step5_command]
+    assert len(verification_commands) == 4
+    assert verification_commands[0] == step1_command
+    assert verification_commands[1] == step3_command
+    assert verification_commands[2] == step4_command
+    assert verification_commands[3] == step5_command
+
+
+def test_d064_vendoroui_macaddress_fragment_normalizes_case():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d064 = load_case(cases_dir / "D064_vendoroui.yaml")
+    step2_command = d064["steps"][1]["command"]
+    pipeline = step2_command.split("|", 1)[1].strip()
+    sample_output = 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"'
+
+    proc = subprocess.run(
+        [
+            "sh",
+            "-lc",
+            f"cat <<'EOF' | {pipeline}\n{sample_output}\nEOF",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == "MACAddress=2c:59:17:00:04:85"
+
+
+def test_d064_vendoroui_snapshot_fragment_executes_with_empty_value():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d064 = load_case(cases_dir / "D064_vendoroui.yaml")
+    step4_command = d064["steps"][3]["command"]
+    pipeline = step4_command.split("|", 1)[1].strip()
+    sample_output = "\n".join(
+        [
+            'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+            'WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI=""',
+        ]
+    )
+
+    proc = subprocess.run(
+        [
+            "sh",
+            "-lc",
+            f"cat <<'EOF' | {pipeline}\n{sample_output}\nEOF",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == [
+        "AssocMAC=2c:59:17:00:04:85",
+        "AssocVendorOUI=",
+    ]
+
+
+def test_d064_vendoroui_driver_capture_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d064 = load_case(cases_dir / "D064_vendoroui.yaml")
+    step5_command = d064["steps"][4]["command"]
+    awk_fragment = "awk " + step5_command.rsplit("| awk ", 1)[1]
+    sample_output = "\n".join(
+        [
+            "\t state: AUTHENTICATED ASSOCIATED AUTHORIZED",
+            "VENDOR OUI VALUE[0] 00:90:4C",
+            "VENDOR OUI VALUE[1] 00:10:18",
+            "VENDOR OUI VALUE[2] 00:50:F2",
+            "VENDOR OUI VALUE[3] 50:6F:9A",
+        ]
+    )
+
+    proc = subprocess.run(
+        [
+            "sh",
+            "-lc",
+            f"cat <<'EOF' | {awk_fragment}\n{sample_output}\nEOF",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == [
+        "DriverVendorOUICount=4",
+        "DriverVendorOUIList=00:90:4C,00:10:18,00:50:F2,50:6F:9A",
     ]
 
 
