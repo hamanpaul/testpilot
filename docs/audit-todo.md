@@ -41,6 +41,13 @@
 - YAML sync scope rule:
   - sync shared, verified environment settings back into the baseline first
   - only sync case-specific settings into an individual case YAML when that case truly needs unique environment settings such as a different security mode
+- Default non-open baseline rule:
+  - unless a case explicitly requires another security mode, do not use open-security SSIDs
+  - default baseline naming / credential is `testpilot5G` / `testpilot6G` / `testpilot2G` with password `00000000`
+  - current verified default security policy is:
+    - 5G = `WPA2-Personal`
+    - 2.4G = `WPA2-Personal`
+    - 6G = `WPA3-Personal` with `key_mgmt=SAE`
 - Baseline acceptance rule:
   - baseline is only considered OK if the STA can complete a 6G STA->AP connection, obtain an IP address by DHCP, and ping the DUT(AP)
   - do not keep all three bands connected simultaneously, because that can create loop issues
@@ -87,8 +94,8 @@ If I open only this file in a future session, I should do the following in order
 
 ## Current repo handoff snapshot（2026-03-18）
 
-- Trusted/calibrated official cases: **119 / 415**
-- Remaining official cases: **296**
+- Trusted/calibrated official cases: **119 / 415** (`D060/D061` 已有 committed checkpoint，但尚未重新結算到這份 handoff ledger)
+- Remaining official cases: **296**（沿用上一版已結算 ledger；待下一輪統一重算）
 - Active blockers:
   - `D037 OperatingStandard`
   - `D054 Tx_RetransmissionsFailed`
@@ -97,39 +104,54 @@ If I open only this file in a future session, I should do the following in order
   - `D056 TxErrors` → workbook-aligned `To be tested` checkpoint (`9880918`)
   - `D057 TxMulticastPacketCount` → workbook-aligned `To be tested` checkpoint (`01fd2c3`), plus MAC normalization follow-up (`426de8a`)
   - `D059 TxUnicastPacketCount` → workbook-aligned **Fail-shaped mismatch** (`49640dd`)
+  - `D060 UNIIBandsCapabilities` → workbook-aligned `Pass` checkpoint (`ff9ada2`, shared batch commit with `D046/D051/D058`)
+  - `D061 UplinkBandwidth` → workbook-aligned `Pass` checkpoint (`538a741`)
   - `D185 TPCMode` → targeted source/live **Fail-shaped mismatch** checkpoint; main sweep counts stay at 119 / 296 until workbook-side verdict bookkeeping for this retroactive row is reconciled
 - Latest validated commands:
   - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py` → `111 passed`
   - `uv run pytest -q` → `163 passed`
+  - `serialwrap COM0 ubus-cli/hostapd_cli baseline readback` → 5G `testpilot5G` + `WPA2-Personal/00000000`, 6G `testpilot6G` + `WPA3-Personal/SAE/00000000`, 2.4G `testpilot2G` + `WPA2-Personal/00000000`
+  - `serialwrap COM1 wl0 reconnect testpilot5G` → `iw dev wl0 link` = connected to `2c:59:17:00:19:95`, `wpa_cli status` = `wpa_state=COMPLETED` / `key_mgmt=WPA2-PSK`
+  - `serialwrap COM0 wl0 assoclist + AssociatedDevice.1.MACAddress?` → same STA `2C:59:17:00:04:85`
 - Next ready repo handoff case:
-  - `D060 UNIIBandsCapabilities`
+  - `D062 UplinkMCS`
 - Continuation guard rails:
   - only committed YAML / docs count as trusted handoff state
   - do not infer progress from any local unstaged experiment outside these committed checkpoints
   - reuse `D058 TxPacketCount` as the positive same-STA tx-packet prior art when judging `D059`/`D060` family cases
+  - `D070_discoverymethodenabled_accesspoint_rnr.yaml` currently has unstaged local edits; read/merge that diff before touching the file
 
 Current verified live baseline findings from this session:
 
 - DUT `COM0`:
-  - 5G = `wl0` / `AccessPoint.1` / `SSID.4` / SSID `TestPilot_BTM` / BSSID `2c:59:17:00:19:95`
-  - 6G = `wl1` / `AccessPoint.3` / `SSID.6` / SSID `TestPilot_BTM` / BSSID `2c:59:17:00:19:96`
-  - 2.4G = `wl2` / `AccessPoint.5` / `SSID.8` / SSID `TestPilot_24G` / BSSID `2c:59:17:00:19:a7`
+  - 5G = `wl0` / `AccessPoint.1` / `SSID.4` / SSID `testpilot5G` / BSSID `2c:59:17:00:19:95` / `WPA2-Personal` / passphrase `00000000`
+  - 6G = `wl1` / `AccessPoint.3` / `SSID.6` / SSID `testpilot6G` / BSSID `2c:59:17:00:19:96` / `WPA3-Personal` / `key_mgmt=SAE` / SAE passphrase `00000000`
+  - 2.4G = `wl2` / `AccessPoint.5` / `SSID.8` / SSID `testpilot2G` / BSSID `2c:59:17:00:19:a7` / `WPA2-Personal` / passphrase `00000000`
 - STA `COM1` candidate managed interfaces:
   - 5G = `wl0` / MAC `2c:59:17:00:04:85`
   - 6G = `wl1` / MAC `2c:59:17:00:04:86`
   - 2.4G = `wl2` / MAC `2c:59:17:00:04:97`
+- Current `D060-D079` batch triage:
+  - `D060/D061` are already committed 0310/5G-only live-aligned cases and do not need to be re-done before the next handoff step
+  - `D062-D065` remain old `0302` setter-style drafts; offline survey indicates they should be rewritten as read-only getter cases, and the earlier 5G association blocker is now cleared
+  - `D062/D063` should use `wl sta_info ... rx nrate` style truth sources (`mcs`, `GI`)
+  - `D064/D065` are more likely hostapd / assoc-IE derived fields than simple driver counters
+  - `D066-D079` are still old `0302` setter transcripts with row drift against the current BCM summary and should be reworked case-by-case from live/source evidence
 - Critical lab rule:
   - `COM1` is another `prplOS` / B0-class board, not a simple STA dongle
   - before using `ping 192.168.1.1` as DUT reachability evidence, move `COM1 br-lan` off `192.168.1.0/24` (for example `192.168.88.1/24`), otherwise the ping is a false-positive self-hit
+- Current 5G recovery status:
+  - `COM1 wl0` now reconnects to DUT AP1 `2c:59:17:00:19:95` with SSID `testpilot5G`
+  - `wpa_cli` reaches `wpa_state=COMPLETED` with `key_mgmt=WPA2-PSK`
+  - DUT `wl -i wl0 assoclist` and `WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?` both confirm the same STA `2C:59:17:00:04:85`
 - Proven 6G baseline flow:
-  - disable STA-side AP VIFs on `COM1`
-  - use `wl1` as managed STA with `wpa_supplicant` + SAE
-  - current working 6G SSID = `TestPilot_BTM`
-  - current working SAE credential observed in hostapd = `testpilot6g`
-  - DHCP lease acquisition works, but the routed ping proof is only valid after the bridge-IP conflict is removed
+  - 6G baseline policy is now fixed to `testpilot6G` + `WPA3-Personal` + `key_mgmt=SAE` + password `00000000`
+  - DUT readback and `hostapd_cli -i wl1 get_config` both confirm the non-open WPA3/SAE configuration
+  - COM1 `wl1` revalidation against the new `00000000` credential is still pending; keep the older DHCP/routed-ping evidence as historical context only
 - 5G and 2.4G current state:
-  - L2 association is verified on `wl0` / `wl2`
-  - DHCP/routing is not yet applied automatically on those bands, so any traffic-dependent case still needs explicit L3 setup or a blocker note
+  - 5G `wl0` L2 association is re-verified on the rebuilt `testpilot5G` baseline
+  - 2.4G `wl2` baseline config (`testpilot2G` + `WPA2-Personal/00000000`) is re-applied on the DUT, but COM1 `wl2` association has not been rerun after this reboot/recovery step
+  - DHCP/routing is not yet applied automatically on these bands, so any traffic-dependent case still needs explicit L3 setup or a blocker note
 - First live-aligned `AssociatedDevice` getter cases now rewritten against the verified 6G baseline:
   - `D011` `AssociationTime`
   - `D012` `AuthenticationState`

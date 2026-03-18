@@ -95,6 +95,15 @@ pytest
    - 下一個 ready case
    - 最新驗證指令與結果
 
+## Default Lab Baseline Policy
+
+1. 預設 baseline 不可使用 open security SSID。
+2. 若 testcase 沒有明確要求特殊安全模式，預設使用：
+   - 5G：`testpilot5G` / `WPA2-Personal` / password `00000000`
+   - 2.4G：`testpilot2G` / `WPA2-Personal` / password `00000000`
+   - 6G：`testpilot6G` / `WPA3-Personal` / `key_mgmt=SAE` / password `00000000`
+3. baseline 因 reboot / session recover 重建後，必須先把最新 SSID / security readback 與已驗證 band link 狀態同步回 repo handoff 文件，再繼續逐案校正。
+
 ## Plugin Agent Config Policy
 
 1. plugin 若需宣告 agent/model policy，使用 `plugins/<plugin>/agent-config.yaml`。
