@@ -3757,6 +3757,7 @@ def test_d057_txmulticastpacketcount_uses_same_sta_delivery_contract():
     assert d057_links == {"5g"}
     assert d057["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount?"'
     assert "cat /sys/class/net/wl0/address" in d057_commands
+    assert "tr 'A-F' 'a-f'" in d057_commands
     assert "StaRxPacketsBefore=" in d057_commands
     assert "StaRxBytesBefore=" in d057_commands
     assert "MACAddress?" in d057_commands
@@ -3767,6 +3768,7 @@ def test_d057_txmulticastpacketcount_uses_same_sta_delivery_contract():
     assert "AssocTxMulticastPacketCount=" in d057_commands
     assert "DriverTxMulticastPacketCount=" in d057_commands
     assert "DriverTxMulticastBytes=" in d057_commands
+    assert 'AssocMAC=' in d057_commands
     assert any(
         criterion["field"] == "assoc_entry.MACAddress"
         and criterion["operator"] == "equals"
@@ -3837,7 +3839,7 @@ def test_d057_txmulticastpacketcount_evaluate_live_examples():
                 "success": True,
                 "output": "\n".join(
                     [
-                        "StaMac=2C:59:17:00:04:85",
+                        "StaMac=2c:59:17:00:04:85",
                         "StaRxPacketsBefore=136067",
                         "StaRxBytesBefore=15249537",
                     ]
@@ -3846,7 +3848,7 @@ def test_d057_txmulticastpacketcount_evaluate_live_examples():
             },
             "step2": {
                 "success": True,
-                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+                "output": "MACAddress=2c:59:17:00:04:85",
                 "timing": 0.01,
             },
             "step3": {
@@ -3866,12 +3868,12 @@ def test_d057_txmulticastpacketcount_evaluate_live_examples():
             },
             "step6": {
                 "success": True,
-                "output": "AssocMAC=2C:59:17:00:04:85\nAssocTxMulticastPacketCount=0",
+                "output": "AssocMAC=2c:59:17:00:04:85\nAssocTxMulticastPacketCount=0",
                 "timing": 0.01,
             },
             "step7": {
                 "success": True,
-                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverTxMulticastPacketCount=0\nDriverTxMulticastBytes=0",
+                "output": "DriverAssocMac=2c:59:17:00:04:85\nDriverTxMulticastPacketCount=0\nDriverTxMulticastBytes=0",
                 "timing": 0.01,
             },
         }
@@ -3907,7 +3909,7 @@ def test_d057_txmulticastpacketcount_evaluate_live_examples():
             **d057_results["steps"],
             "step7": {
                 "success": True,
-                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverTxMulticastPacketCount=2\nDriverTxMulticastBytes=196",
+                "output": "DriverAssocMac=2c:59:17:00:04:85\nDriverTxMulticastPacketCount=2\nDriverTxMulticastBytes=196",
                 "timing": 0.01,
             },
         }
@@ -3919,12 +3921,34 @@ def test_d057_txmulticastpacketcount_evaluate_live_examples():
             **d057_results["steps"],
             "step2": {
                 "success": True,
-                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="AA:AA:AA:AA:AA:AA"',
+                "output": "MACAddress=aa:aa:aa:aa:aa:aa",
                 "timing": 0.01,
             },
         }
     }
     assert plugin.evaluate(d057, d057_wrong_assoc_results) is False
+
+    d057_mixed_case_llapi_results = {
+        "steps": {
+            **d057_results["steps"],
+            "step2": {
+                "success": True,
+                "output": "MACAddress=2c:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step6": {
+                "success": True,
+                "output": "AssocMAC=2c:59:17:00:04:85\nAssocTxMulticastPacketCount=0",
+                "timing": 0.01,
+            },
+            "step7": {
+                "success": True,
+                "output": "DriverAssocMac=2c:59:17:00:04:85\nDriverTxMulticastPacketCount=0\nDriverTxMulticastBytes=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d057, d057_mixed_case_llapi_results) is True
 
 
 def test_run_required_command_retries_after_recovery_signal():
@@ -4677,11 +4701,33 @@ def test_d057_txmulticastpacketcount_verification_fragments_preserve_delivery_an
     assert step7_command in verification_commands
 
 
+def test_d057_txmulticastpacketcount_macaddress_fragment_normalizes_case():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d057 = load_case(cases_dir / "D057_txmulticastpacketcount.yaml")
+    step2_command = d057["steps"][1]["command"]
+    pipeline = step2_command.split("|", 1)[1].strip()
+    sample_output = 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"'
+
+    proc = subprocess.run(
+        [
+            "sh",
+            "-lc",
+            f"cat <<'EOF' | {pipeline}\n{sample_output}\nEOF",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == "MACAddress=2c:59:17:00:04:85"
+
+
 def test_d057_txmulticastpacketcount_snapshot_sed_fragment_executes():
     cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
     d057 = load_case(cases_dir / "D057_txmulticastpacketcount.yaml")
     step6_command = d057["steps"][5]["command"]
-    sed_script = step6_command.split("| sed -n ", 1)[1]
+    pipeline = step6_command.split("|", 1)[1].strip()
     sample_output = "\n".join(
         [
             'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
@@ -4693,7 +4739,7 @@ def test_d057_txmulticastpacketcount_snapshot_sed_fragment_executes():
         [
             "sh",
             "-lc",
-            f"cat <<'EOF' | sed -n {sed_script}\n{sample_output}\nEOF",
+            f"cat <<'EOF' | {pipeline}\n{sample_output}\nEOF",
         ],
         check=False,
         capture_output=True,
@@ -4702,7 +4748,7 @@ def test_d057_txmulticastpacketcount_snapshot_sed_fragment_executes():
 
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.strip().splitlines() == [
-        "AssocMAC=2C:59:17:00:04:85",
+        "AssocMAC=2c:59:17:00:04:85",
         "AssocTxMulticastPacketCount=0",
     ]
 
