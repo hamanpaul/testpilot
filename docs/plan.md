@@ -30,7 +30,7 @@ TestPilot 的主目標是：
 6. 415 官方 row-indexed cases 已有實機全量驗證基線；兩個 duplicate-row legacy YAML 已改為 underscore-prefixed compatibility fixtures，不再混入 discoverable case inventory。
 7. `wifi_llapi` 目前已固化 124 筆 trusted/calibrated cases，尚餘 291 筆待校正；目前明確 blockers 為 `D037 OperatingStandard`、`D054 Tx_RetransmissionsFailed`、`D055 TxBytes`。
 8. repo-only 校正 handoff 已同步到 `docs/audit-todo.md` 與 `plugins/wifi_llapi/reports/audit-report-260313-185447.md`；目前 handoff 已補記 `D060 UNIIBandsCapabilities`、`D061 UplinkBandwidth`、`D062 UplinkMCS`、`D063 UplinkShortGuard`、`D064 VendorOUI` 的 committed checkpoint 與 `D185 TPCMode` targeted source/live fail-shaped checkpoint。
-9. reboot 後的 default lab baseline 已重建並落成文件：5G `testpilot5G` / 2.4G `testpilot2G` 使用 `WPA2-Personal + 00000000`，6G `testpilot6G` 固定使用 `WPA3-Personal + key_mgmt=SAE + 00000000`；`D064 VendorOUI` 已在這組 baseline 下完成 5G same-STA fail-shaped checkpoint（LLAPI empty string vs driver vendor OUI list），下一個 ready single-case 入口改為 `D065 VendorCapabilities`。
+9. reboot 後的 default lab baseline 已重建並落成文件：5G `testpilot5G` / 2.4G `testpilot2G` 使用 `WPA2-Personal + 00000000`，6G `testpilot6G` 固定使用 `WPA3-Personal + key_mgmt=SAE + 00000000`；`D064 VendorOUI` 已在這組 baseline 下完成 5G same-STA fail-shaped checkpoint（LLAPI empty string vs driver vendor OUI list），下一個 ready single-case 入口改為 `D065 VhtCapabilities`。
 10. 第三次重構的 Copilot SDK 深度研究已完成，並已複製到 `docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`。
 
 ### 2.2 尚未落地

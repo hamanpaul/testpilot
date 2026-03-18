@@ -118,7 +118,7 @@ If I open only this file in a future session, I should do the following in order
   - `serialwrap COM1 wl0 reconnect testpilot5G` → `iw dev wl0 link` = connected to `2c:59:17:00:19:95`, `wpa_cli status` = `wpa_state=COMPLETED` / `key_mgmt=WPA2-PSK`
   - `serialwrap COM0 VendorOUI + wl0 sta_info vendor OUI` → same STA `2c:59:17:00:04:85`, `VendorOUI=""`, `AssocVendorOUI=`, `DriverVendorOUICount=4`, `DriverVendorOUIList=00:90:4C,00:10:18,00:50:F2,50:6F:9A`
 - Next ready repo handoff case:
-  - `D065 VendorCapabilities`
+  - `D065 VhtCapabilities`
 - Continuation guard rails:
   - only committed YAML / docs count as trusted handoff state
   - do not infer progress from any local unstaged experiment outside these committed checkpoints
