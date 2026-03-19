@@ -5144,6 +5144,12 @@ def test_d068_discoverymethodenabled_accesspoint_fils_contract():
         for criterion in d068["pass_criteria"]
     )
     assert any(
+        criterion["field"] == "set_alt_6g.DiscoveryMethodEnabled"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "FILSDiscovery"
+        for criterion in d068["pass_criteria"]
+    )
+    assert any(
         criterion["field"] == "after_alt_6g.DiscoveryMethodEnabled"
         and criterion["operator"] == "equals"
         and criterion["value"] == "FILSDiscovery"
@@ -5295,6 +5301,18 @@ def test_d068_discoverymethodenabled_accesspoint_fils_evaluate_live_examples():
         }
     }
     assert plugin.evaluate(d068, d068_wrong_alt_results) is False
+
+    d068_wrong_set_alt_results = {
+        "steps": {
+            **d068_results["steps"],
+            "step11_set_alt_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.\nWiFi.AccessPoint.3.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d068, d068_wrong_set_alt_results) is False
 
     d068_wrong_restore_results = {
         "steps": {

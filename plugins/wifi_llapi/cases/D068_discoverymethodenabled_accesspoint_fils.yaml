@@ -218,6 +218,18 @@ pass_criteria:
   operator: equals
   reference: default_24g.DiscoveryMethodEnabled
   description: 2.4G AP5 should remain at Default after the rejected FILS write.
+- field: set_alt_5g.DiscoveryMethodEnabled
+  operator: equals
+  value: FILSDiscovery
+  description: 5G AP1 should explicitly acknowledge the accepted FILSDiscovery setter.
+- field: set_alt_6g.DiscoveryMethodEnabled
+  operator: equals
+  value: FILSDiscovery
+  description: 6G AP3 should explicitly acknowledge the accepted FILSDiscovery setter.
+- field: set_alt_24g.DiscoveryMethodEnabled
+  operator: equals
+  value: FILSDiscovery
+  description: 2.4G AP5 should explicitly acknowledge the accepted FILSDiscovery setter.
 - field: after_alt_5g.DiscoveryMethodEnabled
   operator: equals
   value: FILSDiscovery
