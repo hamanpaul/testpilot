@@ -92,10 +92,10 @@ If I open only this file in a future session, I should do the following in order
 8. Only after live evidence matches the workbook baseline, update YAML and tests.
 9. If the case still does not match after sanitation + source cross-check + rerun, move it to blocker tracking instead of forcing a YAML change.
 
-## Current repo handoff snapshot（2026-03-18）
+## Current repo handoff snapshot（2026-03-19）
 
-- Trusted/calibrated official cases: **125 / 415**
-- Remaining official cases: **290**
+- Trusted/calibrated official cases: **126 / 415**
+- Remaining official cases: **289**
 - Active blockers:
   - `D037 OperatingStandard`
   - `D054 Tx_RetransmissionsFailed`
@@ -109,17 +109,20 @@ If I open only this file in a future session, I should do the following in order
   - `D062 UplinkMCS` → workbook-aligned `Pass` checkpoint (`c7470b2`)
   - `D063 UplinkShortGuard` → workbook-aligned `Pass` checkpoint (`8000121`)
   - `D064 VendorOUI` → workbook-aligned **Fail-shaped mismatch** checkpoint (`ed480e2`)
-  - `D065 VhtCapabilities` → workbook-aligned **Fail-shaped mismatch** checkpoint（current checkpoint；5G same-STA direct getter + snapshot empty string versus non-empty `wl sta_info` `VHT caps` line）
-  - `D185 TPCMode` → targeted source/live **Fail-shaped mismatch** checkpoint outside the 125 / 290 main-sweep counts
+  - `D065 VhtCapabilities` → workbook-aligned **Fail-shaped mismatch** checkpoint (`fb6bcc0`)
+  - `D066 APBridgeDisable` → workbook-aligned **Not Supported** checkpoint（current checkpoint；5G AP-only toggle/readback diverges between northbound getter, hostapd config, and driver `ap_isolate`）
+  - `D185 TPCMode` → targeted source/live **Fail-shaped mismatch** checkpoint outside the 126 / 289 main-sweep counts
 - Latest validated commands:
-  - `timeout 30s env PYTHONUNBUFFERED=1 PYTHONPATH=src python - <<'PY' ... load_case(D065) + collect_alignment_issues ... PY` → `alignment_issues=[]`
-  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py` → `132 passed`
-  - `uv run pytest -q` → `185 passed`
+  - `timeout 30s env PYTHONUNBUFFERED=1 PYTHONPATH=src python - <<'PY' ... load_case(D066) + collect_alignment_issues ... PY` → `alignment_issues=[]`
+  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'd066'` → `6 passed`
+  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py` → `138 passed`
+  - `uv run pytest -q` → `191 passed`
   - `serialwrap COM0 ubus-cli/hostapd_cli baseline readback` → 5G `testpilot5G` + `WPA2-Personal/00000000`, 6G `testpilot6G` + `WPA3-Personal/SAE/00000000`, 2.4G `testpilot2G` + `WPA2-Personal/00000000`
   - `serialwrap COM1 wl0 reconnect testpilot5G` → `iw dev wl0 link` = connected to `2c:59:17:00:19:95`, `wpa_cli status` = `wpa_state=COMPLETED` / `key_mgmt=WPA2-PSK`
-  - `serialwrap COM0 VhtCapabilities + wl0 sta_info VHT caps` → same STA `2c:59:17:00:04:85`, `VhtCapabilities=""`, `AssocVhtCapabilities=`, `DriverVhtCapsLine=LDPC SGI80 SGI160 SU-BFR SU-BFE`, `DriverVhtCapabilities=SGI80,SGI160,SU-BFR,SU-BFE`
+  - `serialwrap COM0 APBridgeDisable toggle` → getter `1 -> 0`, `/tmp/wl0_hapd.conf` stayed `ap_isolate=0`, `wl -i wl0 ap_isolate` stayed `1`, and `wl0 bss` remained `up`
+  - `serialwrap COM1 post-toggle sanity` → `iw dev wl0 link` stayed connected to `testpilot5G`, `ping -c 1 192.168.1.1` passed, DUT `wl -i wl0 assoclist` still showed `2C:59:17:00:04:85`
 - Next ready repo handoff case:
-  - `D066 ApBridgeDisable`
+  - `D067 BridgeInterface`
 - Continuation guard rails:
   - only committed YAML / docs count as trusted handoff state
   - do not infer progress from any local unstaged experiment outside these committed checkpoints
@@ -142,7 +145,8 @@ Current verified live baseline findings from this session:
   - `D063` is now a committed 0310/5G-only live-aligned pass case; reuse its same-STA post-trigger snapshot + driver GI mapping pattern (`0.4us/0.8us/1.6us => 1`, `3.2us => 0`, unknown GI fail-closed) as the immediate prior art
   - `D064` is now a committed 0310/5G-only live-aligned fail case; reuse its same-STA direct getter + snapshot empty-string cross-check against non-empty `wl sta_info` vendor OUI list as the immediate prior art
   - `D065` is now a committed 0310/5G-only live-aligned fail case; reuse its same-STA direct getter + snapshot empty-string cross-check against normalized driver-side `VHT caps` tokens as the immediate prior art
-  - `D066-D079` are still old `0302` setter transcripts with row drift against the current BCM summary and should be reworked case-by-case from live/source evidence
+  - `D066` is now a committed 0310/5G-only AP-only live-aligned Not Supported case; reuse its APBridgeDisable toggle/readback versus `hostapd.conf`/driver divergence pattern as the immediate prior art for remaining AccessPoint setter families
+  - `D067-D079` are still old `0302` setter transcripts with row drift against the current BCM summary and should be reworked case-by-case from live/source evidence
 - Critical lab rule:
   - `COM1` is another `prplOS` / B0-class board, not a simple STA dongle
   - before using `ping 192.168.1.1` as DUT reachability evidence, move `COM1 br-lan` off `192.168.1.0/24` (for example `192.168.88.1/24`), otherwise the ping is a false-positive self-hit

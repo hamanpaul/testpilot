@@ -4719,6 +4719,199 @@ def test_d065_vhtcapabilities_evaluate_live_examples():
     assert plugin.evaluate(d065, d065_wrong_assoc_results) is False
 
 
+def test_d066_apbridgedisable_uses_ap_only_unsupported_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
+    assert "wifi-llapi-D066-apbridgedisable" in discoverable_ids
+
+    d066_raw = yaml.safe_load((cases_dir / "D066_apbridgedisable.yaml").read_text(encoding="utf-8"))
+    d066 = load_case(cases_dir / "D066_apbridgedisable.yaml")
+    d066_commands = "\n".join(str(step.get("command", "")) for step in d066["steps"])
+
+    assert "aliases" not in d066_raw
+    assert d066["id"] == "wifi-llapi-D066-apbridgedisable"
+    assert d066["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d066["source"]["row"] == 66
+    assert d066["source"]["baseline"] == "BCM v4.0.3"
+    assert d066["llapi_support"] == "Not Supported"
+    assert d066["bands"] == ["5g"]
+    assert set(d066["topology"]["devices"]) == {"DUT"}
+    assert d066["topology"]["links"] == []
+    assert d066["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.APBridgeDisable?"'
+    assert "STA:" not in d066.get("sta_env_setup", "")
+    assert "WPA2-Personal" in d066.get("sta_env_setup", "")
+    assert "APBridgeDisable=1" in d066_commands
+    assert "DriverApIsolateOn=" in d066_commands
+    assert "HostapdApIsolateZeroCount=" in d066_commands
+    assert "APBridgeDisable=0" in d066_commands
+    assert "DriverApIsolateOff=" in d066_commands
+    assert "DriverBssState=" in d066_commands
+    assert any(
+        criterion["field"] == "result_on.APBridgeDisable"
+        and criterion["operator"] == "equals"
+        and str(criterion["value"]) == "1"
+        for criterion in d066["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "hostapd_after_on.HostapdApIsolate"
+        and criterion["operator"] == "not_equals"
+        and criterion.get("reference") == "result_on.APBridgeDisable"
+        for criterion in d066["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "driver_off.DriverApIsolateOff"
+        and criterion["operator"] == "not_equals"
+        and criterion.get("reference") == "result_off.APBridgeDisable"
+        for criterion in d066["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "bss_status.DriverBssState"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "up"
+        for criterion in d066["pass_criteria"]
+    )
+    assert d066["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
+    assert d066["results_reference"]["v4.0.3"]["6g"] == "N/A"
+    assert d066["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+
+
+def test_d066_apbridgedisable_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d066 = load_case(cases_dir / "D066_apbridgedisable.yaml")
+
+    assert plugin.setup_env(d066, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    assert all("wpa_cli" not in command for command in recorder.transports[0].executed_commands)
+    assert any(
+        command == "ubus-cli WiFi.AccessPoint.1.APBridgeDisable=0"
+        for command in recorder.transports[0].executed_commands
+    )
+    plugin.teardown(d066, topology)
+
+
+def test_d066_apbridgedisable_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d066 = load_case(cases_dir / "D066_apbridgedisable.yaml")
+
+    d066_results = {
+        "steps": {
+            "step1": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.\nWiFi.AccessPoint.1.APBridgeDisable=1",
+                "timing": 0.01,
+            },
+            "step2": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.APBridgeDisable=1",
+                "timing": 0.01,
+            },
+            "step3": {
+                "success": True,
+                "output": "DriverApIsolateOn=1",
+                "timing": 0.01,
+            },
+            "step4": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "HostapdApIsolate=0",
+                        "HostapdApIsolate=0",
+                        "HostapdApIsolateZeroCount=2",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+            "step5": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.\nWiFi.AccessPoint.1.APBridgeDisable=0",
+                "timing": 0.01,
+            },
+            "step6": {
+                "success": True,
+                "output": "waited 5.000s",
+                "timing": 5.0,
+            },
+            "step7": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.APBridgeDisable=0",
+                "timing": 0.01,
+            },
+            "step8": {
+                "success": True,
+                "output": "DriverApIsolateOff=1",
+                "timing": 0.01,
+            },
+            "step9": {
+                "success": True,
+                "output": "DriverBssState=up",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d066, d066_results) is True
+
+    d066_wrong_enable_results = {
+        "steps": {
+            **d066_results["steps"],
+            "step2": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.APBridgeDisable=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d066, d066_wrong_enable_results) is False
+
+    d066_wrong_hostapd_results = {
+        "steps": {
+            **d066_results["steps"],
+            "step4": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "HostapdApIsolate=1",
+                        "HostapdApIsolate=1",
+                        "HostapdApIsolateZeroCount=0",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d066, d066_wrong_hostapd_results) is False
+
+    d066_wrong_driver_results = {
+        "steps": {
+            **d066_results["steps"],
+            "step8": {
+                "success": True,
+                "output": "DriverApIsolateOff=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d066, d066_wrong_driver_results) is False
+
+    d066_bss_down_results = {
+        "steps": {
+            **d066_results["steps"],
+            "step9": {
+                "success": True,
+                "output": "DriverBssState=down",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d066, d066_bss_down_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
@@ -5846,6 +6039,82 @@ def test_d065_vhtcapabilities_driver_capture_fragment_executes():
         "DriverVhtCapsLine=LDPC SGI80 SGI160 SU-BFR SU-BFE",
         "DriverVhtCapabilities=SGI80,SGI160,SU-BFR,SU-BFE",
     ]
+
+
+def test_d066_apbridgedisable_verification_fragments_preserve_toggle_and_cross_checks():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d066 = load_case(cases_dir / "D066_apbridgedisable.yaml")
+
+    step1_command = d066["steps"][0]["command"]
+    step2_command = d066["steps"][1]["command"]
+    step3_command = d066["steps"][2]["command"]
+    step4_command = d066["steps"][3]["command"]
+    step5_command = d066["steps"][4]["command"]
+    step8_command = d066["steps"][7]["command"]
+    step9_command = d066["steps"][8]["command"]
+    verification_commands = plugin._extract_cli_fragments(d066["verification_command"])
+
+    assert step2_command == 'ubus-cli "WiFi.AccessPoint.1.APBridgeDisable?"'
+    assert plugin._sanitize_cli_fragment(step4_command) == step4_command
+    assert plugin._extract_cli_fragments(step4_command) == [step4_command]
+    assert len(verification_commands) == 8
+    assert verification_commands[0] == step1_command
+    assert verification_commands[1] == step2_command
+    assert verification_commands[2] == step3_command
+    assert verification_commands[3] == step4_command
+    assert verification_commands[4] == step5_command
+    assert verification_commands[5] == "sleep 5"
+    assert verification_commands[6] == step8_command
+    assert verification_commands[7] == step9_command
+
+
+def test_d066_apbridgedisable_hostapd_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d066 = load_case(cases_dir / "D066_apbridgedisable.yaml")
+    step4_command = d066["steps"][3]["command"]
+    pipeline = step4_command.split("|", 1)[1].strip()
+    sample_output = "\n".join(["ap_isolate=0", "ap_isolate=0"])
+
+    proc = subprocess.run(
+        [
+            "sh",
+            "-lc",
+            f"cat <<'EOF' | {pipeline}\n{sample_output}\nEOF",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == [
+        "HostapdApIsolate=0",
+        "HostapdApIsolate=0",
+        "HostapdApIsolateZeroCount=2",
+    ]
+
+
+def test_d066_apbridgedisable_driver_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d066 = load_case(cases_dir / "D066_apbridgedisable.yaml")
+    step8_command = d066["steps"][7]["command"]
+    pipeline = step8_command.split("|", 1)[1].strip()
+    sample_output = "1"
+
+    proc = subprocess.run(
+        [
+            "sh",
+            "-lc",
+            f"cat <<'EOF' | {pipeline}\n{sample_output}\nEOF",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == "DriverApIsolateOff=1"
 
 
 @pytest.mark.parametrize(

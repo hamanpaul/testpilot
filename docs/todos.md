@@ -60,7 +60,7 @@
 | P4-01 | wifi-plugin full implementation | done | setup/verify/execute/evaluate 已完成 |
 | P4-02 | case-getRadioStats | done | legacy compatibility fixture 已保留，改為 underscore-prefixed explicit fixture，不進 discover_cases |
 | P4-03 | case-kickStation | done | legacy compatibility fixture 已保留，改為 underscore-prefixed explicit fixture，不進 discover_cases |
-| P4-04 | 417 case source 對齊治理 | done | 415 官方 discoverable D### 已對齊；2 legacy duplicate-row YAML 已轉為 explicit fixtures；目前 handoff 已補記 D060/D061/D062/D063/D064/D065 committed checkpoint 與 D185 targeted fail-shaped checkpoint；default lab baseline 已重建為 5G/2.4G=`WPA2-Personal + 00000000`、6G=`WPA3-Personal + SAE + 00000000`，D065 已完成 5G same-STA VhtCapabilities fail-shaped 校正，下一個 ready single-case 入口改為 D066 |
+| P4-04 | 417 case source 對齊治理 | done | 415 官方 discoverable D### 已對齊；2 legacy duplicate-row YAML 已轉為 explicit fixtures；目前 handoff 已補記 D060/D061/D062/D063/D064/D065/D066 committed checkpoint 與 D185 targeted fail-shaped checkpoint；default lab baseline 已重建為 5G/2.4G=`WPA2-Personal + 00000000`、6G=`WPA3-Personal + SAE + 00000000`，D066 已完成 5G AP-only APBridgeDisable Not Supported 校正，下一個 ready single-case 入口改為 D067 |
 | P4-05 | Wifi_LLAPI Excel report pipeline | done | template + run report + merged-cell 相容 |
 
 ## Phase 5：CLI & Integration
