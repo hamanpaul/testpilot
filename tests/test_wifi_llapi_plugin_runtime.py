@@ -5112,6 +5112,203 @@ def test_d067_bridgeinterface_evaluate_live_examples():
     assert plugin.evaluate(d067, d067_wrong_bridge_name_results) is False
 
 
+def test_d068_discoverymethodenabled_accesspoint_fils_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+
+    d068_raw = yaml.safe_load(
+        (cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml").read_text(encoding="utf-8")
+    )
+    d068 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml")
+    d068_commands = "\n".join(str(step.get("command", "")) for step in d068["steps"])
+
+    assert "aliases" not in d068_raw
+    assert d068["id"] == "wifi-llapi-D068-discoverymethodenabled-accesspoint-fils"
+    assert d068["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d068["source"]["row"] == 68
+    assert d068["source"]["baseline"] == "BCM v4.0.3"
+    assert d068["llapi_support"] == "Support"
+    assert d068["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d068["topology"]["devices"]) == {"DUT"}
+    assert d068["topology"]["links"] == []
+    assert d068["hlapi_command"] == 'ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=FILS'
+    assert "wl -i wl0 bss" in d068.get("sta_env_setup", "")
+    assert "wl -i wl1 bss" in d068.get("sta_env_setup", "")
+    assert "wl -i wl2 bss" in d068.get("sta_env_setup", "")
+    assert 'WiFi.AccessPoint.1.DiscoveryMethodEnabled?"' in d068_commands
+    assert "DiscoveryMethodEnabled=FILS" in d068_commands
+    assert "DiscoveryMethodEnabled=FILSDiscovery" in d068_commands
+    assert any(
+        criterion["field"] == "invalid_5g"
+        and criterion["operator"] == "contains"
+        and criterion["value"] == "invalid value"
+        for criterion in d068["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "after_alt_6g.DiscoveryMethodEnabled"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "FILSDiscovery"
+        for criterion in d068["pass_criteria"]
+    )
+    assert d068["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
+    assert d068["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
+    assert d068["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
+
+
+def test_d068_discoverymethodenabled_accesspoint_fils_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d068 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml")
+
+    assert plugin.setup_env(d068, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    assert recorder.transports[0].executed_commands.count("wl -i wl0 bss") == 1
+    assert recorder.transports[0].executed_commands.count("wl -i wl1 bss") == 1
+    assert recorder.transports[0].executed_commands.count("wl -i wl2 bss") == 1
+    plugin.teardown(d068, topology)
+
+
+def test_d068_discoverymethodenabled_accesspoint_fils_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d068 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml")
+
+    d068_results = {
+        "steps": {
+            "step1_default_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step2_default_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step3_default_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step4_invalid_5g": {
+                "success": True,
+                "output": "ERROR: set WiFi.AccessPoint.1.DiscoveryMethodEnabled failed (10 - invalid value)",
+                "timing": 0.01,
+            },
+            "step5_invalid_6g": {
+                "success": True,
+                "output": "ERROR: set WiFi.AccessPoint.3.DiscoveryMethodEnabled failed (10 - invalid value)",
+                "timing": 0.01,
+            },
+            "step6_invalid_24g": {
+                "success": True,
+                "output": "ERROR: set WiFi.AccessPoint.5.DiscoveryMethodEnabled failed (10 - invalid value)",
+                "timing": 0.01,
+            },
+            "step7_after_invalid_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step8_after_invalid_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step9_after_invalid_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step10_set_alt_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.\nWiFi.AccessPoint.1.DiscoveryMethodEnabled="FILSDiscovery"',
+                "timing": 0.01,
+            },
+            "step11_set_alt_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.\nWiFi.AccessPoint.3.DiscoveryMethodEnabled="FILSDiscovery"',
+                "timing": 0.01,
+            },
+            "step12_set_alt_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.\nWiFi.AccessPoint.5.DiscoveryMethodEnabled="FILSDiscovery"',
+                "timing": 0.01,
+            },
+            "step13_after_alt_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.DiscoveryMethodEnabled="FILSDiscovery"',
+                "timing": 0.01,
+            },
+            "step14_after_alt_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.DiscoveryMethodEnabled="FILSDiscovery"',
+                "timing": 0.01,
+            },
+            "step15_after_alt_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.DiscoveryMethodEnabled="FILSDiscovery"',
+                "timing": 0.01,
+            },
+            "step16_restore_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.\nWiFi.AccessPoint.1.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step17_restore_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.\nWiFi.AccessPoint.3.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step18_restore_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.\nWiFi.AccessPoint.5.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d068, d068_results) is True
+
+    d068_wrong_invalid_results = {
+        "steps": {
+            **d068_results["steps"],
+            "step5_invalid_6g": {
+                "success": True,
+                "output": "ERROR: set WiFi.AccessPoint.3.DiscoveryMethodEnabled failed (1 - permission denied)",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d068, d068_wrong_invalid_results) is False
+
+    d068_wrong_alt_results = {
+        "steps": {
+            **d068_results["steps"],
+            "step15_after_alt_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d068, d068_wrong_alt_results) is False
+
+    d068_wrong_restore_results = {
+        "steps": {
+            **d068_results["steps"],
+            "step16_restore_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.\nWiFi.AccessPoint.1.DiscoveryMethodEnabled="FILSDiscovery"',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d068, d068_wrong_restore_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
@@ -6420,6 +6617,33 @@ def test_d067_bridgeinterface_bridge_master_fragment_executes():
         "BridgeMaster6g=br-lan",
         "BridgeMaster24g=br-lan",
     ]
+
+
+def test_d068_discoverymethodenabled_accesspoint_fils_verification_fragments_preserve_sequence():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d068 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml")
+
+    verification_commands = plugin._extract_cli_fragments(d068["verification_command"])
+
+    expected_commands = [
+        d068["steps"][0]["command"],
+        d068["steps"][1]["command"],
+        d068["steps"][2]["command"],
+        d068["steps"][3]["command"],
+        d068["steps"][4]["command"],
+        d068["steps"][5]["command"],
+        d068["steps"][9]["command"],
+        d068["steps"][10]["command"],
+        d068["steps"][11]["command"],
+        d068["steps"][15]["command"],
+        d068["steps"][16]["command"],
+        d068["steps"][17]["command"],
+    ]
+
+    assert len(verification_commands) == 13
+    assert verification_commands[:-1] == expected_commands
+    assert verification_commands[-1] == 'ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?"'
 
 
 @pytest.mark.parametrize(

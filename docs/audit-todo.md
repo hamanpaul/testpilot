@@ -94,8 +94,8 @@ If I open only this file in a future session, I should do the following in order
 
 ## Current repo handoff snapshot（2026-03-19）
 
-- Trusted/calibrated official cases: **127 / 415**
-- Remaining official cases: **288**
+- Trusted/calibrated official cases: **128 / 415**
+- Remaining official cases: **287**
 - Active blockers:
   - `D037 OperatingStandard`
   - `D054 Tx_RetransmissionsFailed`
@@ -111,18 +111,19 @@ If I open only this file in a future session, I should do the following in order
   - `D064 VendorOUI` → workbook-aligned **Fail-shaped mismatch** checkpoint (`ed480e2`)
   - `D065 VhtCapabilities` → workbook-aligned **Fail-shaped mismatch** checkpoint (`fb6bcc0`)
   - `D066 APBridgeDisable` → workbook-aligned **Not Supported** checkpoint（5G AP-only toggle/readback diverges between northbound getter, hostapd config, and driver `ap_isolate`）
-  - `D067 BridgeInterface` → workbook-aligned `Pass` checkpoint（current checkpoint；AP-only multiband getter, hostapd bridge config, and live Linux bridge master all converge on `br-lan`）
-  - `D185 TPCMode` → targeted source/live **Fail-shaped mismatch** checkpoint outside the 127 / 288 main-sweep counts
+  - `D067 BridgeInterface` → workbook-aligned `Pass` checkpoint（AP-only multiband getter, hostapd bridge config, and live Linux bridge master all converge on `br-lan`）
+  - `D068 DiscoveryMethodEnabled (FILS)` → workbook-aligned **Not Supported** checkpoint（current checkpoint；AP-only multiband `FILS` writes are rejected as invalid, while `FILSDiscovery` is accepted and must be restored back to `Default`）
+  - `D185 TPCMode` → targeted source/live **Fail-shaped mismatch** checkpoint outside the 128 / 287 main-sweep counts
 - Latest validated commands:
-  - `timeout 30s env PYTHONUNBUFFERED=1 PYTHONPATH=src python - <<'PY' ... load_case(D067) + collect_alignment_issues ... PY` → `alignment_issues=[]`
-  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'd067'` → `6 passed`
-  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py` → `144 passed`
-  - `uv run pytest -q` → `197 passed`
+  - `timeout 30s env PYTHONUNBUFFERED=1 PYTHONPATH=src python - <<'PY' ... load_case(D068) + collect_alignment_issues ... PY` → `alignment_issues=[]`
+  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'd068'` → `4 passed`
+  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py` → `148 passed`
+  - `uv run pytest -q` → `201 passed`
   - `serialwrap COM0 ubus-cli/hostapd_cli baseline readback` → 5G `testpilot5G` + `WPA2-Personal/00000000`, 6G `testpilot6G` + `WPA3-Personal/SAE/00000000`, 2.4G `testpilot2G` + `WPA2-Personal/00000000`
   - `serialwrap COM1 wl0 reconnect testpilot5G` → `iw dev wl0 link` = connected to `2c:59:17:00:19:95`, `wpa_cli status` = `wpa_state=COMPLETED` / `key_mgmt=WPA2-PSK`
-  - `serialwrap COM0 BridgeInterface readback` → `WiFi.AccessPoint.1/3/5.BridgeInterface="br-lan"`, `/tmp/wl0_hapd.conf`/`wl1`/`wl2` each exposed two `bridge=br-lan` lines, and `/sys/class/net/wl0|wl1|wl2/master/uevent` all resolved to `INTERFACE=br-lan`
+  - `serialwrap COM0 DiscoveryMethodEnabled FILS probe` → AP1/AP3/AP5 getters all started at `Default`; `FILS` writes failed with `invalid value`; `FILSDiscovery` writes were accepted and read back; AP1/AP3/AP5 were all restored to `Default`
 - Next ready repo handoff case:
-  - `D068 DiscoveryMethodEnabled (FILS)`
+  - `D069 DiscoveryMethodEnabled (UPR)`
 - Continuation guard rails:
   - only committed YAML / docs count as trusted handoff state
   - do not infer progress from any local unstaged experiment outside these committed checkpoints
@@ -147,7 +148,8 @@ Current verified live baseline findings from this session:
   - `D065` is now a committed 0310/5G-only live-aligned fail case; reuse its same-STA direct getter + snapshot empty-string cross-check against normalized driver-side `VHT caps` tokens as the immediate prior art
   - `D066` is now a committed 0310/5G-only AP-only live-aligned Not Supported case; reuse its APBridgeDisable toggle/readback versus `hostapd.conf`/driver divergence pattern as the immediate prior art for remaining AccessPoint setter families
   - `D067` is now a committed 0310/AP-only multiband live-aligned pass case; reuse its direct getter + hostapd `bridge=` + `/sys/class/net/*/master/uevent` cross-check pattern for remaining read-only AccessPoint bridge-family getters
-  - `D068-D079` are still old `0302` setter transcripts with row drift against the current BCM summary and should be reworked case-by-case from live/source evidence
+  - `D068` is now a committed 0310/AP-only multiband live-aligned Not Supported case; reuse its `Default -> FILS invalid -> FILSDiscovery accepted -> restore Default` pattern for the remaining `DiscoveryMethodEnabled` enum families
+  - `D069-D079` are still old `0302` setter transcripts with row drift against the current BCM summary and should be reworked case-by-case from live/source evidence
 - Critical lab rule:
   - `COM1` is another `prplOS` / B0-class board, not a simple STA dongle
   - before using `ping 192.168.1.1` as DUT reachability evidence, move `COM1 br-lan` off `192.168.1.0/24` (for example `192.168.88.1/24`), otherwise the ping is a false-positive self-hit
