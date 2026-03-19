@@ -1,158 +1,417 @@
-id: wifi-llapi-D078-qosmapset
-aliases:
-  - wifi-llapi-r070-qosmapset
-name: QoSMapSet — WiFi.AccessPoint.{i}.IEEE80211u
-version: '1.0'
+id: wifi-llapi-D078-qosmapset-accesspoint
+name: "QoSMapSet — WiFi.AccessPoint.{i}.IEEE80211u"
+version: '1.1'
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 78
-  object: "WiFi.AccessPoint.{i}.IEEE80211u"
-  api: "QoSMapSet"
+  row: 70
+  object: WiFi.AccessPoint.{i}.IEEE80211u
+  api: QoSMapSet
+  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli WiFi.AccessPoint.{i}.IEEE80211u.QoSMapSet=
-llapi_support: Support
-implemented_by: Vendor Module
+hlapi_command: 'ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet="0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255"'
+llapi_support: Not Supported
+implemented_by: pWHM
+bands: ["5g", "6g", "2.4g"]
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM0
-    STA:
-      role: sta
-      transport: serial
-      selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
-  links:
-  - from: STA
-    to: DUT
-    band: 5g
+  links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
-  Transport:
-  - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
-
+  - DUT: COM0 (AP role; QoSMapSet is calibrated as an AP-only IEEE80211u case with no STA transport)
+  Live band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
+  - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
+  - 2.4G: DUT wl2 / AP5 / SSID.8 / testpilot2G / WPA2-Personal / 00000000
+  Preconditions:
+  - keep AP1, AP3, and AP5 enabled on the documented non-open baseline before the IEEE80211u probe
+  - live 0319 probe showed the requested DSCP map `0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255` is not preserved on any band
+  - baseline getter/config stay empty, the setter collapses to scalar `255` in both northbound getter and hostapd `qos_map_set=255`, and the clear path restores the empty baseline
 setup_steps: |
-  1) DUT 5G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
-  3) Association evidence:
-     - A0: iw dev wl0 link
-     - B0: wl -i wl0 assoclist
+  1) DUT baseline:
+     - keep AP1 / AP3 / AP5 enabled on the documented non-open baseline
+     - clear QoSMapSet on AP1 / AP3 / AP5 before the live probe
+     - confirm wl0 / wl1 / wl2 BSS instances are reachable before changing IEEE80211u settings
+  2) Per-band QoSMapSet mismatch capture:
+     - confirm the northbound getter starts empty and the hostapd file exposes no `qos_map_set=` line
+     - write the full DSCP map `0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255` to the target AP
+     - capture the fail-shaped convergence: the setter/getter collapse to `255` and hostapd persists `qos_map_set=255` instead of the requested map
+     - clear QoSMapSet and confirm both the getter and hostapd file return to the empty baseline
 sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+  DUT:
     ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-  STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
-    iw dev wl0 link
-  DUT association evidence:
-    wl -i wl0 assoclist
+    ubus-cli WiFi.AccessPoint.3.Enable=1
+    ubus-cli WiFi.AccessPoint.5.Enable=1
+    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
+    ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet=
+    ubus-cli WiFi.AccessPoint.5.IEEE80211u.QoSMapSet=
+    wl -i wl0 bss
+    wl -i wl1 bss
+    wl -i wl2 bss
 test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli WiFi.AccessPoint.{i}.IEEE80211u.QoSMapSet=
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.AccessPoint.*.IEEE80211u.QoSMapSet?"
-  3) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
-
+  1) Keep AP1, AP3, and AP5 enabled on the documented non-open baseline.
+  2) For each band, confirm the northbound getter starts at an empty string and the band-specific hapd file exposes no `qos_map_set=` line.
+  3) Set QoSMapSet to `0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255` on the same AP and capture the returned mismatch.
+  4) Cross-check the same band-specific hapd file after the setter write: instead of the requested DSCP map, the current DUT collapses the config to `qos_map_set=255`.
+  5) Clear QoSMapSet and confirm both the getter and the hostapd file return to the empty baseline.
+  6) Verdict: Not Supported. The workbook already marks 5G/6G/2.4G as `Not Supported`, and the live DUT matches that shape because it never preserves the requested DSCP map; it only collapses to scalar `255` before clearing back to empty.
 steps:
-- id: step1
+- id: step1_state_baseline_5g
   action: exec
   target: DUT
-  command: \\Set QoSMapSet ubus-cli WiFi.AccessPoint.*.IEEE80211u.QoSMapSet="0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255"
-    > WiFi.AccessPoint.*.IEEE80211u.QoSMapSet=0,7,8,15,255,255,255,255,255,255,16,23,24,31,255,255 WiFi.AccessPoint.1.IEEE80211u.QoSMapSet="255"
-    WiFi.AccessPoint.2.IEEE80211u.QoSMapSet="255" WiFi.AccessPoint.3.IEEE80211u.QoSMapSet="255" WiFi.AccessPoint.4.IEEE80211u.QoSMapSet="255"
-    WiFi.AccessPoint.5.IEEE80211u.QoSMapSet="255" WiFi.AccessPoint.6.IEEE80211u.QoSMapSet="255"
-- id: step2
+  band: 5g
+  command: >-
+    VALUE=$(ubus-cli "WiFi.AccessPoint.1.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet5g=%s\n' "$VALUE"; else echo 'QoSMapSet5g=EMPTY'; fi
+  capture: state_baseline_5g
+- id: step2_cfg_baseline_5g
   action: exec
   target: DUT
-  command: Get QoSMapSet to check the settings ubus-cli WiFi.AccessPoint.*.IEEE80211u.QoSMapSet? > WiFi.AccessPoint.*.IEEE80211u.QoSMapSet?
-    WiFi.AccessPoint.1.IEEE80211u.QoSMapSet="255" WiFi.AccessPoint.2.IEEE80211u.QoSMapSet="255" WiFi.AccessPoint.3.IEEE80211u.QoSMapSet="255"
-    WiFi.AccessPoint.4.IEEE80211u.QoSMapSet="255" WiFi.AccessPoint.5.IEEE80211u.QoSMapSet="255" WiFi.AccessPoint.6.IEEE80211u.QoSMapSet="255"
-  depends_on: step1
-  capture: result
+  band: 5g
+  command: >-
+    grep -c '^qos_map_set=' /tmp/wl0_hapd.conf | sed 's/^/QoSMapSetCfg5gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl0_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg5g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg5g=ABSENT'; fi
+  depends_on: step1_state_baseline_5g
+  capture: cfg_baseline_5g
+- id: step3_set_qosmap_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    REQUESTED='0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255'; printf 'RequestedQoSMapSet5g=%s\n' "$REQUESTED"; OUT=$(ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet="$REQUESTED" 2>&1); printf '%s\n' "$OUT"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'SetterQoSMapSet5g=%s\n' "$VALUE"; else echo 'SetterQoSMapSet5g=EMPTY'; fi
+  depends_on: step2_cfg_baseline_5g
+  capture: set_qosmap_5g
+- id: step4_state_set_qosmap_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    VALUE=$(ubus-cli "WiFi.AccessPoint.1.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet5g=%s\n' "$VALUE"; else echo 'QoSMapSet5g=EMPTY'; fi
+  depends_on: step3_set_qosmap_5g
+  capture: state_set_qosmap_5g
+- id: step5_cfg_set_qosmap_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    grep -c '^qos_map_set=' /tmp/wl0_hapd.conf | sed 's/^/QoSMapSetCfg5gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl0_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg5g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg5g=ABSENT'; fi
+  depends_on: step4_state_set_qosmap_5g
+  capture: cfg_set_qosmap_5g
+- id: step6_restore_qosmap_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    OUT=$(ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet= 2>&1); printf '%s\n' "$OUT"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'RestoreQoSMapSet5g=%s\n' "$VALUE"; else echo 'RestoreQoSMapSet5g=EMPTY'; fi
+  depends_on: step5_cfg_set_qosmap_5g
+  capture: restore_qosmap_5g
+- id: step7_state_restore_qosmap_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    VALUE=$(ubus-cli "WiFi.AccessPoint.1.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet5g=%s\n' "$VALUE"; else echo 'QoSMapSet5g=EMPTY'; fi
+  depends_on: step6_restore_qosmap_5g
+  capture: state_restore_qosmap_5g
+- id: step8_cfg_restore_qosmap_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    grep -c '^qos_map_set=' /tmp/wl0_hapd.conf | sed 's/^/QoSMapSetCfg5gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl0_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg5g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg5g=ABSENT'; fi
+  depends_on: step7_state_restore_qosmap_5g
+  capture: cfg_restore_qosmap_5g
+- id: step9_state_baseline_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    VALUE=$(ubus-cli "WiFi.AccessPoint.3.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet6g=%s\n' "$VALUE"; else echo 'QoSMapSet6g=EMPTY'; fi
+  capture: state_baseline_6g
+- id: step10_cfg_baseline_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    grep -c '^qos_map_set=' /tmp/wl1_hapd.conf | sed 's/^/QoSMapSetCfg6gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl1_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg6g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg6g=ABSENT'; fi
+  depends_on: step9_state_baseline_6g
+  capture: cfg_baseline_6g
+- id: step11_set_qosmap_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    REQUESTED='0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255'; printf 'RequestedQoSMapSet6g=%s\n' "$REQUESTED"; OUT=$(ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet="$REQUESTED" 2>&1); printf '%s\n' "$OUT"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'SetterQoSMapSet6g=%s\n' "$VALUE"; else echo 'SetterQoSMapSet6g=EMPTY'; fi
+  depends_on: step10_cfg_baseline_6g
+  capture: set_qosmap_6g
+- id: step12_state_set_qosmap_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    VALUE=$(ubus-cli "WiFi.AccessPoint.3.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet6g=%s\n' "$VALUE"; else echo 'QoSMapSet6g=EMPTY'; fi
+  depends_on: step11_set_qosmap_6g
+  capture: state_set_qosmap_6g
+- id: step13_cfg_set_qosmap_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    grep -c '^qos_map_set=' /tmp/wl1_hapd.conf | sed 's/^/QoSMapSetCfg6gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl1_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg6g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg6g=ABSENT'; fi
+  depends_on: step12_state_set_qosmap_6g
+  capture: cfg_set_qosmap_6g
+- id: step14_restore_qosmap_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    OUT=$(ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet= 2>&1); printf '%s\n' "$OUT"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'RestoreQoSMapSet6g=%s\n' "$VALUE"; else echo 'RestoreQoSMapSet6g=EMPTY'; fi
+  depends_on: step13_cfg_set_qosmap_6g
+  capture: restore_qosmap_6g
+- id: step15_state_restore_qosmap_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    VALUE=$(ubus-cli "WiFi.AccessPoint.3.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet6g=%s\n' "$VALUE"; else echo 'QoSMapSet6g=EMPTY'; fi
+  depends_on: step14_restore_qosmap_6g
+  capture: state_restore_qosmap_6g
+- id: step16_cfg_restore_qosmap_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    grep -c '^qos_map_set=' /tmp/wl1_hapd.conf | sed 's/^/QoSMapSetCfg6gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl1_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg6g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg6g=ABSENT'; fi
+  depends_on: step15_state_restore_qosmap_6g
+  capture: cfg_restore_qosmap_6g
+- id: step17_state_baseline_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    VALUE=$(ubus-cli "WiFi.AccessPoint.5.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet24g=%s\n' "$VALUE"; else echo 'QoSMapSet24g=EMPTY'; fi
+  capture: state_baseline_24g
+- id: step18_cfg_baseline_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    grep -c '^qos_map_set=' /tmp/wl2_hapd.conf | sed 's/^/QoSMapSetCfg24gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl2_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg24g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg24g=ABSENT'; fi
+  depends_on: step17_state_baseline_24g
+  capture: cfg_baseline_24g
+- id: step19_set_qosmap_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    REQUESTED='0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255'; printf 'RequestedQoSMapSet24g=%s\n' "$REQUESTED"; OUT=$(ubus-cli WiFi.AccessPoint.5.IEEE80211u.QoSMapSet="$REQUESTED" 2>&1); printf '%s\n' "$OUT"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'SetterQoSMapSet24g=%s\n' "$VALUE"; else echo 'SetterQoSMapSet24g=EMPTY'; fi
+  depends_on: step18_cfg_baseline_24g
+  capture: set_qosmap_24g
+- id: step20_state_set_qosmap_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    VALUE=$(ubus-cli "WiFi.AccessPoint.5.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet24g=%s\n' "$VALUE"; else echo 'QoSMapSet24g=EMPTY'; fi
+  depends_on: step19_set_qosmap_24g
+  capture: state_set_qosmap_24g
+- id: step21_cfg_set_qosmap_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    grep -c '^qos_map_set=' /tmp/wl2_hapd.conf | sed 's/^/QoSMapSetCfg24gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl2_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg24g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg24g=ABSENT'; fi
+  depends_on: step20_state_set_qosmap_24g
+  capture: cfg_set_qosmap_24g
+- id: step22_restore_qosmap_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    OUT=$(ubus-cli WiFi.AccessPoint.5.IEEE80211u.QoSMapSet= 2>&1); printf '%s\n' "$OUT"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'RestoreQoSMapSet24g=%s\n' "$VALUE"; else echo 'RestoreQoSMapSet24g=EMPTY'; fi
+  depends_on: step21_cfg_set_qosmap_24g
+  capture: restore_qosmap_24g
+- id: step23_state_restore_qosmap_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    VALUE=$(ubus-cli "WiFi.AccessPoint.5.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet24g=%s\n' "$VALUE"; else echo 'QoSMapSet24g=EMPTY'; fi
+  depends_on: step22_restore_qosmap_24g
+  capture: state_restore_qosmap_24g
+- id: step24_cfg_restore_qosmap_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    grep -c '^qos_map_set=' /tmp/wl2_hapd.conf | sed 's/^/QoSMapSetCfg24gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl2_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg24g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg24g=ABSENT'; fi
+  depends_on: step23_state_restore_qosmap_24g
+  capture: cfg_restore_qosmap_24g
 pass_criteria:
-- field: result
-  operator: not_empty
-  value: ''
-  description: QoSMapSet 應回傳非空結果
-
+- field: state_baseline_5g.QoSMapSet5g
+  operator: equals
+  value: 'EMPTY'
+  description: 5G AP1 / wl0 getter should start empty before the setter write.
+- field: cfg_baseline_5g.QoSMapSetCfg5gCount
+  operator: equals
+  value: '0'
+  description: 5G AP1 / wl0 hostapd file should expose no qos_map_set lines at baseline.
+- field: cfg_baseline_5g.QoSMapSetCfg5g
+  operator: equals
+  value: 'ABSENT'
+  description: 5G AP1 / wl0 hostapd file should keep qos_map_set absent at baseline.
+- field: set_qosmap_5g.RequestedQoSMapSet5g
+  operator: equals
+  value: '0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255'
+  description: 5G AP1 / wl0 setter should attempt the full requested DSCP map.
+- field: set_qosmap_5g.SetterQoSMapSet5g
+  operator: equals
+  value: '255'
+  description: 5G AP1 / wl0 setter acknowledgement should collapse to scalar 255 on the current DUT.
+- field: state_set_qosmap_5g.QoSMapSet5g
+  operator: equals
+  value: '255'
+  description: 5G AP1 / wl0 getter should read back scalar 255 after the setter write.
+- field: cfg_set_qosmap_5g.QoSMapSetCfg5gCount
+  operator: equals
+  value: '1'
+  description: 5G AP1 / wl0 hostapd file should expose exactly one qos_map_set line after the setter write.
+- field: cfg_set_qosmap_5g.QoSMapSetCfg5g
+  operator: equals
+  value: '255'
+  description: 5G AP1 / wl0 hostapd file should also collapse the requested DSCP map to qos_map_set=255.
+- field: state_restore_qosmap_5g.QoSMapSet5g
+  operator: equals
+  value: 'EMPTY'
+  description: 5G AP1 / wl0 getter should return to empty after the clear path.
+- field: cfg_restore_qosmap_5g.QoSMapSetCfg5gCount
+  operator: equals
+  value: '0'
+  description: 5G AP1 / wl0 hostapd file should remove qos_map_set on restore.
+- field: cfg_restore_qosmap_5g.QoSMapSetCfg5g
+  operator: equals
+  value: 'ABSENT'
+  description: 5G AP1 / wl0 hostapd file should return to the absent baseline after restore.
+- field: state_baseline_6g.QoSMapSet6g
+  operator: equals
+  value: 'EMPTY'
+  description: 6G AP3 / wl1 getter should start empty before the setter write.
+- field: cfg_baseline_6g.QoSMapSetCfg6gCount
+  operator: equals
+  value: '0'
+  description: 6G AP3 / wl1 hostapd file should expose no qos_map_set lines at baseline.
+- field: cfg_baseline_6g.QoSMapSetCfg6g
+  operator: equals
+  value: 'ABSENT'
+  description: 6G AP3 / wl1 hostapd file should keep qos_map_set absent at baseline.
+- field: set_qosmap_6g.RequestedQoSMapSet6g
+  operator: equals
+  value: '0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255'
+  description: 6G AP3 / wl1 setter should attempt the full requested DSCP map.
+- field: set_qosmap_6g.SetterQoSMapSet6g
+  operator: equals
+  value: '255'
+  description: 6G AP3 / wl1 setter acknowledgement should collapse to scalar 255 on the current DUT.
+- field: state_set_qosmap_6g.QoSMapSet6g
+  operator: equals
+  value: '255'
+  description: 6G AP3 / wl1 getter should read back scalar 255 after the setter write.
+- field: cfg_set_qosmap_6g.QoSMapSetCfg6gCount
+  operator: equals
+  value: '1'
+  description: 6G AP3 / wl1 hostapd file should expose exactly one qos_map_set line after the setter write.
+- field: cfg_set_qosmap_6g.QoSMapSetCfg6g
+  operator: equals
+  value: '255'
+  description: 6G AP3 / wl1 hostapd file should also collapse the requested DSCP map to qos_map_set=255.
+- field: state_restore_qosmap_6g.QoSMapSet6g
+  operator: equals
+  value: 'EMPTY'
+  description: 6G AP3 / wl1 getter should return to empty after the clear path.
+- field: cfg_restore_qosmap_6g.QoSMapSetCfg6gCount
+  operator: equals
+  value: '0'
+  description: 6G AP3 / wl1 hostapd file should remove qos_map_set on restore.
+- field: cfg_restore_qosmap_6g.QoSMapSetCfg6g
+  operator: equals
+  value: 'ABSENT'
+  description: 6G AP3 / wl1 hostapd file should return to the absent baseline after restore.
+- field: state_baseline_24g.QoSMapSet24g
+  operator: equals
+  value: 'EMPTY'
+  description: 2.4G AP5 / wl2 getter should start empty before the setter write.
+- field: cfg_baseline_24g.QoSMapSetCfg24gCount
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 / wl2 hostapd file should expose no qos_map_set lines at baseline.
+- field: cfg_baseline_24g.QoSMapSetCfg24g
+  operator: equals
+  value: 'ABSENT'
+  description: 2.4G AP5 / wl2 hostapd file should keep qos_map_set absent at baseline.
+- field: set_qosmap_24g.RequestedQoSMapSet24g
+  operator: equals
+  value: '0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255'
+  description: 2.4G AP5 / wl2 setter should attempt the full requested DSCP map.
+- field: set_qosmap_24g.SetterQoSMapSet24g
+  operator: equals
+  value: '255'
+  description: 2.4G AP5 / wl2 setter acknowledgement should collapse to scalar 255 on the current DUT.
+- field: state_set_qosmap_24g.QoSMapSet24g
+  operator: equals
+  value: '255'
+  description: 2.4G AP5 / wl2 getter should read back scalar 255 after the setter write.
+- field: cfg_set_qosmap_24g.QoSMapSetCfg24gCount
+  operator: equals
+  value: '1'
+  description: 2.4G AP5 / wl2 hostapd file should expose exactly one qos_map_set line after the setter write.
+- field: cfg_set_qosmap_24g.QoSMapSetCfg24g
+  operator: equals
+  value: '255'
+  description: 2.4G AP5 / wl2 hostapd file should also collapse the requested DSCP map to qos_map_set=255.
+- field: state_restore_qosmap_24g.QoSMapSet24g
+  operator: equals
+  value: 'EMPTY'
+  description: 2.4G AP5 / wl2 getter should return to empty after the clear path.
+- field: cfg_restore_qosmap_24g.QoSMapSetCfg24gCount
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 / wl2 hostapd file should remove qos_map_set on restore.
+- field: cfg_restore_qosmap_24g.QoSMapSetCfg24g
+  operator: equals
+  value: 'ABSENT'
+  description: 2.4G AP5 / wl2 hostapd file should return to the absent baseline after restore.
 verification_command: |
-  ubus-cli "WiFi.AccessPoint.*.?" | sed -n "1,200p"
-  ubus-cli "WiFi.AccessPoint.*.QoSMapSet?" 2>/dev/null || true
-  wl -i wl0 bss 2>/dev/null || true
-  wl -i wl1 bss 2>/dev/null || true
-  wl -i wl2 bss 2>/dev/null || true
-  wl -i wl0 assoclist
-  wl -i wl1 assoclist
-  wl -i wl2 assoclist
-
+  VALUE=$(ubus-cli "WiFi.AccessPoint.1.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet5g=%s\n' "$VALUE"; else echo 'QoSMapSet5g=EMPTY'; fi
+  grep -c '^qos_map_set=' /tmp/wl0_hapd.conf | sed 's/^/QoSMapSetCfg5gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl0_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg5g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg5g=ABSENT'; fi
+  REQUESTED='0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255'; printf 'RequestedQoSMapSet5g=%s\n' "$REQUESTED"; OUT=$(ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet="$REQUESTED" 2>&1); printf '%s\n' "$OUT"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'SetterQoSMapSet5g=%s\n' "$VALUE"; else echo 'SetterQoSMapSet5g=EMPTY'; fi
+  VALUE=$(ubus-cli "WiFi.AccessPoint.1.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet5g=%s\n' "$VALUE"; else echo 'QoSMapSet5g=EMPTY'; fi | sed -n '1,20p'
+  grep -c '^qos_map_set=' /tmp/wl0_hapd.conf | sed 's/^/QoSMapSetCfg5gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl0_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg5g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg5g=ABSENT'; fi | sed -n '1,20p'
+  OUT=$(ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet= 2>&1); printf '%s\n' "$OUT"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'RestoreQoSMapSet5g=%s\n' "$VALUE"; else echo 'RestoreQoSMapSet5g=EMPTY'; fi
+  VALUE=$(ubus-cli "WiFi.AccessPoint.1.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet5g=%s\n' "$VALUE"; else echo 'QoSMapSet5g=EMPTY'; fi | sed -n '1,21p'
+  grep -c '^qos_map_set=' /tmp/wl0_hapd.conf | sed 's/^/QoSMapSetCfg5gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl0_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg5g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg5g=ABSENT'; fi | sed -n '1,21p'
+  VALUE=$(ubus-cli "WiFi.AccessPoint.3.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet6g=%s\n' "$VALUE"; else echo 'QoSMapSet6g=EMPTY'; fi
+  grep -c '^qos_map_set=' /tmp/wl1_hapd.conf | sed 's/^/QoSMapSetCfg6gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl1_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg6g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg6g=ABSENT'; fi
+  REQUESTED='0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255'; printf 'RequestedQoSMapSet6g=%s\n' "$REQUESTED"; OUT=$(ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet="$REQUESTED" 2>&1); printf '%s\n' "$OUT"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'SetterQoSMapSet6g=%s\n' "$VALUE"; else echo 'SetterQoSMapSet6g=EMPTY'; fi
+  VALUE=$(ubus-cli "WiFi.AccessPoint.3.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet6g=%s\n' "$VALUE"; else echo 'QoSMapSet6g=EMPTY'; fi | sed -n '1,20p'
+  grep -c '^qos_map_set=' /tmp/wl1_hapd.conf | sed 's/^/QoSMapSetCfg6gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl1_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg6g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg6g=ABSENT'; fi | sed -n '1,20p'
+  OUT=$(ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet= 2>&1); printf '%s\n' "$OUT"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'RestoreQoSMapSet6g=%s\n' "$VALUE"; else echo 'RestoreQoSMapSet6g=EMPTY'; fi
+  VALUE=$(ubus-cli "WiFi.AccessPoint.3.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet6g=%s\n' "$VALUE"; else echo 'QoSMapSet6g=EMPTY'; fi | sed -n '1,21p'
+  grep -c '^qos_map_set=' /tmp/wl1_hapd.conf | sed 's/^/QoSMapSetCfg6gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl1_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg6g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg6g=ABSENT'; fi | sed -n '1,21p'
+  VALUE=$(ubus-cli "WiFi.AccessPoint.5.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet24g=%s\n' "$VALUE"; else echo 'QoSMapSet24g=EMPTY'; fi
+  grep -c '^qos_map_set=' /tmp/wl2_hapd.conf | sed 's/^/QoSMapSetCfg24gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl2_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg24g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg24g=ABSENT'; fi
+  REQUESTED='0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255'; printf 'RequestedQoSMapSet24g=%s\n' "$REQUESTED"; OUT=$(ubus-cli WiFi.AccessPoint.5.IEEE80211u.QoSMapSet="$REQUESTED" 2>&1); printf '%s\n' "$OUT"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'SetterQoSMapSet24g=%s\n' "$VALUE"; else echo 'SetterQoSMapSet24g=EMPTY'; fi
+  VALUE=$(ubus-cli "WiFi.AccessPoint.5.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet24g=%s\n' "$VALUE"; else echo 'QoSMapSet24g=EMPTY'; fi | sed -n '1,20p'
+  grep -c '^qos_map_set=' /tmp/wl2_hapd.conf | sed 's/^/QoSMapSetCfg24gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl2_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg24g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg24g=ABSENT'; fi | sed -n '1,20p'
+  OUT=$(ubus-cli WiFi.AccessPoint.5.IEEE80211u.QoSMapSet= 2>&1); printf '%s\n' "$OUT"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'RestoreQoSMapSet24g=%s\n' "$VALUE"; else echo 'RestoreQoSMapSet24g=EMPTY'; fi
+  VALUE=$(ubus-cli "WiFi.AccessPoint.5.IEEE80211u.QoSMapSet?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211u\.QoSMapSet="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then printf 'QoSMapSet24g=%s\n' "$VALUE"; else echo 'QoSMapSet24g=EMPTY'; fi | sed -n '1,21p'
+  grep -c '^qos_map_set=' /tmp/wl2_hapd.conf | sed 's/^/QoSMapSetCfg24gCount=/'; VALUE=$(sed -n 's/^qos_map_set=\(.*\)$/\1/p' /tmp/wl2_hapd.conf | head -n 1); if [ -n "$VALUE" ]; then printf 'QoSMapSetCfg24g=%s\n' "$VALUE"; else echo 'QoSMapSetCfg24g=ABSENT'; fi | sed -n '1,21p'
 results_reference:
-  v4.0.1:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
-    comment: 'BRCM: CSP CS00012439197'
   v4.0.3:
     5g: Not Supported
     6g: Not Supported
     2.4g: Not Supported
-    comment: not supported by wlcfg80211
+    comment: '0319 serialwrap live probe on AP1/AP3/AP5 showed baseline getter/config empty, but writing the requested DSCP map always collapsed to QoSMapSet=255 and hostapd qos_map_set=255 on all three bands before the clear path restored the empty baseline. This matches the workbook Not Supported verdict and the wlcfg80211 limitation note.'

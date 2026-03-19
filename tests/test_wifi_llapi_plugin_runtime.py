@@ -6432,6 +6432,188 @@ def test_d077_interworkingenable_accesspoint_evaluate_live_examples():
     assert plugin.evaluate(d077, d077_wrong_5g_baseline_results) is False
 
 
+def test_d078_qosmapset_accesspoint_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    requested = "0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255"
+
+    d078_raw = yaml.safe_load((cases_dir / "D078_qosmapset.yaml").read_text(encoding="utf-8"))
+    d078 = load_case(cases_dir / "D078_qosmapset.yaml")
+    d078_commands = "\n".join(str(step.get("command", "")) for step in d078["steps"])
+
+    assert "aliases" not in d078_raw
+    assert d078["id"] == "wifi-llapi-D078-qosmapset-accesspoint"
+    assert d078["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d078["source"]["row"] == 70
+    assert d078["source"]["baseline"] == "BCM v4.0.3"
+    assert d078["llapi_support"] == "Not Supported"
+    assert d078["implemented_by"] == "pWHM"
+    assert d078["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d078["topology"]["devices"]) == {"DUT"}
+    assert d078["topology"]["links"] == []
+    assert d078["hlapi_command"] == (
+        f'ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet="{requested}"'
+    )
+    assert "ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=" in d078.get("sta_env_setup", "")
+    assert "ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet=" in d078.get("sta_env_setup", "")
+    assert "ubus-cli WiFi.AccessPoint.5.IEEE80211u.QoSMapSet=" in d078.get("sta_env_setup", "")
+    assert "RequestedQoSMapSet6g=" in d078_commands
+    assert "QoSMapSetCfg24gCount=" in d078_commands
+    assert any(
+        criterion["field"] == "cfg_set_qosmap_6g.QoSMapSetCfg6g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "255"
+        for criterion in d078["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "cfg_restore_qosmap_24g.QoSMapSetCfg24g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "ABSENT"
+        for criterion in d078["pass_criteria"]
+    )
+    assert d078["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
+    assert d078["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
+    assert d078["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
+
+
+def test_d078_qosmapset_accesspoint_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d078 = load_case(cases_dir / "D078_qosmapset.yaml")
+
+    assert plugin.setup_env(d078, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    executed_commands = recorder.transports[0].executed_commands
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet=") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.IEEE80211u.QoSMapSet=") == 1
+    assert executed_commands.count("wl -i wl0 bss") == 1
+    assert executed_commands.count("wl -i wl1 bss") == 1
+    assert executed_commands.count("wl -i wl2 bss") == 1
+    assert all(
+        "0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255" not in command
+        for command in executed_commands
+    )
+    plugin.teardown(d078, topology)
+
+
+def test_d078_qosmapset_accesspoint_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d078 = load_case(cases_dir / "D078_qosmapset.yaml")
+    requested = "0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255"
+
+    def state_output(suffix: str, value: str) -> str:
+        return f"QoSMapSet{suffix}={value}"
+
+    def cfg_output(suffix: str, count: int, value: str) -> str:
+        return "\n".join(
+            [
+                f"QoSMapSetCfg{suffix}Count={count}",
+                f"QoSMapSetCfg{suffix}={value}",
+            ]
+        )
+
+    def set_output(suffix: str, setter_value: str = "255") -> str:
+        return "\n".join(
+            [
+                f"RequestedQoSMapSet{suffix}={requested}",
+                f"SetterQoSMapSet{suffix}={setter_value}",
+            ]
+        )
+
+    def restore_output(suffix: str) -> str:
+        return f"RestoreQoSMapSet{suffix}=EMPTY"
+
+    d078_steps: dict[str, dict[str, Any]] = {}
+    for suffix, band_key, base in (("5g", "5g", 1), ("6g", "6g", 9), ("24g", "24g", 17)):
+        d078_steps[f"step{base}_state_baseline_{band_key}"] = {
+            "success": True,
+            "output": state_output(suffix, "EMPTY"),
+            "timing": 0.01,
+        }
+        d078_steps[f"step{base + 1}_cfg_baseline_{band_key}"] = {
+            "success": True,
+            "output": cfg_output(suffix, 0, "ABSENT"),
+            "timing": 0.01,
+        }
+        d078_steps[f"step{base + 2}_set_qosmap_{band_key}"] = {
+            "success": True,
+            "output": set_output(suffix),
+            "timing": 0.01,
+        }
+        d078_steps[f"step{base + 3}_state_set_qosmap_{band_key}"] = {
+            "success": True,
+            "output": state_output(suffix, "255"),
+            "timing": 0.01,
+        }
+        d078_steps[f"step{base + 4}_cfg_set_qosmap_{band_key}"] = {
+            "success": True,
+            "output": cfg_output(suffix, 1, "255"),
+            "timing": 0.01,
+        }
+        d078_steps[f"step{base + 5}_restore_qosmap_{band_key}"] = {
+            "success": True,
+            "output": restore_output(suffix),
+            "timing": 0.01,
+        }
+        d078_steps[f"step{base + 6}_state_restore_qosmap_{band_key}"] = {
+            "success": True,
+            "output": state_output(suffix, "EMPTY"),
+            "timing": 0.01,
+        }
+        d078_steps[f"step{base + 7}_cfg_restore_qosmap_{band_key}"] = {
+            "success": True,
+            "output": cfg_output(suffix, 0, "ABSENT"),
+            "timing": 0.01,
+        }
+
+    d078_results = {"steps": d078_steps}
+    assert plugin.evaluate(d078, d078_results) is True
+
+    d078_wrong_6g_set_results = {
+        "steps": {
+            **d078_steps,
+            "step11_set_qosmap_6g": {
+                "success": True,
+                "output": set_output("6g", setter_value=requested),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d078, d078_wrong_6g_set_results) is False
+
+    d078_wrong_24g_restore_results = {
+        "steps": {
+            **d078_steps,
+            "step24_cfg_restore_qosmap_24g": {
+                "success": True,
+                "output": cfg_output("24g", 1, "255"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d078, d078_wrong_24g_restore_results) is False
+
+    d078_wrong_5g_baseline_results = {
+        "steps": {
+            **d078_steps,
+            "step1_state_baseline_5g": {
+                "success": True,
+                "output": state_output("5g", "255"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d078, d078_wrong_5g_baseline_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
@@ -8342,6 +8524,122 @@ def test_d077_interworkingenable_accesspoint_config_set_fragment_executes():
         "Interworking5gOneCount=1",
         "Interworking5gZeroCount=1",
         "Interworking5gTotalCount=2",
+    ]
+
+
+def test_d078_qosmapset_accesspoint_verification_fragments_preserve_sequence():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d078 = load_case(cases_dir / "D078_qosmapset.yaml")
+
+    verification_commands = plugin._extract_cli_fragments(d078["verification_command"])
+    step_commands = [step["command"] for step in d078["steps"]]
+
+    def fragments(command: str, suffix: str = "") -> list[str]:
+        rendered = f"{command}{suffix}" if suffix else command
+        return plugin._extract_cli_fragments(rendered)
+
+    expected_commands = []
+    seen: set[str] = set()
+    for start in (0, 8, 16):
+        for command, suffix in (
+            (step_commands[start], ""),
+            (step_commands[start + 1], ""),
+            (step_commands[start + 2], ""),
+            (step_commands[start + 3], " | sed -n '1,20p'"),
+            (step_commands[start + 4], " | sed -n '1,20p'"),
+            (step_commands[start + 5], ""),
+            (step_commands[start + 6], " | sed -n '1,21p'"),
+            (step_commands[start + 7], " | sed -n '1,21p'"),
+        ):
+            for fragment in fragments(command, suffix):
+                if fragment in seen:
+                    continue
+                expected_commands.append(fragment)
+                seen.add(fragment)
+
+    assert verification_commands == expected_commands
+
+
+def test_d078_qosmapset_accesspoint_state_snapshot_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d078 = load_case(cases_dir / "D078_qosmapset.yaml")
+    step1_command = d078["steps"][0]["command"]
+    sample_output = 'WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=""\n'
+
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
+        handle.write(sample_output)
+        temp_path = handle.name
+
+    try:
+        adapted_command = step1_command.replace(
+            'ubus-cli "WiFi.AccessPoint.1.IEEE80211u.QoSMapSet?"',
+            f"cat {temp_path}",
+        )
+        proc = subprocess.run(
+            ["sh", "-lc", adapted_command],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    finally:
+        Path(temp_path).unlink(missing_ok=True)
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == ["QoSMapSet5g=EMPTY"]
+
+
+def test_d078_qosmapset_accesspoint_config_baseline_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d078 = load_case(cases_dir / "D078_qosmapset.yaml")
+    step2_command = d078["steps"][1]["command"]
+
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
+        handle.write("ssid=testpilot5G\n")
+        temp_path = handle.name
+
+    try:
+        adapted_command = step2_command.replace("/tmp/wl0_hapd.conf", temp_path)
+        proc = subprocess.run(
+            ["sh", "-lc", adapted_command],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    finally:
+        Path(temp_path).unlink(missing_ok=True)
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == [
+        "QoSMapSetCfg5gCount=0",
+        "QoSMapSetCfg5g=ABSENT",
+    ]
+
+
+def test_d078_qosmapset_accesspoint_config_set_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d078 = load_case(cases_dir / "D078_qosmapset.yaml")
+    step5_command = d078["steps"][4]["command"]
+
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
+        handle.write("qos_map_set=255\n")
+        temp_path = handle.name
+
+    try:
+        adapted_command = step5_command.replace("/tmp/wl0_hapd.conf", temp_path)
+        proc = subprocess.run(
+            ["sh", "-lc", adapted_command],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    finally:
+        Path(temp_path).unlink(missing_ok=True)
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == [
+        "QoSMapSetCfg5gCount=1",
+        "QoSMapSetCfg5g=255",
     ]
 
 
