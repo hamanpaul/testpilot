@@ -28,9 +28,9 @@ TestPilot 的主目標是：
 4. Per-case dispatcher、selection trace、retry-aware timeout、attempt trace 已落地。
 5. 正式 hot path 仍由 `setup_env -> verify_env -> execute_step -> evaluate` 決定。
 6. 415 官方 row-indexed cases 已有實機全量驗證基線；兩個 duplicate-row legacy YAML 已改為 underscore-prefixed compatibility fixtures，不再混入 discoverable case inventory。
-7. `wifi_llapi` 目前已固化 126 筆 trusted/calibrated cases，尚餘 289 筆待校正；目前明確 blockers 為 `D037 OperatingStandard`、`D054 Tx_RetransmissionsFailed`、`D055 TxBytes`。
-8. repo-only 校正 handoff 已同步到 `docs/audit-todo.md` 與 `plugins/wifi_llapi/reports/audit-report-260313-185447.md`；目前 handoff 已補記 `D060 UNIIBandsCapabilities`、`D061 UplinkBandwidth`、`D062 UplinkMCS`、`D063 UplinkShortGuard`、`D064 VendorOUI`、`D065 VhtCapabilities`、`D066 APBridgeDisable` 的 committed checkpoint 與 `D185 TPCMode` targeted source/live fail-shaped checkpoint。
-9. reboot 後的 default lab baseline 已重建並落成文件：5G `testpilot5G` / 2.4G `testpilot2G` 使用 `WPA2-Personal + 00000000`，6G `testpilot6G` 固定使用 `WPA3-Personal + key_mgmt=SAE + 00000000`；`D066 APBridgeDisable` 已在這組 baseline 下完成 5G AP-only Not Supported checkpoint（northbound getter `1 -> 0`，但 `hostapd.conf` 與 driver `ap_isolate` 不對齊），下一個 ready single-case 入口改為 `D067 BridgeInterface`。
+7. `wifi_llapi` 目前已固化 127 筆 trusted/calibrated cases，尚餘 288 筆待校正；目前明確 blockers 為 `D037 OperatingStandard`、`D054 Tx_RetransmissionsFailed`、`D055 TxBytes`。
+8. repo-only 校正 handoff 已同步到 `docs/audit-todo.md` 與 `plugins/wifi_llapi/reports/audit-report-260313-185447.md`；目前 handoff 已補記 `D060 UNIIBandsCapabilities`、`D061 UplinkBandwidth`、`D062 UplinkMCS`、`D063 UplinkShortGuard`、`D064 VendorOUI`、`D065 VhtCapabilities`、`D066 APBridgeDisable`、`D067 BridgeInterface` 的 committed checkpoint 與 `D185 TPCMode` targeted source/live fail-shaped checkpoint。
+9. reboot 後的 default lab baseline 已重建並落成文件：5G `testpilot5G` / 2.4G `testpilot2G` 使用 `WPA2-Personal + 00000000`，6G `testpilot6G` 固定使用 `WPA3-Personal + key_mgmt=SAE + 00000000`；`D067 BridgeInterface` 已在這組 baseline 下完成 AP-only multiband Pass checkpoint（AP1/AP3/AP5 getter 都回 `br-lan`、三個 hostapd config 都保留兩條 `bridge=br-lan`、wl0/wl1/wl2 的 Linux bridge master 都是 `br-lan`），下一個 ready single-case 入口改為 `D068 DiscoveryMethodEnabled (FILS)`。
 10. 第三次重構的 Copilot SDK 深度研究已完成，並已複製到 `docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`。
 
 ### 2.2 尚未落地

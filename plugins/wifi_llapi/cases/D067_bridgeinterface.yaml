@@ -1,166 +1,179 @@
 id: wifi-llapi-D067-bridgeinterface
-aliases:
-  - wifi-llapi-r062-bridgeinterface
-name: BridgeInterface — WiFi.AccessPoint.{i}.
-version: '1.0'
+name: "BridgeInterface — WiFi.AccessPoint.{i}."
+version: '1.1'
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
   row: 67
-  object: "WiFi.AccessPoint.{i}."
-  api: "BridgeInterface"
+  object: WiFi.AccessPoint.{i}.
+  api: BridgeInterface
+  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli WiFi.AccessPoint.{i}.BridgeInterface=bridge
+hlapi_command: 'ubus-cli "WiFi.AccessPoint.1.BridgeInterface?"'
 llapi_support: Support
-implemented_by: Vendor Module
+implemented_by: pWHM
+bands: ["5g", "6g", "2.4g"]
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM0
-    STA:
-      role: sta
-      transport: serial
-      selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
-  links:
-  - from: STA
-    to: DUT
-    band: 5g
+  links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
-  Transport:
-  - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
-
+  - DUT: COM0 (AP role; BridgeInterface is validated as an AP-only case with no STA transport)
+  Live band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
+  - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
+  - 2.4G: DUT wl2 / AP5 / SSID.8 / testpilot2G / WPA2-Personal / 00000000
+  Preconditions:
+  - keep AP1, AP3, and AP5 enabled on the documented non-open baseline
+  - validate the read-only BridgeInterface getter against hostapd config and live bridge membership
 setup_steps: |
-  1) DUT 5G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
-  3) Association evidence:
-     - A0: iw dev wl0 link
-     - B0: wl -i wl0 assoclist
+  1) DUT bridge baseline:
+     - keep AP1 / AP3 / AP5 enabled on the default non-open baseline
+     - confirm wl0 / wl1 / wl2 BSS instances are up before readback
+  2) DUT readback:
+     - query BridgeInterface on AP1, AP3, and AP5
+     - cross-check each band's hostapd config bridge= line
+     - confirm br-lan still owns wl0 / wl1 / wl2
 sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
-    ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-  STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
-    iw dev wl0 link
-  DUT association evidence:
-    wl -i wl0 assoclist
+  DUT:
+    wl -i wl0 bss
+    wl -i wl1 bss
+    wl -i wl2 bss
 test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli WiFi.AccessPoint.{i}.BridgeInterface=bridge
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.AccessPoint.*.BridgeInterface?"
-  3) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
-
+  1) Read WiFi.AccessPoint.1/3/5.BridgeInterface directly from the DUT.
+  2) Cross-check each radio's hostapd config file for bridge=br-lan.
+  3) Confirm the live sysfs master bridge for wl0 / wl1 / wl2 is still br-lan.
+  Verdict: Pass. The BridgeInterface getter matches hostapd config and the live Linux bridge master on 5G, 6G, and 2.4G.
 steps:
-- id: step1
+- id: step1_5g
   action: exec
   target: DUT
-  command: ubus-cli WiFi.AccessPoint.? | grep BridgeInterface WiFi.AccessPoint.1.BridgeInterface="br-lan" WiFi.AccessPoint.3.BridgeInterface="br-lan"
-    WiFi.AccessPoint.5.BridgeInterface="br-lan"
-  capture: result
+  band: 5g
+  command: 'ubus-cli "WiFi.AccessPoint.1.BridgeInterface?"'
+  capture: result_5g
+- id: step2_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli "WiFi.AccessPoint.3.BridgeInterface?"'
+  depends_on: step1_5g
+  capture: result_6g
+- id: step3_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli "WiFi.AccessPoint.5.BridgeInterface?"'
+  depends_on: step2_6g
+  capture: result_24g
+- id: step4_5g_config
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    grep '^bridge=' /tmp/wl0_hapd.conf | awk -F= '/^bridge=/ {if (count == 0) first=$2; if ($2 != first) mismatch=1; count++} END {print "BridgeConfig5g=" first; print "BridgeConfig5gCount=" count+0; print "BridgeConfig5gMismatch=" mismatch+0}'
+  depends_on: step3_24g
+  capture: config_5g
+- id: step5_6g_config
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    grep '^bridge=' /tmp/wl1_hapd.conf | awk -F= '/^bridge=/ {if (count == 0) first=$2; if ($2 != first) mismatch=1; count++} END {print "BridgeConfig6g=" first; print "BridgeConfig6gCount=" count+0; print "BridgeConfig6gMismatch=" mismatch+0}'
+  depends_on: step4_5g_config
+  capture: config_6g
+- id: step6_24g_config
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    grep '^bridge=' /tmp/wl2_hapd.conf | awk -F= '/^bridge=/ {if (count == 0) first=$2; if ($2 != first) mismatch=1; count++} END {print "BridgeConfig24g=" first; print "BridgeConfig24gCount=" count+0; print "BridgeConfig24gMismatch=" mismatch+0}'
+  depends_on: step5_6g_config
+  capture: config_24g
+- id: step7_bridge_state
+  action: exec
+  target: DUT
+  command: >-
+    cat /sys/class/net/wl0/master/uevent | sed -n 's/^INTERFACE=/BridgeMaster5g=/p' && cat /sys/class/net/wl1/master/uevent | sed -n 's/^INTERFACE=/BridgeMaster6g=/p' && cat /sys/class/net/wl2/master/uevent | sed -n 's/^INTERFACE=/BridgeMaster24g=/p'
+  depends_on: step6_24g_config
+  capture: bridge_state
 pass_criteria:
-- field: result.BridgeInterface
-  operator: contains
-  value: bridge
-  description: BridgeInterface 應回傳包含 BridgeInterface=bridge
-verification_command: 'cat /tmp/wl0_hapd.conf |grep bridge
-
-
-  root@prplOS:/# brctl show
-
-  bridge name bridge id STP enabled interfaces
-
-  br-lcm 8000.6c15db74c0b3 no
-
-  br-lan 8000.6c15db74c0b1 no wl0.1
-
-  eth3
-
-  wl1
-
-  eth1
-
-  wl2.1
-
-  wl2
-
-  eth2
-
-  wl0
-
-  wl1.1
-
-  br-guest 8000.6c15db74c0b2 no'
+- field: result_5g.BridgeInterface
+  operator: equals
+  value: br-lan
+  description: 5G AP1 BridgeInterface should read back br-lan.
+- field: result_6g.BridgeInterface
+  operator: equals
+  value: br-lan
+  description: 6G AP3 BridgeInterface should read back br-lan.
+- field: result_24g.BridgeInterface
+  operator: equals
+  value: br-lan
+  description: 2.4G AP5 BridgeInterface should read back br-lan.
+- field: config_5g.BridgeConfig5g
+  operator: equals
+  reference: result_5g.BridgeInterface
+  description: wl0 hostapd bridge config should match the 5G BridgeInterface getter.
+- field: config_5g.BridgeConfig5gCount
+  operator: equals
+  value: '2'
+  description: wl0 hostapd config should expose two bridge=br-lan lines in the current dual-BSS file.
+- field: config_5g.BridgeConfig5gMismatch
+  operator: equals
+  value: '0'
+  description: All wl0 bridge= lines should agree on the same bridge name.
+- field: config_6g.BridgeConfig6g
+  operator: equals
+  reference: result_6g.BridgeInterface
+  description: wl1 hostapd bridge config should match the 6G BridgeInterface getter.
+- field: config_6g.BridgeConfig6gCount
+  operator: equals
+  value: '2'
+  description: wl1 hostapd config should expose two bridge=br-lan lines in the current dual-BSS file.
+- field: config_6g.BridgeConfig6gMismatch
+  operator: equals
+  value: '0'
+  description: All wl1 bridge= lines should agree on the same bridge name.
+- field: config_24g.BridgeConfig24g
+  operator: equals
+  reference: result_24g.BridgeInterface
+  description: wl2 hostapd bridge config should match the 2.4G BridgeInterface getter.
+- field: config_24g.BridgeConfig24gCount
+  operator: equals
+  value: '2'
+  description: wl2 hostapd config should expose two bridge=br-lan lines in the current dual-BSS file.
+- field: config_24g.BridgeConfig24gMismatch
+  operator: equals
+  value: '0'
+  description: All wl2 bridge= lines should agree on the same bridge name.
+- field: bridge_state.BridgeMaster5g
+  operator: equals
+  reference: result_5g.BridgeInterface
+  description: wl0's live Linux bridge master should match the 5G BridgeInterface getter.
+- field: bridge_state.BridgeMaster6g
+  operator: equals
+  reference: result_6g.BridgeInterface
+  description: wl1's live Linux bridge master should match the 6G BridgeInterface getter.
+- field: bridge_state.BridgeMaster24g
+  operator: equals
+  reference: result_24g.BridgeInterface
+  description: wl2's live Linux bridge master should match the 2.4G BridgeInterface getter.
+verification_command: |
+  ubus-cli "WiFi.AccessPoint.1.BridgeInterface?"
+  ubus-cli "WiFi.AccessPoint.3.BridgeInterface?"
+  ubus-cli "WiFi.AccessPoint.5.BridgeInterface?"
+  grep '^bridge=' /tmp/wl0_hapd.conf | awk -F= '/^bridge=/ {if (count == 0) first=$2; if ($2 != first) mismatch=1; count++} END {print "BridgeConfig5g=" first; print "BridgeConfig5gCount=" count+0; print "BridgeConfig5gMismatch=" mismatch+0}'
+  grep '^bridge=' /tmp/wl1_hapd.conf | awk -F= '/^bridge=/ {if (count == 0) first=$2; if ($2 != first) mismatch=1; count++} END {print "BridgeConfig6g=" first; print "BridgeConfig6gCount=" count+0; print "BridgeConfig6gMismatch=" mismatch+0}'
+  grep '^bridge=' /tmp/wl2_hapd.conf | awk -F= '/^bridge=/ {if (count == 0) first=$2; if ($2 != first) mismatch=1; count++} END {print "BridgeConfig24g=" first; print "BridgeConfig24gCount=" count+0; print "BridgeConfig24gMismatch=" mismatch+0}'
+  cat /sys/class/net/wl0/master/uevent | sed -n 's/^INTERFACE=/BridgeMaster5g=/p' && cat /sys/class/net/wl1/master/uevent | sed -n 's/^INTERFACE=/BridgeMaster6g=/p' && cat /sys/class/net/wl2/master/uevent | sed -n 's/^INTERFACE=/BridgeMaster24g=/p'
 results_reference:
-  v4.0.1:
+  v4.0.3:
     5g: Pass
     6g: Pass
     2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: ''
+    comment: '5G/6G/2.4G serialwrap readback all returned BridgeInterface="br-lan"; /tmp/wl0_hapd.conf, /tmp/wl1_hapd.conf, and /tmp/wl2_hapd.conf each exposed two bridge=br-lan lines; and wl0/wl1/wl2 all resolved to Linux bridge master br-lan via /sys/class/net/*/master/uevent. This case is calibrated as Pass across all three executed bands.'

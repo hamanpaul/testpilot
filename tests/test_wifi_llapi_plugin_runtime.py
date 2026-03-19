@@ -4912,6 +4912,206 @@ def test_d066_apbridgedisable_evaluate_live_examples():
     assert plugin.evaluate(d066, d066_bss_down_results) is False
 
 
+def test_d067_bridgeinterface_uses_ap_only_multiband_pass_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
+    assert "wifi-llapi-D067-bridgeinterface" in discoverable_ids
+
+    d067_raw = yaml.safe_load((cases_dir / "D067_bridgeinterface.yaml").read_text(encoding="utf-8"))
+    d067 = load_case(cases_dir / "D067_bridgeinterface.yaml")
+    d067_commands = "\n".join(str(step.get("command", "")) for step in d067["steps"])
+
+    assert "aliases" not in d067_raw
+    assert d067["id"] == "wifi-llapi-D067-bridgeinterface"
+    assert d067["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d067["source"]["row"] == 67
+    assert d067["source"]["baseline"] == "BCM v4.0.3"
+    assert d067["llapi_support"] == "Support"
+    assert d067["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d067["topology"]["devices"]) == {"DUT"}
+    assert d067["topology"]["links"] == []
+    assert d067["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.BridgeInterface?"'
+    assert "wl -i wl0 bss" in d067.get("sta_env_setup", "")
+    assert "wl -i wl1 bss" in d067.get("sta_env_setup", "")
+    assert "wl -i wl2 bss" in d067.get("sta_env_setup", "")
+    assert 'WiFi.AccessPoint.1.BridgeInterface?"' in d067_commands
+    assert 'WiFi.AccessPoint.3.BridgeInterface?"' in d067_commands
+    assert 'WiFi.AccessPoint.5.BridgeInterface?"' in d067_commands
+    assert "BridgeConfig5g=" in d067_commands
+    assert "BridgeConfig6g=" in d067_commands
+    assert "BridgeConfig24g=" in d067_commands
+    assert "BridgeConfig5gMismatch=" in d067_commands
+    assert "BridgeConfig6gMismatch=" in d067_commands
+    assert "BridgeConfig24gMismatch=" in d067_commands
+    assert "BridgeMaster5g=" in d067_commands
+    assert "BridgeMaster6g=" in d067_commands
+    assert "BridgeMaster24g=" in d067_commands
+    assert any(
+        criterion["field"] == "result_5g.BridgeInterface"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "br-lan"
+        for criterion in d067["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "config_6g.BridgeConfig6g"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "result_6g.BridgeInterface"
+        for criterion in d067["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "config_5g.BridgeConfig5gMismatch"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "0"
+        for criterion in d067["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "bridge_state.BridgeMaster24g"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "result_24g.BridgeInterface"
+        for criterion in d067["pass_criteria"]
+    )
+    assert d067["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d067["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d067["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+
+
+def test_d067_bridgeinterface_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d067 = load_case(cases_dir / "D067_bridgeinterface.yaml")
+
+    assert plugin.setup_env(d067, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    assert recorder.transports[0].executed_commands.count("wl -i wl0 bss") == 1
+    assert recorder.transports[0].executed_commands.count("wl -i wl1 bss") == 1
+    assert recorder.transports[0].executed_commands.count("wl -i wl2 bss") == 1
+    plugin.teardown(d067, topology)
+
+
+def test_d067_bridgeinterface_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d067 = load_case(cases_dir / "D067_bridgeinterface.yaml")
+
+    d067_results = {
+        "steps": {
+            "step1_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.BridgeInterface="br-lan"',
+                "timing": 0.01,
+            },
+            "step2_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.BridgeInterface="br-lan"',
+                "timing": 0.01,
+            },
+            "step3_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.BridgeInterface="br-lan"',
+                "timing": 0.01,
+            },
+            "step4_5g_config": {
+                "success": True,
+                "output": "BridgeConfig5g=br-lan\nBridgeConfig5gCount=2\nBridgeConfig5gMismatch=0",
+                "timing": 0.01,
+            },
+            "step5_6g_config": {
+                "success": True,
+                "output": "BridgeConfig6g=br-lan\nBridgeConfig6gCount=2\nBridgeConfig6gMismatch=0",
+                "timing": 0.01,
+            },
+            "step6_24g_config": {
+                "success": True,
+                "output": "BridgeConfig24g=br-lan\nBridgeConfig24gCount=2\nBridgeConfig24gMismatch=0",
+                "timing": 0.01,
+            },
+            "step7_bridge_state": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "BridgeMaster5g=br-lan",
+                        "BridgeMaster6g=br-lan",
+                        "BridgeMaster24g=br-lan",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d067, d067_results) is True
+
+    d067_wrong_6g_results = {
+        "steps": {
+            **d067_results["steps"],
+            "step2_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.BridgeInterface="br-guest"',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d067, d067_wrong_6g_results) is False
+
+    d067_wrong_config_count_results = {
+        "steps": {
+            **d067_results["steps"],
+            "step5_6g_config": {
+                "success": True,
+                "output": "BridgeConfig6g=br-lan\nBridgeConfig6gCount=1\nBridgeConfig6gMismatch=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d067, d067_wrong_config_count_results) is False
+
+    d067_mixed_config_results = {
+        "steps": {
+            **d067_results["steps"],
+            "step4_5g_config": {
+                "success": True,
+                "output": "BridgeConfig5g=br-guest\nBridgeConfig5gCount=2\nBridgeConfig5gMismatch=1",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d067, d067_mixed_config_results) is False
+
+    d067_missing_member_results = {
+        "steps": {
+            **d067_results["steps"],
+            "step7_bridge_state": {
+                "success": True,
+                "output": "BridgeMaster5g=br-lan\nBridgeMaster6g=br-lan",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d067, d067_missing_member_results) is False
+
+    d067_wrong_bridge_name_results = {
+        "steps": {
+            **d067_results["steps"],
+            "step7_bridge_state": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "BridgeMaster5g=br-lan",
+                        "BridgeMaster6g=br-lan",
+                        "BridgeMaster24g=br-guest",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d067, d067_wrong_bridge_name_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
@@ -6115,6 +6315,111 @@ def test_d066_apbridgedisable_driver_fragment_executes():
 
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.strip() == "DriverApIsolateOff=1"
+
+
+def test_d067_bridgeinterface_verification_fragments_preserve_getters_and_cross_checks():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d067 = load_case(cases_dir / "D067_bridgeinterface.yaml")
+
+    step1_command = d067["steps"][0]["command"]
+    step2_command = d067["steps"][1]["command"]
+    step3_command = d067["steps"][2]["command"]
+    step4_command = d067["steps"][3]["command"]
+    step5_command = d067["steps"][4]["command"]
+    step6_command = d067["steps"][5]["command"]
+    step7_command = d067["steps"][6]["command"]
+    verification_commands = plugin._extract_cli_fragments(d067["verification_command"])
+
+    step7_fragments = [fragment.strip() for fragment in step7_command.split("&&")]
+    assert len(verification_commands) == 9
+    assert verification_commands[0] == step1_command
+    assert verification_commands[1] == step2_command
+    assert verification_commands[2] == step3_command
+    assert verification_commands[3] == step4_command
+    assert verification_commands[4] == step5_command
+    assert verification_commands[5] == step6_command
+    assert verification_commands[6:] == step7_fragments
+
+
+def test_d067_bridgeinterface_hostapd_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d067 = load_case(cases_dir / "D067_bridgeinterface.yaml")
+    step4_command = d067["steps"][3]["command"]
+    pipeline = step4_command.split("|", 1)[1].strip()
+    sample_output = "\n".join(["bridge=br-lan", "bridge=br-lan"])
+
+    proc = subprocess.run(
+        [
+            "sh",
+            "-lc",
+            f"cat <<'EOF' | {pipeline}\n{sample_output}\nEOF",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == [
+        "BridgeConfig5g=br-lan",
+        "BridgeConfig5gCount=2",
+        "BridgeConfig5gMismatch=0",
+    ]
+
+    mismatch_output = "\n".join(["bridge=br-guest", "bridge=br-lan"])
+    mismatch_proc = subprocess.run(
+        [
+            "sh",
+            "-lc",
+            f"cat <<'EOF' | {pipeline}\n{mismatch_output}\nEOF",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert mismatch_proc.returncode == 0, mismatch_proc.stderr
+    assert mismatch_proc.stdout.strip().splitlines() == [
+        "BridgeConfig5g=br-guest",
+        "BridgeConfig5gCount=2",
+        "BridgeConfig5gMismatch=1",
+    ]
+
+
+def test_d067_bridgeinterface_bridge_master_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d067 = load_case(cases_dir / "D067_bridgeinterface.yaml")
+    step7_command = d067["steps"][6]["command"]
+    fragments = [fragment.strip() for fragment in step7_command.split("&&")]
+    outputs = []
+    for fragment, expected in zip(
+        fragments,
+        [
+            "BridgeMaster5g=br-lan",
+            "BridgeMaster6g=br-lan",
+            "BridgeMaster24g=br-lan",
+        ],
+    ):
+        pipeline = fragment.split("|", 1)[1].strip()
+        proc = subprocess.run(
+            [
+                "sh",
+                "-lc",
+                f"cat <<'EOF' | {pipeline}\nINTERFACE=br-lan\nEOF",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert proc.returncode == 0, proc.stderr
+        outputs.append(proc.stdout.strip())
+
+    assert outputs == [
+        "BridgeMaster5g=br-lan",
+        "BridgeMaster6g=br-lan",
+        "BridgeMaster24g=br-lan",
+    ]
 
 
 @pytest.mark.parametrize(
