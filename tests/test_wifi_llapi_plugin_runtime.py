@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import subprocess
+import tempfile
 import sys
 import types
 from typing import Any
@@ -5493,6 +5494,192 @@ def test_d069_discoverymethodenabled_accesspoint_upr_evaluate_live_examples():
     assert plugin.evaluate(d069, d069_wrong_restore_results) is False
 
 
+def test_d070_discoverymethodenabled_accesspoint_rnr_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+
+    d070_raw = yaml.safe_load(
+        (cases_dir / "D070_discoverymethodenabled_accesspoint_rnr.yaml").read_text(encoding="utf-8")
+    )
+    d070 = load_case(cases_dir / "D070_discoverymethodenabled_accesspoint_rnr.yaml")
+    d070_commands = "\n".join(str(step.get("command", "")) for step in d070["steps"])
+
+    assert "aliases" not in d070_raw
+    assert d070["id"] == "wifi-llapi-D070-discoverymethodenabled-accesspoint-rnr"
+    assert d070["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d070["source"]["row"] == 70
+    assert d070["source"]["baseline"] == "BCM v4.0.3"
+    assert d070["llapi_support"] == "Support"
+    assert d070["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d070["topology"]["devices"]) == {"DUT"}
+    assert d070["topology"]["links"] == []
+    assert d070["hlapi_command"] == 'ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=RNR'
+    assert "wl -i wl0 bss" in d070.get("sta_env_setup", "")
+    assert "wl -i wl1 bss" in d070.get("sta_env_setup", "")
+    assert "wl -i wl2 bss" in d070.get("sta_env_setup", "")
+    assert "RnrEnabled6gCount=" in d070_commands
+    assert "RnrTotal24gCount=" in d070_commands
+    assert any(
+        criterion["field"] == "cfg_6g_after.RnrEnabled6gCount"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "1"
+        for criterion in d070["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "cfg_5g_after.RnrTotal5gCount"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "0"
+        for criterion in d070["pass_criteria"]
+    )
+    assert d070["results_reference"]["v4.0.3"]["5g"] == "Fail"
+    assert d070["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d070["results_reference"]["v4.0.3"]["2.4g"] == "Fail"
+
+
+def test_d070_discoverymethodenabled_accesspoint_rnr_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d070 = load_case(cases_dir / "D070_discoverymethodenabled_accesspoint_rnr.yaml")
+
+    assert plugin.setup_env(d070, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    assert recorder.transports[0].executed_commands.count("wl -i wl0 bss") == 1
+    assert recorder.transports[0].executed_commands.count("wl -i wl1 bss") == 1
+    assert recorder.transports[0].executed_commands.count("wl -i wl2 bss") == 1
+    plugin.teardown(d070, topology)
+
+
+def test_d070_discoverymethodenabled_accesspoint_rnr_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d070 = load_case(cases_dir / "D070_discoverymethodenabled_accesspoint_rnr.yaml")
+
+    d070_results = {
+        "steps": {
+            "step1_default_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step2_default_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step3_default_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step4_set_rnr_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.\nWiFi.AccessPoint.1.DiscoveryMethodEnabled="RNR"',
+                "timing": 0.01,
+            },
+            "step5_set_rnr_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.\nWiFi.AccessPoint.3.DiscoveryMethodEnabled="RNR"',
+                "timing": 0.01,
+            },
+            "step6_set_rnr_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.\nWiFi.AccessPoint.5.DiscoveryMethodEnabled="RNR"',
+                "timing": 0.01,
+            },
+            "step7_after_rnr_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.DiscoveryMethodEnabled="RNR"',
+                "timing": 0.01,
+            },
+            "step8_after_rnr_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.DiscoveryMethodEnabled="RNR"',
+                "timing": 0.01,
+            },
+            "step9_after_rnr_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.DiscoveryMethodEnabled="RNR"',
+                "timing": 0.01,
+            },
+            "step10_cfg_5g_after": {
+                "success": True,
+                "output": "RnrEnabled5gCount=0\nRnrDisabled5gCount=0\nRnrTotal5gCount=0",
+                "timing": 0.01,
+            },
+            "step11_cfg_6g_after": {
+                "success": True,
+                "output": "RnrEnabled6gCount=1\nRnrDisabled6gCount=1\nRnrTotal6gCount=2",
+                "timing": 0.01,
+            },
+            "step12_cfg_24g_after": {
+                "success": True,
+                "output": "RnrEnabled24gCount=0\nRnrDisabled24gCount=0\nRnrTotal24gCount=0",
+                "timing": 0.01,
+            },
+            "step13_restore_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.\nWiFi.AccessPoint.1.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step14_restore_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.\nWiFi.AccessPoint.3.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step15_restore_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.\nWiFi.AccessPoint.5.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step16_cfg_6g_restore": {
+                "success": True,
+                "output": "RnrEnabled6gCount=0\nRnrDisabled6gCount=2\nRnrTotal6gCount=2",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d070, d070_results) is True
+
+    d070_wrong_6g_config_results = {
+        "steps": {
+            **d070_results["steps"],
+            "step11_cfg_6g_after": {
+                "success": True,
+                "output": "RnrEnabled6gCount=0\nRnrDisabled6gCount=2\nRnrTotal6gCount=2",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d070, d070_wrong_6g_config_results) is False
+
+    d070_wrong_5g_getter_results = {
+        "steps": {
+            **d070_results["steps"],
+            "step7_after_rnr_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d070, d070_wrong_5g_getter_results) is False
+
+    d070_wrong_restore_results = {
+        "steps": {
+            **d070_results["steps"],
+            "step16_cfg_6g_restore": {
+                "success": True,
+                "output": "RnrEnabled6gCount=1\nRnrDisabled6gCount=1\nRnrTotal6gCount=2",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d070, d070_wrong_restore_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
@@ -6852,6 +7039,62 @@ def test_d069_discoverymethodenabled_accesspoint_upr_verification_fragments_pres
     assert len(verification_commands) == 11
     assert verification_commands[:-1] == expected_commands
     assert verification_commands[-1] == 'ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?" | sed -n \'1,20p\''
+
+
+def test_d070_discoverymethodenabled_accesspoint_rnr_verification_fragments_preserve_sequence():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d070 = load_case(cases_dir / "D070_discoverymethodenabled_accesspoint_rnr.yaml")
+
+    verification_commands = plugin._extract_cli_fragments(d070["verification_command"])
+    expected_commands = [
+        d070["steps"][0]["command"],
+        d070["steps"][1]["command"],
+        d070["steps"][2]["command"],
+        d070["steps"][3]["command"],
+        d070["steps"][4]["command"],
+        d070["steps"][5]["command"],
+        'ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?"',
+        d070["steps"][9]["command"],
+        d070["steps"][10]["command"],
+        d070["steps"][11]["command"],
+        d070["steps"][12]["command"],
+        d070["steps"][13]["command"],
+        d070["steps"][14]["command"],
+        'ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?" | sed -n \'1,20p\'',
+        d070["steps"][15]["command"] + " | sed -n '1,20p'",
+    ]
+
+    assert verification_commands == expected_commands
+
+
+def test_d070_discoverymethodenabled_accesspoint_rnr_config_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d070 = load_case(cases_dir / "D070_discoverymethodenabled_accesspoint_rnr.yaml")
+    step11_command = d070["steps"][10]["command"]
+    sample_output = "\n".join(["rnr=1", "rnr=0"])
+
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
+        handle.write(sample_output + "\n")
+        temp_path = handle.name
+
+    try:
+        adapted_command = step11_command.replace("/tmp/wl1_hapd.conf", temp_path)
+        proc = subprocess.run(
+            ["sh", "-lc", adapted_command],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    finally:
+        Path(temp_path).unlink(missing_ok=True)
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == [
+        "RnrEnabled6gCount=1",
+        "RnrDisabled6gCount=1",
+        "RnrTotal6gCount=2",
+    ]
 
 
 @pytest.mark.parametrize(

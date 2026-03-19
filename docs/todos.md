@@ -60,7 +60,7 @@
 | P4-01 | wifi-plugin full implementation | done | setup/verify/execute/evaluate 已完成 |
 | P4-02 | case-getRadioStats | done | legacy compatibility fixture 已保留，改為 underscore-prefixed explicit fixture，不進 discover_cases |
 | P4-03 | case-kickStation | done | legacy compatibility fixture 已保留，改為 underscore-prefixed explicit fixture，不進 discover_cases |
-| P4-04 | 417 case source 對齊治理 | done | 415 官方 discoverable D### 已對齊；2 legacy duplicate-row YAML 已轉為 explicit fixtures；目前 handoff 已補記 D060/D061/D062/D063/D064/D065/D066/D067/D068/D069 committed checkpoint 與 D185 targeted fail-shaped checkpoint；default lab baseline 已重建為 5G/2.4G=`WPA2-Personal + 00000000`、6G=`WPA3-Personal + SAE + 00000000`，D069 已完成 AP-only multiband DiscoveryMethodEnabled(UPR) mixed-band 校正，下一個 ready single-case 入口改為 D070 |
+| P4-04 | 417 case source 對齊治理 | done | 415 官方 discoverable D### 已對齊；2 legacy duplicate-row YAML 已轉為 explicit fixtures；目前 handoff 已補記 D060/D061/D062/D063/D064/D065/D066/D067/D068/D069/D070 committed checkpoint 與 D185 targeted fail-shaped checkpoint；default lab baseline 已重建為 5G/2.4G=`WPA2-Personal + 00000000`、6G=`WPA3-Personal + SAE + 00000000`，D070 已完成 AP-only multiband DiscoveryMethodEnabled(RNR) mixed-band 校正，下一個 ready single-case 入口改為 D072 |
 | P4-05 | Wifi_LLAPI Excel report pipeline | done | template + run report + merged-cell 相容 |
 
 ## Phase 5：CLI & Integration
@@ -69,7 +69,7 @@
 |---|---|---|---|
 | P5-01 | cli-full | done | `run/list` + `wifi-llapi build-template-report` |
 | P5-02 | orchestrator-full | in_progress | `wifi_llapi` 流程已整合；其他 plugin 仍 skeleton |
-| P5-03 | integration tests（mock transport） | done | 已補齊 realistic runtime 測試；最新逐案校正後 `tests/test_wifi_llapi_plugin_runtime.py=111 passed`、full suite `163 passed` |
+| P5-03 | integration tests（mock transport） | done | 已補齊 realistic runtime 測試；最新逐案校正後 `tests/test_wifi_llapi_plugin_runtime.py=157 passed`、full suite `210 passed` |
 | P5-04 | plugin agent-config schema/runtime | done | `agent_runtime.py` |
 | P5-05 | agent selection trace | done | per-case selection / fallback trace |
 | P5-06 | case-agent dispatcher（sequential） | done | `max_concurrency=1` |
