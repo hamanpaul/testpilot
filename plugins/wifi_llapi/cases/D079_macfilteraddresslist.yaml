@@ -1,179 +1,407 @@
-id: wifi-llapi-D079-macfilteraddresslist
-aliases:
-  - wifi-llapi-r071-macfilteraddresslist
-name: MACFilterAddressList — WiFi.AccessPoint.{i}.
-version: '1.0'
+id: wifi-llapi-D079-macfilteraddresslist-accesspoint
+name: "MACFilterAddressList — WiFi.AccessPoint.{i}."
+version: '1.1'
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 79
-  object: "WiFi.AccessPoint.{i}."
-  api: "MACFilterAddressList"
+  row: 71
+  object: WiFi.AccessPoint.{i}.
+  api: MACFilterAddressList
+  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli WiFi.AccessPoint.{i}.MACFilterAddressList=
+hlapi_command: 'ubus-cli "WiFi.AccessPoint.1.MACFilterAddressList?"'
 llapi_support: Support
 implemented_by: pWHM
+bands: ["5g", "6g", "2.4g"]
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM0
-    STA:
-      role: sta
-      transport: serial
-      selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
-  links:
-  - from: STA
-    to: DUT
-    band: 5g
+  links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
-  Transport:
-  - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
-
+  - DUT: COM0 (AP role; MACFilterAddressList is calibrated as an AP-only case with no STA transport)
+  Live band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
+  - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
+  - 2.4G: DUT wl2 / AP5 / SSID.8 / testpilot2G / WPA2-Personal / 00000000
+  Preconditions:
+  - keep AP1, AP3, and AP5 enabled on the documented non-open baseline before probing MACFilterAddressList
+  - live 0319 probe showed the northbound getter and the `MACFiltering.Entry` tree stay empty at baseline
+  - on all three bands, `MACFiltering.addEntry(mac=...)` populates both `MACFilterAddressList` and the `MACFiltering.Entry` tree, and `MACFiltering.delEntry(mac=...)` clears both again
+  - `MACFiltering.Mode` is intentionally out of scope for D079; the AP1/AP3/AP5 mode semantics are handled separately by D081
 setup_steps: |
-  1) DUT 5G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
-  3) Association evidence:
-     - A0: iw dev wl0 link
-     - B0: wl -i wl0 assoclist
+  1) DUT baseline:
+     - keep AP1 / AP3 / AP5 enabled on the documented non-open baseline
+     - remove the band-specific probe MAC from AP1 / AP3 / AP5 before starting the getter check
+     - confirm the northbound getter and the `MACFiltering.Entry` tree are empty before adding a test MAC
+  2) Per-band MACFilterAddressList probe:
+     - add one band-specific MAC with `MACFiltering.addEntry(mac=...)`
+     - wait about two seconds for the northbound getter to converge, then capture the same MAC from `MACFilterAddressList?`
+     - capture the same MAC from the `MACFiltering.Entry` tree
+     - delete the same MAC with `MACFiltering.delEntry(mac=...)`
+     - wait about two seconds after delete, then confirm the getter and the entry tree both return to the empty baseline
 sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+  DUT:
     ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-  STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
-    iw dev wl0 link
-  DUT association evidence:
-    wl -i wl0 assoclist
+    ubus-cli WiFi.AccessPoint.3.Enable=1
+    ubus-cli WiFi.AccessPoint.5.Enable=1
+    ubus-cli "WiFi.AccessPoint.1.MACFiltering.delEntry(mac=62:2F:B8:66:BB:82)" 2>/dev/null || true
+    ubus-cli "WiFi.AccessPoint.3.MACFiltering.delEntry(mac=FA:DD:AC:24:5A:B4)" 2>/dev/null || true
+    ubus-cli "WiFi.AccessPoint.5.MACFiltering.delEntry(mac=FA:A0:DF:91:47:7C)" 2>/dev/null || true
+    wl -i wl0 bss
+    wl -i wl1 bss
+    wl -i wl2 bss
 test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli WiFi.AccessPoint.{i}.MACFilterAddressList=
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.AccessPoint.*.MACFilterAddressList?"
-  3) For stats/AssociatedDevice cases, generate traffic (ping/iperf) before re-read.
-  4) STA link validation:
-     iw dev wl0 link
-     iw dev wl1 link
-     wpa_cli -i wl1 status
-     iw dev wl2 link
-  5) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
-
+  1) Keep AP1, AP3, and AP5 enabled on the documented non-open baseline.
+  2) For each band, confirm `MACFilterAddressList?` starts empty and the `MACFiltering.Entry` tree exposes no MAC address entry.
+  3) Add one band-specific MAC with `MACFiltering.addEntry(mac=...)` on the same AP.
+  4) Wait about two seconds, then cross-check the same band-specific MAC from both the northbound getter and the `MACFiltering.Entry` tree.
+  5) Delete the same MAC with `MACFiltering.delEntry(mac=...)`, wait about two seconds, and confirm both surfaces return to the empty baseline.
+  6) Verdict: Pass. The live 0319 probe on AP1/AP3/AP5 showed the getter/list flow converges cleanly on all three bands without depending on the separate `MACFiltering.Mode` behavior.
 steps:
-- id: step1
+- id: step1_state_baseline_5g
   action: exec
   target: DUT
-  command: \\Add Station MAC to the table ubus-cli "WiFi.AccessPoint.{i}.MACFiltering.addEntry(mac=62:2F:B8:66:BB:82)"
-- id: step2
+  band: 5g
+  command: >-
+    VALUE=$(ubus-cli "WiFi.AccessPoint.1.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList5g=%s\n' "$VALUE"; else echo 'MACFilterAddressList5g=EMPTY'; fi
+  capture: state_baseline_5g
+- id: step2_entry_baseline_5g
   action: exec
   target: DUT
-  command: Check Station MAC added to the table ubus-cli WiFi.AccessPoint.? | grep MACFiltering.Entry WiFi.AccessPoint.1.MACFiltering.Entry.1.
-    WiFi.AccessPoint.1.MACFiltering.Entry.1.Alias="cpe-Entry-1" WiFi.AccessPoint.1.MACFiltering.Entry.1.MACAddress="62:2F:B8:66:BB:82"
-  depends_on: step1
-- id: step3
+  band: 5g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.1.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount5g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 'EntryMac5g=EMPTY'; fi
+  depends_on: step1_state_baseline_5g
+  capture: entry_baseline_5g
+- id: step3_add_entry_5g
   action: exec
   target: DUT
-  command: Set MAC Filtering Mode from Off to "WhiteList or Blacklist" ubus-cli WiFi.AccessPoint.{i}.MACFiltering.Mode="BlackList"
-    Whitelist (allow list) and Blacklist (deny list)
-  depends_on: step2
-  capture: result
+  band: 5g
+  command: >-
+    MAC='62:2F:B8:66:BB:82'; printf 'RequestedMac5g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.1.MACFiltering.addEntry(mac=$MAC)"
+  depends_on: step2_entry_baseline_5g
+  capture: add_entry_5g
+- id: step4_state_add_entry_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    sleep 2; VALUE=$(ubus-cli "WiFi.AccessPoint.1.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList5g=%s\n' "$VALUE"; else echo 'MACFilterAddressList5g=EMPTY'; fi
+  depends_on: step3_add_entry_5g
+  capture: state_add_entry_5g
+- id: step5_entry_add_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.1.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount5g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 'EntryMac5g=EMPTY'; fi
+  depends_on: step4_state_add_entry_5g
+  capture: entry_add_5g
+- id: step6_delete_entry_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    MAC='62:2F:B8:66:BB:82'; printf 'DeletedMac5g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.1.MACFiltering.delEntry(mac=$MAC)"
+  depends_on: step5_entry_add_5g
+  capture: delete_entry_5g
+- id: step7_state_delete_entry_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    sleep 2; VALUE=$(ubus-cli "WiFi.AccessPoint.1.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList5g=%s\n' "$VALUE"; else echo 'MACFilterAddressList5g=EMPTY'; fi
+  depends_on: step6_delete_entry_5g
+  capture: state_delete_entry_5g
+- id: step8_entry_delete_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.1.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount5g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 'EntryMac5g=EMPTY'; fi
+  depends_on: step7_state_delete_entry_5g
+  capture: entry_delete_5g
+- id: step9_state_baseline_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    VALUE=$(ubus-cli "WiFi.AccessPoint.3.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList6g=%s\n' "$VALUE"; else echo 'MACFilterAddressList6g=EMPTY'; fi
+  capture: state_baseline_6g
+- id: step10_entry_baseline_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount6g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac6g=%s\n' "$VALUE"; else echo 'EntryMac6g=EMPTY'; fi
+  depends_on: step9_state_baseline_6g
+  capture: entry_baseline_6g
+- id: step11_add_entry_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    MAC='FA:DD:AC:24:5A:B4'; printf 'RequestedMac6g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.3.MACFiltering.addEntry(mac=$MAC)"
+  depends_on: step10_entry_baseline_6g
+  capture: add_entry_6g
+- id: step12_state_add_entry_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    sleep 2; VALUE=$(ubus-cli "WiFi.AccessPoint.3.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList6g=%s\n' "$VALUE"; else echo 'MACFilterAddressList6g=EMPTY'; fi
+  depends_on: step11_add_entry_6g
+  capture: state_add_entry_6g
+- id: step13_entry_add_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount6g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac6g=%s\n' "$VALUE"; else echo 'EntryMac6g=EMPTY'; fi
+  depends_on: step12_state_add_entry_6g
+  capture: entry_add_6g
+- id: step14_delete_entry_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    MAC='FA:DD:AC:24:5A:B4'; printf 'DeletedMac6g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.3.MACFiltering.delEntry(mac=$MAC)"
+  depends_on: step13_entry_add_6g
+  capture: delete_entry_6g
+- id: step15_state_delete_entry_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    sleep 2; VALUE=$(ubus-cli "WiFi.AccessPoint.3.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList6g=%s\n' "$VALUE"; else echo 'MACFilterAddressList6g=EMPTY'; fi
+  depends_on: step14_delete_entry_6g
+  capture: state_delete_entry_6g
+- id: step16_entry_delete_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount6g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac6g=%s\n' "$VALUE"; else echo 'EntryMac6g=EMPTY'; fi
+  depends_on: step15_state_delete_entry_6g
+  capture: entry_delete_6g
+- id: step17_state_baseline_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    VALUE=$(ubus-cli "WiFi.AccessPoint.5.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList24g=%s\n' "$VALUE"; else echo 'MACFilterAddressList24g=EMPTY'; fi
+  capture: state_baseline_24g
+- id: step18_entry_baseline_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount24g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac24g=%s\n' "$VALUE"; else echo 'EntryMac24g=EMPTY'; fi
+  depends_on: step17_state_baseline_24g
+  capture: entry_baseline_24g
+- id: step19_add_entry_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    MAC='FA:A0:DF:91:47:7C'; printf 'RequestedMac24g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.5.MACFiltering.addEntry(mac=$MAC)"
+  depends_on: step18_entry_baseline_24g
+  capture: add_entry_24g
+- id: step20_state_add_entry_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    sleep 2; VALUE=$(ubus-cli "WiFi.AccessPoint.5.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList24g=%s\n' "$VALUE"; else echo 'MACFilterAddressList24g=EMPTY'; fi
+  depends_on: step19_add_entry_24g
+  capture: state_add_entry_24g
+- id: step21_entry_add_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount24g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac24g=%s\n' "$VALUE"; else echo 'EntryMac24g=EMPTY'; fi
+  depends_on: step20_state_add_entry_24g
+  capture: entry_add_24g
+- id: step22_delete_entry_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    MAC='FA:A0:DF:91:47:7C'; printf 'DeletedMac24g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.5.MACFiltering.delEntry(mac=$MAC)"
+  depends_on: step21_entry_add_24g
+  capture: delete_entry_24g
+- id: step23_state_delete_entry_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    sleep 2; VALUE=$(ubus-cli "WiFi.AccessPoint.5.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList24g=%s\n' "$VALUE"; else echo 'MACFilterAddressList24g=EMPTY'; fi
+  depends_on: step22_delete_entry_24g
+  capture: state_delete_entry_24g
+- id: step24_entry_delete_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount24g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac24g=%s\n' "$VALUE"; else echo 'EntryMac24g=EMPTY'; fi
+  depends_on: step23_state_delete_entry_24g
+  capture: entry_delete_24g
 pass_criteria:
-- field: result
-  operator: not_empty
-  value: ''
-  description: MACFilterAddressList 應回傳非空結果
-verification_command: 'cat /tmp/wl0_hapd.conf
-
-  accept_mac_file=/tmp/hostap_wl0.acl
-
-  or
-
-  deny_mac_file=/tmp/hostap_wl0.acl
-
-
-  cat /tmp/hostap_wl0.acl
-
-  62:2F:B8:66:BB:82
-
-
-
-  root@prplOS:/# cat /tmp/wl0_hapd.conf | grep mac
-
-  macaddr_acl=0
-
-  deny_mac_file=/tmp/hostap_wl0.acl
-
-  root@prplOS:/# cat /tmp/hostap_wl0.acl
-
-  62:2F:B8:66:BB:82'
+- field: state_baseline_5g.MACFilterAddressList5g
+  operator: equals
+  value: 'EMPTY'
+  description: 5G AP1 / wl0 getter should start empty before adding the probe MAC.
+- field: entry_baseline_5g.EntryCount5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 / wl0 entry tree should start with no MAC address entry.
+- field: entry_baseline_5g.EntryMac5g
+  operator: equals
+  value: 'EMPTY'
+  description: 5G AP1 / wl0 entry tree should expose no MAC address at baseline.
+- field: add_entry_5g.RequestedMac5g
+  operator: equals
+  value: '62:2F:B8:66:BB:82'
+  description: 5G AP1 / wl0 should add the documented probe MAC.
+- field: state_add_entry_5g.MACFilterAddressList5g
+  operator: equals
+  value: '62:2F:B8:66:BB:82'
+  description: 5G AP1 / wl0 getter should expose the same MAC after addEntry.
+- field: entry_add_5g.EntryCount5g
+  operator: equals
+  value: '1'
+  description: 5G AP1 / wl0 entry tree should expose exactly one MAC address after addEntry.
+- field: entry_add_5g.EntryMac5g
+  operator: equals
+  value: '62:2F:B8:66:BB:82'
+  description: 5G AP1 / wl0 entry tree should expose the same probe MAC after addEntry.
+- field: state_delete_entry_5g.MACFilterAddressList5g
+  operator: equals
+  value: 'EMPTY'
+  description: 5G AP1 / wl0 getter should return to empty after delEntry.
+- field: entry_delete_5g.EntryCount5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 / wl0 entry tree should return to zero MAC address entries after delEntry.
+- field: entry_delete_5g.EntryMac5g
+  operator: equals
+  value: 'EMPTY'
+  description: 5G AP1 / wl0 entry tree should expose no MAC address after delEntry.
+- field: state_baseline_6g.MACFilterAddressList6g
+  operator: equals
+  value: 'EMPTY'
+  description: 6G AP3 / wl1 getter should start empty before adding the probe MAC.
+- field: entry_baseline_6g.EntryCount6g
+  operator: equals
+  value: '0'
+  description: 6G AP3 / wl1 entry tree should start with no MAC address entry.
+- field: entry_baseline_6g.EntryMac6g
+  operator: equals
+  value: 'EMPTY'
+  description: 6G AP3 / wl1 entry tree should expose no MAC address at baseline.
+- field: add_entry_6g.RequestedMac6g
+  operator: equals
+  value: 'FA:DD:AC:24:5A:B4'
+  description: 6G AP3 / wl1 should add the documented probe MAC.
+- field: state_add_entry_6g.MACFilterAddressList6g
+  operator: equals
+  value: 'FA:DD:AC:24:5A:B4'
+  description: 6G AP3 / wl1 getter should expose the same MAC after addEntry.
+- field: entry_add_6g.EntryCount6g
+  operator: equals
+  value: '1'
+  description: 6G AP3 / wl1 entry tree should expose exactly one MAC address after addEntry.
+- field: entry_add_6g.EntryMac6g
+  operator: equals
+  value: 'FA:DD:AC:24:5A:B4'
+  description: 6G AP3 / wl1 entry tree should expose the same probe MAC after addEntry.
+- field: state_delete_entry_6g.MACFilterAddressList6g
+  operator: equals
+  value: 'EMPTY'
+  description: 6G AP3 / wl1 getter should return to empty after delEntry.
+- field: entry_delete_6g.EntryCount6g
+  operator: equals
+  value: '0'
+  description: 6G AP3 / wl1 entry tree should return to zero MAC address entries after delEntry.
+- field: entry_delete_6g.EntryMac6g
+  operator: equals
+  value: 'EMPTY'
+  description: 6G AP3 / wl1 entry tree should expose no MAC address after delEntry.
+- field: state_baseline_24g.MACFilterAddressList24g
+  operator: equals
+  value: 'EMPTY'
+  description: 2.4G AP5 / wl2 getter should start empty before adding the probe MAC.
+- field: entry_baseline_24g.EntryCount24g
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 / wl2 entry tree should start with no MAC address entry.
+- field: entry_baseline_24g.EntryMac24g
+  operator: equals
+  value: 'EMPTY'
+  description: 2.4G AP5 / wl2 entry tree should expose no MAC address at baseline.
+- field: add_entry_24g.RequestedMac24g
+  operator: equals
+  value: 'FA:A0:DF:91:47:7C'
+  description: 2.4G AP5 / wl2 should add the documented probe MAC.
+- field: state_add_entry_24g.MACFilterAddressList24g
+  operator: equals
+  value: 'FA:A0:DF:91:47:7C'
+  description: 2.4G AP5 / wl2 getter should expose the same MAC after addEntry.
+- field: entry_add_24g.EntryCount24g
+  operator: equals
+  value: '1'
+  description: 2.4G AP5 / wl2 entry tree should expose exactly one MAC address after addEntry.
+- field: entry_add_24g.EntryMac24g
+  operator: equals
+  value: 'FA:A0:DF:91:47:7C'
+  description: 2.4G AP5 / wl2 entry tree should expose the same probe MAC after addEntry.
+- field: state_delete_entry_24g.MACFilterAddressList24g
+  operator: equals
+  value: 'EMPTY'
+  description: 2.4G AP5 / wl2 getter should return to empty after delEntry.
+- field: entry_delete_24g.EntryCount24g
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 / wl2 entry tree should return to zero MAC address entries after delEntry.
+- field: entry_delete_24g.EntryMac24g
+  operator: equals
+  value: 'EMPTY'
+  description: 2.4G AP5 / wl2 entry tree should expose no MAC address after delEntry.
+verification_command: |
+  VALUE=$(ubus-cli "WiFi.AccessPoint.1.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList5g=%s\n' "$VALUE"; else echo 'MACFilterAddressList5g=EMPTY'; fi
+  OUT=$(ubus-cli "WiFi.AccessPoint.1.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount5g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 'EntryMac5g=EMPTY'; fi
+  MAC='62:2F:B8:66:BB:82'; printf 'RequestedMac5g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.1.MACFiltering.addEntry(mac=$MAC)"
+  sleep 2; VALUE=$(ubus-cli "WiFi.AccessPoint.1.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList5g=%s\n' "$VALUE"; else echo 'MACFilterAddressList5g=EMPTY'; fi | sed -n '1,20p'
+  OUT=$(ubus-cli "WiFi.AccessPoint.1.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount5g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 'EntryMac5g=EMPTY'; fi | sed -n '1,20p'
+  MAC='62:2F:B8:66:BB:82'; printf 'DeletedMac5g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.1.MACFiltering.delEntry(mac=$MAC)"
+  sleep 2; VALUE=$(ubus-cli "WiFi.AccessPoint.1.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList5g=%s\n' "$VALUE"; else echo 'MACFilterAddressList5g=EMPTY'; fi | sed -n '1,20p'
+  OUT=$(ubus-cli "WiFi.AccessPoint.1.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount5g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 'EntryMac5g=EMPTY'; fi | sed -n '1,20p'
+  VALUE=$(ubus-cli "WiFi.AccessPoint.3.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList6g=%s\n' "$VALUE"; else echo 'MACFilterAddressList6g=EMPTY'; fi
+  OUT=$(ubus-cli "WiFi.AccessPoint.3.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount6g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac6g=%s\n' "$VALUE"; else echo 'EntryMac6g=EMPTY'; fi
+  MAC='FA:DD:AC:24:5A:B4'; printf 'RequestedMac6g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.3.MACFiltering.addEntry(mac=$MAC)"
+  sleep 2; VALUE=$(ubus-cli "WiFi.AccessPoint.3.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList6g=%s\n' "$VALUE"; else echo 'MACFilterAddressList6g=EMPTY'; fi | sed -n '1,20p'
+  OUT=$(ubus-cli "WiFi.AccessPoint.3.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount6g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac6g=%s\n' "$VALUE"; else echo 'EntryMac6g=EMPTY'; fi | sed -n '1,20p'
+  MAC='FA:DD:AC:24:5A:B4'; printf 'DeletedMac6g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.3.MACFiltering.delEntry(mac=$MAC)"
+  sleep 2; VALUE=$(ubus-cli "WiFi.AccessPoint.3.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList6g=%s\n' "$VALUE"; else echo 'MACFilterAddressList6g=EMPTY'; fi | sed -n '1,20p'
+  OUT=$(ubus-cli "WiFi.AccessPoint.3.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount6g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac6g=%s\n' "$VALUE"; else echo 'EntryMac6g=EMPTY'; fi | sed -n '1,20p'
+  VALUE=$(ubus-cli "WiFi.AccessPoint.5.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList24g=%s\n' "$VALUE"; else echo 'MACFilterAddressList24g=EMPTY'; fi
+  OUT=$(ubus-cli "WiFi.AccessPoint.5.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount24g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac24g=%s\n' "$VALUE"; else echo 'EntryMac24g=EMPTY'; fi
+  MAC='FA:A0:DF:91:47:7C'; printf 'RequestedMac24g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.5.MACFiltering.addEntry(mac=$MAC)"
+  sleep 2; VALUE=$(ubus-cli "WiFi.AccessPoint.5.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList24g=%s\n' "$VALUE"; else echo 'MACFilterAddressList24g=EMPTY'; fi | sed -n '1,20p'
+  OUT=$(ubus-cli "WiFi.AccessPoint.5.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount24g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac24g=%s\n' "$VALUE"; else echo 'EntryMac24g=EMPTY'; fi | sed -n '1,20p'
+  MAC='FA:A0:DF:91:47:7C'; printf 'DeletedMac24g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.5.MACFiltering.delEntry(mac=$MAC)"
+  sleep 2; VALUE=$(ubus-cli "WiFi.AccessPoint.5.MACFilterAddressList?" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFilterAddressList="\([^"]*\)".*/\1/p'); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'MACFilterAddressList24g=%s\n' "$VALUE"; else echo 'MACFilterAddressList24g=EMPTY'; fi | sed -n '1,20p'
+  OUT=$(ubus-cli "WiFi.AccessPoint.5.?" 2>&1); printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 's/^/EntryCount24g=/'; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]' '[:upper:]'); printf 'EntryMac24g=%s\n' "$VALUE"; else echo 'EntryMac24g=EMPTY'; fi | sed -n '1,20p'
 results_reference:
-  v4.0.1:
+  v4.0.3:
     5g: Pass
     6g: Pass
     2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: ''
+    comment: '0319 serialwrap live probe on AP1/AP3/AP5 showed MACFilterAddressList and the same-band MACFiltering.Entry tree both start empty. After addEntry and after delEntry, a bounded wait of about two seconds gives a stable readback where the getter and entry tree converge together to the same band-specific MAC and then back to empty. D079 intentionally stays AP-only and does not depend on the separate MACFiltering.Mode semantics handled by D081.'

@@ -6614,6 +6614,204 @@ def test_d078_qosmapset_accesspoint_evaluate_live_examples():
     assert plugin.evaluate(d078, d078_wrong_5g_baseline_results) is False
 
 
+def test_d079_macfilteraddresslist_accesspoint_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+
+    d079_raw = yaml.safe_load((cases_dir / "D079_macfilteraddresslist.yaml").read_text(encoding="utf-8"))
+    d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
+    d079_commands = "\n".join(str(step.get("command", "")) for step in d079["steps"])
+
+    assert "aliases" not in d079_raw
+    assert d079["id"] == "wifi-llapi-D079-macfilteraddresslist-accesspoint"
+    assert d079["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d079["source"]["row"] == 71
+    assert d079["source"]["baseline"] == "BCM v4.0.3"
+    assert d079["llapi_support"] == "Support"
+    assert d079["implemented_by"] == "pWHM"
+    assert d079["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d079["topology"]["devices"]) == {"DUT"}
+    assert d079["topology"]["links"] == []
+    assert d079["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.MACFilterAddressList?"'
+    assert (
+        'ubus-cli "WiFi.AccessPoint.1.MACFiltering.delEntry(mac=62:2F:B8:66:BB:82)"'
+        in d079.get("sta_env_setup", "")
+    )
+    assert (
+        'ubus-cli "WiFi.AccessPoint.3.MACFiltering.delEntry(mac=FA:DD:AC:24:5A:B4)"'
+        in d079.get("sta_env_setup", "")
+    )
+    assert (
+        'ubus-cli "WiFi.AccessPoint.5.MACFiltering.delEntry(mac=FA:A0:DF:91:47:7C)"'
+        in d079.get("sta_env_setup", "")
+    )
+    assert "RequestedMac6g=" in d079_commands
+    assert "EntryMac24g=" in d079_commands
+    assert any(
+        criterion["field"] == "state_add_entry_6g.MACFilterAddressList6g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "FA:DD:AC:24:5A:B4"
+        for criterion in d079["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "entry_delete_24g.EntryCount24g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "0"
+        for criterion in d079["pass_criteria"]
+    )
+    assert d079["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d079["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d079["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+
+
+def test_d079_macfilteraddresslist_accesspoint_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
+
+    assert plugin.setup_env(d079, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    executed_commands = recorder.transports[0].executed_commands
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.Enable=1") == 1
+    assert (
+        executed_commands.count(
+            'ubus-cli "WiFi.AccessPoint.1.MACFiltering.delEntry(mac=62:2F:B8:66:BB:82)" 2>/dev/null || true'
+        )
+        == 1
+    )
+    assert (
+        executed_commands.count(
+            'ubus-cli "WiFi.AccessPoint.3.MACFiltering.delEntry(mac=FA:DD:AC:24:5A:B4)" 2>/dev/null || true'
+        )
+        == 1
+    )
+    assert (
+        executed_commands.count(
+            'ubus-cli "WiFi.AccessPoint.5.MACFiltering.delEntry(mac=FA:A0:DF:91:47:7C)" 2>/dev/null || true'
+        )
+        == 1
+    )
+    assert executed_commands.count("wl -i wl0 bss") == 1
+    assert executed_commands.count("wl -i wl1 bss") == 1
+    assert executed_commands.count("wl -i wl2 bss") == 1
+    assert all("STA" not in command for command in executed_commands)
+    plugin.teardown(d079, topology)
+
+
+def test_d079_macfilteraddresslist_accesspoint_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
+
+    def list_output(suffix: str, value: str) -> str:
+        return f"MACFilterAddressList{suffix}={value}"
+
+    def entry_output(suffix: str, count: int, value: str) -> str:
+        return "\n".join(
+            [
+                f"EntryCount{suffix}={count}",
+                f"EntryMac{suffix}={value}",
+            ]
+        )
+
+    def add_output(suffix: str, mac: str) -> str:
+        return f"RequestedMac{suffix}={mac}"
+
+    def delete_output(suffix: str, mac: str) -> str:
+        return f"DeletedMac{suffix}={mac}"
+
+    d079_steps: dict[str, dict[str, Any]] = {}
+    for suffix, band_key, mac, base in (
+        ("5g", "5g", "62:2F:B8:66:BB:82", 1),
+        ("6g", "6g", "FA:DD:AC:24:5A:B4", 9),
+        ("24g", "24g", "FA:A0:DF:91:47:7C", 17),
+    ):
+        d079_steps[f"step{base}_state_baseline_{band_key}"] = {
+            "success": True,
+            "output": list_output(suffix, "EMPTY"),
+            "timing": 0.01,
+        }
+        d079_steps[f"step{base + 1}_entry_baseline_{band_key}"] = {
+            "success": True,
+            "output": entry_output(suffix, 0, "EMPTY"),
+            "timing": 0.01,
+        }
+        d079_steps[f"step{base + 2}_add_entry_{band_key}"] = {
+            "success": True,
+            "output": add_output(suffix, mac),
+            "timing": 0.01,
+        }
+        d079_steps[f"step{base + 3}_state_add_entry_{band_key}"] = {
+            "success": True,
+            "output": list_output(suffix, mac),
+            "timing": 0.01,
+        }
+        d079_steps[f"step{base + 4}_entry_add_{band_key}"] = {
+            "success": True,
+            "output": entry_output(suffix, 1, mac),
+            "timing": 0.01,
+        }
+        d079_steps[f"step{base + 5}_delete_entry_{band_key}"] = {
+            "success": True,
+            "output": delete_output(suffix, mac),
+            "timing": 0.01,
+        }
+        d079_steps[f"step{base + 6}_state_delete_entry_{band_key}"] = {
+            "success": True,
+            "output": list_output(suffix, "EMPTY"),
+            "timing": 0.01,
+        }
+        d079_steps[f"step{base + 7}_entry_delete_{band_key}"] = {
+            "success": True,
+            "output": entry_output(suffix, 0, "EMPTY"),
+            "timing": 0.01,
+        }
+
+    d079_results = {"steps": d079_steps}
+    assert plugin.evaluate(d079, d079_results) is True
+
+    d079_wrong_6g_state_results = {
+        "steps": {
+            **d079_steps,
+            "step12_state_add_entry_6g": {
+                "success": True,
+                "output": list_output("6g", "EMPTY"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d079, d079_wrong_6g_state_results) is False
+
+    d079_wrong_24g_delete_results = {
+        "steps": {
+            **d079_steps,
+            "step24_entry_delete_24g": {
+                "success": True,
+                "output": entry_output("24g", 1, "FA:A0:DF:91:47:7C"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d079, d079_wrong_24g_delete_results) is False
+
+    d079_wrong_5g_baseline_results = {
+        "steps": {
+            **d079_steps,
+            "step2_entry_baseline_5g": {
+                "success": True,
+                "output": entry_output("5g", 1, "62:2F:B8:66:BB:82"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d079, d079_wrong_5g_baseline_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
@@ -8640,6 +8838,163 @@ def test_d078_qosmapset_accesspoint_config_set_fragment_executes():
     assert proc.stdout.strip().splitlines() == [
         "QoSMapSetCfg5gCount=1",
         "QoSMapSetCfg5g=255",
+    ]
+
+
+def test_d079_macfilteraddresslist_accesspoint_verification_fragments_preserve_sequence():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
+
+    verification_commands = plugin._extract_cli_fragments(d079["verification_command"])
+    step_commands = [step["command"] for step in d079["steps"]]
+
+    def fragments(command: str, suffix: str = "") -> list[str]:
+        rendered = f"{command}{suffix}" if suffix else command
+        return plugin._extract_cli_fragments(rendered)
+
+    expected_commands = []
+    seen: set[str] = set()
+    for start in (0, 8, 16):
+        for command, suffix in (
+            (step_commands[start], ""),
+            (step_commands[start + 1], ""),
+            (step_commands[start + 2], ""),
+            (step_commands[start + 3], " | sed -n '1,20p'"),
+            (step_commands[start + 4], " | sed -n '1,20p'"),
+            (step_commands[start + 5], ""),
+            (step_commands[start + 6], " | sed -n '1,20p'"),
+            (step_commands[start + 7], " | sed -n '1,20p'"),
+        ):
+            for fragment in fragments(command, suffix):
+                if fragment in seen:
+                    continue
+                expected_commands.append(fragment)
+                seen.add(fragment)
+
+    assert verification_commands == expected_commands
+
+
+def test_d079_macfilteraddresslist_accesspoint_state_baseline_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
+    step1_command = d079["steps"][0]["command"]
+    sample_output = 'WiFi.AccessPoint.1.MACFilterAddressList=""\n'
+
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
+        handle.write(sample_output)
+        temp_path = handle.name
+
+    try:
+        adapted_command = step1_command.replace(
+            'ubus-cli "WiFi.AccessPoint.1.MACFilterAddressList?"',
+            f"cat {temp_path}",
+        )
+        proc = subprocess.run(
+            ["sh", "-lc", adapted_command],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    finally:
+        Path(temp_path).unlink(missing_ok=True)
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == ["MACFilterAddressList5g=EMPTY"]
+
+
+def test_d079_macfilteraddresslist_accesspoint_entry_baseline_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
+    step2_command = d079["steps"][1]["command"]
+    sample_output = 'WiFi.AccessPoint.1.MACFiltering.Mode="Off"\n'
+
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
+        handle.write(sample_output)
+        temp_path = handle.name
+
+    try:
+        adapted_command = step2_command.replace(
+            'ubus-cli "WiFi.AccessPoint.1.?"',
+            f"cat {temp_path}",
+        )
+        proc = subprocess.run(
+            ["sh", "-lc", adapted_command],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    finally:
+        Path(temp_path).unlink(missing_ok=True)
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == [
+        "EntryCount5g=0",
+        "EntryMac5g=EMPTY",
+    ]
+
+
+def test_d079_macfilteraddresslist_accesspoint_state_add_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
+    step4_command = d079["steps"][3]["command"]
+    sample_output = 'WiFi.AccessPoint.1.MACFilterAddressList="62:2f:b8:66:bb:82"\n'
+
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
+        handle.write(sample_output)
+        temp_path = handle.name
+
+    try:
+        adapted_command = step4_command.replace(
+            'ubus-cli "WiFi.AccessPoint.1.MACFilterAddressList?"',
+            f"cat {temp_path}",
+        )
+        proc = subprocess.run(
+            ["sh", "-lc", adapted_command],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    finally:
+        Path(temp_path).unlink(missing_ok=True)
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == ["MACFilterAddressList5g=62:2F:B8:66:BB:82"]
+
+
+def test_d079_macfilteraddresslist_accesspoint_entry_add_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
+    step5_command = d079["steps"][4]["command"]
+    sample_output = "\n".join(
+        [
+            'WiFi.AccessPoint.1.MACFiltering.Entry.1.Alias="cpe-Entry-1"',
+            'WiFi.AccessPoint.1.MACFiltering.Entry.1.MACAddress="62:2f:b8:66:bb:82"',
+        ]
+    )
+
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
+        handle.write(sample_output)
+        temp_path = handle.name
+
+    try:
+        adapted_command = step5_command.replace(
+            'ubus-cli "WiFi.AccessPoint.1.?"',
+            f"cat {temp_path}",
+        )
+        proc = subprocess.run(
+            ["sh", "-lc", adapted_command],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    finally:
+        Path(temp_path).unlink(missing_ok=True)
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == [
+        "EntryCount5g=1",
+        "EntryMac5g=62:2F:B8:66:BB:82",
     ]
 
 
