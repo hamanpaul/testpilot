@@ -5327,6 +5327,172 @@ def test_d068_discoverymethodenabled_accesspoint_fils_evaluate_live_examples():
     assert plugin.evaluate(d068, d068_wrong_restore_results) is False
 
 
+def test_d069_discoverymethodenabled_accesspoint_upr_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+
+    d069_raw = yaml.safe_load(
+        (cases_dir / "D069_discoverymethodenabled_accesspoint_upr.yaml").read_text(encoding="utf-8")
+    )
+    d069 = load_case(cases_dir / "D069_discoverymethodenabled_accesspoint_upr.yaml")
+    d069_commands = "\n".join(str(step.get("command", "")) for step in d069["steps"])
+
+    assert "aliases" not in d069_raw
+    assert d069["id"] == "wifi-llapi-D069-discoverymethodenabled-accesspoint-upr"
+    assert d069["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d069["source"]["row"] == 69
+    assert d069["source"]["baseline"] == "BCM v4.0.3"
+    assert d069["llapi_support"] == "Support"
+    assert d069["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d069["topology"]["devices"]) == {"DUT"}
+    assert d069["topology"]["links"] == []
+    assert d069["hlapi_command"] == 'ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=UPR'
+    assert "wl -i wl0 bss" in d069.get("sta_env_setup", "")
+    assert "wl -i wl1 bss" in d069.get("sta_env_setup", "")
+    assert "wl -i wl2 bss" in d069.get("sta_env_setup", "")
+    assert 'WiFi.AccessPoint.1.DiscoveryMethodEnabled?"' in d069_commands
+    assert "DiscoveryMethodEnabled=UPR" in d069_commands
+    assert any(
+        criterion["field"] == "set_upr_6g.DiscoveryMethodEnabled"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "UPR"
+        for criterion in d069["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "set_upr_5g"
+        and criterion["operator"] == "contains"
+        and criterion["value"] == "invalid value"
+        for criterion in d069["pass_criteria"]
+    )
+    assert d069["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
+    assert d069["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d069["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
+
+
+def test_d069_discoverymethodenabled_accesspoint_upr_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d069 = load_case(cases_dir / "D069_discoverymethodenabled_accesspoint_upr.yaml")
+
+    assert plugin.setup_env(d069, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    assert recorder.transports[0].executed_commands.count("wl -i wl0 bss") == 1
+    assert recorder.transports[0].executed_commands.count("wl -i wl1 bss") == 1
+    assert recorder.transports[0].executed_commands.count("wl -i wl2 bss") == 1
+    plugin.teardown(d069, topology)
+
+
+def test_d069_discoverymethodenabled_accesspoint_upr_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d069 = load_case(cases_dir / "D069_discoverymethodenabled_accesspoint_upr.yaml")
+
+    d069_results = {
+        "steps": {
+            "step1_default_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step2_default_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step3_default_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step4_set_upr_5g": {
+                "success": True,
+                "output": "ERROR: set WiFi.AccessPoint.1.DiscoveryMethodEnabled failed (10 - invalid value)",
+                "timing": 0.01,
+            },
+            "step5_set_upr_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.\nWiFi.AccessPoint.3.DiscoveryMethodEnabled="UPR"',
+                "timing": 0.01,
+            },
+            "step6_set_upr_24g": {
+                "success": True,
+                "output": "ERROR: set WiFi.AccessPoint.5.DiscoveryMethodEnabled failed (10 - invalid value)",
+                "timing": 0.01,
+            },
+            "step7_after_upr_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step8_after_upr_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.DiscoveryMethodEnabled="UPR"',
+                "timing": 0.01,
+            },
+            "step9_after_upr_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step10_restore_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.\nWiFi.AccessPoint.1.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step11_restore_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.\nWiFi.AccessPoint.3.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+            "step12_restore_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.\nWiFi.AccessPoint.5.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d069, d069_results) is True
+
+    d069_wrong_5g_results = {
+        "steps": {
+            **d069_results["steps"],
+            "step4_set_upr_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.\nWiFi.AccessPoint.1.DiscoveryMethodEnabled="UPR"',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d069, d069_wrong_5g_results) is False
+
+    d069_wrong_6g_results = {
+        "steps": {
+            **d069_results["steps"],
+            "step8_after_upr_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.DiscoveryMethodEnabled="Default"',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d069, d069_wrong_6g_results) is False
+
+    d069_wrong_restore_results = {
+        "steps": {
+            **d069_results["steps"],
+            "step11_restore_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.\nWiFi.AccessPoint.3.DiscoveryMethodEnabled="UPR"',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d069, d069_wrong_restore_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
@@ -6660,6 +6826,29 @@ def test_d068_discoverymethodenabled_accesspoint_fils_verification_fragments_pre
     ]
 
     assert len(verification_commands) == 13
+    assert verification_commands[:-1] == expected_commands
+    assert verification_commands[-1] == 'ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?"'
+
+
+def test_d069_discoverymethodenabled_accesspoint_upr_verification_fragments_preserve_sequence():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d069 = load_case(cases_dir / "D069_discoverymethodenabled_accesspoint_upr.yaml")
+
+    verification_commands = plugin._extract_cli_fragments(d069["verification_command"])
+    expected_commands = [
+        d069["steps"][0]["command"],
+        d069["steps"][1]["command"],
+        d069["steps"][2]["command"],
+        d069["steps"][3]["command"],
+        d069["steps"][4]["command"],
+        d069["steps"][5]["command"],
+        d069["steps"][9]["command"],
+        d069["steps"][10]["command"],
+        d069["steps"][11]["command"],
+    ]
+
+    assert len(verification_commands) == 10
     assert verification_commands[:-1] == expected_commands
     assert verification_commands[-1] == 'ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?"'
 
