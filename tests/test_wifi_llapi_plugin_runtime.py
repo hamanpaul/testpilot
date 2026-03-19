@@ -7502,6 +7502,184 @@ def test_d081_mode_accesspoint_macfiltering_evaluate_live_examples():
     assert plugin.evaluate(d081, d081_wrong_24g_acl_results) is False
 
 
+def test_d082_maxassociateddevices_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+
+    d082_raw = yaml.safe_load((cases_dir / "D082_maxassociateddevices.yaml").read_text(encoding="utf-8"))
+    d082 = load_case(cases_dir / "D082_maxassociateddevices.yaml")
+    d082_commands = "\n".join(str(step.get("command", "")) for step in d082["steps"])
+
+    assert "aliases" not in d082_raw
+    assert d082["id"] == "wifi-llapi-D082-maxassociateddevices"
+    assert d082["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d082["source"]["row"] == 74
+    assert d082["source"]["baseline"] == "BCM v4.0.3"
+    assert d082["llapi_support"] == "Support"
+    assert d082["implemented_by"] == "Vendor Module"
+    assert d082["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d082["topology"]["devices"]) == {"DUT"}
+    assert d082["topology"]["links"] == []
+    assert d082["hlapi_command"] == "ubus-cli WiFi.AccessPoint.1.MaxAssociatedDevices=32"
+    assert "killall wpa_supplicant" not in d082.get("sta_env_setup", "")
+    assert "AfterTempHostapdMax24g=" in d082_commands
+    assert any(
+        criterion["field"] == "max_after_temp_5g.AfterTempHostapdMax5g"
+        and criterion["operator"] == "not_equals"
+        and criterion["reference"] == "max_after_temp_5g.AfterTempGetterMax5g"
+        for criterion in d082["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "max_after_restore_24g.AfterRestoreHostapdCount24g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "2"
+        for criterion in d082["pass_criteria"]
+    )
+    assert d082["results_reference"]["v4.0.3"]["5g"] == "Fail"
+    assert d082["results_reference"]["v4.0.3"]["6g"] == "Fail"
+    assert d082["results_reference"]["v4.0.3"]["2.4g"] == "Fail"
+
+
+def test_d082_maxassociateddevices_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d082 = load_case(cases_dir / "D082_maxassociateddevices.yaml")
+
+    assert plugin.setup_env(d082, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    executed_commands = recorder.transports[0].executed_commands
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.Enable=1") == 1
+    assert executed_commands.count("wl -i wl0 bss") == 1
+    assert executed_commands.count("wl -i wl1 bss") == 1
+    assert executed_commands.count("wl -i wl2 bss") == 1
+    assert all("STA" not in command for command in executed_commands)
+    plugin.teardown(d082, topology)
+
+
+def test_d082_maxassociateddevices_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d082 = load_case(cases_dir / "D082_maxassociateddevices.yaml")
+
+    def baseline_output(prefix: str) -> str:
+        return "\n".join(
+            [
+                f"BaselineGetterMax{prefix}=32",
+                f"BaselineHostapdMax{prefix}=32",
+                f"BaselineHostapdCount{prefix}=2",
+            ]
+        )
+
+    def request_output(prefix: str, phase: str) -> str:
+        if phase == "temp":
+            return f"RequestedTempMax{prefix}=31"
+        return f"RestoreMax{prefix}=32"
+
+    def after_temp_output(prefix: str, getter: str, hostapd: str, count: str) -> str:
+        return "\n".join(
+            [
+                f"AfterTempGetterMax{prefix}={getter}",
+                f"AfterTempHostapdMax{prefix}={hostapd}",
+                f"AfterTempHostapdCount{prefix}={count}",
+            ]
+        )
+
+    def after_restore_output(prefix: str, getter: str, hostapd: str, count: str) -> str:
+        return "\n".join(
+            [
+                f"AfterRestoreGetterMax{prefix}={getter}",
+                f"AfterRestoreHostapdMax{prefix}={hostapd}",
+                f"AfterRestoreHostapdCount{prefix}={count}",
+            ]
+        )
+
+    d082_results = {
+        "steps": {
+            "step1_max_baseline_5g": {"success": True, "output": baseline_output("5g"), "timing": 0.01},
+            "step2_set_temp_5g": {"success": True, "output": request_output("5g", "temp"), "timing": 0.01},
+            "step3_max_after_temp_5g": {
+                "success": True,
+                "output": after_temp_output("5g", "31", "32", "2"),
+                "timing": 0.01,
+            },
+            "step4_restore_5g": {"success": True, "output": request_output("5g", "restore"), "timing": 0.01},
+            "step5_max_after_restore_5g": {
+                "success": True,
+                "output": after_restore_output("5g", "32", "32", "2"),
+                "timing": 0.01,
+            },
+            "step6_max_baseline_6g": {"success": True, "output": baseline_output("6g"), "timing": 0.01},
+            "step7_set_temp_6g": {"success": True, "output": request_output("6g", "temp"), "timing": 0.01},
+            "step8_max_after_temp_6g": {
+                "success": True,
+                "output": after_temp_output("6g", "31", "32", "2"),
+                "timing": 0.01,
+            },
+            "step9_restore_6g": {"success": True, "output": request_output("6g", "restore"), "timing": 0.01},
+            "step10_max_after_restore_6g": {
+                "success": True,
+                "output": after_restore_output("6g", "32", "32", "2"),
+                "timing": 0.01,
+            },
+            "step11_max_baseline_24g": {"success": True, "output": baseline_output("24g"), "timing": 0.01},
+            "step12_set_temp_24g": {"success": True, "output": request_output("24g", "temp"), "timing": 0.01},
+            "step13_max_after_temp_24g": {
+                "success": True,
+                "output": after_temp_output("24g", "31", "32", "2"),
+                "timing": 0.01,
+            },
+            "step14_restore_24g": {"success": True, "output": request_output("24g", "restore"), "timing": 0.01},
+            "step15_max_after_restore_24g": {
+                "success": True,
+                "output": after_restore_output("24g", "32", "32", "2"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d082, d082_results) is True
+
+    d082_wrong_6g_temp_getter = {
+        "steps": {
+            **d082_results["steps"],
+            "step8_max_after_temp_6g": {
+                "success": True,
+                "output": after_temp_output("6g", "32", "32", "2"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d082, d082_wrong_6g_temp_getter) is False
+
+    d082_wrong_5g_hostapd_converged = {
+        "steps": {
+            **d082_results["steps"],
+            "step3_max_after_temp_5g": {
+                "success": True,
+                "output": after_temp_output("5g", "31", "31", "2"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d082, d082_wrong_5g_hostapd_converged) is False
+
+    d082_wrong_24g_restore = {
+        "steps": {
+            **d082_results["steps"],
+            "step15_max_after_restore_24g": {
+                "success": True,
+                "output": after_restore_output("24g", "31", "32", "2"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d082, d082_wrong_24g_restore) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
