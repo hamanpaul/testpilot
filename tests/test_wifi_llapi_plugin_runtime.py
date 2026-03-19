@@ -5680,6 +5680,213 @@ def test_d070_discoverymethodenabled_accesspoint_rnr_evaluate_live_examples():
     assert plugin.evaluate(d070, d070_wrong_restore_results) is False
 
 
+def test_d072_enable_accesspoint_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+
+    d072_raw = yaml.safe_load((cases_dir / "D072_enable_accesspoint.yaml").read_text(encoding="utf-8"))
+    d072 = load_case(cases_dir / "D072_enable_accesspoint.yaml")
+    d072_commands = "\n".join(str(step.get("command", "")) for step in d072["steps"])
+
+    assert "aliases" not in d072_raw
+    assert d072["id"] == "wifi-llapi-D072-enable-accesspoint"
+    assert d072["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d072["source"]["row"] == 72
+    assert d072["source"]["baseline"] == "BCM v4.0.3"
+    assert d072["llapi_support"] == "Support"
+    assert d072["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d072["topology"]["devices"]) == {"DUT"}
+    assert d072["topology"]["links"] == []
+    assert d072["hlapi_command"] == "ubus-cli WiFi.AccessPoint.1.Enable=1"
+    assert "ubus-cli WiFi.AccessPoint.1.Enable=1" in d072.get("sta_env_setup", "")
+    assert "ubus-cli WiFi.AccessPoint.3.Enable=1" in d072.get("sta_env_setup", "")
+    assert "ubus-cli WiFi.AccessPoint.5.Enable=1" in d072.get("sta_env_setup", "")
+    assert "DriverBssState6g=" in d072_commands
+    assert "StartDisabled24gTotalCount=" in d072_commands
+    assert any(
+        criterion["field"] == "cfg_disable_6g.StartDisabled6gOneCount"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "1"
+        for criterion in d072["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "cfg_enable_24g.StartDisabled24gTotalCount"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "0"
+        for criterion in d072["pass_criteria"]
+    )
+    assert d072["results_reference"]["v4.0.3"]["5g"] == "To be tested"
+    assert d072["results_reference"]["v4.0.3"]["6g"] == "To be tested"
+    assert d072["results_reference"]["v4.0.3"]["2.4g"] == "To be tested"
+
+
+def test_d072_enable_accesspoint_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d072 = load_case(cases_dir / "D072_enable_accesspoint.yaml")
+
+    assert plugin.setup_env(d072, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    executed_commands = recorder.transports[0].executed_commands
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.Enable=1") == 1
+    assert executed_commands.count("wl -i wl0 bss") == 1
+    assert executed_commands.count("wl -i wl1 bss") == 1
+    assert executed_commands.count("wl -i wl2 bss") == 1
+    plugin.teardown(d072, topology)
+
+
+def test_d072_enable_accesspoint_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d072 = load_case(cases_dir / "D072_enable_accesspoint.yaml")
+
+    d072_results = {
+        "steps": {
+            "step1_default_5g": {"success": True, "output": "WiFi.AccessPoint.1.Enable=1", "timing": 0.01},
+            "step2_default_6g": {"success": True, "output": "WiFi.AccessPoint.3.Enable=1", "timing": 0.01},
+            "step3_default_24g": {"success": True, "output": "WiFi.AccessPoint.5.Enable=1", "timing": 0.01},
+            "step4_disable_5g": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.\nWiFi.AccessPoint.1.Enable=0",
+                "timing": 0.01,
+            },
+            "step5_state_disable_5g": {
+                "success": True,
+                "output": 'Enable5g=0\nStatus5g="Disabled"',
+                "timing": 0.01,
+            },
+            "step6_bss_disable_5g": {"success": True, "output": "DriverBssState5g=down", "timing": 0.01},
+            "step7_cfg_disable_5g": {
+                "success": True,
+                "output": "StartDisabled5g=1\nStartDisabled5gOneCount=1\nStartDisabled5gZeroCount=0\nStartDisabled5gTotalCount=1",
+                "timing": 0.01,
+            },
+            "step8_enable_5g": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.\nWiFi.AccessPoint.1.Enable=1",
+                "timing": 0.01,
+            },
+            "step9_state_enable_5g": {
+                "success": True,
+                "output": 'Enable5g=1\nStatus5g="Enabled"',
+                "timing": 0.01,
+            },
+            "step10_bss_enable_5g": {"success": True, "output": "DriverBssState5g=up", "timing": 0.01},
+            "step11_cfg_enable_5g": {
+                "success": True,
+                "output": "StartDisabled5gOneCount=0\nStartDisabled5gZeroCount=0\nStartDisabled5gTotalCount=0",
+                "timing": 0.01,
+            },
+            "step12_disable_6g": {
+                "success": True,
+                "output": "WiFi.AccessPoint.3.\nWiFi.AccessPoint.3.Enable=0",
+                "timing": 0.01,
+            },
+            "step13_state_disable_6g": {
+                "success": True,
+                "output": 'Enable6g=0\nStatus6g="Disabled"',
+                "timing": 0.01,
+            },
+            "step14_bss_disable_6g": {"success": True, "output": "DriverBssState6g=down", "timing": 0.01},
+            "step15_cfg_disable_6g": {
+                "success": True,
+                "output": "StartDisabled6g=1\nStartDisabled6gOneCount=1\nStartDisabled6gZeroCount=0\nStartDisabled6gTotalCount=1",
+                "timing": 0.01,
+            },
+            "step16_enable_6g": {
+                "success": True,
+                "output": "WiFi.AccessPoint.3.\nWiFi.AccessPoint.3.Enable=1",
+                "timing": 0.01,
+            },
+            "step17_state_enable_6g": {
+                "success": True,
+                "output": 'Enable6g=1\nStatus6g="Enabled"',
+                "timing": 0.01,
+            },
+            "step18_bss_enable_6g": {"success": True, "output": "DriverBssState6g=up", "timing": 0.01},
+            "step19_cfg_enable_6g": {
+                "success": True,
+                "output": "StartDisabled6gOneCount=0\nStartDisabled6gZeroCount=0\nStartDisabled6gTotalCount=0",
+                "timing": 0.01,
+            },
+            "step20_disable_24g": {
+                "success": True,
+                "output": "WiFi.AccessPoint.5.\nWiFi.AccessPoint.5.Enable=0",
+                "timing": 0.01,
+            },
+            "step21_state_disable_24g": {
+                "success": True,
+                "output": 'Enable24g=0\nStatus24g="Disabled"',
+                "timing": 0.01,
+            },
+            "step22_bss_disable_24g": {"success": True, "output": "DriverBssState24g=down", "timing": 0.01},
+            "step23_cfg_disable_24g": {
+                "success": True,
+                "output": "StartDisabled24g=1\nStartDisabled24gOneCount=1\nStartDisabled24gZeroCount=0\nStartDisabled24gTotalCount=1",
+                "timing": 0.01,
+            },
+            "step24_enable_24g": {
+                "success": True,
+                "output": "WiFi.AccessPoint.5.\nWiFi.AccessPoint.5.Enable=1",
+                "timing": 0.01,
+            },
+            "step25_state_enable_24g": {
+                "success": True,
+                "output": 'Enable24g=1\nStatus24g="Enabled"',
+                "timing": 0.01,
+            },
+            "step26_bss_enable_24g": {"success": True, "output": "DriverBssState24g=up", "timing": 0.01},
+            "step27_cfg_enable_24g": {
+                "success": True,
+                "output": "StartDisabled24gOneCount=0\nStartDisabled24gZeroCount=0\nStartDisabled24gTotalCount=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d072, d072_results) is True
+
+    d072_wrong_6g_bss_results = {
+        "steps": {
+            **d072_results["steps"],
+            "step14_bss_disable_6g": {
+                "success": True,
+                "output": "DriverBssState6g=up",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d072, d072_wrong_6g_bss_results) is False
+
+    d072_wrong_24g_cfg_results = {
+        "steps": {
+            **d072_results["steps"],
+            "step23_cfg_disable_24g": {
+                "success": True,
+                "output": "StartDisabled24gOneCount=0\nStartDisabled24gZeroCount=0\nStartDisabled24gTotalCount=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d072, d072_wrong_24g_cfg_results) is False
+
+    d072_wrong_5g_restore_results = {
+        "steps": {
+            **d072_results["steps"],
+            "step9_state_enable_5g": {
+                "success": True,
+                "output": 'Enable5g=1\nStatus5g="Disabled"',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d072, d072_wrong_5g_restore_results) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
@@ -7094,6 +7301,132 @@ def test_d070_discoverymethodenabled_accesspoint_rnr_config_fragment_executes():
         "RnrEnabled6gCount=1",
         "RnrDisabled6gCount=1",
         "RnrTotal6gCount=2",
+    ]
+
+
+def test_d072_enable_accesspoint_verification_fragments_preserve_sequence():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d072 = load_case(cases_dir / "D072_enable_accesspoint.yaml")
+
+    verification_commands = plugin._extract_cli_fragments(d072["verification_command"])
+    expected_commands = [
+        d072["steps"][0]["command"],
+        d072["steps"][1]["command"],
+        d072["steps"][2]["command"],
+        d072["steps"][3]["command"],
+        d072["steps"][4]["command"],
+        d072["steps"][5]["command"],
+        d072["steps"][6]["command"],
+        d072["steps"][7]["command"],
+        d072["steps"][8]["command"] + " | sed -n '1,20p'",
+        d072["steps"][9]["command"] + " | sed -n '1,20p'",
+        d072["steps"][10]["command"] + " | sed -n '1,20p'",
+        d072["steps"][11]["command"],
+        d072["steps"][12]["command"],
+        d072["steps"][13]["command"],
+        d072["steps"][14]["command"],
+        d072["steps"][15]["command"],
+        d072["steps"][16]["command"] + " | sed -n '1,20p'",
+        d072["steps"][17]["command"] + " | sed -n '1,20p'",
+        d072["steps"][18]["command"] + " | sed -n '1,20p'",
+        d072["steps"][19]["command"],
+        d072["steps"][20]["command"],
+        d072["steps"][21]["command"],
+        d072["steps"][22]["command"],
+        d072["steps"][23]["command"],
+        d072["steps"][24]["command"] + " | sed -n '1,20p'",
+        d072["steps"][25]["command"] + " | sed -n '1,20p'",
+        d072["steps"][26]["command"] + " | sed -n '1,20p'",
+    ]
+
+    assert verification_commands == expected_commands
+
+
+def test_d072_enable_accesspoint_state_snapshot_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d072 = load_case(cases_dir / "D072_enable_accesspoint.yaml")
+    step5_command = d072["steps"][4]["command"]
+    pipeline = step5_command.split("|", 1)[1].strip()
+    sample_output = "\n".join(
+        [
+            "WiFi.AccessPoint.1.Enable=0",
+            'WiFi.AccessPoint.1.Status="Disabled"',
+        ]
+    )
+
+    proc = subprocess.run(
+        [
+            "sh",
+            "-lc",
+            f"cat <<'EOF' | {pipeline}\n{sample_output}\nEOF",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == [
+        "Enable5g=0",
+        'Status5g="Disabled"',
+    ]
+
+
+def test_d072_enable_accesspoint_disable_config_fragment_executes():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d072 = load_case(cases_dir / "D072_enable_accesspoint.yaml")
+    step7_command = d072["steps"][6]["command"]
+
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
+        handle.write("start_disabled=1\n")
+        temp_path = handle.name
+
+    try:
+        adapted_command = step7_command.replace("/tmp/wl0_hapd.conf", temp_path)
+        proc = subprocess.run(
+            ["sh", "-lc", adapted_command],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    finally:
+        Path(temp_path).unlink(missing_ok=True)
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == [
+        "StartDisabled5g=1",
+        "StartDisabled5gOneCount=1",
+        "StartDisabled5gZeroCount=0",
+        "StartDisabled5gTotalCount=1",
+    ]
+
+
+def test_d072_enable_accesspoint_enable_config_fragment_executes_without_start_disabled():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d072 = load_case(cases_dir / "D072_enable_accesspoint.yaml")
+    step11_command = d072["steps"][10]["command"]
+
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
+        handle.write("")
+        temp_path = handle.name
+
+    try:
+        adapted_command = step11_command.replace("/tmp/wl0_hapd.conf", temp_path)
+        proc = subprocess.run(
+            ["sh", "-lc", adapted_command],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    finally:
+        Path(temp_path).unlink(missing_ok=True)
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == [
+        "StartDisabled5gOneCount=0",
+        "StartDisabled5gZeroCount=0",
+        "StartDisabled5gTotalCount=0",
     ]
 
 
