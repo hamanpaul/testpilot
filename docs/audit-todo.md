@@ -120,8 +120,8 @@ If I open only this file in a future session, I should do the following in order
 
 ## Current repo handoff snapshot（2026-03-20）
 
-- Trusted/calibrated official cases: **154 / 415**
-- Remaining official cases: **261**
+- Trusted/calibrated official cases: **155 / 415**
+- Remaining official cases: **260**
 - Active blockers:
   - `D037 OperatingStandard`
   - `D054 Tx_RetransmissionsFailed`
@@ -181,13 +181,16 @@ If I open only this file in a future session, I should do the following in order
   - `D094 WEPKey` → workbook-aligned AP-only multiband `Fail` checkpoint（setter accepted + getter reads back AABBCCDDEEFF0 on all 3 bands, but hostapd has NO wep lines under WPA2/WPA3 ModeEnabled）
   - `load_case(plugins/wifi_llapi/cases/D094_wepkey_accesspoint_security.yaml)` → `steps=12`
   - `serialwrap COM0 D094 WEPKey probe` → AP1/AP3/AP5 setter+readback pass; hostapd has zero WEP lines
-  - `D095 SSIDAdvertisementEnabled`
+  - `D095 SSIDAdvertisementEnabled` → workbook-aligned AP-only multiband `Pass` checkpoint（setter=0 causes hostapd ignore_broadcast_ssid to flip 0→2 on all 3 bands; restore=1 brings it back to 0）
+  - `load_case(plugins/wifi_llapi/cases/D095_ssidadvertisementenabled.yaml)` → `steps=12, pass_criteria=15`
+  - `serialwrap COM0 D095 SSIDAdvertisementEnabled probe` → AP1/AP3/AP5 setter+readback+hostapd full round-trip pass
+  - `D096 Status`
 - Continuation guard rails:
   - only committed YAML / docs count as trusted handoff state
   - do not infer progress from any local unstaged experiment outside these committed checkpoints
   - reuse `D058 TxPacketCount` as the positive same-STA tx-packet prior art when judging `D059`/`D060` family cases
-  - `D089_modeenabled_accesspoint_security.yaml` is the next stale YAML; reuse D088 的 mixed-band Security setter/getter divergence pattern together with D087 的 Security setter prior art before rewriting it
-  - `D185` / `D368` / `D371` 已從待校正池移出並折入完成數；最新 main-sweep checkpoint 則前進到 `D088`，下一個 ready sequential case 為 `D089`
+  - `D096_status.yaml` is the next stale YAML; reuse D095 的 AP-only multiband getter pattern
+  - `D185` / `D368` / `D371` 已從待校正池移出並折入完成數；最新 main-sweep checkpoint 則前進到 `D095`，下一個 ready sequential case 為 `D096`
 
 Current verified live baseline findings from this session:
 

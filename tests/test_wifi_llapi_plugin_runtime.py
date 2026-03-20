@@ -9206,6 +9206,69 @@ def test_d094_wepkey_evaluate_live_examples():
     assert plugin.evaluate(d094, d094_bad) is False
 
 
+def test_d095_ssidadvertisementenabled_contract():
+    """D095 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d095 = load_case(cases_dir / "D095_ssidadvertisementenabled.yaml")
+    assert d095["source"]["row"] == 95
+    assert d095["source"]["api"] == "SSIDAdvertisementEnabled"
+    assert len(d095["steps"]) == 12
+    assert len(d095["pass_criteria"]) == 15
+    assert d095["bands"] == ["5g", "6g", "2.4g"]
+    ref = d095["results_reference"]["v4.0.3"]
+    assert ref["5g"] == "Pass"
+    assert ref["6g"] == "Pass"
+    assert ref["2.4g"] == "Pass"
+
+
+def test_d095_ssidadvertisementenabled_setup_env_uses_only_dut_transport(monkeypatch):
+    """D095 topology uses DUT-only; setup_env should not require STA."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d095 = load_case(cases_dir / "D095_ssidadvertisementenabled.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(d095, topology=topo) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    plugin.teardown(d095, topo)
+
+
+def test_d095_ssidadvertisementenabled_evaluate_live_examples():
+    """D095 all-pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d095 = load_case(cases_dir / "D095_ssidadvertisementenabled.yaml")
+
+    d095_results = {
+        "steps": {
+            "step1_baseline_5g": {"success": True, "output": "BaselineAdv5g=1\nBaselineHapd5g=0", "timing": 0.01},
+            "step2_set_5g": {"success": True, "output": "", "timing": 0.01},
+            "step3_readback_5g": {"success": True, "output": "GetterAdv5g=0\nHapdAfterSet5g=2", "timing": 0.01},
+            "step4_restore_5g": {"success": True, "output": "RestoredAdv5g=1\nRestoredHapd5g=0", "timing": 0.01},
+            "step5_baseline_6g": {"success": True, "output": "BaselineAdv6g=1\nBaselineHapd6g=0", "timing": 0.01},
+            "step6_set_6g": {"success": True, "output": "", "timing": 0.01},
+            "step7_readback_6g": {"success": True, "output": "GetterAdv6g=0\nHapdAfterSet6g=2", "timing": 0.01},
+            "step8_restore_6g": {"success": True, "output": "RestoredAdv6g=1\nRestoredHapd6g=0", "timing": 0.01},
+            "step9_baseline_24g": {"success": True, "output": "BaselineAdv24g=1\nBaselineHapd24g=0", "timing": 0.01},
+            "step10_set_24g": {"success": True, "output": "", "timing": 0.01},
+            "step11_readback_24g": {"success": True, "output": "GetterAdv24g=0\nHapdAfterSet24g=2", "timing": 0.01},
+            "step12_restore_24g": {"success": True, "output": "RestoredAdv24g=1\nRestoredHapd24g=0", "timing": 0.01},
+        }
+    }
+    assert plugin.evaluate(d095, d095_results) is True
+
+    # Negative: if hostapd stays 0 after set (no convergence), should fail
+    d095_bad = {
+        "steps": {
+            **d095_results["steps"],
+            "step3_readback_5g": {"success": True, "output": "GetterAdv5g=0\nHapdAfterSet5g=0", "timing": 0.01},
+        }
+    }
+    assert plugin.evaluate(d095, d095_bad) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []

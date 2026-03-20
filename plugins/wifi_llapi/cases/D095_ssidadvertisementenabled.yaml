@@ -1,10 +1,8 @@
 id: wifi-llapi-D095-ssidadvertisementenabled
-aliases:
-  - wifi-llapi-r087-ssidadvertisementenabled
-name: SSIDAdvertisementEnabled — WiFi.AccessPoint.{i}.
+name: "SSIDAdvertisementEnabled — WiFi.AccessPoint.{i}."
 version: '1.0'
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
+  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
   sheet: Wifi_LLAPI
   row: 95
   object: "WiFi.AccessPoint.{i}."
@@ -12,144 +10,224 @@ source:
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli WiFi.AccessPoint.{i}.SSIDAdvertisementEnabled=1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.SSIDAdvertisementEnabled=0
 llapi_support: Support
 implemented_by: pWHM
+bands:
+  - 5g
+  - 6g
+  - 2.4g
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM0
-    STA:
-      role: sta
-      transport: serial
-      selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
-  links:
-  - from: STA
-    to: DUT
-    band: 5g
+  links: []
 test_environment: |
   Topology:
   - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
   Transport:
-  - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
-
-setup_steps: |
-  1) DUT 5G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
-  3) Association evidence:
-     - A0: iw dev wl0 link
-     - B0: wl -i wl0 assoclist
-sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
-    ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-  STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
-    iw dev wl0 link
-  DUT association evidence:
-    wl -i wl0 assoclist
-test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli WiFi.AccessPoint.{i}.SSIDAdvertisementEnabled=1
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.AccessPoint.*.SSIDAdvertisementEnabled?"
-  3) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
-
+  - DUT via serialwrap COM0
+  Baseline:
+  - 5G  = AP1 / wl0 / testpilot5G / WPA2-Personal
+  - 6G  = AP3 / wl1 / testpilot6G / WPA3-Personal / SAE
+  - 2.4G = AP5 / wl2 / testpilot2G / WPA2-Personal
+  Notes:
+  - SSIDAdvertisementEnabled=1 maps to hostapd ignore_broadcast_ssid=0 (advertised)
+  - SSIDAdvertisementEnabled=0 maps to hostapd ignore_broadcast_ssid=2 (hidden)
+  - Dual-BSS config: each wlX_hapd.conf has two ignore_broadcast_ssid lines; setter toggles first BSS only
 steps:
-- id: step1
-  action: exec
-  target: DUT
-  command: 1. Get SSIDAdvertisementEnabled value ubus-cli WiFi.AccessPoint.? | grep SSIDAdvertisementEnabled WiFi.AccessPoint.1.SSIDAdvertisementEnabled=1
-    WiFi.AccessPoint.3.SSIDAdvertisementEnabled=1 WiFi.AccessPoint.5.SSIDAdvertisementEnabled=1
-- id: step2
-  action: exec
-  target: DUT
-  command: Capture Beacon Packet and Check SSID 1=Enable "SSID not Hidden" 0=Disabled "SSID Hidden"
-  depends_on: step1
-  capture: result
+  # ---------- 5G ----------
+  - id: step1_baseline_5g
+    action: exec
+    target: DUT
+    command: |
+      echo "BaselineAdv5g=$(ubus-cli 'WiFi.AccessPoint.1.SSIDAdvertisementEnabled?' 2>/dev/null | grep -o 'SSIDAdvertisementEnabled=[0-9]*' | cut -d= -f2)"
+      echo "BaselineHapd5g=$(grep 'ignore_broadcast_ssid=' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+    capture: baseline_5g
+
+  - id: step2_set_5g
+    action: exec
+    target: DUT
+    depends_on: step1_baseline_5g
+    command: 'ubus-cli WiFi.AccessPoint.1.SSIDAdvertisementEnabled=0'
+    capture: set_5g
+
+  - id: step3_readback_5g
+    action: exec
+    target: DUT
+    depends_on: step2_set_5g
+    command: |
+      sleep 3
+      echo "GetterAdv5g=$(ubus-cli 'WiFi.AccessPoint.1.SSIDAdvertisementEnabled?' 2>/dev/null | grep -o 'SSIDAdvertisementEnabled=[0-9]*' | cut -d= -f2)"
+      echo "HapdAfterSet5g=$(grep 'ignore_broadcast_ssid=' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+    capture: readback_5g
+
+  - id: step4_restore_5g
+    action: exec
+    target: DUT
+    depends_on: step3_readback_5g
+    command: |
+      ubus-cli WiFi.AccessPoint.1.SSIDAdvertisementEnabled=1
+      sleep 3
+      echo "RestoredAdv5g=$(ubus-cli 'WiFi.AccessPoint.1.SSIDAdvertisementEnabled?' 2>/dev/null | grep -o 'SSIDAdvertisementEnabled=[0-9]*' | cut -d= -f2)"
+      echo "RestoredHapd5g=$(grep 'ignore_broadcast_ssid=' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+    capture: restore_5g
+
+  # ---------- 6G ----------
+  - id: step5_baseline_6g
+    action: exec
+    target: DUT
+    depends_on: step4_restore_5g
+    command: |
+      echo "BaselineAdv6g=$(ubus-cli 'WiFi.AccessPoint.3.SSIDAdvertisementEnabled?' 2>/dev/null | grep -o 'SSIDAdvertisementEnabled=[0-9]*' | cut -d= -f2)"
+      echo "BaselineHapd6g=$(grep 'ignore_broadcast_ssid=' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+    capture: baseline_6g
+
+  - id: step6_set_6g
+    action: exec
+    target: DUT
+    depends_on: step5_baseline_6g
+    command: 'ubus-cli WiFi.AccessPoint.3.SSIDAdvertisementEnabled=0'
+    capture: set_6g
+
+  - id: step7_readback_6g
+    action: exec
+    target: DUT
+    depends_on: step6_set_6g
+    command: |
+      sleep 3
+      echo "GetterAdv6g=$(ubus-cli 'WiFi.AccessPoint.3.SSIDAdvertisementEnabled?' 2>/dev/null | grep -o 'SSIDAdvertisementEnabled=[0-9]*' | cut -d= -f2)"
+      echo "HapdAfterSet6g=$(grep 'ignore_broadcast_ssid=' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+    capture: readback_6g
+
+  - id: step8_restore_6g
+    action: exec
+    target: DUT
+    depends_on: step7_readback_6g
+    command: |
+      ubus-cli WiFi.AccessPoint.3.SSIDAdvertisementEnabled=1
+      sleep 3
+      echo "RestoredAdv6g=$(ubus-cli 'WiFi.AccessPoint.3.SSIDAdvertisementEnabled?' 2>/dev/null | grep -o 'SSIDAdvertisementEnabled=[0-9]*' | cut -d= -f2)"
+      echo "RestoredHapd6g=$(grep 'ignore_broadcast_ssid=' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+    capture: restore_6g
+
+  # ---------- 2.4G ----------
+  - id: step9_baseline_24g
+    action: exec
+    target: DUT
+    depends_on: step8_restore_6g
+    command: |
+      echo "BaselineAdv24g=$(ubus-cli 'WiFi.AccessPoint.5.SSIDAdvertisementEnabled?' 2>/dev/null | grep -o 'SSIDAdvertisementEnabled=[0-9]*' | cut -d= -f2)"
+      echo "BaselineHapd24g=$(grep 'ignore_broadcast_ssid=' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+    capture: baseline_24g
+
+  - id: step10_set_24g
+    action: exec
+    target: DUT
+    depends_on: step9_baseline_24g
+    command: 'ubus-cli WiFi.AccessPoint.5.SSIDAdvertisementEnabled=0'
+    capture: set_24g
+
+  - id: step11_readback_24g
+    action: exec
+    target: DUT
+    depends_on: step10_set_24g
+    command: |
+      sleep 3
+      echo "GetterAdv24g=$(ubus-cli 'WiFi.AccessPoint.5.SSIDAdvertisementEnabled?' 2>/dev/null | grep -o 'SSIDAdvertisementEnabled=[0-9]*' | cut -d= -f2)"
+      echo "HapdAfterSet24g=$(grep 'ignore_broadcast_ssid=' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+    capture: readback_24g
+
+  - id: step12_restore_24g
+    action: exec
+    target: DUT
+    depends_on: step11_readback_24g
+    command: |
+      ubus-cli WiFi.AccessPoint.5.SSIDAdvertisementEnabled=1
+      sleep 3
+      echo "RestoredAdv24g=$(ubus-cli 'WiFi.AccessPoint.5.SSIDAdvertisementEnabled?' 2>/dev/null | grep -o 'SSIDAdvertisementEnabled=[0-9]*' | cut -d= -f2)"
+      echo "RestoredHapd24g=$(grep 'ignore_broadcast_ssid=' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+    capture: restore_24g
+
 pass_criteria:
-- field: result.SSIDAdvertisementEnabled
-  operator: contains
-  value: '1'
-  description: SSIDAdvertisementEnabled 應回傳包含 SSIDAdvertisementEnabled=1
-verification_command: 'root@prplOS:/# cat /tmp/wl0_hapd.conf | grep -E ''broadcast|ssid''
+  - field: baseline_5g.BaselineAdv5g
+    operator: equals
+    value: '1'
+    description: '5G baseline SSIDAdvertisementEnabled should be 1'
+  - field: readback_5g.GetterAdv5g
+    operator: equals
+    value: '0'
+    description: '5G getter reads back 0 after setter'
+  - field: readback_5g.HapdAfterSet5g
+    operator: equals
+    value: '2'
+    description: '5G hostapd ignore_broadcast_ssid changes to 2 (hidden)'
+  - field: restore_5g.RestoredAdv5g
+    operator: equals
+    value: '1'
+    description: '5G SSIDAdvertisementEnabled restored to 1'
+  - field: restore_5g.RestoredHapd5g
+    operator: equals
+    value: '0'
+    description: '5G hostapd ignore_broadcast_ssid restored to 0'
+  - field: baseline_6g.BaselineAdv6g
+    operator: equals
+    value: '1'
+    description: '6G baseline SSIDAdvertisementEnabled should be 1'
+  - field: readback_6g.GetterAdv6g
+    operator: equals
+    value: '0'
+    description: '6G getter reads back 0 after setter'
+  - field: readback_6g.HapdAfterSet6g
+    operator: equals
+    value: '2'
+    description: '6G hostapd ignore_broadcast_ssid changes to 2 (hidden)'
+  - field: restore_6g.RestoredAdv6g
+    operator: equals
+    value: '1'
+    description: '6G SSIDAdvertisementEnabled restored to 1'
+  - field: restore_6g.RestoredHapd6g
+    operator: equals
+    value: '0'
+    description: '6G hostapd ignore_broadcast_ssid restored to 0'
+  - field: baseline_24g.BaselineAdv24g
+    operator: equals
+    value: '1'
+    description: '2.4G baseline SSIDAdvertisementEnabled should be 1'
+  - field: readback_24g.GetterAdv24g
+    operator: equals
+    value: '0'
+    description: '2.4G getter reads back 0 after setter'
+  - field: readback_24g.HapdAfterSet24g
+    operator: equals
+    value: '2'
+    description: '2.4G hostapd ignore_broadcast_ssid changes to 2 (hidden)'
+  - field: restore_24g.RestoredAdv24g
+    operator: equals
+    value: '1'
+    description: '2.4G SSIDAdvertisementEnabled restored to 1'
+  - field: restore_24g.RestoredHapd24g
+    operator: equals
+    value: '0'
+    description: '2.4G hostapd ignore_broadcast_ssid restored to 0'
 
-  bssid=6C:15:DB:74:C0:B5
+verification_command: |
+  grep ignore_broadcast_ssid /tmp/wl0_hapd.conf
+  grep ignore_broadcast_ssid /tmp/wl1_hapd.conf
+  grep ignore_broadcast_ssid /tmp/wl2_hapd.conf
 
-  ssid=5G_Primary-BE
-
-  ignore_broadcast_ssid=2
-
-
-  ignore_broadcast_ssid=0 => "SSID not Hidden"
-
-  ignore_broadcast_ssid=2 => "SSID Hidden"'
 results_reference:
   v4.0.1:
     5g: Pass
     6g: Pass
     2.4g: Pass
-    comment: ''
   v4.0.3:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: ''
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: >-
+      All 3 bands: setter=0 causes hostapd ignore_broadcast_ssid to flip 0->2 (hidden),
+      getter reads back 0; restore=1 causes ignore_broadcast_ssid back to 0, getter
+      reads back 1. Full round-trip convergence on all bands.
