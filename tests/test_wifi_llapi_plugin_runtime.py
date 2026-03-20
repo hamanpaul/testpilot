@@ -9996,6 +9996,419 @@ def test_d109_selfpin_evaluate():
     assert plugin.evaluate(d109, results) is True
 
 
+
+def test_d110_uuid_contract():
+    """D110 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D110_uuid.yaml")
+    assert case["source"]["row"] == 110
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 3
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d110_uuid_setup_env(monkeypatch):
+    """D110 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d110 = load_case(cases_dir / "D110_uuid.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(d110, topology=topo) is True
+    plugin.teardown(d110, topo)
+
+
+def test_d110_uuid_evaluate():
+    """D110 all-pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    d110 = load_case(cases_dir / "D110_uuid.yaml")
+    results = {
+        "steps": {
+            "step1_5g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.WPS.UUID="47584a4e-464c-f545-f64e-4e4547584a4e"',
+                "timing": 0.01,
+            },
+            "step2_6g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.WPS.UUID="47584a4e-464c-f545-f64e-4e4547584a4e"',
+                "timing": 0.01,
+            },
+            "step3_24g": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.5.WPS.UUID="47584a4e-464c-f545-f64e-4e4547584a4e"',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d110, results) is True
+
+
+def test_d111_getstationstats_accesspoint_contract():
+    """D111 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D111_getstationstats_accesspoint.yaml")
+    assert case["source"]["row"] == 111
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 3
+    assert case["bands"] == ["5g"]
+
+
+def test_d111_getstationstats_accesspoint_setup_env(monkeypatch):
+    """D111 needs STA + DUT."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d111 = load_case(cases_dir / "D111_getstationstats_accesspoint.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(d111, topology=topo) is True
+    plugin.teardown(d111, topo)
+
+
+def test_d111_getstationstats_accesspoint_evaluate():
+    """D111 all-pass criteria met with live-shaped getStationStats output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    d111 = load_case(cases_dir / "D111_getstationstats_accesspoint.yaml")
+    results = {
+        "steps": {
+            "step1_assoc_precheck": {
+                "success": True,
+                "output": "2C:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step2_getstationstats": {
+                "success": True,
+                "output": 'MACAddress="2C:59:17:00:04:85"\nActive=1\nConnectionDuration=2985',
+                "timing": 0.01,
+            },
+            "step3_sta_mac": {
+                "success": True,
+                "output": "2c:59:17:00:04:85",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d111, results) is True
+
+
+def test_d112_getstationstats_active_contract():
+    """D112 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D112_getstationstats_active.yaml")
+    assert case["source"]["row"] == 112
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 2
+    assert len(case["pass_criteria"]) == 2
+    assert case["bands"] == ["5g"]
+
+
+def test_d112_getstationstats_active_setup_env(monkeypatch):
+    """D112 needs STA + DUT."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D112_getstationstats_active.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d112_getstationstats_active_evaluate():
+    """D112 pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D112_getstationstats_active.yaml")
+    results = {
+        "steps": {
+            "step1_assoc_precheck": {
+                "success": True,
+                "output": "2C:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step2_getstationstats": {
+                "success": True,
+                "output": "Active=1",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d113_getstationstats_associationtime_contract():
+    """D113 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D113_getstationstats_associationtime.yaml")
+    assert case["source"]["row"] == 113
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 2
+    assert len(case["pass_criteria"]) == 2
+    assert case["bands"] == ["5g"]
+
+
+def test_d113_getstationstats_associationtime_setup_env(monkeypatch):
+    """D113 needs STA + DUT."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D113_getstationstats_associationtime.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d113_getstationstats_associationtime_evaluate():
+    """D113 pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D113_getstationstats_associationtime.yaml")
+    results = {
+        "steps": {
+            "step1_assoc_precheck": {
+                "success": True,
+                "output": "2C:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step2_getstationstats": {
+                "success": True,
+                "output": "AssociationTime=2026-03-19T10:18:49Z",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d114_getstationstats_authenticationstate_contract():
+    """D114 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D114_getstationstats_authenticationstate.yaml")
+    assert case["source"]["row"] == 114
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 2
+    assert len(case["pass_criteria"]) == 2
+    assert case["bands"] == ["5g"]
+
+
+def test_d114_getstationstats_authenticationstate_setup_env(monkeypatch):
+    """D114 needs STA + DUT."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D114_getstationstats_authenticationstate.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d114_getstationstats_authenticationstate_evaluate():
+    """D114 pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D114_getstationstats_authenticationstate.yaml")
+    results = {
+        "steps": {
+            "step1_assoc_precheck": {
+                "success": True,
+                "output": "2C:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step2_getstationstats": {
+                "success": True,
+                "output": "AuthenticationState=1",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d115_getstationstats_avgsignalstrength_contract():
+    """D115 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D115_getstationstats_avgsignalstrength.yaml")
+    assert case["source"]["row"] == 115
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 2
+    assert len(case["pass_criteria"]) == 2
+    assert case["bands"] == ["5g"]
+
+
+def test_d115_getstationstats_avgsignalstrength_setup_env(monkeypatch):
+    """D115 needs STA + DUT."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D115_getstationstats_avgsignalstrength.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d115_getstationstats_avgsignalstrength_evaluate():
+    """D115 pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D115_getstationstats_avgsignalstrength.yaml")
+    results = {
+        "steps": {
+            "step1_assoc_precheck": {
+                "success": True,
+                "output": "2C:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step2_getstationstats": {
+                "success": True,
+                "output": "AvgSignalStrength=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d116_getstationstats_avgsignalstrengthbychain_contract():
+    """D116 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D116_getstationstats_avgsignalstrengthbychain.yaml")
+    assert case["source"]["row"] == 116
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 2
+    assert len(case["pass_criteria"]) == 2
+    assert case["bands"] == ["5g"]
+
+
+def test_d116_getstationstats_avgsignalstrengthbychain_setup_env(monkeypatch):
+    """D116 needs STA + DUT."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D116_getstationstats_avgsignalstrengthbychain.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d116_getstationstats_avgsignalstrengthbychain_evaluate():
+    """D116 pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D116_getstationstats_avgsignalstrengthbychain.yaml")
+    results = {
+        "steps": {
+            "step1_assoc_precheck": {
+                "success": True,
+                "output": "2C:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step2_getstationstats": {
+                "success": True,
+                "output": "AvgSignalStrengthByChain=-34",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d117_getstationstats_connectionduration_contract():
+    """D117 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D117_getstationstats_connectionduration.yaml")
+    assert case["source"]["row"] == 117
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 2
+    assert len(case["pass_criteria"]) == 2
+    assert case["bands"] == ["5g"]
+
+
+def test_d117_getstationstats_connectionduration_setup_env(monkeypatch):
+    """D117 needs STA + DUT."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D117_getstationstats_connectionduration.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d117_getstationstats_connectionduration_evaluate():
+    """D117 pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D117_getstationstats_connectionduration.yaml")
+    results = {
+        "steps": {
+            "step1_assoc_precheck": {
+                "success": True,
+                "output": "2C:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step2_getstationstats": {
+                "success": True,
+                "output": "ConnectionDuration=2985",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d119_enable_endpoint_contract():
+    """D119 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D119_enable_endpoint.yaml")
+    assert case["source"]["row"] == 105
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d119_enable_endpoint_setup_env(monkeypatch):
+    """D119 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d119 = load_case(cases_dir / "D119_enable_endpoint.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(d119, topology=topo) is True
+    plugin.teardown(d119, topo)
+
+
+def test_d119_enable_endpoint_evaluate():
+    """D119 pass criteria met with 'No data found' output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    d119 = load_case(cases_dir / "D119_enable_endpoint.yaml")
+    results = {
+        "steps": {
+            "step1_endpoint_probe": {
+                "success": True,
+                "output": 'WiFi.EndPoint.?\nNo data found',
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d119, results) is True
+
+
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
