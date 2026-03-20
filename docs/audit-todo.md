@@ -120,8 +120,8 @@ If I open only this file in a future session, I should do the following in order
 
 ## Current repo handoff snapshot（2026-03-20）
 
-- Trusted/calibrated official cases: **200 / 415**
-- Remaining official cases: **215**
+- Trusted/calibrated official cases: **212 / 415**
+- Remaining official cases: **203**
 - Active blockers:
   - `D037 OperatingStandard`
   - `D054 Tx_RetransmissionsFailed`
@@ -200,7 +200,7 @@ If I open only this file in a future session, I should do the following in order
   - only committed YAML / docs count as trusted handoff state
   - do not infer progress from any local unstaged experiment outside these committed checkpoints
   - reuse `D058 TxPacketCount` as the positive same-STA tx-packet prior art when judging `D059`/`D060` family cases
-  - `D185` / `D368` / `D371` 已從待校正池移出並折入完成數；最新 main-sweep checkpoint 則前進到 `D119`，下一個 ready sequential case 為 `D140`
+  - `D185` / `D368` / `D371` 已從待校正池移出並折入完成數；最新 main-sweep checkpoint 則前進到 `D119`，下一個 ready sequential case 為 `D176`
   - `D100` WDSEnable — 3-band setter round-trip with `wl dwds` driver convergence
   - `D101` WMMCapability — 3-band read-only getter, `wmm_enabled=1` on all bands
   - `D102` WMMEnable — 3-band setter round-trip, hostapd `wmm_enabled` converges; workbook marks Not Support

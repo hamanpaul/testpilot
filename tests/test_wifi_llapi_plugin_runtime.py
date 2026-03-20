@@ -11208,6 +11208,485 @@ def test_d139_getstats_txpacketcount_evaluate():
     assert plugin.evaluate(case, results) is True
 
 
+
+def test_d140_endpoint_intfname_contract():
+    """D140 EndPoint IntfName YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D140_intfname.yaml")
+    assert case["source"]["row"] == 126
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d140_endpoint_intfname_setup_env(monkeypatch):
+    """D140 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D140_intfname.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d140_endpoint_intfname_evaluate():
+    """D140 pass criteria met with No data found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D140_intfname.yaml")
+    results = {
+        "steps": {
+            "step1_endpoint_probe": {
+                "success": True,
+                "output": "WiFi.EndPoint.?" + "\n" + "No data found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d141_endpoint_multiapenable_contract():
+    """D141 EndPoint MultiAPEnable YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D141_multiapenable.yaml")
+    assert case["source"]["row"] == 127
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d141_endpoint_multiapenable_setup_env(monkeypatch):
+    """D141 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D141_multiapenable.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d141_endpoint_multiapenable_evaluate():
+    """D141 pass criteria met with No data found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D141_multiapenable.yaml")
+    results = {
+        "steps": {
+            "step1_endpoint_probe": {
+                "success": True,
+                "output": "WiFi.EndPoint.?" + "\n" + "No data found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d142_endpoint_enable_profile_wps_contract():
+    """D142 EndPoint Enable YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D142_enable_profile_wps.yaml")
+    assert case["source"]["row"] == 128
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d142_endpoint_enable_profile_wps_setup_env(monkeypatch):
+    """D142 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D142_enable_profile_wps.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d142_endpoint_enable_profile_wps_evaluate():
+    """D142 pass criteria met with No data found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D142_enable_profile_wps.yaml")
+    results = {
+        "steps": {
+            "step1_endpoint_probe": {
+                "success": True,
+                "output": "WiFi.EndPoint.?" + "\n" + "No data found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d143_endpoint_forcebssid_contract():
+    """D143 EndPoint ForceBSSID YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D143_forcebssid.yaml")
+    assert case["source"]["row"] == 129
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d143_endpoint_forcebssid_setup_env(monkeypatch):
+    """D143 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D143_forcebssid.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d143_endpoint_forcebssid_evaluate():
+    """D143 pass criteria met with No data found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D143_forcebssid.yaml")
+    results = {
+        "steps": {
+            "step1_endpoint_probe": {
+                "success": True,
+                "output": "WiFi.EndPoint.?" + "\n" + "No data found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d144_endpoint_keypassphrase_wps_security_contract():
+    """D144 EndPoint KeyPassPhrase YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D144_keypassphrase_wps_security.yaml")
+    assert case["source"]["row"] == 130
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d144_endpoint_keypassphrase_wps_security_setup_env(monkeypatch):
+    """D144 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D144_keypassphrase_wps_security.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d144_endpoint_keypassphrase_wps_security_evaluate():
+    """D144 pass criteria met with No data found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D144_keypassphrase_wps_security.yaml")
+    results = {
+        "steps": {
+            "step1_endpoint_probe": {
+                "success": True,
+                "output": "WiFi.EndPoint.?" + "\n" + "No data found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d145_endpoint_mfpconfig_wps_security_contract():
+    """D145 EndPoint MFPConfig YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D145_mfpconfig_wps_security.yaml")
+    assert case["source"]["row"] == 131
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d145_endpoint_mfpconfig_wps_security_setup_env(monkeypatch):
+    """D145 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D145_mfpconfig_wps_security.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d145_endpoint_mfpconfig_wps_security_evaluate():
+    """D145 pass criteria met with No data found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D145_mfpconfig_wps_security.yaml")
+    results = {
+        "steps": {
+            "step1_endpoint_probe": {
+                "success": True,
+                "output": "WiFi.EndPoint.?" + "\n" + "No data found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d146_endpoint_modeenabled_wps_security_contract():
+    """D146 EndPoint ModeEnabled YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D146_modeenabled_wps_security.yaml")
+    assert case["source"]["row"] == 132
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d146_endpoint_modeenabled_wps_security_setup_env(monkeypatch):
+    """D146 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D146_modeenabled_wps_security.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d146_endpoint_modeenabled_wps_security_evaluate():
+    """D146 pass criteria met with No data found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D146_modeenabled_wps_security.yaml")
+    results = {
+        "steps": {
+            "step1_endpoint_probe": {
+                "success": True,
+                "output": "WiFi.EndPoint.?" + "\n" + "No data found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d147_endpoint_presharedkey_wps_security_contract():
+    """D147 EndPoint PreSharedKey YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D147_presharedkey_wps_security.yaml")
+    assert case["source"]["row"] == 133
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d147_endpoint_presharedkey_wps_security_setup_env(monkeypatch):
+    """D147 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D147_presharedkey_wps_security.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d147_endpoint_presharedkey_wps_security_evaluate():
+    """D147 pass criteria met with No data found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D147_presharedkey_wps_security.yaml")
+    results = {
+        "steps": {
+            "step1_endpoint_probe": {
+                "success": True,
+                "output": "WiFi.EndPoint.?" + "\n" + "No data found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d148_endpoint_wepkey_wps_security_contract():
+    """D148 EndPoint WEPKey YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D148_wepkey_wps_security.yaml")
+    assert case["source"]["row"] == 134
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d148_endpoint_wepkey_wps_security_setup_env(monkeypatch):
+    """D148 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D148_wepkey_wps_security.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d148_endpoint_wepkey_wps_security_evaluate():
+    """D148 pass criteria met with No data found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D148_wepkey_wps_security.yaml")
+    results = {
+        "steps": {
+            "step1_endpoint_probe": {
+                "success": True,
+                "output": "WiFi.EndPoint.?" + "\n" + "No data found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d149_endpoint_ssid_profile_wps_contract():
+    """D149 EndPoint SSID YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D149_ssid_profile_wps.yaml")
+    assert case["source"]["row"] == 135
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d149_endpoint_ssid_profile_wps_setup_env(monkeypatch):
+    """D149 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D149_ssid_profile_wps.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d149_endpoint_ssid_profile_wps_evaluate():
+    """D149 pass criteria met with No data found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D149_ssid_profile_wps.yaml")
+    results = {
+        "steps": {
+            "step1_endpoint_probe": {
+                "success": True,
+                "output": "WiFi.EndPoint.?" + "\n" + "No data found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d150_endpoint_status_profile_wps_contract():
+    """D150 EndPoint Status YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D150_status_profile_wps.yaml")
+    assert case["source"]["row"] == 136
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d150_endpoint_status_profile_wps_setup_env(monkeypatch):
+    """D150 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D150_status_profile_wps.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d150_endpoint_status_profile_wps_evaluate():
+    """D150 pass criteria met with No data found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D150_status_profile_wps.yaml")
+    results = {
+        "steps": {
+            "step1_endpoint_probe": {
+                "success": True,
+                "output": "WiFi.EndPoint.?" + "\n" + "No data found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d154_endpoint_pairinginprogress_endpoint_wps_contract():
+    """D154 EndPoint PairingInProgress YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D154_pairinginprogress_endpoint_wps.yaml")
+    assert case["source"]["row"] == 137
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d154_endpoint_pairinginprogress_endpoint_wps_setup_env(monkeypatch):
+    """D154 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D154_pairinginprogress_endpoint_wps.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d154_endpoint_pairinginprogress_endpoint_wps_evaluate():
+    """D154 pass criteria met with No data found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D154_pairinginprogress_endpoint_wps.yaml")
+    results = {
+        "steps": {
+            "step1_endpoint_probe": {
+                "success": True,
+                "output": "WiFi.EndPoint.?" + "\n" + "No data found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
