@@ -8633,6 +8633,151 @@ def test_d087_keypassphrase_accesspoint_security_evaluate_live_examples():
     assert plugin.evaluate(d087, d087_wrong_24g_restore) is False
 
 
+def test_d088_mfpconfig_accesspoint_security_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+
+    d088_raw = yaml.safe_load((cases_dir / "D088_mfpconfig_accesspoint_security.yaml").read_text(encoding="utf-8"))
+    d088 = load_case(cases_dir / "D088_mfpconfig_accesspoint_security.yaml")
+    d088_commands = "\n".join(str(step.get("command", "")) for step in d088["steps"])
+
+    assert "aliases" not in d088_raw
+    assert d088["id"] == "wifi-llapi-D088-mfpconfig-accesspoint-security"
+    assert d088["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d088["source"]["row"] == 80
+    assert d088["source"]["baseline"] == "BCM v4.0.3"
+    assert d088["hlapi_command"] == "ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled"
+    assert d088["llapi_support"] == "Support"
+    assert d088["implemented_by"] == "pWHM"
+    assert d088["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d088["topology"]["devices"]) == {"DUT"}
+    assert d088["topology"]["links"] == []
+    assert "killall wpa_supplicant" not in d088.get("sta_env_setup", "")
+    assert "grep -m1 '^ieee80211w=' /tmp/wl1_hapd.conf" in d088_commands
+    assert 'case "$RAW" in 0) MFP=Disabled ;; 1) MFP=Optional ;; 2) MFP=Required ;;' in d088_commands
+    assert any(
+        criterion["field"] == "mfp_after_disable_6g.GetterMfpConfig6g"
+        and criterion["operator"] == "not_equals"
+        and criterion["reference"] == "mfp_after_disable_6g.HostapdMfpConfig6g"
+        for criterion in d088["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "mfp_after_disable_24g.HostapdMfpRaw24g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "0"
+        for criterion in d088["pass_criteria"]
+    )
+    assert d088["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d088["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
+    assert d088["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+
+
+def test_d088_mfpconfig_accesspoint_security_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d088 = load_case(cases_dir / "D088_mfpconfig_accesspoint_security.yaml")
+
+    assert plugin.setup_env(d088, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    executed_commands = recorder.transports[0].executed_commands
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.Enable=1") == 1
+    assert executed_commands.count("wl -i wl0 bss") == 1
+    assert executed_commands.count("wl -i wl1 bss") == 1
+    assert executed_commands.count("wl -i wl2 bss") == 1
+    assert all("STA" not in command for command in executed_commands)
+    plugin.teardown(d088, topology)
+
+
+def test_d088_mfpconfig_accesspoint_security_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d088 = load_case(cases_dir / "D088_mfpconfig_accesspoint_security.yaml")
+
+    def mode_output(prefix: str, value: str) -> str:
+        return f"ModeEnabled{prefix}={value}"
+
+    def disable_output(prefix: str) -> str:
+        return f"RequestedMfpConfig{prefix}=Disabled"
+
+    def after_disable_output(prefix: str, getter: str, keymgmt: str, hostapd_mfp: str, raw: str) -> str:
+        return "\n".join(
+            [
+                f"GetterMfpConfig{prefix}={getter}",
+                f"HostapdKeyMgmt{prefix}={keymgmt}",
+                f"HostapdMfpConfig{prefix}={hostapd_mfp}",
+                f"HostapdMfpRaw{prefix}={raw}",
+            ]
+        )
+
+    d088_results = {
+        "steps": {
+            "step1_security_mode_5g": {"success": True, "output": mode_output("5g", "WPA2-Personal"), "timing": 0.01},
+            "step2_mfp_disable_5g": {"success": True, "output": disable_output("5g"), "timing": 0.01},
+            "step3_mfp_after_disable_5g": {
+                "success": True,
+                "output": after_disable_output("5g", "Disabled", "WPA-PSK", "Disabled", "0"),
+                "timing": 0.01,
+            },
+            "step4_security_mode_6g": {"success": True, "output": mode_output("6g", "WPA3-Personal"), "timing": 0.01},
+            "step5_mfp_disable_6g": {"success": True, "output": disable_output("6g"), "timing": 0.01},
+            "step6_mfp_after_disable_6g": {
+                "success": True,
+                "output": after_disable_output("6g", "Disabled", "SAE", "Required", "2"),
+                "timing": 0.01,
+            },
+            "step7_security_mode_24g": {"success": True, "output": mode_output("24g", "WPA2-Personal"), "timing": 0.01},
+            "step8_mfp_disable_24g": {"success": True, "output": disable_output("24g"), "timing": 0.01},
+            "step9_mfp_after_disable_24g": {
+                "success": True,
+                "output": after_disable_output("24g", "Disabled", "WPA-PSK", "Disabled", "0"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d088, d088_results) is True
+
+    d088_wrong_5g_hostapd = {
+        "steps": {
+            **d088_results["steps"],
+            "step3_mfp_after_disable_5g": {
+                "success": True,
+                "output": after_disable_output("5g", "Disabled", "WPA-PSK", "Required", "2"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d088, d088_wrong_5g_hostapd) is False
+
+    d088_wrong_6g_hostapd = {
+        "steps": {
+            **d088_results["steps"],
+            "step6_mfp_after_disable_6g": {
+                "success": True,
+                "output": after_disable_output("6g", "Disabled", "SAE", "Disabled", "0"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d088, d088_wrong_6g_hostapd) is False
+
+    d088_wrong_24g_getter = {
+        "steps": {
+            **d088_results["steps"],
+            "step9_mfp_after_disable_24g": {
+                "success": True,
+                "output": after_disable_output("24g", "Optional", "WPA-PSK", "Disabled", "0"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d088, d088_wrong_24g_getter) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []

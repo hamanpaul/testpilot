@@ -60,7 +60,7 @@
 | P4-01 | wifi-plugin full implementation | done | setup/verify/execute/evaluate 已完成 |
 | P4-02 | case-getRadioStats | done | legacy compatibility fixture 已保留，改為 underscore-prefixed explicit fixture，不進 discover_cases |
 | P4-03 | case-kickStation | done | legacy compatibility fixture 已保留，改為 underscore-prefixed explicit fixture，不進 discover_cases |
-| P4-04 | 417 case source 對齊治理 | done | 415 官方 discoverable D### 已對齊；2 legacy duplicate-row YAML 已轉為 explicit fixtures；目前 handoff 已補記 D060/D061/D062/D063/D064/D065/D066/D067/D068/D069/D070/D072/D073/D074/D077/D078/D079/D080/D081/D082/D083/D084/D085/D086/D087 committed checkpoint，且 D185/D368/D371 已折入 completed official cases（progress=`147 / 415`，remaining=`268`）；default lab baseline 已重建為 5G/2.4G=`WPA2-Personal + 00000000`、6G=`WPA3-Personal + SAE + 00000000`，主 sequence 下一個 ready single-case 入口改為 D088 |
+| P4-04 | 417 case source 對齊治理 | done | 415 官方 discoverable D### 已對齊；2 legacy duplicate-row YAML 已轉為 explicit fixtures；目前 handoff 已補記 D060/D061/D062/D063/D064/D065/D066/D067/D068/D069/D070/D072/D073/D074/D077/D078/D079/D080/D081/D082/D083/D084/D085/D086/D087/D088 committed checkpoint，且 D185/D368/D371 已折入 completed official cases（progress=`148 / 415`，remaining=`267`）；default lab baseline 已重建為 5G/2.4G=`WPA2-Personal + 00000000`、6G=`WPA3-Personal + SAE + 00000000`，主 sequence 下一個 ready single-case 入口改為 D089 |
 | P4-05 | Wifi_LLAPI Excel report pipeline | done | template + run report + merged-cell 相容 |
 
 ## Phase 5：CLI & Integration

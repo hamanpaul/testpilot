@@ -1,144 +1,238 @@
 id: wifi-llapi-D088-mfpconfig-accesspoint-security
-aliases:
-  - wifi-llapi-r080-mfpconfig-accesspoint-security
-name: MFPConfig — WiFi.AccessPoint.{i}.Security
-version: '1.0'
+name: "MFPConfig — WiFi.AccessPoint.{i}.Security"
+version: '1.1'
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 88
-  object: "WiFi.AccessPoint.{i}.Security"
-  api: "MFPConfig"
+  row: 80
+  object: WiFi.AccessPoint.{i}.Security
+  api: MFPConfig
+  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Security.MFPConfig=Disabled
+hlapi_command: ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
 llapi_support: Support
 implemented_by: pWHM
+bands: ["5g", "6g", "2.4g"]
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM0
-    STA:
-      role: sta
-      transport: serial
-      selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
-  links:
-  - from: STA
-    to: DUT
-    band: 5g
+  links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
-  Transport:
-  - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
-
+  - DUT: COM0 (AP role; MFPConfig is calibrated as an AP-only Security setter/getter case with no STA transport)
+  Live band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
+  - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
+  - 2.4G: DUT wl2 / AP5 / SSID.8 / testpilot2G / WPA2-Personal / 00000000
+  Preconditions:
+  - keep AP1, AP3, and AP5 enabled on the documented non-open baseline before probing `Security.MFPConfig`
+  - workbook row 80 keeps the v4.0.3 reference at `Not Supported / Not Supported / Not Supported` with comment `hardcode in pwhm`
+  - live 0320 probe showed `MFPConfig=Disabled` is accepted and read back as `Disabled` on all three bands
+  - hostapd diverges by band: wl0 and wl2 keep `ieee80211w=0` (semantic `Disabled`), while wl1 keeps `wpa_key_mgmt=SAE` with `ieee80211w=2` (semantic `Required`)
+  - this makes the current firmware a mixed-band checkpoint: 5G and 2.4G genuinely converge to `Disabled`, while 6G remains hardcoded at the northbound getter and does not project the forced SAE/MFP requirement
 setup_steps: |
-  1) DUT 5G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
-  3) Association evidence:
-     - A0: iw dev wl0 link
-     - B0: wl -i wl0 assoclist
+  1) DUT baseline:
+     - keep AP1 / AP3 / AP5 enabled on the documented non-open baseline
+     - read the current `Security.ModeEnabled` context on all three bands
+  2) Per-band MFPConfig probe:
+     - set `MFPConfig=Disabled` on the same AP
+     - allow hostapd reload to settle, then re-read the getter and map hostapd `ieee80211w=` to the semantic MFP value (`0=Disabled`, `1=Optional`, `2=Required`)
+     - also record `wpa_key_mgmt=` so the 6G SAE-enforced path stays explicit
+  3) Verdict model:
+     - this is a mixed-band checkpoint
+     - 5G and 2.4G pass only when the getter and hostapd both converge to `Disabled`
+     - 6G passes only when the getter remains hardcoded at `Disabled` while hostapd still exposes `Required` (`ieee80211w=2`) under `wpa_key_mgmt=SAE`
 sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+  DUT:
     ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-  STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
-    iw dev wl0 link
-  DUT association evidence:
-    wl -i wl0 assoclist
+    ubus-cli WiFi.AccessPoint.3.Enable=1
+    ubus-cli WiFi.AccessPoint.5.Enable=1
+    wl -i wl0 bss
+    wl -i wl1 bss
+    wl -i wl2 bss
 test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli WiFi.AccessPoint.{i}.Security.MFPConfig=Disabled
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.AccessPoint.*.Security.MFPConfig?"
-  3) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
+  1) Read `Security.ModeEnabled` on AP1 / AP3 / AP5.
+  2) Set `MFPConfig=Disabled` on the same AP.
+  3) Re-read `Security.MFPConfig` and inspect hostapd `wpa_key_mgmt=` plus `ieee80211w=` on the matching band.
+  4) Map hostapd `ieee80211w=` to semantic MFP state (`Disabled` / `Optional` / `Required`) before comparing it to the getter.
+  Verdict: Mixed. 5G and 2.4G genuinely converge to `Disabled`, but 6G still reads back `Disabled` while hostapd remains SAE + `ieee80211w=2` (`Required`), so the 6G band is currently `Not Supported`.
 
 steps:
-- id: step1
+- id: step1_security_mode_5g
   action: exec
   target: DUT
-  command: ubus-cli WiFi.AccessPoint.? | grep Security.MFPConfig WiFi.AccessPoint.1.Security.MFPConfig="Disabled" WiFi.AccessPoint.3.Security.MFPConfig="Disabled"
-    WiFi.AccessPoint.5.Security.MFPConfig="Disabled"
-  capture: result
+  band: 5g
+  command: >-
+    MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p'); printf 'ModeEnabled5g=%s\n' "$MODE"
+  capture: security_mode_5g
+- id: step2_mfp_disable_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    printf 'RequestedMfpConfig5g=Disabled\n'; ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+  depends_on: step1_security_mode_5g
+  capture: mfp_disable_5g
+- id: step3_mfp_after_disable_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.Security.MFPConfig?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.MFPConfig="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'GetterMfpConfig5g=%s\n' "$VALUE"; else echo 'GetterMfpConfig5g=EMPTY'; fi; KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); RAW=$(grep -m1 '^ieee80211w=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true); case "$RAW" in 0) MFP=Disabled ;; 1) MFP=Optional ;; 2) MFP=Required ;; '') MFP=ABSENT ;; *) MFP="UNKNOWN:$RAW" ;; esac; printf 'HostapdKeyMgmt5g=%s\n' "${KM:-ABSENT}"; printf 'HostapdMfpConfig5g=%s\n' "$MFP"; printf 'HostapdMfpRaw5g=%s\n' "${RAW:-ABSENT}"
+  depends_on: step2_mfp_disable_5g
+  capture: mfp_after_disable_5g
+- id: step4_security_mode_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p'); printf 'ModeEnabled6g=%s\n' "$MODE"
+  capture: security_mode_6g
+- id: step5_mfp_disable_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    printf 'RequestedMfpConfig6g=Disabled\n'; ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Disabled
+  depends_on: step4_security_mode_6g
+  capture: mfp_disable_6g
+- id: step6_mfp_after_disable_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.MFPConfig?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.MFPConfig="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'GetterMfpConfig6g=%s\n' "$VALUE"; else echo 'GetterMfpConfig6g=EMPTY'; fi; KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); RAW=$(grep -m1 '^ieee80211w=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true); case "$RAW" in 0) MFP=Disabled ;; 1) MFP=Optional ;; 2) MFP=Required ;; '') MFP=ABSENT ;; *) MFP="UNKNOWN:$RAW" ;; esac; printf 'HostapdKeyMgmt6g=%s\n' "${KM:-ABSENT}"; printf 'HostapdMfpConfig6g=%s\n' "$MFP"; printf 'HostapdMfpRaw6g=%s\n' "${RAW:-ABSENT}"
+  depends_on: step5_mfp_disable_6g
+  capture: mfp_after_disable_6g
+- id: step7_security_mode_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p'); printf 'ModeEnabled24g=%s\n' "$MODE"
+  capture: security_mode_24g
+- id: step8_mfp_disable_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    printf 'RequestedMfpConfig24g=Disabled\n'; ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled
+  depends_on: step7_security_mode_24g
+  capture: mfp_disable_24g
+- id: step9_mfp_after_disable_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.MFPConfig?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.MFPConfig="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'GetterMfpConfig24g=%s\n' "$VALUE"; else echo 'GetterMfpConfig24g=EMPTY'; fi; KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); RAW=$(grep -m1 '^ieee80211w=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true); case "$RAW" in 0) MFP=Disabled ;; 1) MFP=Optional ;; 2) MFP=Required ;; '') MFP=ABSENT ;; *) MFP="UNKNOWN:$RAW" ;; esac; printf 'HostapdKeyMgmt24g=%s\n' "${KM:-ABSENT}"; printf 'HostapdMfpConfig24g=%s\n' "$MFP"; printf 'HostapdMfpRaw24g=%s\n' "${RAW:-ABSENT}"
+  depends_on: step8_mfp_disable_24g
+  capture: mfp_after_disable_24g
+
 pass_criteria:
-- field: result.MFPConfig
-  operator: contains
+- field: security_mode_5g.ModeEnabled5g
+  operator: equals
+  value: WPA2-Personal
+  description: 5G AP1 / wl0 should stay on the documented WPA2 baseline.
+- field: mfp_disable_5g.RequestedMfpConfig5g
+  operator: equals
   value: Disabled
-  description: MFPConfig 應回傳包含 MFPConfig=Disabled
-verification_command: 'cat /tmp/wl0_hapd.conf |grep ieee80211w
+  description: 5G AP1 / wl0 should request MFPConfig=Disabled.
+- field: mfp_after_disable_5g.GetterMfpConfig5g
+  operator: equals
+  value: Disabled
+  description: 5G AP1 / wl0 getter should read back Disabled.
+- field: mfp_after_disable_5g.HostapdKeyMgmt5g
+  operator: equals
+  value: WPA-PSK
+  description: 5G AP1 / wl0 hostapd should remain on WPA-PSK.
+- field: mfp_after_disable_5g.HostapdMfpConfig5g
+  operator: equals
+  value: Disabled
+  description: 5G AP1 / wl0 hostapd semantic MFP state should remain Disabled.
+- field: mfp_after_disable_5g.HostapdMfpRaw5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 / wl0 hostapd raw ieee80211w value should remain 0.
+- field: mfp_after_disable_5g.GetterMfpConfig5g
+  operator: equals
+  reference: mfp_after_disable_5g.HostapdMfpConfig5g
+  description: 5G AP1 / wl0 getter and hostapd should converge on Disabled.
+- field: security_mode_6g.ModeEnabled6g
+  operator: equals
+  value: WPA3-Personal
+  description: 6G AP3 / wl1 should stay on the documented WPA3 baseline.
+- field: mfp_disable_6g.RequestedMfpConfig6g
+  operator: equals
+  value: Disabled
+  description: 6G AP3 / wl1 should request MFPConfig=Disabled.
+- field: mfp_after_disable_6g.GetterMfpConfig6g
+  operator: equals
+  value: Disabled
+  description: 6G AP3 / wl1 getter currently reads back Disabled.
+- field: mfp_after_disable_6g.HostapdKeyMgmt6g
+  operator: equals
+  value: SAE
+  description: 6G AP3 / wl1 hostapd should remain on SAE.
+- field: mfp_after_disable_6g.HostapdMfpConfig6g
+  operator: equals
+  value: Required
+  description: 6G AP3 / wl1 hostapd semantic MFP state should stay Required under SAE.
+- field: mfp_after_disable_6g.HostapdMfpRaw6g
+  operator: equals
+  value: '2'
+  description: 6G AP3 / wl1 hostapd raw ieee80211w value should remain 2.
+- field: mfp_after_disable_6g.GetterMfpConfig6g
+  operator: not_equals
+  reference: mfp_after_disable_6g.HostapdMfpConfig6g
+  description: 6G AP3 / wl1 getter remains hardcoded at Disabled instead of exposing the live Required hostapd state.
+- field: security_mode_24g.ModeEnabled24g
+  operator: equals
+  value: WPA2-Personal
+  description: 2.4G AP5 / wl2 should stay on the documented WPA2 baseline.
+- field: mfp_disable_24g.RequestedMfpConfig24g
+  operator: equals
+  value: Disabled
+  description: 2.4G AP5 / wl2 should request MFPConfig=Disabled.
+- field: mfp_after_disable_24g.GetterMfpConfig24g
+  operator: equals
+  value: Disabled
+  description: 2.4G AP5 / wl2 getter should read back Disabled.
+- field: mfp_after_disable_24g.HostapdKeyMgmt24g
+  operator: equals
+  value: WPA-PSK
+  description: 2.4G AP5 / wl2 hostapd should remain on WPA-PSK.
+- field: mfp_after_disable_24g.HostapdMfpConfig24g
+  operator: equals
+  value: Disabled
+  description: 2.4G AP5 / wl2 hostapd semantic MFP state should remain Disabled.
+- field: mfp_after_disable_24g.HostapdMfpRaw24g
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 / wl2 hostapd raw ieee80211w value should remain 0.
+- field: mfp_after_disable_24g.GetterMfpConfig24g
+  operator: equals
+  reference: mfp_after_disable_24g.HostapdMfpConfig24g
+  description: 2.4G AP5 / wl2 getter and hostapd should converge on Disabled.
 
+verification_command: |
+  ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
+  ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+  ubus-cli "WiFi.AccessPoint.1.Security.MFPConfig?"
+  grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl0_hapd.conf || true
+  ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"
+  ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Disabled
+  ubus-cli "WiFi.AccessPoint.3.Security.MFPConfig?"
+  grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl1_hapd.conf || true
+  ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"
+  ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled
+  ubus-cli "WiFi.AccessPoint.5.Security.MFPConfig?"
+  grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl2_hapd.conf || true
 
-  root@prplOS:/# cat /tmp/wl0_hapd.conf |grep ieee80211w
-
-  ieee80211w=2
-
-  root@prplOS:/# cat /tmp/wl1_hapd.conf |grep ieee80211w
-
-  ieee80211w=2
-
-  root@prplOS:/# cat /tmp/wl2_hapd.conf |grep ieee80211w
-
-  ieee80211w=2'
 results_reference:
   v4.0.1:
     5g: Fail
@@ -146,7 +240,7 @@ results_reference:
     2.4g: Fail
     comment: 'ARC : API always return "Disabled"'
   v4.0.3:
-    5g: Not Supported
+    5g: Pass
     6g: Not Supported
-    2.4g: Not Supported
-    comment: hardcode in pwhm
+    2.4g: Pass
+    comment: '0320 serialwrap live probe showed `MFPConfig=Disabled` is accepted and read back as `Disabled` on AP1/AP3/AP5; wl0/wl2 hostapd also stay at `ieee80211w=0`, but wl1 remains `wpa_key_mgmt=SAE` with `ieee80211w=2`, so the current firmware is mixed-band rather than the workbook''s all-band `hardcode in pwhm` shape.'
