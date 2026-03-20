@@ -92,10 +92,36 @@ If I open only this file in a future session, I should do the following in order
 8. Only after live evidence matches the workbook baseline, update YAML and tests.
 9. If the case still does not match after sanitation + source cross-check + rerun, move it to blocker tracking instead of forcing a YAML change.
 
-## Current repo handoff snapshot（2026-03-19）
+## Per-case calibration loop（Single-Case Mode）
 
-- Trusted/calibrated official cases: **148 / 415**
-- Remaining official cases: **267**
+每筆 case 嚴格按以下步驟執行，完成後**不停**，直接進下一筆：
+
+1. **Offline Survey**（sub-agent `explore`）
+   - 讀舊 YAML、workbook row、鄰近 prior art
+   - 產出：預期 object/API、workbook command、可能 verdict
+   - sub-agent **只做離線分析**，不操作實機
+2. **Live 三 Band 驗證**（主操作者透過 serialwrap）
+   - 5G = AP1 / `wl0` / Radio.1 / SSID.4 / `testpilot5G` / WPA2-Personal
+   - 6G = AP3 / `wl1` / Radio.2 / SSID.6 / `testpilot6G` / WPA3-Personal (SAE)
+   - 2.4G = AP5 / `wl2` / Radio.3 / SSID.8 / `testpilot2G` / WPA2-Personal
+   - 每個 band：baseline getter → setter → readback → driver/hostapd cross-check → restore baseline
+   - 判定 verdict：Pass / Not Supported / Fail / mixed-band
+3. **YAML 重寫** — 對齊 `0310` workbook、填入 `source.row`、AP-only、live evidence
+4. **Tests**
+   - `load_case()` schema 驗證
+   - targeted `pytest -k 'dXXX'`
+   - runtime file `pytest tests/test_wifi_llapi_plugin_runtime.py`
+   - full suite `pytest`
+5. **Docs Sync** — 同步 `README.md`、`docs/plan.md`、`docs/todos.md`、`docs/audit-todo.md`、`audit-report`
+6. **Precise Stage & Commit** — 只 stage 本案相關檔案，不混入其他 dirty YAML
+7. **立刻進下一案** — 把下一個 ready case 標 `in_progress`，回到步驟 1
+
+> commit、簡短進度回覆與 targeted tests pass 都不是停點。只要沒有明確 blocker、lab 失真、或使用者要求暫停，就必須在同一輪直接推進到下一個 ready single case。
+
+## Current repo handoff snapshot（2026-03-20）
+
+- Trusted/calibrated official cases: **149 / 415**
+- Remaining official cases: **266**
 - Active blockers:
   - `D037 OperatingStandard`
   - `D054 Tx_RetransmissionsFailed`
@@ -130,19 +156,19 @@ If I open only this file in a future session, I should do the following in order
   - `D085 Neighbour` → workbook-aligned AP-only multiband `Pass` checkpoint（AP1/AP3/AP5 都從空的 `Neighbour` tree 出發，`setNeighbourAP(BSSID=...,Channel=...)` 會收斂出單一 `Neighbour.1.BSSID/Channel`，`delNeighbourAP(BSSID=...)` 則會把 tree restore 回 empty baseline）
   - `D086 EncryptionMode` → workbook-aligned AP-only multiband `Not Supported` checkpoint（AP1/AP3/AP5 的 getter 都固定回 `EncryptionMode="Default"`，但 `/tmp/wl{0,1,2}_hapd.conf` 仍明確暴露 `WPA-PSK/SAE + CCMP` 的真實 security lines，符合 workbook `hardcode in pwhm`）
   - `D087 KeyPassPhrase` → workbook-aligned AP-only multiband `Pass` checkpoint（AP1/AP3/AP5 的 getter 與 hostapd `wpa_passphrase=` 都能在 quoted syntax 下收斂 `00000000 -> 0689388783 -> 00000000`，而 bare leading-zero setter 會被 misparse 成 `689388783.000000`；6G `sae_password=` 維持 baseline `00000000`）
-  - `D088 MFPConfig` → workbook-aligned AP-only mixed-band checkpoint（current checkpoint；AP1/AP5 的 getter 與 hostapd `ieee80211w=0` 都收斂到 `Disabled`，但 AP3 / wl1 仍固定 `MFPConfig="Disabled"` 與 `wpa_key_mgmt=SAE + ieee80211w=2` 的 live `Required` 狀態不一致）
+  - `D088 MFPConfig` → workbook-aligned AP-only mixed-band checkpoint（AP1/AP5 的 getter 與 hostapd `ieee80211w=0` 都收斂到 `Disabled`，但 AP3 / wl1 仍固定 `MFPConfig="Disabled"` 與 `wpa_key_mgmt=SAE + ieee80211w=2` 的 live `Required` 狀態不一致）
+  - `D089 ModeEnabled` → workbook-aligned AP-only multiband `Pass` checkpoint（AP1/AP3/AP5 的 setter `ModeEnabled=WPA3-Personal` 都被接受，getter 和 hostapd 在 wl0/wl1/wl2 都收斂到 `SAE` + `ieee80211w=2`，restore 到 WPA2-Personal 在 AP1/AP5 也都正常回復到 `WPA-PSK` + `ieee80211w=0`）
   - `D185 TPCMode` → source/live **Fail-shaped mismatch** checkpoint，現已納入 `148 / 415` 完成數
   - `D368 SRGBSSColorBitmap` → 0310 row 273 **Fail-shaped mismatch** checkpoint，現已納入 `148 / 415` 完成數（5G/6G/2.4G setters all accepted/read back `"1"`, but hostapd `he_spr_srg_bss_colors=` stayed absent on wl0/wl1/wl2）
   - `D371 SRGPartialBSSIDBitmap` → 0310 row 276 mixed-band checkpoint，現已納入 `148 / 415` 完成數（5G/6G setters accepted/read back `"1"` while hostapd `he_spr_srg_partial_bssid=` stayed absent; 2.4G setter failed with `error=4` / `parameter not found`）
 - Latest validated commands:
-  - `load_case(plugins/wifi_llapi/cases/D088_mfpconfig_accesspoint_security.yaml)` → `steps=9`
-  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'd088'` → `3 passed`
-  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py` → `233 passed`
-  - `uv run pytest -q` → `286 passed`
-  - `serialwrap COM0 ubus-cli/hostapd_cli baseline readback` → 5G `testpilot5G` + `WPA2-Personal/00000000`, 6G `testpilot6G` + `WPA3-Personal/SAE/00000000`, 2.4G `testpilot2G` + `WPA2-Personal/00000000`
-  - `serialwrap COM0 D088 MFPConfig probe` → AP1/AP5 keep `MFPConfig="Disabled"` with hostapd `ieee80211w=0`, while AP3 / wl1 also reads back `MFPConfig="Disabled"` but hostapd remains `wpa_key_mgmt=SAE` with `ieee80211w=2`
+  - `load_case(plugins/wifi_llapi/cases/D089_modeenabled_accesspoint_security.yaml)` → `steps=12`
+  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'd089'` → `3 passed`
+  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py` → `236 passed`
+  - `uv run pytest -q` → `289 passed`
+  - `serialwrap COM0 D089 ModeEnabled probe` → AP1/AP3/AP5 setter `WPA3-Personal` accepted; getter reads `WPA3-Personal`; hostapd converges to `SAE` + `ieee80211w=2` on wl0/wl1/wl2; restore AP1/AP5 to `WPA2-Personal` works cleanly
 - Next ready repo handoff case:
-  - `D089 ModeEnabled`
+  - `D090 PreSharedKey`
 - Continuation guard rails:
   - only committed YAML / docs count as trusted handoff state
   - do not infer progress from any local unstaged experiment outside these committed checkpoints

@@ -1,180 +1,342 @@
 id: wifi-llapi-D089-modeenabled-accesspoint-security
-aliases:
-  - wifi-llapi-r081-modeenabled-accesspoint-security
-name: ModeEnabled — WiFi.AccessPoint.{i}.Security
-version: '1.0'
+name: "ModeEnabled — WiFi.AccessPoint.{i}.Security"
+version: '1.1'
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 89
-  object: "WiFi.AccessPoint.{i}.Security"
-  api: "ModeEnabled"
+  row: 81
+  object: WiFi.AccessPoint.{i}.Security
+  api: ModeEnabled
+  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
 hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Security.ModeEnabled=WPA3-Personal
 llapi_support: Support
 implemented_by: pWHM
+bands: ["5g", "6g", "2.4g"]
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM0
-    STA:
-      role: sta
-      transport: serial
-      selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
-  links:
-  - from: STA
-    to: DUT
-    band: 5g
+  links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
-  Transport:
-  - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
-
+  - DUT: COM0 (AP role; ModeEnabled is calibrated as an AP-only Security setter/getter case with no STA transport)
+  Live band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
+  - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
+  - 2.4G: DUT wl2 / AP5 / SSID.8 / testpilot2G / WPA2-Personal / 00000000
+  Preconditions:
+  - keep AP1, AP3, and AP5 enabled on the documented non-open baseline before probing `Security.ModeEnabled`
+  - workbook row 81 commands `ModeEnabled=WPA3-Personal` on all bands
+  - live 0320 probe showed the setter is accepted and getter reads back `WPA3-Personal` on all three bands
+  - hostapd converges on all bands: wl0 flips `WPA-PSK -> SAE` + `ieee80211w 0 -> 2`, wl1 stays `SAE` + `ieee80211w=2` (already WPA3), wl2 flips `WPA-PSK -> SAE` + `ieee80211w 0 -> 2`
+  - restore to baseline `WPA2-Personal` on AP1/AP5 and `WPA3-Personal` on AP3 works cleanly with getter + hostapd converging back
 setup_steps: |
-  1) DUT 5G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
-  3) Association evidence:
-     - A0: iw dev wl0 link
-     - B0: wl -i wl0 assoclist
+  1) DUT baseline:
+     - keep AP1 / AP3 / AP5 enabled on the documented non-open baseline
+     - capture baseline `Security.ModeEnabled` on all three bands
+     - capture baseline hostapd `wpa_key_mgmt=` / `ieee80211w=` on wl0/wl1/wl2
+  2) Per-band ModeEnabled probe:
+     - set `ModeEnabled=WPA3-Personal` on AP1 / AP3 / AP5
+     - wait 5s for hostapd reload to settle
+     - re-read the getter and hostapd `wpa_key_mgmt=` / `ieee80211w=` on each band
+  3) Restore:
+     - AP1/AP5: `ModeEnabled=WPA2-Personal`
+     - AP3: `ModeEnabled=WPA3-Personal` (same as setter, effectively no-op restore)
+     - verify getter and hostapd return to baseline
 sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+  DUT:
     ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-  STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
-    iw dev wl0 link
-  DUT association evidence:
-    wl -i wl0 assoclist
+    ubus-cli WiFi.AccessPoint.3.Enable=1
+    ubus-cli WiFi.AccessPoint.5.Enable=1
 test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli WiFi.AccessPoint.{i}.Security.ModeEnabled=WPA3-Personal
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.AccessPoint.*.Security.ModeEnabled?"
-  3) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
+  1) Read baseline `Security.ModeEnabled` on AP1 / AP3 / AP5.
+  2) Read baseline hostapd `wpa_key_mgmt=` and `ieee80211w=` on wl0 / wl1 / wl2.
+  3) Set `ModeEnabled=WPA3-Personal` on AP1 / AP3 / AP5.
+  4) Wait 5s, then re-read getter + hostapd on all three bands.
+  5) Verify getter reads `WPA3-Personal` and hostapd converges to `SAE` + `ieee80211w=2` on all bands.
+  6) Restore AP1/AP5 to `WPA2-Personal`, AP3 to `WPA3-Personal`.
+  7) Verify getter and hostapd return to baseline.
+  Verdict: multiband Pass — all three bands accept the setter, getter and hostapd converge, and restore works cleanly.
 
 steps:
-- id: step1
+# --- 5G baseline ---
+- id: step1_baseline_5g
   action: exec
   target: DUT
-  command: 1. Set security mode to WPA3-Personal ubus-cli WiFi.AccessPoint.*.Security.ModeEnabled=WPA3-Personal > WiFi.AccessPoint.*.Security.ModeEnabled=WPA3-Personal
-    WiFi.AccessPoint.1.Security.ModeEnabled="WPA3-Personal" WiFi.AccessPoint.3.Security.ModeEnabled="WPA3-Personal" WiFi.AccessPoint.5.Security.
-- id: step2
+  band: 5g
+  command: >-
+    MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p');
+    KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true);
+    W=$(grep -m1 '^ieee80211w=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true);
+    printf 'BaselineModeEnabled5g=%s\nBaselineKeyMgmt5g=%s\nBaselineIeee80211w5g=%s\n' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"
+  capture: baseline_5g
+
+# --- 5G setter ---
+- id: step2_set_5g
   action: exec
   target: DUT
-  command: Verify security mode ubus-cli WiFi.AccessPoint.? | grep .Security.ModeEnabled WiFi.AccessPoint.1.Security.ModeEnabled="WPA3-Personal"
-    WiFi.AccessPoint.3.Security.ModeEnabled="WPA3-Personal" WiFi.AccessPoint.5.Security.ModeEnabled="WPA3-Personal"
-  depends_on: step1
-  capture: result
+  band: 5g
+  command: >-
+    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal;
+    printf 'SetterRequest5g=WPA3-Personal\n'
+  depends_on: step1_baseline_5g
+  capture: set_5g
+
+# --- 5G readback ---
+- id: step3_readback_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    sleep 5;
+    MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p');
+    KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true);
+    W=$(grep -m1 '^ieee80211w=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true);
+    printf 'GetterModeEnabled5g=%s\nHostapdKeyMgmt5g=%s\nHostapdIeee80211w5g=%s\n' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"
+  depends_on: step2_set_5g
+  capture: readback_5g
+
+# --- 5G restore ---
+- id: step4_restore_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal;
+    sleep 5;
+    MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p');
+    KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true);
+    W=$(grep -m1 '^ieee80211w=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true);
+    printf 'RestoredModeEnabled5g=%s\nRestoredKeyMgmt5g=%s\nRestoredIeee80211w5g=%s\n' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"
+  depends_on: step3_readback_5g
+  capture: restore_5g
+
+# --- 6G baseline ---
+- id: step5_baseline_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p');
+    KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true);
+    W=$(grep -m1 '^ieee80211w=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true);
+    printf 'BaselineModeEnabled6g=%s\nBaselineKeyMgmt6g=%s\nBaselineIeee80211w6g=%s\n' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"
+  capture: baseline_6g
+
+# --- 6G setter ---
+- id: step6_set_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal;
+    printf 'SetterRequest6g=WPA3-Personal\n'
+  depends_on: step5_baseline_6g
+  capture: set_6g
+
+# --- 6G readback ---
+- id: step7_readback_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    sleep 5;
+    MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p');
+    KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true);
+    W=$(grep -m1 '^ieee80211w=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true);
+    printf 'GetterModeEnabled6g=%s\nHostapdKeyMgmt6g=%s\nHostapdIeee80211w6g=%s\n' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"
+  depends_on: step6_set_6g
+  capture: readback_6g
+
+# --- 6G restore (no-op: already WPA3-Personal) ---
+- id: step8_restore_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal;
+    sleep 5;
+    MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p');
+    KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true);
+    W=$(grep -m1 '^ieee80211w=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true);
+    printf 'RestoredModeEnabled6g=%s\nRestoredKeyMgmt6g=%s\nRestoredIeee80211w6g=%s\n' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"
+  depends_on: step7_readback_6g
+  capture: restore_6g
+
+# --- 2.4G baseline ---
+- id: step9_baseline_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p');
+    KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true);
+    W=$(grep -m1 '^ieee80211w=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true);
+    printf 'BaselineModeEnabled24g=%s\nBaselineKeyMgmt24g=%s\nBaselineIeee80211w24g=%s\n' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"
+  capture: baseline_24g
+
+# --- 2.4G setter ---
+- id: step10_set_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA3-Personal;
+    printf 'SetterRequest24g=WPA3-Personal\n'
+  depends_on: step9_baseline_24g
+  capture: set_24g
+
+# --- 2.4G readback ---
+- id: step11_readback_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    sleep 5;
+    MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p');
+    KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true);
+    W=$(grep -m1 '^ieee80211w=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true);
+    printf 'GetterModeEnabled24g=%s\nHostapdKeyMgmt24g=%s\nHostapdIeee80211w24g=%s\n' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"
+  depends_on: step10_set_24g
+  capture: readback_24g
+
+# --- 2.4G restore ---
+- id: step12_restore_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal;
+    sleep 5;
+    MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p');
+    KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true);
+    W=$(grep -m1 '^ieee80211w=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true);
+    printf 'RestoredModeEnabled24g=%s\nRestoredKeyMgmt24g=%s\nRestoredIeee80211w24g=%s\n' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"
+  depends_on: step11_readback_24g
+  capture: restore_24g
+
 pass_criteria:
-- field: result.ModeEnabled
-  operator: contains
+# 5G baseline
+- field: baseline_5g.BaselineModeEnabled5g
+  operator: equals
+  value: WPA2-Personal
+  description: 5G AP1 baseline should be WPA2-Personal.
+- field: baseline_5g.BaselineKeyMgmt5g
+  operator: equals
+  value: WPA-PSK
+  description: 5G wl0 hostapd baseline should be WPA-PSK.
+# 5G post-setter
+- field: readback_5g.GetterModeEnabled5g
+  operator: equals
   value: WPA3-Personal
-  description: ModeEnabled 應回傳包含 ModeEnabled=WPA3-Personal
-verification_command: 'cat /tmp/wl0_hapd.conf | grep wpa
+  description: 5G AP1 getter should read WPA3-Personal after setter.
+- field: readback_5g.HostapdKeyMgmt5g
+  operator: equals
+  value: SAE
+  description: 5G wl0 hostapd should converge to SAE after setter.
+- field: readback_5g.HostapdIeee80211w5g
+  operator: equals
+  value: '2'
+  description: 5G wl0 hostapd ieee80211w should converge to 2 (Required) after WPA3.
+# 5G restore
+- field: restore_5g.RestoredModeEnabled5g
+  operator: equals
+  value: WPA2-Personal
+  description: 5G AP1 getter should return to WPA2-Personal after restore.
+- field: restore_5g.RestoredKeyMgmt5g
+  operator: equals
+  value: WPA-PSK
+  description: 5G wl0 hostapd should return to WPA-PSK after restore.
+- field: restore_5g.RestoredIeee80211w5g
+  operator: equals
+  value: '0'
+  description: 5G wl0 hostapd ieee80211w should return to 0 after restore.
+# 6G baseline
+- field: baseline_6g.BaselineModeEnabled6g
+  operator: equals
+  value: WPA3-Personal
+  description: 6G AP3 baseline should already be WPA3-Personal.
+- field: baseline_6g.BaselineKeyMgmt6g
+  operator: equals
+  value: SAE
+  description: 6G wl1 hostapd baseline should already be SAE.
+# 6G post-setter (same as baseline, effectively a no-op)
+- field: readback_6g.GetterModeEnabled6g
+  operator: equals
+  value: WPA3-Personal
+  description: 6G AP3 getter should still read WPA3-Personal.
+- field: readback_6g.HostapdKeyMgmt6g
+  operator: equals
+  value: SAE
+  description: 6G wl1 hostapd should still be SAE.
+- field: readback_6g.HostapdIeee80211w6g
+  operator: equals
+  value: '2'
+  description: 6G wl1 hostapd ieee80211w should still be 2.
+# 2.4G baseline
+- field: baseline_24g.BaselineModeEnabled24g
+  operator: equals
+  value: WPA2-Personal
+  description: 2.4G AP5 baseline should be WPA2-Personal.
+- field: baseline_24g.BaselineKeyMgmt24g
+  operator: equals
+  value: WPA-PSK
+  description: 2.4G wl2 hostapd baseline should be WPA-PSK.
+# 2.4G post-setter
+- field: readback_24g.GetterModeEnabled24g
+  operator: equals
+  value: WPA3-Personal
+  description: 2.4G AP5 getter should read WPA3-Personal after setter.
+- field: readback_24g.HostapdKeyMgmt24g
+  operator: equals
+  value: SAE
+  description: 2.4G wl2 hostapd should converge to SAE after setter.
+- field: readback_24g.HostapdIeee80211w24g
+  operator: equals
+  value: '2'
+  description: 2.4G wl2 hostapd ieee80211w should converge to 2 (Required) after WPA3.
+# 2.4G restore
+- field: restore_24g.RestoredModeEnabled24g
+  operator: equals
+  value: WPA2-Personal
+  description: 2.4G AP5 getter should return to WPA2-Personal after restore.
+- field: restore_24g.RestoredKeyMgmt24g
+  operator: equals
+  value: WPA-PSK
+  description: 2.4G wl2 hostapd should return to WPA-PSK after restore.
+- field: restore_24g.RestoredIeee80211w24g
+  operator: equals
+  value: '0'
+  description: 2.4G wl2 hostapd ieee80211w should return to 0 after restore.
 
-  and other related parameters
+verification_command: |
+  # 5G
+  ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
+  ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
+  sleep 5
+  ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
+  grep -E '^(wpa_key_mgmt|ieee80211w)=' /tmp/wl0_hapd.conf || true
+  ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+  # 6G
+  ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"
+  ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
+  sleep 5
+  ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"
+  grep -E '^(wpa_key_mgmt|ieee80211w)=' /tmp/wl1_hapd.conf || true
+  ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
+  # 2.4G
+  ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"
+  ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA3-Personal
+  sleep 5
+  ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"
+  grep -E '^(wpa_key_mgmt|ieee80211w)=' /tmp/wl2_hapd.conf || true
+  ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal
 
-
-  root@prplOS:/# cat /tmp/wl0_hapd.conf | grep wpa
-
-  wpa=2
-
-  wpa_key_mgmt=SAE FT-SAE
-
-  wpa_pairwise=CCMP
-
-  wpa_group_rekey=0
-
-  wpa_ptk_rekey=0
-
-  wpa_passphrase=87654321
-
-  wpa_disable_eapol_key_retries=0
-
-  wpa_group_update_count=8
-
-  wpa_pairwise_update_count=8
-
-  wpa=2
-
-  wpa_key_mgmt=WPA-PSK
-
-  wpa_pairwise=CCMP
-
-  wpa_passphrase=password
-
-  wpa_group_rekey=0
-
-  wpa_ptk_rekey=0
-
-  wpa_disable_eapol_key_retries=0
-
-  wpa_group_update_count=8
-
-  wpa_pairwise_update_count=8
-
-  multi_ap_backhaul_wpa_passphrase=password'
 results_reference:
   v4.0.1:
     5g: Pass
@@ -182,7 +344,7 @@ results_reference:
     2.4g: Pass
     comment: ''
   v4.0.3:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: ''
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: '0320 serialwrap live probe: setter `ModeEnabled=WPA3-Personal` is accepted on all 3 bands; getter reads back `WPA3-Personal` and hostapd converges to `wpa_key_mgmt=SAE` + `ieee80211w=2` on wl0/wl1/wl2; restore to WPA2-Personal on AP1/AP5 works cleanly with getter and hostapd returning to baseline WPA-PSK + ieee80211w=0; AP3 (6G) was already WPA3-Personal baseline so setter is effectively a no-op.'

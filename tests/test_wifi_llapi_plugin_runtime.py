@@ -8778,6 +8778,115 @@ def test_d088_mfpconfig_accesspoint_security_evaluate_live_examples():
     assert plugin.evaluate(d088, d088_wrong_24g_getter) is False
 
 
+def test_d089_modeenabled_accesspoint_security_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d089 = load_case(cases_dir / "D089_modeenabled_accesspoint_security.yaml")
+    assert d089["id"] == "wifi-llapi-D089-modeenabled-accesspoint-security"
+    assert d089["source"]["row"] == 81
+    assert d089["source"]["api"] == "ModeEnabled"
+    assert d089["bands"] == ["5g", "6g", "2.4g"]
+    assert len(d089["steps"]) == 12
+    assert len(d089["pass_criteria"]) == 21
+    step_ids = [s["id"] for s in d089["steps"]]
+    for band_tag in ["5g", "6g", "24g"]:
+        assert f"step1_baseline_5g" in step_ids or any(band_tag in sid for sid in step_ids)
+    assert all(s.get("target") == "DUT" for s in d089["steps"])
+
+
+def test_d089_modeenabled_accesspoint_security_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d089 = load_case(cases_dir / "D089_modeenabled_accesspoint_security.yaml")
+
+    assert plugin.setup_env(d089, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    executed_commands = recorder.transports[0].executed_commands
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.Enable=1") == 1
+    assert all("STA" not in command for command in executed_commands)
+    plugin.teardown(d089, topology)
+
+
+def test_d089_modeenabled_accesspoint_security_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d089 = load_case(cases_dir / "D089_modeenabled_accesspoint_security.yaml")
+
+    def baseline_output(band: str, mode: str, keymgmt: str, w: str) -> str:
+        return "\n".join([
+            f"BaselineModeEnabled{band}={mode}",
+            f"BaselineKeyMgmt{band}={keymgmt}",
+            f"BaselineIeee80211w{band}={w}",
+        ])
+
+    def set_output(band: str) -> str:
+        return f"SetterRequest{band}=WPA3-Personal"
+
+    def readback_output(band: str, mode: str, keymgmt: str, w: str) -> str:
+        return "\n".join([
+            f"GetterModeEnabled{band}={mode}",
+            f"HostapdKeyMgmt{band}={keymgmt}",
+            f"HostapdIeee80211w{band}={w}",
+        ])
+
+    def restore_output(band: str, mode: str, keymgmt: str, w: str) -> str:
+        return "\n".join([
+            f"RestoredModeEnabled{band}={mode}",
+            f"RestoredKeyMgmt{band}={keymgmt}",
+            f"RestoredIeee80211w{band}={w}",
+        ])
+
+    d089_results = {
+        "steps": {
+            "step1_baseline_5g": {"success": True, "output": baseline_output("5g", "WPA2-Personal", "WPA-PSK", "0"), "timing": 0.01},
+            "step2_set_5g": {"success": True, "output": set_output("5g"), "timing": 0.01},
+            "step3_readback_5g": {"success": True, "output": readback_output("5g", "WPA3-Personal", "SAE", "2"), "timing": 0.01},
+            "step4_restore_5g": {"success": True, "output": restore_output("5g", "WPA2-Personal", "WPA-PSK", "0"), "timing": 0.01},
+            "step5_baseline_6g": {"success": True, "output": baseline_output("6g", "WPA3-Personal", "SAE", "2"), "timing": 0.01},
+            "step6_set_6g": {"success": True, "output": set_output("6g"), "timing": 0.01},
+            "step7_readback_6g": {"success": True, "output": readback_output("6g", "WPA3-Personal", "SAE", "2"), "timing": 0.01},
+            "step8_restore_6g": {"success": True, "output": restore_output("6g", "WPA3-Personal", "SAE", "2"), "timing": 0.01},
+            "step9_baseline_24g": {"success": True, "output": baseline_output("24g", "WPA2-Personal", "WPA-PSK", "0"), "timing": 0.01},
+            "step10_set_24g": {"success": True, "output": set_output("24g"), "timing": 0.01},
+            "step11_readback_24g": {"success": True, "output": readback_output("24g", "WPA3-Personal", "SAE", "2"), "timing": 0.01},
+            "step12_restore_24g": {"success": True, "output": restore_output("24g", "WPA2-Personal", "WPA-PSK", "0"), "timing": 0.01},
+        }
+    }
+    assert plugin.evaluate(d089, d089_results) is True
+
+    # Wrong 5G readback (still WPA2-Personal after setter)
+    d089_bad_5g = {
+        "steps": {
+            **d089_results["steps"],
+            "step3_readback_5g": {"success": True, "output": readback_output("5g", "WPA2-Personal", "WPA-PSK", "0"), "timing": 0.01},
+        }
+    }
+    assert plugin.evaluate(d089, d089_bad_5g) is False
+
+    # Wrong 6G readback (unexpected mode)
+    d089_bad_6g = {
+        "steps": {
+            **d089_results["steps"],
+            "step7_readback_6g": {"success": True, "output": readback_output("6g", "WPA2-Personal", "SAE", "2"), "timing": 0.01},
+        }
+    }
+    assert plugin.evaluate(d089, d089_bad_6g) is False
+
+    # Wrong 2.4G restore (still WPA3-Personal)
+    d089_bad_24g_restore = {
+        "steps": {
+            **d089_results["steps"],
+            "step12_restore_24g": {"success": True, "output": restore_output("24g", "WPA3-Personal", "SAE", "2"), "timing": 0.01},
+        }
+    }
+    assert plugin.evaluate(d089, d089_bad_24g_restore) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
