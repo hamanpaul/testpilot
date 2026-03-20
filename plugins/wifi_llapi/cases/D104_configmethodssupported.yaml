@@ -1,0 +1,76 @@
+id: wifi-llapi-D104-configmethodssupported
+name: ConfigMethodsSupported — WiFi.AccessPoint.{i}.WPS.
+version: '1.0'
+source:
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  baseline: 0310-BGW720-300
+  row: 104
+  object: WiFi.AccessPoint.{i}.WPS.
+  api: ConfigMethodsSupported
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli "WiFi.AccessPoint.{i}.WPS.ConfigMethodsSupported?"
+llapi_support: Not Support
+implemented_by: Vendor Module
+bands:
+- 5g
+- 6g
+- 2.4g
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+  links: []
+test_environment: "Topology:\n  - DUT: COM0 (B0, AP role)\n  Transport:\n  - DUT via serialwrap COM0\n  Baseline:\n  - 5G  = AP1 / wl0 / testpilot5G / WPA2-Personal\n  - 6G  = AP3 / wl1 / testpilot6G /\
+  \ WPA3-Personal / SAE\n  - 2.4G = AP5 / wl2 / testpilot2G / WPA2-Personal\n  Notes:\n  - Read-only getter, all 3 bands return full method list\n  - Workbook marks Not Support but getter returns value\
+  \ on all bands"
+steps:
+- id: step_5g_getter
+  action: exec
+  target: DUT
+  command: 'echo "CfgSupported5g=$(ubus-cli ''WiFi.AccessPoint.1.WPS.ConfigMethodsSupported?'' 2>/dev/null | grep -o ''ConfigMethodsSupported=[^"]*'' | cut -d= -f2)"
+
+    '
+  capture: cfg_5g
+- id: step_6g_getter
+  action: exec
+  target: DUT
+  depends_on: step_5g_getter
+  command: 'echo "CfgSupported6g=$(ubus-cli ''WiFi.AccessPoint.3.WPS.ConfigMethodsSupported?'' 2>/dev/null | grep -o ''ConfigMethodsSupported=[^"]*'' | cut -d= -f2)"
+
+    '
+  capture: cfg_6g
+- id: step_24g_getter
+  action: exec
+  target: DUT
+  depends_on: step_6g_getter
+  command: 'echo "CfgSupported24g=$(ubus-cli ''WiFi.AccessPoint.5.WPS.ConfigMethodsSupported?'' 2>/dev/null | grep -o ''ConfigMethodsSupported=[^"]*'' | cut -d= -f2)"
+
+    '
+  capture: cfg_24g
+pass_criteria:
+- field: cfg_5g.CfgSupported5g
+  operator: contains
+  value: PushButton
+  description: 5g ConfigMethodsSupported contains PushButton
+- field: cfg_6g.CfgSupported6g
+  operator: contains
+  value: PushButton
+  description: 6g ConfigMethodsSupported contains PushButton
+- field: cfg_24g.CfgSupported24g
+  operator: contains
+  value: PushButton
+  description: 2.4g ConfigMethodsSupported contains PushButton
+verification_command: 'ubus-cli "WiFi.AccessPoint.1.WPS.ConfigMethodsSupported?" && ubus-cli "WiFi.AccessPoint.3.WPS.ConfigMethodsSupported?" && ubus-cli "WiFi.AccessPoint.5.WPS.ConfigMethodsSupported?"
+
+  '
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: All 3 bands return Label,Display,PushButton,PIN,PhysicalPushButton,PhysicalDisplay,VirtualPushButton,VirtualDisplay.

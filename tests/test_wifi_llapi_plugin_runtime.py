@@ -9592,6 +9592,410 @@ def test_d100_wdsenable_evaluate():
     assert plugin.evaluate(d100, d100_results) is True
 
 
+
+
+def test_d101_wmmcapability_contract():
+    """D101 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D101_wmmcapability.yaml")
+    assert case["source"]["row"] == 101
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 6
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+    assert case["results_reference"]["v4.0.3"]["5g"] == "Pass"
+
+
+def test_d101_wmmcapability_setup_env(monkeypatch):
+    """D101 is DUT-only; setup_env should only request COM0."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d101 = load_case(cases_dir / "D101_wmmcapability.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(d101, topology=topo) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    plugin.teardown(d101, topo)
+
+
+def test_d101_wmmcapability_evaluate():
+    """D101 all-pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    d101 = load_case(cases_dir / "D101_wmmcapability.yaml")
+    results = {
+        "steps": {
+            "step_5g_getter": {
+                "success": True,
+                "output": "WMMCapability5g=1\nHapdWmm5g=1",
+                "timing": 0.01,
+            },
+            "step_6g_getter": {
+                "success": True,
+                "output": "WMMCapability6g=1\nHapdWmm6g=1",
+                "timing": 0.01,
+            },
+            "step_24g_getter": {
+                "success": True,
+                "output": "WMMCapability24g=1\nHapdWmm24g=1",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d101, results) is True
+
+
+def test_d102_wmmenable_contract():
+    """D102 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D102_wmmenable.yaml")
+    assert case["source"]["row"] == 102
+    assert case["llapi_support"] == "Not Support"
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 18
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d102_wmmenable_setup_env(monkeypatch):
+    """D102 is DUT-only; setup_env should only request COM0."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d102 = load_case(cases_dir / "D102_wmmenable.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(d102, topology=topo) is True
+    assert len(recorder.calls) == 1
+    plugin.teardown(d102, topo)
+
+
+def test_d102_wmmenable_evaluate():
+    """D102 all-pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    d102 = load_case(cases_dir / "D102_wmmenable.yaml")
+    results = {
+        "steps": {
+            "step_5g_setter": {
+                "success": True,
+                "output": "Baseline5g=1\nHapdBaseline5g=1\nAfterSet5g=0\nHapdAfterSet5g=0\nAfterRestore5g=1\nHapdAfterRestore5g=1",
+                "timing": 0.01,
+            },
+            "step_6g_setter": {
+                "success": True,
+                "output": "Baseline6g=1\nHapdBaseline6g=1\nAfterSet6g=0\nHapdAfterSet6g=0\nAfterRestore6g=1\nHapdAfterRestore6g=1",
+                "timing": 0.01,
+            },
+            "step_24g_setter": {
+                "success": True,
+                "output": "Baseline24g=1\nHapdBaseline24g=1\nAfterSet24g=0\nHapdAfterSet24g=0\nAfterRestore24g=1\nHapdAfterRestore24g=1",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d102, results) is True
+
+
+def test_d103_configmethodsenabled_contract():
+    """D103 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D103_configmethodsenabled.yaml")
+    assert case["source"]["row"] == 103
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 3
+    assert case["results_reference"]["v4.0.3"]["6g"] == "Fail"
+
+
+def test_d103_configmethodsenabled_setup_env(monkeypatch):
+    """D103 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d103 = load_case(cases_dir / "D103_configmethodsenabled.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(d103, topology=topo) is True
+    plugin.teardown(d103, topo)
+
+
+def test_d103_configmethodsenabled_evaluate():
+    """D103 all-pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    d103 = load_case(cases_dir / "D103_configmethodsenabled.yaml")
+    results = {
+        "steps": {
+            "step_5g_setter": {
+                "success": True,
+                "output": "Baseline5g=PhysicalPushButton,VirtualPushButton\nAfterSet5g=PushButton\nHapdCfg5g=physical_push_button virtual_push_button",
+                "timing": 0.01,
+            },
+            "step_6g_setter": {
+                "success": True,
+                "output": "Baseline6g=PhysicalPushButton,VirtualPushButton\nAfterSet6g=PushButton\nHapdCfg6g=",
+                "timing": 0.01,
+            },
+            "step_24g_setter": {
+                "success": True,
+                "output": "Baseline24g=PhysicalPushButton,VirtualPushButton\nAfterSet24g=PushButton\nHapdCfg24g=push_button",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d103, results) is True
+
+
+def test_d104_configmethodssupported_contract():
+    """D104 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D104_configmethodssupported.yaml")
+    assert case["source"]["row"] == 104
+    assert case["llapi_support"] == "Not Support"
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 3
+
+
+def test_d104_configmethodssupported_evaluate():
+    """D104 all-pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    d104 = load_case(cases_dir / "D104_configmethodssupported.yaml")
+    results = {
+        "steps": {
+            "step_5g_getter": {
+                "success": True,
+                "output": "CfgSupported5g=Label,Display,PushButton,PIN,PhysicalPushButton,PhysicalDisplay,VirtualPushButton,VirtualDisplay",
+                "timing": 0.01,
+            },
+            "step_6g_getter": {
+                "success": True,
+                "output": "CfgSupported6g=Label,Display,PushButton,PIN,PhysicalPushButton,PhysicalDisplay,VirtualPushButton,VirtualDisplay",
+                "timing": 0.01,
+            },
+            "step_24g_getter": {
+                "success": True,
+                "output": "CfgSupported24g=Label,Display,PushButton,PIN,PhysicalPushButton,PhysicalDisplay,VirtualPushButton,VirtualDisplay",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d104, results) is True
+
+
+def test_d105_configured_contract():
+    """D105 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D105_configured.yaml")
+    assert case["source"]["row"] == 105
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 3
+
+
+def test_d105_configured_evaluate():
+    """D105 all-pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    d105 = load_case(cases_dir / "D105_configured.yaml")
+    results = {
+        "steps": {
+            "step_5g_getter": {
+                "success": True,
+                "output": "Configured5g=1",
+                "timing": 0.01,
+            },
+            "step_6g_getter": {
+                "success": True,
+                "output": "Configured6g=1",
+                "timing": 0.01,
+            },
+            "step_24g_getter": {
+                "success": True,
+                "output": "Configured24g=1",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d105, results) is True
+
+
+def test_d106_wps_enable_contract():
+    """D106 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D106_enable_accesspoint_wps.yaml")
+    assert case["source"]["row"] == 106
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 11
+    assert case["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
+
+
+def test_d106_wps_enable_setup_env(monkeypatch):
+    """D106 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d106 = load_case(cases_dir / "D106_enable_accesspoint_wps.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(d106, topology=topo) is True
+    plugin.teardown(d106, topo)
+
+
+def test_d106_wps_enable_evaluate():
+    """D106 all-pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    d106 = load_case(cases_dir / "D106_enable_accesspoint_wps.yaml")
+    results = {
+        "steps": {
+            "step_5g_setter": {
+                "success": True,
+                "output": "Baseline5g=0\nWpsState5gBaseline=0\nAfterSet5g=1\nWpsState5gAfter=2\nRestore5g=0\nWpsState5gRestore=0",
+                "timing": 0.01,
+            },
+            "step_6g_setter": {
+                "success": True,
+                "output": "Baseline6g=0\nWpsState6gBaseline=0\nAfterSet6g=1\nWpsState6gAfter=0",
+                "timing": 0.01,
+            },
+            "step_24g_setter": {
+                "success": True,
+                "output": "Baseline24g=1\nWpsState24gBaseline=2\nAfterSet24g=0\nWpsState24gAfter=0\nRestore24g=1\nWpsState24gRestore=2",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d106, results) is True
+
+
+def test_d107_pairinginprogress_contract():
+    """D107 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D107_pairinginprogress_accesspoint_wps.yaml")
+    assert case["source"]["row"] == 107
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 3
+
+
+def test_d107_pairinginprogress_evaluate():
+    """D107 all-pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    d107 = load_case(cases_dir / "D107_pairinginprogress_accesspoint_wps.yaml")
+    results = {
+        "steps": {
+            "step_5g_getter": {
+                "success": True,
+                "output": "PairingInProgress5g=0",
+                "timing": 0.01,
+            },
+            "step_6g_getter": {
+                "success": True,
+                "output": "PairingInProgress6g=0",
+                "timing": 0.01,
+            },
+            "step_24g_getter": {
+                "success": True,
+                "output": "PairingInProgress24g=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d107, results) is True
+
+
+def test_d108_relaycredentialsenable_contract():
+    """D108 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D108_relaycredentialsenable.yaml")
+    assert case["source"]["row"] == 108
+    assert case["llapi_support"] == "Not Support"
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 3
+
+
+def test_d108_relaycredentialsenable_evaluate():
+    """D108 all-pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    d108 = load_case(cases_dir / "D108_relaycredentialsenable.yaml")
+    results = {
+        "steps": {
+            "step_5g_getter": {
+                "success": True,
+                "output": "RelayCred5g=0",
+                "timing": 0.01,
+            },
+            "step_6g_getter": {
+                "success": True,
+                "output": "RelayCred6g=0",
+                "timing": 0.01,
+            },
+            "step_24g_getter": {
+                "success": True,
+                "output": "RelayCred24g=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d108, results) is True
+
+
+def test_d109_selfpin_contract():
+    """D109 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D109_selfpin.yaml")
+    assert case["source"]["row"] == 109
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 9
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d109_selfpin_setup_env(monkeypatch):
+    """D109 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d109 = load_case(cases_dir / "D109_selfpin.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(d109, topology=topo) is True
+    plugin.teardown(d109, topo)
+
+
+def test_d109_selfpin_evaluate():
+    """D109 all-pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    d109 = load_case(cases_dir / "D109_selfpin.yaml")
+    results = {
+        "steps": {
+            "step_5g_setter": {
+                "success": True,
+                "output": "Baseline5g=90455865\nAfterSet5g=12345678\nRestore5g=90455865",
+                "timing": 0.01,
+            },
+            "step_6g_setter": {
+                "success": True,
+                "output": "Baseline6g=90455865\nAfterSet6g=12345678\nRestore6g=90455865",
+                "timing": 0.01,
+            },
+            "step_24g_setter": {
+                "success": True,
+                "output": "Baseline24g=90455865\nAfterSet24g=12345678\nRestore24g=90455865",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d109, results) is True
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []

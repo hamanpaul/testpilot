@@ -1,170 +1,117 @@
 id: wifi-llapi-D101-wmmcapability
-aliases:
-  - wifi-llapi-r091-wmmcapability
 name: WMMCapability — WiFi.AccessPoint.{i}.
 version: '1.0'
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
   row: 101
-  object: "WiFi.AccessPoint.{i}."
-  api: "WMMCapability"
+  object: WiFi.AccessPoint.{i}.
+  api: WMMCapability
+  baseline: 0310-BGW720-300
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli WiFi.AccessPoint.{i}.WMMCapability=1
+hlapi_command: ubus-cli "WiFi.AccessPoint.{i}.WMMCapability?"
 llapi_support: Support
 implemented_by: Vendor Module
+bands:
+- 5g
+- 6g
+- 2.4g
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM0
-    STA:
-      role: sta
-      transport: serial
-      selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
-  links:
-  - from: STA
-    to: DUT
-    band: 5g
-test_environment: |
-  Topology:
+  links: []
+test_environment: 'Topology:
+
   - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
+
   Transport:
-  - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
 
-setup_steps: |
-  1) DUT 5G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
-  3) Association evidence:
-     - A0: iw dev wl0 link
-     - B0: wl -i wl0 assoclist
-sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
-    ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-  STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
-    iw dev wl0 link
-  DUT association evidence:
-    wl -i wl0 assoclist
-test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli WiFi.AccessPoint.{i}.WMMCapability=1
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.AccessPoint.*.WMMCapability?"
-  3) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
+  - DUT via serialwrap COM0
 
+  Baseline:
+
+  - 5G  = AP1 / wl0 / testpilot5G / WPA2-Personal
+
+  - 6G  = AP3 / wl1 / testpilot6G / WPA3-Personal / SAE
+
+  - 2.4G = AP5 / wl2 / testpilot2G / WPA2-Personal
+
+  Notes:
+
+  - Read-only getter, all 3 bands return WMMCapability=1
+
+  - hostapd wmm_enabled=1 on all bands confirms driver convergence
+
+  '
 steps:
-- id: step1
+- id: step_5g_getter
   action: exec
   target: DUT
-  command: 1. Get GW WMMCapability ubus-cli WiFi.AccessPoint.*.WMMCapability? > WiFi.AccessPoint.*.WMMCapability? WiFi.AccessPoint.1.WMMCapability=1
-    WiFi.AccessPoint.3.WMMCapability=1 WiFi.AccessPoint.5.WMMCapability=1
-- id: step2
+  command: 'echo "WMMCapability5g=$(ubus-cli ''WiFi.AccessPoint.1.WMMCapability?'' 2>/dev/null | grep -o ''WMMCapability=[0-9]*''
+    | cut -d= -f2)"
+
+    echo "HapdWmm5g=$(grep ''wmm_enabled='' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+
+    '
+  capture: wmm_5g
+- id: step_6g_getter
   action: exec
   target: DUT
-  command: Capture Beacon Packet from GW -> Beacon Packet include wmm ie
-  depends_on: step1
-  capture: result
+  depends_on: step_5g_getter
+  command: 'echo "WMMCapability6g=$(ubus-cli ''WiFi.AccessPoint.3.WMMCapability?'' 2>/dev/null | grep -o ''WMMCapability=[0-9]*''
+    | cut -d= -f2)"
+
+    echo "HapdWmm6g=$(grep ''wmm_enabled='' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+
+    '
+  capture: wmm_6g
+- id: step_24g_getter
+  action: exec
+  target: DUT
+  depends_on: step_6g_getter
+  command: 'echo "WMMCapability24g=$(ubus-cli ''WiFi.AccessPoint.5.WMMCapability?'' 2>/dev/null | grep -o ''WMMCapability=[0-9]*''
+    | cut -d= -f2)"
+
+    echo "HapdWmm24g=$(grep ''wmm_enabled='' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+
+    '
+  capture: wmm_24g
 pass_criteria:
-- field: result.WMMCapability
-  operator: contains
+- field: wmm_5g.WMMCapability5g
+  operator: equals
   value: '1'
-  description: WMMCapability 應回傳包含 WMMCapability=1
-verification_command: 'root@prplOS:/# wl -i wl0 cap
+  description: 5G WMMCapability=1
+- field: wmm_5g.HapdWmm5g
+  operator: equals
+  value: '1'
+  description: 5G hostapd wmm_enabled=1
+- field: wmm_6g.WMMCapability6g
+  operator: equals
+  value: '1'
+  description: 6G WMMCapability=1
+- field: wmm_6g.HapdWmm6g
+  operator: equals
+  value: '1'
+  description: 6G hostapd wmm_enabled=1
+- field: wmm_24g.WMMCapability24g
+  operator: equals
+  value: '1'
+  description: 2.4G WMMCapability=1
+- field: wmm_24g.HapdWmm24g
+  operator: equals
+  value: '1'
+  description: 2.4G hostapd wmm_enabled=1
+verification_command: 'grep ''wmm_enabled='' /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf
 
-  ap sta wet led wme 802.11d 802.11h rm cac mbss8 ampdu ampdu_tx ampdu_rx amsdurx amsdutx rxchain_pwrsave wds dwds vht-prop-rates
-  multi-user-beamformer single-user-beamformer multi-user-beamformee single-user-beamformee 160 dfrts stbc-tx stbc-rx-1ss
-  pspretend probresp_mac_filter mfp wnm bsstrans scanmac ve fbtoverds fbt_adpt ifver bgdfs bgdfs160 spp lpr_scan bkoff_evt
-  awd_data_info monitor cevent traffic_thresh 11ax 11be mlo 320 stamon csimon cfp hwa-1a-1b-2a-2b-3a-3b-4b-pp-pr pqp sqs airiq
-  sae slaveradar swpaging ba256 qosmgmt asr sbf_active gcmp suite-b chanswitch puq 11az pcap telemetry mrsno
-
-  root@prplOS:/#
-
-  root@prplOS:/# wl -i wl1 cap
-
-  ap sta wet led wme 802.11d 802.11h rm cac mbss8 ampdu ampdu_tx ampdu_rx amsdurx amsdutx rxchain_pwrsave wds dwds vht-prop-rates
-  multi-user-beamformer single-user-beamformer multi-user-beamformee single-user-beamformee 160 dfrts stbc-tx stbc-rx-1ss
-  pspretend probresp_mac_filter mfp wnm bsstrans scanmac ve fbtoverds fbt_adpt ifver bgdfs bgdfs160 spp lpr_scan bkoff_evt
-  awd_data_info monitor cevent traffic_thresh 11ax 11be mlo 320 stamon csimon cfp hwa-1a-1b-2a-2b-3a-3b-4b-pp-pr pqp sqs airiq
-  sae slaveradar swpaging ba256 qosmgmt asr sbf_active gcmp suite-b chanswitch puq 11az pcap telemetry mrsno
-
-  root@prplOS:/# wl -i wl2 cap
-
-  ap sta wet led wme 802.11d 802.11h rm cac mbss8 ampdu ampdu_tx ampdu_rx amsdurx amsdutx rxchain_pwrsave wds dwds vht-prop-rates
-  multi-user-beamformer single-user-beamformer multi-user-beamformee single-user-beamformee 160 dfrts stbc-tx stbc-rx-1ss
-  pspretend probresp_mac_filter mfp wnm bsstrans scanmac ve fbtoverds fbt_adpt ifver bgdfs bgdfs160 spp lpr_scan bkoff_evt
-  awd_data_info monitor cevent traffic_thresh 11ax 11be mlo 320 stamon csimon cfp hwa-1a-1b-2a-2b-3a-3b-4b-pp-pr pqp sqs airiq
-  sae slaveradar swpaging ba256 qosmgmt asr sbf_active gcmp suite-b chanswitch puq 11az pcap telemetry mrsno
-
-  root@prplOS:/#'
+  '
 results_reference:
-  v4.0.1:
+  v4.0.3:
     5g: Pass
     6g: Pass
     2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: ''
+    comment: 'All 3 bands: WMMCapability=1, hostapd wmm_enabled=1.'

@@ -120,8 +120,8 @@ If I open only this file in a future session, I should do the following in order
 
 ## Current repo handoff snapshot（2026-03-20）
 
-- Trusted/calibrated official cases: **160 / 415**
-- Remaining official cases: **255**
+- Trusted/calibrated official cases: **170 / 415**
+- Remaining official cases: **245**
 - Active blockers:
   - `D037 OperatingStandard`
   - `D054 Tx_RetransmissionsFailed`
@@ -200,7 +200,17 @@ If I open only this file in a future session, I should do the following in order
   - only committed YAML / docs count as trusted handoff state
   - do not infer progress from any local unstaged experiment outside these committed checkpoints
   - reuse `D058 TxPacketCount` as the positive same-STA tx-packet prior art when judging `D059`/`D060` family cases
-  - `D185` / `D368` / `D371` 已從待校正池移出並折入完成數；最新 main-sweep checkpoint 則前進到 `D099`，下一個 ready sequential case 為 `D100`
+  - `D185` / `D368` / `D371` 已從待校正池移出並折入完成數；最新 main-sweep checkpoint 則前進到 `D109`，下一個 ready sequential case 為 `D110`
+  - `D100` WDSEnable — 3-band setter round-trip with `wl dwds` driver convergence
+  - `D101` WMMCapability — 3-band read-only getter, `wmm_enabled=1` on all bands
+  - `D102` WMMEnable — 3-band setter round-trip, hostapd `wmm_enabled` converges; workbook marks Not Support
+  - `D103` ConfigMethodsEnabled — mixed-band setter: 5G/2.4G Pass, 6G Fail (no hostapd config_methods)
+  - `D104` ConfigMethodsSupported — 3-band read-only getter, full method list; workbook marks Not Support
+  - `D105` Configured — 3-band read-only getter, `Configured=1`
+  - `D106` WPS.Enable — mixed-band setter: 5G/2.4G Pass (wps_state converges), 6G Not Supported (wps_state stays 0)
+  - `D107` PairingInProgress — 3-band read-only getter, `PairingInProgress=0`
+  - `D108` RelayCredentialsEnable — 3-band read-only getter, `RelayCredentialsEnable=0`; workbook marks Not Support
+  - `D109` SelfPIN — 3-band setter round-trip, `90455865→12345678→90455865` converges
 
 Current verified live baseline findings from this session:
 
