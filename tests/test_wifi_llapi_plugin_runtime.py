@@ -7680,6 +7680,186 @@ def test_d082_maxassociateddevices_evaluate_live_examples():
     assert plugin.evaluate(d082, d082_wrong_24g_restore) is False
 
 
+def test_d083_mboenable_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+
+    d083_raw = yaml.safe_load((cases_dir / "D083_mboenable.yaml").read_text(encoding="utf-8"))
+    d083 = load_case(cases_dir / "D083_mboenable.yaml")
+    d083_commands = "\n".join(str(step.get("command", "")) for step in d083["steps"])
+
+    assert "aliases" not in d083_raw
+    assert d083["id"] == "wifi-llapi-D083-mboenable"
+    assert d083["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d083["source"]["row"] == 75
+    assert d083["source"]["baseline"] == "BCM v4.0.3"
+    assert d083["llapi_support"] == "Support"
+    assert d083["implemented_by"] == "Vendor Module"
+    assert d083["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d083["topology"]["devices"]) == {"DUT"}
+    assert d083["topology"]["links"] == []
+    assert d083["hlapi_command"] == "ubus-cli WiFi.AccessPoint.1.MBOEnable=0"
+    assert "killall wpa_supplicant" not in d083.get("sta_env_setup", "")
+    assert "AfterEnableHostapdMbo24g=" in d083_commands
+    assert "sleep 5;" in d083_commands
+    assert any(
+        criterion["field"] == "mbo_after_enable_5g.AfterEnableHostapdMbo5g"
+        and criterion["operator"] == "not_equals"
+        and criterion["reference"] == "mbo_after_enable_5g.AfterEnableGetterMbo5g"
+        for criterion in d083["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "mbo_after_restore_24g.AfterRestoreHostapdMboCount24g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "0"
+        for criterion in d083["pass_criteria"]
+    )
+    assert d083["results_reference"]["v4.0.3"]["5g"] == "Fail"
+    assert d083["results_reference"]["v4.0.3"]["6g"] == "Fail"
+    assert d083["results_reference"]["v4.0.3"]["2.4g"] == "Fail"
+
+
+def test_d083_mboenable_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d083 = load_case(cases_dir / "D083_mboenable.yaml")
+
+    assert plugin.setup_env(d083, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    executed_commands = recorder.transports[0].executed_commands
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.Enable=1") == 1
+    assert executed_commands.count("wl -i wl0 bss") == 1
+    assert executed_commands.count("wl -i wl1 bss") == 1
+    assert executed_commands.count("wl -i wl2 bss") == 1
+    assert all("STA" not in command for command in executed_commands)
+    plugin.teardown(d083, topology)
+
+
+def test_d083_mboenable_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d083 = load_case(cases_dir / "D083_mboenable.yaml")
+
+    def baseline_output(prefix: str) -> str:
+        return "\n".join(
+            [
+                f"BaselineGetterMbo{prefix}=0",
+                f"BaselineHostapdMbo{prefix}=ABSENT",
+                f"BaselineHostapdMboCount{prefix}=0",
+            ]
+        )
+
+    def enable_output(prefix: str) -> str:
+        return f"RequestedEnableMbo{prefix}=1"
+
+    def restore_output(prefix: str) -> str:
+        return f"RestoreMbo{prefix}=0"
+
+    def after_enable_output(prefix: str, getter: str, hostapd: str, count: str) -> str:
+        return "\n".join(
+            [
+                f"AfterEnableGetterMbo{prefix}={getter}",
+                f"AfterEnableHostapdMbo{prefix}={hostapd}",
+                f"AfterEnableHostapdMboCount{prefix}={count}",
+            ]
+        )
+
+    def after_restore_output(prefix: str, getter: str, hostapd: str, count: str) -> str:
+        return "\n".join(
+            [
+                f"AfterRestoreGetterMbo{prefix}={getter}",
+                f"AfterRestoreHostapdMbo{prefix}={hostapd}",
+                f"AfterRestoreHostapdMboCount{prefix}={count}",
+            ]
+        )
+
+    d083_results = {
+        "steps": {
+            "step1_mbo_baseline_5g": {"success": True, "output": baseline_output("5g"), "timing": 0.01},
+            "step2_mbo_enable_5g": {"success": True, "output": enable_output("5g"), "timing": 0.01},
+            "step3_mbo_after_enable_5g": {
+                "success": True,
+                "output": after_enable_output("5g", "1", "ABSENT", "0"),
+                "timing": 0.01,
+            },
+            "step4_mbo_restore_5g": {"success": True, "output": restore_output("5g"), "timing": 0.01},
+            "step5_mbo_after_restore_5g": {
+                "success": True,
+                "output": after_restore_output("5g", "0", "ABSENT", "0"),
+                "timing": 0.01,
+            },
+            "step6_mbo_baseline_6g": {"success": True, "output": baseline_output("6g"), "timing": 0.01},
+            "step7_mbo_enable_6g": {"success": True, "output": enable_output("6g"), "timing": 0.01},
+            "step8_mbo_after_enable_6g": {
+                "success": True,
+                "output": after_enable_output("6g", "1", "ABSENT", "0"),
+                "timing": 0.01,
+            },
+            "step9_mbo_restore_6g": {"success": True, "output": restore_output("6g"), "timing": 0.01},
+            "step10_mbo_after_restore_6g": {
+                "success": True,
+                "output": after_restore_output("6g", "0", "ABSENT", "0"),
+                "timing": 0.01,
+            },
+            "step11_mbo_baseline_24g": {"success": True, "output": baseline_output("24g"), "timing": 0.01},
+            "step12_mbo_enable_24g": {"success": True, "output": enable_output("24g"), "timing": 0.01},
+            "step13_mbo_after_enable_24g": {
+                "success": True,
+                "output": after_enable_output("24g", "1", "ABSENT", "0"),
+                "timing": 0.01,
+            },
+            "step14_mbo_restore_24g": {"success": True, "output": restore_output("24g"), "timing": 0.01},
+            "step15_mbo_after_restore_24g": {
+                "success": True,
+                "output": after_restore_output("24g", "0", "ABSENT", "0"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d083, d083_results) is True
+
+    d083_wrong_6g_enable_getter = {
+        "steps": {
+            **d083_results["steps"],
+            "step8_mbo_after_enable_6g": {
+                "success": True,
+                "output": after_enable_output("6g", "0", "ABSENT", "0"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d083, d083_wrong_6g_enable_getter) is False
+
+    d083_wrong_5g_hostapd_converged = {
+        "steps": {
+            **d083_results["steps"],
+            "step3_mbo_after_enable_5g": {
+                "success": True,
+                "output": after_enable_output("5g", "1", "1", "1"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d083, d083_wrong_5g_hostapd_converged) is False
+
+    d083_wrong_24g_restore = {
+        "steps": {
+            **d083_results["steps"],
+            "step15_mbo_after_restore_24g": {
+                "success": True,
+                "output": after_restore_output("24g", "1", "ABSENT", "0"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d083, d083_wrong_24g_restore) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []

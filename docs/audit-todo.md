@@ -94,13 +94,13 @@ If I open only this file in a future session, I should do the following in order
 
 ## Current repo handoff snapshot（2026-03-19）
 
-- Trusted/calibrated official cases: **142 / 415**
-- Remaining official cases: **273**
+- Trusted/calibrated official cases: **143 / 415**
+- Remaining official cases: **272**
 - Active blockers:
   - `D037 OperatingStandard`
   - `D054 Tx_RetransmissionsFailed`
   - `D055 TxBytes`
-  - 執行順序：blockers 先保留在 blocker 清單，不插回目前從 `D083` 往後的 sequential queue；待其餘待校正案例收斂後再回頭處理
+  - 執行順序：blockers 先保留在 blocker 清單，不插回目前從 `D084` 往後的 sequential queue；待其餘待校正案例收斂後再回頭處理
 - Latest committed single-case checkpoints:
   - `D056 TxErrors` → workbook-aligned `To be tested` checkpoint (`9880918`)
   - `D057 TxMulticastPacketCount` → workbook-aligned `To be tested` checkpoint (`01fd2c3`), plus MAC normalization follow-up (`426de8a`)
@@ -124,25 +124,26 @@ If I open only this file in a future session, I should do the following in order
   - `D079 MacFilterAddressList` → workbook-aligned AP-only multiband `Pass` checkpoint（AP1/AP3/AP5 all started with an empty getter and empty `MACFiltering.Entry` tree, and after `MACFiltering.addEntry(mac=...)` / `delEntry(mac=...)` the bounded `sleep 2` readback showed the getter and entry tree converging together to the same band-specific MAC and then back to the empty baseline）
   - `D080 Entry` → workbook-aligned AP-only multiband `Pass` checkpoint（AP1/AP3/AP5 的 `MACFiltering.Entry.?` 都從 `No data found` 基線出發，`addEntry(mac=...)` 後收斂出單一 `Entry.Alias` / `Entry.MACAddress` 節點，`delEntry(mac=...)` 後回到 `No data found`；ACL file side effect 依 mode split 而不同，因此留給 D081 處理）
   - `D081 Mode` → workbook-aligned AP-only multiband `Fail` checkpoint（AP1 baseline 是 `BlackList` + `deny_mac_file=/tmp/hostap_wl0.acl`，AP3/AP5 baseline 都已是 `Off` 且 hostapd 無 ACL line，但 `ubus-cli WiFi.AccessPoint.{1|3|5}.MACFiltering.Mode=Off` 在三個 band 都仍回 `ERROR: ... invalid value`，並留下不變的 getter / hostapd ACL 狀態）
-  - `D082 MaxAssociatedDevices` → workbook-aligned AP-only multiband `Fail` checkpoint（current checkpoint；AP1/AP3/AP5 的 northbound getter 都會接受 setter 並 read back `32 -> 31 -> 32`，但 `/tmp/wl{0,1,2}_hapd.conf` 的兩條 `max_num_sta=` 都固定維持 `32`，因此目前仍未符合 workbook 記錄的 `Pass` 路徑）
-  - `D185 TPCMode` → source/live **Fail-shaped mismatch** checkpoint，現已納入 `142 / 415` 完成數
-  - `D368 SRGBSSColorBitmap` → 0310 row 273 **Fail-shaped mismatch** checkpoint，現已納入 `142 / 415` 完成數（5G/6G/2.4G setters all accepted/read back `"1"`, but hostapd `he_spr_srg_bss_colors=` stayed absent on wl0/wl1/wl2）
-  - `D371 SRGPartialBSSIDBitmap` → 0310 row 276 mixed-band checkpoint，現已納入 `142 / 415` 完成數（5G/6G setters accepted/read back `"1"` while hostapd `he_spr_srg_partial_bssid=` stayed absent; 2.4G setter failed with `error=4` / `parameter not found`）
+  - `D082 MaxAssociatedDevices` → workbook-aligned AP-only multiband `Fail` checkpoint（AP1/AP3/AP5 的 northbound getter 都會接受 setter 並 read back `32 -> 31 -> 32`，但 `/tmp/wl{0,1,2}_hapd.conf` 的兩條 `max_num_sta=` 都固定維持 `32`，因此目前仍未符合 workbook 記錄的 `Pass` 路徑）
+  - `D083 MBOEnable` → workbook-aligned AP-only multiband `Fail` checkpoint（current checkpoint；AP1/AP3/AP5 的 northbound getter 都會接受 `MBOEnable 0 -> 1 -> 0` readback，但 `/tmp/wl{0,1,2}_hapd.conf` 的 `mbo=` 在三個 band 都持續 absent，因此目前仍未符合 workbook 記錄的 `Pass` 路徑）
+  - `D185 TPCMode` → source/live **Fail-shaped mismatch** checkpoint，現已納入 `143 / 415` 完成數
+  - `D368 SRGBSSColorBitmap` → 0310 row 273 **Fail-shaped mismatch** checkpoint，現已納入 `143 / 415` 完成數（5G/6G/2.4G setters all accepted/read back `"1"`, but hostapd `he_spr_srg_bss_colors=` stayed absent on wl0/wl1/wl2）
+  - `D371 SRGPartialBSSIDBitmap` → 0310 row 276 mixed-band checkpoint，現已納入 `143 / 415` 完成數（5G/6G setters accepted/read back `"1"` while hostapd `he_spr_srg_partial_bssid=` stayed absent; 2.4G setter failed with `error=4` / `parameter not found`）
 - Latest validated commands:
-  - `load_case(plugins/wifi_llapi/cases/D082_maxassociateddevices.yaml)` → `steps=15`
-  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'd082'` → `3 passed`
-  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py` → `215 passed`
-  - `uv run pytest -q` → `268 passed`
+  - `load_case(plugins/wifi_llapi/cases/D083_mboenable.yaml)` → `steps=15`
+  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'd083'` → `3 passed`
+  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py` → `218 passed`
+  - `uv run pytest -q` → `271 passed`
   - `serialwrap COM0 ubus-cli/hostapd_cli baseline readback` → 5G `testpilot5G` + `WPA2-Personal/00000000`, 6G `testpilot6G` + `WPA3-Personal/SAE/00000000`, 2.4G `testpilot2G` + `WPA2-Personal/00000000`
-  - `serialwrap COM0 D082 MaxAssociatedDevices probe` → AP1/AP3/AP5 baseline getters all started at `32`, temporary setter `=31` was accepted and read back `31`, restore `=32` returned to `32`, but `/tmp/wl{0,1,2}_hapd.conf` kept two `max_num_sta=32` lines throughout
+  - `serialwrap COM0 D083 MBOEnable probe` → AP1/AP3/AP5 baseline getters all started at `0`, temporary setter `=1` was accepted and read back `1`, restore `=0` returned to `0`, but `/tmp/wl{0,1,2}_hapd.conf` kept `mbo=` absent throughout
 - Next ready repo handoff case:
-  - `D083 MBOEnable`
+  - `D084 MultiAPType`
 - Continuation guard rails:
   - only committed YAML / docs count as trusted handoff state
   - do not infer progress from any local unstaged experiment outside these committed checkpoints
   - reuse `D058 TxPacketCount` as the positive same-STA tx-packet prior art when judging `D059`/`D060` family cases
-  - `D083_mboenable.yaml` is the next unsurveyed case; re-read workbook row 75 plus the new D082 MaxAssociatedDevices setter-divergence prior art before rewriting it
-  - `D185` / `D368` / `D371` 已從待校正池移出並折入完成數；最新 main-sweep checkpoint 則前進到 `D082`，下一個 ready sequential case 為 `D083`
+  - `D084_multiaptype.yaml` is the next unsurveyed case; re-read workbook row 76 plus the new D083 MBOEnable setter-divergence prior art before rewriting it
+  - `D185` / `D368` / `D371` 已從待校正池移出並折入完成數；最新 main-sweep checkpoint 則前進到 `D083`，下一個 ready sequential case 為 `D084`
 
 Current verified live baseline findings from this session:
 
