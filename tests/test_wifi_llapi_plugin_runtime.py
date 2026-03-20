@@ -9377,6 +9377,153 @@ def test_d097_uapsdcapability_evaluate_live_examples():
     assert plugin.evaluate(d097, d097_bad) is False
 
 
+# ── D098 UAPSDEnable (setter round-trip, all bands Pass) ─────────────
+
+
+def test_d098_uapsdenable_contract():
+    """D098 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D098_uapsdenable.yaml")
+    assert case["source"]["row"] == 98
+    assert case["source"]["api"] == "UAPSDEnable"
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 15
+    ref = case["results_reference"]["v4.0.3"]
+    assert ref["5g"] == "Pass"
+    assert ref["6g"] == "Pass"
+    assert ref["2.4g"] == "Pass"
+
+
+def test_d098_uapsdenable_setup_env(monkeypatch):
+    """D098 is DUT-only; setup_env should only request COM0."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d098 = load_case(cases_dir / "D098_uapsdenable.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(d098, topology=topo) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    plugin.teardown(d098, topo)
+
+
+def test_d098_uapsdenable_evaluate_live_examples():
+    """D098 all-pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d098 = load_case(cases_dir / "D098_uapsdenable.yaml")
+
+    d098_results = {
+        "steps": {
+            "step1_5g_setter_roundtrip": {
+                "success": True,
+                "output": (
+                    "Baseline5g=0\n"
+                    "AfterSet5g=1\n"
+                    "HapdAfterSet5g=1\n"
+                    "DriverAfterSet5g=1\n"
+                    "AfterRestore5g=0\n"
+                    "HapdAfterRestore5g=0"
+                ),
+                "timing": 0.01,
+            },
+            "step2_6g_setter_roundtrip": {
+                "success": True,
+                "output": (
+                    "Baseline6g=0\n"
+                    "AfterSet6g=1\n"
+                    "HapdAfterSet6g=1\n"
+                    "DriverAfterSet6g=1\n"
+                    "AfterRestore6g=0\n"
+                    "HapdAfterRestore6g=0"
+                ),
+                "timing": 0.01,
+            },
+            "step3_24g_setter_roundtrip": {
+                "success": True,
+                "output": (
+                    "Baseline24g=0\n"
+                    "AfterSet24g=1\n"
+                    "HapdAfterSet24g=1\n"
+                    "DriverAfterSet24g=1\n"
+                    "AfterRestore24g=0\n"
+                    "HapdAfterRestore24g=0"
+                ),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d098, d098_results) is True
+
+
+# ── D099 VendorIE / createVendorIE() (Not Supported, all bands) ─────
+
+
+def test_d099_vendorie_contract():
+    """D099 YAML loads, discovers, and has correct metadata."""
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D099_vendorie.yaml")
+    assert case["source"]["row"] == 99
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 6
+    ref = case["results_reference"]["v4.0.3"]
+    assert ref["5g"] == "Not Supported"
+    assert ref["6g"] == "Not Supported"
+    assert ref["2.4g"] == "Not Supported"
+
+
+def test_d099_vendorie_setup_env(monkeypatch):
+    """D099 is DUT-only; setup_env should only request COM0."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d099 = load_case(cases_dir / "D099_vendorie.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(d099, topology=topo) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    plugin.teardown(d099, topo)
+
+
+def test_d099_vendorie_evaluate_live_examples():
+    """D099 all-pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d099 = load_case(cases_dir / "D099_vendorie.yaml")
+
+    d099_results = {
+        "steps": {
+            "step1_5g_vendorie": {
+                "success": True,
+                "output": (
+                    "Enable5g=0\n"
+                    "CreateResult5g=ERROR: call (null) failed with status 1 - unknown error"
+                ),
+                "timing": 0.01,
+            },
+            "step2_6g_vendorie": {
+                "success": True,
+                "output": (
+                    "Enable6g=0\n"
+                    "CreateResult6g=ERROR: call (null) failed with status 1 - unknown error"
+                ),
+                "timing": 0.01,
+            },
+            "step3_24g_vendorie": {
+                "success": True,
+                "output": (
+                    "Enable24g=0\n"
+                    "CreateResult24g=ERROR: call (null) failed with status 1 - unknown error"
+                ),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d099, d099_results) is True
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []

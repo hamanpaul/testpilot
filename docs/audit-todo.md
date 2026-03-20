@@ -120,8 +120,8 @@ If I open only this file in a future session, I should do the following in order
 
 ## Current repo handoff snapshot（2026-03-20）
 
-- Trusted/calibrated official cases: **156 / 415**
-- Remaining official cases: **259**
+- Trusted/calibrated official cases: **159 / 415**
+- Remaining official cases: **256**
 - Active blockers:
   - `D037 OperatingStandard`
   - `D054 Tx_RetransmissionsFailed`
@@ -190,11 +190,17 @@ If I open only this file in a future session, I should do the following in order
   - `D097 UAPSDCapability` → workbook-aligned AP-only multiband `Pass` checkpoint（read-only capability getter, UAPSDCapability=1 on all 3 bands, setter returns error 15 read-only; hostapd uapsd_advertisement_enabled=0 / driver wme_apsd=0 = not active but capability present）
   - `load_case(plugins/wifi_llapi/cases/D097_uapsdcapability.yaml)` → `steps=3, pass_criteria=3`
   - `serialwrap COM0 D097 UAPSDCapability probe` → AP1/AP3/AP5 UAPSDCapability=1 + hostapd wmm/uapsd + driver wme_apsd cross-check
+  - `D098 UAPSDEnable` → workbook-aligned AP-only multiband `Pass` checkpoint（setter 0→1→0 全 3 band 都收斂：northbound getter、hostapd uapsd_advertisement_enabled first BSS、driver wme_apsd 同步翻轉；workbook 標 Not Support 但實際 API 完整運作）
+  - `load_case(plugins/wifi_llapi/cases/D098_uapsdenable.yaml)` → `steps=3, pass_criteria=15`
+  - `serialwrap COM0 D098 UAPSDEnable probe` → AP1/AP3/AP5 baseline=0, setter=1 accepted, hostapd/driver flip, restore=0 converges
+  - `D099 VendorIE` → workbook-aligned AP-only multiband `Not Supported` checkpoint（VendorIEs.Enable=0 exists but createVendorIE() returns ERROR: call (null) failed with status 1 on all 3 bands）
+  - `load_case(plugins/wifi_llapi/cases/D099_vendorie.yaml)` → `steps=3, pass_criteria=6`
+  - `serialwrap COM0 D099 VendorIE probe` → AP1/AP3/AP5 Enable=0 + createVendorIE() error on all bands
 - Continuation guard rails:
   - only committed YAML / docs count as trusted handoff state
   - do not infer progress from any local unstaged experiment outside these committed checkpoints
   - reuse `D058 TxPacketCount` as the positive same-STA tx-packet prior art when judging `D059`/`D060` family cases
-  - `D185` / `D368` / `D371` 已從待校正池移出並折入完成數；最新 main-sweep checkpoint 則前進到 `D097`，下一個 ready sequential case 為 `D098`
+  - `D185` / `D368` / `D371` 已從待校正池移出並折入完成數；最新 main-sweep checkpoint 則前進到 `D099`，下一個 ready sequential case 為 `D100`
 
 Current verified live baseline findings from this session:
 
