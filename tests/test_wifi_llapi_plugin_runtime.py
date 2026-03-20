@@ -8992,6 +8992,88 @@ def test_d091_presharedkey_accesspoint_security_evaluate_live_examples():
     assert plugin.evaluate(d091, d091_bad_restore) is False
 
 
+def test_d092_rekeyinginterval_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d092 = load_case(cases_dir / "D092_rekeyinginterval.yaml")
+    assert d092["id"] == "wifi-llapi-D092-rekeyinginterval"
+    assert d092["source"]["row"] == 92
+    assert d092["source"]["api"] == "RekeyingInterval"
+    assert d092["bands"] == ["5g", "6g", "2.4g"]
+    assert len(d092["steps"]) == 12
+    assert len(d092["pass_criteria"]) == 9
+    assert all(s.get("target") == "DUT" for s in d092["steps"])
+    assert "STA" not in d092["topology"]["devices"]
+    ref = d092["results_reference"]["v4.0.3"]
+    assert ref["5g"] == "Fail"
+    assert ref["6g"] == "Fail"
+    assert ref["2.4g"] == "Fail"
+
+
+def test_d092_rekeyinginterval_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d092 = load_case(cases_dir / "D092_rekeyinginterval.yaml")
+
+    assert plugin.setup_env(d092, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    plugin.teardown(d092, topology)
+
+
+def test_d092_rekeyinginterval_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d092 = load_case(cases_dir / "D092_rekeyinginterval.yaml")
+
+    d092_results = {
+        "steps": {
+            "step1_baseline_5g": {"success": True, "output": "BaselineRekeyingInterval5g=0\nBaselineHostapdRekey5g=0", "timing": 0.01},
+            "step2_set_5g": {"success": True, "output": "RekeyingInterval=3600", "timing": 0.01},
+            "step3_readback_5g": {"success": True, "output": "GetterRekeyingInterval5g=3600\nHostapdRekey5g=0", "timing": 0.01},
+            "step4_restore_5g": {"success": True, "output": "RestoredRekeyingInterval5g=0", "timing": 0.01},
+            "step5_baseline_6g": {"success": True, "output": "BaselineRekeyingInterval6g=0\nBaselineHostapdRekey6g=0", "timing": 0.01},
+            "step6_set_6g": {"success": True, "output": "RekeyingInterval=3600", "timing": 0.01},
+            "step7_readback_6g": {"success": True, "output": "GetterRekeyingInterval6g=3600\nHostapdRekey6g=0", "timing": 0.01},
+            "step8_restore_6g": {"success": True, "output": "RestoredRekeyingInterval6g=0", "timing": 0.01},
+            "step9_baseline_24g": {"success": True, "output": "BaselineRekeyingInterval24g=0\nBaselineHostapdRekey24g=0", "timing": 0.01},
+            "step10_set_24g": {"success": True, "output": "RekeyingInterval=3600", "timing": 0.01},
+            "step11_readback_24g": {"success": True, "output": "GetterRekeyingInterval24g=3600\nHostapdRekey24g=3600", "timing": 0.01},
+            "step12_restore_24g": {"success": True, "output": "RestoredRekeyingInterval24g=0", "timing": 0.01},
+        }
+    }
+    assert plugin.evaluate(d092, d092_results) is True
+
+    # Baseline not 0
+    d092_bad_baseline = {
+        "steps": {
+            **d092_results["steps"],
+            "step1_baseline_5g": {"success": True, "output": "BaselineRekeyingInterval5g=3600\nBaselineHostapdRekey5g=0", "timing": 0.01},
+        }
+    }
+    assert plugin.evaluate(d092, d092_bad_baseline) is False
+
+    # Readback didn't match
+    d092_bad_readback = {
+        "steps": {
+            **d092_results["steps"],
+            "step7_readback_6g": {"success": True, "output": "GetterRekeyingInterval6g=0\nHostapdRekey6g=0", "timing": 0.01},
+        }
+    }
+    assert plugin.evaluate(d092, d092_bad_readback) is False
+
+    # Restore didn't work
+    d092_bad_restore = {
+        "steps": {
+            **d092_results["steps"],
+            "step12_restore_24g": {"success": True, "output": "RestoredRekeyingInterval24g=3600", "timing": 0.01},
+        }
+    }
+    assert plugin.evaluate(d092, d092_bad_restore) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []

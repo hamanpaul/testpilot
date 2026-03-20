@@ -120,8 +120,8 @@ If I open only this file in a future session, I should do the following in order
 
 ## Current repo handoff snapshot（2026-03-20）
 
-- Trusted/calibrated official cases: **151 / 415**
-- Remaining official cases: **264**
+- Trusted/calibrated official cases: **152 / 415**
+- Remaining official cases: **263**
 - Active blockers:
   - `D037 OperatingStandard`
   - `D054 Tx_RetransmissionsFailed`
@@ -172,7 +172,10 @@ If I open only this file in a future session, I should do the following in order
   - `D091 PreSharedKey` → workbook-aligned AP-only multiband `Pass(5G)/Not Supported(6G)/Pass(2.4G)` checkpoint（PreSharedKey 64-char hex setter/readback accepted on 5G/2.4G; 6G setter accepted but WPA3-only semantics → Not Supported; hostapd wpa_psk= only appears via KeyPassPhrase route）
   - `load_case(plugins/wifi_llapi/cases/D091_presharedkey_accesspoint_security.yaml)` → `steps=12`
   - `serialwrap COM0 D091 PreSharedKey probe` → AP1/AP5 setter+readback pass; AP3 setter accepted but 6G WPA3-only; hostapd wpa_psk never appears via PreSharedKey API alone
-  - `D092 RekeyingInterval`
+  - `D092 RekeyingInterval` → workbook-aligned AP-only multiband `Fail` checkpoint（setter accepted + getter reads back 3600 on all 3 bands, but hostapd wpa_group_rekey does not consistently update; 5G/6G stay 0, 2.4G partially converges）
+  - `load_case(plugins/wifi_llapi/cases/D092_rekeyinginterval.yaml)` → `steps=12`
+  - `serialwrap COM0 D092 RekeyingInterval probe` → AP1/AP3/AP5 setter+readback pass; hostapd wpa_group_rekey diverges on all bands
+  - `D093 SHA256Enable`
 - Continuation guard rails:
   - only committed YAML / docs count as trusted handoff state
   - do not infer progress from any local unstaged experiment outside these committed checkpoints
