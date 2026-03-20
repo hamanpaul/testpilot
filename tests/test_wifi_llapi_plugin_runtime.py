@@ -8046,6 +8046,228 @@ def test_d084_multiaptype_evaluate_live_examples():
     assert plugin.evaluate(d084, d084_wrong_24g_restore) is False
 
 
+def test_d085_neighbour_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+
+    d085_raw = yaml.safe_load((cases_dir / "D085_neighbour.yaml").read_text(encoding="utf-8"))
+    d085 = load_case(cases_dir / "D085_neighbour.yaml")
+    d085_commands = "\n".join(str(step.get("command", "")) for step in d085["steps"])
+
+    assert "aliases" not in d085_raw
+    assert d085["id"] == "wifi-llapi-D085-neighbour"
+    assert d085["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d085["source"]["row"] == 77
+    assert d085["source"]["baseline"] == "BCM v4.0.3"
+    assert d085["llapi_support"] == "Support"
+    assert d085["implemented_by"] == "pWHM"
+    assert d085["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d085["topology"]["devices"]) == {"DUT"}
+    assert d085["topology"]["links"] == []
+    assert d085["hlapi_command"] == "ubus-cli WiFi.AccessPoint.1.Neighbour"
+    assert "killall wpa_supplicant" not in d085.get("sta_env_setup", "")
+    assert 'setNeighbourAP(BSSID=11:22:33:44:55:77,Channel=1)' in d085_commands
+    assert 'delNeighbourAP(BSSID=11:22:33:44:55:88)' in d085_commands
+    assert "AfterDeleteBssid24g=ABSENT" in d085_commands
+    assert any(
+        criterion["field"] == "neighbour_after_add_6g.AfterAddChannel6g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "1"
+        for criterion in d085["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "neighbour_after_delete_5g.AfterDeleteBssidCount5g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "0"
+        for criterion in d085["pass_criteria"]
+    )
+    assert d085["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d085["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d085["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+
+
+def test_d085_neighbour_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d085 = load_case(cases_dir / "D085_neighbour.yaml")
+
+    assert plugin.setup_env(d085, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    executed_commands = recorder.transports[0].executed_commands
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.Enable=1") == 1
+    assert executed_commands.count("wl -i wl0 bss") == 1
+    assert executed_commands.count("wl -i wl1 bss") == 1
+    assert executed_commands.count("wl -i wl2 bss") == 1
+    assert all("STA" not in command for command in executed_commands)
+    plugin.teardown(d085, topology)
+
+
+def test_d085_neighbour_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d085 = load_case(cases_dir / "D085_neighbour.yaml")
+
+    def baseline_output(prefix: str) -> str:
+        return "\n".join(
+            [
+                f"BaselineBssidCount{prefix}=0",
+                f"BaselineChannelCount{prefix}=0",
+                f"BaselineBssid{prefix}=ABSENT",
+                f"BaselineChannel{prefix}=ABSENT",
+            ]
+        )
+
+    def add_output(prefix: str, bssid: str, channel: str) -> str:
+        return "\n".join([f"RequestedBssid{prefix}={bssid}", f"RequestedChannel{prefix}={channel}"])
+
+    def after_add_output(prefix: str, bssid: str, channel: str) -> str:
+        return "\n".join(
+            [
+                f"AfterAddBssidCount{prefix}=1",
+                f"AfterAddChannelCount{prefix}=1",
+                f"AfterAddBssid{prefix}={bssid}",
+                f"AfterAddChannel{prefix}={channel}",
+            ]
+        )
+
+    def delete_output(prefix: str, bssid: str) -> str:
+        return f"DeleteBssid{prefix}={bssid}"
+
+    def after_delete_output(prefix: str) -> str:
+        return "\n".join(
+            [
+                f"AfterDeleteBssidCount{prefix}=0",
+                f"AfterDeleteChannelCount{prefix}=0",
+                f"AfterDeleteBssid{prefix}=ABSENT",
+                f"AfterDeleteChannel{prefix}=ABSENT",
+            ]
+        )
+
+    d085_results = {
+        "steps": {
+            "step1_neighbour_baseline_5g": {"success": True, "output": baseline_output("5g"), "timing": 0.01},
+            "step2_neighbour_add_5g": {
+                "success": True,
+                "output": add_output("5g", "11:22:33:44:55:66", "36"),
+                "timing": 0.01,
+            },
+            "step3_neighbour_after_add_5g": {
+                "success": True,
+                "output": after_add_output("5g", "11:22:33:44:55:66", "36"),
+                "timing": 0.01,
+            },
+            "step4_neighbour_delete_5g": {
+                "success": True,
+                "output": delete_output("5g", "11:22:33:44:55:66"),
+                "timing": 0.01,
+            },
+            "step5_neighbour_after_delete_5g": {
+                "success": True,
+                "output": after_delete_output("5g"),
+                "timing": 0.01,
+            },
+            "step6_neighbour_baseline_6g": {"success": True, "output": baseline_output("6g"), "timing": 0.01},
+            "step7_neighbour_add_6g": {
+                "success": True,
+                "output": add_output("6g", "11:22:33:44:55:77", "1"),
+                "timing": 0.01,
+            },
+            "step8_neighbour_after_add_6g": {
+                "success": True,
+                "output": after_add_output("6g", "11:22:33:44:55:77", "1"),
+                "timing": 0.01,
+            },
+            "step9_neighbour_delete_6g": {
+                "success": True,
+                "output": delete_output("6g", "11:22:33:44:55:77"),
+                "timing": 0.01,
+            },
+            "step10_neighbour_after_delete_6g": {
+                "success": True,
+                "output": after_delete_output("6g"),
+                "timing": 0.01,
+            },
+            "step11_neighbour_baseline_24g": {"success": True, "output": baseline_output("24g"), "timing": 0.01},
+            "step12_neighbour_add_24g": {
+                "success": True,
+                "output": add_output("24g", "11:22:33:44:55:88", "11"),
+                "timing": 0.01,
+            },
+            "step13_neighbour_after_add_24g": {
+                "success": True,
+                "output": after_add_output("24g", "11:22:33:44:55:88", "11"),
+                "timing": 0.01,
+            },
+            "step14_neighbour_delete_24g": {
+                "success": True,
+                "output": delete_output("24g", "11:22:33:44:55:88"),
+                "timing": 0.01,
+            },
+            "step15_neighbour_after_delete_24g": {
+                "success": True,
+                "output": after_delete_output("24g"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d085, d085_results) is True
+
+    d085_wrong_5g_baseline = {
+        "steps": {
+            **d085_results["steps"],
+            "step1_neighbour_baseline_5g": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "BaselineBssidCount5g=1",
+                        "BaselineChannelCount5g=1",
+                        "BaselineBssid5g=11:22:33:44:55:66",
+                        "BaselineChannel5g=36",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d085, d085_wrong_5g_baseline) is False
+
+    d085_wrong_6g_channel = {
+        "steps": {
+            **d085_results["steps"],
+            "step8_neighbour_after_add_6g": {
+                "success": True,
+                "output": after_add_output("6g", "11:22:33:44:55:77", "5"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d085, d085_wrong_6g_channel) is False
+
+    d085_wrong_24g_delete = {
+        "steps": {
+            **d085_results["steps"],
+            "step15_neighbour_after_delete_24g": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "AfterDeleteBssidCount24g=1",
+                        "AfterDeleteChannelCount24g=1",
+                        "AfterDeleteBssid24g=11:22:33:44:55:88",
+                        "AfterDeleteChannel24g=11",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d085, d085_wrong_24g_delete) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
