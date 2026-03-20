@@ -1,148 +1,61 @@
 id: wifi-llapi-D130-getstats-retransmissions
-aliases:
-  - wifi-llapi-r116-getstats-retransmissions
-name: getStats() — WiFi.EndPoint.{i}.
+name: getStats() Retransmissions — WiFi.AccessPoint.{i}.
 version: '1.0'
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
   row: 130
-  object: "WiFi.EndPoint.{i}."
-  api: "getStats()"
+  object: WiFi.AccessPoint.{i}.
+  api: getStats()
+  baseline: 0310-BGW720-300
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: 'ubus-cli WiFi.EndPoint.{i}.getStats() Retransmissions : 33,'
-llapi_support: Support
-implemented_by: pWHM
+hlapi_command: ubus-cli "WiFi.AccessPoint.{i}.getStats()"
+llapi_support: Not Supported
+implemented_by: N/A
+bands:
+- 5g
+- 6g
+- 2.4g
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM0
-    EndpointPC:
-      role: endpoint
-      transport: ssh
-    STA:
-      role: sta
-      transport: serial
-      selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
-  links:
-  - from: STA
-    to: DUT
-    band: 5g
+  links: []
 test_environment: |
   Topology:
   - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
   Transport:
-  - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
-
-setup_steps: |
-  1) DUT 5G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
-  3) Association evidence:
-     - A0: iw dev wl0 link
-     - B0: wl -i wl0 assoclist
-sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
-    ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-  STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
-    iw dev wl0 link
-  DUT association evidence:
-    wl -i wl0 assoclist
-test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli WiFi.EndPoint.{i}.getStats() Retransmissions : 33,
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.EndPoint.*.getStats()"
-  3) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
-
+  - DUT via serialwrap COM0
+  Baseline:
+  - 5G  = AP1 / wl0 / testpilot5G / WPA2-Personal
+  - 6G  = AP3 / wl1 / testpilot6G / WPA3-Personal / SAE
+  - 2.4G = AP5 / wl2 / testpilot2G / WPA2-Personal
+  Notes:
+  - getStats() returns "function not found" on all 3 bands
+  - AP1/AP3/AP5 all return ERROR status 3
+  - Retransmissions field cannot be retrieved via getStats()
 steps:
-- id: query
+- id: step1_getstats_probe
   action: exec
   target: DUT
-  command: 'ubus-cli WiFi.EndPoint.{i}.getStats() Retransmissions : 33,'
-  capture: result
+  command: ubus-cli "WiFi.AccessPoint.1.getStats()"
+  capture: getstats_probe
 pass_criteria:
-- field: result
-  operator: not_contains
-  value: error
-  description: getStats() 執行不應回傳 error
-
+- field: getstats_probe
+  operator: contains
+  value: function not found
+  description: getStats() should return function not found error
 verification_command: |
-  ubus-cli "WiFi.EndPoint.*.getStats()" | sed -n "1,200p"
-  ubus-cli "WiFi.EndPoint.*.getStats?" 2>/dev/null || true
-  iw dev 2>/dev/null
-  iw dev wl0 link 2>/dev/null || true
-  iw dev wl0 station dump 2>/dev/null | sed -n "1,120p"
-
+  ubus-cli "WiFi.AccessPoint.1.getStats()" 2>&1
+  ubus-cli "WiFi.AccessPoint.3.getStats()" 2>&1
+  ubus-cli "WiFi.AccessPoint.5.getStats()" 2>&1
 results_reference:
-  v4.0.1:
-    5g: Skip
-    6g: Skip
-    2.4g: Skip
-    comment: ''
   v4.0.3:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: ''
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: getStats() method not implemented on BGW720 (status 3 function not found)

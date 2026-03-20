@@ -10408,6 +10408,805 @@ def test_d119_enable_endpoint_evaluate():
 
 
 
+def test_d120_getstats_encryptionmode_contract():
+    """D120 getStats() EncryptionMode YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D120_getstats_encryptionmode.yaml")
+    assert case["source"]["row"] == 106
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d120_getstats_encryptionmode_setup_env(monkeypatch):
+    """D120 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D120_getstats_encryptionmode.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d120_getstats_encryptionmode_evaluate():
+    """D120 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D120_getstats_encryptionmode.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d121_getstats_hecapabilities_contract():
+    """D121 getStats() HeCapabilities YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D121_getstats_hecapabilities.yaml")
+    assert case["source"]["row"] == 121
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d121_getstats_hecapabilities_setup_env(monkeypatch):
+    """D121 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D121_getstats_hecapabilities.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d121_getstats_hecapabilities_evaluate():
+    """D121 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D121_getstats_hecapabilities.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d122_getstats_htcapabilities_contract():
+    """D122 getStats() HtCapabilities YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D122_getstats_htcapabilities.yaml")
+    assert case["source"]["row"] == 122
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d122_getstats_htcapabilities_setup_env(monkeypatch):
+    """D122 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D122_getstats_htcapabilities.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d122_getstats_htcapabilities_evaluate():
+    """D122 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D122_getstats_htcapabilities.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d123_getstats_lastdatadownlinkrate_contract():
+    """D123 getStats() LastDataDownlinkRate YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D123_getstats_lastdatadownlinkrate.yaml")
+    assert case["source"]["row"] == 123
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d123_getstats_lastdatadownlinkrate_setup_env(monkeypatch):
+    """D123 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D123_getstats_lastdatadownlinkrate.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d123_getstats_lastdatadownlinkrate_evaluate():
+    """D123 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D123_getstats_lastdatadownlinkrate.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d124_getstats_lastdatauplinkrate_contract():
+    """D124 getStats() LastDataUplinkRate YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D124_getstats_lastdatauplinkrate.yaml")
+    assert case["source"]["row"] == 124
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d124_getstats_lastdatauplinkrate_setup_env(monkeypatch):
+    """D124 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D124_getstats_lastdatauplinkrate.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d124_getstats_lastdatauplinkrate_evaluate():
+    """D124 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D124_getstats_lastdatauplinkrate.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d125_getstats_linkbandwidth_contract():
+    """D125 getStats() LinkBandwidth YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D125_getstats_linkbandwidth.yaml")
+    assert case["source"]["row"] == 125
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d125_getstats_linkbandwidth_setup_env(monkeypatch):
+    """D125 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D125_getstats_linkbandwidth.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d125_getstats_linkbandwidth_evaluate():
+    """D125 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D125_getstats_linkbandwidth.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d126_getstats_maxrxspatialstreamssupported_contract():
+    """D126 getStats() MaxRxSpatialStreamsSupported YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D126_getstats_maxrxspatialstreamssupported.yaml")
+    assert case["source"]["row"] == 126
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d126_getstats_maxrxspatialstreamssupported_setup_env(monkeypatch):
+    """D126 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D126_getstats_maxrxspatialstreamssupported.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d126_getstats_maxrxspatialstreamssupported_evaluate():
+    """D126 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D126_getstats_maxrxspatialstreamssupported.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d127_getstats_maxtxspatialstreamssupported_contract():
+    """D127 getStats() MaxTxSpatialStreamsSupported YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D127_getstats_maxtxspatialstreamssupported.yaml")
+    assert case["source"]["row"] == 127
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d127_getstats_maxtxspatialstreamssupported_setup_env(monkeypatch):
+    """D127 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D127_getstats_maxtxspatialstreamssupported.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d127_getstats_maxtxspatialstreamssupported_evaluate():
+    """D127 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D127_getstats_maxtxspatialstreamssupported.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d128_getstats_noise_contract():
+    """D128 getStats() Noise YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D128_getstats_noise.yaml")
+    assert case["source"]["row"] == 128
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d128_getstats_noise_setup_env(monkeypatch):
+    """D128 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D128_getstats_noise.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d128_getstats_noise_evaluate():
+    """D128 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D128_getstats_noise.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d129_getstats_operatingstandard_contract():
+    """D129 getStats() OperatingStandard YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D129_getstats_operatingstandard.yaml")
+    assert case["source"]["row"] == 129
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d129_getstats_operatingstandard_setup_env(monkeypatch):
+    """D129 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D129_getstats_operatingstandard.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d129_getstats_operatingstandard_evaluate():
+    """D129 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D129_getstats_operatingstandard.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d130_getstats_retransmissions_contract():
+    """D130 getStats() Retransmissions YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D130_getstats_retransmissions.yaml")
+    assert case["source"]["row"] == 130
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d130_getstats_retransmissions_setup_env(monkeypatch):
+    """D130 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D130_getstats_retransmissions.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d130_getstats_retransmissions_evaluate():
+    """D130 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D130_getstats_retransmissions.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d131_getstats_rssi_contract():
+    """D131 getStats() RSSI YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D131_getstats_rssi.yaml")
+    assert case["source"]["row"] == 131
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d131_getstats_rssi_setup_env(monkeypatch):
+    """D131 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D131_getstats_rssi.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d131_getstats_rssi_evaluate():
+    """D131 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D131_getstats_rssi.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d132_getstats_rx_retransmissions_contract():
+    """D132 getStats() Rx_Retransmissions YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D132_getstats_rx_retransmissions.yaml")
+    assert case["source"]["row"] == 132
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d132_getstats_rx_retransmissions_setup_env(monkeypatch):
+    """D132 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D132_getstats_rx_retransmissions.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d132_getstats_rx_retransmissions_evaluate():
+    """D132 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D132_getstats_rx_retransmissions.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d133_getstats_rxbytes_contract():
+    """D133 getStats() RxBytes YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D133_getstats_rxbytes.yaml")
+    assert case["source"]["row"] == 133
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d133_getstats_rxbytes_setup_env(monkeypatch):
+    """D133 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D133_getstats_rxbytes.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d133_getstats_rxbytes_evaluate():
+    """D133 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D133_getstats_rxbytes.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d134_getstats_rxpacketcount_contract():
+    """D134 getStats() RxPacketCount YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D134_getstats_rxpacketcount.yaml")
+    assert case["source"]["row"] == 134
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d134_getstats_rxpacketcount_setup_env(monkeypatch):
+    """D134 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D134_getstats_rxpacketcount.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d134_getstats_rxpacketcount_evaluate():
+    """D134 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D134_getstats_rxpacketcount.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d135_getstats_securitymodeenabled_contract():
+    """D135 getStats() SecurityModeEnabled YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D135_getstats_securitymodeenabled.yaml")
+    assert case["source"]["row"] == 135
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d135_getstats_securitymodeenabled_setup_env(monkeypatch):
+    """D135 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D135_getstats_securitymodeenabled.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d135_getstats_securitymodeenabled_evaluate():
+    """D135 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D135_getstats_securitymodeenabled.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d136_getstats_supportedmcs_contract():
+    """D136 getStats() SupportedMCS YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D136_getstats_supportedmcs.yaml")
+    assert case["source"]["row"] == 136
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d136_getstats_supportedmcs_setup_env(monkeypatch):
+    """D136 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D136_getstats_supportedmcs.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d136_getstats_supportedmcs_evaluate():
+    """D136 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D136_getstats_supportedmcs.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d137_getstats_tx_retransmissions_contract():
+    """D137 getStats() Tx_Retransmissions YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D137_getstats_tx_retransmissions.yaml")
+    assert case["source"]["row"] == 137
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d137_getstats_tx_retransmissions_setup_env(monkeypatch):
+    """D137 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D137_getstats_tx_retransmissions.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d137_getstats_tx_retransmissions_evaluate():
+    """D137 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D137_getstats_tx_retransmissions.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d138_getstats_txbytes_contract():
+    """D138 getStats() TxBytes YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D138_getstats_txbytes.yaml")
+    assert case["source"]["row"] == 138
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d138_getstats_txbytes_setup_env(monkeypatch):
+    """D138 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D138_getstats_txbytes.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d138_getstats_txbytes_evaluate():
+    """D138 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D138_getstats_txbytes.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d139_getstats_txpacketcount_contract():
+    """D139 getStats() TxPacketCount YAML loads with correct metadata."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D139_getstats_txpacketcount.yaml")
+    assert case["source"]["row"] == 139
+    assert case["llapi_support"] == "Not Supported"
+    assert len(case["steps"]) == 1
+    assert len(case["pass_criteria"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+
+
+def test_d139_getstats_txpacketcount_setup_env(monkeypatch):
+    """D139 is DUT-only."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D139_getstats_txpacketcount.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d139_getstats_txpacketcount_evaluate():
+    """D139 pass criteria met with function not found output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D139_getstats_txpacketcount.yaml")
+    results = {
+        "steps": {
+            "step1_getstats_probe": {
+                "success": True,
+                "output": "ERROR: call (null) failed with status 3 - function not found",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
 
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
