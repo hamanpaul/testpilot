@@ -94,13 +94,13 @@ If I open only this file in a future session, I should do the following in order
 
 ## Current repo handoff snapshot（2026-03-19）
 
-- Trusted/calibrated official cases: **145 / 415**
-- Remaining official cases: **270**
+- Trusted/calibrated official cases: **146 / 415**
+- Remaining official cases: **269**
 - Active blockers:
   - `D037 OperatingStandard`
   - `D054 Tx_RetransmissionsFailed`
   - `D055 TxBytes`
-- 執行順序：blockers 先保留在 blocker 清單，不插回目前從 `D086` 往後的 sequential queue；待其餘待校正案例收斂後再回頭處理
+- 執行順序：blockers 先保留在 blocker 清單，不插回目前從 `D087` 往後的 sequential queue；待其餘待校正案例收斂後再回頭處理
 - Latest committed single-case checkpoints:
   - `D056 TxErrors` → workbook-aligned `To be tested` checkpoint (`9880918`)
   - `D057 TxMulticastPacketCount` → workbook-aligned `To be tested` checkpoint (`01fd2c3`), plus MAC normalization follow-up (`426de8a`)
@@ -127,25 +127,26 @@ If I open only this file in a future session, I should do the following in order
   - `D082 MaxAssociatedDevices` → workbook-aligned AP-only multiband `Fail` checkpoint（AP1/AP3/AP5 的 northbound getter 都會接受 setter 並 read back `32 -> 31 -> 32`，但 `/tmp/wl{0,1,2}_hapd.conf` 的兩條 `max_num_sta=` 都固定維持 `32`，因此目前仍未符合 workbook 記錄的 `Pass` 路徑）
   - `D083 MBOEnable` → workbook-aligned AP-only multiband `Fail` checkpoint（AP1/AP3/AP5 的 northbound getter 都會接受 `MBOEnable 0 -> 1 -> 0` readback，但 `/tmp/wl{0,1,2}_hapd.conf` 的 `mbo=` 在三個 band 都持續 absent，因此目前仍未符合 workbook 記錄的 `Pass` 路徑）
   - `D084 MultiAPType` → workbook-aligned AP-only multiband `Fail` checkpoint（AP1/AP3/AP5 的 northbound getter 與 `wl -i wlX map` 都會接受 `BackhaulBSS` 並在 restore 後回到 `FronthaulBSS,BackhaulBSS`，但 `/tmp/wl{0,1,2}_hapd.conf` 的 `multi_ap=` 在 setter 後只從 `3/3` 變成 `1/3`，沒有完整收斂到 backhaul-only）
-  - `D085 Neighbour` → workbook-aligned AP-only multiband `Pass` checkpoint（current checkpoint；AP1/AP3/AP5 都從空的 `Neighbour` tree 出發，`setNeighbourAP(BSSID=...,Channel=...)` 會收斂出單一 `Neighbour.1.BSSID/Channel`，`delNeighbourAP(BSSID=...)` 則會把 tree restore 回 empty baseline）
-  - `D185 TPCMode` → source/live **Fail-shaped mismatch** checkpoint，現已納入 `145 / 415` 完成數
-  - `D368 SRGBSSColorBitmap` → 0310 row 273 **Fail-shaped mismatch** checkpoint，現已納入 `145 / 415` 完成數（5G/6G/2.4G setters all accepted/read back `"1"`, but hostapd `he_spr_srg_bss_colors=` stayed absent on wl0/wl1/wl2）
-  - `D371 SRGPartialBSSIDBitmap` → 0310 row 276 mixed-band checkpoint，現已納入 `145 / 415` 完成數（5G/6G setters accepted/read back `"1"` while hostapd `he_spr_srg_partial_bssid=` stayed absent; 2.4G setter failed with `error=4` / `parameter not found`）
+  - `D085 Neighbour` → workbook-aligned AP-only multiband `Pass` checkpoint（AP1/AP3/AP5 都從空的 `Neighbour` tree 出發，`setNeighbourAP(BSSID=...,Channel=...)` 會收斂出單一 `Neighbour.1.BSSID/Channel`，`delNeighbourAP(BSSID=...)` 則會把 tree restore 回 empty baseline）
+  - `D086 EncryptionMode` → workbook-aligned AP-only multiband `Not Supported` checkpoint（current checkpoint；AP1/AP3/AP5 的 getter 都固定回 `EncryptionMode="Default"`，但 `/tmp/wl{0,1,2}_hapd.conf` 仍明確暴露 `WPA-PSK/SAE + CCMP` 的真實 security lines，符合 workbook `hardcode in pwhm`）
+  - `D185 TPCMode` → source/live **Fail-shaped mismatch** checkpoint，現已納入 `146 / 415` 完成數
+  - `D368 SRGBSSColorBitmap` → 0310 row 273 **Fail-shaped mismatch** checkpoint，現已納入 `146 / 415` 完成數（5G/6G/2.4G setters all accepted/read back `"1"`, but hostapd `he_spr_srg_bss_colors=` stayed absent on wl0/wl1/wl2）
+  - `D371 SRGPartialBSSIDBitmap` → 0310 row 276 mixed-band checkpoint，現已納入 `146 / 415` 完成數（5G/6G setters accepted/read back `"1"` while hostapd `he_spr_srg_partial_bssid=` stayed absent; 2.4G setter failed with `error=4` / `parameter not found`）
 - Latest validated commands:
-  - `load_case(plugins/wifi_llapi/cases/D085_neighbour.yaml)` → `steps=15`
-  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'd085'` → `3 passed`
-  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py` → `224 passed`
-  - `uv run pytest -q` → `277 passed`
+  - `load_case(plugins/wifi_llapi/cases/D086_encryptionmode_accesspoint_security.yaml)` → `steps=9`
+  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'd086'` → `3 passed`
+  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py` → `227 passed`
+  - `uv run pytest -q` → `280 passed`
   - `serialwrap COM0 ubus-cli/hostapd_cli baseline readback` → 5G `testpilot5G` + `WPA2-Personal/00000000`, 6G `testpilot6G` + `WPA3-Personal/SAE/00000000`, 2.4G `testpilot2G` + `WPA2-Personal/00000000`
-  - `serialwrap COM0 D085 Neighbour probe` → AP1/AP3/AP5 baseline `Neighbour` trees were empty, `setNeighbourAP(BSSID=...,Channel=...)` added one `Neighbour.1.BSSID/Channel` pair on every band, and `delNeighbourAP(BSSID=...)` restored all three trees to empty
+  - `serialwrap COM0 D086 EncryptionMode probe` → AP1/AP3/AP5 all returned `EncryptionMode="Default"` while the matching hostapd configs still exposed real `WPA-PSK/SAE + CCMP` lines
 - Next ready repo handoff case:
-  - `D086 EncryptionMode`
+  - `D087 KeyPassPhrase`
 - Continuation guard rails:
   - only committed YAML / docs count as trusted handoff state
   - do not infer progress from any local unstaged experiment outside these committed checkpoints
   - reuse `D058 TxPacketCount` as the positive same-STA tx-packet prior art when judging `D059`/`D060` family cases
-  - `D086_encryptionmode_accesspoint_security.yaml` is the next stale YAML; re-read workbook row 78 plus the new D085 Neighbour AP-only object-lifecycle prior art before rewriting it
-  - `D185` / `D368` / `D371` 已從待校正池移出並折入完成數；最新 main-sweep checkpoint 則前進到 `D085`，下一個 ready sequential case 為 `D086`
+  - `D087_keypassphrase_accesspoint_security.yaml` is the next stale YAML; re-read workbook row 79 plus the new D086 EncryptionMode Security getter prior art before rewriting it
+  - `D185` / `D368` / `D371` 已從待校正池移出並折入完成數；最新 main-sweep checkpoint 則前進到 `D086`，下一個 ready sequential case 為 `D087`
 
 Current verified live baseline findings from this session:
 

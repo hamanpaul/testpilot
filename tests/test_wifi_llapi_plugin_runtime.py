@@ -8268,6 +8268,154 @@ def test_d085_neighbour_evaluate_live_examples():
     assert plugin.evaluate(d085, d085_wrong_24g_delete) is False
 
 
+def test_d086_encryptionmode_accesspoint_security_contract():
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+
+    d086_raw = yaml.safe_load((cases_dir / "D086_encryptionmode_accesspoint_security.yaml").read_text(encoding="utf-8"))
+    d086 = load_case(cases_dir / "D086_encryptionmode_accesspoint_security.yaml")
+    d086_commands = "\n".join(str(step.get("command", "")) for step in d086["steps"])
+
+    assert "aliases" not in d086_raw
+    assert d086["id"] == "wifi-llapi-D086-encryptionmode-accesspoint-security"
+    assert d086["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d086["source"]["row"] == 78
+    assert d086["source"]["baseline"] == "BCM v4.0.3"
+    assert d086["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.Security.EncryptionMode?"'
+    assert d086["llapi_support"] == "Not Supported"
+    assert d086["implemented_by"] == "pWHM"
+    assert d086["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d086["topology"]["devices"]) == {"DUT"}
+    assert d086["topology"]["links"] == []
+    assert "killall wpa_supplicant" not in d086.get("sta_env_setup", "")
+    assert "HostapdKeyMgmt6g=SAE" not in d086_commands
+    assert "grep -m1 '^wpa_key_mgmt=' /tmp/wl1_hapd.conf" in d086_commands
+    assert any(
+        criterion["field"] == "encryption_mode_6g.EncryptionMode6g"
+        and criterion["operator"] == "not_equals"
+        and criterion["reference"] == "security_hostapd_6g.HostapdPairwise6g"
+        for criterion in d086["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "security_hostapd_24g.HostapdKeyMgmt24g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "WPA-PSK"
+        for criterion in d086["pass_criteria"]
+    )
+    assert d086["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
+    assert d086["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
+    assert d086["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
+
+
+def test_d086_encryptionmode_accesspoint_security_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d086 = load_case(cases_dir / "D086_encryptionmode_accesspoint_security.yaml")
+
+    assert plugin.setup_env(d086, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    executed_commands = recorder.transports[0].executed_commands
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.Enable=1") == 1
+    assert executed_commands.count("wl -i wl0 bss") == 1
+    assert executed_commands.count("wl -i wl1 bss") == 1
+    assert executed_commands.count("wl -i wl2 bss") == 1
+    assert all("STA" not in command for command in executed_commands)
+    plugin.teardown(d086, topology)
+
+
+def test_d086_encryptionmode_accesspoint_security_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d086 = load_case(cases_dir / "D086_encryptionmode_accesspoint_security.yaml")
+
+    def mode_output(prefix: str, value: str) -> str:
+        return f"ModeEnabled{prefix}={value}"
+
+    def encryption_output(prefix: str, value: str) -> str:
+        return f"EncryptionMode{prefix}={value}"
+
+    def hostapd_output(prefix: str, keymgmt: str, pairwise: str, rsn: str) -> str:
+        return "\n".join(
+            [
+                f"HostapdKeyMgmt{prefix}={keymgmt}",
+                f"HostapdPairwise{prefix}={pairwise}",
+                f"HostapdRsnPairwise{prefix}={rsn}",
+            ]
+        )
+
+    d086_results = {
+        "steps": {
+            "step1_security_mode_5g": {"success": True, "output": mode_output("5g", "WPA2-Personal"), "timing": 0.01},
+            "step2_encryption_mode_5g": {"success": True, "output": encryption_output("5g", "Default"), "timing": 0.01},
+            "step3_security_hostapd_5g": {
+                "success": True,
+                "output": hostapd_output("5g", "WPA-PSK", "CCMP", "CCMP"),
+                "timing": 0.01,
+            },
+            "step4_security_mode_6g": {"success": True, "output": mode_output("6g", "WPA3-Personal"), "timing": 0.01},
+            "step5_encryption_mode_6g": {"success": True, "output": encryption_output("6g", "Default"), "timing": 0.01},
+            "step6_security_hostapd_6g": {
+                "success": True,
+                "output": hostapd_output("6g", "SAE", "CCMP", "CCMP"),
+                "timing": 0.01,
+            },
+            "step7_security_mode_24g": {"success": True, "output": mode_output("24g", "WPA2-Personal"), "timing": 0.01},
+            "step8_encryption_mode_24g": {
+                "success": True,
+                "output": encryption_output("24g", "Default"),
+                "timing": 0.01,
+            },
+            "step9_security_hostapd_24g": {
+                "success": True,
+                "output": hostapd_output("24g", "WPA-PSK", "CCMP", "CCMP"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d086, d086_results) is True
+
+    d086_wrong_5g_encryption = {
+        "steps": {
+            **d086_results["steps"],
+            "step2_encryption_mode_5g": {
+                "success": True,
+                "output": encryption_output("5g", "CCMP"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d086, d086_wrong_5g_encryption) is False
+
+    d086_wrong_6g_hostapd = {
+        "steps": {
+            **d086_results["steps"],
+            "step6_security_hostapd_6g": {
+                "success": True,
+                "output": hostapd_output("6g", "SAE", "Default", "Default"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d086, d086_wrong_6g_hostapd) is False
+
+    d086_wrong_24g_mode = {
+        "steps": {
+            **d086_results["steps"],
+            "step7_security_mode_24g": {
+                "success": True,
+                "output": mode_output("24g", "WPA3-Personal"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d086, d086_wrong_24g_mode) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []

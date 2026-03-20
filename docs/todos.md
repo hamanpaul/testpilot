@@ -60,7 +60,7 @@
 | P4-01 | wifi-plugin full implementation | done | setup/verify/execute/evaluate 已完成 |
 | P4-02 | case-getRadioStats | done | legacy compatibility fixture 已保留，改為 underscore-prefixed explicit fixture，不進 discover_cases |
 | P4-03 | case-kickStation | done | legacy compatibility fixture 已保留，改為 underscore-prefixed explicit fixture，不進 discover_cases |
-| P4-04 | 417 case source 對齊治理 | done | 415 官方 discoverable D### 已對齊；2 legacy duplicate-row YAML 已轉為 explicit fixtures；目前 handoff 已補記 D060/D061/D062/D063/D064/D065/D066/D067/D068/D069/D070/D072/D073/D074/D077/D078/D079/D080/D081/D082/D083/D084/D085 committed checkpoint，且 D185/D368/D371 已折入 completed official cases（progress=`145 / 415`，remaining=`270`）；default lab baseline 已重建為 5G/2.4G=`WPA2-Personal + 00000000`、6G=`WPA3-Personal + SAE + 00000000`，主 sequence 下一個 ready single-case 入口改為 D086 |
+| P4-04 | 417 case source 對齊治理 | done | 415 官方 discoverable D### 已對齊；2 legacy duplicate-row YAML 已轉為 explicit fixtures；目前 handoff 已補記 D060/D061/D062/D063/D064/D065/D066/D067/D068/D069/D070/D072/D073/D074/D077/D078/D079/D080/D081/D082/D083/D084/D085/D086 committed checkpoint，且 D185/D368/D371 已折入 completed official cases（progress=`146 / 415`，remaining=`269`）；default lab baseline 已重建為 5G/2.4G=`WPA2-Personal + 00000000`、6G=`WPA3-Personal + SAE + 00000000`，主 sequence 下一個 ready single-case 入口改為 D087 |
 | P4-05 | Wifi_LLAPI Excel report pipeline | done | template + run report + merged-cell 相容 |
 
 ## Phase 5：CLI & Integration
@@ -69,7 +69,7 @@
 |---|---|---|---|
 | P5-01 | cli-full | done | `run/list` + `wifi-llapi build-template-report` |
 | P5-02 | orchestrator-full | in_progress | `wifi_llapi` 流程已整合；其他 plugin 仍 skeleton |
-| P5-03 | integration tests（mock transport） | done | 已補齊 realistic runtime 測試；最新逐案校正後 `tests/test_wifi_llapi_plugin_runtime.py=224 passed`、full suite `277 passed` |
+| P5-03 | integration tests（mock transport） | done | 已補齊 realistic runtime 測試；最新逐案校正後 `tests/test_wifi_llapi_plugin_runtime.py=227 passed`、full suite `280 passed` |
 | P5-04 | plugin agent-config schema/runtime | done | `agent_runtime.py` |
 | P5-05 | agent selection trace | done | per-case selection / fallback trace |
 | P5-06 | case-agent dispatcher（sequential） | done | `max_concurrency=1` |
