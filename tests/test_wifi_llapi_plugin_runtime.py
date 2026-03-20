@@ -9074,6 +9074,72 @@ def test_d092_rekeyinginterval_evaluate_live_examples():
     assert plugin.evaluate(d092, d092_bad_restore) is False
 
 
+# ---------------------------------------------------------------------------
+# D093 SHA256Enable — Fail-shaped mismatch (setter accepted, hostapd unchanged)
+# ---------------------------------------------------------------------------
+
+def test_d093_sha256enable_contract():
+    """D093 YAML loads with 12 steps, 9 pass_criteria, row=93, all-band Fail."""
+    from testpilot.schema.case_schema import load_case
+    c = load_case("plugins/wifi_llapi/cases/D093_sha256enable.yaml")
+    assert len(c["steps"]) == 12
+    assert len(c["pass_criteria"]) == 9
+    assert c["source"]["row"] == 93
+    ref = c["results_reference"]["v4.0.3"]
+    assert ref["5g"] == "Fail"
+    assert ref["6g"] == "Fail"
+    assert ref["2.4g"] == "Fail"
+
+
+def test_d093_sha256enable_setup_env_uses_only_dut_transport(monkeypatch):
+    """D093 is DUT-only (no STA); setup_env should only request COM0."""
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d093 = load_case(cases_dir / "D093_sha256enable.yaml")
+
+    assert plugin.setup_env(d093, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    plugin.teardown(d093, topology)
+
+
+def test_d093_sha256enable_evaluate_live_examples():
+    """D093 all-pass criteria met with live-shaped synthetic output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    d093 = load_case(cases_dir / "D093_sha256enable.yaml")
+
+    d093_results = {
+        "steps": {
+            "step1_baseline_5g": {"success": True, "output": "BaselineSHA256Enable5g=0\nBaselineWpaKeyMgmt5g=WPA-PSK", "timing": 0.01},
+            "step2_set_5g": {"success": True, "output": "", "timing": 0.01},
+            "step3_readback_5g": {"success": True, "output": "GetterSHA256Enable5g=1\nHostapdWpaKeyMgmt5g=WPA-PSK", "timing": 0.01},
+            "step4_restore_5g": {"success": True, "output": "RestoredSHA256Enable5g=0", "timing": 0.01},
+            "step5_baseline_6g": {"success": True, "output": "BaselineSHA256Enable6g=0\nBaselineWpaKeyMgmt6g=SAE", "timing": 0.01},
+            "step6_set_6g": {"success": True, "output": "", "timing": 0.01},
+            "step7_readback_6g": {"success": True, "output": "GetterSHA256Enable6g=1\nHostapdWpaKeyMgmt6g=SAE", "timing": 0.01},
+            "step8_restore_6g": {"success": True, "output": "RestoredSHA256Enable6g=0", "timing": 0.01},
+            "step9_baseline_24g": {"success": True, "output": "BaselineSHA256Enable24g=0\nBaselineWpaKeyMgmt24g=WPA-PSK", "timing": 0.01},
+            "step10_set_24g": {"success": True, "output": "", "timing": 0.01},
+            "step11_readback_24g": {"success": True, "output": "GetterSHA256Enable24g=1\nHostapdWpaKeyMgmt24g=WPA-PSK", "timing": 0.01},
+            "step12_restore_24g": {"success": True, "output": "RestoredSHA256Enable24g=0", "timing": 0.01},
+        }
+    }
+    assert plugin.evaluate(d093, d093_results) is True
+
+    # Negative: if readback stays 0 on 5G, evaluation should fail
+    d093_bad = {
+        "steps": {
+            **d093_results["steps"],
+            "step3_readback_5g": {"success": True, "output": "GetterSHA256Enable5g=0\nHostapdWpaKeyMgmt5g=WPA-PSK", "timing": 0.01},
+        }
+    }
+    assert plugin.evaluate(d093, d093_bad) is False
+
+
 def test_run_required_command_retries_after_recovery_signal():
     plugin = _load_plugin()
     calls: list[str] = []
