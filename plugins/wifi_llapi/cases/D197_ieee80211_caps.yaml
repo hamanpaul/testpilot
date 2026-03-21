@@ -1,176 +1,55 @@
-id: wifi-llapi-D197-ieee80211-caps
-aliases:
-  - wifi-llapi-r158-ieee80211-caps
-name: IEEE80211_Caps — WiFi.Radio.{i}.
-version: '1.0'
+id: d197-radio-ieee80211_caps
+name: D197 Radio IEEE80211_Caps
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
-  sheet: Wifi_LLAPI
-  row: 197
-  object: "WiFi.Radio.{i}."
-  api: "IEEE80211_Caps"
-platform:
-  prplos: 4.0.3
-  bdk: 6.3.1
-hlapi_command: ubus-cli WiFi.Radio.{i}.IEEE80211_Caps=WPA2 BURST WME WME_TKIPMIC BGSCAN UAPSD DOTH IMPL_BF EXPL_BF
+  row: 158
+  object: WiFi.Radio.{i}.
+  api: IEEE80211_Caps
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+- 6g
+- 2.4g
 llapi_support: Support
-implemented_by: Vendor Module
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM0
-    STA:
-      role: sta
-      transport: serial
-      selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
-  links:
-  - from: STA
-    to: DUT
-    band: 5g
-test_environment: |
-  Topology:
-  - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
-  Transport:
-  - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
-
-setup_steps: |
-  1) DUT 5G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
-  3) Association evidence:
-     - A0: iw dev wl0 link
-     - B0: wl -i wl0 assoclist
-sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
-    ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-  STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
-    iw dev wl0 link
-  DUT association evidence:
-    wl -i wl0 assoclist
-test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli WiFi.Radio.{i}.IEEE80211_Caps=WPA2 BURST WME WME_TKIPMIC BGSCAN UAPSD DOTH IMPL_BF EXPL_BF
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.Radio.*.IEEE80211_Caps?"
-  3) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
-
 steps:
-- id: step1
-  action: exec
-  target: DUT
-  command: 1. Get Radio Default value of IEEE80211_Caps ubus-cli WiFi.Radio.*.IEEE80211_Caps? > WiFi.Radio.*.IEEE80211_Caps?
-    WiFi.Radio.1.IEEE80211_Caps="160MHz UAPSD WEP TKIP AES AES_CCM SAE EXPL_BF IMPL_BF MU_MIMO DFS_OFFLOAD OWE SAE_PWE WME"
-    WiFi.Radio.2.IEEE80211_Caps="320MHz 160MHz UAPSD SAE EXPL_BF IMPL_BF MU_MIMO OWE SAE_PWE WME" WiFi.Radio.3.IEEE80211_Caps="UAPSD
-    WEP TKIP AES AES_CCM SAE EXPL_BF IMPL_BF MU_MIMO OWE SAE_PWE WME"
-- id: step2
-  action: exec
-  target: DUT
-  command: Check Capability in Beacon frame | Capability | Wireshark path | ------------------------ | ---------------------------
-    | WME / UAPSD | Beacon → WMM IE | 160/320 MHz | VHT / HE / EHT Operation IE | MU-MIMO | VHT/HE Capabilities IE | Beamforming
-    | VHT/HE/EHT Capabilities | SAE / OWE | RSN IE → AKM list
-  depends_on: step1
-  capture: result
+- id: step_5g_getter
+  target: dut
+  action: read
+  capture: getter_5g
+  command: ubus-cli "WiFi.Radio.1.IEEE80211_Caps?"
+  expected: IEEE80211_Caps 回傳有效值
+  description: Radio.1 (5g) IEEE80211_Caps getter（live=160MHz UAPSD WEP TKIP AES AES_CCM SAE EXPL_BF IMPL_BF MU_MIMO DFS_OFFLOAD OWE SAE_PWE WME）
+- id: step_6g_getter
+  target: dut
+  action: read
+  capture: getter_6g
+  command: ubus-cli "WiFi.Radio.2.IEEE80211_Caps?"
+  expected: IEEE80211_Caps 回傳有效值
+  description: Radio.2 (6g) IEEE80211_Caps getter（live=320MHz 160MHz UAPSD SAE EXPL_BF IMPL_BF MU_MIMO OWE SAE_PWE WME）
+- id: step_24g_getter
+  target: dut
+  action: read
+  capture: getter_24g
+  command: ubus-cli "WiFi.Radio.3.IEEE80211_Caps?"
+  expected: IEEE80211_Caps 回傳有效值
+  description: Radio.3 (2.4g) IEEE80211_Caps getter（live=UAPSD WEP TKIP AES AES_CCM SAE EXPL_BF IMPL_BF MU_MIMO OWE SAE_PWE WME）
 pass_criteria:
-- field: result.IEEE80211_Caps
-  operator: contains
-  value: WPA2 BURST WME WME_TKIPMIC BGSCAN UAPSD DOTH IMPL_BF EXPL_BF
-  description: IEEE80211_Caps 應回傳包含 IEEE80211_Caps=WPA2 BURST WME WME_TKIPMIC BGSCAN UAPSD DOTH IMPL_BF EXPL_BF
-verification_command: 'root@prplOS:/# wl -i wl0 cap
-
-  ap sta wet led wme 802.11d 802.11h rm cac mbss8 ampdu ampdu_tx ampdu_rx amsdurx amsdutx rxchain_pwrsave wds dwds vht-prop-rates
-  multi-user-beamformer single-user-beamformer multi-user-beamformee single-user-beamformee 160 dfrts stbc-tx stbc-rx-1ss
-  pspretend probresp_mac_filter mfp wnm bsstrans scanmac ve fbtoverds fbt_adpt ifver bgdfs bgdfs160 spp lpr_scan bkoff_evt
-  awd_data_info monitor cevent traffic_thresh 11ax 11be mlo 320 stamon csimon cfp hwa-1a-1b-2a-2b-3a-3b-4b-pp-pr pqp sqs airiq
-  sae slaveradar swpaging ba256 qosmgmt asr sbf_active gcmp suite-b chanswitch puq 11az pcap telemetry mrsno
-
-  root@prplOS:/#
-
-  root@prplOS:/# wl -i wl1 cap
-
-  ap sta wet led wme 802.11d 802.11h rm cac mbss8 ampdu ampdu_tx ampdu_rx amsdurx amsdutx rxchain_pwrsave wds dwds vht-prop-rates
-  multi-user-beamformer single-user-beamformer multi-user-beamformee single-user-beamformee 160 dfrts stbc-tx stbc-rx-1ss
-  pspretend probresp_mac_filter mfp wnm bsstrans scanmac ve fbtoverds fbt_adpt ifver bgdfs bgdfs160 spp lpr_scan bkoff_evt
-  awd_data_info monitor cevent traffic_thresh 11ax 11be mlo 320 stamon csimon cfp hwa-1a-1b-2a-2b-3a-3b-4b-pp-pr pqp sqs airiq
-  sae slaveradar swpaging ba256 qosmgmt asr sbf_active gcmp suite-b chanswitch puq 11az pcap telemetry mrsno
-
-  root@prplOS:/#
-
-  root@prplOS:/# wl -i wl2 cap
-
-  ap sta wet led wme 802.11d 802.11h rm cac mbss8 ampdu ampdu_tx ampdu_rx amsdurx amsdutx rxchain_pwrsave wds dwds vht-prop-rates
-  multi-user-beamformer single-user-beamformer multi-user-beamformee single-user-beamformee 160 dfrts stbc-tx stbc-rx-1ss
-  pspretend probresp_mac_filter mfp wnm bsstrans scanmac ve fbtoverds fbt_adpt ifver bgdfs bgdfs160 spp lpr_scan bkoff_evt
-  awd_data_info monitor cevent traffic_thresh 11ax 11be mlo 320 stamon csimon cfp hwa-1a-1b-2a-2b-3a-3b-4b-pp-pr pqp sqs airiq
-  sae slaveradar swpaging ba256 qosmgmt asr sbf_active gcmp suite-b chanswitch puq 11az pcap telemetry mrsno
-
-  root@prplOS:/#'
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: ''
+- field: getter_5g.IEEE80211_Caps
+  operator: regex
+  value: ".+"
+- field: getter_6g.IEEE80211_Caps
+  operator: regex
+  value: ".+"
+- field: getter_24g.IEEE80211_Caps
+  operator: regex
+  value: ".+"

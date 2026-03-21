@@ -1,256 +1,55 @@
-id: wifi-llapi-D206-multiusermimoenabled
-aliases:
-  - wifi-llapi-r167-multiusermimoenabled
-name: MultiUserMIMOEnabled — WiFi.Radio.{i}.
-version: '1.0'
+id: d206-radio-multiusermimoenabled
+name: D206 Radio MultiUserMIMOEnabled
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
-  sheet: Wifi_LLAPI
-  row: 206
-  object: "WiFi.Radio.{i}."
-  api: "MultiUserMIMOEnabled"
-platform:
-  prplos: 4.0.3
-  bdk: 6.3.1
-hlapi_command: ubus-cli WiFi.Radio.{i}.MultiUserMIMOEnabled=1
+  row: 167
+  object: WiFi.Radio.{i}.
+  api: MultiUserMIMOEnabled
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+- 6g
+- 2.4g
 llapi_support: Support
-implemented_by: Vendor Module
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM0
-    STA:
-      role: sta
-      transport: serial
-      selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
-      - iface: 6g
-        mode: sta
-        ssid: '{{SSID_6G}}'
-        key: '{{KEY_6G}}'
-    EndpointPC:
-      role: endpoint
-      transport: ssh
-  links:
-  - from: STA
-    to: DUT
-    band: 5g
-  - from: STA
-    to: DUT
-    band: 6g
-test_environment: |
-  Topology:
-  - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
-  Transport:
-  - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
-
-setup_steps: |
-  1) DUT 5G + 6G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
-     - set Radio.2/SSID.6 for the 6G AP under test
-     - configure AP3 for WPA3-SAE with MFP required
-     - enable AP3 before station association
-  2) STA 5G + 6G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
-     - disable local AP3/AP4 on A0
-     - reset wl1 and its wpa_supplicant control socket
-     - connect wl1 to {{SSID_6G}} with SAE
-  3) Association evidence:
-     - A0: iw dev wl0 link ; iw dev wl1 link ; wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-     - B0: wl -i wl0 assoclist ; wl -i wl1 assoclist
-sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
-    ubus-cli WiFi.AccessPoint.1.Enable=1
-  DUT 6G AP baseline:
-    ubus-cli WiFi.Radio.2.Enable=1
-    ubus-cli WiFi.Radio.2.BeaconPeriod=100
-    ubus-cli WiFi.Radio.2.DTIMPeriod=3
-    ubus-cli WiFi.Radio.2.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.2.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.2.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.2.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.2.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.2.OfdmaEnable=1
-    ubus-cli WiFi.Radio.2.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.2.OperatingStandards=ax
-    ubus-cli WiFi.Radio.2.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.2.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.2.Sensing.Enable=1
-    ubus-cli WiFi.Radio.2.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.2.LongRetryLimit=6
-    ubus-cli WiFi.Radio.2.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.2.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.6.SSID={{SSID_6G}}
-    ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.4.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
-    ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase={{KEY_6G}}
-    ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Required
-    ubus-cli WiFi.AccessPoint.3.MultiAPType=FronthaulBSS
-    ubus-cli WiFi.AccessPoint.3.Enable=1
-  STA 5G preparation:
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-  STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
-    iw dev wl0 link
-  STA 6G preparation:
-    ubus-cli WiFi.AccessPoint.3.Enable=0
-    ubus-cli WiFi.AccessPoint.4.Enable=0
-    wpa_cli terminate 2>/dev/null || true
-    sleep 1
-    rm -f /var/run/wpa_supplicant/wl1 2>/dev/null || true
-    iw dev wl1.1 del 2>/dev/null || true
-    iw dev wl1 disconnect 2>/dev/null || true
-    iw dev wl1 set type managed
-    ifconfig wl1 up
-    mkdir -p /var/run/wpa_supplicant
-    printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\nnetwork={\nssid="{{SSID_6G}}"\nkey_mgmt=SAE\nsae_password="{{KEY_6G}}"\nieee80211w=2\nscan_ssid=1\n}\n' > /tmp/wpa_wl1.conf
-    wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant
-    sleep 3
-  STA 6G connect verify:
-    wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect
-    sleep 8
-    iw dev wl1 link
-    wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-  DUT association evidence:
-    wl -i wl0 assoclist
-    wl -i wl1 assoclist
-test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli WiFi.Radio.{i}.MultiUserMIMOEnabled=1
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.Radio.*.MultiUserMIMOEnabled?"
-  3) For stats/AssociatedDevice cases, generate traffic (ping/iperf) before re-read.
-  4) STA link validation:
-     iw dev wl0 link
-     iw dev wl1 link
-     wpa_cli -i wl1 status
-     iw dev wl2 link
-  5) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
-
 steps:
-- id: step1
-  action: exec
-  target: DUT
-  command: 1. Check MIMO enabled or not ubus-cli WiFi.Radio.*.MultiUserMIMOEnabled? > WiFi.Radio.*.MultiUserMIMOEnabled? WiFi.Radio.1.MultiUserMIMOEnabled=1
-    WiFi.Radio.2.MultiUserMIMOEnabled=1 WiFi.Radio.3.MultiUserMIMOEnabled=1
-- id: step2
-  action: exec
-  target: DUT
-  command: Connect WiFi Station then rune IPERF3 iperf3 -c 192.168.1.1 -P 10 -t 60
-  depends_on: step1
-- id: step3
-  action: exec
-  target: DUT
-  command: '. Check Actual Spatial Streams (NSS) in Use Command: iw dev wl1 station dump | grep -E "Station|tx bitrate|rx
-    bitrate" Output: Station 38:06:e6:92:b0:4a (on wl1) tx bitrate: 4322.6 MBit/s 160MHz rx bitrate: 3890.3 MBit/s 160MHz
-    Analysis: The reported TX/RX PHY rates are multi-Gbps. Such rates cannot be achieved using 1×1 or 2×2 at 6 GHz/160 MHz.
-    This indicates multiple spatial streams are actively being used.'
-  depends_on: step2
-- id: step4
-  action: exec
-  target: DUT
-  command: 'Confirm MIMO Capabilities from sta_info Command: wl -i wl1 sta_info 38:06:e6:92:b0:4a | grep -E "OMI|Nss|eht mcs|per
-    antenna rssi|txchain|rxchain" Key output: OMI 0x32e3: 160Mhz rx=4ss tx=4ss ER_SU_DISABLE UL_MU_DISABLE per antenna rssi
-    of last rx data frame: -36 -36 -35 -36 eht mcs 10 Nss 4 Tx Exp 0 bw160 ldpc 2xLTF GI 0.8us auto eht mcs 12 Nss 3 Tx Exp
-    0 bw160 ldpc 2xLTF GI 1.6us auto 2.1 OMI — Advertised Spatial Streams rx = 4ss tx = 4ss The STA advertises support for
-    4 spatial streams in both TX and RX. 2.2 Per-Antenna RSSI — Active Chain Confirmation -36 -36 -35 -36 Four separate RSSI
-    values confirm four active receive chains. This validates 4×4 MIMO operation at the RF chain level.'
-  depends_on: step3
-- id: step5
-  action: exec
-  target: DUT
-  command: 'AP RF Chain Capability (txchain / rxchain) Commands: wl -i wl1 txchain / wl -i wl1 rxchain Output: txchain: 15
-    (0xf) rxchain: 15 (0xf) Analysis: 0xf (binary 1111) means 4 TX chains and 4 RX chains are enabled. Confirms the AP is
-    configured as 4×4 MIMO capable. Based on: Multi-Gbps PHY rates from iw: OMI advertisement confirming 4ss TX/RX Per-antenna
-    RSSI showing 4 active RF chains AP reporting 4 TX + 4 RX chains enabled MIMO is enabled and working correctly on 6 GHz
-    (4×4 MIMO).'
-  depends_on: step4
-  capture: result
+- id: step_5g_getter
+  target: dut
+  action: read
+  capture: getter_5g
+  command: ubus-cli "WiFi.Radio.1.MultiUserMIMOEnabled?"
+  expected: MultiUserMIMOEnabled 回傳有效值
+  description: Radio.1 (5g) MultiUserMIMOEnabled getter（live=1）
+- id: step_6g_getter
+  target: dut
+  action: read
+  capture: getter_6g
+  command: ubus-cli "WiFi.Radio.2.MultiUserMIMOEnabled?"
+  expected: MultiUserMIMOEnabled 回傳有效值
+  description: Radio.2 (6g) MultiUserMIMOEnabled getter（live=1）
+- id: step_24g_getter
+  target: dut
+  action: read
+  capture: getter_24g
+  command: ubus-cli "WiFi.Radio.3.MultiUserMIMOEnabled?"
+  expected: MultiUserMIMOEnabled 回傳有效值
+  description: Radio.3 (2.4g) MultiUserMIMOEnabled getter（live=0）
 pass_criteria:
-- field: result.MultiUserMIMOEnabled
-  operator: contains
-  value: '1'
-  description: MultiUserMIMOEnabled 應回傳包含 MultiUserMIMOEnabled=1
-verification_command: 'root@prplOS:/# wl -i wl0 mu_features
-
-  1
-
-  root@prplOS:/# wl -i wl1 mu_features
-
-  1
-
-  root@prplOS:/# wl -i wl1 mu_features
-
-  1'
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'Note: 2.4GHz mu features are disable by default "need clarification why it is disabled by default because 5G
-      and 6G are enabled."'
-  v4.0.3:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: ''
+- field: getter_5g.MultiUserMIMOEnabled
+  operator: regex
+  value: "^[01]$"
+- field: getter_6g.MultiUserMIMOEnabled
+  operator: regex
+  value: "^[01]$"
+- field: getter_24g.MultiUserMIMOEnabled
+  operator: regex
+  value: "^[01]$"

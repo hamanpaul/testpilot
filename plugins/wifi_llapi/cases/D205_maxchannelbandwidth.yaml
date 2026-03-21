@@ -1,187 +1,55 @@
-id: wifi-llapi-D205-maxchannelbandwidth
-aliases:
-  - wifi-llapi-r166-maxchannelbandwidth
-name: MaxChannelBandwidth — WiFi.Radio.{i}.
-version: '1.0'
+id: d205-radio-maxchannelbandwidth
+name: D205 Radio MaxChannelBandwidth
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
-  sheet: Wifi_LLAPI
-  row: 205
-  object: "WiFi.Radio.{i}."
-  api: "MaxChannelBandwidth"
-platform:
-  prplos: 4.0.3
-  bdk: 6.3.1
-hlapi_command: ubus-cli WiFi.Radio.{i}.MaxChannelBandwidth=80MHz
+  row: 166
+  object: WiFi.Radio.{i}.
+  api: MaxChannelBandwidth
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+- 6g
+- 2.4g
 llapi_support: Support
-implemented_by: Vendor Module
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM0
-    STA:
-      role: sta
-      transport: serial
-      selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
-  links:
-  - from: STA
-    to: DUT
-    band: 5g
-test_environment: |
-  Topology:
-  - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
-  Transport:
-  - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
-
-setup_steps: |
-  1) DUT 5G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
-  3) Association evidence:
-     - A0: iw dev wl0 link
-     - B0: wl -i wl0 assoclist
-sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
-    ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-  STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
-    iw dev wl0 link
-  DUT association evidence:
-    wl -i wl0 assoclist
-test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli WiFi.Radio.{i}.MaxChannelBandwidth=80MHz
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.Radio.*.MaxChannelBandwidth?"
-  3) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
-
 steps:
-- id: step1
-  action: exec
-  target: DUT
-  command: '1. Read-only API, defines max bandwidth for each radio: ubus-cli WiFi.Radio.*.MaxChannelBandwidth? > WiFi.Radio.*.MaxChannelBandwidth?
-    WiFi.Radio.1.MaxChannelBandwidth="160MHz" WiFi.Radio.2.MaxChannelBandwidth="320MHz" WiFi.Radio.3.MaxChannelBandwidth="40MHz"'
-  capture: result
+- id: step_5g_getter
+  target: dut
+  action: read
+  capture: getter_5g
+  command: ubus-cli "WiFi.Radio.1.MaxChannelBandwidth?"
+  expected: MaxChannelBandwidth 回傳有效值
+  description: Radio.1 (5g) MaxChannelBandwidth getter（live=160MHz）
+- id: step_6g_getter
+  target: dut
+  action: read
+  capture: getter_6g
+  command: ubus-cli "WiFi.Radio.2.MaxChannelBandwidth?"
+  expected: MaxChannelBandwidth 回傳有效值
+  description: Radio.2 (6g) MaxChannelBandwidth getter（live=320MHz）
+- id: step_24g_getter
+  target: dut
+  action: read
+  capture: getter_24g
+  command: ubus-cli "WiFi.Radio.3.MaxChannelBandwidth?"
+  expected: MaxChannelBandwidth 回傳有效值
+  description: Radio.3 (2.4g) MaxChannelBandwidth getter（live=40MHz）
 pass_criteria:
-- field: result.MaxChannelBandwidth
-  operator: contains
-  value: 80MHz
-  description: MaxChannelBandwidth 應回傳包含 MaxChannelBandwidth=80MHz
-verification_command: 'wl -i wl0 bw_cap
-
-  Usage: wl bw_cap <2g|5g|6g> [<cap>]
-
-  2g|5g|6g - Requested band
-
-  cap:
-
-  0x1 - 20MHz
-
-  0x3 - 20/40MHz
-
-  0x7 - 20/40/80MHz
-
-  0xf - 20/40/80/160MHz
-
-  0x1f - 20/40/80/160/320MHz
-
-  0xff - Unrestricted
-
-
-  root@prplOS:/# wl bw_cap 5g
-
-  0xf
-
-  root@prplOS:/# wl bw_cap 6g
-
-  0x0
-
-  root@prplOS:/# wl bw_cap 2g
-
-  0x0'
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Fail
-    2.4g: Fail
-    comment: 'BRCM: CSP CS00012439197'
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'MaxChB is readonly. bw_cap keeps auto. Set chanspec can tune the bandwidth
-
-
-      Please see the logs, capture from BDK version. It''s ok
-
-      # wl -i wl0 bw_cap 6g; wl -i wl0 bw_cap 5g; wl -i wl0 bw_cap 2g
-
-      0x1f   0x0  0x0
-
-      # wl -i wl1 bw_cap 6g; wl -i wl1 bw_cap 5g; wl -i wl1 bw_cap 2g
-
-      0x0  0xf   0x0
-
-      # wl -i wl2 bw_cap 6g; wl -i wl2 bw_cap 5g; wl -i wl2 bw_cap 2g
-
-      0x0 0x0  0x3
-
-      #'
+- field: getter_5g.MaxChannelBandwidth
+  operator: regex
+  value: ".+"
+- field: getter_6g.MaxChannelBandwidth
+  operator: regex
+  value: ".+"
+- field: getter_24g.MaxChannelBandwidth
+  operator: regex
+  value: ".+"

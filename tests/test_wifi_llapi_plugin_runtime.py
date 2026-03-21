@@ -14086,6 +14086,27 @@ _RADIO_GETTER_CASES = [
     ("D192_explicitbeamformingenabled.yaml", 153, "1", "1", "1", "WiFi.Radio.{r}.ExplicitBeamFormingEnabled"),
     ("D193_explicitbeamformingsupported.yaml", 154, "1", "1", "1", "WiFi.Radio.{r}.ExplicitBeamFormingSupported"),
     ("D194_guardinterval.yaml", 155, "Auto", "Auto", "Auto", "WiFi.Radio.{r}.GuardInterval"),
+    # --- Batch 1: D195-D216 Radio config/capabilities ---
+    ("D195_hecapsenabled.yaml", 156, "DEFAULT", "DEFAULT", "DEFAULT", "WiFi.Radio.{r}.HeCapsEnabled"),
+    ("D196_hecapssupported.yaml", 157, "DL_OFDMA,UL_OFDMA,DL_MUMIMO,UL_MUMIMO", "DL_OFDMA,UL_OFDMA,DL_MUMIMO,UL_MUMIMO", "DL_OFDMA,UL_OFDMA,DL_MUMIMO,UL_MUMIMO", "WiFi.Radio.{r}.HeCapsSupported"),
+    ("D197_ieee80211_caps.yaml", 158, "160MHz UAPSD WEP TKIP AES AES_CCM SAE EXPL_BF IMPL_BF MU_MIMO DFS_OFFLOAD OWE SAE_PWE WME", "320MHz 160MHz UAPSD SAE EXPL_BF IMPL_BF MU_MIMO OWE SAE_PWE WME", "UAPSD WEP TKIP AES AES_CCM SAE EXPL_BF IMPL_BF MU_MIMO OWE SAE_PWE WME", "WiFi.Radio.{r}.IEEE80211_Caps"),
+    ("D198_ieee80211henabled.yaml", 159, "1", "0", "0", "WiFi.Radio.{r}.IEEE80211hEnabled"),
+    ("D199_ieee80211hsupported.yaml", 160, "1", "0", "0", "WiFi.Radio.{r}.IEEE80211hSupported"),
+    ("D200_ieee80211ksupported.yaml", 161, "1", "1", "1", "WiFi.Radio.{r}.IEEE80211kSupported"),
+    ("D201_ieee80211rsupported.yaml", 162, "1", "1", "1", "WiFi.Radio.{r}.IEEE80211rSupported"),
+    ("D202_implicitbeamformingenabled.yaml", 163, "1", "1", "1", "WiFi.Radio.{r}.ImplicitBeamFormingEnabled"),
+    ("D203_implicitbeamformingsupported.yaml", 164, "1", "1", "1", "WiFi.Radio.{r}.ImplicitBeamFormingSupported"),
+    ("D204_interference.yaml", 165, "0", "0", "0", "WiFi.Radio.{r}.Interference"),
+    ("D205_maxchannelbandwidth.yaml", 166, "160MHz", "320MHz", "40MHz", "WiFi.Radio.{r}.MaxChannelBandwidth"),
+    ("D206_multiusermimoenabled.yaml", 167, "1", "1", "0", "WiFi.Radio.{r}.MultiUserMIMOEnabled"),
+    ("D207_multiusermimosupported.yaml", 168, "1", "1", "1", "WiFi.Radio.{r}.MultiUserMIMOSupported"),
+    ("D209_obsscoexistenceenable.yaml", 169, "0", "0", "1", "WiFi.Radio.{r}.ObssCoexistenceEnable"),
+    ("D210_ofdmaenable.yaml", 170, "1", "1", "1", "WiFi.Radio.{r}.OfdmaEnable"),
+    ("D211_operatingchannelbandwidth.yaml", 171, "20MHz", "20MHz", "20MHz", "WiFi.Radio.{r}.OperatingChannelBandwidth"),
+    ("D213_operatingstandards.yaml", 172, "be", "be", "be", "WiFi.Radio.{r}.OperatingStandards"),
+    ("D214_possiblechannels.yaml", 173, "36,40,44,48", "1,5,9,13", "1,2,3,4", "WiFi.Radio.{r}.PossibleChannels"),
+    ("D215_regulatorydomain_radio.yaml", 174, "#a", "#a", "#a", "WiFi.Radio.{r}.RegulatoryDomain"),
+    ("D216_rifsenabled.yaml", 175, "Default", "Default", "Default", "WiFi.Radio.{r}.RIFSEnabled"),
 ]
 
 _RADIO_IDS = [t[0].split(".")[0] for t in _RADIO_GETTER_CASES]
