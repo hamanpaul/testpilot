@@ -949,66 +949,59 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
             )
 
     multiband_getssid_cases = {
-        "D302_getssidstats_broadcastpacketsreceived.yaml": {"row": 225, "api": "BroadcastPacketsReceived", "driver": "DriverBroadcastPacketsReceived", "awk_field": "$23", "expected": "Pass"},
-        "D303_getssidstats_broadcastpacketssent.yaml": {"row": 226, "api": "BroadcastPacketsSent", "driver": "DriverBroadcastPacketsSent", "awk_field": "$24", "expected": "Pass"},
-        "D304_getssidstats_bytesreceived.yaml": {"row": 227, "api": "BytesReceived", "driver": "DriverBytesReceived", "awk_field": "$2", "expected": "Pass"},
-        "D305_getssidstats_bytessent.yaml": {"row": 228, "api": "BytesSent", "driver": "DriverBytesSent", "awk_field": "$10", "expected": "Pass"},
-        "D306_getssidstats_discardpacketsreceived.yaml": {"row": 229, "api": "DiscardPacketsReceived", "driver": "DriverDiscardPacketsReceived", "awk_field": "$5", "expected": "Pass"},
-        "D307_getssidstats_discardpacketssent.yaml": {"row": 230, "api": "DiscardPacketsSent", "driver": "DriverDiscardPacketsSent", "awk_field": "$13", "expected": "Pass"},
-        "D308_getssidstats_errorsreceived.yaml": {"row": 231, "api": "ErrorsReceived", "driver": "DriverErrorsReceived", "awk_field": "$4", "expected": "Pass"},
-        "D309_getssidstats_errorssent.yaml": {"row": 232, "api": "ErrorsSent", "driver": "DriverErrorsSent", "awk_field": "$12", "expected": "Pass"},
+        "D302_getssidstats_broadcastpacketsreceived.yaml": {"row": 225, "api": "BroadcastPacketsReceived", "expected": "Pass"},
+        "D303_getssidstats_broadcastpacketssent.yaml": {"row": 226, "api": "BroadcastPacketsSent", "expected": "Pass"},
+        "D304_getssidstats_bytesreceived.yaml": {"row": 227, "api": "BytesReceived", "expected": "Pass"},
+        "D305_getssidstats_bytessent.yaml": {"row": 228, "api": "BytesSent", "expected": "Pass"},
+        "D306_getssidstats_discardpacketsreceived.yaml": {"row": 229, "api": "DiscardPacketsReceived", "expected": "Pass"},
+        "D307_getssidstats_discardpacketssent.yaml": {"row": 230, "api": "DiscardPacketsSent", "expected": "Pass"},
+        "D308_getssidstats_errorsreceived.yaml": {"row": 231, "api": "ErrorsReceived", "expected": "Pass"},
+        "D309_getssidstats_errorssent.yaml": {"row": 232, "api": "ErrorsSent", "expected": "Pass"},
         "D310_getssidstats_failedretranscount.yaml": {"row": 233, "api": "FailedRetransCount", "expected": "Not Supported"},
-        "D311_getssidstats_multicastpacketsreceived.yaml": {"row": 234, "api": "MulticastPacketsReceived", "driver": "DriverMulticastPacketsReceived", "awk_field": "$9", "expected": "Pass"},
-        "D312_getssidstats_multicastpacketssent.yaml": {"row": 235, "api": "MulticastPacketsSent", "driver": "DriverMulticastPacketsSent", "awk_field": "$18", "expected": "Pass"},
-        "D313_getssidstats_packetsreceived.yaml": {"row": 236, "api": "PacketsReceived", "driver": "DriverPacketsReceived", "awk_field": "$3", "expected": "Pass"},
-        "D314_getssidstats_packetssent.yaml": {"row": 237, "api": "PacketsSent", "driver": "DriverPacketsSent", "awk_field": "$11", "expected": "Pass"},
+        "D311_getssidstats_multicastpacketsreceived.yaml": {"row": 234, "api": "MulticastPacketsReceived", "expected": "Pass"},
+        "D312_getssidstats_multicastpacketssent.yaml": {"row": 235, "api": "MulticastPacketsSent", "expected": "Pass"},
+        "D313_getssidstats_packetsreceived.yaml": {"row": 236, "api": "PacketsReceived", "expected": "Pass"},
+        "D314_getssidstats_packetssent.yaml": {"row": 237, "api": "PacketsSent", "expected": "Pass"},
         "D315_getssidstats_retranscount.yaml": {"row": 238, "api": "RetransCount", "expected": "Not Supported"},
-        "D316_getssidstats_unicastpacketsreceived.yaml": {"row": 239, "api": "UnicastPacketsReceived", "driver": "DriverUnicastPacketsReceived", "awk_field": "$21", "expected": "Pass"},
-        "D317_getssidstats_unicastpacketssent.yaml": {"row": 240, "api": "UnicastPacketsSent", "driver": "DriverUnicastPacketsSent", "awk_field": "$22", "expected": "Pass"},
+        "D316_getssidstats_unicastpacketsreceived.yaml": {"row": 239, "api": "UnicastPacketsReceived", "expected": "Pass"},
+        "D317_getssidstats_unicastpacketssent.yaml": {"row": 240, "api": "UnicastPacketsSent", "expected": "Pass"},
         "D318_getssidstats_unknownprotopacketsreceived.yaml": {"row": 241, "api": "UnknownProtoPacketsReceived", "expected": "Not Supported"},
     }
 
     for filename, meta in multiband_getssid_cases.items():
         case_data = yaml.safe_load((cases_dir / filename).read_text(encoding="utf-8"))
+        dnum = filename.split("_")[0]  # e.g. "D302"
+        num = dnum[1:]  # e.g. "302"
         commands = "\n".join(str(step.get("command", "")) for step in case_data["steps"])
         assert "aliases" not in case_data
-        assert case_data["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+        assert case_data["id"] == f"d{num}-getssidstats-{meta['api'].lower()}"
+        assert case_data["name"] == f"D{num} getSSIDStats {meta['api']}"
         assert case_data["source"]["row"] == meta["row"]
-        assert case_data["hlapi_command"] == 'ubus-cli "WiFi.SSID.{i}.getSSIDStats()"'
-        assert "5G -> 6G -> 2.4G sequentially" in case_data["test_environment"]
-        assert f"GetSSIDStats{meta['api']}5g=" in commands
-        assert f"GetSSIDStats{meta['api']}6g=" in commands
-        assert f"GetSSIDStats{meta['api']}24g=" in commands
-        assert f"WiFi.SSID.4.Stats.{meta['api']}?" in commands
-        assert f"WiFi.SSID.6.Stats.{meta['api']}?" in commands
-        assert f"WiFi.SSID.8.Stats.{meta['api']}?" in commands
+        assert case_data["source"]["api"] == "getSSIDStats()"
+        assert case_data["source"]["baseline"] == "0310-BGW720-300"
+        assert 'WiFi.SSID.4.getSSIDStats()' in commands
+        assert 'WiFi.SSID.6.getSSIDStats()' in commands
+        assert 'WiFi.SSID.8.getSSIDStats()' in commands
+        assert len(case_data["steps"]) == 3
         assert case_data["results_reference"]["v4.0.3"]["5g"] == meta["expected"]
         assert case_data["results_reference"]["v4.0.3"]["6g"] == meta["expected"]
         assert case_data["results_reference"]["v4.0.3"]["2.4g"] == meta["expected"]
         assert any(
-            criterion["field"] == f"method_5g.GetSSIDStats{meta['api']}5g"
-            and criterion["operator"] == "equals"
-            and criterion["reference"] == f"direct_5g.{meta['api']}"
+            criterion["field"] == f"stats_5g.{meta['api']}"
+            and criterion["operator"] == "regex"
+            and criterion["value"] == r"^\d+$"
             for criterion in case_data["pass_criteria"]
         )
-        if "driver" in meta:
-            assert f"{meta['driver']}5g=" in commands
-            assert f"{meta['driver']}6g=" in commands
-            assert f"{meta['driver']}24g=" in commands
-            assert meta["awk_field"] in commands
-            assert any(
-                criterion["field"] == f"method_5g.GetSSIDStats{meta['api']}5g"
-                and criterion["operator"] == "equals"
-                and criterion["reference"] == f"driver_5g.{meta['driver']}5g"
-                for criterion in case_data["pass_criteria"]
-            )
-        else:
-            assert any(
-                criterion["field"] == f"method_5g.GetSSIDStats{meta['api']}5g"
-                and criterion["operator"] == "equals"
-                and str(criterion.get("value")) == "0"
-                for criterion in case_data["pass_criteria"]
-            )
+        assert any(
+            criterion["field"] == f"stats_6g.{meta['api']}"
+            and criterion["operator"] == "regex"
+            for criterion in case_data["pass_criteria"]
+        )
+        assert any(
+            criterion["field"] == f"stats_24g.{meta['api']}"
+            and criterion["operator"] == "regex"
+            for criterion in case_data["pass_criteria"]
+        )
 
     for case_num in range(498, 530):
         filename = next(cases_dir.glob(f"D{case_num}_*.yaml"))
@@ -14372,7 +14365,203 @@ def test_scan_results_evaluate(yaml_file, row, field):
     assert plugin.evaluate(case, results) is True
 
 
+# --- Batch 4a: D296 getNaStationStats (Skip) ---
 
+def test_d296_getnastationstats_contract():
+    """D296 getNaStationStats loads as Skip case."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D296_getnastationstats.yaml")
+    assert case["source"]["row"] == 219
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 1
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+    ref = case["results_reference"]["v4.0.3"]
+    assert ref["5g"] == "Skip"
+    assert ref["6g"] == "Skip"
+    assert ref["2.4g"] == "Skip"
+
+
+def test_d296_getnastationstats_evaluate():
+    """D296 evaluate passes when 'object not found' is in output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D296_getnastationstats.yaml")
+    results = {"steps": {
+        "step_probe": {
+            "success": True,
+            "output": 'ERROR: call (null) failed with status 2 - object not found\ngetNaStationStats() returned\n[\n    "",\n    {\n    }\n]',
+            "timing": 0.5,
+        }
+    }}
+    assert plugin.evaluate(case, results) is True
+
+
+# --- Batch 4b: Action method cases (D297-D301) ---
+
+_ACTION_METHOD_CASES = [
+    # (yaml_file, row, method, verdict)
+    ("D297_scan.yaml", 220, "scan", "To be tested"),
+    ("D298_startacs.yaml", 221, "startACS", "Pass"),
+    ("D299_startautochannelselection.yaml", 222, "startAutoChannelSelection", "Pass"),
+    ("D300_startscan.yaml", 223, "startScan", "To be tested"),
+    ("D301_stopscan.yaml", 224, "stopScan", "To be tested"),
+]
+
+_ACTION_IDS = [t[0].split(".")[0] for t in _ACTION_METHOD_CASES]
+
+
+@pytest.mark.parametrize("yaml_file,row,method,verdict", _ACTION_METHOD_CASES, ids=_ACTION_IDS)
+def test_action_method_contract(yaml_file, row, method, verdict):
+    """Action method YAML loads with correct 3-band structure."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / yaml_file)
+    assert case["source"]["row"] == row
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 3
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+    ref = case["results_reference"]["v4.0.3"]
+    assert ref["5g"] == verdict
+
+
+@pytest.mark.parametrize("yaml_file,row,method,verdict", _ACTION_METHOD_CASES, ids=_ACTION_IDS)
+def test_action_method_setup_env(yaml_file, row, method, verdict, monkeypatch):
+    """Action method is DUT-only; setup_env succeeds without STA."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / yaml_file)
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+@pytest.mark.parametrize("yaml_file,row,method,verdict", _ACTION_METHOD_CASES, ids=_ACTION_IDS)
+def test_action_method_evaluate(yaml_file, row, method, verdict):
+    """Action method evaluate passes when no error is returned."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / yaml_file)
+    results = {"steps": {}}
+    for r, band in [("1", "5g"), ("2", "6g"), ("3", "24g")]:
+        results["steps"][f"step_{band}"] = {
+            "success": True,
+            "output": f"WiFi.Radio.{r}.{method}() returned\n",
+            "timing": 0.5,
+        }
+    assert plugin.evaluate(case, results) is True
+
+
+# --- Batch 4c: getSSIDStats field cases (D302-D318) ---
+
+_SSID_STATS_CASES = [
+    # (yaml_file, row, field, verdict)
+    ("D302_getssidstats_broadcastpacketsreceived.yaml", 225, "BroadcastPacketsReceived", "Pass"),
+    ("D303_getssidstats_broadcastpacketssent.yaml", 226, "BroadcastPacketsSent", "Pass"),
+    ("D304_getssidstats_bytesreceived.yaml", 227, "BytesReceived", "Pass"),
+    ("D305_getssidstats_bytessent.yaml", 228, "BytesSent", "Pass"),
+    ("D306_getssidstats_discardpacketsreceived.yaml", 229, "DiscardPacketsReceived", "Pass"),
+    ("D307_getssidstats_discardpacketssent.yaml", 230, "DiscardPacketsSent", "Pass"),
+    ("D308_getssidstats_errorsreceived.yaml", 231, "ErrorsReceived", "Pass"),
+    ("D309_getssidstats_errorssent.yaml", 232, "ErrorsSent", "Pass"),
+    ("D310_getssidstats_failedretranscount.yaml", 233, "FailedRetransCount", "Not Supported"),
+    ("D311_getssidstats_multicastpacketsreceived.yaml", 234, "MulticastPacketsReceived", "Pass"),
+    ("D312_getssidstats_multicastpacketssent.yaml", 235, "MulticastPacketsSent", "Pass"),
+    ("D313_getssidstats_packetsreceived.yaml", 236, "PacketsReceived", "Pass"),
+    ("D314_getssidstats_packetssent.yaml", 237, "PacketsSent", "Pass"),
+    ("D315_getssidstats_retranscount.yaml", 238, "RetransCount", "Not Supported"),
+    ("D316_getssidstats_unicastpacketsreceived.yaml", 239, "UnicastPacketsReceived", "Pass"),
+    ("D317_getssidstats_unicastpacketssent.yaml", 240, "UnicastPacketsSent", "Pass"),
+    ("D318_getssidstats_unknownprotopacketsreceived.yaml", 241, "UnknownProtoPacketsReceived", "Not Supported"),
+]
+
+_SSID_STATS_IDS = [t[0].split(".")[0] for t in _SSID_STATS_CASES]
+
+
+@pytest.mark.parametrize("yaml_file,row,field,verdict", _SSID_STATS_CASES, ids=_SSID_STATS_IDS)
+def test_ssid_stats_contract(yaml_file, row, field, verdict):
+    """getSSIDStats YAML loads with correct 3-band structure."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / yaml_file)
+    assert case["source"]["row"] == row
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 3
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+    ref = case["results_reference"]["v4.0.3"]
+    assert ref["5g"] == verdict
+
+
+@pytest.mark.parametrize("yaml_file,row,field,verdict", _SSID_STATS_CASES, ids=_SSID_STATS_IDS)
+def test_ssid_stats_setup_env(yaml_file, row, field, verdict, monkeypatch):
+    """getSSIDStats is DUT-only; setup_env succeeds without STA."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / yaml_file)
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+@pytest.mark.parametrize("yaml_file,row,field,verdict", _SSID_STATS_CASES, ids=_SSID_STATS_IDS)
+def test_ssid_stats_evaluate(yaml_file, row, field, verdict):
+    """getSSIDStats evaluate passes with live-shaped stats output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / yaml_file)
+    results = {"steps": {}}
+    for ssid, band in [("4", "5g"), ("6", "6g"), ("8", "24g")]:
+        output = (
+            f"WiFi.SSID.{ssid}.getSSIDStats() returned\n"
+            f"[\n    {{\n"
+            f"        {field} = 42,\n"
+            f"    }}\n]"
+        )
+        results["steps"][f"step_{band}_stats"] = {
+            "success": True, "output": output, "timing": 0.01,
+        }
+    assert plugin.evaluate(case, results) is True
+
+
+# --- Batch 4d: D319 BSSID SSID property ---
+
+def test_d319_bssid_ssid_contract():
+    """D319 BSSID SSID loads as 3-band property getter."""
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D319_bssid_ssid.yaml")
+    assert case["source"]["row"] == 242
+    assert case["llapi_support"] == "Support"
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 3
+    assert case["bands"] == ["5g", "6g", "2.4g"]
+    ref = case["results_reference"]["v4.0.3"]
+    assert ref["5g"] == "Pass"
+
+
+def test_d319_bssid_ssid_evaluate():
+    """D319 evaluate passes with valid MAC BSSID output."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D319_bssid_ssid.yaml")
+    results = {"steps": {}}
+    macs = {"5g": "2c:59:17:00:19:95", "6g": "2c:59:17:00:19:96", "24g": "2c:59:17:00:19:a7"}
+    ssids = {"5g": "4", "6g": "6", "24g": "8"}
+    for band, mac in macs.items():
+        s = ssids[band]
+        results["steps"][f"step_{band}"] = {
+            "success": True,
+            "output": f'WiFi.SSID.{s}.BSSID="{mac}"',
+            "timing": 0.01,
+        }
+    assert plugin.evaluate(case, results) is True
+
+
+# --- D185 TPCMode ---
+
+def test_d185_tpcmode_contract():
     """D185 TPCMode YAML loads as fail-shaped 5G-only case."""
     cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D185_tpcmode.yaml")

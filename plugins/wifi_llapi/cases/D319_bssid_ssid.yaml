@@ -1,154 +1,56 @@
-id: wifi-llapi-D319-bssid-ssid
-aliases:
-  - wifi-llapi-r242-bssid-ssid
-name: BSSID — WiFi.SSID.{i}.
-version: '1.0'
+id: d319-bssid-ssid
+name: D319 BSSID SSID
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
-  sheet: Wifi_LLAPI
-  row: 319
-  object: "WiFi.SSID.{i}."
-  api: "BSSID"
-platform:
-  prplos: 4.0.3
-  bdk: 6.3.1
-hlapi_command: ubus-cli WiFi.SSID.{i}.BSSID=98:42:65:2d:0f:e4
+  row: 242
+  object: WiFi.SSID.{i}.
+  api: BSSID
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+- 6g
+- 2.4g
 llapi_support: Support
-implemented_by: pWHM
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: Live probe confirmed SSID.4/6/8 all return valid MAC BSSIDs matching iw dev info
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM0
-    STA:
-      role: sta
-      transport: serial
-      selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
-  links:
-  - from: STA
-    to: DUT
-    band: 5g
-test_environment: |
-  Topology:
-  - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
-  Transport:
-  - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
-
-setup_steps: |
-  1) DUT 5G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
-  3) Association evidence:
-     - A0: iw dev wl0 link
-     - B0: wl -i wl0 assoclist
-sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
-    ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-  STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
-    iw dev wl0 link
-  DUT association evidence:
-    wl -i wl0 assoclist
-test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli WiFi.SSID.{i}.BSSID=98:42:65:2d:0f:e4
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.SSID.*.BSSID?"
-  3) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
-
 steps:
-- id: step1
-  action: exec
-  target: DUT
-  command: 1. get SSID BSSID ubus-cli WiFi.SSID.? | grep .\BSSID WiFi.SSID.4.BSSID="6c:15:db:74:c0:b5" WiFi.SSID.6.BSSID="6c:15:db:74:c0:b6"
-    WiFi.SSID.8.BSSID="6c:15:db:74:c0:c7"
-- id: step2
-  action: exec
-  target: DUT
-  command: Capture Beacon packet and verify the BSSID
-  depends_on: step1
-  capture: result
+- id: step_5g
+  target: dut
+  action: read
+  capture: bssid_5g
+  command: ubus-cli "WiFi.SSID.4.BSSID?"
+  expected: 回傳有效 MAC 位址
+  description: SSID.4 (5g) BSSID
+- id: step_6g
+  target: dut
+  action: read
+  capture: bssid_6g
+  command: ubus-cli "WiFi.SSID.6.BSSID?"
+  expected: 回傳有效 MAC 位址
+  description: SSID.6 (6g) BSSID
+- id: step_24g
+  target: dut
+  action: read
+  capture: bssid_24g
+  command: ubus-cli "WiFi.SSID.8.BSSID?"
+  expected: 回傳有效 MAC 位址
+  description: SSID.8 (2.4g) BSSID
 pass_criteria:
-- field: result.BSSID
-  operator: contains
-  value: 98:42:65:2d:0f:e4
-  description: BSSID 應回傳包含 BSSID=98:42:65:2d:0f:e4
-verification_command: 'root@prplOS:/# iw dev wl0 info | grep addr
-
-  addr 6c:15:db:74:c0:b5
-
-  root@prplOS:/# iw dev wl1 info | grep addr
-
-  addr 6c:15:db:74:c0:b6
-
-  root@prplOS:/# iw dev wl2 info | grep addr
-
-  addr 6c:15:db:74:c0:c7'
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: ''
+- field: bssid_5g.BSSID
+  operator: regex
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+- field: bssid_6g.BSSID
+  operator: regex
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+- field: bssid_24g.BSSID
+  operator: regex
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$

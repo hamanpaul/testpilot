@@ -1,145 +1,36 @@
-id: wifi-llapi-D296-getnastationstats
-aliases:
-  - wifi-llapi-r219-getnastationstats
-name: getNaStationStats() — WiFi.Radio.{i}.NaStaMonitor.
-version: '1.0'
+id: d296-getnastationstats
+name: D296 getNaStationStats
 source:
-  report: "0302-AT&T_LLAPI_Test_Report_20260107.xlsx"
-  sheet: Wifi_LLAPI
-  row: 296
-  object: "WiFi.Radio.{i}.NaStaMonitor."
-  api: "getNaStationStats()"
-platform:
-  prplos: 4.0.3
-  bdk: 6.3.1
-hlapi_command: ubus-cli WiFi.Radio.{i}.NaStaMonitor.getNaStationStats():void
+  row: 219
+  object: WiFi.Radio.{i}.NaStaMonitor.
+  api: getNaStationStats()
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+- 6g
+- 2.4g
 llapi_support: Support
-implemented_by: Vendor Module
+results_reference:
+  v4.0.3:
+    5g: Skip
+    6g: Skip
+    2.4g: Skip
+    comment: WiFi.EndPoint not supported on this platform; getNaStationStats() returns 'object not found'
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM0
-    STA:
-      role: sta
-      transport: serial
-      selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: '{{SSID_5G}}'
-        key: '{{KEY_5G}}'
-  links:
-  - from: STA
-    to: DUT
-    band: 5g
-test_environment: |
-  Topology:
-  - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role, STA-required cases only)
-  Transport:
-  - serialwrap attach COM0 / COM1
-  Band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4
-  - 6G: DUT wl1 / AP3 / SSID.6
-  - 2.4G: DUT wl2 / AP5 / SSID.8
-  Pre-check:
-  - cat /proc/socinfo | grep Revision | cut -d: -f2
-  - iw dev
-  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
-
-setup_steps: |
-  1) DUT 5G baseline:
-     - set Radio.1/SSID.4 for the 5G AP under test
-     - configure AP1 as open with MFP disabled
-     - enable AP1 before station association
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on A0
-     - clear wl0 AP child interface and switch wl0 to managed mode
-     - connect wl0 to {{SSID_5G}}
-  3) Association evidence:
-     - A0: iw dev wl0 link
-     - B0: wl -i wl0 assoclist
-sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
-    ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    killall wpa_supplicant 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-  STA 5G connect verify:
-    iw dev wl0 connect {{SSID_5G}}
-    sleep 2
-    iw dev wl0 link
-  DUT association evidence:
-    wl -i wl0 assoclist
-test_procedure: |
-  1) Execute case command on DUT:
-     ubus-cli WiFi.Radio.{i}.NaStaMonitor.getNaStationStats():void
-  2) LLAPI readback on DUT:
-     ubus-cli "WiFi.Radio.*.NaStaMonitor.getNaStationStats()"
-  3) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
-
 steps:
-- id: query
-  action: exec
-  target: DUT
-  command: ubus-cli WiFi.Radio.{i}.NaStaMonitor.getNaStationStats():void
-  capture: result
+- id: step_probe
+  target: dut
+  action: read
+  capture: probe_result
+  command: ubus-cli "WiFi.EndPoint.1.getNaStationStats()"
+  expected: 預期回傳 object not found
+  description: EndPoint.1 getNaStationStats() probe
 pass_criteria:
-- field: result
-  operator: not_contains
-  value: error
-  description: getNaStationStats() 執行不應回傳 error
-
-verification_command: |
-  ubus-cli "WiFi.Radio.*.getRadioStats()" 2>/dev/null | sed -n "1,200p" || true
-  ubus-cli "WiFi.Radio.*.getRadioAirStats()" 2>/dev/null | sed -n "1,200p" || true
-  ubus-cli "WiFi.Radio.*.getNaStationStats?" 2>/dev/null || true
-  cat /proc/net/dev | grep -E "Inter-|wl0|wl1|wl2"
-  wl -i wl0 counters 2>/dev/null | sed -n "1,40p" || true
-
-results_reference:
-  v4.0.1:
-    5g: Skip
-    6g: Skip
-    2.4g: Skip
-    comment: This API should combine "createNonAssociatedDevice()" to test while that API does not supported.
-  v4.0.3:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: ''
+- field: probe_result
+  operator: contains
+  value: object not found

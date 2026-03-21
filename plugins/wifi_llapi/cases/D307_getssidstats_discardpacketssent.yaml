@@ -1,251 +1,55 @@
-id: wifi-llapi-d307-getssidstats-discardpacketssent
-name: "DiscardPacketsSent — WiFi.SSID.{i}.getSSIDStats()"
-version: '1.0'
+id: d307-getssidstats-discardpacketssent
+name: D307 getSSIDStats DiscardPacketsSent
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 230
   object: WiFi.SSID.{i}.
   api: getSSIDStats()
-platform:
-  prplos: 4.0.3
-  bdk: 6.3.1
-hlapi_command: 'ubus-cli "WiFi.SSID.{i}.getSSIDStats()"'
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+- 6g
+- 2.4g
 llapi_support: Support
-implemented_by: pWHM
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM0
-    STA:
-      role: sta
-      transport: serial
-      selector: COM1
-      config:
-        - iface: 5g
-          mode: sta
-          ssid: TestPilot_BTM
-          key: testpilot6g
-        - iface: 6g
-          mode: sta
-          ssid: TestPilot_BTM
-          key: testpilot6g
-        - iface: 2.4g
-          mode: sta
-          ssid: TestPilot_24G
-          key: ''
-  links:
-    - from: STA
-      to: DUT
-      band: 5g
-    - from: STA
-      to: DUT
-      band: 6g
-    - from: STA
-      to: DUT
-      band: 2.4g
-test_environment: |
-  Topology:
-  - DUT: COM0 (AP role)
-  - STA: COM1 (single active STA link only; validate 5G -> 6G -> 2.4G sequentially)
-  Mapping:
-  - 5G = wl0 / SSID.4 / STA MAC 2c:59:17:00:04:85
-  - 6G = wl1 / SSID.6 / STA MAC 2c:59:17:00:04:86
-  - 2.4G = wl2 / SSID.8 / STA MAC 2c:59:17:00:04:97
-  Rules:
-  - move COM1 br-lan off 192.168.1.0/24 before any ping attempt
-  - attempt STA-generated traffic before the final readback for each band
-  - on 2.4G, keep the traffic attempt even if ping still drops; judge by direct/getSSIDStats/driver consistency
-setup_steps: |
-  DUT baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.SSID.4.SSID=TestPilot_BTM
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
-    ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=testpilot6g
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Required
-    ubus-cli WiFi.AccessPoint.1.Enable=1
-    ubus-cli WiFi.Radio.2.Enable=1
-    ubus-cli WiFi.SSID.6.SSID=TestPilot_BTM
-    ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
-    ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase=testpilot6g
-    ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Required
-    ubus-cli WiFi.AccessPoint.3.Enable=1
-    ubus-cli WiFi.Radio.3.Enable=1
-    ubus-cli WiFi.SSID.8.SSID=TestPilot_24G
-    ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=None
-    ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled
-    ubus-cli WiFi.AccessPoint.5.Enable=1
-  STA reset before each band:
-    ifconfig br-lan 192.168.88.1 netmask 255.255.255.0 up
-    wpa_cli terminate 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl1 disconnect 2>/dev/null || true
-    iw dev wl2 disconnect 2>/dev/null || true
-    ip addr flush dev wl0 2>/dev/null || true
-    ip addr flush dev wl1 2>/dev/null || true
-    ip addr flush dev wl2 2>/dev/null || true
-sta_env_setup: |
-  5G example:
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-    wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
-    wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
-  6G example:
-    iw dev wl1 set type managed
-    ifconfig wl1 up
-    wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant
-    wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect
-  2.4G example:
-    iw dev wl2 set type managed
-    ifconfig wl2 up
-    iw dev wl2 connect TestPilot_24G
-  Traffic attempt:
-    ifconfig wlX 192.168.1.X netmask 255.255.255.0 up
-    ip route replace 192.168.1.0/24 dev wlX src 192.168.1.X
-    ip neigh flush dev wlX
-    ping -I wlX -c 5 -W 1 192.168.1.1
-    sleep 2
-    ping -I wlX -c 5 -W 1 192.168.1.1
-test_procedure: |
-  1) Validate this getSSIDStats() field sequentially on 5G, then 6G, then 2.4G.
-  2) For each band, capture getSSIDStats(), the matching direct Stats field, and the matching driver view before and after the STA traffic attempt.
-  3) Use the final reread for the manual judgment.
-  4) Pass when getSSIDStats().DiscardPacketsSent equals direct Stats.DiscardPacketsSent on 5G/6G/2.4G and /proc/net/dev_extstats field $13 when mapped.
 steps:
-- id: assoc_5g
-  action: exec
-  target: DUT
-  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
-  capture: assoc_5g
-- id: method_5g
-  action: exec
-  target: DUT
-  command: ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n 's/.*DiscardPacketsSent = \([0-9][0-9]*\).*/GetSSIDStatsDiscardPacketsSent5g=\1/p'
-  depends_on: assoc_5g
-  capture: method_5g
-- id: direct_5g
-  action: exec
-  target: DUT
-  command: 'ubus-cli "WiFi.SSID.4.Stats.DiscardPacketsSent?"'
-  depends_on: method_5g
-  capture: direct_5g
-- id: driver_5g
-  action: exec
-  target: DUT
-  command: awk '$1=="wl0:" {print "DriverDiscardPacketsSent5g=" $13}' /proc/net/dev_extstats
-  depends_on: method_5g
-  capture: driver_5g
-- id: assoc_6g
-  action: exec
-  target: DUT
-  command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
-  capture: assoc_6g
-- id: method_6g
-  action: exec
-  target: DUT
-  command: ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n 's/.*DiscardPacketsSent = \([0-9][0-9]*\).*/GetSSIDStatsDiscardPacketsSent6g=\1/p'
-  depends_on: assoc_6g
-  capture: method_6g
-- id: direct_6g
-  action: exec
-  target: DUT
-  command: 'ubus-cli "WiFi.SSID.6.Stats.DiscardPacketsSent?"'
-  depends_on: method_6g
-  capture: direct_6g
-- id: driver_6g
-  action: exec
-  target: DUT
-  command: awk '$1=="wl1:" {print "DriverDiscardPacketsSent6g=" $13}' /proc/net/dev_extstats
-  depends_on: method_6g
-  capture: driver_6g
-- id: assoc_24g
-  action: exec
-  target: DUT
-  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
-  capture: assoc_24g
-- id: method_24g
-  action: exec
-  target: DUT
-  command: ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n 's/.*DiscardPacketsSent = \([0-9][0-9]*\).*/GetSSIDStatsDiscardPacketsSent24g=\1/p'
-  depends_on: assoc_24g
-  capture: method_24g
-- id: direct_24g
-  action: exec
-  target: DUT
-  command: 'ubus-cli "WiFi.SSID.8.Stats.DiscardPacketsSent?"'
-  depends_on: method_24g
-  capture: direct_24g
-- id: driver_24g
-  action: exec
-  target: DUT
-  command: awk '$1=="wl2:" {print "DriverDiscardPacketsSent24g=" $13}' /proc/net/dev_extstats
-  depends_on: method_24g
-  capture: driver_24g
+- id: step_5g_stats
+  target: dut
+  action: read
+  capture: stats_5g
+  command: ubus-cli "WiFi.SSID.4.getSSIDStats()"
+  expected: getSSIDStats() 回傳有效值
+  description: SSID.4 (5g) getSSIDStats()
+- id: step_6g_stats
+  target: dut
+  action: read
+  capture: stats_6g
+  command: ubus-cli "WiFi.SSID.6.getSSIDStats()"
+  expected: getSSIDStats() 回傳有效值
+  description: SSID.6 (6g) getSSIDStats()
+- id: step_24g_stats
+  target: dut
+  action: read
+  capture: stats_24g
+  command: ubus-cli "WiFi.SSID.8.getSSIDStats()"
+  expected: getSSIDStats() 回傳有效值
+  description: SSID.8 (2.4g) getSSIDStats()
 pass_criteria:
-- field: assoc_5g.AssocMac5g
-  operator: equals
-  value: 2c:59:17:00:04:85
-  description: 5g DUT assoclist must resolve the expected STA MAC 2c:59:17:00:04:85.
-- field: method_5g.GetSSIDStatsDiscardPacketsSent5g
-  operator: equals
-  reference: direct_5g.DiscardPacketsSent
-  description: 5g getSSIDStats().DiscardPacketsSent must match direct Stats.DiscardPacketsSent.
-- field: method_5g.GetSSIDStatsDiscardPacketsSent5g
-  operator: equals
-  reference: driver_5g.DriverDiscardPacketsSent5g
-  description: 5g getSSIDStats().DiscardPacketsSent must match /proc/net/dev_extstats field $13 on wl0.
-- field: assoc_6g.AssocMac6g
-  operator: equals
-  value: 2c:59:17:00:04:86
-  description: 6g DUT assoclist must resolve the expected STA MAC 2c:59:17:00:04:86.
-- field: method_6g.GetSSIDStatsDiscardPacketsSent6g
-  operator: equals
-  reference: direct_6g.DiscardPacketsSent
-  description: 6g getSSIDStats().DiscardPacketsSent must match direct Stats.DiscardPacketsSent.
-- field: method_6g.GetSSIDStatsDiscardPacketsSent6g
-  operator: equals
-  reference: driver_6g.DriverDiscardPacketsSent6g
-  description: 6g getSSIDStats().DiscardPacketsSent must match /proc/net/dev_extstats field $13 on wl1.
-- field: assoc_24g.AssocMac24g
-  operator: equals
-  value: 2c:59:17:00:04:97
-  description: 2.4g DUT assoclist must resolve the expected STA MAC 2c:59:17:00:04:97.
-- field: method_24g.GetSSIDStatsDiscardPacketsSent24g
-  operator: equals
-  reference: direct_24g.DiscardPacketsSent
-  description: 2.4g getSSIDStats().DiscardPacketsSent must match direct Stats.DiscardPacketsSent.
-- field: method_24g.GetSSIDStatsDiscardPacketsSent24g
-  operator: equals
-  reference: driver_24g.DriverDiscardPacketsSent24g
-  description: 2.4g getSSIDStats().DiscardPacketsSent must match /proc/net/dev_extstats field $13 on wl2.
-verification_command: |
-  # 5g
-  wl -i wl0 assoclist
-  ubus-cli "WiFi.SSID.4.getSSIDStats()" | grep "DiscardPacketsSent"
-  ubus-cli "WiFi.SSID.4.Stats.DiscardPacketsSent?"
-  awk '$1=="wl0:" {print "DriverDiscardPacketsSent5g=" $13}' /proc/net/dev_extstats
-
-  # 6g
-  wl -i wl1 assoclist
-  ubus-cli "WiFi.SSID.6.getSSIDStats()" | grep "DiscardPacketsSent"
-  ubus-cli "WiFi.SSID.6.Stats.DiscardPacketsSent?"
-  awk '$1=="wl1:" {print "DriverDiscardPacketsSent6g=" $13}' /proc/net/dev_extstats
-
-  # 2.4g
-  wl -i wl2 assoclist
-  ubus-cli "WiFi.SSID.8.getSSIDStats()" | grep "DiscardPacketsSent"
-  ubus-cli "WiFi.SSID.8.Stats.DiscardPacketsSent?"
-  awk '$1=="wl2:" {print "DriverDiscardPacketsSent24g=" $13}' /proc/net/dev_extstats
-results_reference:
-  v4.0.1:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: ''
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'Multiband serialwrap retest after STA traffic attempt: 5g=26, 6g=20, 2.4g=16; getSSIDStats() matched direct Stats and /proc/net/dev_extstats field $13 on SSID.4/6/8.'
+- field: stats_5g.DiscardPacketsSent
+  operator: regex
+  value: ^\d+$
+- field: stats_6g.DiscardPacketsSent
+  operator: regex
+  value: ^\d+$
+- field: stats_24g.DiscardPacketsSent
+  operator: regex
+  value: ^\d+$

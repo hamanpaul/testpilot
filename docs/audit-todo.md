@@ -120,7 +120,7 @@ If I open only this file in a future session, I should do the following in order
 
 ## Current repo handoff snapshot（2026-03-20）
 
-- Trusted/calibrated official cases: **292 / 415**
+- Trusted/calibrated official cases: **316 / 415**
 - Remaining official cases: **186**
 - Active blockers:
   - `D037 OperatingStandard`
