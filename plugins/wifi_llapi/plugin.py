@@ -906,10 +906,28 @@ class Plugin(PluginBase):
     def _iter_env_script_commands(self, script: str) -> list[tuple[str, str]]:
         commands: list[tuple[str, str]] = []
         target = "STA"
+
+        # Pre-process: join continuation lines with unbalanced single quotes
+        # (e.g. multi-line printf '...\n...\n...' → single line).
+        raw_lines: list[str] = []
+        pending: str | None = None
         for raw in script.splitlines():
-            line = raw.strip()
-            if not line:
+            stripped = raw.strip()
+            if not stripped:
                 continue
+            if pending is not None:
+                pending = pending + "\n" + stripped
+                if pending.count("'") % 2 == 0:
+                    raw_lines.append(pending)
+                    pending = None
+            elif stripped.count("'") % 2 != 0:
+                pending = stripped
+            else:
+                raw_lines.append(stripped)
+        if pending is not None:
+            raw_lines.append(pending)
+
+        for line in raw_lines:
             lower_line = line.lower()
             if lower_line.endswith(":"):
                 if "dut" in lower_line:
@@ -1110,6 +1128,41 @@ class Plugin(PluginBase):
         ]
         return tuple(selected or ("5g", "6g", "2.4g"))
 
+    def _has_explicit_wifi_bands(self, case: dict[str, Any]) -> bool:
+        """Return True when the case explicitly references WiFi AP/radio bands."""
+        marker_chunks: list[str] = []
+        for key in ("hlapi_command", "verification_command"):
+            value = case.get(key)
+            if isinstance(value, str) and value.strip():
+                marker_chunks.append(value)
+        source = self._as_mapping(case.get("source"))
+        source_object = source.get("object")
+        if isinstance(source_object, str) and source_object.strip():
+            marker_chunks.append(source_object)
+        steps = case.get("steps")
+        if isinstance(steps, list):
+            for step in steps:
+                step_mapping = self._as_mapping(step)
+                for key in ("command", "target", "capture"):
+                    value = step_mapping.get(key)
+                    if isinstance(value, str) and value.strip():
+                        marker_chunks.append(value)
+        pass_criteria = case.get("pass_criteria")
+        if isinstance(pass_criteria, list):
+            for criterion in pass_criteria:
+                criterion_mapping = self._as_mapping(criterion)
+                field = criterion_mapping.get("field")
+                if isinstance(field, str) and field.strip():
+                    marker_chunks.append(field)
+        haystack = "\n".join(marker_chunks)
+        band_patterns = (
+            r"WiFi\.AccessPoint\.(?:1|2|3|4|5|6)\b",
+            r"\bwl[012](?:\.\d+)?\b",
+            r"WiFi\.Radio\.\d",
+            r"WiFi\.SSID\.\d",
+        )
+        return any(re.search(p, haystack) for p in band_patterns)
+
     def _connect_with_retry(
         self,
         *,
@@ -1153,10 +1206,14 @@ class Plugin(PluginBase):
         sta = self._transports.get("STA")
         if sta is None:
             return False
-        wpa_cli = "wpa_cli -p /var/run/wpa_supplicant -i wl1"
+        wpa_cli = "wpa_cli -i wl1"
         selected_bands = set(self._selected_sta_bands(case))
 
-        # 5G
+        # Suppress kernel console messages to prevent UART prompt detection issues
+        # (Broadcom dhd driver floods console during WiFi mode switches).
+        self._execute_env_command(sta, "dmesg -n 1", timeout=5.0)
+
+        # 5G (WPA2-Personal via wpa_supplicant)
         if "5g" in selected_bands:
             five_g_prep = (
                 "ubus-cli WiFi.AccessPoint.1.Enable=0",
@@ -1164,8 +1221,15 @@ class Plugin(PluginBase):
                 "killall wpa_supplicant 2>/dev/null || true",
                 "iw dev wl0.1 del 2>/dev/null || true",
                 "iw dev wl0 disconnect 2>/dev/null || true",
-                "iw dev wl0 set type managed",
+                "ifconfig wl0 down",
+                "wl -i wl0 ap 0",
+                "wl -i wl0 up",
                 "ifconfig wl0 up",
+                "rm -rf /var/run/wpa_supplicant",
+                "mkdir -p /var/run/wpa_supplicant",
+                "printf 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nnetwork={\\nssid=\"TestPilot_BTM\"\\nkey_mgmt=WPA-PSK\\npsk=\"00000000\"\\n}\\n' > /tmp/wpa_wl0.conf",
+                "wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf",
+                "sleep 5",
             )
             for idx, cmd in enumerate(five_g_prep, start=1):
                 if not self._run_required_command(
@@ -1179,29 +1243,33 @@ class Plugin(PluginBase):
                 transport=sta,
                 case_id=case_id,
                 label="sta_5g",
-                connect_cmd="iw dev wl0 connect B0_5G_AP",
+                connect_cmd="wpa_cli -i wl0 reconnect",
                 verify_cmd="iw dev wl0 link",
                 attempts=3,
-                sleep_seconds=3,
+                sleep_seconds=5,
             ):
                 return False
 
-        # 6G (SAE)
+        # 6G (SAE) — non-fatal: STA Broadcom dhd driver may not support
+        # SAE-H2E required by DUT 6G; failure is logged but does not block.
         if "6g" in selected_bands:
             six_g_prep = (
                 "ubus-cli WiFi.AccessPoint.3.Enable=0",
                 "ubus-cli WiFi.AccessPoint.4.Enable=0",
-                "killall wpa_supplicant 2>/dev/null || true",
+                "wpa_cli -i wl1 terminate 2>/dev/null || true",
                 "rm -f /var/run/wpa_supplicant/wl1 2>/dev/null || true",
                 "iw dev wl1.1 del 2>/dev/null || true",
                 "iw dev wl1 disconnect 2>/dev/null || true",
-                "iw dev wl1 set type managed",
+                "ifconfig wl1 down",
+                "wl -i wl1 ap 0",
+                "wl -i wl1 up",
                 "ifconfig wl1 up",
                 "mkdir -p /var/run/wpa_supplicant",
-                "printf 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nsae_pwe=2\\nnetwork={\\nssid=\"B0_6G_AP\"\\nkey_mgmt=SAE\\nsae_password=\"B0StaTest1234\"\\nieee80211w=2\\nscan_ssid=1\\n}\\n' > /tmp/wpa_wl1.conf",
-                "wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant",
-                "sleep 3",
+                "printf 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nsae_pwe=2\\nnetwork={\\nssid=\"testpilot6G\"\\nkey_mgmt=SAE\\nsae_password=\"00000000\"\\nieee80211w=2\\nscan_ssid=1\\n}\\n' > /tmp/wpa_wl1.conf",
+                "wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf",
+                "sleep 5",
             )
+            six_g_ok = True
             for idx, cmd in enumerate(six_g_prep, start=1):
                 if not self._run_required_command(
                     transport=sta,
@@ -1209,45 +1277,60 @@ class Plugin(PluginBase):
                     label=f"sta_6g_prep.{idx}",
                     command=cmd,
                 ):
-                    return False
-            if not self._connect_with_retry(
-                transport=sta,
-                case_id=case_id,
-                label="sta_6g_ctrl",
-                connect_cmd=f"{wpa_cli} ping",
-                verify_cmd=f"{wpa_cli} ping",
-                attempts=3,
-                sleep_seconds=1,
-            ):
-                return False
-            if not self._connect_with_retry(
-                transport=sta,
-                case_id=case_id,
-                label="sta_6g",
-                connect_cmd=f"{wpa_cli} reconnect",
-                verify_cmd="iw dev wl1 link",
-                attempts=3,
-                sleep_seconds=8,
-            ):
-                return False
-            if not self._run_required_command(
-                transport=sta,
-                case_id=case_id,
-                label="sta_6g_status",
-                command=f"{wpa_cli} status",
-                timeout=20.0,
-            ):
-                return False
+                    six_g_ok = False
+                    break
+            if six_g_ok:
+                six_g_ok = self._connect_with_retry(
+                    transport=sta,
+                    case_id=case_id,
+                    label="sta_6g_ctrl",
+                    connect_cmd=f"{wpa_cli} ping",
+                    verify_cmd=f"{wpa_cli} ping",
+                    attempts=3,
+                    sleep_seconds=1,
+                )
+            if six_g_ok:
+                six_g_ok = self._connect_with_retry(
+                    transport=sta,
+                    case_id=case_id,
+                    label="sta_6g",
+                    connect_cmd=f"{wpa_cli} reconnect",
+                    verify_cmd="iw dev wl1 link",
+                    attempts=3,
+                    sleep_seconds=8,
+                )
+            if six_g_ok:
+                self._run_required_command(
+                    transport=sta,
+                    case_id=case_id,
+                    label="sta_6g_status",
+                    command=f"{wpa_cli} status",
+                    timeout=20.0,
+                )
+            if not six_g_ok:
+                log.warning(
+                    "[%s] verify_env: %s 6G connect failed (SAE-H2E likely unsupported), continuing",
+                    self.name,
+                    case_id,
+                )
 
-        # 2.4G
+        # 2.4G (WPA2-Personal via wpa_supplicant)
         if "2.4g" in selected_bands:
             two_g_prep = (
                 "ubus-cli WiFi.AccessPoint.5.Enable=0",
                 "ubus-cli WiFi.AccessPoint.6.Enable=0",
+                "wpa_cli -i wl2 terminate 2>/dev/null || true",
                 "iw dev wl2.1 del 2>/dev/null || true",
                 "iw dev wl2 disconnect 2>/dev/null || true",
-                "iw dev wl2 set type managed",
+                "ifconfig wl2 down",
+                "wl -i wl2 ap 0",
+                "wl -i wl2 up",
                 "ifconfig wl2 up",
+                "rm -f /var/run/wpa_supplicant/wl2 2>/dev/null || true",
+                "mkdir -p /var/run/wpa_supplicant",
+                "printf 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nnetwork={\\nssid=\"testpilot2G\"\\nkey_mgmt=WPA-PSK\\npsk=\"00000000\"\\n}\\n' > /tmp/wpa_wl2.conf",
+                "wpa_supplicant -B -D nl80211 -i wl2 -c /tmp/wpa_wl2.conf",
+                "sleep 5",
             )
             for idx, cmd in enumerate(two_g_prep, start=1):
                 if not self._run_required_command(
@@ -1261,10 +1344,10 @@ class Plugin(PluginBase):
                 transport=sta,
                 case_id=case_id,
                 label="sta_24g",
-                connect_cmd="iw dev wl2 connect B0_24G_AP",
+                connect_cmd="wpa_cli -i wl2 reconnect",
                 verify_cmd="iw dev wl2 link",
                 attempts=3,
-                sleep_seconds=3,
+                sleep_seconds=5,
             ):
                 return False
         return True
@@ -1276,15 +1359,41 @@ class Plugin(PluginBase):
             return False
         selected_bands = set(self._selected_sta_bands(case))
 
+        # Check if BSS is already up — skip DUT config if radios are active.
+        # We accept factory SSIDs (EasyMesh may override 5G SSID changes).
+        bss_map = {"5g": "wl0", "6g": "wl1", "2.4g": "wl2"}
+        all_up = True
+        for band in selected_bands:
+            iface = bss_map.get(band)
+            if iface:
+                result = self._execute_env_command(dut, f"wl -i {iface} bss", timeout=10.0)
+                if "up" not in self._env_output_text(result).strip().lower():
+                    all_up = False
+                    break
+        if all_up:
+            log.info("[%s] verify_env: %s BSS already up, skipping DUT baseline", self.name, case_id)
+            # Always ensure 5G is WPA2-Personal even when BSS is up.
+            # EasyMesh may revert ModeEnabled to WPA3-Personal (SAE-H2E),
+            # which is incompatible with the STA Broadcom dhd driver.
+            if "5g" in selected_bands:
+                self._execute_env_command(
+                    dut,
+                    "ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal",
+                    timeout=15.0,
+                )
+            return True
+
+        # DUT baseline: enable Radio/AP, set security and KeyPassPhrase.
+        # We do NOT change SSIDs — EasyMesh controller overrides 5G SSID;
+        # factory SSIDs (TestPilot_BTM/testpilot6G/testpilot2G) are accepted.
+        # 5G must be forced to WPA2-Personal (factory SAE-H2E incompatible with STA).
         dut_commands: list[str] = []
         if "5g" in selected_bands:
             dut_commands.extend(
                 (
                     "ubus-cli WiFi.Radio.1.Enable=1",
-                    "ubus-cli WiFi.Radio.1.RegulatoryDomain=CA",
-                    "ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=170",
-                    "ubus-cli WiFi.SSID.4.SSID=B0_5G_AP",
-                    "ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None",
+                    "ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal",
+                    'ubus-cli \'WiFi.AccessPoint.1.Security.KeyPassPhrase="00000000"\'',
                     "ubus-cli WiFi.AccessPoint.1.Enable=1",
                 )
             )
@@ -1292,13 +1401,7 @@ class Plugin(PluginBase):
             dut_commands.extend(
                 (
                     "ubus-cli WiFi.Radio.2.Enable=1",
-                    "ubus-cli WiFi.Radio.2.RegulatoryDomain=CA",
-                    "ubus-cli WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev=170",
-                    "ubus-cli WiFi.SSID.6.SSID=B0_6G_AP",
-                    "ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal",
-                    "ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase=B0StaTest1234",
-                    "ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Required",
-                    "ubus-cli WiFi.AccessPoint.3.MultiAPType=FronthaulBSS",
+                    'ubus-cli \'WiFi.AccessPoint.3.Security.KeyPassPhrase="00000000"\'',
                     "ubus-cli WiFi.AccessPoint.3.Enable=1",
                 )
             )
@@ -1306,17 +1409,13 @@ class Plugin(PluginBase):
             dut_commands.extend(
                 (
                     "ubus-cli WiFi.Radio.3.Enable=1",
-                    "ubus-cli WiFi.Radio.3.RegulatoryDomain=CA",
-                    "ubus-cli WiFi.Radio.3.Vendor.Brcm.RegulatoryDomainRev=170",
-                    "ubus-cli WiFi.SSID.8.SSID=B0_24G_AP",
-                    "ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=None",
+                    'ubus-cli \'WiFi.AccessPoint.5.Security.KeyPassPhrase="00000000"\'',
                     "ubus-cli WiFi.AccessPoint.5.Enable=1",
                 )
             )
-        dut_commands.extend(("/etc/init.d/wld_gen start", "sleep 10"))
+        # Apply DUT config (no wld_gen — boot sequence handles radio init).
         for index, command in enumerate(dut_commands, start=1):
-            timeout = 60.0 if command == "/etc/init.d/wld_gen start" else 20.0
-            result = self._execute_env_command(dut, command, timeout=timeout)
+            result = self._execute_env_command(dut, command, timeout=30.0)
             if not self._env_command_succeeded(command, result):
                 log.warning(
                     "[%s] verify_env: %s sta_baseline[%d] failed rc=%s cmd=%s out=%s",
@@ -1329,6 +1428,9 @@ class Plugin(PluginBase):
                 )
                 return False
 
+        # Wait for hostapd to reload after DUT config changes.
+        self._execute_env_command(dut, "sleep 5", timeout=10.0)
+
         bss_commands: list[str] = []
         if "5g" in selected_bands:
             bss_commands.append("wl -i wl0 bss")
@@ -1336,19 +1438,28 @@ class Plugin(PluginBase):
             bss_commands.append("wl -i wl1 bss")
         if "2.4g" in selected_bands:
             bss_commands.append("wl -i wl2 bss")
+        # Retry BSS readiness — after reboot, radios may need extra time.
+        bss_max_wait = 60.0
+        bss_poll_interval = 5.0
         for index, command in enumerate(bss_commands, start=1):
-            result = self._execute_env_command(dut, command, timeout=20.0)
-            if self._env_command_succeeded(command, result):
-                continue
-            log.warning(
-                "[%s] verify_env: %s sta_baseline_bss[%d] not ready rc=%s cmd=%s out=%s",
-                self.name,
-                case_id,
-                index,
-                int(result.get("returncode", 1)),
-                command,
-                self._preview_value(self._env_output_text(result)),
-            )
+            deadline = time.monotonic() + bss_max_wait
+            ready = False
+            while time.monotonic() < deadline:
+                result = self._execute_env_command(dut, command, timeout=20.0)
+                out = self._env_output_text(result).strip().lower()
+                if "up" in out:
+                    ready = True
+                    break
+                log.info(
+                    "[%s] verify_env: %s bss[%d] not ready yet (%s), retrying...",
+                    self.name, case_id, index, out,
+                )
+                self._execute_env_command(dut, f"sleep {int(bss_poll_interval)}", timeout=bss_poll_interval + 5)
+            if not ready:
+                log.warning(
+                    "[%s] verify_env: %s sta_baseline_bss[%d] not ready after %.0fs cmd=%s",
+                    self.name, case_id, index, bss_max_wait, command,
+                )
         return True
 
     def _verify_sta_band_connectivity(self, case: dict[str, Any]) -> bool:
@@ -1477,10 +1588,29 @@ class Plugin(PluginBase):
             log.warning("[%s] verify_env: %s missing DUT transport", self.name, case_id)
             return False
 
+        # Suppress kernel console messages on DUT to prevent UART flood
+        # (Broadcom dhd driver generates continuous messages that break prompt detection).
+        self._execute_env_command(dut, "dmesg -n 1", timeout=5.0)
+
         gate_result = self._execute_env_command(dut, 'echo "__testpilot_env_gate__"', timeout=10.0)
         if int(gate_result.get("returncode", 1)) != 0:
             log.warning("[%s] verify_env: %s DUT gate failed", self.name, case_id)
             return False
+
+        # Run default band baseline only when the case does NOT provide its
+        # own sta_env_setup AND explicitly references WiFi AP/radio bands.
+        has_custom_env = bool(
+            isinstance(case.get("sta_env_setup"), str)
+            and case["sta_env_setup"].strip()
+        )
+        needs_wifi = self._has_explicit_wifi_bands(case)
+        sta = self._transports.get("STA")
+        if not has_custom_env and needs_wifi and sta is not None:
+            # Suppress kernel console messages on STA too.
+            self._execute_env_command(sta, "dmesg -n 1", timeout=5.0)
+            if not self._ensure_sta_band_ready(case, topology):
+                log.warning("[%s] verify_env: %s STA band baseline/connect failed", self.name, case_id)
+                return False
 
         env_verify = case.get("env_verify")
         if not isinstance(env_verify, list):

@@ -69,7 +69,7 @@
 |---|---|---|---|
 | P5-01 | cli-full | done | `run/list` + `wifi-llapi build-template-report` |
 | P5-02 | orchestrator-full | in_progress | `wifi_llapi` 流程已整合；其他 plugin 仍 skeleton |
-| P5-03 | integration tests（mock transport） | done | 已補齊 realistic runtime 測試；最新校正後 full suite `1223 passed` |
+| P5-03 | integration tests（mock transport） | done | 已補齊 realistic runtime 測試；最新校正後 full suite `1223 passed`；3x live full run determinism 驗證通過（Run 2/3 = 100% 一致） |
 | P5-04 | plugin agent-config schema/runtime | done | `agent_runtime.py` |
 | P5-05 | agent selection trace | done | per-case selection / fallback trace |
 | P5-06 | case-agent dispatcher（sequential） | done | `max_concurrency=1` |

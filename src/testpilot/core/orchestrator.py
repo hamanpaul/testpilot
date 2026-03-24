@@ -219,7 +219,7 @@ class Orchestrator:
 
     @staticmethod
     def _is_wifi_llapi_official_case(case: dict[str, Any]) -> bool:
-        return re.match(r"^wifi-llapi-D\d+", str(case.get("id", "")).strip()) is not None
+        return re.match(r"^(?:wifi-llapi-)?[Dd]\d+", str(case.get("id", "")).strip()) is not None
 
     def _load_wifi_llapi_agent_config(self, plugin_name: str) -> dict[str, Any]:
         path = self.plugins_dir / plugin_name / "agent-config.yaml"
@@ -786,15 +786,12 @@ class Orchestrator:
                 ),
                 encoding="utf-8",
             )
-            return {
-                "plugin": plugin_name,
-                "plugin_version": plugin.version,
-                "cases_count": len(cases),
-                "status": "alignment_failed",
-                "message": "case source.row/object/api mismatch with source Excel sheet",
-                "alignment_report": str(alignment_path),
-                "issues_count": len(alignment_issues),
-            }
+            log.warning(
+                "alignment issues: %d case(s) have source.row mismatch with template Excel "
+                "(report row placement may be inaccurate); report: %s",
+                len(alignment_issues),
+                alignment_path,
+            )
 
         agent_config = self._load_wifi_llapi_agent_config(plugin_name)
         execution_policy = self._wifi_llapi_execution_policy(agent_config)

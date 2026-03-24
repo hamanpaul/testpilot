@@ -435,7 +435,7 @@ def test_verify_env_only_runs_generic_gates(monkeypatch):
     dut = next(
         transport for transport in recorder.transports if transport.transport_type == "serial"
     )
-    assert dut.executed_commands == ['echo "__testpilot_env_gate__"']
+    assert dut.executed_commands == ['dmesg -n 1', 'echo "__testpilot_env_gate__"']
     plugin.teardown(case, topology=topology)
 
 
@@ -13954,6 +13954,10 @@ def test_run_sta_band_connect_sequence_keeps_6g_ctrl_alive(monkeypatch):
     commands: list[tuple[str, str]] = []
     connect_calls: list[tuple[str, str, str]] = []
 
+    def fake_execute_env_command(transport, command, *, timeout=30.0):
+        del transport, timeout
+        return {"returncode": 0, "stdout": "", "stderr": ""}
+
     def fake_run_required_command(*, transport, case_id, label, command, timeout=30.0):
         del transport, case_id, timeout
         commands.append((label, command))
@@ -13973,6 +13977,7 @@ def test_run_sta_band_connect_sequence_keeps_6g_ctrl_alive(monkeypatch):
         connect_calls.append((label, connect_cmd, verify_cmd))
         return True
 
+    monkeypatch.setattr(plugin, "_execute_env_command", fake_execute_env_command)
     monkeypatch.setattr(plugin, "_run_required_command", fake_run_required_command)
     monkeypatch.setattr(plugin, "_connect_with_retry", fake_connect_with_retry)
 
@@ -13982,23 +13987,25 @@ def test_run_sta_band_connect_sequence_keeps_6g_ctrl_alive(monkeypatch):
     assert "iw dev wl0 disconnect 2>/dev/null || true" in command_values
     assert "iw dev wl1 disconnect 2>/dev/null || true" in command_values
     assert "iw dev wl2 disconnect 2>/dev/null || true" in command_values
-    assert command_values.count("killall wpa_supplicant 2>/dev/null || true") == 2
+    assert command_values.count("killall wpa_supplicant 2>/dev/null || true") == 1
+    assert "wpa_cli -i wl1 terminate 2>/dev/null || true" in command_values
+    assert "wpa_cli -i wl2 terminate 2>/dev/null || true" in command_values
     assert not any(label.startswith("sta_6g_net.") for label, _ in commands)
     assert any(
         command.startswith("printf 'ctrl_interface=/var/run/wpa_supplicant")
-        and 'ssid="B0_6G_AP"' in command
-        and 'sae_password="B0StaTest1234"' in command
+        and 'ssid="testpilot6G"' in command
+        and 'sae_password="00000000"' in command
         for label, command in commands
         if label.startswith("sta_6g_prep.")
     )
     assert (
         "sta_6g_ctrl",
-        "wpa_cli -p /var/run/wpa_supplicant -i wl1 ping",
-        "wpa_cli -p /var/run/wpa_supplicant -i wl1 ping",
+        "wpa_cli -i wl1 ping",
+        "wpa_cli -i wl1 ping",
     ) in connect_calls
     assert (
         "sta_6g",
-        "wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect",
+        "wpa_cli -i wl1 reconnect",
         "iw dev wl1 link",
     ) in connect_calls
 
@@ -14009,6 +14016,10 @@ def test_run_sta_band_connect_sequence_limits_to_selected_band(monkeypatch):
     commands: list[tuple[str, str]] = []
     connect_calls: list[tuple[str, str, str]] = []
 
+    def fake_execute_env_command(transport, command, *, timeout=30.0):
+        del transport, timeout
+        return {"returncode": 0, "stdout": "", "stderr": ""}
+
     def fake_run_required_command(*, transport, case_id, label, command, timeout=30.0):
         del transport, case_id, timeout
         commands.append((label, command))
@@ -14028,6 +14039,7 @@ def test_run_sta_band_connect_sequence_limits_to_selected_band(monkeypatch):
         connect_calls.append((label, connect_cmd, verify_cmd))
         return True
 
+    monkeypatch.setattr(plugin, "_execute_env_command", fake_execute_env_command)
     monkeypatch.setattr(plugin, "_run_required_command", fake_run_required_command)
     monkeypatch.setattr(plugin, "_connect_with_retry", fake_connect_with_retry)
 
@@ -14048,7 +14060,7 @@ def test_run_sta_band_connect_sequence_limits_to_selected_band(monkeypatch):
     assert "iw dev wl0 disconnect 2>/dev/null || true" in command_values
     assert "iw dev wl1 disconnect 2>/dev/null || true" not in command_values
     assert "iw dev wl2 disconnect 2>/dev/null || true" not in command_values
-    assert connect_calls == [("sta_5g", "iw dev wl0 connect B0_5G_AP", "iw dev wl0 link")]
+    assert connect_calls == [("sta_5g", "wpa_cli -i wl0 reconnect", "iw dev wl0 link")]
 
 
 # ---------------------------------------------------------------------------

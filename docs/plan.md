@@ -18,13 +18,13 @@ TestPilot 的主目標是：
 
 ---
 
-## 2. 現況快照（2026-03-20）
+## 2. 現況快照（2026-03-25）
 
 ### 2.1 已落地能力
 
 1. CLI 入口：`list-plugins`、`list-cases`、`run`、`wifi-llapi build-template-report`。
 2. `wifi_llapi` 已有報表導向 run path 與 row/source 對齊治理。
-3. Transport：serialwrap / adb / ssh / network 已實作。
+3. Transport：serialwrap / adb / ssh / network 已實作。serialwrap 已支援 auto-detect template（COM init 時自動偵測 prpl / openwrt / generic）與 prpl-template 復原。
 4. Per-case dispatcher、selection trace、retry-aware timeout、attempt trace 已落地。
 5. 正式 hot path 仍由 `setup_env -> verify_env -> execute_step -> evaluate` 決定。
 6. 420 官方 row-indexed cases 已全部校正完畢；兩個 duplicate-row legacy YAML 已改為 underscore-prefixed compatibility fixtures，不再混入 discoverable case inventory。
@@ -33,6 +33,7 @@ TestPilot 的主目標是：
 9. reboot 後的 default lab baseline 已重建並落成文件：5G `testpilot5G` / 2.4G `testpilot2G` 使用 `WPA2-Personal + 00000000`，6G `testpilot6G` 固定使用 `WPA3-Personal + key_mgmt=SAE + 00000000`。
 10. 第三次重構的 Copilot SDK 深度研究已完成，並已複製到 `docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`。
 11. 校正工作守則已補強為「不中斷持續作業」：commit、簡短狀態回覆與 targeted tests pass 都不是停點；只要沒有 blocker 或使用者要求暫停，就必須在同一輪把下一個 ready case 直接推進到 `in_progress`。
+12. **3x full run determinism 驗證完成**（2026-03-25）：420 cases × 3 runs 全部 exit=0，Run 2/3 verdict 100% 一致，Run 1 僅 2/355 rows 差異（baseline warm-up 效應）。修復 4 個 live runtime bugs：DUT kernel flood、5G ModeEnabled reversion、6G connect fatal、multi-line printf split。詳見 `plugins/wifi_llapi/reports/3x_determinism_report_20260325.md`。
 
 ### 2.2 尚未落地
 
