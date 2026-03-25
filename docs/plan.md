@@ -37,11 +37,10 @@ TestPilot 的主目標是：
 
 ### 2.2 尚未落地
 
-1. Copilot SDK session / hooks / custom agents / skills runtime 整合。
-2. MD/JSON diagnostic projector。
-3. structured remediation planner + whitelist executor + rerun gate。
-4. `plugins/wifi_llapi/agent-config.yaml` 與新 policy 的 runtime 對齊。
-5. 將 plugin fallback heuristic 收斂為更 schema/evidence-driven 的 path。
+1. P2 Environment modules（topology / provisioner / validator）— 低優先。
+2. P3-02 Monitor subsystem — 規格未定。
+3. R5-04 Session / device binding 嚴格化 — 低優先。
+4. R4/R5 各模組已 scaffolded 但尚未接入 hot path（agent_roles → orchestrator、advisory → hook handler、remediation → post-run、skill/mcp → session request、reporter → orchestrator output）。
 
 ---
 
@@ -86,27 +85,27 @@ TestPilot 的主目標是：
 | ID | 項目 | 輸出 | 狀態 |
 |---|---|---|---|
 | R4-00 | 第三次重構研究 / 文件基線 | 研究報告與 docs sync 完成 | done |
-| R4-01 | Copilot SDK session foundation | create / resume / list / delete / workspace policy | in_progress |
-| R4-02 | hook policy layer | `on_session_start` / `on_pre_tool_use` / `on_post_tool_use` / `on_error_occurred` | pending |
-| R4-03 | custom agents roles | operator / case-auditor / remediation-planner / run-summarizer | pending |
-| R4-04 | skills packages | diagnostics / remediation policy / report style | pending |
-| R4-05 | advisory agent outputs | per-case audit / run summary / md draft generation | pending |
-| R4-06 | remediation planner loop | structured JSON plan + whitelist executor + rerun gate | pending |
+| R4-01 | Copilot SDK session foundation | SDK session wire-in with create/cleanup lifecycle | done |
+| R4-02 | hook policy layer | 6 lifecycle hooks: pre/post_case, pre/post_step, on_failure, on_retry | done |
+| R4-03 | custom agents roles | executor / advisor / remediation / observer + role merging | done |
+| R4-04 | skills packages | SkillRegistry + SKILL.md discovery + role-based resolution | done |
+| R4-05 | advisory agent outputs | AdvisoryOutput + AdvisoryCollector + IHook handler factory | done |
+| R4-06 | remediation planner loop | RemediationPlanner + severity-prioritized action mapping | done |
 | R4-07 | runtime policy alignment | plugin agent-config / runner policy 改為 copilot-only order | done |
-| R4-08 | selective MCP | GitHub / KB / lab inventory 等非熱路徑工具 | pending |
+| R4-08 | selective MCP | MCPRegistry + role-selective server management | done |
 
 ### Phase R5：Deterministic kernel 補強
 
 | ID | 項目 | 輸出 | 狀態 |
 |---|---|---|---|
 | R5-01 | serialwrap RC 擷取修正 | FIRST match return code | done |
-| R5-02 | Plugin loader 改良 | 移除 `sys.path` 污染 | pending |
-| R5-03 | openpyxl API 隔離 | 封裝進 adapter | pending |
+| R5-02 | Plugin loader 改良 | sys.path try/finally cleanup | done |
+| R5-03 | openpyxl API 隔離 | excel_adapter.py 封裝 | done |
 | R5-04 | Session / device binding 嚴格化 | 減少 fallback、避免靜默選錯裝置 | pending |
-| R5-05 | 測試覆蓋 >80% | 補邊界條件與 CLI integration | pending |
-| R5-06 | MD/JSON report projector | canonical result → md/json 實作 | pending |
-| R5-07 | `execute_step` heuristic 收斂 | 減少自由文字 fallback，回到 schema/evidence 驅動 | pending |
-| R5-08 | control-plane / verdict-plane 邊界測試 | 確保 Copilot 不直接決定最終 pass/fail | pending |
+| R5-05 | 測試覆蓋 >80% | coverage baseline 81% (2492 stmts) | done |
+| R5-06 | MD/JSON report projector | IReporter + MarkdownReporter + JsonReporter | done |
+| R5-07 | `execute_step` heuristic 收斂 | CommandResolver strategy pattern refactor | done |
+| R5-08 | control-plane / verdict-plane 邊界測試 | 15 boundary tests for hook/retry/timeout/band | done |
 
 ### 4.3 舊 Phase 的位置
 
@@ -135,7 +134,7 @@ R1 / R2 / R3 kernel 邊界整理
 | P0 | Scaffold（目錄 / pyproject / loader / schema / cli） | done |
 | P1 | Transport Layer（serialwrap / adb / ssh / network） | done |
 | P2 | Environment Management（topology / provisioner / validator） | partial |
-| P3 | Core Engine（runner loop / monitor / reporter / verdict merge） | partial |
+| P3 | Core Engine（runner loop / monitor / reporter / verdict merge） | done (except P3-02 Monitor) |
 | P4 | Wifi_LLAPI Plugin（完整 runtime + cases） | done |
 | P5 | CLI & Integration（dispatcher / trace / retry / tests） | done |
 
