@@ -197,7 +197,7 @@ class _FactoryRecorder:
 
 
 def _load_plugin() -> Any:
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[3]
     loader = PluginLoader(root / "plugins")
     return loader.load("wifi_llapi")
 
@@ -512,7 +512,7 @@ def test_env_command_succeeds_for_iw_link_with_ssid_metrics():
 
 
 def test_case_yaml_band_baselines_reset_radio_defaults():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     required_resets = {
         "ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}": [
             "ubus-cli WiFi.Radio.1.BeaconPeriod=100",
@@ -609,7 +609,7 @@ def test_case_yaml_band_baselines_reset_radio_defaults():
 
 
 def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     # Post-skip cases are still pending review; keep this guard focused on the
     # pre-skip YAMLs that the audit report already treats as aligned.
@@ -1027,7 +1027,7 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
 
 
 def test_pending_method_calibration_cases_use_runtime_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert {
@@ -1157,7 +1157,7 @@ def test_pending_method_calibration_cases_use_runtime_supported_contracts():
 
 
 def test_pending_readonly_associateddevice_cases_use_live_cross_checks():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert {
@@ -1253,7 +1253,7 @@ def test_pending_readonly_associateddevice_cases_use_live_cross_checks():
 
 def test_pending_readonly_associateddevice_cases_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d014 = load_case(cases_dir / "D014_avgsignalstrengthbychain.yaml")
     d014_results = {
@@ -1345,7 +1345,7 @@ def test_pending_readonly_associateddevice_cases_evaluate_live_examples():
 
 
 def test_pending_boolean_and_frequency_cases_use_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert {
@@ -1394,7 +1394,7 @@ def test_pending_boolean_and_frequency_cases_use_supported_contracts():
 
 def test_pending_boolean_and_frequency_cases_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d020 = load_case(cases_dir / "D020_downlinkshortguard.yaml")
     d020_results = {
@@ -1486,7 +1486,7 @@ def test_pending_boolean_and_frequency_cases_evaluate_live_examples():
 
 
 def test_pending_inactive_and_bandwidth_cases_use_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert {
@@ -1536,7 +1536,7 @@ def test_pending_inactive_and_bandwidth_cases_use_supported_contracts():
 
 def test_pending_inactive_and_bandwidth_cases_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d025 = load_case(cases_dir / "D025_inactive.yaml")
     d025_results = {
@@ -1628,7 +1628,7 @@ def test_pending_inactive_and_bandwidth_cases_evaluate_live_examples():
 
 
 def test_pending_not_supported_associateddevice_cases_use_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert {
@@ -1681,7 +1681,7 @@ def test_pending_not_supported_associateddevice_cases_use_supported_contracts():
 
 def test_pending_not_supported_associateddevice_cases_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d031 = load_case(cases_dir / "D031_mode_accesspoint_associateddevice.yaml")
     d031_results = {
@@ -1763,7 +1763,7 @@ def test_pending_not_supported_associateddevice_cases_evaluate_live_examples():
 
 
 def test_pending_mu_stub_cases_use_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert {
@@ -1820,7 +1820,7 @@ def test_pending_mu_stub_cases_use_supported_contracts():
 
 def test_pending_mu_stub_cases_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     mu_cases = {
         "D033_mumimotxpktscount.yaml": "MUMimoTxPktsCount",
@@ -1870,7 +1870,7 @@ def test_pending_mu_stub_cases_evaluate_live_examples():
 
 
 def test_pending_failure_shaped_associateddevice_cases_use_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert {
@@ -1959,7 +1959,7 @@ def test_pending_failure_shaped_associateddevice_cases_use_supported_contracts()
 
 def test_pending_failure_shaped_associateddevice_cases_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d036 = load_case(cases_dir / "D036_noise_accesspoint_associateddevice.yaml")
     d036_results = {
@@ -2110,7 +2110,7 @@ def test_pending_failure_shaped_associateddevice_cases_evaluate_live_examples():
     assert plugin.evaluate(d042, d042_mismatch_results) is False
 
 def test_pending_counter_stub_associateddevice_cases_use_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert {
@@ -2184,7 +2184,7 @@ def test_pending_counter_stub_associateddevice_cases_use_supported_contracts():
 
 def test_pending_counter_stub_associateddevice_cases_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     counter_cases = {
         "D039_retransmissions.yaml": {
@@ -2253,7 +2253,7 @@ def test_pending_counter_stub_associateddevice_cases_evaluate_live_examples():
 
 
 def test_pending_counter_pass_associateddevice_cases_use_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert {
@@ -2350,7 +2350,7 @@ def test_pending_counter_pass_associateddevice_cases_use_supported_contracts():
 
 def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     pass_cases = {
         "D041_rxbytes.yaml": {
@@ -2436,7 +2436,7 @@ def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
 
 
 def test_d062_uplinkmcs_uses_zero_valid_same_sta_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     raw_case = yaml.safe_load((cases_dir / "D062_uplinkmcs.yaml").read_text(encoding="utf-8"))
     case_data = load_case(cases_dir / "D062_uplinkmcs.yaml")
@@ -2499,7 +2499,7 @@ def test_d062_uplinkmcs_uses_zero_valid_same_sta_contract():
 
 def test_d062_uplinkmcs_evaluate_accepts_zero_when_driver_matches():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case_data = load_case(cases_dir / "D062_uplinkmcs.yaml")
 
     pass_results = {
@@ -2554,7 +2554,7 @@ def test_d062_uplinkmcs_evaluate_accepts_zero_when_driver_matches():
 
 
 def test_d063_uplinkshortguard_uses_same_sta_gi_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     raw_case = yaml.safe_load((cases_dir / "D063_uplinkshortguard.yaml").read_text(encoding="utf-8"))
     case_data = load_case(cases_dir / "D063_uplinkshortguard.yaml")
@@ -2618,7 +2618,7 @@ def test_d063_uplinkshortguard_uses_same_sta_gi_contract():
 
 def test_d063_uplinkshortguard_evaluate_uses_driver_gi_mapping():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case_data = load_case(cases_dir / "D063_uplinkshortguard.yaml")
 
     pass_results = {
@@ -2712,7 +2712,7 @@ def test_d063_uplinkshortguard_evaluate_uses_driver_gi_mapping():
 
 
 def test_pending_d046_d051_d060_associateddevice_cases_use_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert {
@@ -2809,7 +2809,7 @@ def test_pending_d046_d051_d060_associateddevice_cases_use_supported_contracts()
 
 def test_pending_d046_d051_d060_associateddevice_cases_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d046 = load_case(cases_dir / "D046_signalnoiseratio.yaml")
     d046_results = {
@@ -2915,7 +2915,7 @@ def test_pending_d046_d051_d060_associateddevice_cases_evaluate_live_examples():
 
 
 def test_pending_security_and_signal_associateddevice_cases_use_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert {
@@ -3038,7 +3038,7 @@ def test_pending_security_and_signal_associateddevice_cases_use_supported_contra
 
 def test_pending_security_and_signal_associateddevice_cases_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d045 = load_case(cases_dir / "D045_securitymodeenabled.yaml")
     d045_results = {
@@ -3158,7 +3158,7 @@ def test_pending_security_and_signal_associateddevice_cases_evaluate_live_exampl
 
 
 def test_d048_signalstrengthbychain_uses_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert "wifi-llapi-D048-signalstrengthbychain" in discoverable_ids
@@ -3229,7 +3229,7 @@ def test_d048_signalstrengthbychain_uses_supported_contracts():
 
 def test_d048_signalstrengthbychain_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d048 = load_case(cases_dir / "D048_signalstrengthbychain.yaml")
 
     d048_results = {
@@ -3308,7 +3308,7 @@ def test_d048_signalstrengthbychain_evaluate_live_examples():
 
 
 def test_d049_supportedhe160mcs_uses_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert "wifi-llapi-D049-supportedhe160mcs" in discoverable_ids
@@ -3390,7 +3390,7 @@ def test_d049_supportedhe160mcs_uses_supported_contracts():
 
 def test_d049_supportedhe160mcs_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d049 = load_case(cases_dir / "D049_supportedhe160mcs.yaml")
 
     d049_results = {
@@ -3462,7 +3462,7 @@ def test_d049_supportedhe160mcs_evaluate_live_examples():
 
 
 def test_d050_supportedhemcs_uses_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert "wifi-llapi-D050-supportedhemcs" in discoverable_ids
@@ -3557,7 +3557,7 @@ def test_d050_supportedhemcs_uses_supported_contracts():
 
 def test_d050_supportedhemcs_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d050 = load_case(cases_dir / "D050_supportedhemcs.yaml")
 
     d050_results = {
@@ -3665,7 +3665,7 @@ def test_d050_supportedhemcs_evaluate_live_examples():
 
 
 def test_d052_supportedvhtmcs_uses_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert "wifi-llapi-D052-supportedvhtmcs" in discoverable_ids
@@ -3753,7 +3753,7 @@ def test_d052_supportedvhtmcs_uses_supported_contracts():
 
 def test_d052_supportedvhtmcs_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d052 = load_case(cases_dir / "D052_supportedvhtmcs.yaml")
 
     d052_results = {
@@ -3849,7 +3849,7 @@ def test_d052_supportedvhtmcs_evaluate_live_examples():
 
 
 def test_d056_txerrors_uses_same_sta_driver_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert "wifi-llapi-D056-txerrors" in discoverable_ids
@@ -3919,7 +3919,7 @@ def test_d056_txerrors_uses_same_sta_driver_contract():
 
 def test_d056_txerrors_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d056 = load_case(cases_dir / "D056_txerrors.yaml")
 
     d056_results = {
@@ -4003,7 +4003,7 @@ def test_d056_txerrors_evaluate_live_examples():
 
 
 def test_d057_txmulticastpacketcount_uses_same_sta_delivery_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert "wifi-llapi-D057-txmulticastpacketcount" in discoverable_ids
@@ -4096,7 +4096,7 @@ def test_d057_txmulticastpacketcount_uses_same_sta_delivery_contract():
 
 def test_d057_txmulticastpacketcount_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d057 = load_case(cases_dir / "D057_txmulticastpacketcount.yaml")
 
     d057_results = {
@@ -4218,7 +4218,7 @@ def test_d057_txmulticastpacketcount_evaluate_live_examples():
 
 
 def test_d059_txunicastpacketcount_uses_same_sta_failure_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert "wifi-llapi-D059-txunicastpacketcount" in discoverable_ids
@@ -4302,7 +4302,7 @@ def test_d059_txunicastpacketcount_uses_same_sta_failure_contract():
 
 def test_d059_txunicastpacketcount_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d059 = load_case(cases_dir / "D059_txunicastpacketcount.yaml")
 
     d059_results = {
@@ -4408,7 +4408,7 @@ def test_d059_txunicastpacketcount_evaluate_live_examples():
 
 
 def test_d064_vendoroui_uses_same_sta_failure_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert "wifi-llapi-D064-vendoroui" in discoverable_ids
@@ -4470,7 +4470,7 @@ def test_d064_vendoroui_uses_same_sta_failure_contract():
 
 def test_d064_vendoroui_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d064 = load_case(cases_dir / "D064_vendoroui.yaml")
 
     d064_results = {
@@ -4548,7 +4548,7 @@ def test_d064_vendoroui_evaluate_live_examples():
 
 
 def test_d065_vhtcapabilities_uses_same_sta_failure_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert "wifi-llapi-D065-vhtcapabilities-accesspoint-associateddevice" in discoverable_ids
@@ -4626,7 +4626,7 @@ def test_d065_vhtcapabilities_uses_same_sta_failure_contract():
 
 def test_d065_vhtcapabilities_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d065 = load_case(cases_dir / "D065_vhtcapabilities_accesspoint_associateddevice.yaml")
 
     d065_results = {
@@ -4710,7 +4710,7 @@ def test_d065_vhtcapabilities_evaluate_live_examples():
 
 
 def test_d066_apbridgedisable_uses_ap_only_unsupported_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert "wifi-llapi-D066-apbridgedisable" in discoverable_ids
@@ -4771,7 +4771,7 @@ def test_d066_apbridgedisable_setup_env_uses_only_dut_transport(monkeypatch):
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d066 = load_case(cases_dir / "D066_apbridgedisable.yaml")
 
     assert plugin.setup_env(d066, topology=topology) is True
@@ -4787,7 +4787,7 @@ def test_d066_apbridgedisable_setup_env_uses_only_dut_transport(monkeypatch):
 
 def test_d066_apbridgedisable_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d066 = load_case(cases_dir / "D066_apbridgedisable.yaml")
 
     d066_results = {
@@ -4903,7 +4903,7 @@ def test_d066_apbridgedisable_evaluate_live_examples():
 
 
 def test_d067_bridgeinterface_uses_ap_only_multiband_pass_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert "wifi-llapi-D067-bridgeinterface" in discoverable_ids
@@ -4971,7 +4971,7 @@ def test_d067_bridgeinterface_setup_env_uses_only_dut_transport(monkeypatch):
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d067 = load_case(cases_dir / "D067_bridgeinterface.yaml")
 
     assert plugin.setup_env(d067, topology=topology) is True
@@ -4985,7 +4985,7 @@ def test_d067_bridgeinterface_setup_env_uses_only_dut_transport(monkeypatch):
 
 def test_d067_bridgeinterface_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d067 = load_case(cases_dir / "D067_bridgeinterface.yaml")
 
     d067_results = {
@@ -5103,7 +5103,7 @@ def test_d067_bridgeinterface_evaluate_live_examples():
 
 
 def test_d068_discoverymethodenabled_accesspoint_fils_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d068_raw = yaml.safe_load(
         (cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml").read_text(encoding="utf-8")
@@ -5155,7 +5155,7 @@ def test_d068_discoverymethodenabled_accesspoint_fils_setup_env_uses_only_dut_tr
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d068 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml")
 
     assert plugin.setup_env(d068, topology=topology) is True
@@ -5169,7 +5169,7 @@ def test_d068_discoverymethodenabled_accesspoint_fils_setup_env_uses_only_dut_tr
 
 def test_d068_discoverymethodenabled_accesspoint_fils_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d068 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml")
 
     d068_results = {
@@ -5318,7 +5318,7 @@ def test_d068_discoverymethodenabled_accesspoint_fils_evaluate_live_examples():
 
 
 def test_d069_discoverymethodenabled_accesspoint_upr_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d069_raw = yaml.safe_load(
         (cases_dir / "D069_discoverymethodenabled_accesspoint_upr.yaml").read_text(encoding="utf-8")
@@ -5363,7 +5363,7 @@ def test_d069_discoverymethodenabled_accesspoint_upr_setup_env_uses_only_dut_tra
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d069 = load_case(cases_dir / "D069_discoverymethodenabled_accesspoint_upr.yaml")
 
     assert plugin.setup_env(d069, topology=topology) is True
@@ -5377,7 +5377,7 @@ def test_d069_discoverymethodenabled_accesspoint_upr_setup_env_uses_only_dut_tra
 
 def test_d069_discoverymethodenabled_accesspoint_upr_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d069 = load_case(cases_dir / "D069_discoverymethodenabled_accesspoint_upr.yaml")
 
     d069_results = {
@@ -5484,7 +5484,7 @@ def test_d069_discoverymethodenabled_accesspoint_upr_evaluate_live_examples():
 
 
 def test_d070_discoverymethodenabled_accesspoint_rnr_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d070_raw = yaml.safe_load(
         (cases_dir / "D070_discoverymethodenabled_accesspoint_rnr.yaml").read_text(encoding="utf-8")
@@ -5529,7 +5529,7 @@ def test_d070_discoverymethodenabled_accesspoint_rnr_setup_env_uses_only_dut_tra
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d070 = load_case(cases_dir / "D070_discoverymethodenabled_accesspoint_rnr.yaml")
 
     assert plugin.setup_env(d070, topology=topology) is True
@@ -5543,7 +5543,7 @@ def test_d070_discoverymethodenabled_accesspoint_rnr_setup_env_uses_only_dut_tra
 
 def test_d070_discoverymethodenabled_accesspoint_rnr_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d070 = load_case(cases_dir / "D070_discoverymethodenabled_accesspoint_rnr.yaml")
 
     d070_results = {
@@ -5670,7 +5670,7 @@ def test_d070_discoverymethodenabled_accesspoint_rnr_evaluate_live_examples():
 
 
 def test_d368_srgbsscolorbitmap_radio_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d368_raw = yaml.safe_load((cases_dir / "D368_srgbsscolorbitmap.yaml").read_text(encoding="utf-8"))
     d368 = load_case(cases_dir / "D368_srgbsscolorbitmap.yaml")
@@ -5714,7 +5714,7 @@ def test_d368_srgbsscolorbitmap_setup_env_uses_only_dut_transport(monkeypatch):
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d368 = load_case(cases_dir / "D368_srgbsscolorbitmap.yaml")
 
     assert plugin.setup_env(d368, topology=topology) is True
@@ -5728,7 +5728,7 @@ def test_d368_srgbsscolorbitmap_setup_env_uses_only_dut_transport(monkeypatch):
 
 def test_d368_srgbsscolorbitmap_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d368 = load_case(cases_dir / "D368_srgbsscolorbitmap.yaml")
 
     d368_results = {
@@ -5838,7 +5838,7 @@ def test_d368_srgbsscolorbitmap_evaluate_live_examples():
 
 
 def test_d371_srgpartialbssidbitmap_radio_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d371_raw = yaml.safe_load((cases_dir / "D371_srgpartialbssidbitmap.yaml").read_text(encoding="utf-8"))
     d371 = load_case(cases_dir / "D371_srgpartialbssidbitmap.yaml")
@@ -5883,7 +5883,7 @@ def test_d371_srgpartialbssidbitmap_setup_env_uses_only_dut_transport(monkeypatc
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d371 = load_case(cases_dir / "D371_srgpartialbssidbitmap.yaml")
 
     assert plugin.setup_env(d371, topology=topology) is True
@@ -5897,7 +5897,7 @@ def test_d371_srgpartialbssidbitmap_setup_env_uses_only_dut_transport(monkeypatc
 
 def test_d371_srgpartialbssidbitmap_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d371 = load_case(cases_dir / "D371_srgpartialbssidbitmap.yaml")
 
     d371_results = {
@@ -6007,7 +6007,7 @@ def test_d371_srgpartialbssidbitmap_evaluate_live_examples():
 
 
 def test_d072_enable_accesspoint_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d072_raw = yaml.safe_load((cases_dir / "D072_enable_accesspoint.yaml").read_text(encoding="utf-8"))
     d072 = load_case(cases_dir / "D072_enable_accesspoint.yaml")
@@ -6050,7 +6050,7 @@ def test_d072_enable_accesspoint_setup_env_uses_only_dut_transport(monkeypatch):
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d072 = load_case(cases_dir / "D072_enable_accesspoint.yaml")
 
     assert plugin.setup_env(d072, topology=topology) is True
@@ -6068,7 +6068,7 @@ def test_d072_enable_accesspoint_setup_env_uses_only_dut_transport(monkeypatch):
 
 def test_d072_enable_accesspoint_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d072 = load_case(cases_dir / "D072_enable_accesspoint.yaml")
 
     d072_results = {
@@ -6214,7 +6214,7 @@ def test_d072_enable_accesspoint_evaluate_live_examples():
 
 
 def test_d073_ftoverdsenable_accesspoint_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d073_raw = yaml.safe_load((cases_dir / "D073_ftoverdsenable.yaml").read_text(encoding="utf-8"))
     d073 = load_case(cases_dir / "D073_ftoverdsenable.yaml")
@@ -6258,7 +6258,7 @@ def test_d073_ftoverdsenable_accesspoint_setup_env_uses_only_dut_transport(monke
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d073 = load_case(cases_dir / "D073_ftoverdsenable.yaml")
 
     assert plugin.setup_env(d073, topology=topology) is True
@@ -6282,7 +6282,7 @@ def test_d073_ftoverdsenable_accesspoint_setup_env_uses_only_dut_transport(monke
 
 def test_d073_ftoverdsenable_accesspoint_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d073 = load_case(cases_dir / "D073_ftoverdsenable.yaml")
 
     def state_output(suffix: str, enabled: int, ft: int, mobility_domain: int) -> str:
@@ -6413,7 +6413,7 @@ def test_d073_ftoverdsenable_accesspoint_evaluate_live_examples():
 
 
 def test_d074_mobilitydomain_accesspoint_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d074_raw = yaml.safe_load((cases_dir / "D074_mobilitydomain.yaml").read_text(encoding="utf-8"))
     d074 = load_case(cases_dir / "D074_mobilitydomain.yaml")
@@ -6458,7 +6458,7 @@ def test_d074_mobilitydomain_accesspoint_setup_env_uses_only_dut_transport(monke
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d074 = load_case(cases_dir / "D074_mobilitydomain.yaml")
 
     assert plugin.setup_env(d074, topology=topology) is True
@@ -6478,7 +6478,7 @@ def test_d074_mobilitydomain_accesspoint_setup_env_uses_only_dut_transport(monke
 
 def test_d074_mobilitydomain_accesspoint_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d074 = load_case(cases_dir / "D074_mobilitydomain.yaml")
 
     def state_output(suffix: str, enabled: int, mobility_domain: int) -> str:
@@ -6590,7 +6590,7 @@ def test_d074_mobilitydomain_accesspoint_evaluate_live_examples():
 
 
 def test_d077_interworkingenable_accesspoint_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d077_raw = yaml.safe_load((cases_dir / "D077_interworkingenable.yaml").read_text(encoding="utf-8"))
     d077 = load_case(cases_dir / "D077_interworkingenable.yaml")
@@ -6635,7 +6635,7 @@ def test_d077_interworkingenable_accesspoint_setup_env_uses_only_dut_transport(m
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d077 = load_case(cases_dir / "D077_interworkingenable.yaml")
 
     assert plugin.setup_env(d077, topology=topology) is True
@@ -6654,7 +6654,7 @@ def test_d077_interworkingenable_accesspoint_setup_env_uses_only_dut_transport(m
 
 def test_d077_interworkingenable_accesspoint_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d077 = load_case(cases_dir / "D077_interworkingenable.yaml")
 
     def state_output(suffix: str, interworking: int) -> str:
@@ -6759,7 +6759,7 @@ def test_d077_interworkingenable_accesspoint_evaluate_live_examples():
 
 
 def test_d078_qosmapset_accesspoint_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     requested = "0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255"
 
     d078_raw = yaml.safe_load((cases_dir / "D078_qosmapset.yaml").read_text(encoding="utf-8"))
@@ -6806,7 +6806,7 @@ def test_d078_qosmapset_accesspoint_setup_env_uses_only_dut_transport(monkeypatc
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d078 = load_case(cases_dir / "D078_qosmapset.yaml")
 
     assert plugin.setup_env(d078, topology=topology) is True
@@ -6831,7 +6831,7 @@ def test_d078_qosmapset_accesspoint_setup_env_uses_only_dut_transport(monkeypatc
 
 def test_d078_qosmapset_accesspoint_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d078 = load_case(cases_dir / "D078_qosmapset.yaml")
     requested = "0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255"
 
@@ -6941,7 +6941,7 @@ def test_d078_qosmapset_accesspoint_evaluate_live_examples():
 
 
 def test_d079_macfilteraddresslist_accesspoint_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d079_raw = yaml.safe_load((cases_dir / "D079_macfilteraddresslist.yaml").read_text(encoding="utf-8"))
     d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
@@ -6994,7 +6994,7 @@ def test_d079_macfilteraddresslist_accesspoint_setup_env_uses_only_dut_transport
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
 
     assert plugin.setup_env(d079, topology=topology) is True
@@ -7031,7 +7031,7 @@ def test_d079_macfilteraddresslist_accesspoint_setup_env_uses_only_dut_transport
 
 def test_d079_macfilteraddresslist_accesspoint_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
 
     def list_output(suffix: str, value: str) -> str:
@@ -7139,7 +7139,7 @@ def test_d079_macfilteraddresslist_accesspoint_evaluate_live_examples():
 
 
 def test_d080_entry_accesspoint_macfiltering_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d080_raw = yaml.safe_load((cases_dir / "D080_entry.yaml").read_text(encoding="utf-8"))
     d080 = load_case(cases_dir / "D080_entry.yaml")
@@ -7191,7 +7191,7 @@ def test_d080_entry_accesspoint_macfiltering_setup_env_uses_only_dut_transport(m
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d080 = load_case(cases_dir / "D080_entry.yaml")
 
     assert plugin.setup_env(d080, topology=topology) is True
@@ -7228,7 +7228,7 @@ def test_d080_entry_accesspoint_macfiltering_setup_env_uses_only_dut_transport(m
 
 def test_d080_entry_accesspoint_macfiltering_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d080 = load_case(cases_dir / "D080_entry.yaml")
 
     def entry_output(suffix: str, count: int, alias: str, value: str) -> str:
@@ -7319,7 +7319,7 @@ def test_d080_entry_accesspoint_macfiltering_evaluate_live_examples():
 
 
 def test_d081_mode_accesspoint_macfiltering_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d081_raw = yaml.safe_load(
         (cases_dir / "D081_mode_accesspoint_macfiltering.yaml").read_text(encoding="utf-8")
@@ -7362,7 +7362,7 @@ def test_d081_mode_accesspoint_macfiltering_setup_env_uses_only_dut_transport(mo
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d081 = load_case(cases_dir / "D081_mode_accesspoint_macfiltering.yaml")
 
     assert plugin.setup_env(d081, topology=topology) is True
@@ -7381,7 +7381,7 @@ def test_d081_mode_accesspoint_macfiltering_setup_env_uses_only_dut_transport(mo
 
 def test_d081_mode_accesspoint_macfiltering_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d081 = load_case(cases_dir / "D081_mode_accesspoint_macfiltering.yaml")
 
     def mode_output(prefix: str, mode: str, macaddr_acl: str, acl_state: str, phase: str) -> str:
@@ -7492,7 +7492,7 @@ def test_d081_mode_accesspoint_macfiltering_evaluate_live_examples():
 
 
 def test_d082_maxassociateddevices_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d082_raw = yaml.safe_load((cases_dir / "D082_maxassociateddevices.yaml").read_text(encoding="utf-8"))
     d082 = load_case(cases_dir / "D082_maxassociateddevices.yaml")
@@ -7533,7 +7533,7 @@ def test_d082_maxassociateddevices_setup_env_uses_only_dut_transport(monkeypatch
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d082 = load_case(cases_dir / "D082_maxassociateddevices.yaml")
 
     assert plugin.setup_env(d082, topology=topology) is True
@@ -7552,7 +7552,7 @@ def test_d082_maxassociateddevices_setup_env_uses_only_dut_transport(monkeypatch
 
 def test_d082_maxassociateddevices_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d082 = load_case(cases_dir / "D082_maxassociateddevices.yaml")
 
     def baseline_output(prefix: str) -> str:
@@ -7670,7 +7670,7 @@ def test_d082_maxassociateddevices_evaluate_live_examples():
 
 
 def test_d083_mboenable_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d083_raw = yaml.safe_load((cases_dir / "D083_mboenable.yaml").read_text(encoding="utf-8"))
     d083 = load_case(cases_dir / "D083_mboenable.yaml")
@@ -7712,7 +7712,7 @@ def test_d083_mboenable_setup_env_uses_only_dut_transport(monkeypatch):
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d083 = load_case(cases_dir / "D083_mboenable.yaml")
 
     assert plugin.setup_env(d083, topology=topology) is True
@@ -7731,7 +7731,7 @@ def test_d083_mboenable_setup_env_uses_only_dut_transport(monkeypatch):
 
 def test_d083_mboenable_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d083 = load_case(cases_dir / "D083_mboenable.yaml")
 
     def baseline_output(prefix: str) -> str:
@@ -7850,7 +7850,7 @@ def test_d083_mboenable_evaluate_live_examples():
 
 
 def test_d084_multiaptype_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d084_raw = yaml.safe_load((cases_dir / "D084_multiaptype.yaml").read_text(encoding="utf-8"))
     d084 = load_case(cases_dir / "D084_multiaptype.yaml")
@@ -7892,7 +7892,7 @@ def test_d084_multiaptype_setup_env_uses_only_dut_transport(monkeypatch):
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d084 = load_case(cases_dir / "D084_multiaptype.yaml")
 
     assert plugin.setup_env(d084, topology=topology) is True
@@ -7911,7 +7911,7 @@ def test_d084_multiaptype_setup_env_uses_only_dut_transport(monkeypatch):
 
 def test_d084_multiaptype_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d084 = load_case(cases_dir / "D084_multiaptype.yaml")
 
     def baseline_output(prefix: str) -> str:
@@ -8036,7 +8036,7 @@ def test_d084_multiaptype_evaluate_live_examples():
 
 
 def test_d085_neighbour_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d085_raw = yaml.safe_load((cases_dir / "D085_neighbour.yaml").read_text(encoding="utf-8"))
     d085 = load_case(cases_dir / "D085_neighbour.yaml")
@@ -8079,7 +8079,7 @@ def test_d085_neighbour_setup_env_uses_only_dut_transport(monkeypatch):
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d085 = load_case(cases_dir / "D085_neighbour.yaml")
 
     assert plugin.setup_env(d085, topology=topology) is True
@@ -8098,7 +8098,7 @@ def test_d085_neighbour_setup_env_uses_only_dut_transport(monkeypatch):
 
 def test_d085_neighbour_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d085 = load_case(cases_dir / "D085_neighbour.yaml")
 
     def baseline_output(prefix: str) -> str:
@@ -8258,7 +8258,7 @@ def test_d085_neighbour_evaluate_live_examples():
 
 
 def test_d086_encryptionmode_accesspoint_security_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d086_raw = yaml.safe_load((cases_dir / "D086_encryptionmode_accesspoint_security.yaml").read_text(encoding="utf-8"))
     d086 = load_case(cases_dir / "D086_encryptionmode_accesspoint_security.yaml")
@@ -8300,7 +8300,7 @@ def test_d086_encryptionmode_accesspoint_security_setup_env_uses_only_dut_transp
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d086 = load_case(cases_dir / "D086_encryptionmode_accesspoint_security.yaml")
 
     assert plugin.setup_env(d086, topology=topology) is True
@@ -8319,7 +8319,7 @@ def test_d086_encryptionmode_accesspoint_security_setup_env_uses_only_dut_transp
 
 def test_d086_encryptionmode_accesspoint_security_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d086 = load_case(cases_dir / "D086_encryptionmode_accesspoint_security.yaml")
 
     def mode_output(prefix: str, value: str) -> str:
@@ -8406,7 +8406,7 @@ def test_d086_encryptionmode_accesspoint_security_evaluate_live_examples():
 
 
 def test_d087_keypassphrase_accesspoint_security_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d087_raw = yaml.safe_load((cases_dir / "D087_keypassphrase_accesspoint_security.yaml").read_text(encoding="utf-8"))
     d087 = load_case(cases_dir / "D087_keypassphrase_accesspoint_security.yaml")
@@ -8449,7 +8449,7 @@ def test_d087_keypassphrase_accesspoint_security_setup_env_uses_only_dut_transpo
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d087 = load_case(cases_dir / "D087_keypassphrase_accesspoint_security.yaml")
 
     assert plugin.setup_env(d087, topology=topology) is True
@@ -8468,7 +8468,7 @@ def test_d087_keypassphrase_accesspoint_security_setup_env_uses_only_dut_transpo
 
 def test_d087_keypassphrase_accesspoint_security_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d087 = load_case(cases_dir / "D087_keypassphrase_accesspoint_security.yaml")
 
     def baseline_output(prefix: str, getter: str, hostapd: str, sae: str | None = None) -> str:
@@ -8623,7 +8623,7 @@ def test_d087_keypassphrase_accesspoint_security_evaluate_live_examples():
 
 
 def test_d088_mfpconfig_accesspoint_security_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d088_raw = yaml.safe_load((cases_dir / "D088_mfpconfig_accesspoint_security.yaml").read_text(encoding="utf-8"))
     d088 = load_case(cases_dir / "D088_mfpconfig_accesspoint_security.yaml")
@@ -8665,7 +8665,7 @@ def test_d088_mfpconfig_accesspoint_security_setup_env_uses_only_dut_transport(m
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d088 = load_case(cases_dir / "D088_mfpconfig_accesspoint_security.yaml")
 
     assert plugin.setup_env(d088, topology=topology) is True
@@ -8684,7 +8684,7 @@ def test_d088_mfpconfig_accesspoint_security_setup_env_uses_only_dut_transport(m
 
 def test_d088_mfpconfig_accesspoint_security_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d088 = load_case(cases_dir / "D088_mfpconfig_accesspoint_security.yaml")
 
     def mode_output(prefix: str, value: str) -> str:
@@ -8768,7 +8768,7 @@ def test_d088_mfpconfig_accesspoint_security_evaluate_live_examples():
 
 
 def test_d089_modeenabled_accesspoint_security_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d089 = load_case(cases_dir / "D089_modeenabled_accesspoint_security.yaml")
     assert d089["id"] == "wifi-llapi-D089-modeenabled-accesspoint-security"
     assert d089["source"]["row"] == 81
@@ -8787,7 +8787,7 @@ def test_d089_modeenabled_accesspoint_security_setup_env_uses_only_dut_transport
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d089 = load_case(cases_dir / "D089_modeenabled_accesspoint_security.yaml")
 
     assert plugin.setup_env(d089, topology=topology) is True
@@ -8803,7 +8803,7 @@ def test_d089_modeenabled_accesspoint_security_setup_env_uses_only_dut_transport
 
 def test_d089_modeenabled_accesspoint_security_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d089 = load_case(cases_dir / "D089_modeenabled_accesspoint_security.yaml")
 
     def baseline_output(band: str, mode: str, keymgmt: str, w: str) -> str:
@@ -8877,7 +8877,7 @@ def test_d089_modeenabled_accesspoint_security_evaluate_live_examples():
 
 
 def test_d090_modessupported_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d090 = load_case(cases_dir / "D090_modessupported.yaml")
     assert d090["id"] == "wifi-llapi-D090-modessupported"
     assert d090["source"]["row"] == 82
@@ -8894,7 +8894,7 @@ def test_d090_modessupported_setup_env_uses_only_dut_transport(monkeypatch):
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d090 = load_case(cases_dir / "D090_modessupported.yaml")
 
     assert plugin.setup_env(d090, topology=topology) is True
@@ -8906,7 +8906,7 @@ def test_d090_modessupported_setup_env_uses_only_dut_transport(monkeypatch):
 
 
 def test_d091_presharedkey_accesspoint_security_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d091 = load_case(cases_dir / "D091_presharedkey_accesspoint_security.yaml")
     assert d091["id"] == "wifi-llapi-D091-presharedkey-accesspoint-security"
     assert d091["source"]["row"] == 83
@@ -8927,7 +8927,7 @@ def test_d091_presharedkey_accesspoint_security_setup_env_uses_only_dut_transpor
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d091 = load_case(cases_dir / "D091_presharedkey_accesspoint_security.yaml")
 
     assert plugin.setup_env(d091, topology=topology) is True
@@ -8940,7 +8940,7 @@ def test_d091_presharedkey_accesspoint_security_setup_env_uses_only_dut_transpor
 
 def test_d091_presharedkey_accesspoint_security_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d091 = load_case(cases_dir / "D091_presharedkey_accesspoint_security.yaml")
 
     psk = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
@@ -8982,7 +8982,7 @@ def test_d091_presharedkey_accesspoint_security_evaluate_live_examples():
 
 
 def test_d092_rekeyinginterval_contract():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d092 = load_case(cases_dir / "D092_rekeyinginterval.yaml")
     assert d092["id"] == "wifi-llapi-D092-rekeyinginterval"
     assert d092["source"]["row"] == 92
@@ -9003,7 +9003,7 @@ def test_d092_rekeyinginterval_setup_env_uses_only_dut_transport(monkeypatch):
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d092 = load_case(cases_dir / "D092_rekeyinginterval.yaml")
 
     assert plugin.setup_env(d092, topology=topology) is True
@@ -9014,7 +9014,7 @@ def test_d092_rekeyinginterval_setup_env_uses_only_dut_transport(monkeypatch):
 
 def test_d092_rekeyinginterval_evaluate_live_examples():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d092 = load_case(cases_dir / "D092_rekeyinginterval.yaml")
 
     d092_results = {
@@ -9086,7 +9086,7 @@ def test_d093_sha256enable_setup_env_uses_only_dut_transport(monkeypatch):
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d093 = load_case(cases_dir / "D093_sha256enable.yaml")
 
     assert plugin.setup_env(d093, topology=topology) is True
@@ -9098,7 +9098,7 @@ def test_d093_sha256enable_setup_env_uses_only_dut_transport(monkeypatch):
 def test_d093_sha256enable_evaluate_live_examples():
     """D093 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d093 = load_case(cases_dir / "D093_sha256enable.yaml")
 
     d093_results = {
@@ -9152,7 +9152,7 @@ def test_d094_wepkey_setup_env_uses_only_dut_transport(monkeypatch):
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d094 = load_case(cases_dir / "D094_wepkey_accesspoint_security.yaml")
 
     assert plugin.setup_env(d094, topology=topology) is True
@@ -9164,7 +9164,7 @@ def test_d094_wepkey_setup_env_uses_only_dut_transport(monkeypatch):
 def test_d094_wepkey_evaluate_live_examples():
     """D094 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d094 = load_case(cases_dir / "D094_wepkey_accesspoint_security.yaml")
 
     d094_results = {
@@ -9197,7 +9197,7 @@ def test_d094_wepkey_evaluate_live_examples():
 
 def test_d095_ssidadvertisementenabled_contract():
     """D095 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d095 = load_case(cases_dir / "D095_ssidadvertisementenabled.yaml")
     assert d095["source"]["row"] == 95
     assert d095["source"]["api"] == "SSIDAdvertisementEnabled"
@@ -9213,7 +9213,7 @@ def test_d095_ssidadvertisementenabled_contract():
 def test_d095_ssidadvertisementenabled_setup_env_uses_only_dut_transport(monkeypatch):
     """D095 topology uses DUT-only; setup_env should not require STA."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d095 = load_case(cases_dir / "D095_ssidadvertisementenabled.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -9227,7 +9227,7 @@ def test_d095_ssidadvertisementenabled_setup_env_uses_only_dut_transport(monkeyp
 def test_d095_ssidadvertisementenabled_evaluate_live_examples():
     """D095 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d095 = load_case(cases_dir / "D095_ssidadvertisementenabled.yaml")
 
     d095_results = {
@@ -9260,7 +9260,7 @@ def test_d095_ssidadvertisementenabled_evaluate_live_examples():
 
 def test_d096_status_accesspoint_contract():
     """D096 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d096 = load_case(cases_dir / "D096_status_accesspoint.yaml")
     assert d096["source"]["row"] == 96
     assert d096["source"]["api"] == "Status"
@@ -9276,7 +9276,7 @@ def test_d096_status_accesspoint_contract():
 def test_d096_status_accesspoint_setup_env(monkeypatch):
     """D096 is DUT-only; setup_env should only request COM0."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d096 = load_case(cases_dir / "D096_status_accesspoint.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -9290,7 +9290,7 @@ def test_d096_status_accesspoint_setup_env(monkeypatch):
 def test_d096_status_accesspoint_evaluate_live_examples():
     """D096 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d096 = load_case(cases_dir / "D096_status_accesspoint.yaml")
 
     d096_results = {
@@ -9314,7 +9314,7 @@ def test_d096_status_accesspoint_evaluate_live_examples():
 
 def test_d097_uapsdcapability_contract():
     """D097 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d097 = load_case(cases_dir / "D097_uapsdcapability.yaml")
     assert d097["source"]["row"] == 97
     assert d097["source"]["api"] == "UAPSDCapability"
@@ -9330,7 +9330,7 @@ def test_d097_uapsdcapability_contract():
 def test_d097_uapsdcapability_setup_env(monkeypatch):
     """D097 is DUT-only; setup_env should only request COM0."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d097 = load_case(cases_dir / "D097_uapsdcapability.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -9344,7 +9344,7 @@ def test_d097_uapsdcapability_setup_env(monkeypatch):
 def test_d097_uapsdcapability_evaluate_live_examples():
     """D097 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d097 = load_case(cases_dir / "D097_uapsdcapability.yaml")
 
     d097_results = {
@@ -9371,7 +9371,7 @@ def test_d097_uapsdcapability_evaluate_live_examples():
 
 def test_d098_uapsdenable_contract():
     """D098 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D098_uapsdenable.yaml")
     assert case["source"]["row"] == 98
     assert case["source"]["api"] == "UAPSDEnable"
@@ -9386,7 +9386,7 @@ def test_d098_uapsdenable_contract():
 def test_d098_uapsdenable_setup_env(monkeypatch):
     """D098 is DUT-only; setup_env should only request COM0."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d098 = load_case(cases_dir / "D098_uapsdenable.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -9400,7 +9400,7 @@ def test_d098_uapsdenable_setup_env(monkeypatch):
 def test_d098_uapsdenable_evaluate_live_examples():
     """D098 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d098 = load_case(cases_dir / "D098_uapsdenable.yaml")
 
     d098_results = {
@@ -9451,7 +9451,7 @@ def test_d098_uapsdenable_evaluate_live_examples():
 
 def test_d099_vendorie_contract():
     """D099 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D099_vendorie.yaml")
     assert case["source"]["row"] == 99
     assert len(case["steps"]) == 3
@@ -9465,7 +9465,7 @@ def test_d099_vendorie_contract():
 def test_d099_vendorie_setup_env(monkeypatch):
     """D099 is DUT-only; setup_env should only request COM0."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d099 = load_case(cases_dir / "D099_vendorie.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -9479,7 +9479,7 @@ def test_d099_vendorie_setup_env(monkeypatch):
 def test_d099_vendorie_evaluate_live_examples():
     """D099 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d099 = load_case(cases_dir / "D099_vendorie.yaml")
 
     d099_results = {
@@ -9518,7 +9518,7 @@ def test_d099_vendorie_evaluate_live_examples():
 
 def test_d100_wdsenable_contract():
     """D100 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D100_wdsenable.yaml")
     assert case["source"]["row"] == 100
     assert case["llapi_support"] == "Support"
@@ -9531,7 +9531,7 @@ def test_d100_wdsenable_contract():
 def test_d100_wdsenable_setup_env(monkeypatch):
     """D100 is DUT-only; setup_env should only request COM0."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d100 = load_case(cases_dir / "D100_wdsenable.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -9545,7 +9545,7 @@ def test_d100_wdsenable_setup_env(monkeypatch):
 def test_d100_wdsenable_evaluate():
     """D100 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d100 = load_case(cases_dir / "D100_wdsenable.yaml")
     d100_results = {
         "steps": {
@@ -9585,7 +9585,7 @@ def test_d100_wdsenable_evaluate():
 
 def test_d101_wmmcapability_contract():
     """D101 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D101_wmmcapability.yaml")
     assert case["source"]["row"] == 101
     assert case["llapi_support"] == "Support"
@@ -9598,7 +9598,7 @@ def test_d101_wmmcapability_contract():
 def test_d101_wmmcapability_setup_env(monkeypatch):
     """D101 is DUT-only; setup_env should only request COM0."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d101 = load_case(cases_dir / "D101_wmmcapability.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -9612,7 +9612,7 @@ def test_d101_wmmcapability_setup_env(monkeypatch):
 def test_d101_wmmcapability_evaluate():
     """D101 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d101 = load_case(cases_dir / "D101_wmmcapability.yaml")
     results = {
         "steps": {
@@ -9638,7 +9638,7 @@ def test_d101_wmmcapability_evaluate():
 
 def test_d102_wmmenable_contract():
     """D102 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D102_wmmenable.yaml")
     assert case["source"]["row"] == 102
     assert case["llapi_support"] == "Not Support"
@@ -9650,7 +9650,7 @@ def test_d102_wmmenable_contract():
 def test_d102_wmmenable_setup_env(monkeypatch):
     """D102 is DUT-only; setup_env should only request COM0."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d102 = load_case(cases_dir / "D102_wmmenable.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -9663,7 +9663,7 @@ def test_d102_wmmenable_setup_env(monkeypatch):
 def test_d102_wmmenable_evaluate():
     """D102 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d102 = load_case(cases_dir / "D102_wmmenable.yaml")
     results = {
         "steps": {
@@ -9689,7 +9689,7 @@ def test_d102_wmmenable_evaluate():
 
 def test_d103_configmethodsenabled_contract():
     """D103 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D103_configmethodsenabled.yaml")
     assert case["source"]["row"] == 103
     assert case["llapi_support"] == "Support"
@@ -9701,7 +9701,7 @@ def test_d103_configmethodsenabled_contract():
 def test_d103_configmethodsenabled_setup_env(monkeypatch):
     """D103 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d103 = load_case(cases_dir / "D103_configmethodsenabled.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -9713,7 +9713,7 @@ def test_d103_configmethodsenabled_setup_env(monkeypatch):
 def test_d103_configmethodsenabled_evaluate():
     """D103 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d103 = load_case(cases_dir / "D103_configmethodsenabled.yaml")
     results = {
         "steps": {
@@ -9739,7 +9739,7 @@ def test_d103_configmethodsenabled_evaluate():
 
 def test_d104_configmethodssupported_contract():
     """D104 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D104_configmethodssupported.yaml")
     assert case["source"]["row"] == 104
     assert case["llapi_support"] == "Not Support"
@@ -9750,7 +9750,7 @@ def test_d104_configmethodssupported_contract():
 def test_d104_configmethodssupported_evaluate():
     """D104 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d104 = load_case(cases_dir / "D104_configmethodssupported.yaml")
     results = {
         "steps": {
@@ -9776,7 +9776,7 @@ def test_d104_configmethodssupported_evaluate():
 
 def test_d105_configured_contract():
     """D105 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D105_configured.yaml")
     assert case["source"]["row"] == 105
     assert case["llapi_support"] == "Support"
@@ -9787,7 +9787,7 @@ def test_d105_configured_contract():
 def test_d105_configured_evaluate():
     """D105 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d105 = load_case(cases_dir / "D105_configured.yaml")
     results = {
         "steps": {
@@ -9813,7 +9813,7 @@ def test_d105_configured_evaluate():
 
 def test_d106_wps_enable_contract():
     """D106 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D106_enable_accesspoint_wps.yaml")
     assert case["source"]["row"] == 106
     assert case["llapi_support"] == "Support"
@@ -9825,7 +9825,7 @@ def test_d106_wps_enable_contract():
 def test_d106_wps_enable_setup_env(monkeypatch):
     """D106 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d106 = load_case(cases_dir / "D106_enable_accesspoint_wps.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -9837,7 +9837,7 @@ def test_d106_wps_enable_setup_env(monkeypatch):
 def test_d106_wps_enable_evaluate():
     """D106 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d106 = load_case(cases_dir / "D106_enable_accesspoint_wps.yaml")
     results = {
         "steps": {
@@ -9863,7 +9863,7 @@ def test_d106_wps_enable_evaluate():
 
 def test_d107_pairinginprogress_contract():
     """D107 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D107_pairinginprogress_accesspoint_wps.yaml")
     assert case["source"]["row"] == 107
     assert case["llapi_support"] == "Support"
@@ -9874,7 +9874,7 @@ def test_d107_pairinginprogress_contract():
 def test_d107_pairinginprogress_evaluate():
     """D107 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d107 = load_case(cases_dir / "D107_pairinginprogress_accesspoint_wps.yaml")
     results = {
         "steps": {
@@ -9900,7 +9900,7 @@ def test_d107_pairinginprogress_evaluate():
 
 def test_d108_relaycredentialsenable_contract():
     """D108 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D108_relaycredentialsenable.yaml")
     assert case["source"]["row"] == 108
     assert case["llapi_support"] == "Not Support"
@@ -9911,7 +9911,7 @@ def test_d108_relaycredentialsenable_contract():
 def test_d108_relaycredentialsenable_evaluate():
     """D108 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d108 = load_case(cases_dir / "D108_relaycredentialsenable.yaml")
     results = {
         "steps": {
@@ -9937,7 +9937,7 @@ def test_d108_relaycredentialsenable_evaluate():
 
 def test_d109_selfpin_contract():
     """D109 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D109_selfpin.yaml")
     assert case["source"]["row"] == 109
     assert case["llapi_support"] == "Support"
@@ -9949,7 +9949,7 @@ def test_d109_selfpin_contract():
 def test_d109_selfpin_setup_env(monkeypatch):
     """D109 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d109 = load_case(cases_dir / "D109_selfpin.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -9961,7 +9961,7 @@ def test_d109_selfpin_setup_env(monkeypatch):
 def test_d109_selfpin_evaluate():
     """D109 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d109 = load_case(cases_dir / "D109_selfpin.yaml")
     results = {
         "steps": {
@@ -9988,7 +9988,7 @@ def test_d109_selfpin_evaluate():
 
 def test_d110_uuid_contract():
     """D110 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D110_uuid.yaml")
     assert case["source"]["row"] == 110
     assert case["llapi_support"] == "Support"
@@ -10000,7 +10000,7 @@ def test_d110_uuid_contract():
 def test_d110_uuid_setup_env(monkeypatch):
     """D110 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d110 = load_case(cases_dir / "D110_uuid.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10012,7 +10012,7 @@ def test_d110_uuid_setup_env(monkeypatch):
 def test_d110_uuid_evaluate():
     """D110 all-pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d110 = load_case(cases_dir / "D110_uuid.yaml")
     results = {
         "steps": {
@@ -10038,7 +10038,7 @@ def test_d110_uuid_evaluate():
 
 def test_d111_getstationstats_accesspoint_contract():
     """D111 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D111_getstationstats_accesspoint.yaml")
     assert case["source"]["row"] == 111
     assert case["llapi_support"] == "Support"
@@ -10050,7 +10050,7 @@ def test_d111_getstationstats_accesspoint_contract():
 def test_d111_getstationstats_accesspoint_setup_env(monkeypatch):
     """D111 needs STA + DUT."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d111 = load_case(cases_dir / "D111_getstationstats_accesspoint.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10062,7 +10062,7 @@ def test_d111_getstationstats_accesspoint_setup_env(monkeypatch):
 def test_d111_getstationstats_accesspoint_evaluate():
     """D111 all-pass criteria met with live-shaped getStationStats output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d111 = load_case(cases_dir / "D111_getstationstats_accesspoint.yaml")
     results = {
         "steps": {
@@ -10088,7 +10088,7 @@ def test_d111_getstationstats_accesspoint_evaluate():
 
 def test_d112_getstationstats_active_contract():
     """D112 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D112_getstationstats_active.yaml")
     assert case["source"]["row"] == 112
     assert case["llapi_support"] == "Support"
@@ -10100,7 +10100,7 @@ def test_d112_getstationstats_active_contract():
 def test_d112_getstationstats_active_setup_env(monkeypatch):
     """D112 needs STA + DUT."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D112_getstationstats_active.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10112,7 +10112,7 @@ def test_d112_getstationstats_active_setup_env(monkeypatch):
 def test_d112_getstationstats_active_evaluate():
     """D112 pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D112_getstationstats_active.yaml")
     results = {
         "steps": {
@@ -10133,7 +10133,7 @@ def test_d112_getstationstats_active_evaluate():
 
 def test_d113_getstationstats_associationtime_contract():
     """D113 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D113_getstationstats_associationtime.yaml")
     assert case["source"]["row"] == 113
     assert case["llapi_support"] == "Support"
@@ -10145,7 +10145,7 @@ def test_d113_getstationstats_associationtime_contract():
 def test_d113_getstationstats_associationtime_setup_env(monkeypatch):
     """D113 needs STA + DUT."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D113_getstationstats_associationtime.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10157,7 +10157,7 @@ def test_d113_getstationstats_associationtime_setup_env(monkeypatch):
 def test_d113_getstationstats_associationtime_evaluate():
     """D113 pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D113_getstationstats_associationtime.yaml")
     results = {
         "steps": {
@@ -10178,7 +10178,7 @@ def test_d113_getstationstats_associationtime_evaluate():
 
 def test_d114_getstationstats_authenticationstate_contract():
     """D114 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D114_getstationstats_authenticationstate.yaml")
     assert case["source"]["row"] == 114
     assert case["llapi_support"] == "Support"
@@ -10190,7 +10190,7 @@ def test_d114_getstationstats_authenticationstate_contract():
 def test_d114_getstationstats_authenticationstate_setup_env(monkeypatch):
     """D114 needs STA + DUT."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D114_getstationstats_authenticationstate.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10202,7 +10202,7 @@ def test_d114_getstationstats_authenticationstate_setup_env(monkeypatch):
 def test_d114_getstationstats_authenticationstate_evaluate():
     """D114 pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D114_getstationstats_authenticationstate.yaml")
     results = {
         "steps": {
@@ -10223,7 +10223,7 @@ def test_d114_getstationstats_authenticationstate_evaluate():
 
 def test_d115_getstationstats_avgsignalstrength_contract():
     """D115 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D115_getstationstats_avgsignalstrength.yaml")
     assert case["source"]["row"] == 115
     assert case["llapi_support"] == "Support"
@@ -10235,7 +10235,7 @@ def test_d115_getstationstats_avgsignalstrength_contract():
 def test_d115_getstationstats_avgsignalstrength_setup_env(monkeypatch):
     """D115 needs STA + DUT."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D115_getstationstats_avgsignalstrength.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10247,7 +10247,7 @@ def test_d115_getstationstats_avgsignalstrength_setup_env(monkeypatch):
 def test_d115_getstationstats_avgsignalstrength_evaluate():
     """D115 pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D115_getstationstats_avgsignalstrength.yaml")
     results = {
         "steps": {
@@ -10268,7 +10268,7 @@ def test_d115_getstationstats_avgsignalstrength_evaluate():
 
 def test_d116_getstationstats_avgsignalstrengthbychain_contract():
     """D116 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D116_getstationstats_avgsignalstrengthbychain.yaml")
     assert case["source"]["row"] == 116
     assert case["llapi_support"] == "Support"
@@ -10280,7 +10280,7 @@ def test_d116_getstationstats_avgsignalstrengthbychain_contract():
 def test_d116_getstationstats_avgsignalstrengthbychain_setup_env(monkeypatch):
     """D116 needs STA + DUT."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D116_getstationstats_avgsignalstrengthbychain.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10292,7 +10292,7 @@ def test_d116_getstationstats_avgsignalstrengthbychain_setup_env(monkeypatch):
 def test_d116_getstationstats_avgsignalstrengthbychain_evaluate():
     """D116 pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D116_getstationstats_avgsignalstrengthbychain.yaml")
     results = {
         "steps": {
@@ -10313,7 +10313,7 @@ def test_d116_getstationstats_avgsignalstrengthbychain_evaluate():
 
 def test_d117_getstationstats_connectionduration_contract():
     """D117 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D117_getstationstats_connectionduration.yaml")
     assert case["source"]["row"] == 117
     assert case["llapi_support"] == "Support"
@@ -10325,7 +10325,7 @@ def test_d117_getstationstats_connectionduration_contract():
 def test_d117_getstationstats_connectionduration_setup_env(monkeypatch):
     """D117 needs STA + DUT."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D117_getstationstats_connectionduration.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10337,7 +10337,7 @@ def test_d117_getstationstats_connectionduration_setup_env(monkeypatch):
 def test_d117_getstationstats_connectionduration_evaluate():
     """D117 pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D117_getstationstats_connectionduration.yaml")
     results = {
         "steps": {
@@ -10358,7 +10358,7 @@ def test_d117_getstationstats_connectionduration_evaluate():
 
 def test_d119_enable_endpoint_contract():
     """D119 YAML loads, discovers, and has correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D119_enable_endpoint.yaml")
     assert case["source"]["row"] == 105
     assert case["llapi_support"] == "Not Supported"
@@ -10370,7 +10370,7 @@ def test_d119_enable_endpoint_contract():
 def test_d119_enable_endpoint_setup_env(monkeypatch):
     """D119 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d119 = load_case(cases_dir / "D119_enable_endpoint.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10382,7 +10382,7 @@ def test_d119_enable_endpoint_setup_env(monkeypatch):
 def test_d119_enable_endpoint_evaluate():
     """D119 pass criteria met with 'No data found' output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d119 = load_case(cases_dir / "D119_enable_endpoint.yaml")
     results = {
         "steps": {
@@ -10399,7 +10399,7 @@ def test_d119_enable_endpoint_evaluate():
 
 def test_d120_getstats_encryptionmode_contract():
     """D120 getStats() EncryptionMode YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D120_getstats_encryptionmode.yaml")
     assert case["source"]["row"] == 106
     assert case["llapi_support"] == "Not Supported"
@@ -10411,7 +10411,7 @@ def test_d120_getstats_encryptionmode_contract():
 def test_d120_getstats_encryptionmode_setup_env(monkeypatch):
     """D120 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D120_getstats_encryptionmode.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10423,7 +10423,7 @@ def test_d120_getstats_encryptionmode_setup_env(monkeypatch):
 def test_d120_getstats_encryptionmode_evaluate():
     """D120 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D120_getstats_encryptionmode.yaml")
     results = {
         "steps": {
@@ -10439,7 +10439,7 @@ def test_d120_getstats_encryptionmode_evaluate():
 
 def test_d121_getstats_hecapabilities_contract():
     """D121 getStats() HeCapabilities YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D121_getstats_hecapabilities.yaml")
     assert case["source"]["row"] == 121
     assert case["llapi_support"] == "Not Supported"
@@ -10451,7 +10451,7 @@ def test_d121_getstats_hecapabilities_contract():
 def test_d121_getstats_hecapabilities_setup_env(monkeypatch):
     """D121 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D121_getstats_hecapabilities.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10463,7 +10463,7 @@ def test_d121_getstats_hecapabilities_setup_env(monkeypatch):
 def test_d121_getstats_hecapabilities_evaluate():
     """D121 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D121_getstats_hecapabilities.yaml")
     results = {
         "steps": {
@@ -10479,7 +10479,7 @@ def test_d121_getstats_hecapabilities_evaluate():
 
 def test_d122_getstats_htcapabilities_contract():
     """D122 getStats() HtCapabilities YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D122_getstats_htcapabilities.yaml")
     assert case["source"]["row"] == 122
     assert case["llapi_support"] == "Not Supported"
@@ -10491,7 +10491,7 @@ def test_d122_getstats_htcapabilities_contract():
 def test_d122_getstats_htcapabilities_setup_env(monkeypatch):
     """D122 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D122_getstats_htcapabilities.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10503,7 +10503,7 @@ def test_d122_getstats_htcapabilities_setup_env(monkeypatch):
 def test_d122_getstats_htcapabilities_evaluate():
     """D122 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D122_getstats_htcapabilities.yaml")
     results = {
         "steps": {
@@ -10519,7 +10519,7 @@ def test_d122_getstats_htcapabilities_evaluate():
 
 def test_d123_getstats_lastdatadownlinkrate_contract():
     """D123 getStats() LastDataDownlinkRate YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D123_getstats_lastdatadownlinkrate.yaml")
     assert case["source"]["row"] == 123
     assert case["llapi_support"] == "Not Supported"
@@ -10531,7 +10531,7 @@ def test_d123_getstats_lastdatadownlinkrate_contract():
 def test_d123_getstats_lastdatadownlinkrate_setup_env(monkeypatch):
     """D123 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D123_getstats_lastdatadownlinkrate.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10543,7 +10543,7 @@ def test_d123_getstats_lastdatadownlinkrate_setup_env(monkeypatch):
 def test_d123_getstats_lastdatadownlinkrate_evaluate():
     """D123 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D123_getstats_lastdatadownlinkrate.yaml")
     results = {
         "steps": {
@@ -10559,7 +10559,7 @@ def test_d123_getstats_lastdatadownlinkrate_evaluate():
 
 def test_d124_getstats_lastdatauplinkrate_contract():
     """D124 getStats() LastDataUplinkRate YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D124_getstats_lastdatauplinkrate.yaml")
     assert case["source"]["row"] == 124
     assert case["llapi_support"] == "Not Supported"
@@ -10571,7 +10571,7 @@ def test_d124_getstats_lastdatauplinkrate_contract():
 def test_d124_getstats_lastdatauplinkrate_setup_env(monkeypatch):
     """D124 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D124_getstats_lastdatauplinkrate.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10583,7 +10583,7 @@ def test_d124_getstats_lastdatauplinkrate_setup_env(monkeypatch):
 def test_d124_getstats_lastdatauplinkrate_evaluate():
     """D124 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D124_getstats_lastdatauplinkrate.yaml")
     results = {
         "steps": {
@@ -10599,7 +10599,7 @@ def test_d124_getstats_lastdatauplinkrate_evaluate():
 
 def test_d125_getstats_linkbandwidth_contract():
     """D125 getStats() LinkBandwidth YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D125_getstats_linkbandwidth.yaml")
     assert case["source"]["row"] == 125
     assert case["llapi_support"] == "Not Supported"
@@ -10611,7 +10611,7 @@ def test_d125_getstats_linkbandwidth_contract():
 def test_d125_getstats_linkbandwidth_setup_env(monkeypatch):
     """D125 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D125_getstats_linkbandwidth.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10623,7 +10623,7 @@ def test_d125_getstats_linkbandwidth_setup_env(monkeypatch):
 def test_d125_getstats_linkbandwidth_evaluate():
     """D125 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D125_getstats_linkbandwidth.yaml")
     results = {
         "steps": {
@@ -10639,7 +10639,7 @@ def test_d125_getstats_linkbandwidth_evaluate():
 
 def test_d126_getstats_maxrxspatialstreamssupported_contract():
     """D126 getStats() MaxRxSpatialStreamsSupported YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D126_getstats_maxrxspatialstreamssupported.yaml")
     assert case["source"]["row"] == 126
     assert case["llapi_support"] == "Not Supported"
@@ -10651,7 +10651,7 @@ def test_d126_getstats_maxrxspatialstreamssupported_contract():
 def test_d126_getstats_maxrxspatialstreamssupported_setup_env(monkeypatch):
     """D126 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D126_getstats_maxrxspatialstreamssupported.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10663,7 +10663,7 @@ def test_d126_getstats_maxrxspatialstreamssupported_setup_env(monkeypatch):
 def test_d126_getstats_maxrxspatialstreamssupported_evaluate():
     """D126 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D126_getstats_maxrxspatialstreamssupported.yaml")
     results = {
         "steps": {
@@ -10679,7 +10679,7 @@ def test_d126_getstats_maxrxspatialstreamssupported_evaluate():
 
 def test_d127_getstats_maxtxspatialstreamssupported_contract():
     """D127 getStats() MaxTxSpatialStreamsSupported YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D127_getstats_maxtxspatialstreamssupported.yaml")
     assert case["source"]["row"] == 127
     assert case["llapi_support"] == "Not Supported"
@@ -10691,7 +10691,7 @@ def test_d127_getstats_maxtxspatialstreamssupported_contract():
 def test_d127_getstats_maxtxspatialstreamssupported_setup_env(monkeypatch):
     """D127 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D127_getstats_maxtxspatialstreamssupported.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10703,7 +10703,7 @@ def test_d127_getstats_maxtxspatialstreamssupported_setup_env(monkeypatch):
 def test_d127_getstats_maxtxspatialstreamssupported_evaluate():
     """D127 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D127_getstats_maxtxspatialstreamssupported.yaml")
     results = {
         "steps": {
@@ -10719,7 +10719,7 @@ def test_d127_getstats_maxtxspatialstreamssupported_evaluate():
 
 def test_d128_getstats_noise_contract():
     """D128 getStats() Noise YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D128_getstats_noise.yaml")
     assert case["source"]["row"] == 128
     assert case["llapi_support"] == "Not Supported"
@@ -10731,7 +10731,7 @@ def test_d128_getstats_noise_contract():
 def test_d128_getstats_noise_setup_env(monkeypatch):
     """D128 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D128_getstats_noise.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10743,7 +10743,7 @@ def test_d128_getstats_noise_setup_env(monkeypatch):
 def test_d128_getstats_noise_evaluate():
     """D128 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D128_getstats_noise.yaml")
     results = {
         "steps": {
@@ -10759,7 +10759,7 @@ def test_d128_getstats_noise_evaluate():
 
 def test_d129_getstats_operatingstandard_contract():
     """D129 getStats() OperatingStandard YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D129_getstats_operatingstandard.yaml")
     assert case["source"]["row"] == 129
     assert case["llapi_support"] == "Not Supported"
@@ -10771,7 +10771,7 @@ def test_d129_getstats_operatingstandard_contract():
 def test_d129_getstats_operatingstandard_setup_env(monkeypatch):
     """D129 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D129_getstats_operatingstandard.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10783,7 +10783,7 @@ def test_d129_getstats_operatingstandard_setup_env(monkeypatch):
 def test_d129_getstats_operatingstandard_evaluate():
     """D129 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D129_getstats_operatingstandard.yaml")
     results = {
         "steps": {
@@ -10799,7 +10799,7 @@ def test_d129_getstats_operatingstandard_evaluate():
 
 def test_d130_getstats_retransmissions_contract():
     """D130 getStats() Retransmissions YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D130_getstats_retransmissions.yaml")
     assert case["source"]["row"] == 130
     assert case["llapi_support"] == "Not Supported"
@@ -10811,7 +10811,7 @@ def test_d130_getstats_retransmissions_contract():
 def test_d130_getstats_retransmissions_setup_env(monkeypatch):
     """D130 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D130_getstats_retransmissions.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10823,7 +10823,7 @@ def test_d130_getstats_retransmissions_setup_env(monkeypatch):
 def test_d130_getstats_retransmissions_evaluate():
     """D130 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D130_getstats_retransmissions.yaml")
     results = {
         "steps": {
@@ -10839,7 +10839,7 @@ def test_d130_getstats_retransmissions_evaluate():
 
 def test_d131_getstats_rssi_contract():
     """D131 getStats() RSSI YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D131_getstats_rssi.yaml")
     assert case["source"]["row"] == 131
     assert case["llapi_support"] == "Not Supported"
@@ -10851,7 +10851,7 @@ def test_d131_getstats_rssi_contract():
 def test_d131_getstats_rssi_setup_env(monkeypatch):
     """D131 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D131_getstats_rssi.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10863,7 +10863,7 @@ def test_d131_getstats_rssi_setup_env(monkeypatch):
 def test_d131_getstats_rssi_evaluate():
     """D131 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D131_getstats_rssi.yaml")
     results = {
         "steps": {
@@ -10879,7 +10879,7 @@ def test_d131_getstats_rssi_evaluate():
 
 def test_d132_getstats_rx_retransmissions_contract():
     """D132 getStats() Rx_Retransmissions YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D132_getstats_rx_retransmissions.yaml")
     assert case["source"]["row"] == 132
     assert case["llapi_support"] == "Not Supported"
@@ -10891,7 +10891,7 @@ def test_d132_getstats_rx_retransmissions_contract():
 def test_d132_getstats_rx_retransmissions_setup_env(monkeypatch):
     """D132 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D132_getstats_rx_retransmissions.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10903,7 +10903,7 @@ def test_d132_getstats_rx_retransmissions_setup_env(monkeypatch):
 def test_d132_getstats_rx_retransmissions_evaluate():
     """D132 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D132_getstats_rx_retransmissions.yaml")
     results = {
         "steps": {
@@ -10919,7 +10919,7 @@ def test_d132_getstats_rx_retransmissions_evaluate():
 
 def test_d133_getstats_rxbytes_contract():
     """D133 getStats() RxBytes YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D133_getstats_rxbytes.yaml")
     assert case["source"]["row"] == 133
     assert case["llapi_support"] == "Not Supported"
@@ -10931,7 +10931,7 @@ def test_d133_getstats_rxbytes_contract():
 def test_d133_getstats_rxbytes_setup_env(monkeypatch):
     """D133 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D133_getstats_rxbytes.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10943,7 +10943,7 @@ def test_d133_getstats_rxbytes_setup_env(monkeypatch):
 def test_d133_getstats_rxbytes_evaluate():
     """D133 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D133_getstats_rxbytes.yaml")
     results = {
         "steps": {
@@ -10959,7 +10959,7 @@ def test_d133_getstats_rxbytes_evaluate():
 
 def test_d134_getstats_rxpacketcount_contract():
     """D134 getStats() RxPacketCount YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D134_getstats_rxpacketcount.yaml")
     assert case["source"]["row"] == 134
     assert case["llapi_support"] == "Not Supported"
@@ -10971,7 +10971,7 @@ def test_d134_getstats_rxpacketcount_contract():
 def test_d134_getstats_rxpacketcount_setup_env(monkeypatch):
     """D134 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D134_getstats_rxpacketcount.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -10983,7 +10983,7 @@ def test_d134_getstats_rxpacketcount_setup_env(monkeypatch):
 def test_d134_getstats_rxpacketcount_evaluate():
     """D134 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D134_getstats_rxpacketcount.yaml")
     results = {
         "steps": {
@@ -10999,7 +10999,7 @@ def test_d134_getstats_rxpacketcount_evaluate():
 
 def test_d135_getstats_securitymodeenabled_contract():
     """D135 getStats() SecurityModeEnabled YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D135_getstats_securitymodeenabled.yaml")
     assert case["source"]["row"] == 135
     assert case["llapi_support"] == "Not Supported"
@@ -11011,7 +11011,7 @@ def test_d135_getstats_securitymodeenabled_contract():
 def test_d135_getstats_securitymodeenabled_setup_env(monkeypatch):
     """D135 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D135_getstats_securitymodeenabled.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11023,7 +11023,7 @@ def test_d135_getstats_securitymodeenabled_setup_env(monkeypatch):
 def test_d135_getstats_securitymodeenabled_evaluate():
     """D135 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D135_getstats_securitymodeenabled.yaml")
     results = {
         "steps": {
@@ -11039,7 +11039,7 @@ def test_d135_getstats_securitymodeenabled_evaluate():
 
 def test_d136_getstats_supportedmcs_contract():
     """D136 getStats() SupportedMCS YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D136_getstats_supportedmcs.yaml")
     assert case["source"]["row"] == 136
     assert case["llapi_support"] == "Not Supported"
@@ -11051,7 +11051,7 @@ def test_d136_getstats_supportedmcs_contract():
 def test_d136_getstats_supportedmcs_setup_env(monkeypatch):
     """D136 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D136_getstats_supportedmcs.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11063,7 +11063,7 @@ def test_d136_getstats_supportedmcs_setup_env(monkeypatch):
 def test_d136_getstats_supportedmcs_evaluate():
     """D136 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D136_getstats_supportedmcs.yaml")
     results = {
         "steps": {
@@ -11079,7 +11079,7 @@ def test_d136_getstats_supportedmcs_evaluate():
 
 def test_d137_getstats_tx_retransmissions_contract():
     """D137 getStats() Tx_Retransmissions YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D137_getstats_tx_retransmissions.yaml")
     assert case["source"]["row"] == 137
     assert case["llapi_support"] == "Not Supported"
@@ -11091,7 +11091,7 @@ def test_d137_getstats_tx_retransmissions_contract():
 def test_d137_getstats_tx_retransmissions_setup_env(monkeypatch):
     """D137 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D137_getstats_tx_retransmissions.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11103,7 +11103,7 @@ def test_d137_getstats_tx_retransmissions_setup_env(monkeypatch):
 def test_d137_getstats_tx_retransmissions_evaluate():
     """D137 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D137_getstats_tx_retransmissions.yaml")
     results = {
         "steps": {
@@ -11119,7 +11119,7 @@ def test_d137_getstats_tx_retransmissions_evaluate():
 
 def test_d138_getstats_txbytes_contract():
     """D138 getStats() TxBytes YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D138_getstats_txbytes.yaml")
     assert case["source"]["row"] == 138
     assert case["llapi_support"] == "Not Supported"
@@ -11131,7 +11131,7 @@ def test_d138_getstats_txbytes_contract():
 def test_d138_getstats_txbytes_setup_env(monkeypatch):
     """D138 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D138_getstats_txbytes.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11143,7 +11143,7 @@ def test_d138_getstats_txbytes_setup_env(monkeypatch):
 def test_d138_getstats_txbytes_evaluate():
     """D138 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D138_getstats_txbytes.yaml")
     results = {
         "steps": {
@@ -11159,7 +11159,7 @@ def test_d138_getstats_txbytes_evaluate():
 
 def test_d139_getstats_txpacketcount_contract():
     """D139 getStats() TxPacketCount YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D139_getstats_txpacketcount.yaml")
     assert case["source"]["row"] == 139
     assert case["llapi_support"] == "Not Supported"
@@ -11171,7 +11171,7 @@ def test_d139_getstats_txpacketcount_contract():
 def test_d139_getstats_txpacketcount_setup_env(monkeypatch):
     """D139 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D139_getstats_txpacketcount.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11183,7 +11183,7 @@ def test_d139_getstats_txpacketcount_setup_env(monkeypatch):
 def test_d139_getstats_txpacketcount_evaluate():
     """D139 pass criteria met with function not found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D139_getstats_txpacketcount.yaml")
     results = {
         "steps": {
@@ -11200,7 +11200,7 @@ def test_d139_getstats_txpacketcount_evaluate():
 
 def test_d140_endpoint_intfname_contract():
     """D140 EndPoint IntfName YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D140_intfname.yaml")
     assert case["source"]["row"] == 126
     assert case["llapi_support"] == "Not Supported"
@@ -11212,7 +11212,7 @@ def test_d140_endpoint_intfname_contract():
 def test_d140_endpoint_intfname_setup_env(monkeypatch):
     """D140 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D140_intfname.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11224,7 +11224,7 @@ def test_d140_endpoint_intfname_setup_env(monkeypatch):
 def test_d140_endpoint_intfname_evaluate():
     """D140 pass criteria met with No data found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D140_intfname.yaml")
     results = {
         "steps": {
@@ -11240,7 +11240,7 @@ def test_d140_endpoint_intfname_evaluate():
 
 def test_d141_endpoint_multiapenable_contract():
     """D141 EndPoint MultiAPEnable YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D141_multiapenable.yaml")
     assert case["source"]["row"] == 127
     assert case["llapi_support"] == "Not Supported"
@@ -11252,7 +11252,7 @@ def test_d141_endpoint_multiapenable_contract():
 def test_d141_endpoint_multiapenable_setup_env(monkeypatch):
     """D141 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D141_multiapenable.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11264,7 +11264,7 @@ def test_d141_endpoint_multiapenable_setup_env(monkeypatch):
 def test_d141_endpoint_multiapenable_evaluate():
     """D141 pass criteria met with No data found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D141_multiapenable.yaml")
     results = {
         "steps": {
@@ -11280,7 +11280,7 @@ def test_d141_endpoint_multiapenable_evaluate():
 
 def test_d142_endpoint_enable_profile_wps_contract():
     """D142 EndPoint Enable YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D142_enable_profile_wps.yaml")
     assert case["source"]["row"] == 128
     assert case["llapi_support"] == "Not Supported"
@@ -11292,7 +11292,7 @@ def test_d142_endpoint_enable_profile_wps_contract():
 def test_d142_endpoint_enable_profile_wps_setup_env(monkeypatch):
     """D142 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D142_enable_profile_wps.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11304,7 +11304,7 @@ def test_d142_endpoint_enable_profile_wps_setup_env(monkeypatch):
 def test_d142_endpoint_enable_profile_wps_evaluate():
     """D142 pass criteria met with No data found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D142_enable_profile_wps.yaml")
     results = {
         "steps": {
@@ -11320,7 +11320,7 @@ def test_d142_endpoint_enable_profile_wps_evaluate():
 
 def test_d143_endpoint_forcebssid_contract():
     """D143 EndPoint ForceBSSID YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D143_forcebssid.yaml")
     assert case["source"]["row"] == 129
     assert case["llapi_support"] == "Not Supported"
@@ -11332,7 +11332,7 @@ def test_d143_endpoint_forcebssid_contract():
 def test_d143_endpoint_forcebssid_setup_env(monkeypatch):
     """D143 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D143_forcebssid.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11344,7 +11344,7 @@ def test_d143_endpoint_forcebssid_setup_env(monkeypatch):
 def test_d143_endpoint_forcebssid_evaluate():
     """D143 pass criteria met with No data found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D143_forcebssid.yaml")
     results = {
         "steps": {
@@ -11360,7 +11360,7 @@ def test_d143_endpoint_forcebssid_evaluate():
 
 def test_d144_endpoint_keypassphrase_wps_security_contract():
     """D144 EndPoint KeyPassPhrase YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D144_keypassphrase_wps_security.yaml")
     assert case["source"]["row"] == 130
     assert case["llapi_support"] == "Not Supported"
@@ -11372,7 +11372,7 @@ def test_d144_endpoint_keypassphrase_wps_security_contract():
 def test_d144_endpoint_keypassphrase_wps_security_setup_env(monkeypatch):
     """D144 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D144_keypassphrase_wps_security.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11384,7 +11384,7 @@ def test_d144_endpoint_keypassphrase_wps_security_setup_env(monkeypatch):
 def test_d144_endpoint_keypassphrase_wps_security_evaluate():
     """D144 pass criteria met with No data found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D144_keypassphrase_wps_security.yaml")
     results = {
         "steps": {
@@ -11400,7 +11400,7 @@ def test_d144_endpoint_keypassphrase_wps_security_evaluate():
 
 def test_d145_endpoint_mfpconfig_wps_security_contract():
     """D145 EndPoint MFPConfig YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D145_mfpconfig_wps_security.yaml")
     assert case["source"]["row"] == 131
     assert case["llapi_support"] == "Not Supported"
@@ -11412,7 +11412,7 @@ def test_d145_endpoint_mfpconfig_wps_security_contract():
 def test_d145_endpoint_mfpconfig_wps_security_setup_env(monkeypatch):
     """D145 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D145_mfpconfig_wps_security.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11424,7 +11424,7 @@ def test_d145_endpoint_mfpconfig_wps_security_setup_env(monkeypatch):
 def test_d145_endpoint_mfpconfig_wps_security_evaluate():
     """D145 pass criteria met with No data found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D145_mfpconfig_wps_security.yaml")
     results = {
         "steps": {
@@ -11440,7 +11440,7 @@ def test_d145_endpoint_mfpconfig_wps_security_evaluate():
 
 def test_d146_endpoint_modeenabled_wps_security_contract():
     """D146 EndPoint ModeEnabled YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D146_modeenabled_wps_security.yaml")
     assert case["source"]["row"] == 132
     assert case["llapi_support"] == "Not Supported"
@@ -11452,7 +11452,7 @@ def test_d146_endpoint_modeenabled_wps_security_contract():
 def test_d146_endpoint_modeenabled_wps_security_setup_env(monkeypatch):
     """D146 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D146_modeenabled_wps_security.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11464,7 +11464,7 @@ def test_d146_endpoint_modeenabled_wps_security_setup_env(monkeypatch):
 def test_d146_endpoint_modeenabled_wps_security_evaluate():
     """D146 pass criteria met with No data found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D146_modeenabled_wps_security.yaml")
     results = {
         "steps": {
@@ -11480,7 +11480,7 @@ def test_d146_endpoint_modeenabled_wps_security_evaluate():
 
 def test_d147_endpoint_presharedkey_wps_security_contract():
     """D147 EndPoint PreSharedKey YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D147_presharedkey_wps_security.yaml")
     assert case["source"]["row"] == 133
     assert case["llapi_support"] == "Not Supported"
@@ -11492,7 +11492,7 @@ def test_d147_endpoint_presharedkey_wps_security_contract():
 def test_d147_endpoint_presharedkey_wps_security_setup_env(monkeypatch):
     """D147 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D147_presharedkey_wps_security.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11504,7 +11504,7 @@ def test_d147_endpoint_presharedkey_wps_security_setup_env(monkeypatch):
 def test_d147_endpoint_presharedkey_wps_security_evaluate():
     """D147 pass criteria met with No data found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D147_presharedkey_wps_security.yaml")
     results = {
         "steps": {
@@ -11520,7 +11520,7 @@ def test_d147_endpoint_presharedkey_wps_security_evaluate():
 
 def test_d148_endpoint_wepkey_wps_security_contract():
     """D148 EndPoint WEPKey YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D148_wepkey_wps_security.yaml")
     assert case["source"]["row"] == 134
     assert case["llapi_support"] == "Not Supported"
@@ -11532,7 +11532,7 @@ def test_d148_endpoint_wepkey_wps_security_contract():
 def test_d148_endpoint_wepkey_wps_security_setup_env(monkeypatch):
     """D148 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D148_wepkey_wps_security.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11544,7 +11544,7 @@ def test_d148_endpoint_wepkey_wps_security_setup_env(monkeypatch):
 def test_d148_endpoint_wepkey_wps_security_evaluate():
     """D148 pass criteria met with No data found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D148_wepkey_wps_security.yaml")
     results = {
         "steps": {
@@ -11560,7 +11560,7 @@ def test_d148_endpoint_wepkey_wps_security_evaluate():
 
 def test_d149_endpoint_ssid_profile_wps_contract():
     """D149 EndPoint SSID YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D149_ssid_profile_wps.yaml")
     assert case["source"]["row"] == 135
     assert case["llapi_support"] == "Not Supported"
@@ -11572,7 +11572,7 @@ def test_d149_endpoint_ssid_profile_wps_contract():
 def test_d149_endpoint_ssid_profile_wps_setup_env(monkeypatch):
     """D149 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D149_ssid_profile_wps.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11584,7 +11584,7 @@ def test_d149_endpoint_ssid_profile_wps_setup_env(monkeypatch):
 def test_d149_endpoint_ssid_profile_wps_evaluate():
     """D149 pass criteria met with No data found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D149_ssid_profile_wps.yaml")
     results = {
         "steps": {
@@ -11600,7 +11600,7 @@ def test_d149_endpoint_ssid_profile_wps_evaluate():
 
 def test_d150_endpoint_status_profile_wps_contract():
     """D150 EndPoint Status YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D150_status_profile_wps.yaml")
     assert case["source"]["row"] == 136
     assert case["llapi_support"] == "Not Supported"
@@ -11612,7 +11612,7 @@ def test_d150_endpoint_status_profile_wps_contract():
 def test_d150_endpoint_status_profile_wps_setup_env(monkeypatch):
     """D150 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D150_status_profile_wps.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11624,7 +11624,7 @@ def test_d150_endpoint_status_profile_wps_setup_env(monkeypatch):
 def test_d150_endpoint_status_profile_wps_evaluate():
     """D150 pass criteria met with No data found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D150_status_profile_wps.yaml")
     results = {
         "steps": {
@@ -11640,7 +11640,7 @@ def test_d150_endpoint_status_profile_wps_evaluate():
 
 def test_d154_endpoint_pairinginprogress_endpoint_wps_contract():
     """D154 EndPoint PairingInProgress YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D154_pairinginprogress_endpoint_wps.yaml")
     assert case["source"]["row"] == 137
     assert case["llapi_support"] == "Not Supported"
@@ -11652,7 +11652,7 @@ def test_d154_endpoint_pairinginprogress_endpoint_wps_contract():
 def test_d154_endpoint_pairinginprogress_endpoint_wps_setup_env(monkeypatch):
     """D154 is DUT-only."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D154_pairinginprogress_endpoint_wps.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -11664,7 +11664,7 @@ def test_d154_endpoint_pairinginprogress_endpoint_wps_setup_env(monkeypatch):
 def test_d154_endpoint_pairinginprogress_endpoint_wps_evaluate():
     """D154 pass criteria met with No data found output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D154_pairinginprogress_endpoint_wps.yaml")
     results = {
         "steps": {
@@ -12162,7 +12162,7 @@ def test_sta_env_setup_parser_preserves_wpa_cli_quoted_value():
 )
 def test_sta_env_setup_parser_preserves_single_line_wpa_supplicant_template(filename: str):
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case_data = load_case(cases_dir / filename)
 
     parsed = plugin._iter_env_script_commands(case_data["sta_env_setup"])
@@ -12182,7 +12182,7 @@ def test_sta_env_setup_parser_preserves_single_line_wpa_supplicant_template(file
 
 def test_sta_env_setup_parser_preserves_single_line_wpa_supplicant_psk_template():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case_data = load_case(cases_dir / "D062_uplinkmcs.yaml")
 
     parsed = plugin._iter_env_script_commands(case_data["sta_env_setup"])
@@ -12313,7 +12313,7 @@ def test_sanitize_cli_fragment_preserves_nested_quotes_for_associateddevice_driv
     filename: str, step_index: int, driver_token: str
 ):
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case_data = load_case(cases_dir / filename)
     command = case_data["steps"][step_index]["command"]
 
@@ -12364,7 +12364,7 @@ def test_sanitize_cli_fragment_preserves_nested_quotes_for_associateddevice_driv
 
 def test_d049_supportedhe160mcs_verification_fragments_preserve_error_and_driver_checks():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d049 = load_case(cases_dir / "D049_supportedhe160mcs.yaml")
 
     step3_command = d049["steps"][2]["command"]
@@ -12385,7 +12385,7 @@ def test_d049_supportedhe160mcs_verification_fragments_preserve_error_and_driver
 
 def test_d050_supportedhemcs_verification_fragments_preserve_error_and_driver_checks():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d050 = load_case(cases_dir / "D050_supportedhemcs.yaml")
 
     step3_command = d050["steps"][2]["command"]
@@ -12406,7 +12406,7 @@ def test_d050_supportedhemcs_verification_fragments_preserve_error_and_driver_ch
 
 def test_d052_supportedvhtmcs_verification_fragments_preserve_error_and_driver_checks():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d052 = load_case(cases_dir / "D052_supportedvhtmcs.yaml")
 
     step3_command = d052["steps"][2]["command"]
@@ -12427,7 +12427,7 @@ def test_d052_supportedvhtmcs_verification_fragments_preserve_error_and_driver_c
 
 def test_d056_txerrors_verification_fragments_preserve_snapshot_and_driver_checks():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d056 = load_case(cases_dir / "D056_txerrors.yaml")
 
     step3_command = d056["steps"][2]["command"]
@@ -12446,7 +12446,7 @@ def test_d056_txerrors_verification_fragments_preserve_snapshot_and_driver_check
 
 def test_d057_txmulticastpacketcount_verification_fragments_preserve_delivery_and_driver_checks():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d057 = load_case(cases_dir / "D057_txmulticastpacketcount.yaml")
 
     step3_command = d057["steps"][2]["command"]
@@ -12467,7 +12467,7 @@ def test_d057_txmulticastpacketcount_verification_fragments_preserve_delivery_an
 
 
 def test_d057_txmulticastpacketcount_macaddress_fragment_normalizes_case():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d057 = load_case(cases_dir / "D057_txmulticastpacketcount.yaml")
     step2_command = d057["steps"][1]["command"]
     pipeline = step2_command.split("|", 1)[1].strip()
@@ -12489,7 +12489,7 @@ def test_d057_txmulticastpacketcount_macaddress_fragment_normalizes_case():
 
 
 def test_d057_txmulticastpacketcount_snapshot_sed_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d057 = load_case(cases_dir / "D057_txmulticastpacketcount.yaml")
     step6_command = d057["steps"][5]["command"]
     pipeline = step6_command.split("|", 1)[1].strip()
@@ -12520,7 +12520,7 @@ def test_d057_txmulticastpacketcount_snapshot_sed_fragment_executes():
 
 def test_d059_txunicastpacketcount_verification_fragments_preserve_snapshot_and_driver_checks():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d059 = load_case(cases_dir / "D059_txunicastpacketcount.yaml")
 
     step3_command = d059["steps"][2]["command"]
@@ -12540,7 +12540,7 @@ def test_d059_txunicastpacketcount_verification_fragments_preserve_snapshot_and_
 
 
 def test_d059_txunicastpacketcount_macaddress_fragment_normalizes_case():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d059 = load_case(cases_dir / "D059_txunicastpacketcount.yaml")
     step2_command = d059["steps"][1]["command"]
     pipeline = step2_command.split("|", 1)[1].strip()
@@ -12562,7 +12562,7 @@ def test_d059_txunicastpacketcount_macaddress_fragment_normalizes_case():
 
 
 def test_d059_txunicastpacketcount_snapshot_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d059 = load_case(cases_dir / "D059_txunicastpacketcount.yaml")
     step4_command = d059["steps"][3]["command"]
     pipeline = step4_command.split("|", 1)[1].strip()
@@ -12595,7 +12595,7 @@ def test_d059_txunicastpacketcount_snapshot_fragment_executes():
 
 def test_d064_vendoroui_verification_fragments_preserve_snapshot_and_driver_checks():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d064 = load_case(cases_dir / "D064_vendoroui.yaml")
 
     step1_command = d064["steps"][0]["command"]
@@ -12616,7 +12616,7 @@ def test_d064_vendoroui_verification_fragments_preserve_snapshot_and_driver_chec
 
 
 def test_d064_vendoroui_macaddress_fragment_normalizes_case():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d064 = load_case(cases_dir / "D064_vendoroui.yaml")
     step2_command = d064["steps"][1]["command"]
     pipeline = step2_command.split("|", 1)[1].strip()
@@ -12638,7 +12638,7 @@ def test_d064_vendoroui_macaddress_fragment_normalizes_case():
 
 
 def test_d064_vendoroui_snapshot_fragment_executes_with_empty_value():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d064 = load_case(cases_dir / "D064_vendoroui.yaml")
     step4_command = d064["steps"][3]["command"]
     pipeline = step4_command.split("|", 1)[1].strip()
@@ -12668,7 +12668,7 @@ def test_d064_vendoroui_snapshot_fragment_executes_with_empty_value():
 
 
 def test_d064_vendoroui_driver_capture_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d064 = load_case(cases_dir / "D064_vendoroui.yaml")
     step5_command = d064["steps"][4]["command"]
     awk_fragment = "awk " + step5_command.rsplit("| awk ", 1)[1]
@@ -12702,7 +12702,7 @@ def test_d064_vendoroui_driver_capture_fragment_executes():
 
 def test_d065_vhtcapabilities_verification_fragments_preserve_snapshot_and_driver_checks():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d065 = load_case(cases_dir / "D065_vhtcapabilities_accesspoint_associateddevice.yaml")
 
     step1_command = d065["steps"][0]["command"]
@@ -12723,7 +12723,7 @@ def test_d065_vhtcapabilities_verification_fragments_preserve_snapshot_and_drive
 
 
 def test_d065_vhtcapabilities_macaddress_fragment_normalizes_case():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d065 = load_case(cases_dir / "D065_vhtcapabilities_accesspoint_associateddevice.yaml")
     step2_command = d065["steps"][1]["command"]
     pipeline = step2_command.split("|", 1)[1].strip()
@@ -12745,7 +12745,7 @@ def test_d065_vhtcapabilities_macaddress_fragment_normalizes_case():
 
 
 def test_d065_vhtcapabilities_snapshot_fragment_executes_with_empty_value():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d065 = load_case(cases_dir / "D065_vhtcapabilities_accesspoint_associateddevice.yaml")
     step4_command = d065["steps"][3]["command"]
     pipeline = step4_command.split("|", 1)[1].strip()
@@ -12775,7 +12775,7 @@ def test_d065_vhtcapabilities_snapshot_fragment_executes_with_empty_value():
 
 
 def test_d065_vhtcapabilities_driver_capture_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d065 = load_case(cases_dir / "D065_vhtcapabilities_accesspoint_associateddevice.yaml")
     step5_command = d065["steps"][4]["command"]
     awk_fragment = "awk " + step5_command.rsplit("| awk ", 1)[1]
@@ -12807,7 +12807,7 @@ def test_d065_vhtcapabilities_driver_capture_fragment_executes():
 
 def test_d066_apbridgedisable_verification_fragments_preserve_toggle_and_cross_checks():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d066 = load_case(cases_dir / "D066_apbridgedisable.yaml")
 
     step1_command = d066["steps"][0]["command"]
@@ -12834,7 +12834,7 @@ def test_d066_apbridgedisable_verification_fragments_preserve_toggle_and_cross_c
 
 
 def test_d066_apbridgedisable_hostapd_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d066 = load_case(cases_dir / "D066_apbridgedisable.yaml")
     step4_command = d066["steps"][3]["command"]
     pipeline = step4_command.split("|", 1)[1].strip()
@@ -12860,7 +12860,7 @@ def test_d066_apbridgedisable_hostapd_fragment_executes():
 
 
 def test_d066_apbridgedisable_driver_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d066 = load_case(cases_dir / "D066_apbridgedisable.yaml")
     step8_command = d066["steps"][7]["command"]
     pipeline = step8_command.split("|", 1)[1].strip()
@@ -12883,7 +12883,7 @@ def test_d066_apbridgedisable_driver_fragment_executes():
 
 def test_d067_bridgeinterface_verification_fragments_preserve_getters_and_cross_checks():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d067 = load_case(cases_dir / "D067_bridgeinterface.yaml")
 
     step1_command = d067["steps"][0]["command"]
@@ -12907,7 +12907,7 @@ def test_d067_bridgeinterface_verification_fragments_preserve_getters_and_cross_
 
 
 def test_d067_bridgeinterface_hostapd_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d067 = load_case(cases_dir / "D067_bridgeinterface.yaml")
     step4_command = d067["steps"][3]["command"]
     pipeline = step4_command.split("|", 1)[1].strip()
@@ -12952,7 +12952,7 @@ def test_d067_bridgeinterface_hostapd_fragment_executes():
 
 
 def test_d067_bridgeinterface_bridge_master_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d067 = load_case(cases_dir / "D067_bridgeinterface.yaml")
     step7_command = d067["steps"][6]["command"]
     fragments = [fragment.strip() for fragment in step7_command.split("&&")]
@@ -12988,7 +12988,7 @@ def test_d067_bridgeinterface_bridge_master_fragment_executes():
 
 def test_d068_discoverymethodenabled_accesspoint_fils_verification_fragments_preserve_sequence():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d068 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml")
 
     verification_commands = plugin._extract_cli_fragments(d068["verification_command"])
@@ -13015,7 +13015,7 @@ def test_d068_discoverymethodenabled_accesspoint_fils_verification_fragments_pre
 
 def test_d069_discoverymethodenabled_accesspoint_upr_verification_fragments_preserve_sequence():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d069 = load_case(cases_dir / "D069_discoverymethodenabled_accesspoint_upr.yaml")
 
     verification_commands = plugin._extract_cli_fragments(d069["verification_command"])
@@ -13039,7 +13039,7 @@ def test_d069_discoverymethodenabled_accesspoint_upr_verification_fragments_pres
 
 def test_d070_discoverymethodenabled_accesspoint_rnr_verification_fragments_preserve_sequence():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d070 = load_case(cases_dir / "D070_discoverymethodenabled_accesspoint_rnr.yaml")
 
     verification_commands = plugin._extract_cli_fragments(d070["verification_command"])
@@ -13065,7 +13065,7 @@ def test_d070_discoverymethodenabled_accesspoint_rnr_verification_fragments_pres
 
 
 def test_d070_discoverymethodenabled_accesspoint_rnr_config_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d070 = load_case(cases_dir / "D070_discoverymethodenabled_accesspoint_rnr.yaml")
     step11_command = d070["steps"][10]["command"]
     sample_output = "\n".join(["rnr=1", "rnr=0"])
@@ -13095,7 +13095,7 @@ def test_d070_discoverymethodenabled_accesspoint_rnr_config_fragment_executes():
 
 def test_d072_enable_accesspoint_verification_fragments_preserve_sequence():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d072 = load_case(cases_dir / "D072_enable_accesspoint.yaml")
 
     verification_commands = plugin._extract_cli_fragments(d072["verification_command"])
@@ -13133,7 +13133,7 @@ def test_d072_enable_accesspoint_verification_fragments_preserve_sequence():
 
 
 def test_d072_enable_accesspoint_state_snapshot_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d072 = load_case(cases_dir / "D072_enable_accesspoint.yaml")
     step5_command = d072["steps"][4]["command"]
     pipeline = step5_command.split("|", 1)[1].strip()
@@ -13163,7 +13163,7 @@ def test_d072_enable_accesspoint_state_snapshot_fragment_executes():
 
 
 def test_d072_enable_accesspoint_disable_config_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d072 = load_case(cases_dir / "D072_enable_accesspoint.yaml")
     step7_command = d072["steps"][6]["command"]
 
@@ -13192,7 +13192,7 @@ def test_d072_enable_accesspoint_disable_config_fragment_executes():
 
 
 def test_d072_enable_accesspoint_enable_config_fragment_executes_without_start_disabled():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d072 = load_case(cases_dir / "D072_enable_accesspoint.yaml")
     step11_command = d072["steps"][10]["command"]
 
@@ -13221,7 +13221,7 @@ def test_d072_enable_accesspoint_enable_config_fragment_executes_without_start_d
 
 def test_d073_ftoverdsenable_accesspoint_verification_fragments_preserve_sequence():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d073 = load_case(cases_dir / "D073_ftoverdsenable.yaml")
 
     verification_commands = plugin._extract_cli_fragments(d073["verification_command"])
@@ -13258,7 +13258,7 @@ def test_d073_ftoverdsenable_accesspoint_verification_fragments_preserve_sequenc
 
 
 def test_d073_ftoverdsenable_accesspoint_state_snapshot_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d073 = load_case(cases_dir / "D073_ftoverdsenable.yaml")
     step3_command = d073["steps"][2]["command"]
     sample_output = "\n".join(
@@ -13297,7 +13297,7 @@ def test_d073_ftoverdsenable_accesspoint_state_snapshot_fragment_executes():
 
 
 def test_d073_ftoverdsenable_accesspoint_config_snapshot_zero_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d073 = load_case(cases_dir / "D073_ftoverdsenable.yaml")
     step4_command = d073["steps"][3]["command"]
 
@@ -13326,7 +13326,7 @@ def test_d073_ftoverdsenable_accesspoint_config_snapshot_zero_fragment_executes(
 
 
 def test_d073_ftoverdsenable_accesspoint_config_snapshot_one_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d073 = load_case(cases_dir / "D073_ftoverdsenable.yaml")
     step7_command = d073["steps"][6]["command"]
 
@@ -13356,7 +13356,7 @@ def test_d073_ftoverdsenable_accesspoint_config_snapshot_one_fragment_executes()
 
 def test_d074_mobilitydomain_accesspoint_verification_fragments_preserve_sequence():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d074 = load_case(cases_dir / "D074_mobilitydomain.yaml")
 
     verification_commands = plugin._extract_cli_fragments(d074["verification_command"])
@@ -13381,7 +13381,7 @@ def test_d074_mobilitydomain_accesspoint_verification_fragments_preserve_sequenc
 
 
 def test_d074_mobilitydomain_accesspoint_state_snapshot_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d074 = load_case(cases_dir / "D074_mobilitydomain.yaml")
     step2_command = d074["steps"][1]["command"]
     sample_output = "\n".join(
@@ -13417,7 +13417,7 @@ def test_d074_mobilitydomain_accesspoint_state_snapshot_fragment_executes():
 
 
 def test_d074_mobilitydomain_accesspoint_config_snapshot_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d074 = load_case(cases_dir / "D074_mobilitydomain.yaml")
     step5_command = d074["steps"][4]["command"]
 
@@ -13445,7 +13445,7 @@ def test_d074_mobilitydomain_accesspoint_config_snapshot_fragment_executes():
 
 
 def test_d074_mobilitydomain_accesspoint_cleanup_state_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d074 = load_case(cases_dir / "D074_mobilitydomain.yaml")
     step9_command = d074["steps"][8]["command"]
     sample_output = "\n".join(
@@ -13482,7 +13482,7 @@ def test_d074_mobilitydomain_accesspoint_cleanup_state_fragment_executes():
 
 def test_d077_interworkingenable_accesspoint_verification_fragments_preserve_sequence():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d077 = load_case(cases_dir / "D077_interworkingenable.yaml")
 
     verification_commands = plugin._extract_cli_fragments(d077["verification_command"])
@@ -13506,7 +13506,7 @@ def test_d077_interworkingenable_accesspoint_verification_fragments_preserve_seq
 
 
 def test_d077_interworkingenable_accesspoint_state_snapshot_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d077 = load_case(cases_dir / "D077_interworkingenable.yaml")
     step1_command = d077["steps"][0]["command"]
     sample_output = "WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable=0\n"
@@ -13534,7 +13534,7 @@ def test_d077_interworkingenable_accesspoint_state_snapshot_fragment_executes():
 
 
 def test_d077_interworkingenable_accesspoint_config_baseline_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d077 = load_case(cases_dir / "D077_interworkingenable.yaml")
     step2_command = d077["steps"][1]["command"]
 
@@ -13562,7 +13562,7 @@ def test_d077_interworkingenable_accesspoint_config_baseline_fragment_executes()
 
 
 def test_d077_interworkingenable_accesspoint_config_set_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d077 = load_case(cases_dir / "D077_interworkingenable.yaml")
     step5_command = d077["steps"][4]["command"]
 
@@ -13591,7 +13591,7 @@ def test_d077_interworkingenable_accesspoint_config_set_fragment_executes():
 
 def test_d078_qosmapset_accesspoint_verification_fragments_preserve_sequence():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d078 = load_case(cases_dir / "D078_qosmapset.yaml")
 
     verification_commands = plugin._extract_cli_fragments(d078["verification_command"])
@@ -13624,7 +13624,7 @@ def test_d078_qosmapset_accesspoint_verification_fragments_preserve_sequence():
 
 
 def test_d078_qosmapset_accesspoint_state_snapshot_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d078 = load_case(cases_dir / "D078_qosmapset.yaml")
     step1_command = d078["steps"][0]["command"]
     sample_output = 'WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=""\n'
@@ -13652,7 +13652,7 @@ def test_d078_qosmapset_accesspoint_state_snapshot_fragment_executes():
 
 
 def test_d078_qosmapset_accesspoint_config_baseline_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d078 = load_case(cases_dir / "D078_qosmapset.yaml")
     step2_command = d078["steps"][1]["command"]
 
@@ -13679,7 +13679,7 @@ def test_d078_qosmapset_accesspoint_config_baseline_fragment_executes():
 
 
 def test_d078_qosmapset_accesspoint_config_set_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d078 = load_case(cases_dir / "D078_qosmapset.yaml")
     step5_command = d078["steps"][4]["command"]
 
@@ -13707,7 +13707,7 @@ def test_d078_qosmapset_accesspoint_config_set_fragment_executes():
 
 def test_d079_macfilteraddresslist_accesspoint_verification_fragments_preserve_sequence():
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
 
     verification_commands = plugin._extract_cli_fragments(d079["verification_command"])
@@ -13740,7 +13740,7 @@ def test_d079_macfilteraddresslist_accesspoint_verification_fragments_preserve_s
 
 
 def test_d079_macfilteraddresslist_accesspoint_state_baseline_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
     step1_command = d079["steps"][0]["command"]
     sample_output = 'WiFi.AccessPoint.1.MACFilterAddressList=""\n'
@@ -13768,7 +13768,7 @@ def test_d079_macfilteraddresslist_accesspoint_state_baseline_fragment_executes(
 
 
 def test_d079_macfilteraddresslist_accesspoint_entry_baseline_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
     step2_command = d079["steps"][1]["command"]
     sample_output = 'WiFi.AccessPoint.1.MACFiltering.Mode="Off"\n'
@@ -13799,7 +13799,7 @@ def test_d079_macfilteraddresslist_accesspoint_entry_baseline_fragment_executes(
 
 
 def test_d079_macfilteraddresslist_accesspoint_state_add_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
     step4_command = d079["steps"][3]["command"]
     sample_output = 'WiFi.AccessPoint.1.MACFilterAddressList="62:2f:b8:66:bb:82"\n'
@@ -13827,7 +13827,7 @@ def test_d079_macfilteraddresslist_accesspoint_state_add_fragment_executes():
 
 
 def test_d079_macfilteraddresslist_accesspoint_entry_add_fragment_executes():
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d079 = load_case(cases_dir / "D079_macfilteraddresslist.yaml")
     step5_command = d079["steps"][4]["command"]
     sample_output = "\n".join(
@@ -13928,7 +13928,7 @@ def test_d079_macfilteraddresslist_accesspoint_entry_add_fragment_executes():
 def test_associateddevice_sibling_sed_fragments_execute(
     filename: str, sample_output: str, expected_lines: list[str]
 ):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case_data = load_case(cases_dir / filename)
     step4_command = case_data["steps"][3]["command"]
     sed_script = step4_command.split("| sed -n ", 1)[1]
@@ -14157,7 +14157,7 @@ _RADIO_IDS = [t[0].split(".")[0] for t in _RADIO_GETTER_CASES]
 )
 def test_radio_getter_contract(yaml_file, row, live_5g, live_6g, live_24g, path_tpl):
     """Radio getter YAML loads with correct metadata."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
     assert case["llapi_support"] in ("Support", "Not Supported")
@@ -14174,7 +14174,7 @@ def test_radio_getter_contract(yaml_file, row, live_5g, live_6g, live_24g, path_
 def test_radio_getter_setup_env(yaml_file, row, live_5g, live_6g, live_24g, path_tpl, monkeypatch):
     """Radio getter is DUT-only; setup_env succeeds without STA."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -14191,7 +14191,7 @@ def test_radio_getter_setup_env(yaml_file, row, live_5g, live_6g, live_24g, path
 def test_radio_getter_evaluate(yaml_file, row, live_5g, live_6g, live_24g, path_tpl):
     """Radio getter evaluate passes with live-shaped synthetic output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     api = path_tpl.rsplit(".", 1)[-1]
     needs_quote = not live_5g.lstrip("-").isdigit()
@@ -14275,7 +14275,7 @@ _METHOD_IDS = [t[0].split(".")[0] for t in _METHOD_STATS_CASES]
 )
 def test_method_stats_contract(yaml_file, row, method, field, live_5g, live_6g, live_24g):
     """Method-call stats YAML loads with correct 3-band structure."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
     assert case["llapi_support"] in ("Support", "Not Supported")
@@ -14295,7 +14295,7 @@ def test_method_stats_contract(yaml_file, row, method, field, live_5g, live_6g, 
 def test_method_stats_setup_env(yaml_file, row, method, field, live_5g, live_6g, live_24g, monkeypatch):
     """Method-call stats is DUT-only; setup_env succeeds without STA."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -14312,7 +14312,7 @@ def test_method_stats_setup_env(yaml_file, row, method, field, live_5g, live_6g,
 def test_method_stats_evaluate(yaml_file, row, method, field, live_5g, live_6g, live_24g):
     """Method-call stats evaluate passes with live-shaped ubus array output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     # Cases with 'skip' operator (e.g. D454/D455 VendorStats) are not
     # evaluable — the plugin does not implement skip; only test load/discover.
@@ -14347,7 +14347,7 @@ def test_method_stats_evaluate(yaml_file, row, method, field, live_5g, live_6g, 
 
 def test_d264_void_contract():
     """D264 getRadioAirStats Void YAML loads with correct 3-band structure."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D264_getradioairstats_void.yaml")
     assert case["source"]["row"] == 264
     assert len(case["steps"]) == 3
@@ -14359,7 +14359,7 @@ def test_d264_void_contract():
 def test_d264_void_evaluate():
     """D264 void evaluate passes when output has no error."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D264_getradioairstats_void.yaml")
     results = {"steps": {}}
     for r, band in [("1", "5g"), ("2", "6g"), ("3", "24g")]:
@@ -14399,7 +14399,7 @@ _SCAN_IDS = [t[0].split(".")[0] for t in _SCAN_RESULTS_CASES]
 @pytest.mark.parametrize("yaml_file,row,field", _SCAN_RESULTS_CASES, ids=_SCAN_IDS)
 def test_scan_results_contract(yaml_file, row, field):
     """getScanResults YAML loads with correct 3-band structure."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
     assert case["llapi_support"] == "Support"
@@ -14412,7 +14412,7 @@ def test_scan_results_contract(yaml_file, row, field):
 def test_scan_results_setup_env(yaml_file, row, field, monkeypatch):
     """getScanResults is DUT-only; setup_env succeeds without STA."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -14425,7 +14425,7 @@ def test_scan_results_setup_env(yaml_file, row, field, monkeypatch):
 def test_scan_results_evaluate(yaml_file, row, field):
     """getScanResults evaluate passes with live-shaped scan array output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     val = "-42" if field in ("Noise", "RSSI", "SignalStrength") else "TestVal"
     if field == "WPSConfigMethodsSupported":
@@ -14448,7 +14448,7 @@ def test_scan_results_evaluate(yaml_file, row, field):
 
 def test_d296_getnastationstats_contract():
     """D296 getNaStationStats loads as Skip case."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D296_getnastationstats.yaml")
     assert case["source"]["row"] == 219
     assert case["llapi_support"] == "Support"
@@ -14463,7 +14463,7 @@ def test_d296_getnastationstats_contract():
 def test_d296_getnastationstats_evaluate():
     """D296 evaluate passes when 'object not found' is in output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D296_getnastationstats.yaml")
     results = {"steps": {
         "step_probe": {
@@ -14492,7 +14492,7 @@ _ACTION_IDS = [t[0].split(".")[0] for t in _ACTION_METHOD_CASES]
 @pytest.mark.parametrize("yaml_file,row,method,verdict", _ACTION_METHOD_CASES, ids=_ACTION_IDS)
 def test_action_method_contract(yaml_file, row, method, verdict):
     """Action method YAML loads with correct 3-band structure."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
     assert case["llapi_support"] == "Support"
@@ -14507,7 +14507,7 @@ def test_action_method_contract(yaml_file, row, method, verdict):
 def test_action_method_setup_env(yaml_file, row, method, verdict, monkeypatch):
     """Action method is DUT-only; setup_env succeeds without STA."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -14520,7 +14520,7 @@ def test_action_method_setup_env(yaml_file, row, method, verdict, monkeypatch):
 def test_action_method_evaluate(yaml_file, row, method, verdict):
     """Action method evaluate passes when no error is returned."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     results = {"steps": {}}
     for r, band in [("1", "5g"), ("2", "6g"), ("3", "24g")]:
@@ -14561,7 +14561,7 @@ _SSID_STATS_IDS = [t[0].split(".")[0] for t in _SSID_STATS_CASES]
 @pytest.mark.parametrize("yaml_file,row,field,verdict", _SSID_STATS_CASES, ids=_SSID_STATS_IDS)
 def test_ssid_stats_contract(yaml_file, row, field, verdict):
     """getSSIDStats YAML loads with correct 3-band structure."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
     assert case["llapi_support"] == "Support"
@@ -14576,7 +14576,7 @@ def test_ssid_stats_contract(yaml_file, row, field, verdict):
 def test_ssid_stats_setup_env(yaml_file, row, field, verdict, monkeypatch):
     """getSSIDStats is DUT-only; setup_env succeeds without STA."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -14589,7 +14589,7 @@ def test_ssid_stats_setup_env(yaml_file, row, field, verdict, monkeypatch):
 def test_ssid_stats_evaluate(yaml_file, row, field, verdict):
     """getSSIDStats evaluate passes with live-shaped stats output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     results = {"steps": {}}
     for ssid, band in [("4", "5g"), ("6", "6g"), ("8", "24g")]:
@@ -14609,7 +14609,7 @@ def test_ssid_stats_evaluate(yaml_file, row, field, verdict):
 
 def test_d319_bssid_ssid_contract():
     """D319 BSSID SSID loads as 3-band property getter."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D319_bssid_ssid.yaml")
     assert case["source"]["row"] == 242
     assert case["llapi_support"] == "Support"
@@ -14623,7 +14623,7 @@ def test_d319_bssid_ssid_contract():
 def test_d319_bssid_ssid_evaluate():
     """D319 evaluate passes with valid MAC BSSID output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D319_bssid_ssid.yaml")
     results = {"steps": {}}
     macs = {"5g": "2c:59:17:00:19:95", "6g": "2c:59:17:00:19:96", "24g": "2c:59:17:00:19:a7"}
@@ -14670,7 +14670,7 @@ _WMM_IDS = [t[0].split(".")[0] for t in _WMM_STATS_CASES]
 )
 def test_wmm_stats_load(yaml_file, row, wmm_sub, field, live_5g, live_6g, live_24g):
     """Each WMM stats YAML must load, have correct row and 3-band shape."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
     assert case["bands"] == ["5g", "6g", "2.4g"]
@@ -14686,7 +14686,7 @@ def test_wmm_stats_load(yaml_file, row, wmm_sub, field, live_5g, live_6g, live_2
 def test_wmm_stats_discover(yaml_file, row, wmm_sub, field, live_5g, live_6g, live_24g):
     """Every WMM stats YAML must be discoverable."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     discoverable_ids = {c["id"] for c in plugin.discover_cases()}
     assert case["id"] in discoverable_ids
@@ -14700,7 +14700,7 @@ def test_wmm_stats_discover(yaml_file, row, wmm_sub, field, live_5g, live_6g, li
 def test_wmm_stats_evaluate(yaml_file, row, wmm_sub, field, live_5g, live_6g, live_24g):
     """WMM stats evaluate passes with live-shaped getRadioStats grep output."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     results = {"steps": {}}
     radio_ids = {"5g": "1", "6g": "2", "24g": "3"}
@@ -14740,7 +14740,7 @@ _WIFI7_IDS = [t[0].split(".")[0] for t in _WIFI7_CAPS_CASES]
 )
 def test_wifi7_caps_load(yaml_file, row, role, prop):
     """Each WiFi7 capability YAML must load, have correct row and 3-band shape."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
     assert case["bands"] == ["5g", "6g", "2.4g"]
@@ -14756,7 +14756,7 @@ def test_wifi7_caps_load(yaml_file, row, role, prop):
 def test_wifi7_caps_discover(yaml_file, row, role, prop):
     """Every WiFi7 capability YAML must be discoverable."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     discoverable_ids = {c["id"] for c in plugin.discover_cases()}
     assert case["id"] in discoverable_ids
@@ -14770,7 +14770,7 @@ def test_wifi7_caps_discover(yaml_file, row, role, prop):
 def test_wifi7_caps_evaluate(yaml_file, row, role, prop):
     """WiFi7 capability evaluate passes with live value 1."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     results = {"steps": {}}
     radio_ids = {"5g": "1", "6g": "2", "24g": "3"}
@@ -14788,7 +14788,7 @@ def test_wifi7_caps_evaluate(yaml_file, row, role, prop):
 
 def test_d362_mboassocdisallowreason_contract():
     """D362 MBOAssocDisallowReason loads as 3-band AP skip case."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D362_mboassocdisallowreason.yaml")
     assert case["source"]["row"] == 269
     assert case["bands"] == ["5g", "6g", "2.4g"]
@@ -14802,7 +14802,7 @@ def test_d362_mboassocdisallowreason_contract():
 
 def test_d185_tpcmode_contract():
     """D185 TPCMode YAML loads as fail-shaped 5G-only case."""
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D185_tpcmode.yaml")
     assert case["source"]["row"] == 146
     assert case["llapi_support"] == "Support"
@@ -14816,7 +14816,7 @@ def test_d185_tpcmode_contract():
 def test_d185_tpcmode_setup_env(monkeypatch):
     """D185 is DUT-only; setup_env succeeds."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D185_tpcmode.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -14828,7 +14828,7 @@ def test_d185_tpcmode_setup_env(monkeypatch):
 def test_d185_tpcmode_evaluate():
     """D185 evaluate passes when pass_criteria are met (mismatch is in results_reference)."""
     plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parent.parent / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D185_tpcmode.yaml")
     # Each step's output must match the pass_criteria field paths (capture-based).
     _step_outputs = {
@@ -14900,7 +14900,7 @@ _SSID_WMM_IDS = [t[0].split(".")[0] for t in _SSID_WMM_STATS_CASES]
     ids=_SSID_WMM_IDS,
 )
 def test_ssid_wmm_stats_load(yaml_file, row, ac_category, wmm_metric):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
     assert case["bands"] == ["5g", "6g", "2.4g"]
@@ -14912,7 +14912,7 @@ def test_ssid_wmm_stats_load(yaml_file, row, ac_category, wmm_metric):
     ids=_SSID_WMM_IDS,
 )
 def test_ssid_wmm_stats_discover(yaml_file, row, ac_category, wmm_metric):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     plugin = _load_plugin()
     discoverable = {c["id"] for c in plugin.discover_cases()}
@@ -14925,7 +14925,7 @@ def test_ssid_wmm_stats_discover(yaml_file, row, ac_category, wmm_metric):
     ids=_SSID_WMM_IDS,
 )
 def test_ssid_wmm_stats_evaluate(yaml_file, row, ac_category, wmm_metric):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     case = load_case(cases_dir / yaml_file)
     ssid_idx = {"5g": 4, "6g": 6, "2.4g": 8}
@@ -14959,7 +14959,7 @@ _SPECTRUM_IDS = [t[0].split(".")[0] for t in _SPECTRUM_CASES]
     ids=_SPECTRUM_IDS,
 )
 def test_spectrum_load(yaml_file, row, field):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
     assert case["bands"] == ["5g", "6g", "2.4g"]
@@ -14971,7 +14971,7 @@ def test_spectrum_load(yaml_file, row, field):
     ids=_SPECTRUM_IDS,
 )
 def test_spectrum_discover(yaml_file, row, field):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     plugin = _load_plugin()
     discoverable = {c["id"] for c in plugin.discover_cases()}
@@ -14984,7 +14984,7 @@ def test_spectrum_discover(yaml_file, row, field):
     ids=_SPECTRUM_IDS,
 )
 def test_spectrum_evaluate(yaml_file, row, field):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     case = load_case(cases_dir / yaml_file)
     radio_map = {"5g": 1, "6g": 2, "2.4g": 3}
@@ -15025,7 +15025,7 @@ _ASSOCDEV_IDS = [t[0].split(".")[0] for t in _ASSOCDEV_GETTER_CASES]
     ids=_ASSOCDEV_IDS,
 )
 def test_assocdev_getter_load(yaml_file, row, api_field):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
 
@@ -15036,7 +15036,7 @@ def test_assocdev_getter_load(yaml_file, row, api_field):
     ids=_ASSOCDEV_IDS,
 )
 def test_assocdev_getter_discover(yaml_file, row, api_field):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     plugin = _load_plugin()
     discoverable = {c["id"] for c in plugin.discover_cases()}
@@ -15049,7 +15049,7 @@ def test_assocdev_getter_discover(yaml_file, row, api_field):
     ids=_ASSOCDEV_IDS,
 )
 def test_assocdev_getter_evaluate(yaml_file, row, api_field):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     case = load_case(cases_dir / yaml_file)
     # Skip evaluate for cases that use 'skip' operator
@@ -15097,7 +15097,7 @@ _AP_SSID_SECURITY_IDS = [t[0].split(".")[0] for t in _AP_SSID_SECURITY_CASES]
     ids=_AP_SSID_SECURITY_IDS,
 )
 def test_ap_ssid_security_load(yaml_file, row, api_field, path_prefix):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
     assert case["bands"] == ["5g", "6g", "2.4g"]
@@ -15109,7 +15109,7 @@ def test_ap_ssid_security_load(yaml_file, row, api_field, path_prefix):
     ids=_AP_SSID_SECURITY_IDS,
 )
 def test_ap_ssid_security_discover(yaml_file, row, api_field, path_prefix):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     plugin = _load_plugin()
     discoverable = {c["id"] for c in plugin.discover_cases()}
@@ -15122,7 +15122,7 @@ def test_ap_ssid_security_discover(yaml_file, row, api_field, path_prefix):
     ids=_AP_SSID_SECURITY_IDS,
 )
 def test_ap_ssid_security_evaluate(yaml_file, row, api_field, path_prefix):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     case = load_case(cases_dir / yaml_file)
     idx_map = {"5g": 1, "6g": 3, "2.4g": 5}
@@ -15187,7 +15187,7 @@ _SKIP_BLOCKED_IDS = [t[0].split(".")[0] for t in _SKIP_BLOCKED_CASES]
     ids=_SKIP_BLOCKED_IDS,
 )
 def test_skip_blocked_load(yaml_file, row, reference):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
 
@@ -15198,7 +15198,7 @@ def test_skip_blocked_load(yaml_file, row, reference):
     ids=_SKIP_BLOCKED_IDS,
 )
 def test_skip_blocked_discover(yaml_file, row, reference):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     plugin = _load_plugin()
     discoverable = {c["id"] for c in plugin.discover_cases()}
@@ -15221,7 +15221,7 @@ _RADIO_NS_IDS = [t[0].split(".")[0] for t in _RADIO_NOT_SUPPORTED_CASES]
     ids=_RADIO_NS_IDS,
 )
 def test_radio_not_supported_load(yaml_file, row, api_field, path_prefix):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
     ref = case["results_reference"]["v4.0.3"]
@@ -15236,7 +15236,7 @@ def test_radio_not_supported_load(yaml_file, row, api_field, path_prefix):
     ids=_RADIO_NS_IDS,
 )
 def test_radio_not_supported_discover(yaml_file, row, api_field, path_prefix):
-    cases_dir = Path(__file__).resolve().parents[1] / "plugins" / "wifi_llapi" / "cases"
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     plugin = _load_plugin()
     discoverable = {c["id"] for c in plugin.discover_cases()}

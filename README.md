@@ -158,10 +158,11 @@ testpilot/
 │       ├── plugin.py
 │       ├── agent-config.yaml
 │       ├── cases/
-│       └── reports/
+│       ├── reports/
+│       └── tests/          ← plugin 專屬測試（449 tests）
 ├── configs/
 ├── scripts/
-└── tests/
+└── tests/                  ← engine 核心測試（864 tests）
 ```
 
 ## 開發文件
@@ -169,9 +170,10 @@ testpilot/
 1. 系統規格：`docs/spec.md`
 2. 主計畫：`docs/plan.md`
 3. 待辦看板：`docs/todos.md`
-4. 校正交接／恢復入口：`docs/audit-todo.md`
-5. 校正證據報告：`plugins/wifi_llapi/reports/audit-report-260313-185447.md`
-6. Copilot SDK 第三次重構研究：`docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`
+4. 測試計畫：`docs/test-plan.md`
+5. 校正交接／恢復入口：`docs/audit-todo.md`
+6. 校正證據報告：`plugins/wifi_llapi/reports/audit-report-260313-185447.md`
+7. Copilot SDK 第三次重構研究：`docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`
 
 ## License
 

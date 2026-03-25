@@ -94,7 +94,7 @@ def _prepare_runtime_project(tmp_path: Path) -> tuple[Path, Path]:
     plugin_dir = project_root / "plugins" / "wifi_llapi"
     plugin_dir.mkdir(parents=True, exist_ok=True)
 
-    repo_root = Path(__file__).resolve().parents[1]
+    repo_root = Path(__file__).resolve().parents[3]
     source_plugin_dir = repo_root / "plugins" / "wifi_llapi"
     shutil.copy2(source_plugin_dir / "plugin.py", plugin_dir / "plugin.py")
     shutil.copy2(source_plugin_dir / "agent-config.yaml", plugin_dir / "agent-config.yaml")
