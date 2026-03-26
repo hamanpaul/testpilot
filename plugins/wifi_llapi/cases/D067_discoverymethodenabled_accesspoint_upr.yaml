@@ -1,0 +1,208 @@
+id: wifi-llapi-D067-discoverymethodenabled-accesspoint-upr
+name: "DiscoveryMethodEnabled — WiFi.AccessPoint.{i}."
+version: '1.1'
+source:
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 69
+  object: WiFi.AccessPoint.{i}.
+  api: DiscoveryMethodEnabled
+  baseline: BCM v4.0.3
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=UPR'
+llapi_support: Support
+implemented_by: pWHM
+bands: ["5g", "6g", "2.4g"]
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+  links: []
+test_environment: |
+  Topology:
+  - DUT: COM0 (AP role; DiscoveryMethodEnabled is validated as an AP-only case with no STA transport)
+  Live band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
+  - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
+  - 2.4G: DUT wl2 / AP5 / SSID.8 / testpilot2G / WPA2-Personal / 00000000
+  Preconditions:
+  - keep AP1, AP3, and AP5 enabled on the documented non-open baseline
+  - DiscoveryMethodEnabled defaults to Default on AP1/AP3/AP5 before the UPR probe
+  - live 0319 probe showed mixed support: AP3 accepts UPR, while AP1 and AP5 reject UPR as invalid
+setup_steps: |
+  1) DUT baseline:
+     - keep AP1 / AP3 / AP5 enabled on the default non-open baseline
+     - confirm wl0 / wl1 / wl2 BSS instances are up before changing DiscoveryMethodEnabled
+  2) UPR mixed-band probe:
+     - read DiscoveryMethodEnabled on AP1, AP3, and AP5
+     - try to set UPR on AP1 / AP3 / AP5
+     - confirm AP1 and AP5 reject UPR with invalid value while AP3 accepts UPR
+     - confirm getters reflect Default / UPR / Default after the write attempts
+  3) Cleanup:
+     - restore AP1 / AP3 / AP5 to Default before ending the case
+sta_env_setup: |
+  DUT:
+    wl -i wl0 bss
+    wl -i wl1 bss
+    wl -i wl2 bss
+test_procedure: |
+  1) Read WiFi.AccessPoint.1/3/5.DiscoveryMethodEnabled directly from the DUT.
+  2) Try to set UPR on AP1, AP3, and AP5.
+  3) Confirm AP1 and AP5 reject UPR as invalid while AP3 accepts and reads back UPR.
+  4) Restore AP1, AP3, and AP5 to Default.
+  Verdict: Mixed-band checkpoint. 5G and 2.4G are Not Supported for UPR, while 6G passes with direct UPR readback.
+steps:
+- id: step1_default_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"'
+  capture: default_5g
+- id: step2_default_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"'
+  depends_on: step1_default_5g
+  capture: default_6g
+- id: step3_default_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"'
+  depends_on: step2_default_6g
+  capture: default_24g
+- id: step4_set_upr_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=UPR'
+  depends_on: step3_default_24g
+  capture: set_upr_5g
+- id: step5_set_upr_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=UPR'
+  depends_on: step4_set_upr_5g
+  capture: set_upr_6g
+- id: step6_set_upr_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=UPR'
+  depends_on: step5_set_upr_6g
+  capture: set_upr_24g
+- id: step7_after_upr_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"'
+  depends_on: step6_set_upr_24g
+  capture: after_upr_5g
+- id: step8_after_upr_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"'
+  depends_on: step7_after_upr_5g
+  capture: after_upr_6g
+- id: step9_after_upr_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"'
+  depends_on: step8_after_upr_6g
+  capture: after_upr_24g
+- id: step10_restore_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=Default'
+  depends_on: step9_after_upr_24g
+  capture: restore_5g
+- id: step11_restore_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=Default'
+  depends_on: step10_restore_5g
+  capture: restore_6g
+- id: step12_restore_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=Default'
+  depends_on: step11_restore_6g
+  capture: restore_24g
+pass_criteria:
+- field: default_5g.DiscoveryMethodEnabled
+  operator: equals
+  value: Default
+  description: 5G AP1 should start at the default DiscoveryMethodEnabled value.
+- field: default_6g.DiscoveryMethodEnabled
+  operator: equals
+  value: Default
+  description: 6G AP3 should start at the default DiscoveryMethodEnabled value.
+- field: default_24g.DiscoveryMethodEnabled
+  operator: equals
+  value: Default
+  description: 2.4G AP5 should start at the default DiscoveryMethodEnabled value.
+- field: set_upr_5g
+  operator: contains
+  value: invalid value
+  description: 5G AP1 should reject UPR as invalid.
+- field: set_upr_6g.DiscoveryMethodEnabled
+  operator: equals
+  value: UPR
+  description: 6G AP3 should explicitly acknowledge the accepted UPR setter.
+- field: set_upr_24g
+  operator: contains
+  value: invalid value
+  description: 2.4G AP5 should reject UPR as invalid.
+- field: after_upr_5g.DiscoveryMethodEnabled
+  operator: equals
+  reference: default_5g.DiscoveryMethodEnabled
+  description: 5G AP1 should remain at Default after the rejected UPR write.
+- field: after_upr_6g.DiscoveryMethodEnabled
+  operator: equals
+  value: UPR
+  description: 6G AP3 should read back UPR after the accepted write.
+- field: after_upr_24g.DiscoveryMethodEnabled
+  operator: equals
+  reference: default_24g.DiscoveryMethodEnabled
+  description: 2.4G AP5 should remain at Default after the rejected UPR write.
+- field: restore_5g.DiscoveryMethodEnabled
+  operator: equals
+  value: Default
+  description: 5G AP1 should be restored to Default before the case exits.
+- field: restore_6g.DiscoveryMethodEnabled
+  operator: equals
+  value: Default
+  description: 6G AP3 should be restored to Default before the case exits.
+- field: restore_24g.DiscoveryMethodEnabled
+  operator: equals
+  value: Default
+  description: 2.4G AP5 should be restored to Default before the case exits.
+verification_command: |
+  ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"
+  ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"
+  ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"
+  ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=UPR
+  ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=UPR
+  ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=UPR
+  ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?"
+  ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=Default
+  ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=Default
+  ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=Default
+  ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?" | sed -n '1,20p'
+results_reference:
+  v4.0.3:
+    5g: Not Supported
+    6g: Pass
+    2.4g: Not Supported
+    comment: 'AP1/AP3/AP5 all started at DiscoveryMethodEnabled="Default"; AP1 and AP5 rejected UPR with error 10/invalid value, while AP3 accepted UPR and read back as UPR; all three bands were restored to Default. This case is calibrated as 5G Not Supported / 6G Pass / 2.4G Not Supported.'

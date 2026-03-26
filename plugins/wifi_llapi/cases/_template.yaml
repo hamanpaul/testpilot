@@ -85,72 +85,53 @@ test_environment: |
   - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
 
 setup_steps: |
-  1) DUT baseline on COM0:
-     ubus-cli WiFi.AccessPoint.1.Enable=1
-     ubus-cli WiFi.AccessPoint.3.Enable=1
-     ubus-cli WiFi.AccessPoint.5.Enable=1
-  2) STA preparation on COM1:
-     iw dev wl0 set type managed; ifconfig wl0 up
-     iw dev wl1 set type managed; ifconfig wl1 up
-     iw dev wl2 set type managed; ifconfig wl2 up
-  3) 6G dependency before wl1 association:
-     ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled="WPA3-Personal"
-     ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase="B0StaTest1234"
-     ubus-cli WiFi.AccessPoint.3.Security.MFPConfig="Required"
-     ubus-cli WiFi.AccessPoint.3.MultiAPType="FronthaulBSS"
+  1) Describe the DUT/STA baseline in plain language.
+  2) Keep this section human-readable; put executable setup commands in sta_env_setup.
+  3) Make the commands band-specific instead of one shared all-band baseline.
 
 sta_env_setup: |
-  STA env setup baseline (COM1 / A0, serialwrap):
-  1) Enable STA radios:
-     ubus-cli WiFi.Radio.1.Enable=1
-     ubus-cli WiFi.Radio.2.Enable=1
-     ubus-cli WiFi.Radio.3.Enable=1
-  2) 5G connect verify (wl0 -> B0_5G_AP):
-     ubus-cli WiFi.AccessPoint.1.Enable=0
-     ubus-cli WiFi.AccessPoint.2.Enable=0
-     killall wpa_supplicant 2>/dev/null || true
-     iw dev wl0.1 del 2>/dev/null || true
-     iw dev wl0 set type managed
-     ifconfig wl0 up
-     iw dev wl0 connect B0_5G_AP
-     sleep 3
-     iw dev wl0 link
-  3) 6G connect verify (wl1 -> B0_6G_AP, SAE):
-     wpa_cli terminate 2>/dev/null || true
-     sleep 1
-     iw dev wl1.1 del 2>/dev/null || true
-     iw dev wl1 disconnect 2>/dev/null || true
-     iw dev wl1 set type managed
-     ifconfig wl1 up
-     printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\n' > /tmp/wpa_wl1.conf
-     wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf
-     sleep 2
-     wpa_cli -i wl1 remove_network all
-     wpa_cli -i wl1 add_network
-     wpa_cli -i wl1 set_network 0 ssid '"B0_6G_AP"'
-     wpa_cli -i wl1 set_network 0 key_mgmt SAE
-     wpa_cli -i wl1 set_network 0 sae_password '"B0StaTest1234"'
-     wpa_cli -i wl1 set_network 0 ieee80211w 2
-     wpa_cli -i wl1 set_network 0 scan_ssid 1
-     wpa_cli -i wl1 enable_network 0
-     wpa_cli -i wl1 reconnect
-     sleep 15
-     iw dev wl1 link
-     wpa_cli -i wl1 status
-  4) 2.4G connect verify (wl2 -> B0_24G_AP):
-     ubus-cli WiFi.AccessPoint.5.Enable=0
-     ubus-cli WiFi.AccessPoint.6.Enable=0
-     killall wpa_supplicant 2>/dev/null || true
-     iw dev wl2.1 del 2>/dev/null || true
-     iw dev wl2 set type managed
-     ifconfig wl2 up
-     iw dev wl2 connect B0_24G_AP
-     sleep 3
-     iw dev wl2 link
-  5) DUT association evidence (COM0):
-     wl -i wl0 assoclist
-     wl -i wl1 assoclist
-     wl -i wl2 assoclist
+  DUT band-specific setup:
+    ubus-cli WiFi.Radio.1.Enable=1
+    ubus-cli WiFi.Radio.1.BeaconPeriod=100
+    ubus-cli WiFi.Radio.1.DTIMPeriod=3
+    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
+    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
+    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
+    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
+    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
+    ubus-cli WiFi.Radio.1.OfdmaEnable=1
+    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
+    ubus-cli WiFi.Radio.1.OperatingStandards=ax
+    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
+    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
+    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
+    ubus-cli WiFi.Radio.1.Sensing.Enable=1
+    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
+    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
+    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
+    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
+    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
+    ubus-cli WiFi.Radio.1.LongRetryLimit=6
+    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
+    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
+    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
+    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
+    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
+    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
+    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+    ubus-cli WiFi.AccessPoint.1.Enable=1
+  STA band-specific setup:
+    ubus-cli WiFi.AccessPoint.1.Enable=0
+    ubus-cli WiFi.AccessPoint.2.Enable=0
+    killall wpa_supplicant 2>/dev/null || true
+    iw dev wl0.1 del 2>/dev/null || true
+    iw dev wl0 set type managed
+    ifconfig wl0 up
+    iw dev wl0 connect {{SSID_5G}}
+    sleep 2
+    iw dev wl0 link
+  DUT association evidence:
+    wl -i wl0 assoclist
 
 test_procedure: |
   1) Execute case command on DUT:
@@ -159,10 +140,7 @@ test_procedure: |
      ubus-cli "WiFi.?"
   3) For stats/AssociatedDevice cases, generate traffic (ping/iperf) before re-read.
   4) STA link validation:
-     iw dev wl0 link
-     iw dev wl1 link
-     wpa_cli -i wl1 status
-     iw dev wl2 link
+      iw dev wl0 link
   5) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
 
 steps:
@@ -192,6 +170,8 @@ pass_criteria:
 
 verification_command: |
   ubus-cli "WiFi.?" | sed -n "1,200p"
-  wl -i wl0 status 2>/dev/null || true; wl -i wl1 status 2>/dev/null || true; wl -i wl2 status 2>/dev/null || true
+  wl -i wl0 status 2>/dev/null || true
+  wl -i wl1 status 2>/dev/null || true
+  wl -i wl2 status 2>/dev/null || true
 
 bands: ["5g", "6g", "2.4g"]

@@ -1,0 +1,266 @@
+id: wifi-llapi-D079-mode-accesspoint-macfiltering
+name: "Mode — WiFi.AccessPoint.{i}.MACFiltering.Mode"
+version: '1.1'
+source:
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 73
+  object: WiFi.AccessPoint.{i}.MACFiltering.Mode
+  api: Mode
+  baseline: BCM v4.0.3
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.1.MACFiltering.Mode=Off
+llapi_support: Support
+implemented_by: pWHM
+bands: ["5g", "6g", "2.4g"]
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+  links: []
+test_environment: |
+  Topology:
+  - DUT: COM0 (AP role; MACFiltering.Mode is calibrated as an AP-only setter/getter case with no STA transport)
+  Live band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
+  - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
+  - 2.4G: DUT wl2 / AP5 / SSID.8 / testpilot2G / WPA2-Personal / 00000000
+  Preconditions:
+  - keep AP1, AP3, and AP5 enabled on the documented non-open baseline before probing MACFiltering.Mode
+  - live 0319 probe showed the current mode split is AP1=`BlackList`, AP3=`Off`, AP5=`Off`
+  - AP1 `/tmp/wl0_hapd.conf` keeps `macaddr_acl=0` + `deny_mac_file=/tmp/hostap_wl0.acl` at baseline
+  - AP3/AP5 have no `macaddr_acl` / `accept_mac_file` / `deny_mac_file` lines at baseline while the getter already reads `Off`
+  - the workbook v4.0.3 row says `Pass`, but the 0319 serialwrap retest showed `ubus-cli WiFi.AccessPoint.{1|3|5}.MACFiltering.Mode=Off` returns `invalid value` and leaves the northbound getter / hostapd ACL state unchanged on all three bands
+setup_steps: |
+  1) DUT baseline:
+     - keep AP1 / AP3 / AP5 enabled on the documented non-open baseline
+     - do not force MACFiltering.Mode changes in setup; this checkpoint records the current live mode split exactly as observed
+  2) Per-band MACFiltering.Mode probe:
+     - capture the baseline getter and hostapd ACL state for AP1 / AP3 / AP5
+     - attempt `MACFiltering.Mode=Off` on the same AP
+     - re-read the getter and hostapd ACL state immediately after the setter attempt
+  3) Verdict model:
+     - this is a failure-shaped checkpoint, not a pass-path mode transition
+     - the case passes only when the live evidence proves the `Off` setter is rejected and the state stays unchanged
+sta_env_setup: |
+  DUT:
+    ubus-cli WiFi.AccessPoint.1.Enable=1
+    ubus-cli WiFi.AccessPoint.3.Enable=1
+    ubus-cli WiFi.AccessPoint.5.Enable=1
+    wl -i wl0 bss
+    wl -i wl1 bss
+    wl -i wl2 bss
+test_procedure: |
+  1) Capture baseline MACFiltering.Mode getter + hostapd ACL state on AP1 / AP3 / AP5.
+  2) Attempt `ubus-cli WiFi.AccessPoint.{i}.MACFiltering.Mode=Off` on the same AP.
+  3) Re-read the getter and hostapd ACL state immediately after the setter attempt.
+  4) Confirm the setter reports `invalid value` and the live state remains unchanged on all three bands.
+  Verdict: Fail. The current DUT still does not accept the workbook `Mode=Off` setter path even though v4.0.3 marks this row as `Pass`.
+
+steps:
+- id: step1_mode_baseline_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Mode?" 2>&1); MODE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Mode="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$MODE" ]; then printf 'BaselineMode5g=%s\n' "$MODE"; else echo 'BaselineMode5g=EMPTY'; fi; CFG=$(grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl0_hapd.conf 2>/dev/null || true); ACL=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:macaddr_acl=\(.*\)$/\1/p' | head -n 1); if [ -n "$ACL" ]; then printf 'BaselineMacaddrAcl5g=%s\n' "$ACL"; else echo 'BaselineMacaddrAcl5g=ABSENT'; fi; if printf '%s\n' "$CFG" | grep -q 'accept_mac_file='; then echo 'BaselineAclState5g=accept'; elif printf '%s\n' "$CFG" | grep -q 'deny_mac_file='; then echo 'BaselineAclState5g=deny'; else echo 'BaselineAclState5g=absent'; fi
+  capture: mode_baseline_5g
+- id: step2_set_off_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    OUT=$(ubus-cli WiFi.AccessPoint.1.MACFiltering.Mode=Off 2>&1 || true); printf '%s\n' "$OUT"; if printf '%s\n' "$OUT" | grep -q 'invalid value'; then echo 'SetOffStatus5g=invalid_value'; else echo 'SetOffStatus5g=accepted'; fi
+  depends_on: step1_mode_baseline_5g
+  capture: set_off_5g
+- id: step3_mode_after_set_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Mode?" 2>&1); MODE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Mode="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$MODE" ]; then printf 'AfterMode5g=%s\n' "$MODE"; else echo 'AfterMode5g=EMPTY'; fi; CFG=$(grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl0_hapd.conf 2>/dev/null || true); ACL=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:macaddr_acl=\(.*\)$/\1/p' | head -n 1); if [ -n "$ACL" ]; then printf 'AfterMacaddrAcl5g=%s\n' "$ACL"; else echo 'AfterMacaddrAcl5g=ABSENT'; fi; if printf '%s\n' "$CFG" | grep -q 'accept_mac_file='; then echo 'AfterAclState5g=accept'; elif printf '%s\n' "$CFG" | grep -q 'deny_mac_file='; then echo 'AfterAclState5g=deny'; else echo 'AfterAclState5g=absent'; fi
+  depends_on: step2_set_off_5g
+  capture: mode_after_set_5g
+- id: step4_mode_baseline_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.MACFiltering.Mode?" 2>&1); MODE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Mode="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$MODE" ]; then printf 'BaselineMode6g=%s\n' "$MODE"; else echo 'BaselineMode6g=EMPTY'; fi; CFG=$(grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl1_hapd.conf 2>/dev/null || true); ACL=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:macaddr_acl=\(.*\)$/\1/p' | head -n 1); if [ -n "$ACL" ]; then printf 'BaselineMacaddrAcl6g=%s\n' "$ACL"; else echo 'BaselineMacaddrAcl6g=ABSENT'; fi; if printf '%s\n' "$CFG" | grep -q 'accept_mac_file='; then echo 'BaselineAclState6g=accept'; elif printf '%s\n' "$CFG" | grep -q 'deny_mac_file='; then echo 'BaselineAclState6g=deny'; else echo 'BaselineAclState6g=absent'; fi
+  capture: mode_baseline_6g
+- id: step5_set_off_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    OUT=$(ubus-cli WiFi.AccessPoint.3.MACFiltering.Mode=Off 2>&1 || true); printf '%s\n' "$OUT"; if printf '%s\n' "$OUT" | grep -q 'invalid value'; then echo 'SetOffStatus6g=invalid_value'; else echo 'SetOffStatus6g=accepted'; fi
+  depends_on: step4_mode_baseline_6g
+  capture: set_off_6g
+- id: step6_mode_after_set_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.MACFiltering.Mode?" 2>&1); MODE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Mode="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$MODE" ]; then printf 'AfterMode6g=%s\n' "$MODE"; else echo 'AfterMode6g=EMPTY'; fi; CFG=$(grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl1_hapd.conf 2>/dev/null || true); ACL=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:macaddr_acl=\(.*\)$/\1/p' | head -n 1); if [ -n "$ACL" ]; then printf 'AfterMacaddrAcl6g=%s\n' "$ACL"; else echo 'AfterMacaddrAcl6g=ABSENT'; fi; if printf '%s\n' "$CFG" | grep -q 'accept_mac_file='; then echo 'AfterAclState6g=accept'; elif printf '%s\n' "$CFG" | grep -q 'deny_mac_file='; then echo 'AfterAclState6g=deny'; else echo 'AfterAclState6g=absent'; fi
+  depends_on: step5_set_off_6g
+  capture: mode_after_set_6g
+- id: step7_mode_baseline_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.MACFiltering.Mode?" 2>&1); MODE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Mode="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$MODE" ]; then printf 'BaselineMode24g=%s\n' "$MODE"; else echo 'BaselineMode24g=EMPTY'; fi; CFG=$(grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl2_hapd.conf 2>/dev/null || true); ACL=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:macaddr_acl=\(.*\)$/\1/p' | head -n 1); if [ -n "$ACL" ]; then printf 'BaselineMacaddrAcl24g=%s\n' "$ACL"; else echo 'BaselineMacaddrAcl24g=ABSENT'; fi; if printf '%s\n' "$CFG" | grep -q 'accept_mac_file='; then echo 'BaselineAclState24g=accept'; elif printf '%s\n' "$CFG" | grep -q 'deny_mac_file='; then echo 'BaselineAclState24g=deny'; else echo 'BaselineAclState24g=absent'; fi
+  capture: mode_baseline_24g
+- id: step8_set_off_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    OUT=$(ubus-cli WiFi.AccessPoint.5.MACFiltering.Mode=Off 2>&1 || true); printf '%s\n' "$OUT"; if printf '%s\n' "$OUT" | grep -q 'invalid value'; then echo 'SetOffStatus24g=invalid_value'; else echo 'SetOffStatus24g=accepted'; fi
+  depends_on: step7_mode_baseline_24g
+  capture: set_off_24g
+- id: step9_mode_after_set_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.MACFiltering.Mode?" 2>&1); MODE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Mode="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$MODE" ]; then printf 'AfterMode24g=%s\n' "$MODE"; else echo 'AfterMode24g=EMPTY'; fi; CFG=$(grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl2_hapd.conf 2>/dev/null || true); ACL=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:macaddr_acl=\(.*\)$/\1/p' | head -n 1); if [ -n "$ACL" ]; then printf 'AfterMacaddrAcl24g=%s\n' "$ACL"; else echo 'AfterMacaddrAcl24g=ABSENT'; fi; if printf '%s\n' "$CFG" | grep -q 'accept_mac_file='; then echo 'AfterAclState24g=accept'; elif printf '%s\n' "$CFG" | grep -q 'deny_mac_file='; then echo 'AfterAclState24g=deny'; else echo 'AfterAclState24g=absent'; fi
+  depends_on: step8_set_off_24g
+  capture: mode_after_set_24g
+
+pass_criteria:
+- field: mode_baseline_5g.BaselineMode5g
+  operator: equals
+  value: BlackList
+  description: 5G AP1 / wl0 should start from BlackList on the current live baseline.
+- field: mode_baseline_5g.BaselineMacaddrAcl5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 / wl0 hostapd should keep macaddr_acl=0 on the BlackList baseline.
+- field: mode_baseline_5g.BaselineAclState5g
+  operator: equals
+  value: deny
+  description: 5G AP1 / wl0 hostapd should point at deny_mac_file on the BlackList baseline.
+- field: set_off_5g.SetOffStatus5g
+  operator: equals
+  value: invalid_value
+  description: 5G AP1 / wl0 still rejects the workbook Off setter as invalid.
+- field: mode_after_set_5g.AfterMode5g
+  operator: equals
+  value: BlackList
+  description: 5G AP1 / wl0 getter stays BlackList after the rejected Off setter.
+- field: mode_after_set_5g.AfterMode5g
+  operator: equals
+  reference: mode_baseline_5g.BaselineMode5g
+  description: 5G AP1 / wl0 getter remains unchanged across the failed setter attempt.
+- field: mode_after_set_5g.AfterMacaddrAcl5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 / wl0 hostapd macaddr_acl remains unchanged after the failed setter.
+- field: mode_after_set_5g.AfterAclState5g
+  operator: equals
+  value: deny
+  description: 5G AP1 / wl0 hostapd keep deny_mac_file after the failed setter.
+- field: mode_after_set_5g.AfterAclState5g
+  operator: equals
+  reference: mode_baseline_5g.BaselineAclState5g
+  description: 5G AP1 / wl0 ACL file state remains unchanged across the failed setter attempt.
+- field: mode_baseline_6g.BaselineMode6g
+  operator: equals
+  value: 'Off'
+  description: 6G AP3 / wl1 getter already reads Off on the current live baseline.
+- field: mode_baseline_6g.BaselineMacaddrAcl6g
+  operator: equals
+  value: ABSENT
+  description: 6G AP3 / wl1 hostapd should have no macaddr_acl line while the getter reads Off.
+- field: mode_baseline_6g.BaselineAclState6g
+  operator: equals
+  value: absent
+  description: 6G AP3 / wl1 hostapd should expose no accept/deny ACL file on the Off baseline.
+- field: set_off_6g.SetOffStatus6g
+  operator: equals
+  value: invalid_value
+  description: 6G AP3 / wl1 still rejects the workbook Off setter as invalid even while the getter already reads Off.
+- field: mode_after_set_6g.AfterMode6g
+  operator: equals
+  value: 'Off'
+  description: 6G AP3 / wl1 getter remains Off after the rejected setter.
+- field: mode_after_set_6g.AfterMode6g
+  operator: equals
+  reference: mode_baseline_6g.BaselineMode6g
+  description: 6G AP3 / wl1 getter remains unchanged across the failed setter attempt.
+- field: mode_after_set_6g.AfterMacaddrAcl6g
+  operator: equals
+  value: ABSENT
+  description: 6G AP3 / wl1 hostapd still has no macaddr_acl line after the failed setter.
+- field: mode_after_set_6g.AfterAclState6g
+  operator: equals
+  value: absent
+  description: 6G AP3 / wl1 hostapd still exposes no ACL file after the failed setter.
+- field: mode_after_set_6g.AfterAclState6g
+  operator: equals
+  reference: mode_baseline_6g.BaselineAclState6g
+  description: 6G AP3 / wl1 ACL file state remains unchanged across the failed setter attempt.
+- field: mode_baseline_24g.BaselineMode24g
+  operator: equals
+  value: 'Off'
+  description: 2.4G AP5 / wl2 getter already reads Off on the current live baseline.
+- field: mode_baseline_24g.BaselineMacaddrAcl24g
+  operator: equals
+  value: ABSENT
+  description: 2.4G AP5 / wl2 hostapd should have no macaddr_acl line while the getter reads Off.
+- field: mode_baseline_24g.BaselineAclState24g
+  operator: equals
+  value: absent
+  description: 2.4G AP5 / wl2 hostapd should expose no accept/deny ACL file on the Off baseline.
+- field: set_off_24g.SetOffStatus24g
+  operator: equals
+  value: invalid_value
+  description: 2.4G AP5 / wl2 still rejects the workbook Off setter as invalid even while the getter already reads Off.
+- field: mode_after_set_24g.AfterMode24g
+  operator: equals
+  value: 'Off'
+  description: 2.4G AP5 / wl2 getter remains Off after the rejected setter.
+- field: mode_after_set_24g.AfterMode24g
+  operator: equals
+  reference: mode_baseline_24g.BaselineMode24g
+  description: 2.4G AP5 / wl2 getter remains unchanged across the failed setter attempt.
+- field: mode_after_set_24g.AfterMacaddrAcl24g
+  operator: equals
+  value: ABSENT
+  description: 2.4G AP5 / wl2 hostapd still has no macaddr_acl line after the failed setter.
+- field: mode_after_set_24g.AfterAclState24g
+  operator: equals
+  value: absent
+  description: 2.4G AP5 / wl2 hostapd still exposes no ACL file after the failed setter.
+- field: mode_after_set_24g.AfterAclState24g
+  operator: equals
+  reference: mode_baseline_24g.BaselineAclState24g
+  description: 2.4G AP5 / wl2 ACL file state remains unchanged across the failed setter attempt.
+
+verification_command: |
+  OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Mode?" 2>&1); MODE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Mode="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$MODE" ]; then printf 'BaselineMode5g=%s\n' "$MODE"; else echo 'BaselineMode5g=EMPTY'; fi; grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl0_hapd.conf 2>/dev/null || true
+  OUT=$(ubus-cli WiFi.AccessPoint.1.MACFiltering.Mode=Off 2>&1 || true); printf '%s\n' "$OUT"
+  OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Mode?" 2>&1); MODE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Mode="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$MODE" ]; then printf 'AfterMode5g=%s\n' "$MODE"; else echo 'AfterMode5g=EMPTY'; fi; grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl0_hapd.conf 2>/dev/null || true
+  OUT=$(ubus-cli "WiFi.AccessPoint.3.MACFiltering.Mode?" 2>&1); MODE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Mode="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$MODE" ]; then printf 'BaselineMode6g=%s\n' "$MODE"; else echo 'BaselineMode6g=EMPTY'; fi; grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl1_hapd.conf 2>/dev/null || true
+  OUT=$(ubus-cli WiFi.AccessPoint.3.MACFiltering.Mode=Off 2>&1 || true); printf '%s\n' "$OUT"
+  OUT=$(ubus-cli "WiFi.AccessPoint.3.MACFiltering.Mode?" 2>&1); MODE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Mode="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$MODE" ]; then printf 'AfterMode6g=%s\n' "$MODE"; else echo 'AfterMode6g=EMPTY'; fi; grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl1_hapd.conf 2>/dev/null || true
+  OUT=$(ubus-cli "WiFi.AccessPoint.5.MACFiltering.Mode?" 2>&1); MODE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Mode="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$MODE" ]; then printf 'BaselineMode24g=%s\n' "$MODE"; else echo 'BaselineMode24g=EMPTY'; fi; grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl2_hapd.conf 2>/dev/null || true
+  OUT=$(ubus-cli WiFi.AccessPoint.5.MACFiltering.Mode=Off 2>&1 || true); printf '%s\n' "$OUT"
+  OUT=$(ubus-cli "WiFi.AccessPoint.5.MACFiltering.Mode?" 2>&1); MODE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Mode="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$MODE" ]; then printf 'AfterMode24g=%s\n' "$MODE"; else echo 'AfterMode24g=EMPTY'; fi; grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl2_hapd.conf 2>/dev/null || true
+
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: '0302 workbook comment already recorded Cannot switch Off on all three bands.'
+  v4.0.3:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: '0319 serialwrap live probe showed `ubus-cli WiFi.AccessPoint.{1|3|5}.MACFiltering.Mode=Off` still returns `ERROR: ... invalid value` on AP1/AP3/AP5. AP1 remained `BlackList` with `macaddr_acl=0` + `deny_mac_file=/tmp/hostap_wl0.acl`, while AP3/AP5 remained `Off` with no ACL lines. The current DUT still does not accept the workbook Off setter path, so D081 is calibrated as Fail/Fail/Fail.'

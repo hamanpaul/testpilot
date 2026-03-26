@@ -1,0 +1,351 @@
+id: wifi-llapi-D081-mboenable
+name: "MBOEnable — WiFi.AccessPoint.{i}."
+version: '1.1'
+source:
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 75
+  object: WiFi.AccessPoint.{i}.
+  api: MBOEnable
+  baseline: BCM v4.0.3
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.1.MBOEnable=0
+llapi_support: Support
+implemented_by: Vendor Module
+bands: ["5g", "6g", "2.4g"]
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+  links: []
+test_environment: |
+  Topology:
+  - DUT: COM0 (AP role; MBOEnable is calibrated as an AP-only setter/getter case with no STA transport)
+  Live band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
+  - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
+  - 2.4G: DUT wl2 / AP5 / SSID.8 / testpilot2G / WPA2-Personal / 00000000
+  Preconditions:
+  - keep AP1, AP3, and AP5 enabled on the documented non-open baseline before probing MBOEnable
+  - live 0320 probe showed AP1/AP3/AP5 all start from `MBOEnable=0`
+  - `/tmp/wl0_hapd.conf`, `/tmp/wl1_hapd.conf`, and `/tmp/wl2_hapd.conf` all keep `mbo=` absent at baseline
+  - the workbook v4.0.3 row says `Pass`, but the 0320 serialwrap retest showed the northbound setter/readback path converges `0 -> 1 -> 0` while hostapd `mbo=` stays absent on all three bands
+setup_steps: |
+  1) DUT baseline:
+     - keep AP1 / AP3 / AP5 enabled on the documented non-open baseline
+     - capture the current getter and hostapd `mbo=` baseline on all three bands
+  2) Per-band MBOEnable probe:
+     - set `MBOEnable=1` on the same AP
+     - allow hostapd reload to settle, then re-read the getter and hostapd `mbo=` state
+     - restore the same AP back to `0`
+     - allow hostapd reload to settle, then re-read the getter and hostapd `mbo=` state
+  3) Verdict model:
+     - this is a failure-shaped checkpoint, not a pass-path config convergence case
+     - the case passes only when the live evidence proves the northbound setter/readback changes while hostapd `mbo=` remains absent
+sta_env_setup: |
+  DUT:
+    ubus-cli WiFi.AccessPoint.1.Enable=1
+    ubus-cli WiFi.AccessPoint.3.Enable=1
+    ubus-cli WiFi.AccessPoint.5.Enable=1
+    wl -i wl0 bss
+    wl -i wl1 bss
+    wl -i wl2 bss
+test_procedure: |
+  1) Capture baseline getter + hostapd `mbo=` state on AP1 / AP3 / AP5.
+  2) Set `MBOEnable=1` on the same AP and re-read the getter / hostapd state after settle.
+  3) Restore `MBOEnable=0` and re-read the getter / hostapd state again after settle.
+  4) Confirm the northbound setter/readback changes `0 -> 1 -> 0` while hostapd `mbo=` remains absent throughout on all three bands.
+  Verdict: Fail. The current DUT accepts the northbound setter but still does not project the state into hostapd `mbo=`, so the workbook `Pass` path is not yet live-aligned.
+
+steps:
+- id: step1_mbo_baseline_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.1.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMbo5g=%s\n' "$VALUE"; else echo 'BaselineGetterMbo5g=EMPTY'; fi; CFG=$(grep -n '^mbo=' /tmp/wl0_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:mbo=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'BaselineHostapdMbo5g=%s\n' "$HAPD"; else echo 'BaselineHostapdMbo5g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'BaselineHostapdMboCount5g=%s\n' "$COUNT"
+  capture: mbo_baseline_5g
+- id: step2_mbo_enable_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    printf 'RequestedEnableMbo5g=1\n'; ubus-cli WiFi.AccessPoint.1.MBOEnable=1
+  depends_on: step1_mbo_baseline_5g
+  capture: mbo_enable_5g
+- id: step3_mbo_after_enable_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterEnableGetterMbo5g=%s\n' "$VALUE"; else echo 'AfterEnableGetterMbo5g=EMPTY'; fi; CFG=$(grep -n '^mbo=' /tmp/wl0_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:mbo=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterEnableHostapdMbo5g=%s\n' "$HAPD"; else echo 'AfterEnableHostapdMbo5g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterEnableHostapdMboCount5g=%s\n' "$COUNT"
+  depends_on: step2_mbo_enable_5g
+  capture: mbo_after_enable_5g
+- id: step4_mbo_restore_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    printf 'RestoreMbo5g=0\n'; ubus-cli WiFi.AccessPoint.1.MBOEnable=0
+  depends_on: step3_mbo_after_enable_5g
+  capture: mbo_restore_5g
+- id: step5_mbo_after_restore_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMbo5g=%s\n' "$VALUE"; else echo 'AfterRestoreGetterMbo5g=EMPTY'; fi; CFG=$(grep -n '^mbo=' /tmp/wl0_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:mbo=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdMbo5g=%s\n' "$HAPD"; else echo 'AfterRestoreHostapdMbo5g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterRestoreHostapdMboCount5g=%s\n' "$COUNT"
+  depends_on: step4_mbo_restore_5g
+  capture: mbo_after_restore_5g
+- id: step6_mbo_baseline_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMbo6g=%s\n' "$VALUE"; else echo 'BaselineGetterMbo6g=EMPTY'; fi; CFG=$(grep -n '^mbo=' /tmp/wl1_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:mbo=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'BaselineHostapdMbo6g=%s\n' "$HAPD"; else echo 'BaselineHostapdMbo6g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'BaselineHostapdMboCount6g=%s\n' "$COUNT"
+  capture: mbo_baseline_6g
+- id: step7_mbo_enable_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    printf 'RequestedEnableMbo6g=1\n'; ubus-cli WiFi.AccessPoint.3.MBOEnable=1
+  depends_on: step6_mbo_baseline_6g
+  capture: mbo_enable_6g
+- id: step8_mbo_after_enable_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterEnableGetterMbo6g=%s\n' "$VALUE"; else echo 'AfterEnableGetterMbo6g=EMPTY'; fi; CFG=$(grep -n '^mbo=' /tmp/wl1_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:mbo=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterEnableHostapdMbo6g=%s\n' "$HAPD"; else echo 'AfterEnableHostapdMbo6g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterEnableHostapdMboCount6g=%s\n' "$COUNT"
+  depends_on: step7_mbo_enable_6g
+  capture: mbo_after_enable_6g
+- id: step9_mbo_restore_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    printf 'RestoreMbo6g=0\n'; ubus-cli WiFi.AccessPoint.3.MBOEnable=0
+  depends_on: step8_mbo_after_enable_6g
+  capture: mbo_restore_6g
+- id: step10_mbo_after_restore_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMbo6g=%s\n' "$VALUE"; else echo 'AfterRestoreGetterMbo6g=EMPTY'; fi; CFG=$(grep -n '^mbo=' /tmp/wl1_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:mbo=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdMbo6g=%s\n' "$HAPD"; else echo 'AfterRestoreHostapdMbo6g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterRestoreHostapdMboCount6g=%s\n' "$COUNT"
+  depends_on: step9_mbo_restore_6g
+  capture: mbo_after_restore_6g
+- id: step11_mbo_baseline_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMbo24g=%s\n' "$VALUE"; else echo 'BaselineGetterMbo24g=EMPTY'; fi; CFG=$(grep -n '^mbo=' /tmp/wl2_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:mbo=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'BaselineHostapdMbo24g=%s\n' "$HAPD"; else echo 'BaselineHostapdMbo24g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'BaselineHostapdMboCount24g=%s\n' "$COUNT"
+  capture: mbo_baseline_24g
+- id: step12_mbo_enable_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    printf 'RequestedEnableMbo24g=1\n'; ubus-cli WiFi.AccessPoint.5.MBOEnable=1
+  depends_on: step11_mbo_baseline_24g
+  capture: mbo_enable_24g
+- id: step13_mbo_after_enable_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterEnableGetterMbo24g=%s\n' "$VALUE"; else echo 'AfterEnableGetterMbo24g=EMPTY'; fi; CFG=$(grep -n '^mbo=' /tmp/wl2_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:mbo=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterEnableHostapdMbo24g=%s\n' "$HAPD"; else echo 'AfterEnableHostapdMbo24g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterEnableHostapdMboCount24g=%s\n' "$COUNT"
+  depends_on: step12_mbo_enable_24g
+  capture: mbo_after_enable_24g
+- id: step14_mbo_restore_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    printf 'RestoreMbo24g=0\n'; ubus-cli WiFi.AccessPoint.5.MBOEnable=0
+  depends_on: step13_mbo_after_enable_24g
+  capture: mbo_restore_24g
+- id: step15_mbo_after_restore_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMbo24g=%s\n' "$VALUE"; else echo 'AfterRestoreGetterMbo24g=EMPTY'; fi; CFG=$(grep -n '^mbo=' /tmp/wl2_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:mbo=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdMbo24g=%s\n' "$HAPD"; else echo 'AfterRestoreHostapdMbo24g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterRestoreHostapdMboCount24g=%s\n' "$COUNT"
+  depends_on: step14_mbo_restore_24g
+  capture: mbo_after_restore_24g
+
+pass_criteria:
+- field: mbo_baseline_5g.BaselineGetterMbo5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 / wl0 getter should start from the live baseline value 0.
+- field: mbo_baseline_5g.BaselineHostapdMbo5g
+  operator: equals
+  value: ABSENT
+  description: 5G AP1 / wl0 hostapd should start with mbo= absent.
+- field: mbo_baseline_5g.BaselineHostapdMboCount5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 / wl0 hostapd should expose zero mbo= lines at baseline.
+- field: mbo_enable_5g.RequestedEnableMbo5g
+  operator: equals
+  value: '1'
+  description: 5G AP1 / wl0 should request MBOEnable=1.
+- field: mbo_after_enable_5g.AfterEnableGetterMbo5g
+  operator: equals
+  value: '1'
+  description: 5G AP1 / wl0 getter should follow the enable setter to 1.
+- field: mbo_after_enable_5g.AfterEnableHostapdMbo5g
+  operator: equals
+  value: ABSENT
+  description: 5G AP1 / wl0 hostapd still keeps mbo= absent after the enable setter.
+- field: mbo_after_enable_5g.AfterEnableHostapdMboCount5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 / wl0 hostapd still exposes zero mbo= lines after the enable setter.
+- field: mbo_after_enable_5g.AfterEnableHostapdMbo5g
+  operator: not_equals
+  reference: mbo_after_enable_5g.AfterEnableGetterMbo5g
+  description: 5G AP1 / wl0 hostapd diverges from the northbound getter on the enable setter path.
+- field: mbo_restore_5g.RestoreMbo5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 / wl0 should request restore back to 0.
+- field: mbo_after_restore_5g.AfterRestoreGetterMbo5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 / wl0 getter should return to 0 after restore.
+- field: mbo_after_restore_5g.AfterRestoreHostapdMbo5g
+  operator: equals
+  value: ABSENT
+  description: 5G AP1 / wl0 hostapd remains without mbo= after restore.
+- field: mbo_after_restore_5g.AfterRestoreHostapdMboCount5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 / wl0 hostapd still exposes zero mbo= lines after restore.
+- field: mbo_baseline_6g.BaselineGetterMbo6g
+  operator: equals
+  value: '0'
+  description: 6G AP3 / wl1 getter should start from the live baseline value 0.
+- field: mbo_baseline_6g.BaselineHostapdMbo6g
+  operator: equals
+  value: ABSENT
+  description: 6G AP3 / wl1 hostapd should start with mbo= absent.
+- field: mbo_baseline_6g.BaselineHostapdMboCount6g
+  operator: equals
+  value: '0'
+  description: 6G AP3 / wl1 hostapd should expose zero mbo= lines at baseline.
+- field: mbo_enable_6g.RequestedEnableMbo6g
+  operator: equals
+  value: '1'
+  description: 6G AP3 / wl1 should request MBOEnable=1.
+- field: mbo_after_enable_6g.AfterEnableGetterMbo6g
+  operator: equals
+  value: '1'
+  description: 6G AP3 / wl1 getter should follow the enable setter to 1.
+- field: mbo_after_enable_6g.AfterEnableHostapdMbo6g
+  operator: equals
+  value: ABSENT
+  description: 6G AP3 / wl1 hostapd still keeps mbo= absent after the enable setter.
+- field: mbo_after_enable_6g.AfterEnableHostapdMboCount6g
+  operator: equals
+  value: '0'
+  description: 6G AP3 / wl1 hostapd still exposes zero mbo= lines after the enable setter.
+- field: mbo_after_enable_6g.AfterEnableHostapdMbo6g
+  operator: not_equals
+  reference: mbo_after_enable_6g.AfterEnableGetterMbo6g
+  description: 6G AP3 / wl1 hostapd diverges from the northbound getter on the enable setter path.
+- field: mbo_restore_6g.RestoreMbo6g
+  operator: equals
+  value: '0'
+  description: 6G AP3 / wl1 should request restore back to 0.
+- field: mbo_after_restore_6g.AfterRestoreGetterMbo6g
+  operator: equals
+  value: '0'
+  description: 6G AP3 / wl1 getter should return to 0 after restore.
+- field: mbo_after_restore_6g.AfterRestoreHostapdMbo6g
+  operator: equals
+  value: ABSENT
+  description: 6G AP3 / wl1 hostapd remains without mbo= after restore.
+- field: mbo_after_restore_6g.AfterRestoreHostapdMboCount6g
+  operator: equals
+  value: '0'
+  description: 6G AP3 / wl1 hostapd still exposes zero mbo= lines after restore.
+- field: mbo_baseline_24g.BaselineGetterMbo24g
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 / wl2 getter should start from the live baseline value 0.
+- field: mbo_baseline_24g.BaselineHostapdMbo24g
+  operator: equals
+  value: ABSENT
+  description: 2.4G AP5 / wl2 hostapd should start with mbo= absent.
+- field: mbo_baseline_24g.BaselineHostapdMboCount24g
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 / wl2 hostapd should expose zero mbo= lines at baseline.
+- field: mbo_enable_24g.RequestedEnableMbo24g
+  operator: equals
+  value: '1'
+  description: 2.4G AP5 / wl2 should request MBOEnable=1.
+- field: mbo_after_enable_24g.AfterEnableGetterMbo24g
+  operator: equals
+  value: '1'
+  description: 2.4G AP5 / wl2 getter should follow the enable setter to 1.
+- field: mbo_after_enable_24g.AfterEnableHostapdMbo24g
+  operator: equals
+  value: ABSENT
+  description: 2.4G AP5 / wl2 hostapd still keeps mbo= absent after the enable setter.
+- field: mbo_after_enable_24g.AfterEnableHostapdMboCount24g
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 / wl2 hostapd still exposes zero mbo= lines after the enable setter.
+- field: mbo_after_enable_24g.AfterEnableHostapdMbo24g
+  operator: not_equals
+  reference: mbo_after_enable_24g.AfterEnableGetterMbo24g
+  description: 2.4G AP5 / wl2 hostapd diverges from the northbound getter on the enable setter path.
+- field: mbo_restore_24g.RestoreMbo24g
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 / wl2 should request restore back to 0.
+- field: mbo_after_restore_24g.AfterRestoreGetterMbo24g
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 / wl2 getter should return to 0 after restore.
+- field: mbo_after_restore_24g.AfterRestoreHostapdMbo24g
+  operator: equals
+  value: ABSENT
+  description: 2.4G AP5 / wl2 hostapd remains without mbo= after restore.
+- field: mbo_after_restore_24g.AfterRestoreHostapdMboCount24g
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 / wl2 hostapd still exposes zero mbo= lines after restore.
+
+verification_command: |
+  ubus-cli "WiFi.AccessPoint.1.MBOEnable?"
+  grep -n '^mbo=' /tmp/wl0_hapd.conf 2>/dev/null || true
+  ubus-cli WiFi.AccessPoint.1.MBOEnable=1
+  sleep 5
+  ubus-cli "WiFi.AccessPoint.1.MBOEnable?"
+  grep -n '^mbo=' /tmp/wl0_hapd.conf 2>/dev/null || true
+  ubus-cli WiFi.AccessPoint.1.MBOEnable=0
+  sleep 5
+  ubus-cli "WiFi.AccessPoint.1.MBOEnable?"
+  grep -n '^mbo=' /tmp/wl0_hapd.conf 2>/dev/null || true
+
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'BRCM: CSP CS00012439197'
+  v4.0.3:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: '0320 serialwrap live probe showed AP1/AP3/AP5 all accept and read back `MBOEnable 0 -> 1 -> 0`, but `/tmp/wl{0,1,2}_hapd.conf` keeps `mbo=` absent throughout. The current DUT still does not project the northbound state into hostapd, so D083 is calibrated as Fail/Fail/Fail.'

@@ -1,0 +1,100 @@
+id: wifi-llapi-D101-configmethodsenabled
+name: ConfigMethodsEnabled — WiFi.AccessPoint.{i}.WPS.
+version: '1.0'
+source:
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  baseline: 0310-BGW720-300
+  row: 103
+  object: WiFi.AccessPoint.{i}.WPS.
+  api: ConfigMethodsEnabled
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli "WiFi.AccessPoint.{i}.WPS.ConfigMethodsEnabled=PushButton"
+llapi_support: Support
+implemented_by: Vendor Module
+bands:
+- 5g
+- 6g
+- 2.4g
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+  links: []
+test_environment: "Topology:\n  - DUT: COM0 (B0, AP role)\n  Transport:\n  - DUT via serialwrap COM0\n  Baseline:\n  - 5G  = AP1 / wl0 / testpilot5G / WPA2-Personal\n  - 6G  = AP3 / wl1 / testpilot6G /\
+  \ WPA3-Personal / SAE\n  - 2.4G = AP5 / wl2 / testpilot2G / WPA2-Personal\n  Notes:\n  - 5G: setter accepted, getter converges, hostapd config_methods unchanged → workbook Pass\n  - 6G: setter accepted,\
+  \ getter converges, no hostapd config_methods line → Fail\n  - 2.4G: setter accepted, getter converges, hostapd config_methods=push_button → Pass"
+steps:
+- id: step_5g_setter
+  action: exec
+  target: DUT
+  command: 'echo "Baseline5g=$(ubus-cli ''WiFi.AccessPoint.1.WPS.ConfigMethodsEnabled?'' 2>/dev/null | grep -o ''ConfigMethodsEnabled=[^"]*'' | cut -d= -f2)"
+
+    ubus-cli "WiFi.AccessPoint.1.WPS.ConfigMethodsEnabled=PushButton" 2>/dev/null
+
+    sleep 3
+
+    echo "AfterSet5g=$(ubus-cli ''WiFi.AccessPoint.1.WPS.ConfigMethodsEnabled?'' 2>/dev/null | grep -o ''ConfigMethodsEnabled=[^"]*'' | cut -d= -f2)"
+
+    echo "HapdCfg5g=$(grep ''config_methods='' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+
+    '
+  capture: cfg_5g
+- id: step_6g_setter
+  action: exec
+  target: DUT
+  depends_on: step_5g_setter
+  command: 'echo "Baseline6g=$(ubus-cli ''WiFi.AccessPoint.3.WPS.ConfigMethodsEnabled?'' 2>/dev/null | grep -o ''ConfigMethodsEnabled=[^"]*'' | cut -d= -f2)"
+
+    ubus-cli "WiFi.AccessPoint.3.WPS.ConfigMethodsEnabled=PushButton" 2>/dev/null
+
+    sleep 3
+
+    echo "AfterSet6g=$(ubus-cli ''WiFi.AccessPoint.3.WPS.ConfigMethodsEnabled?'' 2>/dev/null | grep -o ''ConfigMethodsEnabled=[^"]*'' | cut -d= -f2)"
+
+    echo "HapdCfg6g=$(grep ''config_methods='' /tmp/wl1_hapd.conf 2>/dev/null | head -1)"
+
+    '
+  capture: cfg_6g
+- id: step_24g_setter
+  action: exec
+  target: DUT
+  depends_on: step_6g_setter
+  command: 'echo "Baseline24g=$(ubus-cli ''WiFi.AccessPoint.5.WPS.ConfigMethodsEnabled?'' 2>/dev/null | grep -o ''ConfigMethodsEnabled=[^"]*'' | cut -d= -f2)"
+
+    ubus-cli "WiFi.AccessPoint.5.WPS.ConfigMethodsEnabled=PushButton" 2>/dev/null
+
+    sleep 3
+
+    echo "AfterSet24g=$(ubus-cli ''WiFi.AccessPoint.5.WPS.ConfigMethodsEnabled?'' 2>/dev/null | grep -o ''ConfigMethodsEnabled=[^"]*'' | cut -d= -f2)"
+
+    echo "HapdCfg24g=$(grep ''config_methods='' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+
+    '
+  capture: cfg_24g
+pass_criteria:
+- field: cfg_5g.AfterSet5g
+  operator: equals
+  value: PushButton
+  description: 5G getter converges to PushButton
+- field: cfg_6g.AfterSet6g
+  operator: equals
+  value: PushButton
+  description: 6G getter converges to PushButton
+- field: cfg_24g.AfterSet24g
+  operator: equals
+  value: PushButton
+  description: 2.4G getter converges to PushButton
+verification_command: 'grep ''config_methods='' /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf
+
+  '
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Fail
+    2.4g: Pass
+    comment: '5G/2.4G: getter converges. 6G: hostapd has no config_methods line.'

@@ -23,6 +23,12 @@ docs/         # plan, todos, phase docs
 scripts/      # utility scripts (gen_cases, build_template_report)
 ```
 
+## Case Discovery Convention
+
+1. `plugins/wifi_llapi/cases/` 中，官方 discoverable cases 以 workbook row-indexed `D###` YAML 為主。
+2. 檔名 stem 以 `_` 開頭的 YAML 視為 explicit fixtures / legacy compatibility artifacts；`load_cases_dir()` 會排除這類檔案，不得計入 discoverable case inventory。
+3. 若需保留 legacy YAML 供 schema / backward-compat 測試，優先使用 underscore-prefixed fixture 命名，不要沿用會被誤認成正式 case 的 `D###` 命名。
+
 ## Commands
 
 ```bash
@@ -52,16 +58,68 @@ pytest
 3. `README.md`
 4. 本檔 `AGENTS.md`
 
+## Audit Report Format Policy
+
+1. `wifi_llapi` 的人工校正 audit report 必須使用 collapsible markdown sections。
+2. 一旦某批 case 被判定為「已 live 對齊」，report 中必須新增或更新 `Per-case 摘要表（zh-tw）` 區塊。
+3. `Per-case 摘要表（zh-tw）` 至少要包含：
+   - case id
+   - workbook row
+   - API 名稱
+   - verdict
+   - DUT log interval
+   - STA log interval
+4. 每個已對齊 case 都必須附上 markdown fenced code blocks，分別記錄：
+   - STA 指令
+   - DUT 指令
+   - 判定 pass 的 log 摘錄 / log 區間
+5. 不可只寫 prose summary 而省略指令與 log block；有標記 aligned 的 case，command/log evidence 是必填。
+6. 若同一批 case 共用 STA baseline，可重複列出，或在每個 case 內明確引用同一組 baseline 指令，但不可省略。
+7. 若已知 log 行號區間，沿用 `Lxxx-Lyyy` 表示法，避免後續批次漂移成不同風格。
+8. `wifi_llapi` aligned YAML 的 workbook row reference 只保留在 `source.row`；舊的 `wifi-llapi-rXXX-*` alias 視為 stale metadata，live 對齊時應移除，不再作為 row 來源。
+
+## Calibration Continuation Policy
+
+1. 目前 `wifi_llapi` workbook 校正工作必須嚴格採 **single-case mode**：一次只處理一個 official case。
+2. 不可把未解案例再拆成 batch 並行處理，也不可自行建立加速工具／腳本來跳過逐案 evidence 驗證。
+3. sub-agent 只可協助 offline survey、source tracing、code review；最終 live serialwrap 操作與 verdict 仍由主操作者手動收斂。
+4. repo-only handoff 必須落在已提交的文件，而不是 session-local SQL / plan scratchpad。最少要同步：
+   - `docs/audit-todo.md`
+   - `plugins/wifi_llapi/reports/audit-report-*.md` 的最新 checkpoint 區塊
+   - `README.md`
+   - `docs/plan.md`
+5. 每次完成單案校正或確認 blocker 後，repo handoff 文件至少要同步：
+   - 目前 calibrated / remaining counts
+   - active blockers
+   - 最新已提交 case 與 verdict 形狀
+   - 下一個 ready case
+   - 最新驗證指令與結果
+6. **commit / brief status update / targeted tests pass 都不是停點**；只要沒有明確 blocker、lab 失真、或使用者要求暫停，就必須在同一輪直接推進到下一個 ready single case。
+7. 每個 single-case loop 的預設完成定義固定為：offline survey → live 三個 band 驗證/切換 → YAML 重寫 → runtime targeted tests → runtime file / full suite → docs sync → precise stage/commit → 立刻把下一個 ready case 標成 `in_progress`。
+8. 若因 context 壓縮、tool/runtime crash、或 session 中斷而被迫停下，必須先把「最新已提交 case、目前 counts、next ready case、active blocker、最新驗證結果」落回 repo handoff 文件，再視為可接受中斷。
+9. 對使用者的進度回覆應以「不中斷主流程」為原則：除非需要請求決策或回報 blocker，說明完當前 checkpoint 後就要繼續執行下一筆，不得把單次回答本身當成停工理由。
+
+## Default Lab Baseline Policy
+
+1. 預設 baseline 不可使用 open security SSID。
+2. 若 testcase 沒有明確要求特殊安全模式，預設使用：
+   - 5G：`testpilot5G` / `WPA2-Personal` / password `00000000`
+   - 2.4G：`testpilot2G` / `WPA2-Personal` / password `00000000`
+   - 6G：`testpilot6G` / `WPA3-Personal` / `key_mgmt=SAE` / password `00000000`
+3. baseline 因 reboot / session recover 重建後，必須先把最新 SSID / security readback 與已驗證 band link 狀態同步回 repo handoff 文件，再繼續逐案校正。
+
 ## Plugin Agent Config Policy
 
-1. plugin 若需宣告 CLI agent/model，使用 `plugins/<plugin>/agent-config.yaml`。
-2. `wifi_llapi` 優先序固定為：
-   - Priority 1: `codex + gpt-5.3-codex + high`
+1. plugin 若需宣告 agent/model policy，使用 `plugins/<plugin>/agent-config.yaml`。
+2. `wifi_llapi` 第三次重構目標優先序固定為：
+   - Priority 1: `copilot + gpt-5.4 + high`
    - Priority 2: `copilot + sonnet-4.6 + high`
-3. 第一優先不可用時允許自動降級，且需留 `selection trace`。
-4. `wifi_llapi` 執行策略以 case-level 為主（每個 test case 各自呼叫 agent）。
-5. `wifi_llapi` 排程策略預設為 `sequential`（`max_concurrency=1`）。
-6. case 失敗策略為 `retry_then_fail_and_continue`，且 timeout 需隨 retry attempt 調整。
+   - Priority 3: `copilot + gpt-5-mini + high`
+3. 不再以 `codex CLI` 為相容目標，不為舊 runner policy 增加 workaround code。
+4. 第一優先不可用時允許自動降級，且需留 `selection trace`。
+5. `wifi_llapi` 執行策略以 case-level 為主（每個 test case 各自呼叫 agent）。
+6. `wifi_llapi` 排程策略預設為 `sequential`（`max_concurrency=1`）。
+7. case 失敗策略為 `retry_then_fail_and_continue`，且 timeout 需隨 retry attempt 調整。
 
 ## Code Style
 

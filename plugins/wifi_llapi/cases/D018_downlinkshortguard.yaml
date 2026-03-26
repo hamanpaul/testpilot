@@ -1,0 +1,109 @@
+id: wifi-llapi-D018-downlinkshortguard
+name: "DownlinkShortGuard — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+version: '1.1'
+source:
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 15
+  object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+  api: DownlinkShortGuard
+  baseline: BCM v4.0.3
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+    STA:
+      role: sta
+      transport: serial
+      selector: COM1
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: STA
+    to: DUT
+    band: 2.4g
+test_environment: |
+  Topology: DUT=COM0(AP) / STA=COM1(station)
+  Live band mapping:
+  - 5G : DUT wl0 / AP1 / BSSID 2c:59:17:00:19:95 / STA MAC 2C:59:17:00:04:85
+  - 6G : DUT wl1 / AP3 -- BCME_NOTREADY (STA cannot associate; skip all 6G steps)
+  - 2.4G: DUT wl2 / AP5 / BSSID 2C:59:17:00:19:A7 / STA MAC 2C:59:17:00:04:97
+  Precondition: STA associated on the target band so AssociatedDevice.1 is deterministic.
+test_procedure: |
+  Read-only boolean telemetry. DownlinkShortGuard indicates whether the AP-to-STA
+  link is using short guard interval (SGI). Value 1 = SGI enabled, 0 = disabled.
+  Steps:
+  1) Confirm 5G STA is associated; read AP1 AssociatedDevice.1.DownlinkShortGuard.
+  2) Confirm 2.4G STA is associated; read AP5 AssociatedDevice.1.DownlinkShortGuard.
+  6G is skipped (BCME_NOTREADY).
+  Pass: both active bands return `1`, matching live-verified SGI enabled state.
+steps:
+- id: step1_5g_assoc
+  action: exec
+  target: DUT
+  band: 5g
+  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+  capture: assoc_5g
+- id: step2_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkShortGuard?"
+  depends_on: step1_5g_assoc
+  capture: result_5g
+- id: step3_6g
+  action: skip
+  target: DUT
+  band: 6g
+  reason: 6G BCME_NOTREADY -- STA cannot associate on wl1/AP3 in current lab.
+- id: step4_24g_assoc
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+  capture: assoc_24g
+- id: step5_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkShortGuard?"
+  depends_on: step4_24g_assoc
+  capture: result_24g
+pass_criteria:
+- field: assoc_5g.AssocMac5g
+  operator: equals
+  value: 2c:59:17:00:04:85
+  description: "5G -- DownlinkShortGuard 讀取前必須先確認 wl0 STA 已關聯"
+- field: result_5g.DownlinkShortGuard
+  operator: equals
+  value: 1
+  description: "5G -- live DownlinkShortGuard should remain 1 (SGI enabled)"
+- field: assoc_24g.AssocMac24g
+  operator: equals
+  value: 2c:59:17:00:04:97
+  description: "2.4G -- DownlinkShortGuard 讀取前必須先確認 wl2 STA 已關聯"
+- field: result_24g.DownlinkShortGuard
+  operator: equals
+  value: 1
+  description: "2.4G -- live DownlinkShortGuard should remain 1 (SGI enabled)"
+verification_command: |
+  DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkShortGuard?"
+  DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkShortGuard?"
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Skip
+    2.4g: Pass
+    comment: |
+      Live evidence (BCM v4.0.3):
+      5G: WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkShortGuard=1 (SGI enabled)
+      2.4G: WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkShortGuard=1 (SGI enabled)
+      Both bands return boolean 1; LLAPI correctly reflects link SGI state.

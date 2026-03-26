@@ -17,9 +17,11 @@ import re
 import shutil
 from typing import Iterable
 
-from openpyxl import load_workbook
-from openpyxl.cell.cell import MergedCell
-from openpyxl.utils import column_index_from_string
+from testpilot.reporting.excel_adapter import (
+    col_to_index as column_index_from_string,
+    is_merged_cell,
+    open_workbook as load_workbook,
+)
 
 DEFAULT_SHEET_NAME = "Wifi_LLAPI"
 DEFAULT_TEMPLATE_NAME = "wifi_llapi_template.xlsx"
@@ -43,10 +45,6 @@ DATA_START_ROW = 4
 EMPTY_STREAK_STOP = 200
 MAX_SCAN_ROWS = 5000
 _PROMPT_PREFIX_RE = re.compile(r"^(?:root@[^:]+:[^#\n]*#\s*|[>$#]\s*)")
-_SERIALWRAP_MARKER_RE = re.compile(
-    r"__TP_(?:BEGIN|END|RC)_[A-Z0-9a-f_]+__=?[^\s]*",
-    flags=re.IGNORECASE,
-)
 
 
 @dataclass(slots=True)
@@ -132,8 +130,7 @@ def sanitize_report_output(text: str | None) -> str:
 
     lines: list[str] = []
     for raw in str(text).splitlines():
-        line = _SERIALWRAP_MARKER_RE.sub(" ", raw).strip()
-        line = _PROMPT_PREFIX_RE.sub("", line).strip()
+        line = _PROMPT_PREFIX_RE.sub("", raw).strip()
         if not line:
             continue
         lines.append(line)
@@ -192,6 +189,40 @@ def _iter_case_rows(
     return rows
 
 
+def _iter_source_object_api_rows(
+    ws,
+    data_start_row: int,
+    empty_streak_stop: int,
+    max_scan_rows: int,
+) -> Iterable[tuple[int, str | None, str | None]]:
+    """Yield (row, object, api) sequentially for read-only worksheets.
+
+    Random ``ws.cell(row=...)`` access on read-only worksheets becomes very slow
+    when the workbook carries stale dimensions with a huge ``max_row``. Walking
+    the sheet once via ``iter_rows()`` keeps alignment checks bounded.
+    """
+    empty_streak = 0
+    max_row = min(ws.max_row, data_start_row + max_scan_rows)
+    for row_idx, values in enumerate(
+        ws.iter_rows(
+            min_row=data_start_row,
+            max_row=max_row,
+            min_col=1,
+            max_col=3,
+            values_only=True,
+        ),
+        start=data_start_row,
+    ):
+        obj, _, api = values
+        if api is None or str(api).strip() == "":
+            empty_streak += 1
+            if empty_streak >= empty_streak_stop:
+                break
+            continue
+        empty_streak = 0
+        yield row_idx, obj, api
+
+
 def _to_col_idx(col: str | int) -> int:
     if isinstance(col, int):
         return col
@@ -245,7 +276,7 @@ def _set_cell_value_safe(ws, row: int, col: str, value: str) -> None:
     """
     col_idx = _to_col_idx(col)
     cell = ws.cell(row=row, column=col_idx)
-    if not isinstance(cell, MergedCell):
+    if not is_merged_cell(cell):
         cell.value = value
         return
 
@@ -317,7 +348,7 @@ def build_template_from_source(
     for row in case_rows:
         for col_idx in clear_col_indices:
             cell = ws.cell(row=row, column=col_idx)
-            if isinstance(cell, MergedCell):
+            if is_merged_cell(cell):
                 continue
             cell.value = None
 
@@ -445,12 +476,14 @@ def read_source_rows(
     source = Path(source_xlsx)
     wb = load_workbook(source, read_only=True, data_only=False)
     ws = _get_sheet(wb, sheet_name)
-    rows = _iter_case_rows(ws, DATA_START_ROW, EMPTY_STREAK_STOP, MAX_SCAN_ROWS)
     out: dict[int, dict[str, str]] = {}
     current_object = ""
-    for row in rows:
-        obj = ws.cell(row=row, column=1).value
-        api = ws.cell(row=row, column=3).value
+    for row, obj, api in _iter_source_object_api_rows(
+        ws,
+        DATA_START_ROW,
+        EMPTY_STREAK_STOP,
+        MAX_SCAN_ROWS,
+    ):
         obj_norm = normalize_text(obj)
         if obj_norm:
             current_object = obj_norm

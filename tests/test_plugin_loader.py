@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from testpilot.core.plugin_loader import PluginLoader
+from testpilot.schema.case_schema import load_case
 
 
 def test_discover_plugins():
@@ -30,5 +31,7 @@ def test_discover_cases():
     cases = plugin.discover_cases()
     assert len(cases) >= 2
     ids = [c["id"] for c in cases]
-    assert "wifi-llapi-getRadioStats" in ids
-    assert "wifi-llapi-kickStation" in ids
+    assert "wifi-llapi-D009-associationtime" in ids
+    assert "d263-getradiostats-broadcastpacketsreceived" in ids
+    assert "wifi-llapi-legacy-fixture-kickstation" not in ids
+    assert "wifi-llapi-legacy-fixture-getradiostats" not in ids

@@ -30,3 +30,4 @@ Thumbs.db
 
 # Secrets — never commit
 configs/testbed.yaml
+.coverage

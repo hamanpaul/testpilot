@@ -1,0 +1,55 @@
+id: d451-radioairstats-shortpreambleerrorpercentage
+name: D451 getRadioAirStats ShortPreambleErrorPercentage
+source:
+  row: 453
+  object: WiFi.Radio.{i}.getRadioAirStats()
+  api: ShortPreambleErrorPercentage
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+- 6g
+- 2.4g
+llapi_support: Support
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+steps:
+- id: step_5g_method
+  target: dut
+  action: read
+  capture: method_5g
+  command: ubus-cli "WiFi.Radio.1.getRadioAirStats()"
+  expected: ShortPreambleErrorPercentage 回傳有效值
+  description: Radio.1 (5g) getRadioAirStats 取得 ShortPreambleErrorPercentage
+- id: step_6g_method
+  target: dut
+  action: read
+  capture: method_6g
+  command: ubus-cli "WiFi.Radio.2.getRadioAirStats()"
+  expected: ShortPreambleErrorPercentage 回傳有效值
+  description: Radio.2 (6g) getRadioAirStats 取得 ShortPreambleErrorPercentage
+- id: step_24g_method
+  target: dut
+  action: read
+  capture: method_24g
+  command: ubus-cli "WiFi.Radio.3.getRadioAirStats()"
+  expected: ShortPreambleErrorPercentage 回傳有效值
+  description: Radio.3 (2.4g) getRadioAirStats 取得 ShortPreambleErrorPercentage
+pass_criteria:
+- field: method_5g.ShortPreambleErrorPercentage
+  operator: regex
+  value: ^\d+$
+- field: method_6g.ShortPreambleErrorPercentage
+  operator: regex
+  value: ^\d+$
+- field: method_24g.ShortPreambleErrorPercentage
+  operator: regex
+  value: ^\d+$

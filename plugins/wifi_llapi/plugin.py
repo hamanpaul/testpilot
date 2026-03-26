@@ -14,6 +14,9 @@ from typing import Any
 from testpilot.core.plugin_base import PluginBase
 from testpilot.schema.case_schema import load_cases_dir
 from testpilot.transport.base import StubTransport
+from testpilot.yaml_command_audit import looks_like_shell_command
+
+from command_resolver import CommandResolver
 
 log = logging.getLogger(__name__)
 
@@ -41,6 +44,8 @@ class Plugin(PluginBase):
         "printf",
         "sleep",
         "killall",
+        "rm",
+        "mkdir",
         "grep",
         "sed",
         "awk",
@@ -53,15 +58,19 @@ class Plugin(PluginBase):
         "printf",
         "sleep",
         "killall",
+        "rm",
+        "mkdir",
         "true",
         "false",
         "wpa_supplicant",
     )
+    INTERACTIVE_ROOT_TOKENS = ("ubus-cli", "wpa_cli")
 
     def __init__(self) -> None:
         self._transports: dict[str, Any] = {}
         self._device_specs: dict[str, dict[str, Any]] = {}
         self._sta_env_verified = False
+        self._command_resolver = CommandResolver(self)
 
     @property
     def name(self) -> str:
@@ -77,6 +86,18 @@ class Plugin(PluginBase):
 
     def discover_cases(self) -> list[dict[str, Any]]:
         return load_cases_dir(self.cases_dir)
+
+    # -- reporter overrides ----------------------------------------------------
+
+    def create_reporter(self) -> Any:
+        from testpilot.reporting.reporter import MarkdownReporter
+
+        return MarkdownReporter()
+
+    def report_formats(self) -> list[str]:
+        return ["xlsx", "md", "json"]
+
+    # -- helpers ---------------------------------------------------------------
 
     @staticmethod
     def _first_non_empty_line(text: str) -> str:
@@ -102,7 +123,7 @@ class Plugin(PluginBase):
 
     @staticmethod
     def _as_mapping(value: Any) -> dict[str, Any]:
-        return value if isinstance(value, dict) else {}
+        return CommandResolver.as_mapping(value)
 
     def _resolve_text(self, topology: Any, text: str) -> str:
         resolver = getattr(topology, "resolve", None)
@@ -188,27 +209,26 @@ class Plugin(PluginBase):
         cleaned = re.sub(r"_x[0-9A-Fa-f]{4}_", " ", cleaned)
         return re.sub(r"\s+", " ", cleaned).strip()
 
+    @classmethod
+    def _shell_executable_hints(cls) -> set[str]:
+        return {token.rsplit("/", 1)[-1] for token in cls.EXECUTABLE_TOKENS}
+
+    @classmethod
+    def _looks_shell_command(cls, command: str) -> bool:
+        normalized = cls._normalize_command_text(command)
+        first = normalized.split(maxsplit=1)[0].strip("`'\"") if normalized else ""
+        if "/" in first and not first.startswith(("/", "./", "../", "~/")):
+            return False
+        return looks_like_shell_command(
+            normalized,
+            executable_hints=cls._shell_executable_hints(),
+        )
+
+    def _split_safe_shell_commands(self, command: str) -> list[str]:
+        return self._command_resolver.split_safe_shell_commands(command)
+
     def _extract_cli_fragments(self, text: str) -> list[str]:
-        if not text:
-            return []
-
-        normalized = self._normalize_command_text(text)
-        token_pattern = "|".join(re.escape(token) for token in self.ROOT_COMMAND_TOKENS)
-        root_pattern = re.compile(rf"(?<![A-Za-z0-9_])(?:{token_pattern})\b")
-        match = root_pattern.search(normalized)
-        if not match:
-            return []
-
-        fragment = normalized[match.start():].strip().strip("`'\"")
-        fragment = fragment.rstrip("，。;")
-        raw_parts = re.split(rf";\s*(?=(?:{token_pattern})\b)", fragment)
-
-        commands: list[str] = []
-        for part in raw_parts:
-            sanitized = self._sanitize_cli_fragment(part)
-            if sanitized and self._looks_executable(sanitized):
-                commands.append(sanitized)
-        return commands
+        return self._command_resolver.extract_cli_fragments(text)
 
     @staticmethod
     def _join_shell_tokens(tokens: list[str]) -> str:
@@ -243,7 +263,7 @@ class Plugin(PluginBase):
                 break
             if token.startswith("//") or token.startswith("#"):
                 break
-            if token.startswith(("root@", "__TP_")):
+            if token.startswith("root@"):
                 break
 
             lowered = token.lower()
@@ -270,59 +290,65 @@ class Plugin(PluginBase):
         return cleaned
 
     def _sanitize_cli_fragment(self, fragment: str) -> str:
-        text = self._normalize_command_text(fragment)
-        if not text:
-            return ""
+        return self._command_resolver.sanitize_cli_fragment(fragment)
 
-        text = text.lstrip("`'\"; ")
+    @staticmethod
+    def _truncate_ubus_function_tail(text: str) -> str:
+        stripped = text.strip()
+        prefix = "ubus-cli WiFi."
+        if not stripped.startswith(prefix) or "(" not in stripped:
+            return stripped
 
-        # Force single-command execution: truncate transcript wrappers and chained statements.
-        for marker in ("; __tp_rc", ";__tp_rc", "; __TP_", ";__TP_", "; printf '__TP_", "; printf \"__TP_"):
-            pos = text.find(marker)
-            if pos > 0:
-                text = text[:pos].strip()
-        if ";" in text:
-            text = text.split(";", 1)[0].strip()
+        operand_start = len("ubus-cli ")
+        depth = 0
+        seen_open = False
+        end_index: int | None = None
+        for index, ch in enumerate(stripped[operand_start:], start=operand_start):
+            if ch == "(":
+                depth += 1
+                seen_open = True
+                continue
+            if ch == ")" and depth > 0:
+                depth -= 1
+                if depth == 0 and seen_open:
+                    end_index = index
+                    break
 
-        # Remove console prompt / marker tails appended from captured transcript.
-        for marker in (" root@prplOS", " __TP_BEGIN_", " __TP_END_", " __TP_RC_"):
-            pos = text.find(marker)
-            if pos > 0:
-                text = text[:pos].strip()
+        if end_index is None:
+            return stripped
 
-        # Transcript often embeds "command > expected-output"; keep command side only.
-        if " > " in text:
-            left, right = text.split(" > ", 1)
-            right = right.lstrip()
-            if right.startswith(("WiFi.", "ERROR", "root@", "__TP_")):
-                text = left.strip()
+        tail = stripped[end_index + 1 :].lstrip()
+        if not tail:
+            return stripped
+        if tail.startswith(("|", ">", ";", "&&", "||", "2>")):
+            return stripped
+        return stripped[: end_index + 1]
 
-        # Some Excel-derived prose appends expected samples after a real readback query.
-        if text.count("WiFi.") > 1 or "?" in text or "|" in text:
-            text = re.sub(r"\s+WiFi\.[A-Za-z0-9_.{}-]+\s*=\s*.*$", "", text).strip()
+    @staticmethod
+    def _quote_ubus_operand(command: str) -> str:
+        stripped = command.strip()
+        if not stripped.startswith("ubus-cli "):
+            return stripped
 
-        # In malformed transcript strings, quotes are often unbalanced; remove them to recover.
-        if text.count('"') % 2 == 1:
-            text = text.replace('"', "")
-        if text.count("'") % 2 == 1:
-            text = text.replace("'", "")
+        parts = stripped.split(maxsplit=2)
+        if len(parts) < 2:
+            return stripped
 
-        try:
-            tokens = shlex.split(text, posix=True)
-        except ValueError:
-            return text
+        operand = parts[1].strip("`'\"")
+        if not operand.startswith("WiFi."):
+            return stripped
+        if not any(ch in operand for ch in ("(", ")", "?", "*")):
+            return stripped
 
-        trimmed = self._trim_transcript_tokens(tokens)
-        if not trimmed:
-            return text
-        return self._join_shell_tokens(trimmed)
+        remainder = f" {parts[2]}" if len(parts) > 2 else ""
+        return f'ubus-cli "{operand}"{remainder}'.strip()
 
     @staticmethod
     def _command_starts_executable(command: str) -> bool:
         stripped = command.strip()
         if not stripped:
             return False
-        return stripped.split(maxsplit=1)[0].strip("`'\"") in Plugin.EXECUTABLE_TOKENS
+        return Plugin._looks_shell_command(stripped)
 
     @staticmethod
     def _field_name_from_capture(case: dict[str, Any], capture_name: str) -> str:
@@ -350,11 +376,20 @@ class Plugin(PluginBase):
         object_path = object_path.replace("{i}", "*")
 
         field_name = self._field_name_from_capture(case, capture_name)
-        api = field_name or str(source.get("api", "")).strip()
+        source_api = str(source.get("api", "")).strip()
+        if source_api.endswith("()") and not source_api.lower().startswith("get"):
+            return None
+        api = field_name or source_api
         if not api:
             return None
-        if api.endswith("()"):
+        if source_api.endswith("()"):
             return f'ubus-cli "{object_path}{api}"'
+        if "AssociatedDevice.*." in object_path and field_name:
+            parent_object = object_path.split("AssociatedDevice.*.", 1)[0]
+            return (
+                f'ubus-cli "{parent_object}?" '
+                f'| grep -E "AssociatedDevice\\.[0-9]+\\.{re.escape(field_name)}"'
+            )
         return f'ubus-cli "{object_path}{api.rstrip("?")}?"'
 
     def _prefer_synthesized_readback(
@@ -364,50 +399,53 @@ class Plugin(PluginBase):
         raw_command: str,
         candidate_commands: list[str],
     ) -> str | None:
-        capture_name = str(step.get("capture", "")).strip()
-        if not capture_name:
-            return None
-
-        synthesized = self._synthesize_readback_command(case, capture_name)
-        if not synthesized:
-            return None
-
-        normalized = self._normalize_command_text(raw_command).lower()
-        if not self._command_starts_executable(raw_command):
-            return synthesized
-        if len(candidate_commands) > 1:
-            return synthesized
-        if normalized.count("wifi.") >= 3:
-            return synthesized
-        if " > " in normalized and normalized.count("wifi.") >= 2:
-            return synthesized
-        if any(
-            marker in normalized
-            for marker in (
-                "verify ",
-                "read back",
-                "read-only api",
-                "get ",
-                "check ",
-                "using wireshark",
-                "repeat step",
-                "_x0001_",
-            )
-        ):
-            return synthesized
-        if candidate_commands and all("=" in command and "?" not in command for command in candidate_commands):
-            return synthesized
-        return None
+        return self._command_resolver.prefer_synthesized_readback(
+            case, step, raw_command, candidate_commands
+        )
 
     def _looks_executable(self, command: str) -> bool:
-        stripped = command.strip()
-        if not stripped:
+        return self._command_resolver.looks_executable(command)
+
+    @staticmethod
+    def _looks_plausible_cli_command(command: str) -> bool:
+        try:
+            tokens = shlex.split(command, posix=True)
+        except ValueError:
+            tokens = command.split()
+        if not tokens:
             return False
-        first = stripped.split(maxsplit=1)[0].strip("`'\"")
-        first_base = first.rsplit("/", 1)[-1]
-        if first_base in self.EXECUTABLE_TOKENS:
-            return True
-        return False
+
+        first = tokens[0].strip("`'\"").rsplit("/", 1)[-1]
+        rest = tokens[1:]
+        prose_tokens = {
+            "again",
+            "after",
+            "against",
+            "and",
+            "as",
+            "compare",
+            "command",
+            "confirm",
+            "do",
+            "get",
+            "set",
+            "then",
+            "using",
+            "verification",
+            "when",
+            "with",
+        }
+        normalized_rest = {token.strip("`'\" ,;:.").lower() for token in rest if token.strip("`'\" ,;:.")}
+        if first == "ubus-cli":
+            if not rest:
+                return False
+            second = rest[0].strip("`'\"")
+            if not second.startswith("WiFi."):
+                return False
+            return not bool(normalized_rest.intersection(prose_tokens))
+        if first in {"wl", "iw", "wpa_cli"}:
+            return bool(rest) and not bool(normalized_rest.intersection(prose_tokens))
+        return True
 
     @staticmethod
     def _stringify(value: Any) -> str:
@@ -427,34 +465,39 @@ class Plugin(PluginBase):
             return text
         return f"{text[:limit]}...(truncated {len(text) - limit} chars)"
 
-    def _select_fallback_command(
+    @classmethod
+    def _is_runtime_hlapi_command(cls, command: str) -> bool:
+        normalized = cls._normalize_command_text(command)
+        if not normalized or not cls._command_starts_executable(normalized):
+            return False
+
+        lower = normalized.lower()
+        if "get command:" in lower or "set command:" in lower:
+            return False
+        if re.search(r"\([^)]*:[A-Za-z]", normalized):
+            return False
+        if re.search(r"\)\s+[A-Za-z0-9_.-]", normalized) and "?" not in normalized and "=" not in normalized:
+            return False
+
+        payload = normalized.split(maxsplit=1)[1] if " " in normalized else ""
+        if not payload:
+            return False
+        return "?" in payload or "=" in payload or payload.endswith(")")
+
+    def _select_fallback_commands(
         self,
         case: dict[str, Any],
         original_command: str,
         topology: Any,
         step_id: str,
-    ) -> tuple[str, str]:
-        fragment = self._extract_cli_fragment(original_command)
-        if fragment:
-            return self._resolve_text(topology, fragment), "extract_from_step_text"
-
-        for field in ("hlapi_command", "verification_command"):
-            raw = str(case.get(field, "")).strip()
-            if not raw:
-                continue
-            fallback = self._extract_cli_fragment(raw) or self._first_non_empty_line(raw)
-            if fallback:
-                return self._resolve_text(topology, fallback), f"fallback_{field}"
-
-        return f'echo "[skip] non-executable step {step_id}"', "fallback_skip_echo"
+    ) -> tuple[list[str], str]:
+        return self._command_resolver.select_fallback_commands(
+            case, original_command, topology, step_id
+        )
 
     @staticmethod
     def _is_unexecutable_result(result: dict[str, Any]) -> bool:
-        rc = int(result.get("returncode", 1))
-        if rc in (126, 127):
-            return True
-        combined = f"{result.get('stdout', '')}\n{result.get('stderr', '')}".lower()
-        return ("not found" in combined) or ("unknown command" in combined) or ("syntax error" in combined)
+        return CommandResolver.is_unexecutable_result(result)
 
     @staticmethod
     def _extract_key_values(output: str) -> dict[str, Any]:
@@ -467,6 +510,11 @@ class Plugin(PluginBase):
             if isinstance(parsed, dict):
                 for key, value in parsed.items():
                     captured[str(key)] = value
+            elif isinstance(parsed, list):
+                for item in parsed:
+                    if isinstance(item, dict):
+                        for key, value in item.items():
+                            captured[str(key)] = value
         except Exception:
             pass
 
@@ -491,26 +539,7 @@ class Plugin(PluginBase):
             if not line:
                 continue
             line = line.lstrip("> ").strip()
-            # Trim serialwrap wrappers/tails so random rc markers do not pollute captured values.
             line = re.sub(r"^['\"];\s*", "", line)
-            line = re.sub(
-                r";?\s*__tp_rc=.*$",
-                "",
-                line,
-                flags=re.IGNORECASE,
-            )
-            line = re.sub(
-                r";?\s*printf\s+['\"]__TP_[^'\"]+['\"].*$",
-                "",
-                line,
-                flags=re.IGNORECASE,
-            )
-            line = re.sub(
-                r"__TP_[A-Z_0-9a-f]+__=?[^\s]*",
-                " ",
-                line,
-                flags=re.IGNORECASE,
-            ).strip()
             if not line:
                 continue
             match = re.match(r"([A-Za-z0-9_.()/-]+)\s*[:=]\s*(.*)$", line)
@@ -518,39 +547,40 @@ class Plugin(PluginBase):
                 continue
             key, value = match.groups()
             normalized = value.strip().strip("'\"")
-            normalized = re.sub(
-                r"\s*__tp_(?:rc|end)_[^\s]*.*$",
-                "",
-                normalized,
-                flags=re.IGNORECASE,
-            ).strip().strip("'\"")
-            if normalized or value.strip() in {'""', "''"}:
+            # Strip trailing ubus object/array delimiters left by
+            # method-call outputs like getRadioAirStats() / getRadioStats().
+            normalized = re.sub(r"[,}\]]+$", "", normalized).strip()
+            if normalized or value.strip() in {"", '""', "''"}:
                 captured[key] = normalized
 
         return captured
 
-    @staticmethod
-    def _normalize_transcript_noise(text: str) -> str:
+    @classmethod
+    def _is_command_echo_line(cls, line: str) -> bool:
+        stripped = line.strip()
+        if not stripped:
+            return False
+        if stripped.startswith(">"):
+            return True
+
+        first = stripped.split(maxsplit=1)[0].strip("`'\"")
+        first_base = first.rsplit("/", 1)[-1]
+        return first_base in cls.EXECUTABLE_TOKENS
+
+    @classmethod
+    def _normalize_transcript_noise(cls, text: str) -> str:
         if not text:
             return ""
-        # Remove serialwrap markers/prompt echoes to reduce random matching noise.
-        cleaned = re.sub(r"__TP_[A-Z_0-9a-f]+__=?[^\s]*", " ", text, flags=re.IGNORECASE)
-        cleaned = re.sub(r"printf\s+['\"]__TP_[^'\"]+['\"]", " ", cleaned, flags=re.IGNORECASE)
         lines: list[str] = []
-        for raw in cleaned.splitlines():
+        for raw in text.splitlines():
             line = raw.strip()
             if not line:
                 continue
             line = re.sub(r"^['\"];\s*", "", line)
-            line = re.sub(r";?\s*__tp_rc=.*$", "", line, flags=re.IGNORECASE)
-            line = re.sub(
-                r";?\s*printf\s+['\"]__TP_[^'\"]+['\"].*$",
-                "",
-                line,
-                flags=re.IGNORECASE,
-            )
             line = line.strip()
             if not line:
+                continue
+            if cls._is_command_echo_line(line):
                 continue
             if line in {">", "$", "#"}:
                 continue
@@ -609,7 +639,7 @@ class Plugin(PluginBase):
         for step_id, result in step_results.items():
             sid = str(step_id)
             item = self._as_mapping(result)
-            output = str(item.get("output", ""))
+            output = self._normalize_transcript_noise(str(item.get("output", "")))
             parsed = self._extract_key_values(output)
             user_captured = item.get("captured")
             if isinstance(user_captured, dict):
@@ -711,10 +741,28 @@ class Plugin(PluginBase):
     def _iter_env_script_commands(self, script: str) -> list[tuple[str, str]]:
         commands: list[tuple[str, str]] = []
         target = "STA"
+
+        # Pre-process: join continuation lines with unbalanced single quotes
+        # (e.g. multi-line printf '...\n...\n...' → single line).
+        raw_lines: list[str] = []
+        pending: str | None = None
         for raw in script.splitlines():
-            line = raw.strip()
-            if not line:
+            stripped = raw.strip()
+            if not stripped:
                 continue
+            if pending is not None:
+                pending = pending + "\n" + stripped
+                if pending.count("'") % 2 == 0:
+                    raw_lines.append(pending)
+                    pending = None
+            elif stripped.count("'") % 2 != 0:
+                pending = stripped
+            else:
+                raw_lines.append(stripped)
+        if pending is not None:
+            raw_lines.append(pending)
+
+        for line in raw_lines:
             lower_line = line.lower()
             if lower_line.endswith(":"):
                 if "dut" in lower_line:
@@ -727,47 +775,127 @@ class Plugin(PluginBase):
             # Keep exact quoted command for sta_env_setup lines that already
             # begin with an executable token (e.g. wpa_cli with nested quotes).
             first_token = line.split(maxsplit=1)[0].strip("`'\"")
-            if first_token in self.CLI_FALLBACK_TOKENS:
-                command = line
+            if first_token in self.CLI_FALLBACK_TOKENS or self._looks_shell_command(line):
+                resolved_commands = self._split_safe_shell_commands(line)
             else:
-                command = self._extract_cli_fragment(line)
-            if command:
-                commands.append((target, command))
+                resolved_commands = self._extract_cli_fragments(line)
+            for command in resolved_commands:
+                if command:
+                    commands.append((target, command))
         return commands
 
-    def _run_sta_env_setup(self, case: dict[str, Any], topology: Any) -> bool:
-        sta_setup = case.get("sta_env_setup")
-        if not isinstance(sta_setup, str) or not sta_setup.strip():
+    def _run_yaml_env_script(
+        self,
+        case: dict[str, Any],
+        topology: Any,
+        *,
+        field_name: str,
+    ) -> bool:
+        script = case.get(field_name)
+        if not isinstance(script, str) or not script.strip():
             return True
 
         case_id = str(case.get("id", ""))
-        for index, (target_name, raw_command) in enumerate(self._iter_env_script_commands(sta_setup), start=1):
+        for index, (target_name, raw_command) in enumerate(
+            self._iter_env_script_commands(script),
+            start=1,
+        ):
             transport = self._transports.get(target_name)
             if transport is None:
                 log.warning(
-                    "[%s] verify_env: %s sta_env_setup[%d] missing target transport=%s",
+                    "[%s] setup_env: %s %s[%d] missing target transport=%s",
                     self.name,
                     case_id,
+                    field_name,
                     index,
                     target_name,
                 )
                 return False
 
             command = self._resolve_text(topology, raw_command)
-            result = transport.execute(command, timeout=45.0)
-            rc = int(result.get("returncode", 1))
-            if rc != 0:
+            result = self._execute_env_command(transport, command, timeout=45.0)
+            if not self._env_command_succeeded(command, result):
                 log.warning(
-                    "[%s] verify_env: %s sta_env_setup[%d] failed target=%s rc=%s cmd=%s",
+                    "[%s] setup_env: %s %s[%d] failed target=%s rc=%s cmd=%s out=%s",
                     self.name,
                     case_id,
+                    field_name,
                     index,
                     target_name,
-                    rc,
+                    int(result.get("returncode", 1)),
                     self._preview_value(command, limit=96),
+                    self._preview_value(self._env_output_text(result)),
                 )
                 return False
         return True
+
+    def _run_sta_env_setup(self, case: dict[str, Any], topology: Any) -> bool:
+        return self._run_yaml_env_script(case, topology, field_name="sta_env_setup")
+
+    @classmethod
+    def _env_output_text(cls, result: dict[str, Any]) -> str:
+        stdout = str(result.get("stdout", "") or "")
+        stderr = str(result.get("stderr", "") or "")
+        return cls._normalize_transcript_noise(
+            "\n".join(chunk for chunk in (stdout, stderr) if chunk).strip()
+        )
+
+    @classmethod
+    def _env_command_succeeded(cls, command: str, result: dict[str, Any]) -> bool:
+        output = cls._env_output_text(result)
+        lowered_output = output.lower()
+        normalized_command = cls._normalize_command_text(command)
+        lowered_command = normalized_command.lower()
+
+        if any(
+            marker in lowered_output
+            for marker in (
+                "no data found",
+                "syntax error",
+                "unknown command",
+                "/bin/ash:",
+                "not found",
+            )
+        ):
+            return False
+
+        if "iw dev wl" in lowered_command and " link" in lowered_command:
+            if "not connected" in lowered_output:
+                return False
+            return "connected to " in lowered_output or (
+                "ssid:" in lowered_output
+                and any(
+                    marker in lowered_output
+                    for marker in (
+                        "signal:",
+                        "tx bitrate",
+                        "rx:",
+                        "tx:",
+                    )
+                )
+            )
+        if "wpa_cli" in lowered_command and " ping" in lowered_command:
+            return "PONG" in output.upper()
+        if "wpa_cli" in lowered_command and " status" in lowered_command:
+            return "wpa_state=COMPLETED" in output
+        if lowered_command.startswith("hostapd -t "):
+            return not any(
+                marker in lowered_output
+                for marker in (
+                    "errors found in configuration file",
+                    "failed to set up interface",
+                    "failed to initialize interface",
+                    "invalid ",
+                )
+            )
+        if lowered_command.startswith("wl -i wl") and lowered_command.endswith(" bss"):
+            return output.strip().lower() == "up"
+        if "associateddevice" in lowered_command and "macaddress?" in lowered_command:
+            return bool(re.search(r"([0-9a-f]{2}:){5}[0-9a-f]{2}", output, re.IGNORECASE))
+        if "ubus-cli" in lowered_command and "?" in normalized_command:
+            return bool(output.strip())
+
+        return int(result.get("returncode", 1)) == 0
 
     def _run_required_command(
         self,
@@ -778,10 +906,10 @@ class Plugin(PluginBase):
         command: str,
         timeout: float = 30.0,
     ) -> bool:
-        result = transport.execute(command, timeout=timeout)
-        rc = int(result.get("returncode", 1))
-        if rc == 0:
+        result = self._execute_env_command(transport, command, timeout=timeout)
+        if self._env_command_succeeded(command, result):
             return True
+        rc = int(result.get("returncode", 1))
         log.warning(
             "[%s] verify_env: %s %s failed rc=%s cmd=%s out=%s",
             self.name,
@@ -789,9 +917,86 @@ class Plugin(PluginBase):
             label,
             rc,
             self._preview_value(command, limit=120),
-            self._preview_value(result.get("stdout", "")),
+            self._preview_value(self._env_output_text(result)),
         )
         return False
+
+    def _selected_sta_bands(self, case: dict[str, Any]) -> tuple[str, ...]:
+        marker_chunks: list[str] = []
+        for key in ("hlapi_command", "verification_command"):
+            value = case.get(key)
+            if isinstance(value, str) and value.strip():
+                marker_chunks.append(value)
+
+        source = self._as_mapping(case.get("source"))
+        source_object = source.get("object")
+        if isinstance(source_object, str) and source_object.strip():
+            marker_chunks.append(source_object)
+
+        steps = case.get("steps")
+        if isinstance(steps, list):
+            for step in steps:
+                step_mapping = self._as_mapping(step)
+                for key in ("command", "target", "capture"):
+                    value = step_mapping.get(key)
+                    if isinstance(value, str) and value.strip():
+                        marker_chunks.append(value)
+
+        pass_criteria = case.get("pass_criteria")
+        if isinstance(pass_criteria, list):
+            for criterion in pass_criteria:
+                criterion_mapping = self._as_mapping(criterion)
+                field = criterion_mapping.get("field")
+                if isinstance(field, str) and field.strip():
+                    marker_chunks.append(field)
+
+        haystack = "\n".join(marker_chunks)
+        band_patterns = (
+            ("5g", (r"WiFi\.AccessPoint\.(?:1|2)\b", r"\bwl0(?:\.\d+)?\b")),
+            ("6g", (r"WiFi\.AccessPoint\.(?:3|4)\b", r"\bwl1(?:\.\d+)?\b")),
+            ("2.4g", (r"WiFi\.AccessPoint\.(?:5|6)\b", r"\bwl2(?:\.\d+)?\b")),
+        )
+        selected = [
+            band
+            for band, patterns in band_patterns
+            if any(re.search(pattern, haystack) for pattern in patterns)
+        ]
+        return tuple(selected or ("5g", "6g", "2.4g"))
+
+    def _has_explicit_wifi_bands(self, case: dict[str, Any]) -> bool:
+        """Return True when the case explicitly references WiFi AP/radio bands."""
+        marker_chunks: list[str] = []
+        for key in ("hlapi_command", "verification_command"):
+            value = case.get(key)
+            if isinstance(value, str) and value.strip():
+                marker_chunks.append(value)
+        source = self._as_mapping(case.get("source"))
+        source_object = source.get("object")
+        if isinstance(source_object, str) and source_object.strip():
+            marker_chunks.append(source_object)
+        steps = case.get("steps")
+        if isinstance(steps, list):
+            for step in steps:
+                step_mapping = self._as_mapping(step)
+                for key in ("command", "target", "capture"):
+                    value = step_mapping.get(key)
+                    if isinstance(value, str) and value.strip():
+                        marker_chunks.append(value)
+        pass_criteria = case.get("pass_criteria")
+        if isinstance(pass_criteria, list):
+            for criterion in pass_criteria:
+                criterion_mapping = self._as_mapping(criterion)
+                field = criterion_mapping.get("field")
+                if isinstance(field, str) and field.strip():
+                    marker_chunks.append(field)
+        haystack = "\n".join(marker_chunks)
+        band_patterns = (
+            r"WiFi\.AccessPoint\.(?:1|2|3|4|5|6)\b",
+            r"\bwl[012](?:\.\d+)?\b",
+            r"WiFi\.Radio\.\d",
+            r"WiFi\.SSID\.\d",
+        )
+        return any(re.search(p, haystack) for p in band_patterns)
 
     def _connect_with_retry(
         self,
@@ -819,8 +1024,8 @@ class Plugin(PluginBase):
                 command=f"sleep {sleep_seconds}",
                 timeout=max(5.0, float(sleep_seconds + 2)),
             )
-            verify_result = transport.execute(verify_cmd, timeout=20.0)
-            if int(verify_result.get("returncode", 1)) == 0:
+            verify_result = self._execute_env_command(transport, verify_cmd, timeout=20.0)
+            if self._env_command_succeeded(verify_cmd, verify_result):
                 return True
             log.warning(
                 "[%s] verify_env: %s %s verify attempt=%d failed",
@@ -836,116 +1041,150 @@ class Plugin(PluginBase):
         sta = self._transports.get("STA")
         if sta is None:
             return False
-        wpa_cli = "wpa_cli -p /var/run/wpa_supplicant -i wl1"
+        wpa_cli = "wpa_cli -i wl1"
+        selected_bands = set(self._selected_sta_bands(case))
 
-        # 5G
-        five_g_prep = (
-            "ubus-cli WiFi.AccessPoint.1.Enable=0",
-            "ubus-cli WiFi.AccessPoint.2.Enable=0",
-            "killall wpa_supplicant 2>/dev/null || true",
-            "iw dev wl0.1 del 2>/dev/null || true",
-            "iw dev wl0 disconnect 2>/dev/null || true",
-            "iw dev wl0 set type managed",
-            "ifconfig wl0 up",
-        )
-        for idx, cmd in enumerate(five_g_prep, start=1):
-            if not self._run_required_command(
+        # Suppress kernel console messages to prevent UART prompt detection issues
+        # (Broadcom dhd driver floods console during WiFi mode switches).
+        self._execute_env_command(sta, "dmesg -n 1", timeout=5.0)
+
+        # 5G (WPA2-Personal via wpa_supplicant)
+        if "5g" in selected_bands:
+            five_g_prep = (
+                "ubus-cli WiFi.AccessPoint.1.Enable=0",
+                "ubus-cli WiFi.AccessPoint.2.Enable=0",
+                "killall wpa_supplicant 2>/dev/null || true",
+                "iw dev wl0.1 del 2>/dev/null || true",
+                "iw dev wl0 disconnect 2>/dev/null || true",
+                "ifconfig wl0 down",
+                "wl -i wl0 ap 0",
+                "wl -i wl0 up",
+                "ifconfig wl0 up",
+                "rm -rf /var/run/wpa_supplicant",
+                "mkdir -p /var/run/wpa_supplicant",
+                "printf 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nnetwork={\\nssid=\"TestPilot_BTM\"\\nkey_mgmt=WPA-PSK\\npsk=\"00000000\"\\n}\\n' > /tmp/wpa_wl0.conf",
+                "wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf",
+                "sleep 5",
+            )
+            for idx, cmd in enumerate(five_g_prep, start=1):
+                if not self._run_required_command(
+                    transport=sta,
+                    case_id=case_id,
+                    label=f"sta_5g_prep.{idx}",
+                    command=cmd,
+                ):
+                    return False
+            if not self._connect_with_retry(
                 transport=sta,
                 case_id=case_id,
-                label=f"sta_5g_prep.{idx}",
-                command=cmd,
+                label="sta_5g",
+                connect_cmd="wpa_cli -i wl0 reconnect",
+                verify_cmd="iw dev wl0 link",
+                attempts=3,
+                sleep_seconds=5,
             ):
                 return False
-        if not self._connect_with_retry(
-            transport=sta,
-            case_id=case_id,
-            label="sta_5g",
-            connect_cmd="iw dev wl0 connect B0_5G_AP",
-            verify_cmd="iw dev wl0 link | grep -q 'Connected to '",
-            attempts=3,
-            sleep_seconds=3,
-        ):
-            return False
 
-        # 6G (SAE)
-        six_g_prep = (
-            "ubus-cli WiFi.AccessPoint.3.Enable=0",
-            "ubus-cli WiFi.AccessPoint.4.Enable=0",
-            "killall wpa_supplicant 2>/dev/null || true",
-            "rm -f /var/run/wpa_supplicant/wl1 2>/dev/null || true",
-            "iw dev wl1.1 del 2>/dev/null || true",
-            "iw dev wl1 disconnect 2>/dev/null || true",
-            "iw dev wl1 set type managed",
-            "ifconfig wl1 up",
-            "mkdir -p /var/run/wpa_supplicant",
-            "printf 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nsae_pwe=2\\nnetwork={\\nssid=\"B0_6G_AP\"\\nkey_mgmt=SAE\\nsae_password=\"B0StaTest1234\"\\nieee80211w=2\\nscan_ssid=1\\n}\\n' > /tmp/wpa_wl1.conf",
-            "wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant",
-            "sleep 3",
-        )
-        for idx, cmd in enumerate(six_g_prep, start=1):
-            if not self._run_required_command(
+        # 6G (SAE) — non-fatal: STA Broadcom dhd driver may not support
+        # SAE-H2E required by DUT 6G; failure is logged but does not block.
+        if "6g" in selected_bands:
+            six_g_prep = (
+                "ubus-cli WiFi.AccessPoint.3.Enable=0",
+                "ubus-cli WiFi.AccessPoint.4.Enable=0",
+                "wpa_cli -i wl1 terminate 2>/dev/null || true",
+                "rm -f /var/run/wpa_supplicant/wl1 2>/dev/null || true",
+                "iw dev wl1.1 del 2>/dev/null || true",
+                "iw dev wl1 disconnect 2>/dev/null || true",
+                "ifconfig wl1 down",
+                "wl -i wl1 ap 0",
+                "wl -i wl1 up",
+                "ifconfig wl1 up",
+                "mkdir -p /var/run/wpa_supplicant",
+                "printf 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nsae_pwe=2\\nnetwork={\\nssid=\"testpilot6G\"\\nkey_mgmt=SAE\\nsae_password=\"00000000\"\\nieee80211w=2\\nscan_ssid=1\\n}\\n' > /tmp/wpa_wl1.conf",
+                "wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf",
+                "sleep 5",
+            )
+            six_g_ok = True
+            for idx, cmd in enumerate(six_g_prep, start=1):
+                if not self._run_required_command(
+                    transport=sta,
+                    case_id=case_id,
+                    label=f"sta_6g_prep.{idx}",
+                    command=cmd,
+                ):
+                    six_g_ok = False
+                    break
+            if six_g_ok:
+                six_g_ok = self._connect_with_retry(
+                    transport=sta,
+                    case_id=case_id,
+                    label="sta_6g_ctrl",
+                    connect_cmd=f"{wpa_cli} ping",
+                    verify_cmd=f"{wpa_cli} ping",
+                    attempts=3,
+                    sleep_seconds=1,
+                )
+            if six_g_ok:
+                six_g_ok = self._connect_with_retry(
+                    transport=sta,
+                    case_id=case_id,
+                    label="sta_6g",
+                    connect_cmd=f"{wpa_cli} reconnect",
+                    verify_cmd="iw dev wl1 link",
+                    attempts=3,
+                    sleep_seconds=8,
+                )
+            if six_g_ok:
+                self._run_required_command(
+                    transport=sta,
+                    case_id=case_id,
+                    label="sta_6g_status",
+                    command=f"{wpa_cli} status",
+                    timeout=20.0,
+                )
+            if not six_g_ok:
+                log.warning(
+                    "[%s] verify_env: %s 6G connect failed (SAE-H2E likely unsupported), continuing",
+                    self.name,
+                    case_id,
+                )
+
+        # 2.4G (WPA2-Personal via wpa_supplicant)
+        if "2.4g" in selected_bands:
+            two_g_prep = (
+                "ubus-cli WiFi.AccessPoint.5.Enable=0",
+                "ubus-cli WiFi.AccessPoint.6.Enable=0",
+                "wpa_cli -i wl2 terminate 2>/dev/null || true",
+                "iw dev wl2.1 del 2>/dev/null || true",
+                "iw dev wl2 disconnect 2>/dev/null || true",
+                "ifconfig wl2 down",
+                "wl -i wl2 ap 0",
+                "wl -i wl2 up",
+                "ifconfig wl2 up",
+                "rm -f /var/run/wpa_supplicant/wl2 2>/dev/null || true",
+                "mkdir -p /var/run/wpa_supplicant",
+                "printf 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nnetwork={\\nssid=\"testpilot2G\"\\nkey_mgmt=WPA-PSK\\npsk=\"00000000\"\\n}\\n' > /tmp/wpa_wl2.conf",
+                "wpa_supplicant -B -D nl80211 -i wl2 -c /tmp/wpa_wl2.conf",
+                "sleep 5",
+            )
+            for idx, cmd in enumerate(two_g_prep, start=1):
+                if not self._run_required_command(
+                    transport=sta,
+                    case_id=case_id,
+                    label=f"sta_24g_prep.{idx}",
+                    command=cmd,
+                ):
+                    return False
+            if not self._connect_with_retry(
                 transport=sta,
                 case_id=case_id,
-                label=f"sta_6g_prep.{idx}",
-                command=cmd,
+                label="sta_24g",
+                connect_cmd="wpa_cli -i wl2 reconnect",
+                verify_cmd="iw dev wl2 link",
+                attempts=3,
+                sleep_seconds=5,
             ):
                 return False
-        if not self._connect_with_retry(
-            transport=sta,
-            case_id=case_id,
-            label="sta_6g_ctrl",
-            connect_cmd=f"{wpa_cli} ping",
-            verify_cmd=f"{wpa_cli} ping | grep -q PONG",
-            attempts=3,
-            sleep_seconds=1,
-        ):
-            return False
-        if not self._connect_with_retry(
-            transport=sta,
-            case_id=case_id,
-            label="sta_6g",
-            connect_cmd=f"{wpa_cli} reconnect",
-            verify_cmd="iw dev wl1 link | grep -q 'Connected to '",
-            attempts=3,
-            sleep_seconds=8,
-        ):
-            return False
-        if not self._run_required_command(
-            transport=sta,
-            case_id=case_id,
-            label="sta_6g_status",
-            command=f"{wpa_cli} status | grep -q 'wpa_state=COMPLETED'",
-            timeout=20.0,
-        ):
-            return False
-
-        # 2.4G
-        two_g_prep = (
-            "ubus-cli WiFi.AccessPoint.5.Enable=0",
-            "ubus-cli WiFi.AccessPoint.6.Enable=0",
-            "iw dev wl2.1 del 2>/dev/null || true",
-            "iw dev wl2 disconnect 2>/dev/null || true",
-            "iw dev wl2 set type managed",
-            "ifconfig wl2 up",
-        )
-        for idx, cmd in enumerate(two_g_prep, start=1):
-            if not self._run_required_command(
-                transport=sta,
-                case_id=case_id,
-                label=f"sta_24g_prep.{idx}",
-                command=cmd,
-            ):
-                return False
-        if not self._connect_with_retry(
-            transport=sta,
-            case_id=case_id,
-            label="sta_24g",
-            connect_cmd="iw dev wl2 connect B0_24G_AP",
-            verify_cmd="iw dev wl2 link | grep -q 'Connected to '",
-            attempts=3,
-            sleep_seconds=3,
-        ):
-            return False
         return True
 
     def _run_sta_band_baseline(self, case: dict[str, Any]) -> bool:
@@ -953,36 +1192,109 @@ class Plugin(PluginBase):
         dut = self._transports.get("DUT")
         if dut is None:
             return False
+        selected_bands = set(self._selected_sta_bands(case))
 
-        dut_commands = (
-            "ubus-cli WiFi.SSID.4.SSID=B0_5G_AP",
-            "ubus-cli WiFi.SSID.6.SSID=B0_6G_AP",
-            "ubus-cli WiFi.SSID.8.SSID=B0_24G_AP",
-            "ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None",
-            "ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled",
-            "ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=None",
-            "ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled",
-            "ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal",
-            "ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase=B0StaTest1234",
-            "ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Required",
-            "ubus-cli WiFi.AccessPoint.3.MultiAPType=FronthaulBSS",
-            "ubus-cli WiFi.AccessPoint.1.Enable=1",
-            "ubus-cli WiFi.AccessPoint.3.Enable=1",
-            "ubus-cli WiFi.AccessPoint.5.Enable=1",
-        )
+        # Check if BSS is already up — skip DUT config if radios are active.
+        # We accept factory SSIDs (EasyMesh may override 5G SSID changes).
+        bss_map = {"5g": "wl0", "6g": "wl1", "2.4g": "wl2"}
+        all_up = True
+        for band in selected_bands:
+            iface = bss_map.get(band)
+            if iface:
+                result = self._execute_env_command(dut, f"wl -i {iface} bss", timeout=10.0)
+                if "up" not in self._env_output_text(result).strip().lower():
+                    all_up = False
+                    break
+        if all_up:
+            log.info("[%s] verify_env: %s BSS already up, skipping DUT baseline", self.name, case_id)
+            # Always ensure 5G is WPA2-Personal even when BSS is up.
+            # EasyMesh may revert ModeEnabled to WPA3-Personal (SAE-H2E),
+            # which is incompatible with the STA Broadcom dhd driver.
+            if "5g" in selected_bands:
+                self._execute_env_command(
+                    dut,
+                    "ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal",
+                    timeout=15.0,
+                )
+            return True
+
+        # DUT baseline: enable Radio/AP, set security and KeyPassPhrase.
+        # We do NOT change SSIDs — EasyMesh controller overrides 5G SSID;
+        # factory SSIDs (TestPilot_BTM/testpilot6G/testpilot2G) are accepted.
+        # 5G must be forced to WPA2-Personal (factory SAE-H2E incompatible with STA).
+        dut_commands: list[str] = []
+        if "5g" in selected_bands:
+            dut_commands.extend(
+                (
+                    "ubus-cli WiFi.Radio.1.Enable=1",
+                    "ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal",
+                    'ubus-cli \'WiFi.AccessPoint.1.Security.KeyPassPhrase="00000000"\'',
+                    "ubus-cli WiFi.AccessPoint.1.Enable=1",
+                )
+            )
+        if "6g" in selected_bands:
+            dut_commands.extend(
+                (
+                    "ubus-cli WiFi.Radio.2.Enable=1",
+                    'ubus-cli \'WiFi.AccessPoint.3.Security.KeyPassPhrase="00000000"\'',
+                    "ubus-cli WiFi.AccessPoint.3.Enable=1",
+                )
+            )
+        if "2.4g" in selected_bands:
+            dut_commands.extend(
+                (
+                    "ubus-cli WiFi.Radio.3.Enable=1",
+                    'ubus-cli \'WiFi.AccessPoint.5.Security.KeyPassPhrase="00000000"\'',
+                    "ubus-cli WiFi.AccessPoint.5.Enable=1",
+                )
+            )
+        # Apply DUT config (no wld_gen — boot sequence handles radio init).
         for index, command in enumerate(dut_commands, start=1):
-            result = dut.execute(command, timeout=20.0)
-            rc = int(result.get("returncode", 1))
-            if rc != 0:
+            result = self._execute_env_command(dut, command, timeout=30.0)
+            if not self._env_command_succeeded(command, result):
                 log.warning(
-                    "[%s] verify_env: %s sta_baseline[%d] failed rc=%s cmd=%s",
+                    "[%s] verify_env: %s sta_baseline[%d] failed rc=%s cmd=%s out=%s",
                     self.name,
                     case_id,
                     index,
-                    rc,
+                    int(result.get("returncode", 1)),
                     command,
+                    self._preview_value(self._env_output_text(result)),
                 )
                 return False
+
+        # Wait for hostapd to reload after DUT config changes.
+        self._execute_env_command(dut, "sleep 5", timeout=10.0)
+
+        bss_commands: list[str] = []
+        if "5g" in selected_bands:
+            bss_commands.append("wl -i wl0 bss")
+        if "6g" in selected_bands:
+            bss_commands.append("wl -i wl1 bss")
+        if "2.4g" in selected_bands:
+            bss_commands.append("wl -i wl2 bss")
+        # Retry BSS readiness — after reboot, radios may need extra time.
+        bss_max_wait = 60.0
+        bss_poll_interval = 5.0
+        for index, command in enumerate(bss_commands, start=1):
+            deadline = time.monotonic() + bss_max_wait
+            ready = False
+            while time.monotonic() < deadline:
+                result = self._execute_env_command(dut, command, timeout=20.0)
+                out = self._env_output_text(result).strip().lower()
+                if "up" in out:
+                    ready = True
+                    break
+                log.info(
+                    "[%s] verify_env: %s bss[%d] not ready yet (%s), retrying...",
+                    self.name, case_id, index, out,
+                )
+                self._execute_env_command(dut, f"sleep {int(bss_poll_interval)}", timeout=bss_poll_interval + 5)
+            if not ready:
+                log.warning(
+                    "[%s] verify_env: %s sta_baseline_bss[%d] not ready after %.0fs cmd=%s",
+                    self.name, case_id, index, bss_max_wait, command,
+                )
         return True
 
     def _verify_sta_band_connectivity(self, case: dict[str, Any]) -> bool:
@@ -992,18 +1304,19 @@ class Plugin(PluginBase):
         if sta is None or dut is None:
             return True
 
-        checks = (
-            ("5g", "wl0", "1"),
-            ("6g", "wl1", "3"),
-            ("2.4g", "wl2", "5"),
-        )
+        selected_bands = set(self._selected_sta_bands(case))
+        checks: list[tuple[str, str, str]] = []
+        if "5g" in selected_bands:
+            checks.append(("5g", "wl0", "1"))
+        if "6g" in selected_bands:
+            checks.append(("6g", "wl1", "3"))
+        if "2.4g" in selected_bands:
+            checks.append(("2.4g", "wl2", "5"))
         for band, sta_iface, ap_index in checks:
-            link_result = sta.execute(
-                f"iw dev {sta_iface} link | grep -q 'Connected to '",
-                timeout=15.0,
-            )
-            link_stdout = str(link_result.get("stdout", ""))
-            link_ok = int(link_result.get("returncode", 1)) == 0
+            link_command = f"iw dev {sta_iface} link"
+            link_result = self._execute_env_command(sta, link_command, timeout=15.0)
+            link_stdout = self._env_output_text(link_result)
+            link_ok = self._env_command_succeeded(link_command, link_result)
             if not link_ok:
                 log.warning(
                     "[%s] verify_env: %s STA %s link check failed (iface=%s, rc=%s): %s",
@@ -1016,13 +1329,10 @@ class Plugin(PluginBase):
                 )
                 return False
 
-            assoc_result = dut.execute(
-                f"ubus-cli WiFi.AccessPoint.{ap_index}.AssociatedDevice.*.MACAddress? "
-                "| grep -Eiq '([0-9a-f]{2}:){5}[0-9a-f]{2}'",
-                timeout=15.0,
-            )
-            assoc_stdout = str(assoc_result.get("stdout", ""))
-            assoc_ok = int(assoc_result.get("returncode", 1)) == 0
+            assoc_command = f'ubus-cli "WiFi.AccessPoint.{ap_index}.AssociatedDevice.*.MACAddress?"'
+            assoc_result = self._execute_env_command(dut, assoc_command, timeout=15.0)
+            assoc_stdout = self._env_output_text(assoc_result)
+            assoc_ok = self._env_command_succeeded(assoc_command, assoc_result)
             if not assoc_ok:
                 log.warning(
                     "[%s] verify_env: %s DUT %s associated-device check failed (AP=%s, rc=%s): %s",
@@ -1051,6 +1361,7 @@ class Plugin(PluginBase):
         case_id = str(case.get("id", ""))
         if self._transports:
             self.teardown(case, topology)
+        self._sta_env_verified = False
 
         topo = self._as_mapping(case.get("topology"))
         devices = self._as_mapping(topo.get("devices"))
@@ -1097,7 +1408,12 @@ class Plugin(PluginBase):
             all_connected,
             sorted(self._transports.keys()),
         )
-        return all_connected and bool(self._transports)
+        if not (all_connected and bool(self._transports)):
+            return False
+        if not self._run_sta_env_setup(case, topology):
+            return False
+        self._sta_env_verified = True
+        return True
 
     def verify_env(self, case: dict[str, Any], topology: Any) -> bool:
         """驗證 WiFi 連線就緒。"""
@@ -1107,25 +1423,29 @@ class Plugin(PluginBase):
             log.warning("[%s] verify_env: %s missing DUT transport", self.name, case_id)
             return False
 
-        gate_result = dut.execute('echo "__testpilot_env_gate__"', timeout=10.0)
+        # Suppress kernel console messages on DUT to prevent UART flood
+        # (Broadcom dhd driver generates continuous messages that break prompt detection).
+        self._execute_env_command(dut, "dmesg -n 1", timeout=5.0)
+
+        gate_result = self._execute_env_command(dut, 'echo "__testpilot_env_gate__"', timeout=10.0)
         if int(gate_result.get("returncode", 1)) != 0:
             log.warning("[%s] verify_env: %s DUT gate failed", self.name, case_id)
             return False
 
-        if "STA" in self._transports:
-            if not self._sta_env_verified:
-                if not self._ensure_sta_band_ready(case, topology):
-                    return False
-                self._sta_env_verified = True
-            elif not self._verify_sta_band_connectivity(case):
-                log.warning(
-                    "[%s] verify_env: %s quick STA band check failed, re-prepare env",
-                    self.name,
-                    case_id,
-                )
-                if not self._ensure_sta_band_ready(case, topology):
-                    return False
-                self._sta_env_verified = True
+        # Run default band baseline only when the case does NOT provide its
+        # own sta_env_setup AND explicitly references WiFi AP/radio bands.
+        has_custom_env = bool(
+            isinstance(case.get("sta_env_setup"), str)
+            and case["sta_env_setup"].strip()
+        )
+        needs_wifi = self._has_explicit_wifi_bands(case)
+        sta = self._transports.get("STA")
+        if not has_custom_env and needs_wifi and sta is not None:
+            # Suppress kernel console messages on STA too.
+            self._execute_env_command(sta, "dmesg -n 1", timeout=5.0)
+            if not self._ensure_sta_band_ready(case, topology):
+                log.warning("[%s] verify_env: %s STA band baseline/connect failed", self.name, case_id)
+                return False
 
         env_verify = case.get("env_verify")
         if not isinstance(env_verify, list):
@@ -1175,6 +1495,36 @@ class Plugin(PluginBase):
 
         return True
 
+    @staticmethod
+    def _should_retry_env_command(result: dict[str, Any]) -> bool:
+        if int(result.get("returncode", 0)) == 0:
+            return False
+        if str(result.get("recovery_action", "")).strip():
+            return True
+
+        stdout = str(result.get("stdout", "")).strip()
+        stderr = str(result.get("stderr", "")).strip()
+        return stdout in {"^C", "^D"} or stderr in {"^C", "^D"}
+
+    def _execute_env_command(self, transport: Any, command: str, *, timeout: float) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for attempt in range(1, 4):
+            result = self._as_mapping(transport.execute(command, timeout=timeout))
+            if not self._should_retry_env_command(result):
+                return result
+            if attempt >= 3:
+                return result
+
+            log.info(
+                "[%s] env: retry command after recovery_action=%s attempt=%d cmd=%s",
+                self.name,
+                result.get("recovery_action"),
+                attempt,
+                self._preview_value(command, limit=96),
+            )
+            time.sleep(0.2)
+        return result
+
     def execute_step(self, case: dict[str, Any], step: dict[str, Any], topology: Any) -> dict[str, Any]:
         """執行單一 ubus-cli / wl 測試步驟。"""
         step_id = str(step.get("id", "step"))
@@ -1203,37 +1553,7 @@ class Plugin(PluginBase):
                 "timing": 0.0,
             }
 
-        raw_command = str(step.get("command", "")).strip()
-        resolved_command = self._resolve_text(topology, raw_command)
-        command_to_run = resolved_command
-        commands_to_run: list[str] = []
-        fallback_reason = ""
-
-        candidate_commands = [
-            self._resolve_text(topology, command)
-            for command in self._extract_cli_fragments(command_to_run)
-        ]
-        preferred_capture_command = self._prefer_synthesized_readback(
-            case, step, raw_command, candidate_commands
-        )
-        if preferred_capture_command:
-            commands_to_run = [self._resolve_text(topology, preferred_capture_command)]
-            fallback_reason = "synthesized_capture_query"
-        elif candidate_commands:
-            commands_to_run = candidate_commands
-            if len(candidate_commands) > 1 or candidate_commands[0] != command_to_run:
-                fallback_reason = "extract_from_step_text"
-        else:
-            command_to_run = self._sanitize_cli_fragment(command_to_run)
-            if command_to_run:
-                commands_to_run = [command_to_run]
-
-        if not commands_to_run or not all(self._looks_executable(command) for command in commands_to_run):
-            command_to_run, fallback_reason = self._select_fallback_command(
-                case, raw_command, topology, step_id
-            )
-            command_to_run = self._sanitize_cli_fragment(command_to_run)
-            commands_to_run = [command_to_run]
+        commands_to_run, fallback_reason = self._command_resolver.resolve(case, step, topology)
 
         outputs: list[str] = []
         captured: dict[str, Any] = {}
@@ -1241,7 +1561,9 @@ class Plugin(PluginBase):
         success = True
         final_returncode = 0
 
-        for index, command_to_run in enumerate(commands_to_run, start=1):
+        index = 0
+        while index < len(commands_to_run):
+            command_to_run = commands_to_run[index]
             try:
                 result = transport.execute(command_to_run, timeout=timeout)
             except Exception as exc:
@@ -1250,7 +1572,7 @@ class Plugin(PluginBase):
                     self.name,
                     case.get("id"),
                     step_id,
-                    index,
+                    index + 1,
                     exc,
                 )
                 return {
@@ -1262,19 +1584,26 @@ class Plugin(PluginBase):
                     "fallback_reason": fallback_reason,
                 }
 
-            if index == 1 and len(commands_to_run) == 1 and not fallback_reason and self._is_unexecutable_result(self._as_mapping(result)):
-                fallback_command, reason = self._select_fallback_command(case, raw_command, topology, step_id)
-                fallback_command = self._sanitize_cli_fragment(fallback_command)
-                if fallback_command != command_to_run:
-                    commands_to_run = [fallback_command]
-                    command_to_run = fallback_command
-                    fallback_reason = reason
-                    result = transport.execute(command_to_run, timeout=timeout)
+            result_map = self._command_resolver.as_mapping(result)
+            if index == 0 and len(commands_to_run) == 1:
+                retry = self._command_resolver.handle_runtime_fallback(
+                    case, step, topology, result_map, commands_to_run, fallback_reason
+                )
+                if retry is not None:
+                    commands_to_run, fallback_reason = retry
+                    outputs = []
+                    captured = {}
+                    total_elapsed = 0.0
+                    success = True
+                    final_returncode = 0
+                    index = 0
+                    continue
 
-            result_map = self._as_mapping(result)
             stdout = str(result_map.get("stdout", ""))
             stderr = str(result_map.get("stderr", ""))
-            output = "\n".join(chunk for chunk in (stdout, stderr) if chunk).strip()
+            output = self._normalize_transcript_noise(
+                "\n".join(chunk for chunk in (stdout, stderr) if chunk).strip()
+            )
             if output:
                 outputs.append(output)
                 captured.update(self._extract_key_values(output))
@@ -1283,6 +1612,7 @@ class Plugin(PluginBase):
             success = success and final_returncode == 0
             if final_returncode != 0:
                 break
+            index += 1
 
         return {
             "success": success,
@@ -1313,6 +1643,13 @@ class Plugin(PluginBase):
             reference = str(criterion.get("reference", "")).strip()
 
             actual = self._resolve_field(context, field) if field else None
+            # Unwrap step context: when field resolves to a step_context dict
+            # with a single captured value, use that value directly so regex /
+            # equals criteria match the extracted data rather than the whole dict.
+            if isinstance(actual, dict) and "captured" in actual and "output" in actual:
+                captured = actual.get("captured")
+                if isinstance(captured, dict) and len(captured) == 1:
+                    actual = next(iter(captured.values()))
             if actual is None:
                 log.warning("[%s] evaluate: field not found (%s), fallback aggregate output", self.name, field)
                 actual = self._field_fallback_output(aggregate_output, field)
@@ -1352,4 +1689,5 @@ class Plugin(PluginBase):
                 log.warning("[%s] teardown: disconnect failed for %s: %s", self.name, device_name, exc)
         self._transports.clear()
         self._device_specs.clear()
+        self._sta_env_verified = False
         log.info("[%s] teardown: %s done", self.name, case_id)

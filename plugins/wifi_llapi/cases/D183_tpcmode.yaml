@@ -1,0 +1,253 @@
+id: wifi-llapi-D183-tpcmode
+aliases:
+  - wifi-llapi-r146-tpcmode
+name: TPCMode — WiFi.Radio.{i}.DriverConfig.
+version: '1.1'
+source:
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 146
+  object: WiFi.Radio.{i}.DriverConfig.
+  api: TPCMode
+  baseline: BCM v4.0.3
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Ap
+llapi_support: Support
+implemented_by: Vendor Module
+bands: ["5g"]
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+    STA:
+      role: sta
+      transport: serial
+      selector: COM1
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: TestPilot_BTM
+        key: testpilot6g
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+test_environment: |
+  Topology:
+  - DUT: COM0 (AP role)
+  - STA: COM1 (station role for this case; do not rely on the old A0/B0 heuristic)
+  Transport:
+  - serialwrap attach COM0 / COM1
+  Live band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4 / TestPilot_BTM
+  - 6G: DUT wl1 / AP3 / SSID.6 / TestPilot_BTM
+  - 2.4G: DUT wl2 / AP5 / SSID.8 / TestPilot_24G
+  Preconditions:
+  - use the validated 5G single-band WPA3 baseline for this case
+  - current live/source checkpoint shows a northbound/runtime mismatch:
+    `TPCMode=Ap/Sta/ApSta` reads back through ubus, but `wl -i wl0 tpc_mode` stays `0`
+  - `TPCMode=Off` is declared in ODL but rejected by the runtime with `invalid value`
+setup_steps: |
+  1) DUT 5G baseline:
+     - enable Radio.1 / SSID.4 / AP1
+     - configure AP1 as WPA3-Personal with MFP required
+     - keep the validated live SSID/credential pair as TestPilot_BTM / testpilot6g
+  2) STA 5G preparation:
+     - disable local AP1/AP2 on COM1
+     - move COM1 br-lan off 192.168.1.0/24 to avoid bridge self-hit side effects
+     - reset wl0 and its wpa_supplicant control socket
+     - connect wl0 to TestPilot_BTM with SAE
+  3) Association evidence:
+     - COM1: iw dev wl0 link ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+     - COM0: wl -i wl0 assoclist
+sta_env_setup: |
+  DUT 5G AP baseline:
+    ubus-cli WiFi.Radio.1.Enable=1
+    ubus-cli WiFi.Radio.1.BeaconPeriod=100
+    ubus-cli WiFi.Radio.1.DTIMPeriod=3
+    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
+    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
+    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
+    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
+    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
+    ubus-cli WiFi.Radio.1.OfdmaEnable=1
+    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
+    ubus-cli WiFi.Radio.1.OperatingStandards=ax
+    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
+    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
+    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
+    ubus-cli WiFi.Radio.1.Sensing.Enable=1
+    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
+    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
+    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
+    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
+    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
+    ubus-cli WiFi.Radio.1.LongRetryLimit=6
+    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
+    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
+    ubus-cli WiFi.SSID.4.SSID=TestPilot_BTM
+    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
+    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
+    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
+    ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=testpilot6g
+    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Required
+    ubus-cli WiFi.AccessPoint.1.Enable=1
+  STA 5G preparation:
+    ifconfig br-lan 192.168.88.1 netmask 255.255.255.0 up
+    ubus-cli WiFi.AccessPoint.1.Enable=0
+    ubus-cli WiFi.AccessPoint.2.Enable=0
+    wpa_cli terminate 2>/dev/null || true
+    rm -f /var/run/wpa_supplicant/wl0 2>/dev/null || true
+    iw dev wl0.1 del 2>/dev/null || true
+    iw dev wl0 disconnect 2>/dev/null || true
+    iw dev wl1 disconnect 2>/dev/null || true
+    iw dev wl2 disconnect 2>/dev/null || true
+    iw dev wl0 set type managed
+    ifconfig wl0 up
+    mkdir -p /var/run/wpa_supplicant
+    printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\nnetwork={\nssid="TestPilot_BTM"\nkey_mgmt=SAE\nsae_password="testpilot6g"\nieee80211w=2\nscan_ssid=1\n}\n' > /tmp/wpa_wl0.conf
+    wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+    sleep 3
+  STA 5G connect verify:
+    wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+    sleep 10
+    iw dev wl0 link
+    wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  DUT association evidence:
+    wl -i wl0 assoclist
+test_procedure: |
+  1) Read the current 5G TPCMode on DUT; the validated baseline is `Auto`.
+  2) Try the ODL-declared `Off` value. The current runtime rejects it with `invalid value`, and readback remains `Auto`.
+  3) Set `TPCMode=Ap`, `Sta`, and `ApSta` sequentially and confirm each value reads back through ubus.
+  4) Cross-check `wl -i wl0 tpc_mode` after the non-`Auto` writes. The current live checkpoint is fail-shaped because the driver readback stays `0` instead of reflecting the ubus mode changes.
+  5) Restore `TPCMode=Auto` before leaving the DUT baseline.
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.Radio.1.DriverConfig.TPCMode?"
+  capture: before_result
+- id: step2
+  action: exec
+  target: DUT
+  command: >-
+    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Off 2>&1 |
+    awk 'NR==1 {print "OffAttemptLine1="$0} NR==2 {print "OffAttemptLine2="$0}'
+  depends_on: step1
+  capture: off_attempt
+- id: step3
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.Radio.1.DriverConfig.TPCMode?"
+  depends_on: step2
+  capture: after_off
+- id: step4
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Ap
+  depends_on: step3
+  capture: set_ap
+- id: step5
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.Radio.1.DriverConfig.TPCMode?"
+  depends_on: step4
+  capture: after_ap
+- id: step6
+  action: exec
+  target: DUT
+  command: wl -i wl0 tpc_mode | sed 's/^/DriverTPCMode=/'
+  depends_on: step5
+  capture: driver_after_ap
+- id: step7
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Sta
+  depends_on: step6
+  capture: set_sta
+- id: step8
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.Radio.1.DriverConfig.TPCMode?"
+  depends_on: step7
+  capture: after_sta
+- id: step9
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=ApSta
+  depends_on: step8
+  capture: set_apsta
+- id: step10
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.Radio.1.DriverConfig.TPCMode?"
+  depends_on: step9
+  capture: after_apsta
+- id: step11
+  action: exec
+  target: DUT
+  command: ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
+  depends_on: step10
+  capture: restore_auto
+- id: step12
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.Radio.1.DriverConfig.TPCMode?"
+  depends_on: step11
+  capture: after_restore
+pass_criteria:
+- field: before_result.TPCMode
+  operator: equals
+  value: Auto
+  description: The validated 5G baseline starts with TPCMode=Auto.
+- field: off_attempt.OffAttemptLine2
+  operator: contains
+  value: invalid value
+  description: The current runtime rejects the ODL-declared Off value with an explicit invalid-value error.
+- field: after_off.TPCMode
+  operator: equals
+  value: Auto
+  description: After the rejected Off write, ubus readback still remains Auto.
+- field: after_ap.TPCMode
+  operator: equals
+  value: Ap
+  description: The ubus northbound object accepts Ap and reads it back on 5G.
+- field: driver_after_ap.DriverTPCMode
+  operator: equals
+  value: '0'
+  description: The current fail-shaped checkpoint shows wl0 tpc_mode still reads 0 even after TPCMode=Ap.
+- field: after_sta.TPCMode
+  operator: equals
+  value: Sta
+  description: The ubus northbound object also accepts Sta and reads it back.
+- field: after_apsta.TPCMode
+  operator: equals
+  value: ApSta
+  description: The ubus northbound object also accepts ApSta and reads it back.
+- field: after_restore.TPCMode
+  operator: equals
+  value: Auto
+  description: The case must restore the DUT baseline to Auto before exit.
+verification_command: |
+  ubus-cli "WiFi.Radio.1.DriverConfig.TPCMode?"
+  ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Off
+  ubus-cli "WiFi.Radio.1.DriverConfig.TPCMode?"
+  ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Ap
+  ubus-cli "WiFi.Radio.1.DriverConfig.TPCMode?"
+  wl -i wl0 tpc_mode
+  ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Sta
+  ubus-cli "WiFi.Radio.1.DriverConfig.TPCMode?"
+  ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=ApSta
+  ubus-cli "WiFi.Radio.1.DriverConfig.TPCMode?"
+  ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
+  ubus-cli "WiFi.Radio.1.DriverConfig.TPCMode?"
+results_reference:
+  v4.0.3:
+    5g: Fail
+    6g: N/A
+    2.4g: N/A
+    comment: '5G serialwrap/source checkpoint: the WLD ODL exposes TPCMode as Auto/Off/Ap/Sta/ApSta, but the current DUT rejects Off with invalid value, accepts Ap/Sta/ApSta readback through ubus, and still keeps wl0 tpc_mode at 0. This is a fail-shaped mismatch between the northbound TPCMode object and the observed driver state; non-executed bands remain N/A.'

@@ -34,4 +34,4 @@ target-version = "py311"
 line-length = 100
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "plugins/wifi_llapi/tests"]

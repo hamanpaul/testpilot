@@ -51,14 +51,18 @@ class PluginLoader:
         if spec is None or spec.loader is None:
             raise ImportError(f"cannot load plugin spec: {plugin_py}")
 
-        # 確保 plugin 目錄在 sys.path 中（供 plugin 內部 import）
+        # Temporarily add plugin dir to sys.path for plugin internal imports
         plugin_dir = str(self.plugins_dir / name)
-        if plugin_dir not in sys.path:
+        added_to_path = plugin_dir not in sys.path
+        if added_to_path:
             sys.path.insert(0, plugin_dir)
-
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[module_name] = module
-        spec.loader.exec_module(module)
+        try:
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            spec.loader.exec_module(module)
+        finally:
+            if added_to_path and plugin_dir in sys.path:
+                sys.path.remove(plugin_dir)
 
         plugin_cls: Any = getattr(module, "Plugin", None)
         if plugin_cls is None:

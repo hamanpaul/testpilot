@@ -1,0 +1,29 @@
+id: d053-blocked-txbytes
+name: D053 TxBytes Blocked
+source:
+  row: 55
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: TxBytes
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+llapi_support: Blocked
+results_reference:
+  v4.0.3:
+    5g: Blocked
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+steps:
+- id: step_5g_blocked
+  target: dut
+  action: skip
+  command: "echo blocked"
+  description: "TxBytes — needs deterministic AP-to-STA unicast payload"
+pass_criteria:
+- field: skip
+  operator: skip
+  value: "TxBytes — needs deterministic AP-to-STA unicast payload"

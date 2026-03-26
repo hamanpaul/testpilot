@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
-import re
 import subprocess
 from typing import Any
 
@@ -60,6 +58,170 @@ def test_connect_resolves_by_alias(monkeypatch: pytest.MonkeyPatch) -> None:
     assert transport.session["session_id"] == "lab:COM7"
 
 
+def test_connect_attaches_when_session_is_attached(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_run(
+        args: list[str],
+        capture_output: bool,
+        text: bool,
+        check: bool,
+        timeout: float | None,
+    ) -> subprocess.CompletedProcess[str]:
+        del capture_output, text, check, timeout
+        op = tuple(args[1:3])
+
+        if op == ("session", "list"):
+            return _cp(
+                args,
+                {
+                    "ok": True,
+                    "sessions": [
+                        {
+                            "alias": "dut-main",
+                            "com": "COM0",
+                            "session_id": "lab:COM0",
+                            "state": "ATTACHED",
+                        }
+                    ],
+                },
+            )
+
+        if op == ("session", "attach"):
+            return _cp(
+                args,
+                {
+                    "ok": True,
+                    "session": {
+                        "alias": "dut-main",
+                        "com": "COM0",
+                        "session_id": "lab:COM0",
+                        "state": "READY",
+                    },
+                },
+            )
+
+        raise AssertionError(f"unexpected subprocess call: {args}")
+
+    monkeypatch.setattr("testpilot.transport.serialwrap.subprocess.run", fake_run)
+    transport = SerialWrapTransport({"binary": "/tmp/serialwrap", "alias": "dut-main"})
+    transport.connect()
+
+    assert transport.is_connected is True
+    assert transport.session is not None
+    assert transport.session["state"] == "READY"
+
+
+def test_connect_uses_configured_session_timeouts(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen_timeouts: list[tuple[tuple[str, str], float | None]] = []
+
+    def fake_run(
+        args: list[str],
+        capture_output: bool,
+        text: bool,
+        check: bool,
+        timeout: float | None,
+    ) -> subprocess.CompletedProcess[str]:
+        del capture_output, text, check
+        op = tuple(args[1:3])
+        seen_timeouts.append((op, timeout))
+
+        if op == ("session", "list"):
+            return _cp(
+                args,
+                {
+                    "ok": True,
+                    "sessions": [
+                        {
+                            "alias": "dut-main",
+                            "com": "COM0",
+                            "session_id": "lab:COM0",
+                            "state": "ATTACHED",
+                        }
+                    ],
+                },
+            )
+
+        if op == ("session", "attach"):
+            return _cp(
+                args,
+                {
+                    "ok": True,
+                    "session": {
+                        "alias": "dut-main",
+                        "com": "COM0",
+                        "session_id": "lab:COM0",
+                        "state": "READY",
+                    },
+                },
+            )
+
+        raise AssertionError(f"unexpected subprocess call: {args}")
+
+    monkeypatch.setattr("testpilot.transport.serialwrap.subprocess.run", fake_run)
+    transport = SerialWrapTransport(
+        {
+            "binary": "/tmp/serialwrap",
+            "alias": "dut-main",
+            "session_list_timeout": 12.5,
+            "session_attach_timeout": 18.0,
+        }
+    )
+    transport.connect()
+
+    assert seen_timeouts == [
+        (("session", "list"), 12.5),
+        (("session", "attach"), 18.0),
+    ]
+
+
+def test_connect_retries_after_transient_list_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    state = {"list_calls": 0}
+
+    def fake_run(
+        args: list[str],
+        capture_output: bool,
+        text: bool,
+        check: bool,
+        timeout: float | None,
+    ) -> subprocess.CompletedProcess[str]:
+        del capture_output, text, check, timeout
+        op = tuple(args[1:3])
+
+        if op == ("session", "list"):
+            state["list_calls"] += 1
+            if state["list_calls"] == 1:
+                return subprocess.CompletedProcess(args=args, returncode=1, stdout="", stderr="")
+            return _cp(
+                args,
+                {
+                    "ok": True,
+                    "sessions": [
+                        {
+                            "alias": "dut-main",
+                            "com": "COM0",
+                            "session_id": "lab:COM0",
+                            "state": "READY",
+                        }
+                    ],
+                },
+            )
+
+        raise AssertionError(f"unexpected subprocess call: {args}")
+
+    monkeypatch.setattr("testpilot.transport.serialwrap.subprocess.run", fake_run)
+    transport = SerialWrapTransport(
+        {
+            "binary": "/tmp/serialwrap",
+            "alias": "dut-main",
+            "connect_attempts": 2,
+            "connect_retry_delay": 0.0,
+        }
+    )
+    transport.connect()
+
+    assert transport.is_connected is True
+    assert state["list_calls"] == 2
+
+
 def test_connect_resolves_by_serial_port(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_run(
         args: list[str],
@@ -99,11 +261,9 @@ def test_connect_resolves_by_serial_port(monkeypatch: pytest.MonkeyPatch) -> Non
     assert transport.session["com"] == "COM2"
 
 
-def test_execute_submit_poll_and_tail_text(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_execute_submit_poll_and_command_status(monkeypatch: pytest.MonkeyPatch) -> None:
     state = {
         "status_calls": 0,
-        "marker_token": None,
-        "from_seq": None,
     }
 
     def fake_run(
@@ -132,22 +292,9 @@ def test_execute_submit_poll_and_tail_text(monkeypatch: pytest.MonkeyPatch) -> N
                 },
             )
 
-        if op == ("log", "tail-text") and "--from-seq" not in args:
-            return _cp(
-                args,
-                {
-                    "ok": True,
-                    "lines": [
-                        "2026-03-04T00:00:00+00:00 1000 41 COM0 RX device - 1 abc | root@dev:/# "
-                    ],
-                },
-            )
-
         if op == ("cmd", "submit"):
             command_text = args[args.index("--cmd") + 1]
-            match = re.search(r"__TP_BEGIN_([0-9a-f]+)__", command_text)
-            assert match is not None
-            state["marker_token"] = match.group(1)
+            assert command_text == "echo hello"
             return _cp(
                 args,
                 {
@@ -178,50 +325,20 @@ def test_execute_submit_poll_and_tail_text(monkeypatch: pytest.MonkeyPatch) -> N
                         "cmd_id": "cmd-001",
                         "status": "done",
                         "error_code": None,
+                        "stdout": "hello world",
+                        "partial": False,
+                        "background_capture_id": None,
+                        "interactive_session_id": None,
+                        "recovery_action": None,
+                        "execution_mode": "line",
                         "command": "echo hello",
                     },
-                },
-            )
-
-        if op == ("log", "tail-text") and "--from-seq" in args:
-            state["from_seq"] = args[args.index("--from-seq") + 1]
-            token = state["marker_token"]
-            assert token is not None
-            return _cp(
-                args,
-                {
-                    "ok": True,
-                    "lines": [
-                        (
-                            "2026-03-04T00:00:01+00:00 1000 42 COM0 RX device - 1 abc | "
-                            f"__TP_BEGIN_{token}__\n"
-                        ),
-                        "2026-03-04T00:00:01+00:00 1000 43 COM0 RX device - 1 abc | hello world\n",
-                        (
-                            "2026-03-04T00:00:01+00:00 1000 44 COM0 RX device - 1 abc | "
-                            f"__TP_RC_{token}__=7\n"
-                        ),
-                        (
-                            "2026-03-04T00:00:01+00:00 1000 45 COM0 RX device - 1 abc | "
-                            f"__TP_END_{token}__\n"
-                        ),
-                    ],
                 },
             )
 
         raise AssertionError(f"unexpected subprocess call: {args}")
 
     monkeypatch.setattr("testpilot.transport.serialwrap.subprocess.run", fake_run)
-    monkeypatch.setattr(
-        SerialWrapTransport,
-        "_ensure_mirror_path",
-        lambda self: "/tmp/serialwrap-test-mirror.log",
-    )
-    monkeypatch.setattr(
-        SerialWrapTransport,
-        "_read_last_seq_from_mirror",
-        lambda self, path: 41,
-    )
     transport = SerialWrapTransport(
         {
             "binary": "/tmp/serialwrap",
@@ -232,15 +349,19 @@ def test_execute_submit_poll_and_tail_text(monkeypatch: pytest.MonkeyPatch) -> N
     transport.connect()
     result = transport.execute("echo hello", timeout=5.0)
 
-    assert result["returncode"] == 7
+    assert result["returncode"] == 0
     assert "hello world" in result["stdout"]
     assert result["stderr"] == ""
     assert result["elapsed"] >= 0.0
+    assert result["cmd_id"] == "cmd-001"
+    assert result["execution_mode"] == "line"
+    assert result["background_capture_id"] is None
     assert state["status_calls"] >= 2
-    assert state["from_seq"] == "42"
 
 
-def test_execute_stdout_fallback_when_tail_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_execute_returns_empty_stdout_when_command_stdout_is_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     state = {"status_calls": 0}
 
     def fake_run(
@@ -269,9 +390,6 @@ def test_execute_stdout_fallback_when_tail_empty(monkeypatch: pytest.MonkeyPatch
                 },
             )
 
-        if op == ("log", "tail-text"):
-            return _cp(args, {"ok": True, "lines": []})
-
         if op == ("cmd", "submit"):
             return _cp(args, {"ok": True, "cmd_id": "cmd-002", "status": "accepted"})
 
@@ -285,6 +403,12 @@ def test_execute_stdout_fallback_when_tail_empty(monkeypatch: pytest.MonkeyPatch
                         "cmd_id": "cmd-002",
                         "status": "done",
                         "error_code": None,
+                        "stdout": "",
+                        "partial": False,
+                        "background_capture_id": None,
+                        "interactive_session_id": None,
+                        "recovery_action": None,
+                        "execution_mode": "line",
                         "command": "uname -a",
                     },
                 },
@@ -293,79 +417,275 @@ def test_execute_stdout_fallback_when_tail_empty(monkeypatch: pytest.MonkeyPatch
         raise AssertionError(f"unexpected subprocess call: {args}")
 
     monkeypatch.setattr("testpilot.transport.serialwrap.subprocess.run", fake_run)
-    monkeypatch.setattr(
-        SerialWrapTransport,
-        "_ensure_mirror_path",
-        lambda self: "/tmp/serialwrap-test-mirror.log",
-    )
-    monkeypatch.setattr(
-        SerialWrapTransport,
-        "_read_last_seq_from_mirror",
-        lambda self, path: 999,
-    )
     transport = SerialWrapTransport(
         {
             "binary": "/tmp/serialwrap",
             "selector": "COM0",
             "poll_interval": 0.0,
-            "use_marker": False,
         }
     )
     transport.connect()
     result = transport.execute("uname -a", timeout=5.0)
 
     assert result["returncode"] == 0
-    assert result["stdout"] == "uname -a"
+    assert result["stdout"] == ""
     assert result["stderr"] == ""
     assert state["status_calls"] == 1
 
 
-def test_extract_marker_output_prefers_first_rc_match() -> None:
-    transport = SerialWrapTransport({"binary": "/tmp/serialwrap", "selector": "COM0"})
-    marker = {
-        "begin": "__TP_BEGIN_abcd1234__",
-        "end": "__TP_END_abcd1234__",
-        "rc_prefix": "__TP_RC_abcd1234__=",
+def test_execute_retries_submit_after_session_not_ready(monkeypatch: pytest.MonkeyPatch) -> None:
+    state = {
+        "submit_calls": 0,
+        "attach_calls": 0,
     }
-    output = (
-        "__TP_BEGIN_abcd1234__\n"
-        "hello world\n"
-        "__TP_RC_abcd1234__=7\n"
-        "replayed transcript __TP_RC_abcd1234__=99\n"
-        "__TP_END_abcd1234__\n"
+
+    def fake_run(
+        args: list[str],
+        capture_output: bool,
+        text: bool,
+        check: bool,
+        timeout: float | None,
+    ) -> subprocess.CompletedProcess[str]:
+        del capture_output, text, check, timeout
+        op = tuple(args[1:3])
+
+        if op == ("session", "list"):
+            return _cp(
+                args,
+                {
+                    "ok": True,
+                    "sessions": [
+                        {
+                            "alias": "dut-main",
+                            "com": "COM0",
+                            "session_id": "lab:COM0",
+                            "state": "READY",
+                        }
+                    ],
+                },
+            )
+
+        if op == ("cmd", "submit"):
+            state["submit_calls"] += 1
+            if state["submit_calls"] == 1:
+                return _cp(
+                    args,
+                    {
+                        "ok": False,
+                        "error_code": "SESSION_NOT_READY",
+                        "session": {"state": "ATTACHED"},
+                    },
+                )
+            return _cp(args, {"ok": True, "cmd_id": "cmd-004", "status": "accepted"})
+
+        if op == ("session", "attach"):
+            state["attach_calls"] += 1
+            return _cp(
+                args,
+                {
+                    "ok": True,
+                    "session": {
+                        "alias": "dut-main",
+                        "com": "COM0",
+                        "session_id": "lab:COM0",
+                        "state": "READY",
+                    },
+                },
+            )
+
+        if op == ("cmd", "status"):
+            return _cp(
+                args,
+                {
+                    "ok": True,
+                    "command": {
+                        "cmd_id": "cmd-004",
+                        "status": "done",
+                        "error_code": None,
+                        "stdout": "ok",
+                        "partial": False,
+                        "background_capture_id": None,
+                        "interactive_session_id": None,
+                        "recovery_action": None,
+                        "execution_mode": "line",
+                        "command": "echo ok",
+                    },
+                },
+            )
+
+        raise AssertionError(f"unexpected subprocess call: {args}")
+
+    monkeypatch.setattr("testpilot.transport.serialwrap.subprocess.run", fake_run)
+    transport = SerialWrapTransport(
+        {
+            "binary": "/tmp/serialwrap",
+            "selector": "COM0",
+            "poll_interval": 0.0,
+        }
     )
+    transport.connect()
+    result = transport.execute("echo ok", timeout=5.0)
 
-    parsed = transport._extract_marker_output(output, marker)
+    assert result["returncode"] == 0
+    assert result["stdout"] == "ok"
+    assert state["attach_calls"] == 1
+    assert state["submit_calls"] == 2
 
-    assert parsed["returncode"] == 7
-    assert parsed["stdout"] == "hello world\nreplayed transcript"
 
+def test_execute_timeout_attaches_and_returns_recovery_action(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    state = {
+        "status_calls": 0,
+        "attach_calls": 0,
+    }
 
-def test_read_last_seq_from_mirror_parses_tail_line(tmp_path: Path) -> None:
-    mirror = tmp_path / "raw.mirror.log"
-    mirror.write_text(
-        (
-            "2026-03-04T08:29:02.417028+00:00 198725531924298 15273 COM0 TX "
-            "agent:testpilot abc | cmd1\n"
-            "2026-03-04T08:29:02.450118+00:00 198725565012981 15274 COM0 RX "
-            "device - 192 def | cmd2\n"
-        ),
-        encoding="utf-8",
+    def fake_run(
+        args: list[str],
+        capture_output: bool,
+        text: bool,
+        check: bool,
+        timeout: float | None,
+    ) -> subprocess.CompletedProcess[str]:
+        del capture_output, text, check, timeout
+        op = tuple(args[1:3])
+
+        if op == ("session", "list"):
+            return _cp(
+                args,
+                {
+                    "ok": True,
+                    "sessions": [
+                        {
+                            "alias": "dut-main",
+                            "com": "COM0",
+                            "session_id": "lab:COM0",
+                            "state": "READY",
+                        }
+                    ],
+                },
+            )
+
+        if op == ("cmd", "submit"):
+            return _cp(args, {"ok": True, "cmd_id": "cmd-timeout", "status": "accepted"})
+
+        if op == ("cmd", "status"):
+            state["status_calls"] += 1
+            return _cp(
+                args,
+                {
+                    "ok": True,
+                    "command": {
+                        "cmd_id": "cmd-timeout",
+                        "status": "running",
+                    },
+                },
+            )
+
+        if op == ("session", "attach"):
+            state["attach_calls"] += 1
+            return _cp(
+                args,
+                {
+                    "ok": True,
+                    "session": {
+                        "alias": "dut-main",
+                        "com": "COM0",
+                        "session_id": "lab:COM0",
+                        "state": "READY",
+                    },
+                },
+            )
+
+        raise AssertionError(f"unexpected subprocess call: {args}")
+
+    monkeypatch.setattr("testpilot.transport.serialwrap.subprocess.run", fake_run)
+    transport = SerialWrapTransport(
+        {
+            "binary": "/tmp/serialwrap",
+            "selector": "COM0",
+            "poll_interval": 0.0,
+        }
     )
+    transport.connect()
+    result = transport.execute("sleep 10", timeout=0.0)
 
-    transport = SerialWrapTransport({"binary": "/tmp/serialwrap", "selector": "COM0"})
-    assert transport._read_last_seq_from_mirror(str(mirror)) == 15274
+    assert result["returncode"] == 124
+    assert result["status"] == "timeout"
+    assert result["cmd_id"] == "cmd-timeout"
+    assert result["execution_mode"] == "line"
+    assert result["recovery_action"] == "ATTACH"
+    assert "serialwrap cmd status timeout" in result["stderr"]
+    assert state["attach_calls"] == 1
+    assert state["status_calls"] >= 1
 
 
-def test_read_last_seq_from_wal_parses_seq(tmp_path: Path) -> None:
-    wal = tmp_path / "raw.wal.ndjson"
-    wal.write_text(
-        (
-            '{"seq": 101, "dir": "TX"}\n'
-            '{"seq": 102, "dir": "RX"}\n'
-        ),
-        encoding="utf-8",
+def test_execute_normalizes_legacy_mode_alias(monkeypatch: pytest.MonkeyPatch) -> None:
+    state = {"submit_mode": None}
+
+    def fake_run(
+        args: list[str],
+        capture_output: bool,
+        text: bool,
+        check: bool,
+        timeout: float | None,
+    ) -> subprocess.CompletedProcess[str]:
+        del capture_output, text, check, timeout
+        op = tuple(args[1:3])
+
+        if op == ("session", "list"):
+            return _cp(
+                args,
+                {
+                    "ok": True,
+                    "sessions": [
+                        {
+                            "alias": "dut-main",
+                            "com": "COM0",
+                            "session_id": "lab:COM0",
+                            "state": "READY",
+                        }
+                    ],
+                },
+            )
+
+        if op == ("cmd", "submit"):
+            state["submit_mode"] = args[args.index("--mode") + 1]
+            return _cp(args, {"ok": True, "cmd_id": "cmd-003", "status": "accepted"})
+
+        if op == ("cmd", "status"):
+            return _cp(
+                args,
+                {
+                    "ok": True,
+                    "command": {
+                        "cmd_id": "cmd-003",
+                        "status": "done",
+                        "error_code": None,
+                        "stdout": "ok",
+                        "partial": False,
+                        "background_capture_id": None,
+                        "interactive_session_id": None,
+                        "recovery_action": None,
+                        "execution_mode": "line",
+                        "command": "echo ok",
+                    },
+                },
+            )
+
+        raise AssertionError(f"unexpected subprocess call: {args}")
+
+    monkeypatch.setattr("testpilot.transport.serialwrap.subprocess.run", fake_run)
+    transport = SerialWrapTransport(
+        {
+            "binary": "/tmp/serialwrap",
+            "selector": "COM0",
+            "mode": "fg",
+            "poll_interval": 0.0,
+        }
     )
+    transport.connect()
+    result = transport.execute("echo ok", timeout=5.0)
 
-    transport = SerialWrapTransport({"binary": "/tmp/serialwrap", "selector": "COM0"})
-    assert transport._read_last_seq_from_wal(str(wal)) == 102
+    assert result["returncode"] == 0
+    assert state["submit_mode"] == "line"

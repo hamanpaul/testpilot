@@ -1,0 +1,55 @@
+id: d477-getradiostats-unknownprotopacketsreceived
+name: D477 getRadioStats UnknownProtoPacketsReceived
+source:
+  row: 344
+  object: WiFi.Radio.{i}.
+  api: getRadioStats()
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+- 6g
+- 2.4g
+llapi_support: Support
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+steps:
+- id: step_5g_stats
+  target: dut
+  action: read
+  capture: stats_5g
+  command: ubus-cli "WiFi.Radio.1.getRadioStats()"
+  expected: getRadioStats() 回傳有效值
+  description: Radio.1 (5g) getRadioStats()
+- id: step_6g_stats
+  target: dut
+  action: read
+  capture: stats_6g
+  command: ubus-cli "WiFi.Radio.2.getRadioStats()"
+  expected: getRadioStats() 回傳有效值
+  description: Radio.2 (6g) getRadioStats()
+- id: step_24g_stats
+  target: dut
+  action: read
+  capture: stats_24g
+  command: ubus-cli "WiFi.Radio.3.getRadioStats()"
+  expected: getRadioStats() 回傳有效值
+  description: Radio.3 (2.4g) getRadioStats()
+pass_criteria:
+- field: stats_5g.UnknownProtoPacketsReceived
+  operator: regex
+  value: ^\d+$
+- field: stats_6g.UnknownProtoPacketsReceived
+  operator: regex
+  value: ^\d+$
+- field: stats_24g.UnknownProtoPacketsReceived
+  operator: regex
+  value: ^\d+$
