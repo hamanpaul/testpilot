@@ -316,16 +316,22 @@ class Orchestrator:
             pass
         try:
             log_capture.clean_wal()
-            status = log_capture.start_daemon()
-            wal_path = log_capture.get_wal_path(status)
-            # Setup sessions from testbed config
-            dut_cfg = self.config.devices.get("dut", {})
-            sta_cfg = self.config.devices.get("sta", {})
+            log_capture.start_daemon()
+            wal_path = log_capture.get_wal_path()
+            # Setup sessions from testbed config (keys may be DUT/dut)
+            devs = self.config.devices
+            dut_cfg = devs.get("dut") or devs.get("DUT") or {}
+            sta_cfg = devs.get("sta") or devs.get("STA") or {}
             devices = []
             for alias, cfg in [("dut", dut_cfg), ("sta", sta_cfg)]:
                 selector = cfg.get("selector", "")
                 if selector:
-                    devices.append({"selector": selector, "alias": alias})
+                    devices.append({
+                        "com": selector,
+                        "alias": alias,
+                        "profile": "prpl-template",
+                        "serial_port": cfg.get("serial_port", ""),
+                    })
             if devices:
                 log_capture.setup_sessions(devices)
             log.info("serialwrap daemon started, wal_path=%s", wal_path)
@@ -355,8 +361,11 @@ class Orchestrator:
         if not records:
             return {}
 
-        dut_com = self.config.devices.get("dut", {}).get("com_port", "COM0")
-        sta_com = self.config.devices.get("sta", {}).get("com_port", "COM1")
+        devs = self.config.devices
+        dut_dev = devs.get("dut") or devs.get("DUT") or {}
+        sta_dev = devs.get("sta") or devs.get("STA") or {}
+        dut_com = dut_dev.get("com_port") or dut_dev.get("selector", "COM0")
+        sta_com = sta_dev.get("com_port") or sta_dev.get("selector", "COM1")
 
         # Decode & save per-device log files
         dut_text = log_capture.decode_log(records, com_filter=dut_com)

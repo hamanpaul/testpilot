@@ -218,20 +218,37 @@ class TestDaemonLifecycle:
         log_capture.clean_wal(tmp_path / "nonexistent")  # should not raise
 
     @patch("testpilot.reporting.log_capture._run_sw")
-    def test_setup_sessions(self, mock_run):
-        mock_run.return_value = {
-            "ok": True,
-            "session": {"state": "READY", "device_by_id": "/dev/ttyUSB0"},
-            "alias": "dut",
-            "session_id": "prpl-template:COM0",
-        }
-        devices = [
-            {"profile": "prpl-template", "com": "COM0", "alias": "dut"},
-            {"profile": "prpl-template", "com": "COM1", "alias": "sta"},
+    @patch("testpilot.reporting.log_capture.subprocess.Popen")
+    def test_setup_sessions(self, mock_popen, mock_run):
+        # _run_sw handles: device list (1st call), alias set (subsequent)
+        mock_run.side_effect = [
+            # device list call
+            {"ok": True, "devices": [
+                {"by_id": "/dev/serial/by-id/dev0", "real_path": "/dev/ttyUSB0"},
+                {"by_id": "/dev/serial/by-id/dev1", "real_path": "/dev/ttyUSB1"},
+            ]},
+            # alias dut
+            {"ok": True, "alias": "dut"},
+            # alias sta
+            {"ok": True, "alias": "sta"},
         ]
-        log_capture.setup_sessions(devices)
-        # 2 attach + 2 alias = 4 calls
-        assert mock_run.call_count == 4
+        # Popen handles: bind calls (return immediately)
+        mock_proc = MagicMock()
+        mock_proc.communicate.return_value = ('{"ok":true}', "")
+        mock_proc.returncode = 0
+        mock_popen.return_value = mock_proc
+
+        devices = [
+            {"profile": "prpl-template", "com": "COM0", "alias": "dut",
+             "serial_port": "/dev/ttyUSB0"},
+            {"profile": "prpl-template", "com": "COM1", "alias": "sta",
+             "serial_port": "/dev/ttyUSB1"},
+        ]
+        log_capture.setup_sessions(devices, bind_timeout=5)
+        # 2 Popen bind calls
+        assert mock_popen.call_count == 2
+        # 1 device list + 2 alias = 3 _run_sw calls
+        assert mock_run.call_count == 3
 
 
 # ---------------------------------------------------------------------------

@@ -11,6 +11,7 @@ import json
 import logging
 import shutil
 import subprocess
+import time
 from pathlib import Path
 from typing import Any
 
@@ -45,13 +46,22 @@ def _run_sw(args: list[str], timeout: float = 10.0) -> dict[str, Any]:
 # Daemon lifecycle
 # ---------------------------------------------------------------------------
 
-def start_daemon(profile_dir: str | Path | None = None) -> dict[str, Any]:
-    """Start serialwrap daemon and return status (contains wal_path)."""
+def start_daemon(
+    profile_dir: str | Path | None = None,
+    settle_delay: float = 3.0,
+) -> dict[str, Any]:
+    """Start serialwrap daemon and return status (contains wal_path).
+
+    A short *settle_delay* after start allows the daemon to finish
+    device discovery before subsequent ``session bind`` calls.
+    """
     args = ["daemon", "start"]
     if profile_dir:
         args.extend(["--profile-dir", str(profile_dir)])
     payload = _run_sw(args, timeout=15.0)
     logger.info("serialwrap daemon started: pid=%s", payload.get("pid"))
+    if settle_delay > 0:
+        time.sleep(settle_delay)
     return payload
 
 
@@ -80,41 +90,97 @@ def clean_wal(wal_dir: Path | None = None) -> None:
         logger.info("cleaned WAL directory: %s", target)
 
 
+def _list_devices() -> list[dict[str, Any]]:
+    """Return discovered USB serial devices from the daemon."""
+    payload = _run_sw(["device", "list"], timeout=5.0)
+    return payload.get("devices", [])
+
+
+def _match_device_by_id(
+    devices: list[dict[str, Any]],
+    serial_port: str,
+) -> str | None:
+    """Find device_by_id for a given serial port path (e.g. /dev/ttyUSB0)."""
+    rp = Path(serial_port).resolve()
+    for dev in devices:
+        dev_rp = Path(dev.get("real_path", "")).resolve()
+        if dev_rp == rp:
+            return str(dev.get("by_id", ""))
+    return None
+
+
 def setup_sessions(
     devices: list[dict[str, Any]],
     *,
-    timeout: float = 15.0,
+    bind_timeout: float = 60.0,
+    settle_delay: float = 3.0,
 ) -> None:
-    """Attach sessions and set aliases for DUT/STA devices.
+    """Bind sessions and set aliases for DUT/STA devices.
 
     Each device dict should have:
       - profile: str (e.g. "prpl-template")
       - com: str (e.g. "COM0")
       - alias: str (e.g. "dut")
+      - serial_port: str (e.g. "/dev/ttyUSB0") — used to auto-discover device_by_id
+
+    ``session bind`` blocks until the device reaches READY. We launch all
+    binds concurrently and wait up to *bind_timeout* seconds.
     """
+    hw_devices = _list_devices()
+
+    # Phase 1: launch all bind processes concurrently
+    bind_procs: list[tuple[str, str, str, subprocess.Popen[str]]] = []
     for dev in devices:
         profile = dev.get("profile", "prpl-template")
         com = dev.get("com", "")
         alias = dev.get("alias", "")
+        serial_port = dev.get("serial_port", "")
         session_id = f"{profile}:{com}"
 
-        payload = _run_sw(
-            ["session", "attach", "--selector", session_id],
-            timeout=timeout,
-        )
-        session = payload.get("session", {})
-        state = str(session.get("state", "")).upper()
-        logger.info(
-            "attached session %s → %s (state=%s)",
-            session_id, session.get("device_by_id", "?"), state,
-        )
+        by_id = _match_device_by_id(hw_devices, serial_port) if serial_port else None
+        if not by_id:
+            idx = int(com.replace("COM", "")) if com.startswith("COM") else 0
+            if idx < len(hw_devices):
+                by_id = hw_devices[idx].get("by_id", "")
 
+        if not by_id:
+            logger.warning("no device_by_id found for %s (%s), skipping bind", com, serial_port)
+            continue
+
+        proc = subprocess.Popen(
+            [SERIALWRAP_BIN, "session", "bind",
+             "--selector", session_id, "--device-by-id", by_id],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        )
+        bind_procs.append((session_id, alias, by_id, proc))
+
+    # Phase 2: wait for all bind processes (concurrent)
+    deadline = time.monotonic() + bind_timeout
+    for session_id, alias, by_id, proc in bind_procs:
+        remaining = max(0.1, deadline - time.monotonic())
+        try:
+            stdout, stderr = proc.communicate(timeout=remaining)
+            if proc.returncode == 0:
+                logger.info("bound session %s → %s", session_id, by_id)
+            else:
+                logger.warning("bind %s failed (rc=%d): %s", session_id, proc.returncode, stderr.strip())
+                continue
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+            logger.warning("bind %s timed out after %.0fs", session_id, bind_timeout)
+            continue
+
+        # Phase 3: set alias
         if alias:
-            _run_sw(
-                ["alias", "set", "--session-id", session_id, "--alias", alias],
-                timeout=5.0,
-            )
-            logger.info("alias %s → %s", alias, session_id)
+            try:
+                _run_sw(
+                    ["alias", "set", "--session-id", session_id, "--alias", alias],
+                    timeout=5.0,
+                )
+                logger.info("alias %s → %s", alias, session_id)
+            except Exception:
+                logger.warning("alias set failed for %s", alias, exc_info=True)
 
 
 # ---------------------------------------------------------------------------
