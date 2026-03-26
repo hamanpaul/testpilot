@@ -51,6 +51,7 @@ from testpilot.core.runner_selector import (
     RunnerSelector,
 )
 from testpilot.core.testbed_config import TestbedConfig
+from testpilot.reporting.reporter import generate_reports
 from testpilot.reporting.wifi_llapi_excel import (
     ReportMeta,
     WifiLlapiCaseResult,
@@ -510,6 +511,26 @@ class Orchestrator:
             ),
         )
 
+        # -- md / json reports ------------------------------------------------
+        import dataclasses
+
+        report_meta: dict[str, Any] = {
+            "title": f"{fw_ver}_wifi_LLAPI_{run_id}",
+            "date": run_date.isoformat(),
+            "plugin": plugin_name,
+            "firmware_version": fw_ver,
+            "run_id": run_id,
+        }
+        case_dicts = [dataclasses.asdict(cr) for cr in case_results]
+        md_json_paths = generate_reports(
+            case_results=case_dicts,
+            meta=report_meta,
+            output_dir=reports_root,
+            formats=["md", "json"],
+        )
+        for p in md_json_paths:
+            log.info("wifi_llapi %s report generated: %s", p.suffix, p)
+
         log.info("wifi_llapi report generated: %s", report_path)
         return {
             "plugin": plugin_name,
@@ -520,6 +541,8 @@ class Orchestrator:
             "status": "completed",
             "template_path": str(template_path),
             "report_path": str(report_path),
+            "md_report_path": str(md_json_paths[0]) if len(md_json_paths) > 0 else "",
+            "json_report_path": str(md_json_paths[1]) if len(md_json_paths) > 1 else "",
             "source_report": source_report,
             "run_id": run_id,
             "agent_trace_dir": str(agent_trace_dir),
