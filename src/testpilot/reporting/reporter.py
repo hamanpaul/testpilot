@@ -149,6 +149,17 @@ class MarkdownReporter:
                 lines.append(output)
                 lines.append("```")
                 lines.append("")
+            # Log references
+            dut_lines = case.get("dut_log_lines", "")
+            sta_lines = case.get("sta_log_lines", "")
+            if dut_lines or sta_lines:
+                lines.append("**Log Reference**")
+                lines.append("")
+                if dut_lines:
+                    lines.append(f"- DUT: `{dut_lines}`")
+                if sta_lines:
+                    lines.append(f"- STA: `{sta_lines}`")
+                lines.append("")
             # Emit any extra keys not yet rendered
             shown = {
                 "case_id",
@@ -160,6 +171,8 @@ class MarkdownReporter:
                 "result_24g",
                 "comment",
                 "tester",
+                "dut_log_lines",
+                "sta_log_lines",
             }
             extras = {k: v for k, v in case.items() if k not in shown}
             if extras:

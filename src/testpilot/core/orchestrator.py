@@ -52,6 +52,7 @@ from testpilot.core.runner_selector import (
 )
 from testpilot.core.testbed_config import TestbedConfig
 from testpilot.reporting.reporter import generate_reports
+from testpilot.reporting import log_capture
 from testpilot.reporting.wifi_llapi_excel import (
     ReportMeta,
     WifiLlapiCaseResult,
@@ -302,6 +303,94 @@ class Orchestrator:
     def _write_case_trace(path: Path, payload: dict[str, Any]) -> None:
         ExecutionEngine.write_case_trace(path, payload)
 
+    # -- serialwrap log lifecycle helpers --------------------------------------
+
+    def _start_serialwrap_for_run(self) -> Path | None:
+        """Start serialwrap daemon with clean WAL for a fresh test run.
+
+        Returns the WAL path on success, None if serialwrap is unavailable.
+        """
+        try:
+            log_capture.stop_daemon()
+        except Exception:
+            pass
+        try:
+            log_capture.clean_wal()
+            status = log_capture.start_daemon()
+            wal_path = log_capture.get_wal_path(status)
+            # Setup sessions from testbed config
+            dut_cfg = self.config.devices.get("dut", {})
+            sta_cfg = self.config.devices.get("sta", {})
+            devices = []
+            for alias, cfg in [("dut", dut_cfg), ("sta", sta_cfg)]:
+                selector = cfg.get("selector", "")
+                if selector:
+                    devices.append({"selector": selector, "alias": alias})
+            if devices:
+                log_capture.setup_sessions(devices)
+            log.info("serialwrap daemon started, wal_path=%s", wal_path)
+            return wal_path
+        except Exception:
+            log.warning("serialwrap daemon start failed; logs will be unavailable", exc_info=True)
+            return None
+
+    def _stop_serialwrap(self) -> None:
+        """Stop serialwrap daemon after a test run."""
+        try:
+            log_capture.stop_daemon()
+            log.info("serialwrap daemon stopped")
+        except Exception:
+            log.debug("serialwrap daemon stop (non-critical)", exc_info=True)
+
+    def _export_serialwrap_logs(
+        self,
+        *,
+        run_id: str,
+        reports_root: Path,
+        case_seq_ranges: dict[str, dict[str, int | None]],
+        case_results: list[WifiLlapiCaseResult],
+    ) -> dict[str, str]:
+        """Export WAL records, decode DUT/STA logs, and annotate case results."""
+        records = log_capture.export_records(from_seq=1)
+        if not records:
+            return {}
+
+        dut_com = self.config.devices.get("dut", {}).get("com_port", "COM0")
+        sta_com = self.config.devices.get("sta", {}).get("com_port", "COM1")
+
+        # Decode & save per-device log files
+        dut_text = log_capture.decode_log(records, com_filter=dut_com)
+        sta_text = log_capture.decode_log(records, com_filter=sta_com)
+        dut_log_path = log_capture.save_decoded_log(
+            dut_text, reports_root / f"{run_id}_DUT.log"
+        )
+        sta_log_path = log_capture.save_decoded_log(
+            sta_text, reports_root / f"{run_id}_STA.log"
+        )
+
+        # Build seq→line maps
+        dut_line_map = log_capture.build_seq_to_line_map(records, com_filter=dut_com)
+        sta_line_map = log_capture.build_seq_to_line_map(records, com_filter=sta_com)
+
+        # Annotate each case result with log line ranges
+        for cr in case_results:
+            seq_range = case_seq_ranges.get(cr.case_id)
+            if not seq_range:
+                continue
+            s, e = seq_range.get("seq_start"), seq_range.get("seq_end")
+            cr.dut_log_lines = log_capture.seq_range_to_line_range(
+                s, e, dut_line_map
+            )
+            cr.sta_log_lines = log_capture.seq_range_to_line_range(
+                s, e, sta_line_map
+            )
+
+        log.info("serialwrap logs saved: %s, %s", dut_log_path, sta_log_path)
+        return {
+            "dut_log_path": str(dut_log_path),
+            "sta_log_path": str(sta_log_path),
+        }
+
     # -- wifi_llapi run loop ---------------------------------------------------
 
     def _run_wifi_llapi(
@@ -406,6 +495,10 @@ class Orchestrator:
         fail_count = 0
         case_trace_files: list[str] = []
 
+        # -- serialwrap daemon lifecycle: start fresh for this run -------------
+        wal_path = self._start_serialwrap_for_run()
+        case_seq_ranges: dict[str, dict[str, int | None]] = {}
+
         for case in cases:
             case_id = str(case.get("id", "?"))
             source = case.get("source", {}) if isinstance(case.get("source"), dict) else {}
@@ -437,6 +530,7 @@ class Orchestrator:
                     if session_handle.get("status") == "created":
                         active_session_id = session_handle.get("session_id")
 
+            seq_before = log_capture.get_current_seq(wal_path)
             try:
                 retry_result = self.execution_engine.execute_with_retry(
                     plugin=plugin,
@@ -446,6 +540,11 @@ class Orchestrator:
                 )
             finally:
                 self._cleanup_case_session(active_session_id)
+            seq_after = log_capture.get_current_seq(wal_path)
+            case_seq_ranges[case_id] = {
+                "seq_start": seq_before,
+                "seq_end": seq_after,
+            }
             verdict = retry_result.verdict
             comment = retry_result.comment
             commands = retry_result.commands
@@ -501,6 +600,23 @@ class Orchestrator:
                 )
             )
 
+        # -- serialwrap log export & decode ------------------------------------
+        dut_log_path = ""
+        sta_log_path = ""
+        try:
+            log_result = self._export_serialwrap_logs(
+                run_id=run_id,
+                reports_root=reports_root,
+                case_seq_ranges=case_seq_ranges,
+                case_results=case_results,
+            )
+            dut_log_path = log_result.get("dut_log_path", "")
+            sta_log_path = log_result.get("sta_log_path", "")
+        except Exception:
+            log.warning("serialwrap log export failed", exc_info=True)
+        finally:
+            self._stop_serialwrap()
+
         fill_case_results(report_xlsx=report_path, case_results=case_results)
         finalize_report_metadata(
             report_xlsx=report_path,
@@ -543,6 +659,8 @@ class Orchestrator:
             "report_path": str(report_path),
             "md_report_path": str(md_json_paths[0]) if len(md_json_paths) > 0 else "",
             "json_report_path": str(md_json_paths[1]) if len(md_json_paths) > 1 else "",
+            "dut_log_path": dut_log_path,
+            "sta_log_path": sta_log_path,
             "source_report": source_report,
             "run_id": run_id,
             "agent_trace_dir": str(agent_trace_dir),
