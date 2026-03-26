@@ -90,6 +90,19 @@ def clean_wal(wal_dir: Path | None = None) -> None:
         logger.info("cleaned WAL directory: %s", target)
 
 
+def wal_reset() -> dict[str, Any]:
+    """輪替 WAL 檔案並重設 seq，不需重啟 daemon。"""
+    payload = _run_sw(["wal", "reset"], timeout=10.0)
+    logger.info("wal reset: previous_seq=%s", payload.get("previous_seq"))
+    return payload
+
+
+def wal_current_seq() -> int:
+    """透過 RPC 取得目前 WAL seq。"""
+    payload = _run_sw(["wal", "current-seq"], timeout=5.0)
+    return int(payload.get("seq", 0))
+
+
 def _list_devices() -> list[dict[str, Any]]:
     """Return discovered USB serial devices from the daemon."""
     payload = _run_sw(["device", "list"], timeout=5.0)
@@ -196,10 +209,17 @@ def get_wal_path() -> Path:
 
 
 def get_current_seq(wal_path: Path | None = None) -> int | None:
-    """Read the latest seq number from the WAL ndjson tail line.
+    """Return the latest WAL seq number via RPC (preferred) or file tail fallback.
 
     Returns None if WAL file doesn't exist or is empty.
     """
+    if wal_path is None:
+        # 無指定路徑：優先走 RPC（無 race condition）
+        try:
+            return wal_current_seq()
+        except Exception:
+            pass
+    # 指定路徑或 RPC 失敗：讀檔案
     path = wal_path or get_wal_path()
     if not path.is_file():
         return None

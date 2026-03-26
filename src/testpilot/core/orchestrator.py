@@ -306,15 +306,23 @@ class Orchestrator:
     # -- serialwrap log lifecycle helpers --------------------------------------
 
     def _start_serialwrap_for_run(self) -> Path | None:
-        """Start serialwrap daemon with clean WAL for a fresh test run.
+        """確保 serialwrap daemon 已啟動並重設 WAL。
 
+        若 daemon 已在執行，只做 wal.reset（不重啟，不斷線）。
+        若 daemon 未執行，啟動新 daemon 並設定 sessions。
         Returns the WAL path on success, None if serialwrap is unavailable.
         """
         try:
-            log_capture.stop_daemon()
-        except Exception:
-            pass
-        try:
+            status = log_capture.daemon_status()
+            if status and status.get("ok"):
+                # daemon 已執行：用 wal.reset 取代 restart
+                log_capture.wal_reset()
+                wal_path = log_capture.get_wal_path()
+                log.info("serialwrap daemon already running (pid=%s), WAL reset done",
+                         status.get("pid"))
+                return wal_path
+
+            # daemon 未執行：啟動新 daemon
             log_capture.clean_wal()
             log_capture.start_daemon()
             wal_path = log_capture.get_wal_path()
@@ -341,12 +349,11 @@ class Orchestrator:
             return None
 
     def _stop_serialwrap(self) -> None:
-        """Stop serialwrap daemon after a test run."""
-        try:
-            log_capture.stop_daemon()
-            log.info("serialwrap daemon stopped")
-        except Exception:
-            log.debug("serialwrap daemon stop (non-critical)", exc_info=True)
+        """Run 結束後的 serialwrap 清理。
+
+        不再 stop daemon，讓 human console 持續連線。
+        """
+        log.debug("serialwrap daemon kept alive for console coexistence")
 
     def _export_serialwrap_logs(
         self,
