@@ -88,20 +88,20 @@ class _FakeClient:
 
 def test_build_session_id_matches_third_refactor_policy():
     assert build_session_id("20260311T101010") == "run-20260311T101010"
-    assert build_session_id("20260311T101010", case_id="wifi-llapi-D330-errorssent-ssid-stats") == (
-        "run-20260311T101010-case-wifi-llapi-D330-errorssent-ssid-stats"
+    assert build_session_id("20260311T101010", case_id="wifi-llapi-D328-errorssent-ssid-stats") == (
+        "run-20260311T101010-case-wifi-llapi-D328-errorssent-ssid-stats"
     )
     assert build_session_id(
         "20260311T101010",
-        case_id="wifi llapi D330/errorssent",
+        case_id="wifi llapi D328/errorssent",
         remediate_attempt=2,
-    ) == "run-20260311T101010-case-wifi_llapi_D330_errorssent-remediate-2"
+    ) == "run-20260311T101010-case-wifi_llapi_D328_errorssent-remediate-2"
 
 
 def test_build_case_session_plan_for_copilot_runner():
     plan = build_case_session_plan(
         "20260311T101010",
-        "wifi-llapi-D330-errorssent-ssid-stats",
+        "wifi-llapi-D328-errorssent-ssid-stats",
         {
             "cli_agent": "copilot",
             "model": "gpt-5.4",
@@ -111,7 +111,7 @@ def test_build_case_session_plan_for_copilot_runner():
 
     assert plan == {
         "provider": "copilot-sdk",
-        "session_id": "run-20260311T101010-case-wifi-llapi-D330-errorssent-ssid-stats",
+        "session_id": "run-20260311T101010-case-wifi-llapi-D328-errorssent-ssid-stats",
         "model": "gpt-5.4",
         "reasoning_effort": "high",
         "status": "planned",
@@ -126,7 +126,7 @@ def test_create_resume_list_delete_session_via_sdk_adapter():
         client_factory=lambda: fake_client,
     )
     request = CopilotSessionRequest(
-        session_id="run-20260311T101010-case-wifi-llapi-D330-errorssent-ssid-stats",
+        session_id="run-20260311T101010-case-wifi-llapi-D328-errorssent-ssid-stats",
         model="gpt-5.4",
         reasoning_effort="high",
         working_directory="/workspace",

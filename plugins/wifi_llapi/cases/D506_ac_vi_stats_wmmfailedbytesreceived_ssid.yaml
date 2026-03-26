@@ -1,0 +1,55 @@
+id: d506-ssid-wmm-ac_vi_stats_wmmfailedbytesreceived_ssid
+name: D506 WmmFailedBytesReceived.AC_VI
+source:
+  row: 373
+  object: WiFi.SSID.{i}.Stats.WmmFailedBytesReceived.
+  api: AC_VI
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+- 6g
+- 2.4g
+llapi_support: Support
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+steps:
+- id: step_5g_getter
+  target: dut
+  action: read
+  capture: getter_5g
+  command: ubus-cli "WiFi.SSID.4.Stats.WmmFailedBytesReceived.AC_VI?"
+  expected: AC_VI 回傳有效值
+  description: SSID.4 (5g) WmmFailedBytesReceived.AC_VI getter
+- id: step_6g_getter
+  target: dut
+  action: read
+  capture: getter_6g
+  command: ubus-cli "WiFi.SSID.6.Stats.WmmFailedBytesReceived.AC_VI?"
+  expected: AC_VI 回傳有效值
+  description: SSID.6 (6g) WmmFailedBytesReceived.AC_VI getter
+- id: step_24g_getter
+  target: dut
+  action: read
+  capture: getter_24g
+  command: ubus-cli "WiFi.SSID.8.Stats.WmmFailedBytesReceived.AC_VI?"
+  expected: AC_VI 回傳有效值
+  description: SSID.8 (2.4g) WmmFailedBytesReceived.AC_VI getter
+pass_criteria:
+- field: getter_5g.AC_VI
+  operator: regex
+  value: ^\d+$
+- field: getter_6g.AC_VI
+  operator: regex
+  value: ^\d+$
+- field: getter_24g.AC_VI
+  operator: regex
+  value: ^\d+$

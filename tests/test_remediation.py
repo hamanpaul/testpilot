@@ -78,7 +78,7 @@ class TestRemediationPlan:
                 RemediationAction("RA-002", "D002", "reboot", "fix2"),
                 RemediationAction("RA-003", "D003", "config_change", "fix3"),
             ],
-            skipped_cases=["D099"],
+            skipped_cases=["D097"],
             notes=["note1"],
         )
         s = plan.summary()

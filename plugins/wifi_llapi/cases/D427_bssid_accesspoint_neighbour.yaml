@@ -1,0 +1,29 @@
+id: d427-skip-neighbour-bssid
+name: D427 Neighbour BSSID Skip
+source:
+  row: 429
+  object: WiFi.AccessPoint.{i}.Neighbour.
+  api: BSSID
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+llapi_support: Skip
+results_reference:
+  v4.0.3:
+    5g: Skip
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+steps:
+- id: step_5g_skip
+  target: dut
+  action: skip
+  command: "echo skip"
+  description: "AP Neighbour sub-object has no data — WiFi.AccessPoint.1.Neighbour.? returns No data found"
+pass_criteria:
+- field: skip
+  operator: skip
+  value: "AP Neighbour sub-object has no data — WiFi.AccessPoint.1.Neighbour.? returns No data found"

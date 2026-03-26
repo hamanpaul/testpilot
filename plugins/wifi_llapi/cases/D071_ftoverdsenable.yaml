@@ -1,0 +1,593 @@
+id: wifi-llapi-D071-ftoverdsenable-accesspoint
+name: "FTOverDSEnable — WiFi.AccessPoint.{i}.IEEE80211r."
+version: '1.1'
+source:
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 73
+  object: WiFi.AccessPoint.{i}.IEEE80211r.
+  api: FTOverDSEnable
+  baseline: BCM v4.0.3
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable=1'
+llapi_support: Support
+implemented_by: pWHM
+bands: ["5g", "6g", "2.4g"]
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+  links: []
+test_environment: |
+  Topology:
+  - DUT: COM0 (AP role; FTOverDSEnable is validated as an AP-only case with no STA transport)
+  Live band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
+  - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
+  - 2.4G: DUT wl2 / AP5 / SSID.8 / testpilot2G / WPA2-Personal / 00000000
+  Preconditions:
+  - keep AP1, AP3, and AP5 enabled on the documented non-open baseline before the 11r probe
+  - FTOverDSEnable requires `IEEE80211r.Enabled=1` and a non-zero `MobilityDomain`
+  - live 0319 probe showed the northbound MobilityDomain getter stays decimal `4660`, while hostapd stores `mobility_domain=3412` (hex form)
+  - after the prerequisites are applied, hostapd exposes one `ft_over_ds=0` line per band; toggling FTOverDSEnable flips that line between `0` and `1`
+setup_steps: |
+  1) DUT baseline:
+     - keep AP1 / AP3 / AP5 enabled on the documented non-open baseline
+     - confirm wl0 / wl1 / wl2 BSS instances are reachable before changing 11r settings
+  2) Per-band 11r prerequisite setup:
+     - set IEEE80211r.Enabled=1
+     - set MobilityDomain=4660
+     - confirm the northbound getters read Enabled=1 / FTOverDSEnable=0 / MobilityDomain=4660
+     - confirm hostapd exposes `mobility_domain=3412` and `ft_over_ds=0`
+  3) Per-band FTOverDSEnable toggle:
+     - set FTOverDSEnable=1 and confirm both getter and hostapd `ft_over_ds` flip to `1`
+     - set FTOverDSEnable=0 and confirm both getter and hostapd `ft_over_ds` return to `0`
+  4) Cleanup:
+     - restore MobilityDomain=0 and IEEE80211r.Enabled=0 on AP1 / AP3 / AP5
+sta_env_setup: |
+  DUT:
+    ubus-cli WiFi.AccessPoint.1.Enable=1
+    ubus-cli WiFi.AccessPoint.3.Enable=1
+    ubus-cli WiFi.AccessPoint.5.Enable=1
+    ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=1
+    ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=1
+    ubus-cli WiFi.AccessPoint.5.IEEE80211r.Enabled=1
+    ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=4660
+    ubus-cli WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=4660
+    ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=4660
+    wl -i wl0 bss
+    wl -i wl1 bss
+    wl -i wl2 bss
+test_procedure: |
+  1) Keep AP1, AP3, and AP5 enabled on the documented non-open baseline.
+  2) For each band, set IEEE80211r.Enabled=1 and MobilityDomain=4660, then confirm the northbound getters read Enabled=1 / FTOverDSEnable=0 / MobilityDomain=4660.
+  3) Cross-check hostapd after the prerequisites: `mobility_domain=3412` must be present and `ft_over_ds=0` must be exposed exactly once.
+  4) Set FTOverDSEnable=1 on the same AP and confirm the northbound getter plus hostapd `ft_over_ds` both change to `1`.
+  5) Restore FTOverDSEnable=0 and confirm the northbound getter plus hostapd `ft_over_ds` both return to `0`.
+  6) Cleanup by restoring MobilityDomain=0 and IEEE80211r.Enabled=0 on AP1 / AP3 / AP5.
+  Verdict: To be tested. The current DUT converges cleanly on 5G, 6G, and 2.4G for this AP-only 11r prerequisite + FTOverDSEnable toggle path, but the workbook baseline for all three bands remains `To be tested`.
+steps:
+- id: step1_prereq_enabled_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=1'
+  capture: prereq_enabled_5g
+- id: step2_prereq_mobilitydomain_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=4660'
+  depends_on: step1_prereq_enabled_5g
+  capture: prereq_mobilitydomain_5g
+- id: step3_state_prereq_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.FTOverDSEnable=/FtOverDs5g=/p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p'
+  depends_on: step2_prereq_mobilitydomain_5g
+  capture: state_prereq_5g
+- id: step4_cfg_prereq_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    grep -m1 '^mobility_domain=' /tmp/wl0_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg5g=/'; grep -c '^ft_over_ds=1$' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gOneCount=/'; grep -c '^ft_over_ds=0$' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gTotalCount=/'
+  depends_on: step3_state_prereq_5g
+  capture: cfg_prereq_5g
+- id: step5_set_ft_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable=1'
+  depends_on: step4_cfg_prereq_5g
+  capture: set_ft_5g
+- id: step6_state_set_ft_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.FTOverDSEnable=/FtOverDs5g=/p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p'
+  depends_on: step5_set_ft_5g
+  capture: state_set_ft_5g
+- id: step7_cfg_set_ft_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    grep -m1 '^mobility_domain=' /tmp/wl0_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg5g=/'; grep -c '^ft_over_ds=1$' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gOneCount=/'; grep -c '^ft_over_ds=0$' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gTotalCount=/'
+  depends_on: step6_state_set_ft_5g
+  capture: cfg_set_ft_5g
+- id: step8_restore_ft_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable=0'
+  depends_on: step7_cfg_set_ft_5g
+  capture: restore_ft_5g
+- id: step9_state_restore_ft_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.FTOverDSEnable=/FtOverDs5g=/p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p'
+  depends_on: step8_restore_ft_5g
+  capture: state_restore_ft_5g
+- id: step10_cfg_restore_ft_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    grep -m1 '^mobility_domain=' /tmp/wl0_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg5g=/'; grep -c '^ft_over_ds=1$' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gOneCount=/'; grep -c '^ft_over_ds=0$' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gTotalCount=/'
+  depends_on: step9_state_restore_ft_5g
+  capture: cfg_restore_ft_5g
+- id: step11_prereq_enabled_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=1'
+  depends_on: step10_cfg_restore_ft_5g
+  capture: prereq_enabled_6g
+- id: step12_prereq_mobilitydomain_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=4660'
+  depends_on: step11_prereq_enabled_6g
+  capture: prereq_mobilitydomain_6g
+- id: step13_state_prereq_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.FTOverDSEnable=/FtOverDs6g=/p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p'
+  depends_on: step12_prereq_mobilitydomain_6g
+  capture: state_prereq_6g
+- id: step14_cfg_prereq_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    grep -m1 '^mobility_domain=' /tmp/wl1_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg6g=/'; grep -c '^ft_over_ds=1$' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gOneCount=/'; grep -c '^ft_over_ds=0$' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gTotalCount=/'
+  depends_on: step13_state_prereq_6g
+  capture: cfg_prereq_6g
+- id: step15_set_ft_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable=1'
+  depends_on: step14_cfg_prereq_6g
+  capture: set_ft_6g
+- id: step16_state_set_ft_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.FTOverDSEnable=/FtOverDs6g=/p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p'
+  depends_on: step15_set_ft_6g
+  capture: state_set_ft_6g
+- id: step17_cfg_set_ft_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    grep -m1 '^mobility_domain=' /tmp/wl1_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg6g=/'; grep -c '^ft_over_ds=1$' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gOneCount=/'; grep -c '^ft_over_ds=0$' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gTotalCount=/'
+  depends_on: step16_state_set_ft_6g
+  capture: cfg_set_ft_6g
+- id: step18_restore_ft_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable=0'
+  depends_on: step17_cfg_set_ft_6g
+  capture: restore_ft_6g
+- id: step19_state_restore_ft_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.FTOverDSEnable=/FtOverDs6g=/p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p'
+  depends_on: step18_restore_ft_6g
+  capture: state_restore_ft_6g
+- id: step20_cfg_restore_ft_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    grep -m1 '^mobility_domain=' /tmp/wl1_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg6g=/'; grep -c '^ft_over_ds=1$' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gOneCount=/'; grep -c '^ft_over_ds=0$' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gTotalCount=/'
+  depends_on: step19_state_restore_ft_6g
+  capture: cfg_restore_ft_6g
+- id: step21_prereq_enabled_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli WiFi.AccessPoint.5.IEEE80211r.Enabled=1'
+  depends_on: step20_cfg_restore_ft_6g
+  capture: prereq_enabled_24g
+- id: step22_prereq_mobilitydomain_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=4660'
+  depends_on: step21_prereq_enabled_24g
+  capture: prereq_mobilitydomain_24g
+- id: step23_state_prereq_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.FTOverDSEnable=/FtOverDs24g=/p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p'
+  depends_on: step22_prereq_mobilitydomain_24g
+  capture: state_prereq_24g
+- id: step24_cfg_prereq_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    grep -m1 '^mobility_domain=' /tmp/wl2_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg24g=/'; grep -c '^ft_over_ds=1$' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gOneCount=/'; grep -c '^ft_over_ds=0$' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gTotalCount=/'
+  depends_on: step23_state_prereq_24g
+  capture: cfg_prereq_24g
+- id: step25_set_ft_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable=1'
+  depends_on: step24_cfg_prereq_24g
+  capture: set_ft_24g
+- id: step26_state_set_ft_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.FTOverDSEnable=/FtOverDs24g=/p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p'
+  depends_on: step25_set_ft_24g
+  capture: state_set_ft_24g
+- id: step27_cfg_set_ft_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    grep -m1 '^mobility_domain=' /tmp/wl2_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg24g=/'; grep -c '^ft_over_ds=1$' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gOneCount=/'; grep -c '^ft_over_ds=0$' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gTotalCount=/'
+  depends_on: step26_state_set_ft_24g
+  capture: cfg_set_ft_24g
+- id: step28_restore_ft_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable=0'
+  depends_on: step27_cfg_set_ft_24g
+  capture: restore_ft_24g
+- id: step29_state_restore_ft_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.FTOverDSEnable=/FtOverDs24g=/p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p'
+  depends_on: step28_restore_ft_24g
+  capture: state_restore_ft_24g
+- id: step30_cfg_restore_ft_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    grep -m1 '^mobility_domain=' /tmp/wl2_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg24g=/'; grep -c '^ft_over_ds=1$' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gOneCount=/'; grep -c '^ft_over_ds=0$' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gTotalCount=/'
+  depends_on: step29_state_restore_ft_24g
+  capture: cfg_restore_ft_24g
+- id: step31_cleanup_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=0; ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=0'
+  depends_on: step30_cfg_restore_ft_24g
+  capture: cleanup_5g
+- id: step32_state_cleanup_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.FTOverDSEnable=/FtOverDs5g=/p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p'
+  depends_on: step31_cleanup_5g
+  capture: state_cleanup_5g
+- id: step33_cleanup_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=0; ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=0'
+  depends_on: step32_state_cleanup_5g
+  capture: cleanup_6g
+- id: step34_state_cleanup_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.FTOverDSEnable=/FtOverDs6g=/p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p'
+  depends_on: step33_cleanup_6g
+  capture: state_cleanup_6g
+- id: step35_cleanup_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=0; ubus-cli WiFi.AccessPoint.5.IEEE80211r.Enabled=0'
+  depends_on: step34_state_cleanup_6g
+  capture: cleanup_24g
+- id: step36_state_cleanup_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.FTOverDSEnable=/FtOverDs24g=/p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p'
+  depends_on: step35_cleanup_24g
+  capture: state_cleanup_24g
+pass_criteria:
+- field: state_prereq_5g.Enabled5g
+  operator: equals
+  value: '1'
+  description: 5G AP1 should enable IEEE80211r before the FTOverDSEnable probe.
+- field: state_prereq_5g.FtOverDs5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 should start with FTOverDSEnable=0 after the prerequisites are applied.
+- field: state_prereq_5g.MobilityDomain5g
+  operator: equals
+  value: '4660'
+  description: 5G AP1 should read back the configured MobilityDomain in decimal.
+- field: cfg_prereq_5g.MobilityDomainCfg5g
+  operator: equals
+  value: '3412'
+  description: 5G wl0 hostapd config should store the configured MobilityDomain in hex form.
+- field: cfg_prereq_5g.FtOverDs5gZeroCount
+  operator: equals
+  value: '1'
+  description: 5G wl0 hostapd config should expose one ft_over_ds=0 line before the toggle.
+- field: cfg_prereq_5g.FtOverDs5gTotalCount
+  operator: equals
+  value: '1'
+  description: 5G wl0 hostapd config should expose exactly one ft_over_ds line before the toggle.
+- field: set_ft_5g.FTOverDSEnable
+  operator: equals
+  value: '1'
+  description: 5G AP1 should acknowledge FTOverDSEnable=1.
+- field: state_set_ft_5g.FtOverDs5g
+  operator: equals
+  value: '1'
+  description: 5G AP1 getter should read back FTOverDSEnable=1 after the setter write.
+- field: cfg_set_ft_5g.FtOverDs5gOneCount
+  operator: equals
+  value: '1'
+  description: 5G wl0 hostapd config should flip its ft_over_ds line to 1.
+- field: cfg_set_ft_5g.FtOverDs5gTotalCount
+  operator: equals
+  value: '1'
+  description: 5G wl0 hostapd config should still expose exactly one ft_over_ds line after FTOverDSEnable=1.
+- field: restore_ft_5g.FTOverDSEnable
+  operator: equals
+  value: '0'
+  description: 5G AP1 should acknowledge FTOverDSEnable=0 on restore.
+- field: state_restore_ft_5g.FtOverDs5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 getter should return to FTOverDSEnable=0 after restore.
+- field: cfg_restore_ft_5g.FtOverDs5gZeroCount
+  operator: equals
+  value: '1'
+  description: 5G wl0 hostapd config should return its ft_over_ds line to 0.
+- field: cfg_restore_ft_5g.FtOverDs5gTotalCount
+  operator: equals
+  value: '1'
+  description: 5G wl0 hostapd config should still expose exactly one ft_over_ds line after restore.
+- field: state_prereq_6g.Enabled6g
+  operator: equals
+  value: '1'
+  description: 6G AP3 should enable IEEE80211r before the FTOverDSEnable probe.
+- field: state_prereq_6g.FtOverDs6g
+  operator: equals
+  value: '0'
+  description: 6G AP3 should start with FTOverDSEnable=0 after the prerequisites are applied.
+- field: state_prereq_6g.MobilityDomain6g
+  operator: equals
+  value: '4660'
+  description: 6G AP3 should read back the configured MobilityDomain in decimal.
+- field: cfg_prereq_6g.MobilityDomainCfg6g
+  operator: equals
+  value: '3412'
+  description: 6G wl1 hostapd config should store the configured MobilityDomain in hex form.
+- field: cfg_prereq_6g.FtOverDs6gZeroCount
+  operator: equals
+  value: '1'
+  description: 6G wl1 hostapd config should expose one ft_over_ds=0 line before the toggle.
+- field: cfg_prereq_6g.FtOverDs6gTotalCount
+  operator: equals
+  value: '1'
+  description: 6G wl1 hostapd config should expose exactly one ft_over_ds line before the toggle.
+- field: set_ft_6g.FTOverDSEnable
+  operator: equals
+  value: '1'
+  description: 6G AP3 should acknowledge FTOverDSEnable=1.
+- field: state_set_ft_6g.FtOverDs6g
+  operator: equals
+  value: '1'
+  description: 6G AP3 getter should read back FTOverDSEnable=1 after the setter write.
+- field: cfg_set_ft_6g.FtOverDs6gOneCount
+  operator: equals
+  value: '1'
+  description: 6G wl1 hostapd config should flip its ft_over_ds line to 1.
+- field: cfg_set_ft_6g.FtOverDs6gTotalCount
+  operator: equals
+  value: '1'
+  description: 6G wl1 hostapd config should still expose exactly one ft_over_ds line after FTOverDSEnable=1.
+- field: restore_ft_6g.FTOverDSEnable
+  operator: equals
+  value: '0'
+  description: 6G AP3 should acknowledge FTOverDSEnable=0 on restore.
+- field: state_restore_ft_6g.FtOverDs6g
+  operator: equals
+  value: '0'
+  description: 6G AP3 getter should return to FTOverDSEnable=0 after restore.
+- field: cfg_restore_ft_6g.FtOverDs6gZeroCount
+  operator: equals
+  value: '1'
+  description: 6G wl1 hostapd config should return its ft_over_ds line to 0.
+- field: cfg_restore_ft_6g.FtOverDs6gTotalCount
+  operator: equals
+  value: '1'
+  description: 6G wl1 hostapd config should still expose exactly one ft_over_ds line after restore.
+- field: state_prereq_24g.Enabled24g
+  operator: equals
+  value: '1'
+  description: 2.4G AP5 should enable IEEE80211r before the FTOverDSEnable probe.
+- field: state_prereq_24g.FtOverDs24g
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 should start with FTOverDSEnable=0 after the prerequisites are applied.
+- field: state_prereq_24g.MobilityDomain24g
+  operator: equals
+  value: '4660'
+  description: 2.4G AP5 should read back the configured MobilityDomain in decimal.
+- field: cfg_prereq_24g.MobilityDomainCfg24g
+  operator: equals
+  value: '3412'
+  description: 2.4G wl2 hostapd config should store the configured MobilityDomain in hex form.
+- field: cfg_prereq_24g.FtOverDs24gZeroCount
+  operator: equals
+  value: '1'
+  description: 2.4G wl2 hostapd config should expose one ft_over_ds=0 line before the toggle.
+- field: cfg_prereq_24g.FtOverDs24gTotalCount
+  operator: equals
+  value: '1'
+  description: 2.4G wl2 hostapd config should expose exactly one ft_over_ds line before the toggle.
+- field: set_ft_24g.FTOverDSEnable
+  operator: equals
+  value: '1'
+  description: 2.4G AP5 should acknowledge FTOverDSEnable=1.
+- field: state_set_ft_24g.FtOverDs24g
+  operator: equals
+  value: '1'
+  description: 2.4G AP5 getter should read back FTOverDSEnable=1 after the setter write.
+- field: cfg_set_ft_24g.FtOverDs24gOneCount
+  operator: equals
+  value: '1'
+  description: 2.4G wl2 hostapd config should flip its ft_over_ds line to 1.
+- field: cfg_set_ft_24g.FtOverDs24gTotalCount
+  operator: equals
+  value: '1'
+  description: 2.4G wl2 hostapd config should still expose exactly one ft_over_ds line after FTOverDSEnable=1.
+- field: restore_ft_24g.FTOverDSEnable
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 should acknowledge FTOverDSEnable=0 on restore.
+- field: state_restore_ft_24g.FtOverDs24g
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 getter should return to FTOverDSEnable=0 after restore.
+- field: cfg_restore_ft_24g.FtOverDs24gZeroCount
+  operator: equals
+  value: '1'
+  description: 2.4G wl2 hostapd config should return its ft_over_ds line to 0.
+- field: cfg_restore_ft_24g.FtOverDs24gTotalCount
+  operator: equals
+  value: '1'
+  description: 2.4G wl2 hostapd config should still expose exactly one ft_over_ds line after restore.
+- field: state_cleanup_5g.Enabled5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 should restore IEEE80211r.Enabled=0 before the case exits.
+- field: state_cleanup_5g.FtOverDs5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 should keep FTOverDSEnable=0 after cleanup.
+- field: state_cleanup_5g.MobilityDomain5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 should restore MobilityDomain=0 before the case exits.
+- field: state_cleanup_6g.Enabled6g
+  operator: equals
+  value: '0'
+  description: 6G AP3 should restore IEEE80211r.Enabled=0 before the case exits.
+- field: state_cleanup_6g.FtOverDs6g
+  operator: equals
+  value: '0'
+  description: 6G AP3 should keep FTOverDSEnable=0 after cleanup.
+- field: state_cleanup_6g.MobilityDomain6g
+  operator: equals
+  value: '0'
+  description: 6G AP3 should restore MobilityDomain=0 before the case exits.
+- field: state_cleanup_24g.Enabled24g
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 should restore IEEE80211r.Enabled=0 before the case exits.
+- field: state_cleanup_24g.FtOverDs24g
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 should keep FTOverDSEnable=0 after cleanup.
+- field: state_cleanup_24g.MobilityDomain24g
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 should restore MobilityDomain=0 before the case exits.
+verification_command: |
+  ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=1
+  ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=4660
+  ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.FTOverDSEnable=/FtOverDs5g=/p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p'
+  grep -m1 '^mobility_domain=' /tmp/wl0_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg5g=/'; grep -c '^ft_over_ds=1$' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gOneCount=/'; grep -c '^ft_over_ds=0$' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gTotalCount=/'
+  ubus-cli WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable=1
+  ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p' | sed -n '1,20p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.FTOverDSEnable=/FtOverDs5g=/p' | sed -n '1,20p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p' | sed -n '1,20p'
+  grep -m1 '^mobility_domain=' /tmp/wl0_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg5g=/' | sed -n '1,20p'; grep -c '^ft_over_ds=1$' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gOneCount=/' | sed -n '1,20p'; grep -c '^ft_over_ds=0$' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gZeroCount=/' | sed -n '1,20p'; grep -c '^ft_over_ds=' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gTotalCount=/' | sed -n '1,20p'
+  ubus-cli WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable=0
+  ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p' | sed -n '1,21p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.FTOverDSEnable=/FtOverDs5g=/p' | sed -n '1,21p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p' | sed -n '1,21p'
+  grep -m1 '^mobility_domain=' /tmp/wl0_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg5g=/' | sed -n '1,21p'; grep -c '^ft_over_ds=1$' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gOneCount=/' | sed -n '1,21p'; grep -c '^ft_over_ds=0$' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gZeroCount=/' | sed -n '1,21p'; grep -c '^ft_over_ds=' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gTotalCount=/' | sed -n '1,21p'
+  ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=1
+  ubus-cli WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=4660
+  ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.FTOverDSEnable=/FtOverDs6g=/p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p'
+  grep -m1 '^mobility_domain=' /tmp/wl1_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg6g=/'; grep -c '^ft_over_ds=1$' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gOneCount=/'; grep -c '^ft_over_ds=0$' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gTotalCount=/'
+  ubus-cli WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable=1
+  ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p' | sed -n '1,20p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.FTOverDSEnable=/FtOverDs6g=/p' | sed -n '1,20p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p' | sed -n '1,20p'
+  grep -m1 '^mobility_domain=' /tmp/wl1_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg6g=/' | sed -n '1,20p'; grep -c '^ft_over_ds=1$' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gOneCount=/' | sed -n '1,20p'; grep -c '^ft_over_ds=0$' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gZeroCount=/' | sed -n '1,20p'; grep -c '^ft_over_ds=' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gTotalCount=/' | sed -n '1,20p'
+  ubus-cli WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable=0
+  ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p' | sed -n '1,21p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.FTOverDSEnable=/FtOverDs6g=/p' | sed -n '1,21p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p' | sed -n '1,21p'
+  grep -m1 '^mobility_domain=' /tmp/wl1_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg6g=/' | sed -n '1,21p'; grep -c '^ft_over_ds=1$' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gOneCount=/' | sed -n '1,21p'; grep -c '^ft_over_ds=0$' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gZeroCount=/' | sed -n '1,21p'; grep -c '^ft_over_ds=' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gTotalCount=/' | sed -n '1,21p'
+  ubus-cli WiFi.AccessPoint.5.IEEE80211r.Enabled=1
+  ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=4660
+  ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.FTOverDSEnable=/FtOverDs24g=/p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p'
+  grep -m1 '^mobility_domain=' /tmp/wl2_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg24g=/'; grep -c '^ft_over_ds=1$' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gOneCount=/'; grep -c '^ft_over_ds=0$' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gTotalCount=/'
+  ubus-cli WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable=1
+  ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p' | sed -n '1,20p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.FTOverDSEnable=/FtOverDs24g=/p' | sed -n '1,20p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p' | sed -n '1,20p'
+  grep -m1 '^mobility_domain=' /tmp/wl2_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg24g=/' | sed -n '1,20p'; grep -c '^ft_over_ds=1$' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gOneCount=/' | sed -n '1,20p'; grep -c '^ft_over_ds=0$' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gZeroCount=/' | sed -n '1,20p'; grep -c '^ft_over_ds=' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gTotalCount=/' | sed -n '1,20p'
+  ubus-cli WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable=0
+  ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p' | sed -n '1,21p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.FTOverDSEnable=/FtOverDs24g=/p' | sed -n '1,21p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p' | sed -n '1,21p'
+  grep -m1 '^mobility_domain=' /tmp/wl2_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg24g=/' | sed -n '1,21p'; grep -c '^ft_over_ds=1$' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gOneCount=/' | sed -n '1,21p'; grep -c '^ft_over_ds=0$' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gZeroCount=/' | sed -n '1,21p'; grep -c '^ft_over_ds=' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gTotalCount=/' | sed -n '1,21p'
+  ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=0; ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=0
+  ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p' | sed -n '1,22p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.FTOverDSEnable=/FtOverDs5g=/p' | sed -n '1,22p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p' | sed -n '1,22p'
+  ubus-cli WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=0; ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=0
+  ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p' | sed -n '1,22p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.FTOverDSEnable=/FtOverDs6g=/p' | sed -n '1,22p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p' | sed -n '1,22p'
+  ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=0; ubus-cli WiFi.AccessPoint.5.IEEE80211r.Enabled=0
+  ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p' | sed -n '1,22p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.FTOverDSEnable=/FtOverDs24g=/p' | sed -n '1,22p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p' | sed -n '1,22p'
+results_reference:
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: 'AP1/AP3/AP5 all required IEEE80211r.Enabled=1 plus MobilityDomain=4660 before FTOverDSEnable became meaningful. On all three bands, the FT getter started at 0 with hostapd `ft_over_ds=0`, changed to 1 with the setter, and returned to 0 on restore; hostapd stored `mobility_domain=3412` while the northbound getter returned decimal 4660. The workbook baseline remains `To be tested`, so this case is calibrated as an AP-only multiband To-be-tested checkpoint.'

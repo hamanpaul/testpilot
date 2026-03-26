@@ -15,7 +15,7 @@ def _make_orchestrator() -> Orchestrator:
 
 def test_sanitize_case_id_normalizes():
     """_sanitize_case_id replaces non-alphanumeric with underscores."""
-    assert Orchestrator._sanitize_case_id("wifi-llapi-D006-kickstation") == "wifi-llapi-D006-kickstation"
+    assert Orchestrator._sanitize_case_id("wifi-llapi-D004-kickstation") == "wifi-llapi-D004-kickstation"
     assert Orchestrator._sanitize_case_id("  spaced  ") == "spaced"
     assert Orchestrator._sanitize_case_id("with/slashes") == "with_slashes"
     assert Orchestrator._sanitize_case_id("") == "case"
@@ -36,18 +36,18 @@ def test_case_aliases_returns_empty_for_missing():
 
 def test_case_matches_requested_ids():
     """_case_matches_requested_ids matches on id or aliases."""
-    case = {"id": "wifi-llapi-D006-kickstation", "aliases": ["D006"]}
-    assert Orchestrator._case_matches_requested_ids(case, {"D006"}) is True
-    assert Orchestrator._case_matches_requested_ids(case, {"wifi-llapi-D006-kickstation"}) is True
+    case = {"id": "wifi-llapi-D004-kickstation", "aliases": ["D004"]}
+    assert Orchestrator._case_matches_requested_ids(case, {"D004"}) is True
+    assert Orchestrator._case_matches_requested_ids(case, {"wifi-llapi-D004-kickstation"}) is True
     assert Orchestrator._case_matches_requested_ids(case, {"D999"}) is False
     assert Orchestrator._case_matches_requested_ids(case, set()) is False
 
 
 def test_is_wifi_llapi_official_case_d_prefix():
     """Official cases start with D followed by digits."""
-    assert Orchestrator._is_wifi_llapi_official_case({"id": "wifi-llapi-D006-kickstation"}) is True
-    assert Orchestrator._is_wifi_llapi_official_case({"id": "D006"}) is True
-    assert Orchestrator._is_wifi_llapi_official_case({"id": "d123"}) is True
+    assert Orchestrator._is_wifi_llapi_official_case({"id": "wifi-llapi-D004-kickstation"}) is True
+    assert Orchestrator._is_wifi_llapi_official_case({"id": "D004"}) is True
+    assert Orchestrator._is_wifi_llapi_official_case({"id": "d121"}) is True
 
 
 def test_is_wifi_llapi_official_case_rejects_underscore():

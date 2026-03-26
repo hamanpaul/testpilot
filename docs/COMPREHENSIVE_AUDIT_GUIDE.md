@@ -15,7 +15,7 @@ TestPilot is a YAML-driven deterministic WiFi test framework focused on **workbo
 **Current Status (as of 2026-03-20)**:
 - **Calibrated cases**: 370 / 415 official cases (89%)
 - **Remaining**: 186 cases under sequential calibration
-- **Active blockers**: 3 (D037, D054, D055) — parked, to be revisited after main queue
+- **Active blockers**: 3 (D035, D052, D053) — parked, to be revisited after main queue
 - **Repository**: `/home/paul_chen/prj_pri/testpilot`
 
 ---
@@ -34,7 +34,7 @@ testpilot/
 │   └── schema/            # YAML case schema validation
 ├── plugins/
 │   └── wifi_llapi/
-│       ├── cases/         # Individual test case YAML files (D001 → D415)
+│       ├── cases/         # Individual test case YAML files (D001 → D413)
 │       ├── plugin.py      # WiFi LLAPI plugin implementation
 │       ├── agent-config.yaml  # Agent/model policy
 │       └── reports/       # Audit reports, evidence, and Excel templates
@@ -100,7 +100,7 @@ testpilot/
      - Per-case detailed sections with command/log evidence
      - Per-case summary table (zh-tw) with verdict verdicts across bands
      - Baseline restore checkpoint with DUT/STA band mapping
-     - Individual case evidence blocks (D056–D101)
+     - Individual case evidence blocks (D054–D099)
 
 ### Testbed Configuration
 
@@ -135,16 +135,16 @@ testbed:
 ### Case Structure (`src/testpilot/schema/case_schema.py`)
 
 **Required Top-Level Keys**:
-- `id` — unique case identifier (e.g., `wifi-llapi-D095-ssidadvertisementenabled`)
+- `id` — unique case identifier (e.g., `wifi-llapi-D093-ssidadvertisementenabled`)
 - `name` — human-readable case name
 - `topology` → `devices` — DUT/STA/Endpoint role definitions
 - `steps` — ordered list of test execution steps
 - `pass_criteria` — verdict rules
 
-### Example Case: D095_SSIDAdvertisementEnabled
+### Example Case: D093_SSIDAdvertisementEnabled
 
 ```yaml
-id: wifi-llapi-D095-ssidadvertisementenabled
+id: wifi-llapi-D093-ssidadvertisementenabled
 name: "SSIDAdvertisementEnabled — WiFi.AccessPoint.{i}."
 version: '1.0'
 
@@ -371,7 +371,7 @@ If workbook marks a row as `To be tested` or `Not Supported`:
 - When live evidence is clear and user wants alignment:
   - Update YAML to preserve the non-pass verdict explicitly
   - Add comment explaining the workbook designation
-  - Example: `D098 UAPSDEnable` — workbook says "Not Supported" but API fully works; YAML updated as `Pass` with comment
+  - Example: `D096 UAPSDEnable` — workbook says "Not Supported" but API fully works; YAML updated as `Pass` with comment
 
 #### DUT / STA Identity Rule
 - **Stop using A0/B0 heuristic**
@@ -420,18 +420,18 @@ Before starting calibration:
 ### Blocker vs. Non-Pass Verdicts
 
 **Blockers** (moved outside sequential queue):
-- `D037 OperatingStandard` — external environment issue
-- `D054 Tx_RetransmissionsFailed` — traffic-dependent, lab constraint
-- `D055 TxBytes` — traffic-dependent, lab constraint
+- `D035 OperatingStandard` — external environment issue
+- `D052 Tx_RetransmissionsFailed` — traffic-dependent, lab constraint
+- `D053 TxBytes` — traffic-dependent, lab constraint
 
 **Non-Pass but Aligned** (kept in YAML with explicit verdict):
-- `D059 TxUnicastPacketCount` — Fail-shaped mismatch (LLAPI returns 0, driver shows non-zero)
-- `D064 VendorOUI` — Fail-shaped mismatch (LLAPI empty, driver shows values)
-- `D065 VhtCapabilities` — Fail-shaped mismatch (LLAPI empty, driver shows values)
-- `D066 APBridgeDisable` — Not Supported (getter/hostapd/driver diverge)
-- `D068 DiscoveryMethodEnabled (FILS)` — Not Supported (FILS writes rejected)
-- `D078 QoSMapSet` — Not Supported (collapses to scalar 255)
-- `D081 Mode` — Fail (setter returns error even though baseline matches)
+- `D057 TxUnicastPacketCount` — Fail-shaped mismatch (LLAPI returns 0, driver shows non-zero)
+- `D062 VendorOUI` — Fail-shaped mismatch (LLAPI empty, driver shows values)
+- `D063 VhtCapabilities` — Fail-shaped mismatch (LLAPI empty, driver shows values)
+- `D064 APBridgeDisable` — Not Supported (getter/hostapd/driver diverge)
+- `D066 DiscoveryMethodEnabled (FILS)` — Not Supported (FILS writes rejected)
+- `D076 QoSMapSet` — Not Supported (collapses to scalar 255)
+- `D079 Mode` — Fail (setter returns error even though baseline matches)
 - And many others...
 
 ---
@@ -462,13 +462,13 @@ Before starting calibration:
    - Columns: case id | workbook row | API name | verdict | DUT log interval | STA log interval
    - Example:
      ```
-     | `D095` | 95 | SSIDAdvertisementEnabled | Pass | session excerpt | N/A |
-     | `D096` | 96 | Status | Pass | session excerpt | N/A |
+     | `D093` | 95 | SSIDAdvertisementEnabled | Pass | session excerpt | N/A |
+     | `D094` | 96 | Status | Pass | session excerpt | N/A |
      ```
 
 4. **Individual Case Evidence Blocks**
    For each calibrated case:
-   - **Case ID and Row Reference**: `#### D095 — SSIDAdvertisementEnabled`
+   - **Case ID and Row Reference**: `#### D093 — SSIDAdvertisementEnabled`
    - **Live Evidence** section:
      - Clear statement of verdict
      - List of result for each band (5G/6G/2.4G) if applicable
@@ -521,7 +521,7 @@ From `docs/audit-todo.md` Section "Evidence that must be captured":
 ### Case Discovery Convention (from `AGENTS.md`)
 
 1. Official discoverable cases in `plugins/wifi_llapi/cases/`:
-   - Named pattern: `D###_lowercase_api_name.yaml` (e.g., `D095_ssidadvertisementenabled.yaml`)
+   - Named pattern: `D###_lowercase_api_name.yaml` (e.g., `D093_ssidadvertisementenabled.yaml`)
    - Matched by `load_cases_dir()` function
    - Counted in case inventory
 
@@ -542,16 +542,16 @@ From `docs/audit-todo.md` Section "Evidence that must be captured":
 **Current Coverage**:
 - 521 test cases passing (as of latest full run)
 - Guard patterns for each family:
-  - AssociatedDevice getters (D011–D029)
-  - AccessPoint configuration setters (D067–D099)
-  - Security/WPS cases (D089–D109)
-  - Stats/counters (D302–D339)
-  - Radio/AP getters (D176–D194)
+  - AssociatedDevice getters (D009–D027)
+  - AccessPoint configuration setters (D065–D097)
+  - Security/WPS cases (D087–D107)
+  - Stats/counters (D300–D337)
+  - Radio/AP getters (D174–D192)
 
 **Test Commands**:
 ```bash
 # Single case
-pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'd095'  # 3 passed
+pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'd093'  # 3 passed
 
 # Family
 pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'radio_getter'  # N passed
@@ -619,10 +619,10 @@ When referencing the current audit report in your guide:
 
 ## Part 8: Practical Example: How to Write an Audit Entry
 
-### Example Case: D095 SSIDAdvertisementEnabled
+### Example Case: D093 SSIDAdvertisementEnabled
 
 ```markdown
-### D095 SSIDAdvertisementEnabled
+### D093 SSIDAdvertisementEnabled
 
 **Verdict**: Pass (all 3 bands)
 
@@ -698,13 +698,13 @@ RestoredHapd24g=0
 
 **Regression Test**:
 ```bash
-pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'd095' → 3 passed
+pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'd093' → 3 passed
 pytest -q → 521 passed
 ```
 
 **Commit**:
 ```
-D095 SSIDAdvertisementEnabled: Pass (all 3 bands, multiband setter round-trip with hostapd convergence)
+D093 SSIDAdvertisementEnabled: Pass (all 3 bands, multiband setter round-trip with hostapd convergence)
 ```
 
 ---
@@ -766,7 +766,7 @@ If reopening calibration work in a future session:
 | **Total Official Cases** | 415 | From 0310 workbook |
 | **Calibrated Cases** | 370 (89%) | 149→157→370 progression |
 | **Remaining Cases** | 186 (26%) | Under sequential calibration |
-| **Active Blockers** | 3 | D037, D054, D055 (parked) |
+| **Active Blockers** | 3 | D035, D052, D053 (parked) |
 | **Test Suite Coverage** | 521 passed | Full pytest suite |
 | **Audit Report Size** | ~488 KB | 170+ per-case sections |
 | **Latest Commit** | 2026-03-20 | Snapshot date |
@@ -823,10 +823,10 @@ If reopening calibration work in a future session:
 python -m testpilot.cli list-cases wifi_llapi
 
 # Load and validate a specific case
-python -m testpilot.cli run wifi_llapi --case-id wifi-llapi-D095-ssidadvertisementenabled
+python -m testpilot.cli run wifi_llapi --case-id wifi-llapi-D093-ssidadvertisementenabled
 
 # Run targeted regression tests
-pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'd095'  # Single case
+pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'd093'  # Single case
 pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'radio'  # Family
 pytest -q  # Full suite
 
@@ -883,7 +883,7 @@ Regression Tests:
 
 | Column | Heading | Purpose |
 |--------|---------|---------|
-| **A** | ID | Case identifier (D001–D415) |
+| **A** | ID | Case identifier (D001–D413) |
 | **B** | API Path | Full LLAPI object path |
 | **C** | Input Type | Setter / Getter / Method |
 | **D** | Expected Type | Return data type |

@@ -79,8 +79,8 @@ testpilot/
 每個 test case 對應 workbook 中的一行：
 
 ```yaml
-id: d396-getradiostats-bytesreceived        # 唯一識別碼
-name: D396 getRadioStats BytesReceived       # 人類可讀名稱
+id: d394-getradiostats-bytesreceived        # 唯一識別碼
+name: D394 getRadioStats BytesReceived       # 人類可讀名稱
 source:
   row: 289                                   # workbook 行號
   object: "WiFi.Radio.{i}."                  # data model 物件路徑
@@ -241,7 +241,7 @@ serialwrap cmd submit --selector COM0 \
 # 在對應的 _CASES table 新增 tuple
 _RADIO_GETTER_CASES = [
     # (yaml_file, row, live_5g, live_6g, live_24g, path_template)
-    ("D383_noise_radio.yaml", 284, "-100", "-97", "-79", "WiFi.Radio.{r}.Noise"),
+    ("D381_noise_radio.yaml", 284, "-100", "-97", "-79", "WiFi.Radio.{r}.Noise"),
     ...
 ]
 ```
@@ -302,8 +302,8 @@ _RADIO_GETTER_CASES = [
 
 ```markdown
 - Trusted/calibrated official cases: **370 / 415**
-- Blockers: D037, D054, D055
-- Pending: D053
+- Blockers: D035, D052, D053
+- Pending: D051
 ```
 
 ### 4.3 Test File（`tests/test_<plugin>_plugin_runtime.py`）
@@ -570,24 +570,24 @@ Workbook 有時對同一 row 定義不同 API 欄位。每個 D-number 維持獨
 |------|------|------|
 | **已校正（有 test coverage）** | 317 | 包含 Pass/Fail/Skip/Not Supported |
 | **已校正（YAML 完成，缺 test）** | 103 | YAML 骨架存在，需 live probe 補齊 verdict |
-| **Known Blockers** | 4 | D037, D053, D054, D055 |
+| **Known Blockers** | 4 | D035, D051, D052, D053 |
 | **Total YAML on disk** | 420 | |
 
 已校正 case 的群組分佈：
 
-- AssociatedDevice properties (D006-D055)
-- AP properties & setters (D066-D098, D105-D150)
-- Radio properties (D176-D253, D356-D387, D406-D407, D463, D469)
-- getRadioStats (D269-D278, D396-D405, D479)
-- getRadioAirStats (D258-D268)
-- getScanResults (D279-D292)
-- getSSIDStats (D302-D339)
-- SSID properties (D296-D301, D310-D322)
-- Action methods (D354-D362)
-- IEEE80211ax (D365-D373)
-- WMM Radio stats (D480-D495)
-- WiFi7 Capabilities (D596-D603)
-- AffiliatedSTA / MLO (D578-D591)
+- AssociatedDevice properties (D004-D053)
+- AP properties & setters (D064-D096, D103-D148)
+- Radio properties (D174-D251, D189-D385, D404-D405, D461, D467)
+- getRadioStats (D267-D276, D394-D403, D477)
+- getRadioAirStats (D256-D266)
+- getScanResults (D277-D290)
+- getSSIDStats (D300-D337)
+- SSID properties (D294-D299, D308-D320)
+- Action methods (D352-D360)
+- IEEE80211ax (D363-D371)
+- WMM Radio stats (D478-D493)
+- WiFi7 Capabilities (D593-D600)
+- AffiliatedSTA / MLO (D575-D588)
 
 ---
 

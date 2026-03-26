@@ -1,0 +1,55 @@
+id: d214-radio-rifsenabled
+name: D214 Radio RIFSEnabled
+source:
+  row: 175
+  object: WiFi.Radio.{i}.
+  api: RIFSEnabled
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+- 6g
+- 2.4g
+llapi_support: Support
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+steps:
+- id: step_5g_getter
+  target: dut
+  action: read
+  capture: getter_5g
+  command: ubus-cli "WiFi.Radio.1.RIFSEnabled?"
+  expected: RIFSEnabled 回傳有效值
+  description: Radio.1 (5g) RIFSEnabled getter（live=Default）
+- id: step_6g_getter
+  target: dut
+  action: read
+  capture: getter_6g
+  command: ubus-cli "WiFi.Radio.2.RIFSEnabled?"
+  expected: RIFSEnabled 回傳有效值
+  description: Radio.2 (6g) RIFSEnabled getter（live=Default）
+- id: step_24g_getter
+  target: dut
+  action: read
+  capture: getter_24g
+  command: ubus-cli "WiFi.Radio.3.RIFSEnabled?"
+  expected: RIFSEnabled 回傳有效值
+  description: Radio.3 (2.4g) RIFSEnabled getter（live=Default）
+pass_criteria:
+- field: getter_5g.RIFSEnabled
+  operator: regex
+  value: ".+"
+- field: getter_6g.RIFSEnabled
+  operator: regex
+  value: ".+"
+- field: getter_24g.RIFSEnabled
+  operator: regex
+  value: ".+"

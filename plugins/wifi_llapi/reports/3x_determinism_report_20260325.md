@@ -2,7 +2,7 @@
 
 > **日期**：2026-03-25  
 > **DUT FW**：prplOS 4.0.3  
-> **Cases**：420 official discoverable (D006–D420)  
+> **Cases**：420 official discoverable (D004–D420)  
 > **平台**：DUT = prplOS (COM0 /dev/ttyUSB0), STA = Broadcom (COM1 /dev/ttyUSB1)
 
 ---
@@ -82,11 +82,11 @@
 
 | 區段 | Cases | 特徵 | 每 run 耗時 |
 |------|-------|------|-------------|
-| D006–D078 | ~73 | Fast getter | ~1.2 hr |
-| D079–D095 | ~17 | Slow security/MACFilter (多 band setter/restore/sleep) | ~4-6 hr |
-| D096–D278 | ~183 | Fast getter | ~1.5 hr |
-| D279–D310 | ~31 | Slow scan (console flood) | ~4 hr |
-| D311–D420 | ~110 | Fast tail | ~0.9 hr |
+| D004–D076 | ~73 | Fast getter | ~1.2 hr |
+| D077–D093 | ~17 | Slow security/MACFilter (多 band setter/restore/sleep) | ~4-6 hr |
+| D094–D276 | ~183 | Fast getter | ~1.5 hr |
+| D277–D308 | ~31 | Slow scan (console flood) | ~4 hr |
+| D309–D420 | ~110 | Fast tail | ~0.9 hr |
 
 ### 4.2 Run 間效能穩定性
 
@@ -132,6 +132,6 @@
 
 ## 7. 建議後續行動
 
-1. **Scan console flood**：D279–D310 的 `WiFi.Radio.*.Scan()` output 直接打到 serial console，佔每 run ~4hr。建議 redirect 或 suppress 以將 run time 從 ~9hr 縮短至 ~5hr。
+1. **Scan console flood**：D277–D308 的 `WiFi.Radio.*.Scan()` output 直接打到 serial console，佔每 run ~4hr。建議 redirect 或 suppress 以將 run time 從 ~9hr 縮短至 ~5hr。
 2. **kickStation warm-up**：考慮在 Run 開始前增加 explicit association warmup step。
 3. **OperatingStandard flaky**：追蹤 STA 5G association timing 是否能穩定化。

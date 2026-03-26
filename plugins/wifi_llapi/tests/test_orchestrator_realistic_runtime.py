@@ -380,7 +380,7 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
     plugin = orch.loader.load("wifi_llapi")
     cases = [
         {
-            "id": "wifi-llapi-D031-mode-reference-pass",
+            "id": "wifi-llapi-D029-mode-reference-pass",
             "name": "mixed-status-pass",
             "source": {
                 "row": 4,
@@ -412,7 +412,7 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
             },
         },
         {
-            "id": "wifi-llapi-D025-inactive-reference-fail",
+            "id": "wifi-llapi-D023-inactive-reference-fail",
             "name": "mixed-status-fail",
             "source": {
                 "row": 5,
@@ -444,7 +444,7 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
             },
         },
         {
-            "id": "wifi-llapi-D036-noise-reference-single-band",
+            "id": "wifi-llapi-D034-noise-reference-single-band",
             "name": "single-band-fail",
             "bands": ["5g"],
             "source": {
@@ -504,7 +504,7 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
     wb.close()
 
     traces = _load_case_traces(Path(result["agent_trace_dir"]))
-    single_band_trace = traces["wifi-llapi-D036-noise-reference-single-band"]
+    single_band_trace = traces["wifi-llapi-D034-noise-reference-single-band"]
     assert single_band_trace["final"]["status"] == "Fail"
     assert single_band_trace["final"]["evaluation_verdict"] == "Pass"
     assert single_band_trace["attempts"][0]["status"] == "Fail"

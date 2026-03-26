@@ -380,7 +380,7 @@ Use it sparingly.
 It is useful for:
 
 - normalizing operator phrases into explicit intents
-- mapping “rerun D273 with env fix” into structured control prompts
+- mapping “rerun D271 with env fix” into structured control prompts
 
 It should **not** rewrite YAML semantics or silently reinterpret formal test cases.[^17]
 
@@ -517,7 +517,7 @@ Introduce or formalize one canonical structured result per case:
 ```json
 {
   "run_id": "20250301T101500",
-  "case_id": "D273",
+  "case_id": "D271",
   "final_verdict": "Pass",
   "diagnostic_status": "PassAfterRemediation",
   "root_cause": "STA config missing before retry",

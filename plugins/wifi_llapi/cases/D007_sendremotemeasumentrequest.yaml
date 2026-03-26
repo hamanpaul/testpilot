@@ -1,0 +1,169 @@
+id: wifi-llapi-D007-sendremotemeasumentrequest
+name: sendRemoteMeasumentRequest() — WiFi.AccessPoint.{i}.
+version: '1.1'
+source:
+  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+  sheet: Wifi_LLAPI
+  row: 5
+  object: "WiFi.AccessPoint.{i}."
+  api: "sendRemoteMeasumentRequest()"
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.sendRemoteMeasumentRequest(mac:string, bssid:string, class:uint32, channel:uint32,
+  timeout:uint32):bool
+llapi_support: Support
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+    STA:
+      role: sta
+      transport: serial
+      selector: COM1
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: STA
+    to: DUT
+    band: 2.4g
+test_environment: |
+  Topology:
+  - DUT: COM0 (BGW720-300, AP role)
+  - STA: COM1 (BCM board, STA role)
+  Band mapping (live-verified 2026-03-16):
+  - 5G:   DUT wl0 / AP.1 / BSSID 2c:59:17:00:19:95 / STA MAC 2C:59:17:00:04:85
+  - 6G:   DUT wl1 / AP.3 — BCME_NOTREADY blocker (STA cannot associate)
+  - 2.4G: DUT wl2 / AP.5 / BSSID 2C:59:17:00:19:A7 / STA MAC 2C:59:17:00:04:97
+
+test_procedure: |
+  Each band tests AP.{i}.sendRemoteMeasumentRequest() independently.
+  Note: function name is sendRemoteMeasumentRequest (canonical typo - missing 'r').
+        Using sendRemoteMeasurementRequest returns ERROR: function not found.
+        class parameter must be integer 0 (not string uint32).
+  6G is skipped due to BCME_NOTREADY blocker (STA cannot associate to wl1).
+
+  [5G - AP.1 / wl0]
+  Pre-condition: STA 2C:59:17:00:04:85 associated to AP.1 (wl0)
+  DUT:
+    ubus-cli "WiFi.AccessPoint.1.sendRemoteMeasumentRequest(mac=2C:59:17:00:04:85,bssid=2c:59:17:00:19:95,class=0,channel=36,timeout=5)"
+  Expected: returns [ [ ] ]  (empty list = command accepted, async measurement initiated)
+
+  [6G - AP.3 / wl1 - SKIP]
+  Reason: wl1 join fails with WLC_SET_SSID BCME_NOTREADY (-17, cmd=23); STA cannot associate to AP.3.
+
+  [2.4G - AP.5 / wl2]
+  Pre-condition: STA 2C:59:17:00:04:97 associated to AP.5 (wl2)
+  DUT:
+    ubus-cli "WiFi.AccessPoint.5.sendRemoteMeasumentRequest(mac=2C:59:17:00:04:97,bssid=2C:59:17:00:19:A7,class=0,channel=1,timeout=5)"
+  Expected: returns [ [ ] ]  (same as 5G)
+
+steps:
+- id: step1_5g_sta_join
+  action: exec
+  target: STA
+  band: 5g
+  command: |
+    wl -i wl0 down; sleep 1; wl -i wl0 up; sleep 1
+    wl -i wl0 join TestPilot_5G imode bss; sleep 3
+    wl -i wl0 status
+- id: step2_5g_assoc
+  action: exec
+  target: DUT
+  band: 5g
+  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+  depends_on: step1_5g_sta_join
+  capture: assoc_5g
+- id: step3_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.1.sendRemoteMeasumentRequest(mac=2C:59:17:00:04:85,bssid=2c:59:17:00:19:95,class=0,channel=36,timeout=5)"
+  depends_on: step2_5g_assoc
+  capture: result_5g
+- id: step4_6g
+  action: skip
+  target: DUT
+  reason: BCME_NOTREADY - wl1 STA cannot associate; consistent with D006/D007/D008 blocker
+- id: step5_24g_sta_join
+  action: exec
+  target: STA
+  band: 2.4g
+  command: |
+    wl -i wl2 down; sleep 1; wl -i wl2 up; sleep 1
+    wl -i wl2 join TestPilot_24G imode bss; sleep 3
+    wl -i wl2 status
+- id: step6_24g_assoc
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+  depends_on: step5_24g_sta_join
+  capture: assoc_24g
+- id: step7_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.5.sendRemoteMeasumentRequest(mac=2C:59:17:00:04:97,bssid=2C:59:17:00:19:A7,class=0,channel=1,timeout=5)"
+  depends_on: step6_24g_assoc
+  capture: result_24g
+
+pass_criteria:
+- field: assoc_5g.AssocMac5g
+  operator: equals
+  value: 2c:59:17:00:04:85
+  description: "5G: sendRemoteMeasumentRequest() 前必須先確認 wl0 STA 已關聯"
+- field: result_5g
+  operator: not_contains
+  value: ERROR
+  description: "5G: sendRemoteMeasumentRequest() no ERROR"
+- field: result_5g
+  operator: not_contains
+  value: syntax error
+  description: "5G: no syntax error"
+- field: result_5g
+  operator: regex
+  value: '(?s)\[\s*\[\s*\]\s*\]'
+  description: "5G: 成功回傳應維持 [ [ ] ] 的空 list 形狀"
+- field: assoc_24g.AssocMac24g
+  operator: equals
+  value: 2c:59:17:00:04:97
+  description: "2.4G: sendRemoteMeasumentRequest() 前必須先確認 wl2 STA 已關聯"
+- field: result_24g
+  operator: not_contains
+  value: ERROR
+  description: "2.4G: sendRemoteMeasumentRequest() no ERROR"
+- field: result_24g
+  operator: not_contains
+  value: syntax error
+  description: "2.4G: no syntax error"
+- field: result_24g
+  operator: regex
+  value: '(?s)\[\s*\[\s*\]\s*\]'
+  description: "2.4G: 成功回傳應維持 [ [ ] ] 的空 list 形狀"
+
+verification_command: |
+  wl -i wl0 assoclist
+  wl -i wl2 assoclist
+
+results_reference:
+  v4.0.1:
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: 'ARC: GW does not send sendRemoteMeasumentRequest by using the command.'
+  v4.0.3:
+    5g: Pass
+    6g: Blocker
+    2.4g: Pass
+    comment: >-
+      Live-verified 2026-03-16. Returns [ [ ] ] on both 5G and 2.4G.
+      Function name is sendRemoteMeasumentRequest (canonical typo).
+      class parameter must be integer 0.
+      6G blocked: BCME_NOTREADY (wl1 STA cannot associate).

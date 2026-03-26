@@ -1,0 +1,55 @@
+id: d319-ssid-macaddress
+name: D319 SSID MACAddress
+source:
+  row: 321
+  object: WiFi.SSID.{i}.
+  api: MACAddress
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+- 6g
+- 2.4g
+llapi_support: Support
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+steps:
+- id: step_5g_getter
+  target: dut
+  action: read
+  capture: getter_5g
+  command: ubus-cli "WiFi.SSID.4.MACAddress?"
+  expected: MACAddress 回傳有效值
+  description: SSID.4 (5g) MACAddress getter
+- id: step_6g_getter
+  target: dut
+  action: read
+  capture: getter_6g
+  command: ubus-cli "WiFi.SSID.6.MACAddress?"
+  expected: MACAddress 回傳有效值
+  description: SSID.6 (6g) MACAddress getter
+- id: step_24g_getter
+  target: dut
+  action: read
+  capture: getter_24g
+  command: ubus-cli "WiFi.SSID.8.MACAddress?"
+  expected: MACAddress 回傳有效值
+  description: SSID.8 (2.4g) MACAddress getter
+pass_criteria:
+- field: getter_5g.MACAddress
+  operator: regex
+  value: ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$
+- field: getter_6g.MACAddress
+  operator: regex
+  value: ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$
+- field: getter_24g.MACAddress
+  operator: regex
+  value: ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$

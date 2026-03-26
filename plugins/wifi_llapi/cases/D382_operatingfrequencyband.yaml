@@ -1,0 +1,55 @@
+id: d382-radio-operatingfrequencyband
+name: D382 Radio OperatingFrequencyBand
+source:
+  row: 285
+  object: WiFi.Radio.{i}.
+  api: OperatingFrequencyBand
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+- 6g
+- 2.4g
+llapi_support: Support
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+steps:
+- id: step_5g_getter
+  target: dut
+  action: read
+  capture: getter_5g
+  command: ubus-cli "WiFi.Radio.1.OperatingFrequencyBand?"
+  expected: OperatingFrequencyBand 回傳有效值
+  description: Radio.1 (5g) OperatingFrequencyBand getter（live=5GHz）
+- id: step_6g_getter
+  target: dut
+  action: read
+  capture: getter_6g
+  command: ubus-cli "WiFi.Radio.2.OperatingFrequencyBand?"
+  expected: OperatingFrequencyBand 回傳有效值
+  description: Radio.2 (6g) OperatingFrequencyBand getter（live=6GHz）
+- id: step_24g_getter
+  target: dut
+  action: read
+  capture: getter_24g
+  command: ubus-cli "WiFi.Radio.3.OperatingFrequencyBand?"
+  expected: OperatingFrequencyBand 回傳有效值
+  description: Radio.3 (2.4g) OperatingFrequencyBand getter（live=2.4GHz）
+pass_criteria:
+- field: getter_5g.OperatingFrequencyBand
+  operator: regex
+  value: .+
+- field: getter_6g.OperatingFrequencyBand
+  operator: regex
+  value: .+
+- field: getter_24g.OperatingFrequencyBand
+  operator: regex
+  value: .+

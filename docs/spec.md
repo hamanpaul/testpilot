@@ -222,7 +222,7 @@ MCP 只作為 **selective extension**，優先順序低於 in-process custom too
 ```json
 {
   "run_id": "20260311T000000",
-  "case_id": "D273",
+  "case_id": "D271",
   "final_verdict": "Pass",
   "diagnostic_status": "PassAfterRemediation",
   "root_cause": "STA config missing before retry",

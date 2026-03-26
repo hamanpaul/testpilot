@@ -1,0 +1,55 @@
+id: d532-spectruminfo-ourusage
+name: D532 getSpectrumInfo ourUsage
+source:
+  row: 534
+  object: WiFi.Radio.{i}.getSpectrumInfo()
+  api: ourUsage
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+- 6g
+- 2.4g
+llapi_support: Support
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+steps:
+- id: step_5g_method
+  target: dut
+  action: read
+  capture: method_5g
+  command: ubus-cli "WiFi.Radio.1.getSpectrumInfo()"
+  expected: ourUsage 出現在回傳 array 中
+  description: Radio.1 (5g) getSpectrumInfo → ourUsage
+- id: step_6g_method
+  target: dut
+  action: read
+  capture: method_6g
+  command: ubus-cli "WiFi.Radio.2.getSpectrumInfo()"
+  expected: ourUsage 出現在回傳 array 中
+  description: Radio.2 (6g) getSpectrumInfo → ourUsage
+- id: step_24g_method
+  target: dut
+  action: read
+  capture: method_24g
+  command: ubus-cli "WiFi.Radio.3.getSpectrumInfo()"
+  expected: ourUsage 出現在回傳 array 中
+  description: Radio.3 (2.4g) getSpectrumInfo → ourUsage
+pass_criteria:
+- field: method_5g.ourUsage
+  operator: regex
+  value: ^\d+$
+- field: method_6g.ourUsage
+  operator: regex
+  value: ^\d+$
+- field: method_24g.ourUsage
+  operator: regex
+  value: ^\d+$

@@ -161,7 +161,7 @@ class TestAdvisoryHookHandler:
         handler = col.to_hook_handler()
         ctx = HookContext(
             hook_name="post_case",
-            case_id="D020",
+            case_id="D018",
             plugin_name="wifi_llapi",
         )
         result = handler(ctx, {"verdict": False, "comment": "all retries exhausted"})
@@ -174,7 +174,7 @@ class TestAdvisoryHookHandler:
         handler = col.to_hook_handler()
         ctx = HookContext(
             hook_name="post_case",
-            case_id="D030",
+            case_id="D028",
             plugin_name="wifi_llapi",
         )
         result = handler(ctx, {"verdict": True, "comment": "ok"})

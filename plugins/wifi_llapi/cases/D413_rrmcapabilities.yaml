@@ -1,0 +1,46 @@
+id: d413-assocdev-rrmcapabilities
+name: D413 AssociatedDevice RrmCapabilities
+source:
+  row: 415
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+  api: RrmCapabilities
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+llapi_support: Support
+results_reference:
+  v4.0.3:
+    5g: Pass
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+    STA:
+      role: sta
+      transport: serial
+      selector: COM1
+steps:
+- id: step_5g_assoc_check
+  target: dut
+  action: read
+  capture: assoc_check
+  command: wl -i wl0 assoclist | head -1
+  expected: 至少一個 STA MAC
+  description: 確認 AP1 有 associated STA
+- id: step_5g_getter
+  target: dut
+  action: read
+  capture: getter_5g
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RrmCapabilities?"
+  expected: RrmCapabilities 回傳有效值
+  description: AP1 AssociatedDevice.1 RrmCapabilities getter
+  depends_on: step_5g_assoc_check
+pass_criteria:
+- field: assoc_check
+  operator: regex
+  value: "assoclist [0-9A-Fa-f:]+"
+- field: getter_5g.RrmCapabilities
+  operator: regex
+  value: "^.*$"

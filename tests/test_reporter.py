@@ -106,11 +106,11 @@ class TestMarkdownReporter:
         assert "| case_id |" in text
 
     def test_missing_optional_fields(self, tmp_path: Path) -> None:
-        minimal: list[dict[str, Any]] = [{"case_id": "D099", "source_row": 99}]
+        minimal: list[dict[str, Any]] = [{"case_id": "D097", "source_row": 99}]
         out = tmp_path / "report.md"
         MarkdownReporter().generate(minimal, _META, out)
         text = out.read_text(encoding="utf-8")
-        assert "D099" in text
+        assert "D097" in text
 
     def test_creates_parent_dirs(self, tmp_path: Path) -> None:
         out = tmp_path / "sub" / "dir" / "report.md"
@@ -158,11 +158,11 @@ class TestJsonReporter:
         assert payload["summary"]["total_cases"] == 0
 
     def test_missing_optional_fields(self, tmp_path: Path) -> None:
-        minimal: list[dict[str, Any]] = [{"case_id": "D099"}]
+        minimal: list[dict[str, Any]] = [{"case_id": "D097"}]
         out = tmp_path / "report.json"
         JsonReporter().generate(minimal, _META, out)
         cases = json.loads(out.read_text(encoding="utf-8"))["cases"]
-        assert cases[0]["case_id"] == "D099"
+        assert cases[0]["case_id"] == "D097"
 
 
 # ---------------------------------------------------------------------------

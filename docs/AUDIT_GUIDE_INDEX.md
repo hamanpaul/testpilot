@@ -27,13 +27,13 @@ This document contains **everything you need** to:
 **11 Main Parts + 5 Appendices**:
 1. Executive Summary — current status (370/415 = 89%)
 2. Project Structure — directory layout, 8 key files
-3. YAML Case Schema — complete D095 example
+3. YAML Case Schema — complete D093 example
 4. Calibration Methodology — 7-step loop, 13 critical rules
 5. Report Format Standards — mandatory structure
 6. Case Discovery & Regression — conventions, 521 tests
 7. Agent Configuration — 3-tier model policy
 8. Report Metadata — workbook reference
-9. Practical Example — detailed D095 audit entry
+9. Practical Example — detailed D093 audit entry
 10. Continuation & Resumption — 6-step checklist
 11. Key Metrics & Progress Tracking — status dashboard
 Appendices A–E: Glossary, Workbook columns, Verdicts, Blockers, Lab checklist
@@ -45,7 +45,7 @@ Appendices A–E: Glossary, Workbook columns, Verdicts, Blockers, Lab checklist
 ### Current Status (2026-03-20)
 - **Calibrated**: 370 / 415 (89%)
 - **Remaining**: 186 cases
-- **Active Blockers**: 3 (D037, D054, D055)
+- **Active Blockers**: 3 (D035, D052, D053)
 - **Test Suite**: 521 passing
 - **Report Size**: 488 KB (170+ case sections)
 
@@ -96,7 +96,7 @@ Appendices A–E: Glossary, Workbook columns, Verdicts, Blockers, Lab checklist
 **Steps**:
 1. Open `COMPREHENSIVE_AUDIT_GUIDE.md`
 2. Go to **Part 8: Practical Example**
-3. Read the D095 example (structure, format, evidence)
+3. Read the D093 example (structure, format, evidence)
 4. Follow the same structure for your case
 5. Reference **Part 4: Report Format Standards** for formatting details
 6. Commit with case ID and verdict in message
@@ -158,7 +158,7 @@ Appendices A–E: Glossary, Workbook columns, Verdicts, Blockers, Lab checklist
 | `plugins/wifi_llapi/` | 415+ cases | YAML case files, agent config |
 | `configs/testbed.yaml.example` | 35 | Testbed configuration |
 | `schema/case_schema.py` | 102 | YAML validation rules |
-| `D095_ssidadvertisementenabled.yaml` | 234 | Complete case example |
+| `D093_ssidadvertisementenabled.yaml` | 234 | Complete case example |
 
 ### Key Documentation Structure
 
@@ -194,7 +194,7 @@ COMPREHENSIVE_AUDIT_GUIDE.md  ← YOUR REFERENCE (THIS FILE'S PEER)
 
 **Understanding Test Cases**:
 → Part 2: YAML Case Schema
-→ Part 8: Practical Example (D095)
+→ Part 8: Practical Example (D093)
 
 **Calibration Methodology**:
 → Part 3: Audit Calibration Methodology
@@ -223,7 +223,7 @@ COMPREHENSIVE_AUDIT_GUIDE.md  ← YOUR REFERENCE (THIS FILE'S PEER)
 1. Read Part 8 (Practical Example)
 2. Read Part 4 (Report Format)
 3. Read Part 3 (Validation Rules)
-4. Write audit entry following D095 structure
+4. Write audit entry following D093 structure
 
 **Calibration Technician**:
 1. Read Part 9 (Continuation)
@@ -248,10 +248,10 @@ COMPREHENSIVE_AUDIT_GUIDE.md  ← YOUR REFERENCE (THIS FILE'S PEER)
 
 ## Common Tasks & Solutions
 
-### "I need to write an audit entry for case D100"
+### "I need to write an audit entry for case D098"
 
 → Open `COMPREHENSIVE_AUDIT_GUIDE.md` Part 8  
-→ Copy structure from D095 example  
+→ Copy structure from D093 example  
 → Replace case-specific details (commands, output, verdicts)  
 → Verify against **Part 4: Report Format Standards**  
 → Reference **Part 3: Validation Rules** for verdict justification
@@ -302,7 +302,7 @@ COMPREHENSIVE_AUDIT_GUIDE.md  ← YOUR REFERENCE (THIS FILE'S PEER)
 - **Total Cases**: 415 official test cases
 - **Calibrated**: 370 (89%)
 - **Remaining**: 186 (26%)
-- **Blockers**: 3 active (D037, D054, D055)
+- **Blockers**: 3 active (D035, D052, D053)
 - **Test Pass Rate**: 521 / 521 (100%)
 - **Audit Report**: 488 KB with 170+ case sections
 - **Single-Case Time**: Typical 30–60 minutes per case

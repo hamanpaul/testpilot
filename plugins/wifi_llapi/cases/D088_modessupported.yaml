@@ -1,0 +1,166 @@
+id: wifi-llapi-D088-modessupported
+name: "ModesSupported — WiFi.AccessPoint.{i}.Security"
+version: '1.1'
+source:
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 82
+  object: WiFi.AccessPoint.{i}.Security
+  api: ModesSupported
+  baseline: BCM v4.0.3
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: "ubus-cli \"WiFi.AccessPoint.{i}.Security.ModesSupported?\""
+llapi_support: Support
+implemented_by: Vendor Module
+bands: ["5g", "6g", "2.4g"]
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+  links: []
+test_environment: |
+  Topology:
+  - DUT: COM0 (AP role; ModesSupported is a read-only getter — no STA transport needed)
+  Live band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
+  - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
+  - 2.4G: DUT wl2 / AP5 / SSID.8 / testpilot2G / WPA2-Personal / 00000000
+  Preconditions:
+  - keep AP1, AP3, and AP5 enabled on the documented non-open baseline
+  - ModesSupported is read-only (setter returns error 15)
+  - 5G/2.4G: full mode list includes WPA-Personal through OWE
+  - 6G: restricted to None,WPA3-Personal,OWE (6E mandates WPA3)
+  - workbook row 82 command is setter-style but actual test is getter readback
+setup_steps: |
+  1) DUT baseline:
+     - keep AP1 / AP3 / AP5 enabled on the documented non-open baseline
+  2) No STA or restore needed — pure read-only getter
+
+steps:
+  # ── 5G: AP1 getter ──
+  - id: step1
+    action: exec
+    target: DUT
+    command: 'ubus-cli "WiFi.AccessPoint.1.Security.ModesSupported?"'
+    capture: result_5g
+
+  # ── 5G: setter attempt (should fail as read-only) ──
+  - id: step2
+    action: exec
+    target: DUT
+    command: 'ubus-cli WiFi.AccessPoint.1.Security.ModesSupported=WPA3-Personal'
+    depends_on: step1
+    capture: setter_5g
+
+  # ── 6G: AP3 getter ──
+  - id: step3
+    action: exec
+    target: DUT
+    command: 'ubus-cli "WiFi.AccessPoint.3.Security.ModesSupported?"'
+    depends_on: step2
+    capture: result_6g
+
+  # ── 6G: setter attempt (should fail as read-only) ──
+  - id: step4
+    action: exec
+    target: DUT
+    command: 'ubus-cli WiFi.AccessPoint.3.Security.ModesSupported=WPA3-Personal'
+    depends_on: step3
+    capture: setter_6g
+
+  # ── 2.4G: AP5 getter ──
+  - id: step5
+    action: exec
+    target: DUT
+    command: 'ubus-cli "WiFi.AccessPoint.5.Security.ModesSupported?"'
+    depends_on: step4
+    capture: result_24g
+
+  # ── 2.4G: setter attempt (should fail as read-only) ──
+  - id: step6
+    action: exec
+    target: DUT
+    command: 'ubus-cli WiFi.AccessPoint.5.Security.ModesSupported=WPA3-Personal'
+    depends_on: step5
+    capture: setter_24g
+
+pass_criteria:
+  # ── 5G getter: full mode list ──
+  - field: result_5g.ModesSupported
+    operator: contains
+    value: "WPA-Personal"
+    description: "5G ModesSupported 包含 WPA-Personal"
+  - field: result_5g.ModesSupported
+    operator: contains
+    value: "WPA2-Personal"
+    description: "5G ModesSupported 包含 WPA2-Personal"
+  - field: result_5g.ModesSupported
+    operator: contains
+    value: "WPA3-Personal"
+    description: "5G ModesSupported 包含 WPA3-Personal"
+  - field: result_5g.ModesSupported
+    operator: contains
+    value: "WPA-Enterprise"
+    description: "5G ModesSupported 包含 WPA-Enterprise"
+  # ── 5G setter: read-only error ──
+  - field: setter_5g.error
+    operator: equals
+    value: "15"
+    description: "5G setter 回傳 error 15 (read-only)"
+  # ── 6G getter: restricted to WPA3 family ──
+  - field: result_6g.ModesSupported
+    operator: contains
+    value: "WPA3-Personal"
+    description: "6G ModesSupported 包含 WPA3-Personal"
+  - field: result_6g.ModesSupported
+    operator: not_contains
+    value: "WPA2-Personal"
+    description: "6G ModesSupported 不含 WPA2-Personal (6E mandates WPA3)"
+  # ── 6G setter: read-only error ──
+  - field: setter_6g.error
+    operator: equals
+    value: "15"
+    description: "6G setter 回傳 error 15 (read-only)"
+  # ── 2.4G getter: full mode list ──
+  - field: result_24g.ModesSupported
+    operator: contains
+    value: "WPA-Personal"
+    description: "2.4G ModesSupported 包含 WPA-Personal"
+  - field: result_24g.ModesSupported
+    operator: contains
+    value: "WPA2-Personal"
+    description: "2.4G ModesSupported 包含 WPA2-Personal"
+  - field: result_24g.ModesSupported
+    operator: contains
+    value: "WPA3-Personal"
+    description: "2.4G ModesSupported 包含 WPA3-Personal"
+  - field: result_24g.ModesSupported
+    operator: contains
+    value: "WPA-Enterprise"
+    description: "2.4G ModesSupported 包含 WPA-Enterprise"
+  # ── 2.4G setter: read-only error ──
+  - field: setter_24g.error
+    operator: equals
+    value: "15"
+    description: "2.4G setter 回傳 error 15 (read-only)"
+
+verification_command: |
+  ubus-cli "WiFi.AccessPoint.1.Security.ModesSupported?"
+  ubus-cli "WiFi.AccessPoint.3.Security.ModesSupported?"
+  ubus-cli "WiFi.AccessPoint.5.Security.ModesSupported?"
+
+results_reference:
+  v4.0.1:
+    5g: Pass
+    6g: Fail
+    2.4g: Fail
+    comment: 'BRCM: CSP CS00012439197'
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: '5G/2.4G full mode list; 6G restricted to None,WPA3-Personal,OWE'

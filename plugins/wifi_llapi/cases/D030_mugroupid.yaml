@@ -1,0 +1,113 @@
+id: wifi-llapi-D030-mugroupid
+name: "MUGroupId — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+version: '1.1'
+source:
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 27
+  object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+  api: MUGroupId
+  baseline: BCM v4.0.3
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+llapi_support: Not Supported
+implemented_by: pWHM
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+    STA:
+      role: sta
+      transport: serial
+      selector: COM1
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: STA
+    to: DUT
+    band: 2.4g
+test_environment: |
+  Topology: DUT=COM0(AP) / STA=COM1(station)
+  Live band mapping:
+  - 5G : DUT wl0 / AP1 / BSSID 2c:59:17:00:19:95 / STA MAC 2C:59:17:00:04:85
+  - 6G : DUT wl1 / AP3 -- BCME_NOTREADY (STA cannot associate; skip all 6G steps)
+  - 2.4G: DUT wl2 / AP5 / BSSID 2C:59:17:00:19:A7 / STA MAC 2C:59:17:00:04:97
+  Precondition: STA associated on the target band so AssociatedDevice.1 is deterministic.
+test_procedure: |
+  Read-only integer telemetry. MUGroupId is expected to return the MU-MIMO group ID
+  assigned to the associated STA. However, MU-MIMO is defined in pWHM only as a stub
+  (no real hardware backing); the returned value is always 0.
+  Steps:
+  1) Confirm 5G STA is associated so AssociatedDevice.1 is deterministic, then read AP1 MUGroupId.
+  2) Confirm 2.4G STA is associated so AssociatedDevice.1 is deterministic, then read AP5 MUGroupId.
+  3) 6G stays skipped because wl1 association is blocked by BCME_NOTREADY.
+  Verdict: Not Supported (stub implementation).
+steps:
+- id: step1_5g_assoc
+  action: exec
+  target: DUT
+  band: 5g
+  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+  capture: assoc_5g
+- id: step2_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MUGroupId?"
+  depends_on: step1_5g_assoc
+  capture: result_5g
+- id: step3_6g
+  action: skip
+  target: DUT
+  band: 6g
+  reason: 6G BCME_NOTREADY -- STA cannot associate on wl1/AP3 in current lab.
+- id: step4_24g_assoc
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+  capture: assoc_24g
+- id: step5_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MUGroupId?"
+  depends_on: step4_24g_assoc
+  capture: result_24g
+pass_criteria:
+- field: assoc_5g.AssocMac5g
+  operator: equals
+  value: 2c:59:17:00:04:85
+  description: "5G -- MUGroupId readback 前必須先確認 wl0 STA 已關聯"
+- field: result_5g.MUGroupId
+  operator: equals
+  value: 0
+  description: "5G -- stub returns 0; MU-MIMO not backed by real hardware (pWHM definition only)."
+- field: assoc_24g.AssocMac24g
+  operator: equals
+  value: 2c:59:17:00:04:97
+  description: "2.4G -- MUGroupId readback 前必須先確認 wl2 STA 已關聯"
+- field: result_24g.MUGroupId
+  operator: equals
+  value: 0
+  description: "2.4G -- stub returns 0; MU-MIMO not backed by real hardware (pWHM definition only)."
+verification_command: |
+  DUT# wl -i wl0 assoclist
+  DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MUGroupId?"
+  DUT# wl -i wl2 assoclist
+  DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MUGroupId?"
+results_reference:
+  v4.0.3:
+    5g: Not Supported
+    6g: Skip
+    2.4g: Not Supported
+    comment: |
+      Live evidence (BCM v4.0.3):
+      5G: WiFi.AccessPoint.1.AssociatedDevice.1.MUGroupId=0 (stub; no real HW backing)
+      2.4G: WiFi.AccessPoint.5.AssociatedDevice.1.MUGroupId=0 (stub; no real HW backing)
+      MU-MIMO group tracking is defined in pWHM only; hardware does not populate it.
+      Workbook BCM v4.0.3 column: Not Supported / Not Supported.

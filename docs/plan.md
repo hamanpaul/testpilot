@@ -28,7 +28,7 @@ TestPilot 的主目標是：
 4. Per-case dispatcher、selection trace、retry-aware timeout、attempt trace 已落地。
 5. 正式 hot path 仍由 `setup_env -> verify_env -> execute_step -> evaluate` 決定。
 6. 420 官方 row-indexed cases 已全部校正完畢；兩個 duplicate-row legacy YAML 已改為 underscore-prefixed compatibility fixtures，不再混入 discoverable case inventory。
-7. `wifi_llapi` 全部 420 筆 official cases 已校正完畢（343 Support + 54 Not Supported + 20 Skip + 3 Blocked）；僅餘 3 筆 Blocked（`D037`、`D054`、`D055`）因環境/BCM 限制暫無法驗證。
+7. `wifi_llapi` 全部 420 筆 official cases 已校正完畢（343 Support + 54 Not Supported + 20 Skip + 3 Blocked）；僅餘 3 筆 Blocked（`D035`、`D052`、`D053`）因環境/BCM 限制暫無法驗證。
 8. repo-only 校正 handoff 已同步到 `docs/audit-todo.md` 與 `plugins/wifi_llapi/reports/audit-report-260313-185447.md`；校正工作已全部完成，歷史 checkpoint 紀錄保留於 audit-todo.md。
 9. reboot 後的 default lab baseline 已重建並落成文件：5G `testpilot5G` / 2.4G `testpilot2G` 使用 `WPA2-Personal + 00000000`，6G `testpilot6G` 固定使用 `WPA3-Personal + key_mgmt=SAE + 00000000`。
 10. 第三次重構的 Copilot SDK 深度研究已完成，並已複製到 `docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`。

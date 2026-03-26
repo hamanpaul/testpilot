@@ -1,0 +1,55 @@
+id: d194-radio-hecapssupported
+name: D194 Radio HeCapsSupported
+source:
+  row: 157
+  object: WiFi.Radio.{i}.
+  api: HeCapsSupported
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+- 6g
+- 2.4g
+llapi_support: Support
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+steps:
+- id: step_5g_getter
+  target: dut
+  action: read
+  capture: getter_5g
+  command: ubus-cli "WiFi.Radio.1.HeCapsSupported?"
+  expected: HeCapsSupported 回傳有效值
+  description: Radio.1 (5g) HeCapsSupported getter（live=DL_OFDMA,UL_OFDMA,DL_MUMIMO,UL_MUMIMO）
+- id: step_6g_getter
+  target: dut
+  action: read
+  capture: getter_6g
+  command: ubus-cli "WiFi.Radio.2.HeCapsSupported?"
+  expected: HeCapsSupported 回傳有效值
+  description: Radio.2 (6g) HeCapsSupported getter（live=DL_OFDMA,UL_OFDMA,DL_MUMIMO,UL_MUMIMO）
+- id: step_24g_getter
+  target: dut
+  action: read
+  capture: getter_24g
+  command: ubus-cli "WiFi.Radio.3.HeCapsSupported?"
+  expected: HeCapsSupported 回傳有效值
+  description: Radio.3 (2.4g) HeCapsSupported getter（live=DL_OFDMA,UL_OFDMA,DL_MUMIMO,UL_MUMIMO）
+pass_criteria:
+- field: getter_5g.HeCapsSupported
+  operator: regex
+  value: ".+"
+- field: getter_6g.HeCapsSupported
+  operator: regex
+  value: ".+"
+- field: getter_24g.HeCapsSupported
+  operator: regex
+  value: ".+"

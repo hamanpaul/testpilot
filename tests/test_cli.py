@@ -43,7 +43,7 @@ def test_run_without_dut_fw_ver_uses_default():
     """run command accepts default --dut-fw-ver without crashing on missing transport."""
     runner = CliRunner()
     # This will fail because no transport is available, but should not crash on CLI parsing
-    result = runner.invoke(main, ["run", "wifi_llapi", "--case", "wifi-llapi-D006-kickstation"])
+    result = runner.invoke(main, ["run", "wifi_llapi", "--case", "wifi-llapi-D004-kickstation"])
     # Either exits 0 (completed) or non-zero (transport error), but should not have UsageError
     assert "Usage:" not in result.output or result.exit_code != 2
 

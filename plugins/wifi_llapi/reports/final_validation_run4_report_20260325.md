@@ -39,16 +39,16 @@
 
 | Case | Run 2/3 | Run 4 | Root Cause |
 |------|---------|-------|------------|
-| D006 kickStation | Fail (env_verify gate) | Pass (retry 2/2) | STA association timing; clean reboot → baseline connected faster |
-| D016 ChargeableUserId | Fail (env_verify gate) | Pass | Clean device state after reboot; no residual EasyMesh controller reversion |
-| D037 OperatingStandard | Fail (env_verify gate) | Pass | Clean device state; 5G association stable post-reboot |
+| D004 kickStation | Fail (env_verify gate) | Pass (retry 2/2) | STA association timing; clean reboot → baseline connected faster |
+| D014 ChargeableUserId | Fail (env_verify gate) | Pass | Clean device state after reboot; no residual EasyMesh controller reversion |
+| D035 OperatingStandard | Fail (env_verify gate) | Pass | Clean device state; 5G association stable post-reboot |
 
 ### Run 4 vs Run 1 (also fresh reboot): 418/420 identical (99.52%)
 
 | Case | Run 1 | Run 4 | Root Cause |
 |------|-------|-------|------------|
-| D006 kickStation | Fail (pass_criteria) | Pass (retry 2/2) | Different failure mode in Run 1; Run 4 retry succeeded |
-| D007 kickStationReason | Pass (retry 2/2) | Fail (pass_criteria) | STA association timing flip; D006/D007 share association slot |
+| D004 kickStation | Fail (pass_criteria) | Pass (retry 2/2) | Different failure mode in Run 1; Run 4 retry succeeded |
+| D005 kickStationReason | Pass (retry 2/2) | Fail (pass_criteria) | STA association timing flip; D004/D005 share association slot |
 
 ### Pattern Analysis
 
@@ -57,7 +57,7 @@ All 3 diff cases between Run 4 and Run 2/3 share the same root cause:
 - **Run 4** passed cleanly because the user rebooted DUT & STA before this run
 - This matches **Run 1** behavior (also fresh reboot → same cases passed)
 
-The D006↔D007 flip between Run 1 and Run 4 is a known timing-dependent pair:
+The D004↔D005 flip between Run 1 and Run 4 is a known timing-dependent pair:
 both are `kickStation` variants that require STA association within a narrow window.
 
 ## 4. Engine Determinism Assessment
@@ -77,7 +77,7 @@ both are `kickStation` variants that require STA association within a narrow win
 
 **Engine is fully deterministic.** All observed diffs are device-state dependent:
 - Fresh reboot → cleaner env_verify gate → 3 more cases pass
-- Association timing → D006/D007 kickStation pair flips
+- Association timing → D004/D005 kickStation pair flips
 
 No engine bugs, no verdict logic errors, no regression from third refactor.
 

@@ -1,0 +1,439 @@
+id: wifi-llapi-D070-enable-accesspoint
+name: "Enable — WiFi.AccessPoint.{i}."
+version: '1.1'
+source:
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 72
+  object: WiFi.AccessPoint.{i}.
+  api: Enable
+  baseline: BCM v4.0.3
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli WiFi.AccessPoint.1.Enable=1'
+llapi_support: Support
+implemented_by: pWHM
+bands: ["5g", "6g", "2.4g"]
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+  links: []
+test_environment: |
+  Topology:
+  - DUT: COM0 (AP role; Enable is validated as an AP-only case with no STA transport)
+  Live band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
+  - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
+  - 2.4G: DUT wl2 / AP5 / SSID.8 / testpilot2G / WPA2-Personal / 00000000
+  Preconditions:
+  - keep AP1, AP3, and AP5 enabled on the documented non-open baseline before the probe
+  - validate each band one-by-one by toggling Enable from 1 -> 0 -> 1
+  - cross-check northbound Enable / Status against driver `wl -i wlX bss` and hostapd `start_disabled`
+setup_steps: |
+  1) DUT baseline:
+     - force AP1 / AP3 / AP5 back to Enable=1 before the probe starts
+     - confirm wl0 / wl1 / wl2 BSS instances are reachable on the documented non-open baseline
+  2) Per-band Enable probe:
+     - read each band's baseline Enable getter
+     - disable one AP, then verify Enable=0 / Status=Disabled / wl bss=down / hostapd start_disabled=1
+     - enable the same AP again, then verify Enable=1 / Status=Enabled / wl bss=up / hostapd start_disabled disappears
+  3) Cleanup:
+     - finish with AP1 / AP3 / AP5 restored to Enable=1
+sta_env_setup: |
+  DUT:
+    ubus-cli WiFi.AccessPoint.1.Enable=1
+    ubus-cli WiFi.AccessPoint.3.Enable=1
+    ubus-cli WiFi.AccessPoint.5.Enable=1
+    wl -i wl0 bss
+    wl -i wl1 bss
+    wl -i wl2 bss
+test_procedure: |
+  1) Read WiFi.AccessPoint.1/3/5.Enable directly from the DUT.
+  2) Disable AP1 and verify the northbound setter/readback, Status getter, driver bss state, and hostapd `start_disabled` all converge on the disabled state.
+  3) Re-enable AP1 and verify the same northbound / driver / hostapd views all return to the enabled state.
+  4) Repeat the same disable -> enable sequence for AP3 and AP5.
+  Verdict: To be tested. The current DUT converges cleanly on 5G, 6G, and 2.4G for this AP-only toggle/readback path, but the workbook baseline for all three bands remains `To be tested`.
+steps:
+- id: step1_default_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli "WiFi.AccessPoint.1.Enable?"'
+  capture: default_5g
+- id: step2_default_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli "WiFi.AccessPoint.3.Enable?"'
+  depends_on: step1_default_5g
+  capture: default_6g
+- id: step3_default_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli "WiFi.AccessPoint.5.Enable?"'
+  depends_on: step2_default_6g
+  capture: default_24g
+- id: step4_disable_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli WiFi.AccessPoint.1.Enable=0'
+  depends_on: step3_default_24g
+  capture: disable_5g
+- id: step5_state_disable_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.Enable=/Enable5g=/p; s/^WiFi\.AccessPoint\.1\.Status=/Status5g=/p'
+  depends_on: step4_disable_5g
+  capture: state_disable_5g
+- id: step6_bss_disable_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: "wl -i wl0 bss | sed -n 's/^/DriverBssState5g=/p'"
+  depends_on: step5_state_disable_5g
+  capture: bss_disable_5g
+- id: step7_cfg_disable_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    awk -F= '/^start_disabled=/{print "StartDisabled5g=" $2; if ($2 == 1) ones++; if ($2 == 0) zeros++; total++} END {print "StartDisabled5gOneCount=" ones+0; print "StartDisabled5gZeroCount=" zeros+0; print "StartDisabled5gTotalCount=" total+0}' /tmp/wl0_hapd.conf
+  depends_on: step6_bss_disable_5g
+  capture: cfg_disable_5g
+- id: step8_enable_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli WiFi.AccessPoint.1.Enable=1'
+  depends_on: step7_cfg_disable_5g
+  capture: enable_5g
+- id: step9_state_enable_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.Enable=/Enable5g=/p; s/^WiFi\.AccessPoint\.1\.Status=/Status5g=/p'
+  depends_on: step8_enable_5g
+  capture: state_enable_5g
+- id: step10_bss_enable_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: "wl -i wl0 bss | sed -n 's/^/DriverBssState5g=/p'"
+  depends_on: step9_state_enable_5g
+  capture: bss_enable_5g
+- id: step11_cfg_enable_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    awk -F= '/^start_disabled=/{print "StartDisabled5g=" $2; if ($2 == 1) ones++; if ($2 == 0) zeros++; total++} END {print "StartDisabled5gOneCount=" ones+0; print "StartDisabled5gZeroCount=" zeros+0; print "StartDisabled5gTotalCount=" total+0}' /tmp/wl0_hapd.conf
+  depends_on: step10_bss_enable_5g
+  capture: cfg_enable_5g
+- id: step12_disable_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli WiFi.AccessPoint.3.Enable=0'
+  depends_on: step11_cfg_enable_5g
+  capture: disable_6g
+- id: step13_state_disable_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.3.?" | sed -n 's/^WiFi\.AccessPoint\.3\.Enable=/Enable6g=/p; s/^WiFi\.AccessPoint\.3\.Status=/Status6g=/p'
+  depends_on: step12_disable_6g
+  capture: state_disable_6g
+- id: step14_bss_disable_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: "wl -i wl1 bss | sed -n 's/^/DriverBssState6g=/p'"
+  depends_on: step13_state_disable_6g
+  capture: bss_disable_6g
+- id: step15_cfg_disable_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    awk -F= '/^start_disabled=/{print "StartDisabled6g=" $2; if ($2 == 1) ones++; if ($2 == 0) zeros++; total++} END {print "StartDisabled6gOneCount=" ones+0; print "StartDisabled6gZeroCount=" zeros+0; print "StartDisabled6gTotalCount=" total+0}' /tmp/wl1_hapd.conf
+  depends_on: step14_bss_disable_6g
+  capture: cfg_disable_6g
+- id: step16_enable_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli WiFi.AccessPoint.3.Enable=1'
+  depends_on: step15_cfg_disable_6g
+  capture: enable_6g
+- id: step17_state_enable_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.3.?" | sed -n 's/^WiFi\.AccessPoint\.3\.Enable=/Enable6g=/p; s/^WiFi\.AccessPoint\.3\.Status=/Status6g=/p'
+  depends_on: step16_enable_6g
+  capture: state_enable_6g
+- id: step18_bss_enable_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: "wl -i wl1 bss | sed -n 's/^/DriverBssState6g=/p'"
+  depends_on: step17_state_enable_6g
+  capture: bss_enable_6g
+- id: step19_cfg_enable_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    awk -F= '/^start_disabled=/{print "StartDisabled6g=" $2; if ($2 == 1) ones++; if ($2 == 0) zeros++; total++} END {print "StartDisabled6gOneCount=" ones+0; print "StartDisabled6gZeroCount=" zeros+0; print "StartDisabled6gTotalCount=" total+0}' /tmp/wl1_hapd.conf
+  depends_on: step18_bss_enable_6g
+  capture: cfg_enable_6g
+- id: step20_disable_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli WiFi.AccessPoint.5.Enable=0'
+  depends_on: step19_cfg_enable_6g
+  capture: disable_24g
+- id: step21_state_disable_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.5.?" | sed -n 's/^WiFi\.AccessPoint\.5\.Enable=/Enable24g=/p; s/^WiFi\.AccessPoint\.5\.Status=/Status24g=/p'
+  depends_on: step20_disable_24g
+  capture: state_disable_24g
+- id: step22_bss_disable_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: "wl -i wl2 bss | sed -n 's/^/DriverBssState24g=/p'"
+  depends_on: step21_state_disable_24g
+  capture: bss_disable_24g
+- id: step23_cfg_disable_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    awk -F= '/^start_disabled=/{print "StartDisabled24g=" $2; if ($2 == 1) ones++; if ($2 == 0) zeros++; total++} END {print "StartDisabled24gOneCount=" ones+0; print "StartDisabled24gZeroCount=" zeros+0; print "StartDisabled24gTotalCount=" total+0}' /tmp/wl2_hapd.conf
+  depends_on: step22_bss_disable_24g
+  capture: cfg_disable_24g
+- id: step24_enable_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli WiFi.AccessPoint.5.Enable=1'
+  depends_on: step23_cfg_disable_24g
+  capture: enable_24g
+- id: step25_state_enable_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.5.?" | sed -n 's/^WiFi\.AccessPoint\.5\.Enable=/Enable24g=/p; s/^WiFi\.AccessPoint\.5\.Status=/Status24g=/p'
+  depends_on: step24_enable_24g
+  capture: state_enable_24g
+- id: step26_bss_enable_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: "wl -i wl2 bss | sed -n 's/^/DriverBssState24g=/p'"
+  depends_on: step25_state_enable_24g
+  capture: bss_enable_24g
+- id: step27_cfg_enable_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    awk -F= '/^start_disabled=/{print "StartDisabled24g=" $2; if ($2 == 1) ones++; if ($2 == 0) zeros++; total++} END {print "StartDisabled24gOneCount=" ones+0; print "StartDisabled24gZeroCount=" zeros+0; print "StartDisabled24gTotalCount=" total+0}' /tmp/wl2_hapd.conf
+  depends_on: step26_bss_enable_24g
+  capture: cfg_enable_24g
+pass_criteria:
+- field: default_5g.Enable
+  operator: equals
+  value: '1'
+  description: 5G AP1 should start enabled before the toggle probe.
+- field: default_6g.Enable
+  operator: equals
+  value: '1'
+  description: 6G AP3 should start enabled before the toggle probe.
+- field: default_24g.Enable
+  operator: equals
+  value: '1'
+  description: 2.4G AP5 should start enabled before the toggle probe.
+- field: disable_5g.Enable
+  operator: equals
+  value: '0'
+  description: 5G AP1 disable setter should acknowledge Enable=0.
+- field: state_disable_5g.Enable5g
+  operator: equals
+  value: '0'
+  description: 5G AP1 getter should read back Enable=0 after disable.
+- field: state_disable_5g.Status5g
+  operator: equals
+  value: Disabled
+  description: 5G AP1 Status should read Disabled after disable.
+- field: bss_disable_5g.DriverBssState5g
+  operator: equals
+  value: down
+  description: 5G wl0 driver bss state should go down after disable.
+- field: cfg_disable_5g.StartDisabled5gOneCount
+  operator: equals
+  value: '1'
+  description: 5G hostapd config should expose one start_disabled=1 line after disable.
+- field: cfg_disable_5g.StartDisabled5gTotalCount
+  operator: equals
+  value: '1'
+  description: 5G hostapd config should expose exactly one start_disabled line after disable.
+- field: enable_5g.Enable
+  operator: equals
+  value: '1'
+  description: 5G AP1 enable setter should acknowledge Enable=1.
+- field: state_enable_5g.Enable5g
+  operator: equals
+  reference: default_5g.Enable
+  description: 5G AP1 getter should return to the baseline enabled state after re-enable.
+- field: state_enable_5g.Status5g
+  operator: equals
+  value: Enabled
+  description: 5G AP1 Status should return to Enabled after re-enable.
+- field: bss_enable_5g.DriverBssState5g
+  operator: equals
+  value: up
+  description: 5G wl0 driver bss state should return to up after re-enable.
+- field: cfg_enable_5g.StartDisabled5gTotalCount
+  operator: equals
+  value: '0'
+  description: 5G hostapd config should clear start_disabled after re-enable.
+- field: disable_6g.Enable
+  operator: equals
+  value: '0'
+  description: 6G AP3 disable setter should acknowledge Enable=0.
+- field: state_disable_6g.Enable6g
+  operator: equals
+  value: '0'
+  description: 6G AP3 getter should read back Enable=0 after disable.
+- field: state_disable_6g.Status6g
+  operator: equals
+  value: Disabled
+  description: 6G AP3 Status should read Disabled after disable.
+- field: bss_disable_6g.DriverBssState6g
+  operator: equals
+  value: down
+  description: 6G wl1 driver bss state should go down after disable.
+- field: cfg_disable_6g.StartDisabled6gOneCount
+  operator: equals
+  value: '1'
+  description: 6G hostapd config should expose one start_disabled=1 line after disable.
+- field: cfg_disable_6g.StartDisabled6gTotalCount
+  operator: equals
+  value: '1'
+  description: 6G hostapd config should expose exactly one start_disabled line after disable.
+- field: enable_6g.Enable
+  operator: equals
+  value: '1'
+  description: 6G AP3 enable setter should acknowledge Enable=1.
+- field: state_enable_6g.Enable6g
+  operator: equals
+  reference: default_6g.Enable
+  description: 6G AP3 getter should return to the baseline enabled state after re-enable.
+- field: state_enable_6g.Status6g
+  operator: equals
+  value: Enabled
+  description: 6G AP3 Status should return to Enabled after re-enable.
+- field: bss_enable_6g.DriverBssState6g
+  operator: equals
+  value: up
+  description: 6G wl1 driver bss state should return to up after re-enable.
+- field: cfg_enable_6g.StartDisabled6gTotalCount
+  operator: equals
+  value: '0'
+  description: 6G hostapd config should clear start_disabled after re-enable.
+- field: disable_24g.Enable
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 disable setter should acknowledge Enable=0.
+- field: state_disable_24g.Enable24g
+  operator: equals
+  value: '0'
+  description: 2.4G AP5 getter should read back Enable=0 after disable.
+- field: state_disable_24g.Status24g
+  operator: equals
+  value: Disabled
+  description: 2.4G AP5 Status should read Disabled after disable.
+- field: bss_disable_24g.DriverBssState24g
+  operator: equals
+  value: down
+  description: 2.4G wl2 driver bss state should go down after disable.
+- field: cfg_disable_24g.StartDisabled24gOneCount
+  operator: equals
+  value: '1'
+  description: 2.4G hostapd config should expose one start_disabled=1 line after disable.
+- field: cfg_disable_24g.StartDisabled24gTotalCount
+  operator: equals
+  value: '1'
+  description: 2.4G hostapd config should expose exactly one start_disabled line after disable.
+- field: enable_24g.Enable
+  operator: equals
+  value: '1'
+  description: 2.4G AP5 enable setter should acknowledge Enable=1.
+- field: state_enable_24g.Enable24g
+  operator: equals
+  reference: default_24g.Enable
+  description: 2.4G AP5 getter should return to the baseline enabled state after re-enable.
+- field: state_enable_24g.Status24g
+  operator: equals
+  value: Enabled
+  description: 2.4G AP5 Status should return to Enabled after re-enable.
+- field: bss_enable_24g.DriverBssState24g
+  operator: equals
+  value: up
+  description: 2.4G wl2 driver bss state should return to up after re-enable.
+- field: cfg_enable_24g.StartDisabled24gTotalCount
+  operator: equals
+  value: '0'
+  description: 2.4G hostapd config should clear start_disabled after re-enable.
+verification_command: |
+  ubus-cli "WiFi.AccessPoint.1.Enable?"
+  ubus-cli "WiFi.AccessPoint.3.Enable?"
+  ubus-cli "WiFi.AccessPoint.5.Enable?"
+  ubus-cli WiFi.AccessPoint.1.Enable=0
+  ubus-cli "WiFi.AccessPoint.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.Enable=/Enable5g=/p; s/^WiFi\.AccessPoint\.1\.Status=/Status5g=/p'
+  wl -i wl0 bss | sed -n 's/^/DriverBssState5g=/p'
+  awk -F= '/^start_disabled=/{print "StartDisabled5g=" $2; if ($2 == 1) ones++; if ($2 == 0) zeros++; total++} END {print "StartDisabled5gOneCount=" ones+0; print "StartDisabled5gZeroCount=" zeros+0; print "StartDisabled5gTotalCount=" total+0}' /tmp/wl0_hapd.conf
+  ubus-cli WiFi.AccessPoint.1.Enable=1
+  ubus-cli "WiFi.AccessPoint.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.Enable=/Enable5g=/p; s/^WiFi\.AccessPoint\.1\.Status=/Status5g=/p' | sed -n '1,20p'
+  wl -i wl0 bss | sed -n 's/^/DriverBssState5g=/p' | sed -n '1,20p'
+  awk -F= '/^start_disabled=/{print "StartDisabled5g=" $2; if ($2 == 1) ones++; if ($2 == 0) zeros++; total++} END {print "StartDisabled5gOneCount=" ones+0; print "StartDisabled5gZeroCount=" zeros+0; print "StartDisabled5gTotalCount=" total+0}' /tmp/wl0_hapd.conf | sed -n '1,20p'
+  ubus-cli WiFi.AccessPoint.3.Enable=0
+  ubus-cli "WiFi.AccessPoint.3.?" | sed -n 's/^WiFi\.AccessPoint\.3\.Enable=/Enable6g=/p; s/^WiFi\.AccessPoint\.3\.Status=/Status6g=/p'
+  wl -i wl1 bss | sed -n 's/^/DriverBssState6g=/p'
+  awk -F= '/^start_disabled=/{print "StartDisabled6g=" $2; if ($2 == 1) ones++; if ($2 == 0) zeros++; total++} END {print "StartDisabled6gOneCount=" ones+0; print "StartDisabled6gZeroCount=" zeros+0; print "StartDisabled6gTotalCount=" total+0}' /tmp/wl1_hapd.conf
+  ubus-cli WiFi.AccessPoint.3.Enable=1
+  ubus-cli "WiFi.AccessPoint.3.?" | sed -n 's/^WiFi\.AccessPoint\.3\.Enable=/Enable6g=/p; s/^WiFi\.AccessPoint\.3\.Status=/Status6g=/p' | sed -n '1,20p'
+  wl -i wl1 bss | sed -n 's/^/DriverBssState6g=/p' | sed -n '1,20p'
+  awk -F= '/^start_disabled=/{print "StartDisabled6g=" $2; if ($2 == 1) ones++; if ($2 == 0) zeros++; total++} END {print "StartDisabled6gOneCount=" ones+0; print "StartDisabled6gZeroCount=" zeros+0; print "StartDisabled6gTotalCount=" total+0}' /tmp/wl1_hapd.conf | sed -n '1,20p'
+  ubus-cli WiFi.AccessPoint.5.Enable=0
+  ubus-cli "WiFi.AccessPoint.5.?" | sed -n 's/^WiFi\.AccessPoint\.5\.Enable=/Enable24g=/p; s/^WiFi\.AccessPoint\.5\.Status=/Status24g=/p'
+  wl -i wl2 bss | sed -n 's/^/DriverBssState24g=/p'
+  awk -F= '/^start_disabled=/{print "StartDisabled24g=" $2; if ($2 == 1) ones++; if ($2 == 0) zeros++; total++} END {print "StartDisabled24gOneCount=" ones+0; print "StartDisabled24gZeroCount=" zeros+0; print "StartDisabled24gTotalCount=" total+0}' /tmp/wl2_hapd.conf
+  ubus-cli WiFi.AccessPoint.5.Enable=1
+  ubus-cli "WiFi.AccessPoint.5.?" | sed -n 's/^WiFi\.AccessPoint\.5\.Enable=/Enable24g=/p; s/^WiFi\.AccessPoint\.5\.Status=/Status24g=/p' | sed -n '1,20p'
+  wl -i wl2 bss | sed -n 's/^/DriverBssState24g=/p' | sed -n '1,20p'
+  awk -F= '/^start_disabled=/{print "StartDisabled24g=" $2; if ($2 == 1) ones++; if ($2 == 0) zeros++; total++} END {print "StartDisabled24gOneCount=" ones+0; print "StartDisabled24gZeroCount=" zeros+0; print "StartDisabled24gTotalCount=" total+0}' /tmp/wl2_hapd.conf | sed -n '1,20p'
+results_reference:
+  v4.0.3:
+    5g: To be tested
+    6g: To be tested
+    2.4g: To be tested
+    comment: 'AP1/AP3/AP5 all started enabled on the documented non-open baseline. For each band, toggling Enable from 1 -> 0 -> 1 converged cleanly across the northbound setter/readback, the Status getter, driver `wl -i wlX bss`, and hostapd `start_disabled` (`1` after disable, cleared after re-enable). The workbook baseline for all three bands remains `To be tested`, so this case is calibrated as an AP-only multiband To-be-tested checkpoint.'

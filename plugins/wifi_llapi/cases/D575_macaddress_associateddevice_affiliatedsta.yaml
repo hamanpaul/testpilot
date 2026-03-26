@@ -1,0 +1,29 @@
+id: d575-skip-affiliatedsta-macaddress
+name: D575 AffiliatedSTA MACAddress Skip
+source:
+  row: 578
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.
+  api: MACAddress
+  baseline: 0310-BGW720-300
+bands:
+- 5g
+llapi_support: Skip
+results_reference:
+  v4.0.3:
+    5g: Skip
+topology:
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+steps:
+- id: step_5g_skip
+  target: dut
+  action: skip
+  command: "echo skip"
+  description: "AffiliatedSTA object not found — needs MLO (Multi-Link Operation) STA connection"
+pass_criteria:
+- field: skip
+  operator: skip
+  value: "AffiliatedSTA object not found — needs MLO (Multi-Link Operation) STA connection"
