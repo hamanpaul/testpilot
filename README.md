@@ -505,8 +505,9 @@ python -m testpilot.cli wifi-llapi audit-yaml-commands \
 | 軌道 | 格式 | 狀態 | 用途 |
 |------|------|------|------|
 | 對外交付 | `xlsx` | ✅ 已整合 | Pass / Fail only，寫入 Excel 報告 |
-| 內部診斷 | `md` | ✅ 已整合 | 人可讀摘要，含 per-case 指令與輸出 |
-| 結構化資料 | `json` | ✅ 已整合 | 機器可讀，含 summary 統計 |
+| 內部診斷 | `md` | ✅ 已整合 | 人可讀摘要，含 per-case 指令、輸出與 log 行號引用 |
+| 結構化資料 | `json` | ✅ 已整合 | 機器可讀，含 summary 統計與 log 行號 |
+| UART RAW log | `DUT.log` / `STA.log` | ✅ 已整合 | serialwrap WAL 解碼，per-run DUT/STA 原始 UART 通訊記錄 |
 
 ## Agent / Model Policy
 
@@ -550,7 +551,8 @@ testpilot/
 │   ├── reporting/
 │   │   ├── wifi_llapi_excel.py      # xlsx report generation
 │   │   ├── excel_adapter.py         # openpyxl isolation layer
-│   │   └── reporter.py              # IReporter + md/json reporters
+│   │   ├── reporter.py              # IReporter + md/json reporters
+│   │   └── log_capture.py           # serialwrap WAL log capture & decode
 │   ├── schema/
 │   ├── transport/
 │   └── env/

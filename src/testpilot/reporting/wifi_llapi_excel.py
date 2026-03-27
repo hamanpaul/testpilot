@@ -86,6 +86,8 @@ class WifiLlapiCaseResult:
     result_24g: str
     comment: str = ""
     tester: str = "testpilot"
+    dut_log_lines: str = ""
+    sta_log_lines: str = ""
 
 
 def normalize_text(text: str | None) -> str:
