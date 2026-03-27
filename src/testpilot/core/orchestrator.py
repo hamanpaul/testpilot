@@ -122,10 +122,12 @@ class Orchestrator:
         if self.session_manager is None or CopilotSessionRequest is None:
             return None
         try:
+            provider = session_plan.get("provider_config")
             request = CopilotSessionRequest(
                 session_id=str(session_plan.get("session_id", "")),
                 model=str(session_plan.get("model", "")),
                 reasoning_effort=str(session_plan.get("reasoning_effort", "high")),
+                provider=provider,
             )
             handle = self.session_manager.create_session(request)
             return {
@@ -415,6 +417,7 @@ class Orchestrator:
         case_ids: list[str] | None,
         dut_fw_ver: str | None,
         report_source_xlsx: str | None,
+        provider_config: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         plugin = self.loader.load(plugin_name)
         discovered_cases = plugin.discover_cases()
@@ -532,7 +535,10 @@ class Orchestrator:
                 agent_config=agent_config,
             )
             if callable(build_case_session_plan):
-                session_plan = build_case_session_plan(run_id, case_id, selected_runner)
+                session_plan = build_case_session_plan(
+                    run_id, case_id, selected_runner,
+                    provider_config=provider_config,
+                )
                 if session_plan is not None:
                     selection_trace["session_plan"] = session_plan
 
@@ -692,6 +698,7 @@ class Orchestrator:
         *,
         dut_fw_ver: str | None = None,
         report_source_xlsx: str | None = None,
+        provider_config: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """執行測試。
 
@@ -709,6 +716,7 @@ class Orchestrator:
                 case_ids=case_ids,
                 dut_fw_ver=dut_fw_ver,
                 report_source_xlsx=report_source_xlsx,
+                provider_config=provider_config,
             )
 
         plugin = self.loader.load(plugin_name)

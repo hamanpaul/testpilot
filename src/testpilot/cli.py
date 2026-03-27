@@ -12,6 +12,11 @@ from rich.console import Console
 from rich.table import Table
 
 from testpilot import __version__
+from testpilot.core.azure_auth import (
+    AzureAuthError,
+    resolve_provider_config,
+    setup_azure_auth,
+)
 from testpilot.core.orchestrator import Orchestrator
 from testpilot.reporting.wifi_llapi_excel import ensure_template_report
 from testpilot.yaml_command_audit import (
@@ -42,12 +47,38 @@ def _setup_logging(verbose: bool) -> None:
     default=None,
     help="Project root directory.",
 )
+@click.option(
+    "--azure",
+    is_flag=True,
+    default=False,
+    help="Use Azure OpenAI API. Prompts for endpoint, key, and model interactively.",
+)
 @click.pass_context
-def main(ctx: click.Context, verbose: bool, root: str | None) -> None:
+def main(ctx: click.Context, verbose: bool, root: str | None, azure: bool) -> None:
     """TestPilot — plugin-based test automation for embedded devices."""
     _setup_logging(verbose)
     ctx.ensure_object(dict)
     ctx.obj["root"] = Path(root) if root else Path(__file__).resolve().parents[2]
+
+    # --- Authentication: Azure BYOK → GitHub OAuth fallback ---
+    provider_config: dict | None = None
+    if azure:
+        provider_config = setup_azure_auth()
+        if provider_config is None:
+            console.print(
+                "[bold red]Azure authentication failed.[/bold red] "
+                "Cannot proceed. Please check your credentials and network.",
+            )
+            raise SystemExit(1)
+        console.print("[green]✓ Azure OpenAI authenticated.[/green]")
+    else:
+        # Check if COPILOT_PROVIDER_* env vars are already set
+        provider_config = resolve_provider_config()
+        if provider_config:
+            console.print("[green]✓ Azure OpenAI (from env vars).[/green]")
+        # else: fall through to GitHub OAuth (handled by Copilot SDK)
+
+    ctx.obj["provider_config"] = provider_config
     ctx.obj["orchestrator"] = Orchestrator(project_root=ctx.obj["root"])
 
 
@@ -121,11 +152,13 @@ def run_tests(
 ) -> None:
     """Run tests for a plugin (skeleton)."""
     orch: Orchestrator = ctx.obj["orchestrator"]
+    provider_config = ctx.obj.get("provider_config")
     result = orch.run(
         plugin_name,
         list(case_ids) if case_ids else None,
         dut_fw_ver=dut_fw_ver,
         report_source_xlsx=report_source_xlsx,
+        provider_config=provider_config,
     )
     console.print(result)
 
