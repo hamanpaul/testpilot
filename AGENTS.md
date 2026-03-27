@@ -121,6 +121,19 @@ pytest
 6. `wifi_llapi` 排程策略預設為 `sequential`（`max_concurrency=1`）。
 7. case 失敗策略為 `retry_then_fail_and_continue`，且 timeout 需隨 retry attempt 調整。
 
+## Azure OpenAI BYOK Policy
+
+1. CLI 提供 `--azure` flag，啟動時互動式詢問 endpoint / api_key / model 三個參數。
+2. 認證順序：`--azure` 互動 → `COPILOT_PROVIDER_*` 環境變數 → GitHub OAuth → 全部失敗則結束程式。
+3. 環境變數命名遵循 Copilot CLI 官方慣例：
+   - `COPILOT_PROVIDER_TYPE=azure`
+   - `COPILOT_PROVIDER_BASE_URL=<endpoint>`
+   - `COPILOT_PROVIDER_API_KEY=<key>`
+   - `COPILOT_MODEL=<deployment-name>`
+   - `COPILOT_PROVIDER_AZURE_API_VERSION=<version>` (預設 `2024-10-21`)
+4. API key 與 endpoint 不得提交至版本控制；secrets 一律透過環境變數或 shell profile 注入。
+5. `agent-config.yaml` 只放執行策略（model priority / timeout / retry），不放 secrets。
+
 ## Code Style
 
 1. Python 3.11+，型別標註優先。

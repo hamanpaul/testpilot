@@ -143,17 +143,21 @@ def build_case_session_plan(
     run_id: str,
     case_id: str,
     runner: Mapping[str, Any],
+    provider_config: Mapping[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     """Build planned Copilot session metadata without creating the session yet."""
     if str(runner.get("cli_agent", "")).strip().lower() != "copilot":
         return None
-    return {
+    plan: dict[str, Any] = {
         "provider": "copilot-sdk",
         "session_id": build_session_id(run_id, case_id=case_id),
         "model": str(runner.get("model", "")).strip(),
         "reasoning_effort": str(runner.get("effort", "high")).strip() or "high",
         "status": "planned",
     }
+    if provider_config:
+        plan["provider_config"] = dict(provider_config)
+    return plan
 
 
 @dataclass
