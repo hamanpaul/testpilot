@@ -17,26 +17,34 @@ TestPilot is a plugin-based test automation framework for prplOS / OpenWrt embed
 
 Core principle: **the Copilot SDK handles the control plane; it does NOT decide the final verdict.**
 
+### Prerequisites
+
+- **Python 3.11+**
+- **[uv](https://docs.astral.sh/uv/)** — Python package manager
+- **[serialwrap](https://github.com/paulc-arc/serialwrap)** — UART serial multiplexer for DUT / STA communication
+
+After installing serialwrap, set the binary path via environment variable:
+
+```bash
+export SERIALWRAP_BIN=/path/to/serialwrap
+```
+
+Or add to `configs/testbed.yaml`:
+
+```yaml
+testbed:
+  serialwrap_binary: /path/to/serialwrap
+```
+
+> Resolution order: `SERIALWRAP_BIN` env var → `testbed.yaml` config → error exit.
+
 ### Quick Start
 
 ```bash
-# 1. Install
-bash scripts/install.sh
-# — or manually —
-uv venv && source .venv/bin/activate
-uv pip install -e ".[dev]"
-
-# 2. Activate virtualenv (required before each session)
-source .venv/bin/activate
-
-# 3. Configure testbed
-cp configs/testbed.yaml.example configs/testbed.yaml
-# Edit configs/testbed.yaml for your lab (DUT / STA / Endpoints)
-
-# 4. Verify
-testpilot --version
-testpilot list-plugins
-testpilot list-cases wifi_llapi
+uv pip install -e ".[dev]"                              # Install
+cp configs/testbed.yaml.example configs/testbed.yaml    # First-time config
+testpilot list-cases wifi_llapi                         # Verify
+testpilot run wifi_llapi --dut-fw-ver BGW720-B0-403     # Run
 ```
 
 ### Authentication
@@ -251,14 +259,8 @@ testpilot/
 ### Development & Testing
 
 ```bash
-# Install dev dependencies
-uv pip install -e ".[dev]"
-
-# Run all tests
-uv run pytest -q
-
-# Run plugin-specific tests
-uv run pytest plugins/wifi_llapi/tests/ -q
+uv pip install -e ".[dev]"    # Install (first time only)
+uv run pytest -q              # Run full test suite (~1500 tests)
 ```
 
 ### License
@@ -280,26 +282,34 @@ TestPilot 是一套 plugin-based 嵌入式裝置測試自動化框架，面向 p
 
 核心原則：**Copilot SDK 負責 control plane，不負責最終 verdict**。
 
+### 環境需求
+
+- **Python 3.11+**
+- **[uv](https://docs.astral.sh/uv/)** — Python 套件管理工具
+- **[serialwrap](https://github.com/paulc-arc/serialwrap)** — DUT / STA UART 通訊用序列埠多工器
+
+安裝 serialwrap 後，透過環境變數指定路徑：
+
+```bash
+export SERIALWRAP_BIN=/path/to/serialwrap
+```
+
+或在 `configs/testbed.yaml` 中設定：
+
+```yaml
+testbed:
+  serialwrap_binary: /path/to/serialwrap
+```
+
+> 解析優先序：`SERIALWRAP_BIN` 環境變數 → `testbed.yaml` 設定 → 錯誤結束。
+
 ### 快速開始
 
 ```bash
-# 1. 安裝
-bash scripts/install.sh
-# — 或手動安裝 —
-uv venv && source .venv/bin/activate
-uv pip install -e ".[dev]"
-
-# 2. 啟用虛擬環境（每次開新 terminal 都要執行）
-source .venv/bin/activate
-
-# 3. 設定 testbed
-cp configs/testbed.yaml.example configs/testbed.yaml
-# 依實際環境修改 configs/testbed.yaml（DUT / STA / Endpoint）
-
-# 4. 驗證
-testpilot --version
-testpilot list-plugins
-testpilot list-cases wifi_llapi
+uv pip install -e ".[dev]"                              # 安裝
+cp configs/testbed.yaml.example configs/testbed.yaml    # 首次設定
+testpilot list-cases wifi_llapi                         # 驗證
+testpilot run wifi_llapi --dut-fw-ver BGW720-B0-403     # 執行
 ```
 
 ### 認證方式
@@ -514,14 +524,8 @@ testpilot/
 ### 開發與測試
 
 ```bash
-# 安裝開發環境
-uv pip install -e ".[dev]"
-
-# 執行全部測試
-uv run pytest -q
-
-# 執行特定 plugin 測試
-uv run pytest plugins/wifi_llapi/tests/ -q
+uv pip install -e ".[dev]"    # 安裝（僅首次）
+uv run pytest -q              # 執行全部測試（約 1500 筆）
 ```
 
 ### 授權
