@@ -1,6 +1,6 @@
 # TestPilot Master Plan
 
-> 更新日期：2026-03-27
+> 更新日期：2026-03-31
 > 基線版本：v0.0.3-draft  
 > 規劃版本：v0.1.0（第三次重構基線）
 
@@ -18,7 +18,7 @@ TestPilot 的主目標是：
 
 ---
 
-## 2. 現況快照（2026-03-27）
+## 2. 現況快照（2026-04-02）
 
 ### 2.1 已落地能力
 
@@ -27,22 +27,27 @@ TestPilot 的主目標是：
 3. Transport：serialwrap / adb / ssh / network 已實作。serialwrap 已支援 auto-detect template（COM init 時自動偵測 prpl / openwrt / generic）與 prpl-template 復原。
 4. Per-case dispatcher、selection trace、retry-aware timeout、attempt trace 已落地。
 5. 正式 hot path 仍由 `setup_env -> verify_env -> execute_step -> evaluate` 決定。
-6. 420 官方 row-indexed cases 已全部校正完畢；兩個 duplicate-row legacy YAML 已改為 underscore-prefixed compatibility fixtures，不再混入 discoverable case inventory。
-7. `wifi_llapi` 全部 420 筆 official cases 已校正完畢（343 Support + 54 Not Supported + 20 Skip + 3 Blocked）；僅餘 3 筆 Blocked（`D035`、`D052`、`D053`）因環境/BCM 限制暫無法驗證。
-8. repo-only 校正 handoff 已同步到 `docs/audit-todo.md` 與 `plugins/wifi_llapi/reports/audit-report-260313-185447.md`；校正工作已全部完成，歷史 checkpoint 紀錄保留於 audit-todo.md。
-9. reboot 後的 default lab baseline 已重建並落成文件：5G `testpilot5G` / 2.4G `testpilot2G` 使用 `WPA2-Personal + 00000000`，6G `testpilot6G` 固定使用 `WPA3-Personal + key_mgmt=SAE + 00000000`。
-10. 第三次重構的 Copilot SDK 深度研究已完成，並已複製到 `docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`。
-11. 校正工作守則已補強為「不中斷持續作業」：commit、簡短狀態回覆與 targeted tests pass 都不是停點；只要沒有 blocker 或使用者要求暫停，就必須在同一輪把下一個 ready case 直接推進到 `in_progress`。
-12. **3x full run determinism 驗證完成**（2026-03-25）：420 cases × 3 runs 全部 exit=0，Run 2/3 verdict 100% 一致，Run 1 僅 2/355 rows 差異（baseline warm-up 效應）。修復 4 個 live runtime bugs：DUT kernel flood、5G ModeEnabled reversion、6G connect fatal、multi-line printf split。詳見 `plugins/wifi_llapi/reports/3x_determinism_report_20260325.md`。
-13. **serialwrap human-agent 共存**（2026-03-26）：新增 `wal.reset` / `wal.current_seq` RPC + `session.bind` 冪等化（ser-dep PR #18）。testpilot 改用 `wal.reset` 取代 daemon restart，保留 human console (minicom) 連線（PR #7）。WAL fan-out 驗證通過。
-14. **Copilot SDK 原生支援 Azure BYOK**（2026-03-27 確認）：`SessionConfig.provider` 支援 `type: "azure"`，`COPILOT_PROVIDER_*` env vars 可切換認證。詳見下方 §8。
+6. `wifi_llapi` discoverable 官方案例仍維持 420 筆；目前正進行以 repo-root `0401.xlsx` 為 authority 的 compare-driven 單案校正，已 live 對齊 `D004`、`D005`、`D006`、`D007`、`D009`、`D010`。
+7. 最新 `compare-0401` 疊代到 run `20260402T105808547293` 後，狀態為 **264 / 420 full matches**、**156 mismatches**；`D015 ConnectionDuration`、`D016 DownlinkBandwidth`、`D017 DownlinkMCS`、`D018 DownlinkShortGuard` 與 `D023 Inactive` 已完成 row 15 / row 16 / row 17 / row 18 / row 23 三 band live 對齊，`D011 AvgSignalStrength`、`D013 Capabilities` 與 `D020 FrequencyCapabilities` 皆維持已驗證的 fail-shaped mismatch，下一個 ready case 轉為 `D024 LastDataDownlinkRate`。
+8. `wifi_llapi_template.xlsx` 已重新由 repo-root `0401.xlsx` 重建，alignment manifest 現在回指 `source_workbook=0401.xlsx`；先前的 template row drift 不再是 `D017/D018` 的假 warning 來源。
+9. 本輪 campaign 已固定忽略 workbook `F` 欄；manual procedure authority 改以 `Wifi_LLAPI` 的 `G=Test steps` / `H=Command Output` 為準。
+10. preflight guardrail audit 已完成：official-case multiline block scalar ban 仍有效，serialwrap 120-char staging guardrail 仍有效，並新增 official-case `>120` 字元 command inventory guardrail；目前 inventory 為 **597**，先作為 tracked risk 保留，依賴 transport temp-script staging 執行。
+11. baseline hardening 已完成；最新 full repo suite 為 **1600 passed**。
+12. fresh live full run 目前被 lab blocker 卡住：serialwrap daemon 雖在線，但目前環境沒有 `/dev/ttyUSB*` / `/dev/serial/by-id`、也沒有 `COM0/COM1` session，因此無法啟動新的 live full run；待 UART 裝置恢復後，應先重建 session 再續行 Phase 3。
+13. reboot 後的 default lab baseline 已重建並落成文件：5G `testpilot5G` / 2.4G `testpilot2G` 使用 `WPA2-Personal + 00000000`，6G `testpilot6G` 固定使用 `WPA3-Personal + key_mgmt=SAE + 00000000`。
+14. 第三次重構的 Copilot SDK 深度研究已完成，並已複製到 `docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`。
+15. 校正工作守則已補強為「不中斷持續作業」：commit、簡短狀態回覆與 targeted tests pass 都不是停點；只要沒有 blocker 或使用者要求暫停，就必須在同一輪把下一個 ready case 直接推進到 `in_progress`。
+16. **3x full run determinism 驗證完成**（2026-03-25）：420 cases × 3 runs 全部 exit=0，Run 2/3 verdict 100% 一致，Run 1 僅 2/355 rows 差異（baseline warm-up 效應）。修復 4 個 live runtime bugs：DUT kernel flood、5G ModeEnabled reversion、6G connect fatal、multi-line printf split。詳見 `plugins/wifi_llapi/reports/3x_determinism_report_20260325.md`。
+17. **serialwrap human-agent 共存**（2026-03-26）：新增 `wal.reset` / `wal.current_seq` RPC + `session.bind` 冪等化（ser-dep PR #18）。testpilot 改用 `wal.reset` 取代 daemon restart，保留 human console (minicom) 連線（PR #7）。WAL fan-out 驗證通過。
+18. **Copilot SDK 原生支援 Azure BYOK**（2026-03-27 確認）：`SessionConfig.provider` 支援 `type: "azure"`，`COPILOT_PROVIDER_*` env vars 可切換認證。詳見下方 §8。
+19. **`wifi_llapi` live remediation 已接入 hot path**（2026-03-31）：`on_failure -> structured decision -> whitelist remediation executor -> on_retry` 已落地；範圍限定於 safe environment repair（serial session recover / STA reconnect / band baseline / env reverify），不改 testcase semantics 或 final verdict authority。
 
 ### 2.2 尚未落地
 
 1. P2 Environment modules（topology / provisioner / validator）— 低優先。
 2. P3-02 Monitor subsystem — 規格未定。
 3. R5-04 Session / device binding 嚴格化 — 低優先。
-4. R4/R5 各模組已 scaffolded 但尚未接入 hot path（agent_roles → orchestrator、advisory → hook handler、remediation → post-run、skill/mcp → session request、reporter → orchestrator output）。
+4. skill/mcp 對 session request 的深度整合仍未接完；目前 hot path 已接上 hook dispatcher、advisory collector、live remediation coordinator 與 md/json reporter projection。
 
 ---
 
@@ -61,7 +66,7 @@ TestPilot 的主目標是：
 ### 3.3 報告投影分離
 
 - `xlsx`：Pass / Fail only
-- `md/json`：`PassAfterRemediation`、`FailEnv`、`FailConfig`、`FailTest`、`Inconclusive` + root cause + suggestion
+- `md/json`：`Pass`、`PassAfterRemediation`、`FailEnv`、`FailConfig`、`FailTest`、`Inconclusive` + root cause + suggestion + remediation history
 
 ### 3.4 Agent / model policy（第三次重構目標）
 
@@ -92,7 +97,7 @@ TestPilot 的主目標是：
 | R4-03 | custom agents roles | executor / advisor / remediation / observer + role merging | done |
 | R4-04 | skills packages | SkillRegistry + SKILL.md discovery + role-based resolution | done |
 | R4-05 | advisory agent outputs | AdvisoryOutput + AdvisoryCollector + IHook handler factory | done |
-| R4-06 | remediation planner loop | RemediationPlanner + severity-prioritized action mapping | done |
+| R4-06 | remediation planner loop | post-run planner + in-run safe remediation loop（failure snapshot / whitelist executor / retry trace） | done |
 | R4-07 | runtime policy alignment | plugin agent-config / runner policy 改為 copilot-only order | done |
 | R4-08 | selective MCP | MCPRegistry + role-selective server management | done |
 
@@ -123,7 +128,7 @@ TestPilot 的主目標是：
 R1 / R2 / R3 kernel 邊界整理
     -> R4-01 ~ R4-04 control-plane foundation
     -> R5-04 / R5-07 / R5-08 kernel boundary hardening
-    -> R4-05 / R4-06 advisory audit + remediation
+    -> R4-05 / R4-06 advisory audit + live safe remediation
     -> R4-08 selective MCP
 ```
 

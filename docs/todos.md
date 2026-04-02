@@ -50,8 +50,8 @@
 | P3-01 | test-runner loop | done | ExecutionEngine + runner_selector 已落地 (R2-01) |
 | P3-02 | monitor subsystem | pending | 尚未實作 |
 | P3-03 | reporter（MD/JSON） | done | IReporter + MarkdownReporter + JsonReporter 已落地 (R5-06) |
-| P3-04 | verdict merge policy | done | 與 R4-05/R4-06 合併，AdvisoryCollector + RemediationPlanner 已落地 |
-| P3-05 | post-run remediation loop | done | 與 R4-06 合併，RemediationPlanner 已落地 |
+| P3-04 | verdict merge policy | done | 與 R4-05/R4-06 合併；AdvisoryCollector + diagnostic_status / remediation_history 投影已落地 |
+| P3-05 | post-run remediation loop | done | 與 R4-06 合併；RemediationPlanner 保留 post-run 彙整，wifi_llapi 已接上 in-run safe remediation loop |
 
 ## Phase 4：Wifi_LLAPI Plugin
 
@@ -60,7 +60,7 @@
 | P4-01 | wifi-plugin full implementation | done | setup/verify/execute/evaluate 已完成 |
 | P4-02 | case-getRadioStats | done | legacy compatibility fixture 已保留，改為 underscore-prefixed explicit fixture，不進 discover_cases |
 | P4-03 | case-kickStation | done | legacy compatibility fixture 已保留，改為 underscore-prefixed explicit fixture，不進 discover_cases |
-| P4-04 | 420 case source 對齊治理 | done | 420 官方 discoverable D### 已全部校正完畢（343 Support + 54 Not Supported + 20 Skip + 3 Blocked）；2 legacy duplicate-row YAML 已轉為 explicit fixtures；僅餘 3 筆 Blocked（D035/D052/D053）因環境/BCM 限制暫無法驗證 |
+| P4-04 | 420 case source 對齊治理 | in_progress | discoverable inventory 維持 420；目前依 `0401.xlsx` compare-driven single-case loop 持續 live 對齊，manual procedure authority 固定為 workbook `G/H`（忽略 `F`）；最新進度 `264/420` full matches；`D015`/`D016`/`D017`/`D018`/`D023` 已 live 對齊 row 15 / row 16 / row 17 / row 18 / row 23，`D011`/`D013`/`D020` 維持已驗證 fail-shaped mismatch，next=`D024`；目前 fresh full run 因 lab 端缺少 UART devices / COM0/COM1 sessions 而 blocked |
 | P4-05 | Wifi_LLAPI Excel report pipeline | done | template + run report + merged-cell 相容 |
 
 ## Phase 5：CLI & Integration
@@ -68,8 +68,8 @@
 | ID | 項目 | 狀態 | 註記 |
 |---|---|---|---|
 | P5-01 | cli-full | done | `run/list` + `wifi-llapi build-template-report` |
-| P5-02 | orchestrator-full | done | Orchestrator 拆分 + SDK session + hook policy + agent roles 已落地 |
-| P5-03 | integration tests（mock transport） | done | 已補齊 realistic runtime 測試；最新校正後 full suite `1223 passed`；3x live full run determinism 驗證通過（Run 2/3 = 100% 一致） |
+| P5-02 | orchestrator-full | done | Orchestrator 拆分 + SDK session + hook policy + advisory/remediation hot-path wiring 已落地 |
+| P5-03 | integration tests（mock transport） | done | 已補齊 realistic runtime 測試；最新 full suite `1600 passed`；3x live full run determinism 驗證通過（Run 2/3 = 100% 一致） |
 | P5-04 | plugin agent-config schema/runtime | done | `agent_runtime.py` |
 | P5-05 | agent selection trace | done | per-case selection / fallback trace |
 | P5-06 | case-agent dispatcher（sequential） | done | `max_concurrency=1` |
@@ -116,7 +116,7 @@
 | R4-03 | custom agents roles | done | 需求 | executor / advisor / remediation / observer + role merging |
 | R4-04 | skills packages | done | 需求 | SkillRegistry + SKILL.md discovery + role-based resolution |
 | R4-05 | advisory agent outputs | done | 需求 | AdvisoryOutput + AdvisoryCollector + IHook handler factory |
-| R4-06 | remediation planner loop | done | 需求 | RemediationPlanner + severity-prioritized action mapping |
+| R4-06 | remediation planner loop | done | 需求 | RemediationPlanner + severity-prioritized action mapping + wifi_llapi in-run safe remediation loop |
 | R4-07 | runtime policy alignment | done | 需求 | `plugins/wifi_llapi/agent-config.yaml` 已改為 copilot-only policy |
 | R4-08 | selective MCP integrations | done | 需求 | MCPRegistry + role-selective server management |
 

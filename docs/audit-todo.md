@@ -8,9 +8,10 @@
 
 ## Calibration authority
 
-- Acceptance baseline: `~/0310-BGW720-300_LLAPI_Test_Report.xlsx` `Wifi_LLAPI` sheet, BCM v4.0.3 result columns `L/M/N`.
-- Additional interpretation source: workbook BCM comment columns `O/P`.
-- Manual procedure seed: workbook `F/G` (`Test Steps` / `Command Output`).
+- Acceptance baseline: repo-root `0401.xlsx` `Wifi_LLAPI` sheet, answer columns `R/S/T`.
+- Compare rule: normalize both sides so only literal `Pass` stays `Pass`; all other workbook/run values become `Fail`.
+- Additional interpretation source: workbook columns `G/H` (`Test Steps` / `Command Output`).
+- Manual procedure seed: workbook `G/H`; use source survey only after workbook/live evidence still disagree.
 - Live validation path: direct serialwrap operation on `COM0/COM1`.
 - Explicitly not used as correctness evidence: run1 result and any existing YAML pass/fail condition that conflicts with the workbook baseline.
 - YAML writeback gate: only update YAML after the live serialwrap result matches the workbook baseline.
@@ -83,9 +84,9 @@
 If I open only this file in a future session, I should do the following in order:
 
 1. Re-read the calibration authority and working rules in this file.
-2. Re-open `~/0310-BGW720-300_LLAPI_Test_Report.xlsx` and use `Wifi_LLAPI` BCM `L/M/N/O/P` as the baseline.
+2. Re-open repo-root `0401.xlsx` and use `Wifi_LLAPI` `R/S/T` as the answer key (`Pass` = pass, everything else = fail).
 3. Rebuild the current STA 2.4G / 5G / 6G interface-to-DUT AP mapping from live MAC/BSSID evidence if it has not already been refreshed for this session.
-4. Read the current repo handoff snapshot in this file plus the latest checkpoint section at the top of `plugins/wifi_llapi/reports/audit-report-260313-185447.md`; do not rely on session-local SQL as the primary resume source.
+4. Read the current repo handoff snapshot in this file and `compare-0401.{md,json}`; do not rely on session-local SQL as the primary resume source.
 5. Confirm serialwrap access to `COM0/COM1` is healthy before attempting live validation.
 6. Pick the next ready **single case** from the handoff snapshot.
 7. For that case, follow the per-case operator loop below.
@@ -106,7 +107,7 @@ If I open only this file in a future session, I should do the following in order
    - 2.4G = AP5 / `wl2` / Radio.3 / SSID.8 / `testpilot2G` / WPA2-Personal
    - 每個 band：baseline getter → setter → readback → driver/hostapd cross-check → restore baseline
    - 判定 verdict：Pass / Not Supported / Fail / mixed-band
-3. **YAML 重寫** — 對齊 `0310` workbook、填入 `source.row`、AP-only、live evidence
+3. **YAML 重寫** — 對齊 `0401.xlsx` row、填入 `source.row`、保留 live evidence 與目前 deterministic baseline
 4. **Tests**
    - `load_case()` schema 驗證
    - targeted `pytest -k 'dXXX'`
@@ -118,166 +119,115 @@ If I open only this file in a future session, I should do the following in order
 
 > commit、簡短進度回覆與 targeted tests pass 都不是停點。只要沒有明確 blocker、lab 失真、或使用者要求暫停，就必須在同一輪直接推進到下一個 ready single case。
 
-## Current repo handoff snapshot（2026-03-23）
+## Current repo handoff snapshot（2026-04-02）
 
-- Trusted/calibrated official cases: **420 / 420**（全部校正完畢）
-- Remaining official cases: **0**（3 筆 Blocked: D035/D052/D053 已標記於 YAML，不影響其他 case）
+- Acceptance campaign: compare live/full-run results against repo-root `0401.xlsx`, `Wifi_LLAPI` sheet, columns `R/S/T`.
+- Current compare summary (`compare-0401.json`, rebuilt with overlay through run `20260402T105808547293`):
+  - compared cases: **420**
+  - full matches: **264**
+  - mismatches: **156**
+  - metadata drift rows: **67**
+  - per-band matched / mismatched:
+    - 5G: **283 / 137**
+    - 6G: **273 / 147**
+    - 2.4G: **275 / 145**
 - Active blockers:
   - `D035 OperatingStandard`
   - `D052 Tx_RetransmissionsFailed`
   - `D053 TxBytes`
-- 執行順序：blockers 先保留在 blocker 清單，不插回目前從 `D085` 往後的 sequential queue；待其餘待校正案例收斂後再回頭處理
-- Latest committed single-case checkpoints:
-  - `D054 TxErrors` → workbook-aligned `To be tested` checkpoint (`9880918`)
-  - `D055 TxMulticastPacketCount` → workbook-aligned `To be tested` checkpoint (`01fd2c3`), plus MAC normalization follow-up (`426de8a`)
-  - `D057 TxUnicastPacketCount` → workbook-aligned **Fail-shaped mismatch** (`49640dd`)
-  - `D058 UNIIBandsCapabilities` → workbook-aligned `Pass` checkpoint (`ff9ada2`, shared batch commit with `D044/D049/D056`)
-  - `D059 UplinkBandwidth` → workbook-aligned `Pass` checkpoint (`538a741`)
-  - `D060 UplinkMCS` → workbook-aligned `Pass` checkpoint (`c7470b2`)
-  - `D061 UplinkShortGuard` → workbook-aligned `Pass` checkpoint (`8000121`)
-  - `D062 VendorOUI` → workbook-aligned **Fail-shaped mismatch** checkpoint (`ed478e2`)
-  - `D063 VhtCapabilities` → workbook-aligned **Fail-shaped mismatch** checkpoint (`fb6bcc0`)
-  - `D064 APBridgeDisable` → workbook-aligned **Not Supported** checkpoint（5G AP-only toggle/readback diverges between northbound getter, hostapd config, and driver `ap_isolate`）
-  - `D065 BridgeInterface` → workbook-aligned `Pass` checkpoint（AP-only multiband getter, hostapd bridge config, and live Linux bridge master all converge on `br-lan`）
-  - `D066 DiscoveryMethodEnabled (FILS)` → workbook-aligned **Not Supported** checkpoint（AP-only multiband `FILS` writes are rejected as invalid, while `FILSDiscovery` is accepted and must be restored back to `Default`）
-  - `D067 DiscoveryMethodEnabled (UPR)` → workbook-aligned mixed-band checkpoint（AP1/AP5 reject `UPR` as invalid and stay `Default`, while AP3 accepts `UPR` and reads back `UPR` before restore）
-  - `D068 DiscoveryMethodEnabled (RNR)` → workbook-aligned mixed-band checkpoint（AP1/AP3/AP5 all accept/read back `RNR`, but only AP3 / wl1 hostapd `rnr=` flips from `0/0` to `1/0` before restore, so this is calibrated as 5G `Fail` / 6G `Pass` / 2.4G `Fail`）
-  - `D070 Enable` → workbook-aligned AP-only multiband `To be tested` checkpoint（AP1/AP3/AP5 all cleanly toggled `Enable=1 -> 0 -> 1`, `Status` followed `Enabled -> Disabled -> Enabled`, driver `wl -i wlX bss` followed `up -> down -> up`, and hostapd `start_disabled` appeared only in the disabled phase）
-  - `D071 FTOverDSEnable` → workbook-aligned AP-only multiband `To be tested` checkpoint（AP1/AP3/AP5 all required `IEEE80211r.Enabled=1` + `MobilityDomain=4660`, getter FT state stayed `0` at baseline, flipped to `1` on the setter, returned to `0` on restore, and hostapd `ft_over_ds` followed the same `0 -> 1 -> 0` path while `mobility_domain` stayed `3412`）
-  - `D072 MobilityDomain` → workbook-aligned AP-only multiband `To be tested` checkpoint（AP1/AP3/AP5 all started from `IEEE80211r.Enabled=0` / `MobilityDomain=0`, the setter `MobilityDomain=27476` read back as decimal `27476`, and hostapd stored the same value as byte-swapped hex `546B` while `ft_over_ds` remained `0`）
-  - `D075 InterworkingEnable` → workbook-aligned AP-only multiband `To be tested` checkpoint（AP1/AP3/AP5 all toggled `InterworkingEnable 0 -> 1 -> 0`, while each hostapd file kept two `interworking=` lines and converged `one/zero/total = 0/2/2 -> 1/1/2 -> 0/2/2`）
-  - `D076 QoSMapSet` → workbook-aligned AP-only multiband `Not Supported` checkpoint（workbook row 70 / AP1/AP3/AP5 all started from `QoSMapSet=""` with no `qos_map_set=` line, but writing the requested DSCP map always collapsed both getter and hostapd to scalar `255` / `qos_map_set=255` before restore returned to `EMPTY / ABSENT`）
-  - `D077 MacFilterAddressList` → workbook-aligned AP-only multiband `Pass` checkpoint（AP1/AP3/AP5 all started with an empty getter and empty `MACFiltering.Entry` tree, and after `MACFiltering.addEntry(mac=...)` / `delEntry(mac=...)` the bounded `sleep 2` readback showed the getter and entry tree converging together to the same band-specific MAC and then back to the empty baseline）
-  - `D078 Entry` → workbook-aligned AP-only multiband `Pass` checkpoint（AP1/AP3/AP5 的 `MACFiltering.Entry.?` 都從 `No data found` 基線出發，`addEntry(mac=...)` 後收斂出單一 `Entry.Alias` / `Entry.MACAddress` 節點，`delEntry(mac=...)` 後回到 `No data found`；ACL file side effect 依 mode split 而不同，因此留給 D079 處理）
-  - `D079 Mode` → workbook-aligned AP-only multiband `Fail` checkpoint（AP1 baseline 是 `BlackList` + `deny_mac_file=/tmp/hostap_wl0.acl`，AP3/AP5 baseline 都已是 `Off` 且 hostapd 無 ACL line，但 `ubus-cli WiFi.AccessPoint.{1|3|5}.MACFiltering.Mode=Off` 在三個 band 都仍回 `ERROR: ... invalid value`，並留下不變的 getter / hostapd ACL 狀態）
-  - `D080 MaxAssociatedDevices` → workbook-aligned AP-only multiband `Fail` checkpoint（AP1/AP3/AP5 的 northbound getter 都會接受 setter 並 read back `32 -> 31 -> 32`，但 `/tmp/wl{0,1,2}_hapd.conf` 的兩條 `max_num_sta=` 都固定維持 `32`，因此目前仍未符合 workbook 記錄的 `Pass` 路徑）
-  - `D081 MBOEnable` → workbook-aligned AP-only multiband `Fail` checkpoint（AP1/AP3/AP5 的 northbound getter 都會接受 `MBOEnable 0 -> 1 -> 0` readback，但 `/tmp/wl{0,1,2}_hapd.conf` 的 `mbo=` 在三個 band 都持續 absent，因此目前仍未符合 workbook 記錄的 `Pass` 路徑）
-  - `D082 MultiAPType` → workbook-aligned AP-only multiband `Fail` checkpoint（AP1/AP3/AP5 的 northbound getter 與 `wl -i wlX map` 都會接受 `BackhaulBSS` 並在 restore 後回到 `FronthaulBSS,BackhaulBSS`，但 `/tmp/wl{0,1,2}_hapd.conf` 的 `multi_ap=` 在 setter 後只從 `3/3` 變成 `1/3`，沒有完整收斂到 backhaul-only）
-  - `D083 Neighbour` → workbook-aligned AP-only multiband `Pass` checkpoint（AP1/AP3/AP5 都從空的 `Neighbour` tree 出發，`setNeighbourAP(BSSID=...,Channel=...)` 會收斂出單一 `Neighbour.1.BSSID/Channel`，`delNeighbourAP(BSSID=...)` 則會把 tree restore 回 empty baseline）
-  - `D084 EncryptionMode` → workbook-aligned AP-only multiband `Not Supported` checkpoint（AP1/AP3/AP5 的 getter 都固定回 `EncryptionMode="Default"`，但 `/tmp/wl{0,1,2}_hapd.conf` 仍明確暴露 `WPA-PSK/SAE + CCMP` 的真實 security lines，符合 workbook `hardcode in pwhm`）
-  - `D085 KeyPassPhrase` → workbook-aligned AP-only multiband `Pass` checkpoint（AP1/AP3/AP5 的 getter 與 hostapd `wpa_passphrase=` 都能在 quoted syntax 下收斂 `00000000 -> 0689388783 -> 00000000`，而 bare leading-zero setter 會被 misparse 成 `689388783.000000`；6G `sae_password=` 維持 baseline `00000000`）
-  - `D086 MFPConfig` → workbook-aligned AP-only mixed-band checkpoint（AP1/AP5 的 getter 與 hostapd `ieee80211w=0` 都收斂到 `Disabled`，但 AP3 / wl1 仍固定 `MFPConfig="Disabled"` 與 `wpa_key_mgmt=SAE + ieee80211w=2` 的 live `Required` 狀態不一致）
-  - `D087 ModeEnabled` → workbook-aligned AP-only multiband `Pass` checkpoint（AP1/AP3/AP5 的 setter `ModeEnabled=WPA3-Personal` 都被接受，getter 和 hostapd 在 wl0/wl1/wl2 都收斂到 `SAE` + `ieee80211w=2`，restore 到 WPA2-Personal 在 AP1/AP5 也都正常回復到 `WPA-PSK` + `ieee80211w=0`）
-  - `D088 ModesSupported` → workbook-aligned AP-only multiband `Pass` checkpoint（read-only getter, setter returns error 15; 5G/2.4G 回傳完整 mode list 含 OWE，6G 只回 `None,WPA3-Personal,OWE`）
-  - `D174-D192 Radio batch` → 17 getter cases rewritten from pseudo-commands to clean 3-band getter YAMLs with `capture:` + suffix-match pass_criteria; D183 TPCMode already committed as fail-shaped checkpoint. Live evidence: ActiveAntennaCtrl/FragmentationThreshold=-1, BeaconPeriod=100, Channel=36/1/1, ChannelLoad=83/61/100, Ampdu/Amsdu=-1, RtsThreshold=-1, NrActive{Rx,Tx}Antenna=4, Nr{Rx,Tx}Antenna=4, DTIMPeriod=3, Enable=1, ExplicitBeamForming{Enabled,Supported}=1, GuardInterval=Auto
-  - `D183 TPCMode` → source/live **Fail-shaped mismatch** checkpoint，現已納入 `148 / 415` 完成數
-  - `D366 SRGBSSColorBitmap` → 0310 row 273 **Fail-shaped mismatch** checkpoint，現已納入 `148 / 415` 完成數（5G/6G/2.4G setters all accepted/read back `"1"`, but hostapd `he_spr_srg_bss_colors=` stayed absent on wl0/wl1/wl2）
-  - `D369 SRGPartialBSSIDBitmap` → 0310 row 276 mixed-band checkpoint，現已納入 `148 / 415` 完成數（5G/6G setters accepted/read back `"1"` while hostapd `he_spr_srg_partial_bssid=` stayed absent; 2.4G setter failed with `error=4` / `parameter not found`）
-- Latest validated commands:
-  - `load_case(D174-D192 Radio batch)` → all 18 OK (17 getter + D183 fail-shaped)
-  - `uv run pytest -q tests/test_wifi_llapi_plugin_runtime.py -k 'radio_getter or d183'` → `54 passed`
-  - `uv run pytest -q` → `521 passed`
+- Current verified live baseline findings:
+  - DUT `COM0`:
+    - 5G = `wl0` / `AccessPoint.1` / `SSID.4` / SSID `testpilot5G` / BSSID `2c:59:17:00:19:95` / `WPA2-Personal` / passphrase `00000000`
+    - 6G = `wl1` / `AccessPoint.3` / `SSID.6` / SSID `testpilot6G` / BSSID `2c:59:17:00:19:96` / `WPA3-Personal` / `key_mgmt=SAE` / SAE passphrase `00000000`
+    - 2.4G = `wl2` / `AccessPoint.5` / `SSID.8` / SSID `testpilot2G` / BSSID `2c:59:17:00:19:a7` / `WPA2-Personal` / passphrase `00000000`
+  - STA `COM1` managed interfaces:
+    - 5G = `wl0` / BSSID `2c:59:17:00:04:85`
+    - 6G = `wl1` / BSSID `2c:59:17:00:04:86`
+    - 2.4G = `wl2` / BSSID `2c:59:17:00:04:97`
+- Latest live-aligned `0401` checkpoints:
+  - `D004 kickStation()` → `Pass/Pass/Pass` via run `20260402T013838223177`
+  - `D005 kickStationReason()` → `Pass/Pass/Pass` via run `20260402T020432759837`
+  - `D006 sendBssTransferRequest()` → `Pass/Pass/Pass` via run `20260402T021317975166` (pass after retry)
+  - `D007 sendRemoteMeasumentRequest()` → `Pass/Pass/Pass` via run `20260402T021716841976`
+  - `D009 AssociationTime` → `Pass/Pass/Pass` via run `20260402T023927691290`
+  - `D010 AuthenticationState` → `Pass/Pass/Pass` via run `20260402T030604339596`
+  - `D012 AvgSignalStrengthByChain` → `Pass/Pass/Pass` via run `20260402T040807394935`
+  - `D015 ConnectionDuration` → `Pass/Pass/Pass` via run `20260402T054957340010`
+  - `D016 DownlinkBandwidth` → `Pass/Pass/Pass` via run `20260402T060543524189`
+  - `D017 DownlinkMCS` → `Pass/Pass/Pass` via run `20260402T063003376730`
+  - `D018 DownlinkShortGuard` → `Pass/Pass/Pass` via run `20260402T071356233843`
+  - `D023 Inactive` → `Pass/Pass/Pass` via run `20260402T105808547293`
+- Latest verified unresolved mismatches:
+  - `D011 AvgSignalStrength` → live/source-confirmed `Fail/Fail/Fail` via run `20260402T034832813249`
+  - workbook row 11 still expects raw `Pass/Pass/Pass`, so compare remains mismatched on all three bands
+  - live evidence:
+    - AP1/AP3/AP5 each exposed one live STA (`AssocMac5g/6g/24g`)
+    - `wl sta_info` still reported negative smoothed RSSI (`-28 / -85 / -2`)
+    - `ubus-cli "WiFi.AccessPoint.{1,3,5}.AssociatedDevice.1.AvgSignalStrength?"` stayed `0` on all three bands
+  - source evidence:
+    - public/source `wld_ap_nl80211_copyStationInfoToAssocDev()` updates `pAD->SignalStrength`, not the average accumulator path
+    - pWHM `wld_assocdev.c` publishes `AvgSignalStrength` from `WLD_ACC_TO_VAL(pAD->rssiAccumulator)`
+    - live firmware therefore still behaves fail-shaped even though the datamodel field exists
+  - `D013 Capabilities` → live/source-confirmed `Fail/Fail/Fail` via run `20260402T051006378317`
+  - workbook row 13 still expects raw `Pass/Pass/Pass`, so compare remains mismatched on all three bands
+  - live evidence:
+    - AP1/AP3/AP5 each exposed one live STA (`AssocMac5g/6g/24g`)
+    - `wl sta_info` reported `RRM capability = 0x0` on all three bands
+    - `ubus-cli "WiFi.AccessPoint.{1,3,5}.AssociatedDevice.1.Capabilities?"` read back `"" / "BTM,QOS_MAP,PMF" / ""`
+  - source evidence:
+    - pWHM `wld_assocDev_copyAssocDevInfoFromIEs()` publishes parsed STA capability bits from `pWirelessDevIE->capabilities`
+    - workbook H-column sample references a different STA capability profile (`4A:0A:A5:80:23:7B`) with `RRM,BTM,QOS_MAP,PMF`
+    - current deterministic lab STA therefore cannot reproduce the workbook row-13 capability shape
+  - `D020 FrequencyCapabilities` → live/source-confirmed `Fail/Fail/Fail` via run `20260402T095404127199`
+  - workbook row 20 still expects raw `Pass/Pass/Pass`, so compare remains mismatched on all three bands
+  - live evidence:
+    - AP1 getter stayed `""` while `wl sta_info` reported `Frequency Bands Supported: 5G` and the normalized driver token was `5GHz`
+    - AP3 getter stayed `6GHz` while `wl sta_info` reported `Frequency Bands Supported: 6G` and the normalized driver token was `6GHz`
+    - AP5 getter stayed `""` while `wl sta_info` reported `Frequency Bands Supported: 2.4G` and the normalized driver token was `2.4GHz`
+    - the first retry failed at `step9_24g_sta_join` with a serialwrap timeout, but the second retry completed all three bands and preserved the same fail-shaped mismatch
+  - source evidence:
+    - `wld_accesspoint.odl` declares `FrequencyCapabilities` as a read-only string
+    - `whm_brcm_scb_stats()` publishes rates/bytes/packets/retries/failures/RSSI but does not map the driver's `Frequency Bands Supported` line into LLAPI
+    - current firmware therefore cannot reproduce workbook row 20's `2.4GHz,5GHz,6GHz` shape on AP1/AP3/AP5
+- Latest validated commands/tests:
+  - `uv run pytest -q plugins/wifi_llapi/tests/test_command_resolver.py plugins/wifi_llapi/tests/test_wifi_llapi_plugin_runtime.py -k 'driver_capture_shell_step_does_not_use_synthesized_readback or execute_step_capture_prefers_synthesized_readback_query or pending_method_calibration_cases_use_runtime_supported_contracts or execute_step_command_fallback_priority or status_only_sta_checks_do_not_override_deterministic_band_connect or verify_sta_band_connectivity_prefers_case_status_checks'` → `6 passed`
+  - `uv run pytest -q plugins/wifi_llapi/tests/test_wifi_llapi_plugin_runtime.py -k 'D010 or pending_method_calibration_cases_use_runtime_supported_contracts or status_only_sta_checks_do_not_override_deterministic_band_connect or verify_sta_band_connectivity_prefers_case_status_checks'` → `3 passed`
+  - `uv run pytest -q` → `1599 passed`
+  - `uv run python -m testpilot.cli run wifi_llapi --case wifi-llapi-D010-authenticationstate --dut-fw-ver BGW720-B0-403` → `Pass/Pass/Pass`
+  - `uv run pytest -q plugins/wifi_llapi/tests/test_wifi_llapi_plugin_runtime.py -k 'D011 or pending_readonly_associateddevice_cases_use_live_cross_checks or pending_readonly_associateddevice_cases_evaluate_live_examples or pre_skip_aligned_manual_cases_avoid_stale_sample_values'` → `3 passed`
+  - `uv run python -m testpilot.cli run wifi_llapi --case wifi-llapi-D011-avgsignalstrength --dut-fw-ver BGW720-B0-403` → live evidence `Fail/Fail/Fail` (`evaluation_verdict=Pass`, final projected status `Fail`)
+  - `uv run pytest -q plugins/wifi_llapi/tests/test_wifi_llapi_plugin_runtime.py -k 'D012 or pending_readonly_associateddevice_cases_use_live_cross_checks or pending_readonly_associateddevice_cases_evaluate_live_examples or pre_skip_aligned_manual_cases_avoid_stale_sample_values'` → `3 passed`
+  - `uv run python -m testpilot.cli run wifi_llapi --case wifi-llapi-D012-avgsignalstrengthbychain --dut-fw-ver BGW720-B0-403` → `Pass/Pass/Pass` via run `20260402T040807394935` (`AvgSignalStrengthByChain=-30 / -86 / -13`)
+  - `uv run pytest -q plugins/wifi_llapi/tests/test_wifi_llapi_plugin_runtime.py -k 'D013 or pending_readonly_associateddevice_cases_use_live_cross_checks or pending_readonly_associateddevice_cases_evaluate_live_examples or pre_skip_aligned_manual_cases_avoid_stale_sample_values'` → `3 passed`
+  - `uv run python -m testpilot.cli run wifi_llapi --case wifi-llapi-D013-capabilities --dut-fw-ver BGW720-B0-403` → live evidence `Fail/Fail/Fail` (`evaluation_verdict=Pass`, final projected status `Fail`)
+  - `uv run pytest -q plugins/wifi_llapi/tests/test_wifi_llapi_plugin_runtime.py -k 'env_command_succeeded_allows_macaddress_shell_pipeline or D015 or D016 or pending_readonly_associateddevice_cases_use_live_cross_checks or pending_readonly_associateddevice_cases_evaluate_live_examples'` → `3 passed`
+  - `uv run python -m testpilot.cli run wifi_llapi --case wifi-llapi-D015-connectionduration --dut-fw-ver BGW720-B0-403` → `Pass/Pass/Pass` via run `20260402T054957340010`
+  - `uv run python -m testpilot.cli run wifi_llapi --case wifi-llapi-D016-downlinkbandwidth --dut-fw-ver BGW720-B0-403` → `Pass/Pass/Pass` via run `20260402T060543524189`
+  - `uv run pytest -q plugins/wifi_llapi/tests/test_wifi_llapi_plugin_runtime.py -k 'pending_readonly_associateddevice_cases_use_live_cross_checks or pending_readonly_associateddevice_cases_evaluate_live_examples'` → `2 passed, 1200 deselected`
+  - `uv run python -m testpilot.cli run wifi_llapi --case wifi-llapi-D017-downlinkmcs --dut-fw-ver BGW720-B0-403` → `Pass/Pass/Pass` via run `20260402T063003376730`
+  - `uv run pytest -q plugins/wifi_llapi/tests/test_wifi_llapi_plugin_runtime.py -k 'pending_boolean_and_frequency_cases_use_supported_contracts or pending_boolean_and_frequency_cases_evaluate_live_examples'` → `2 passed, 1200 deselected`
+  - `uv run python -m testpilot.cli run wifi_llapi --case wifi-llapi-D018-downlinkshortguard --dut-fw-ver BGW720-B0-403` → first rerun exposed driver-capture shape issue (`20260402T070911215127`); second rerun passed `Pass/Pass/Pass` via run `20260402T071356233843`
+  - `uv run pytest -q plugins/wifi_llapi/tests/test_wifi_llapi_plugin_runtime.py` → `1202 passed`
+  - `uv run pytest -q` → `1599 passed`
+  - `uv run python -m testpilot.cli wifi-llapi build-template-report --source-xlsx 0401.xlsx` → rebuilt `plugins/wifi_llapi/reports/templates/wifi_llapi_template.xlsx`
+  - `uv run pytest -q plugins/wifi_llapi/tests/test_wifi_llapi_excel_template.py` → `8 passed`
+  - `uv run python -m testpilot.cli run wifi_llapi --case wifi-llapi-D020-frequencycapabilities --dut-fw-ver BGW720-B0-403` → live/source-confirmed `Fail/Fail/Fail` via run `20260402T095404127199` (`evaluation_verdict=Pass`, pass after retry 2/2)
+  - `uv run python scripts/compare_0401_answers.py ... 20260402T095404127199 --output-md compare-0401.md --output-json compare-0401.json` → compare refreshed; summary stayed `263 / 420`, while `D020` actual raw updated to `Fail / Fail / Fail`
+  - `uv run pytest -q plugins/wifi_llapi/tests/test_wifi_llapi_plugin_runtime.py -k 'pending_inactive_and_bandwidth_cases'` → `2 passed`
+  - `uv run python -m testpilot.cli run wifi_llapi --case wifi-llapi-D023-inactive --dut-fw-ver BGW720-B0-403` → `Pass/Pass/Pass` via run `20260402T105808547293`
+  - `uv run python scripts/compare_0401_answers.py ... 20260402T105808547293 --output-md compare-0401.md --output-json compare-0401.json` → compare refreshed to `264 / 420`
+  - `uv run pytest -q` → `1599 passed`
+- Runtime guard rail (must keep):
+  - `_env_command_succeeded()` must treat `AssociatedDevice...MACAddress?` as a pure MAC getter only for plain ubus getter commands.
+  - Shell pipelines like `STA_MAC=$(ubus-cli "...MACAddress?" | sed ...) && wl ... | sed ...` must fall through to normal success handling so long-command driver cross-checks are not misclassified as failed MAC getters.
+- Resolver guard rail (must keep):
+  - `CommandResolver.prefer_synthesized_readback()` may synthesize only for raw commands that are non-executable prose/ubus fragments, or executable commands whose first token is `ubus-cli`.
+  - Driver shell capture steps (`wl`, `iw`, shell pipelines with `sed` replacements such as `AssocMac5g=\1`) must never be rewritten into wildcard synthesized queries.
 - Next ready repo handoff case:
-  - `D089 PreSharedKey` → workbook-aligned AP-only multiband `Pass(5G)/Not Supported(6G)/Pass(2.4G)` checkpoint（PreSharedKey 64-char hex setter/readback accepted on 5G/2.4G; 6G setter accepted but WPA3-only semantics → Not Supported; hostapd wpa_psk= only appears via KeyPassPhrase route）
-  - `load_case(plugins/wifi_llapi/cases/D089_presharedkey_accesspoint_security.yaml)` → `steps=12`
-  - `serialwrap COM0 D089 PreSharedKey probe` → AP1/AP5 setter+readback pass; AP3 setter accepted but 6G WPA3-only; hostapd wpa_psk never appears via PreSharedKey API alone
-  - `D090 RekeyingInterval` → workbook-aligned AP-only multiband `Fail` checkpoint（setter accepted + getter reads back 3600 on all 3 bands, but hostapd wpa_group_rekey does not consistently update; 5G/6G stay 0, 2.4G partially converges）
-  - `load_case(plugins/wifi_llapi/cases/D090_rekeyinginterval.yaml)` → `steps=12`
-  - `serialwrap COM0 D090 RekeyingInterval probe` → AP1/AP3/AP5 setter+readback pass; hostapd wpa_group_rekey diverges on all bands
-  - `D091 SHA256Enable` → workbook-aligned AP-only multiband `Fail` checkpoint（setter accepted + getter reads back 1 on all 3 bands, but hostapd wpa_key_mgmt stays WPA-PSK/SAE without gaining SHA256 suffix）
-  - `load_case(plugins/wifi_llapi/cases/D091_sha256enable.yaml)` → `steps=12`
-  - `serialwrap COM0 D091 SHA256Enable probe` → AP1/AP3/AP5 setter+readback pass; hostapd wpa_key_mgmt unchanged on all bands
-  - `D092 WEPKey` → workbook-aligned AP-only multiband `Fail` checkpoint（setter accepted + getter reads back AABBCCDDEEFF0 on all 3 bands, but hostapd has NO wep lines under WPA2/WPA3 ModeEnabled）
-  - `load_case(plugins/wifi_llapi/cases/D092_wepkey_accesspoint_security.yaml)` → `steps=12`
-  - `serialwrap COM0 D092 WEPKey probe` → AP1/AP3/AP5 setter+readback pass; hostapd has zero WEP lines
-  - `D093 SSIDAdvertisementEnabled` → workbook-aligned AP-only multiband `Pass` checkpoint（setter=0 causes hostapd ignore_broadcast_ssid to flip 0→2 on all 3 bands; restore=1 brings it back to 0）
-  - `load_case(plugins/wifi_llapi/cases/D093_ssidadvertisementenabled.yaml)` → `steps=12, pass_criteria=15`
-  - `serialwrap COM0 D093 SSIDAdvertisementEnabled probe` → AP1/AP3/AP5 setter+readback+hostapd full round-trip pass
-  - `D094 Status` → workbook-aligned AP-only multiband `Pass` checkpoint（read-only getter, Status="Enabled" + driver bss=up on all 3 bands）
-  - `load_case(plugins/wifi_llapi/cases/D094_status_accesspoint.yaml)` → `steps=3, pass_criteria=6`
-  - `serialwrap COM0 D094 Status probe` → AP1/AP3/AP5 Status="Enabled" + wl bss=up
-  - `D095 UAPSDCapability` → workbook-aligned AP-only multiband `Pass` checkpoint（read-only capability getter, UAPSDCapability=1 on all 3 bands, setter returns error 15 read-only; hostapd uapsd_advertisement_enabled=0 / driver wme_apsd=0 = not active but capability present）
-  - `load_case(plugins/wifi_llapi/cases/D095_uapsdcapability.yaml)` → `steps=3, pass_criteria=3`
-  - `serialwrap COM0 D095 UAPSDCapability probe` → AP1/AP3/AP5 UAPSDCapability=1 + hostapd wmm/uapsd + driver wme_apsd cross-check
-  - `D096 UAPSDEnable` → workbook-aligned AP-only multiband `Pass` checkpoint（setter 0→1→0 全 3 band 都收斂：northbound getter、hostapd uapsd_advertisement_enabled first BSS、driver wme_apsd 同步翻轉；workbook 標 Not Support 但實際 API 完整運作）
-  - `load_case(plugins/wifi_llapi/cases/D096_uapsdenable.yaml)` → `steps=3, pass_criteria=15`
-  - `serialwrap COM0 D096 UAPSDEnable probe` → AP1/AP3/AP5 baseline=0, setter=1 accepted, hostapd/driver flip, restore=0 converges
-  - `D097 VendorIE` → workbook-aligned AP-only multiband `Not Supported` checkpoint（VendorIEs.Enable=0 exists but createVendorIE() returns ERROR: call (null) failed with status 1 on all 3 bands）
-  - `load_case(plugins/wifi_llapi/cases/D097_vendorie.yaml)` → `steps=3, pass_criteria=6`
-  - `serialwrap COM0 D097 VendorIE probe` → AP1/AP3/AP5 Enable=0 + createVendorIE() error on all bands
-- Continuation guard rails:
-  - only committed YAML / docs count as trusted handoff state
-  - do not infer progress from any local unstaged experiment outside these committed checkpoints
-  - reuse `D056 TxPacketCount` as the positive same-STA tx-packet prior art when judging `D057`/`D058` family cases
-  - `D183` / `D366` / `D369` 已從待校正池移出並折入完成數；最新 main-sweep checkpoint 則前進到 `D117`，下一個 ready sequential case 為 `D174`
-  - `D098` WDSEnable — 3-band setter round-trip with `wl dwds` driver convergence
-  - `D099` WMMCapability — 3-band read-only getter, `wmm_enabled=1` on all bands
-  - `D100` WMMEnable — 3-band setter round-trip, hostapd `wmm_enabled` converges; workbook marks Not Support
-  - `D101` ConfigMethodsEnabled — mixed-band setter: 5G/2.4G Pass, 6G Fail (no hostapd config_methods)
-  - `D102` ConfigMethodsSupported — 3-band read-only getter, full method list; workbook marks Not Support
-  - `D103` Configured — 3-band read-only getter, `Configured=1`
-  - `D104` WPS.Enable — mixed-band setter: 5G/2.4G Pass (wps_state converges), 6G Not Supported (wps_state stays 0)
-  - `D105` PairingInProgress — 3-band read-only getter, `PairingInProgress=0`
-  - `D106` RelayCredentialsEnable — 3-band read-only getter, `RelayCredentialsEnable=0`; workbook marks Not Support
-  - `D107` SelfPIN — 3-band setter round-trip, `90455865→12345678→90455865` converges
-
-Current verified live baseline findings from this session:
-
-- DUT `COM0`:
-  - 5G = `wl0` / `AccessPoint.1` / `SSID.4` / SSID `testpilot5G` / BSSID `2c:59:17:00:19:95` / `WPA2-Personal` / passphrase `00000000`
-  - 6G = `wl1` / `AccessPoint.3` / `SSID.6` / SSID `testpilot6G` / BSSID `2c:59:17:00:19:96` / `WPA3-Personal` / `key_mgmt=SAE` / SAE passphrase `00000000`
-  - 2.4G = `wl2` / `AccessPoint.5` / `SSID.8` / SSID `testpilot2G` / BSSID `2c:59:17:00:19:a7` / `WPA2-Personal` / passphrase `00000000`
-- STA `COM1` candidate managed interfaces:
-  - 5G = `wl0` / MAC `2c:59:17:00:04:85`
-  - 6G = `wl1` / MAC `2c:59:17:00:04:86`
-  - 2.4G = `wl2` / MAC `2c:59:17:00:04:97`
-- Current `D058-D077` batch triage:
-  - `D058/D059` are already committed 0310/5G-only live-aligned cases and do not need to be re-done before the next handoff step
-  - `D060` is now a committed 0310/5G-only live-aligned pass case; use the same-STA post-trigger snapshot + `wl sta_info ... rx nrate` `mcs` equality pattern as the prior art
-  - `D061` is now a committed 0310/5G-only live-aligned pass case; reuse its same-STA post-trigger snapshot + driver GI mapping pattern (`0.4us/0.8us/1.6us => 1`, `3.2us => 0`, unknown GI fail-closed) as the immediate prior art
-  - `D062` is now a committed 0310/5G-only live-aligned fail case; reuse its same-STA direct getter + snapshot empty-string cross-check against non-empty `wl sta_info` vendor OUI list as the immediate prior art
-  - `D063` is now a committed 0310/5G-only live-aligned fail case; reuse its same-STA direct getter + snapshot empty-string cross-check against normalized driver-side `VHT caps` tokens as the immediate prior art
-  - `D064` is now a committed 0310/5G-only AP-only live-aligned Not Supported case; reuse its APBridgeDisable toggle/readback versus `hostapd.conf`/driver divergence pattern as the immediate prior art for remaining AccessPoint setter families
-  - `D065` is now a committed 0310/AP-only multiband live-aligned pass case; reuse its direct getter + hostapd `bridge=` + `/sys/class/net/*/master/uevent` cross-check pattern for remaining read-only AccessPoint bridge-family getters
-  - `D066` is now a committed 0310/AP-only multiband live-aligned Not Supported case; reuse its `Default -> FILS invalid -> FILSDiscovery accepted -> restore Default` pattern for the remaining `DiscoveryMethodEnabled` enum families
-  - `D067` is now a committed 0310/AP-only multiband mixed-band case; reuse its `Default -> 5G invalid / 6G UPR accepted / 2.4G invalid -> restore Default` pattern for remaining `DiscoveryMethodEnabled` enum families with split band behavior
-  - `D068` is now a committed 0310/AP-only multiband mixed-band case; reuse its northbound `RNR` readback versus hostapd `rnr=` divergence pattern when a setter appears accepted on every band but only one band changes real config state
-  - `D070` is now a committed 0310/AP-only multiband `To be tested` case; reuse its `Enable=1 -> 0 -> 1` plus `Status` / `wl bss` / `start_disabled` convergence pattern for the remaining AP enable-style setter families
-  - `D071` is now a committed 0310/AP-only multiband `To be tested` case; reuse its `IEEE80211r.Enabled=1` + `MobilityDomain=4660` prerequisite pattern plus `FTOverDSEnable` / hostapd `ft_over_ds` `0 -> 1 -> 0` convergence and decimal-vs-hex MobilityDomain cross-check for the remaining 11r AccessPoint setter families
-  - `D072` is now a committed 0310/AP-only multiband `To be tested` case; reuse its `IEEE80211r.Enabled=1` prerequisite plus `MobilityDomain=27476` decimal readback and hostapd byte-swapped hex `546B` cross-check for the remaining 11r AccessPoint setter families
-  - `D075` is now a committed 0310/AP-only multiband `To be tested` case; reuse its IEEE80211u `InterworkingEnable` getter `0 -> 1 -> 0` plus hostapd two-line `interworking` count convergence `0/2/2 -> 1/1/2 -> 0/2/2` for the remaining IEEE80211u AccessPoint setter families
-  - `D076` is now a committed 0310/AP-only multiband `Not Supported` case; reuse its `QoSMapSet EMPTY -> 255 -> EMPTY` northbound collapse plus hostapd `ABSENT -> qos_map_set=255 -> ABSENT` pattern for the remaining IEEE80211u AccessPoint setter families that may be implemented fail-shaped rather than pass-shaped
-  - `D077` is now a committed 0310/AP-only multiband pass case; reuse its `MACFiltering.addEntry(mac=...)` / `MACFiltering.delEntry(mac=...)` flow, plus the bounded `sleep 2` northbound getter convergence and same-band `MACFiltering.Entry` tree cross-check, as the immediate prior art for the remaining MAC filtering AccessPoint family
-- Critical lab rule:
-  - `COM1` is another `prplOS` / B0-class board, not a simple STA dongle
-  - before using `ping 192.168.1.1` as DUT reachability evidence, move `COM1 br-lan` off `192.168.1.0/24` (for example `192.168.88.1/24`), otherwise the ping is a false-positive self-hit
-- Current 5G recovery status:
-  - `COM1 wl0` now reconnects to DUT AP1 `2c:59:17:00:19:95` with SSID `testpilot5G`
-  - `wpa_cli` reaches `wpa_state=COMPLETED` with `key_mgmt=WPA2-PSK`
-  - DUT `wl -i wl0 assoclist` and `WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?` both confirm the same STA `2C:59:17:00:04:85`
-- Proven 6G baseline flow:
-  - 6G baseline policy is now fixed to `testpilot6G` + `WPA3-Personal` + `key_mgmt=SAE` + password `00000000`
-  - DUT readback and `hostapd_cli -i wl1 get_config` both confirm the non-open WPA3/SAE configuration
-  - COM1 `wl1` revalidation against the new `00000000` credential is still pending; keep the older DHCP/routed-ping evidence as historical context only
-- 5G and 2.4G current state:
-  - 5G `wl0` L2 association is re-verified on the rebuilt `testpilot5G` baseline
-  - 2.4G `wl2` baseline config (`testpilot2G` + `WPA2-Personal/00000000`) is re-applied on the DUT, but COM1 `wl2` association has not been rerun after this reboot/recovery step
-  - DHCP/routing is not yet applied automatically on these bands, so any traffic-dependent case still needs explicit L3 setup or a blocker note
-- First live-aligned `AssociatedDevice` getter cases now rewritten against the verified 6G baseline:
-  - `D009` `AssociationTime`
-  - `D010` `AuthenticationState`
-  - `D016` `DownlinkBandwidth`
-  - `D019` `EncryptionMode`
-  - `D027` `MACAddress`
-  - all five now point at workbook `0310-BGW720-300_LLAPI_Test_Report.xlsx`
-  - all five use getter-only validation instead of writing sample values into read-only LLAPIs
-  - `D027` now compares the DUT readback against live COM1 + `wl1 assoclist` identity using `reference`-based criteria
-- Second live-aligned `AssociatedDevice` subset now rewritten against the verified 5G WPA3 baseline:
-  - `D011` `AvgSignalStrength` (`Fail` is the expected workbook verdict; LLAPI stays `0` while driver RSSI is live)
-  - `D015` `ConnectionDuration`
-  - `D017` `DownlinkMCS`
-  - `D017` is now explicitly tied to driver `tx nrate` (`AP -> STA`) instead of the stale workbook sample output
-- Third live-aligned `AssociatedDevice` subset now rewritten against the verified 5G WPA3 baseline after a multi-agent survey pass:
-  - `D021` `HeCapabilities`
-  - `D022` `HtCapabilities`
-  - `D024` `LastDataDownlinkRate`
-  - `D025` `LastDataUplinkRate`
-  - `D026` `LinkBandwidth`
-  - `D024` / `D025` normalize the driver last-packet rate to 100-kbps granularity before comparing it with LLAPI
-- First live-aligned `WiFi.SSID.{i}.Stats.` subset now rewritten against the verified 5G WPA3 baseline after a multi-agent survey + serialwrap validation pass:
-  - `D321` `BroadcastPacketsReceived`
-  - `D322` `BroadcastPacketsSent`
-  - `D323` `BytesReceived`
+  - `D024 LastDataDownlinkRate`
+  - `D023` is now aligned: run `20260402T105808547293` rewrote the stale row-20/6G-skip YAML into a true row-23 three-band case and produced actual raw `Pass / Pass / Pass`
+  - `D020` remains the latest verified fail-shaped mismatch: run `20260402T095404127199` preserved actual raw `Fail / Fail / Fail` while the driver normalization stably emits `5GHz / 6GHz / 2.4GHz`
+  - `D014 ChargeableUserId` remains workbook-gated `To be tested` / Radius-blocked, so it is not the next actionable live rewrite target
   - `D324` `BytesSent`
   - `D330` `MulticastPacketsReceived`
   - `D331` `MulticastPacketsSent`
@@ -310,12 +260,12 @@ Current verified live baseline findings from this session:
   - the 2.4G leg keeps the STA traffic attempt in the recipe even when ping still drops; final judgment uses the DUT-side counter reread consistency
 - Workbook-gated blocker from the same batch:
 - `D014` `ChargeableUserId` remains open because workbook `v4.0.3` is still `To be tested/To be tested/To be tested` and BCM comments say the current project lacks Radius method support
-- Multi-agent survey blockers from the same 10-case 5G batch:
-  - `D012` `AvgSignalStrengthByChain`
-  - `D013` `Capabilities`
-  - `D018` `DownlinkShortGuard`
-  - `D020` `FrequencyCapabilities`
-  - `D023` `Inactive`
+- Remaining multi-agent survey blocker from the same 10-case 5G batch:
+  - none in `D020/D023`; next survey target shifts to `D024`
+- Template alignment status:
+  - `plugins/wifi_llapi/reports/templates/wifi_llapi_template.xlsx` has been rebuilt from repo-root `0401.xlsx`
+  - `plugins/wifi_llapi/reports/templates/wifi_llapi_template.manifest.json` now records `source_workbook=0401.xlsx`
+  - the previous row-shifted template was the root cause of the recent alignment warnings; current template/object/api alignment now matches workbook rows again
 - Latest single-case checkpoints after the 5G counter family follow-up:
   - `D054` `TxErrors`
     - same-STA direct getter + AssociatedDevice snapshot + `wl sta_info tx failures` equality
@@ -338,7 +288,7 @@ For every individual case, use this exact loop:
 
 1. Identify the workbook row and the matching YAML case file.
 2. Write down the expected result for 5G / 6G / 2.4G from `L/M/N`.
-3. Clean workbook `F/G` into an executable manual flow.
+3. Clean workbook `G/H` into an executable manual flow.
 4. Decide what kind of readback this case needs:
    - direct readback
    - writable-control -> read-only verification
@@ -380,7 +330,7 @@ For each live-validated case, preserve enough evidence to explain the verdict la
 A case is only considered aligned when all of the following are true:
 
 - [ ] Workbook expected result is identified.
-- [ ] Executable manual serialwrap procedure is normalized from workbook `F/G`.
+- [ ] Executable manual serialwrap procedure is normalized from workbook `G/H`.
 - [ ] Live serialwrap evidence matches workbook expectation.
 - [ ] For setter/method cases, the actual side effect or downstream state change is verified.
 - [ ] YAML is rewritten to the validated manual flow.
@@ -424,7 +374,7 @@ If any item above is not satisfied, the case stays open or moves to blocker trac
 
 ### Phase CAL-1: Workbook recipe sanitation
 
-- [ ] `CAL-101` Clean workbook `F/G` into executable manual commands.
+- [ ] `CAL-101` Clean workbook `G/H` into executable manual commands.
 - [ ] `CAL-102` Strip transcript artifacts:
   - prompt fragments
   - wrapped lines
@@ -451,12 +401,42 @@ If any item above is not satisfied, the case stays open or moves to blocker trac
 
 - Progress note:
   - the first verified 6G getter-only subset is aligned: `D009`, `D010`, `D016`, `D019`, `D027`
-  - the second verified 5G subset is aligned: `D011`, `D015`, `D017`
+  - the second verified 5G subset is aligned: `D011`, `D015`, `D017`, `D018`
   - the third verified 5G subset is aligned: `D021`, `D022`, `D024`, `D025`, `D026`
   - regression guards were added for these patterns in `tests/test_wifi_llapi_plugin_runtime.py`
   - `D019` workbook `v4.0.3` expectation is confirmed as `Pass/Pass/Pass`; the older YAML `To be tested` reference was stale
   - `D014` remains blocker-only because workbook `v4.0.3` is still `To be tested` and the current lab has no Radius-backed path to validate `ChargeableUserId`
-  - `D012`, `D013`, `D018`, `D020`, and `D023` remain blocker-only after live + source cross-check and were intentionally not rewritten
+  - `D013` and `D020` now preserve explicit fail-shaped contracts after live + source cross-check; `D023` is now live-aligned as a row-23 three-band pass case
+
+## Pause / resume handoff（2026-04-02）
+
+- Work objective:
+  - continue the workbook-driven `0401.xlsx` single-case calibration loop for `wifi_llapi`
+  - preserve repo-only handoff so work can resume cleanly after a WSL backup pause
+- Work completed in this checkpoint:
+  - closed `D020 FrequencyCapabilities` as a verified fail-shaped mismatch (`Fail / Fail / Fail`)
+  - rebuilt `compare-0401` with `D020` overlay and kept summary stable at `263 / 420`
+  - identified `D023 Inactive` as stale row mapping (`source.row=20`) plus stale 6G skip semantics
+  - rewrote `D023` into a true row-23 three-band pass-style case
+  - updated runtime tests and revalidated with targeted pytest
+  - live-ran `D023` successfully on AP1/AP3/AP5 and rebuilt `compare-0401` to `264 / 420`
+  - re-ran full suite successfully (`1599 passed`)
+  - locked calibration authority to workbook `G/H` and explicitly ignored `F`
+  - re-ran preflight guardrails: multiline block-scalar ban passed, serialwrap 120-char staging tests passed
+  - added official-case `>120` char command inventory guardrail; current tracked inventory = `597`
+  - re-ran full suite again after the new guardrail (`1600 passed`)
+  - attempted fresh live full-run preflight, but serialwrap daemon reported `0` devices / `0` sessions and the environment exposed no `/dev/ttyUSB*` or `/dev/serial/by-id`, so live Phase 3 is blocked pending DUT/STA UART return
+- Progress record:
+  - latest aligned case: `D023 Inactive` via run `20260402T105808547293`
+  - latest compare summary: `264 / 420` full matches, `156` mismatches
+  - latest stable fail-shaped mismatches: `D011`, `D013`, `D020`
+  - next ready case after resume: `D024 LastDataDownlinkRate`
+  - current live blocker: no serial devices present; `COM0/COM1` do not exist, so fresh full run and subsequent live calibration cannot start
+- Resume instructions:
+  - start from this file plus `compare-0401.{md,json}`
+  - use `compare-0401.{md,json}` rebuilt through `20260402T105808547293`
+  - before any live run, restore UART visibility so serialwrap can see `/dev/ttyUSB*` / `/dev/serial/by-id`, then rebuild `COM0/COM1` sessions and confirm `session self-test` passes
+  - resume with offline survey of `D024`, then run the standard single-case live loop
 - [ ] `CAL-201` Validate object identity semantics:
   - STA MAC vs AP BSSID
   - object instance vs wildcard query

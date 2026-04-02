@@ -598,7 +598,7 @@ Workbook 有時對同一 row 定義不同 API 欄位。每個 D-number 維持獨
 1. [ ] 準備 workbook（Excel）並確認 sheet / column mapping
 2. [ ] 建立 `plugins/<new_plugin>/cases/` 目錄
 3. [ ] 設定 `configs/testbed.yaml` 中的 DUT/STA 設備
-4. [ ] 確認 serialwrap daemon 啟動且 session READY
+4. [ ] 確認 serialwrap daemon 啟動、serial device 可見、且 session READY
 5. [ ] 建立初始 YAML template（依 §5 的 Pattern A-F）
 6. [ ] 建立 `tests/test_<new_plugin>_plugin_runtime.py` 並加入 parametrized table
 7. [ ] 開始 single-case mode 逐筆校正

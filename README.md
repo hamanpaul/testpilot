@@ -13,9 +13,11 @@ Plugin-based test automation framework for embedded device verification (prplOS 
 TestPilot is a plugin-based test automation framework for prplOS / OpenWrt embedded devices. The architecture splits into two planes:
 
 - **Deterministic verdict kernel** — test execution, evidence collection, pass/fail verdicts, and report projection.
-- **Copilot SDK control plane** — session management, custom agents, advisory audit, and remediation planning.
+- **Copilot SDK control plane** — session management, custom agents, advisory audit, and hook-governed safe remediation.
 
 Core principle: **the Copilot SDK handles the control plane; it does NOT decide the final verdict.**
+
+`wifi_llapi` currently supports in-run safe remediation between retry attempts. Scope is limited to environment repair only: serial session recovery, STA reconnect, band baseline rebuild, and environment re-verify. It does not rewrite YAML semantics, step commands, or pass criteria.
 
 ### Prerequisites
 
@@ -45,6 +47,20 @@ uv pip install -e ".[dev]"                              # Install
 cp configs/testbed.yaml.example configs/testbed.yaml    # First-time config
 testpilot list-cases wifi_llapi                         # Verify
 testpilot run wifi_llapi --dut-fw-ver BGW720-B0-403     # Run
+```
+
+### CLI Entry Points
+
+You can use either the installed `testpilot` command or the Python module entry point.
+
+`run` syntax is `testpilot run PLUGIN_NAME [--case CASE_ID] [--dut-fw-ver FW_VER]`. `PLUGIN_NAME` is required because TestPilot supports multiple plugins.
+
+```bash
+testpilot --version
+python -m testpilot.cli --version
+python -m testpilot.cli list-plugins
+python -m testpilot.cli list-cases wifi_llapi
+python -m testpilot.cli run wifi_llapi --case wifi-llapi-D004-kickstation
 ```
 
 ### Authentication
@@ -101,8 +117,31 @@ testpilot run wifi_llapi \
   --case wifi-llapi-D004-kickstation \
   --dut-fw-ver BGW720-B0-403
 
-# Full suite (420 discoverable cases)
+# Full suite (420 discoverable official cases)
 testpilot run wifi_llapi --dut-fw-ver BGW720-B0-403
+
+# Rebuild workbook compare against 0401.xlsx after selected live overlays
+python scripts/compare_0401_answers.py \
+  20260401T152827516151 \
+  20260401T230006391661 \
+  20260401T232631531561 \
+  20260402T013838223177 \
+  20260402T020432759837 \
+  20260402T021317975166 \
+  20260402T021716841976 \
+  20260402T023927691290 \
+  20260402T030604339596 \
+  20260402T034832813249 \
+  20260402T040807394935 \
+  20260402T051006378317 \
+  20260402T054957340010 \
+  20260402T060543524189 \
+  20260402T063003376730 \
+  20260402T071356233843 \
+  20260402T095404127199 \
+  20260402T105808547293 \
+  --output-md compare-0401.md \
+  --output-json compare-0401.json
 
 # With Azure OpenAI
 testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
@@ -113,11 +152,19 @@ testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
 | Track | Format | Purpose |
 |-------|--------|---------|
 | External delivery | `xlsx` | Pass / Fail only, written to Excel report |
-| Internal diagnostics | `md` | Human-readable summary with per-case commands, output, and log line references |
-| Structured data | `json` | Machine-readable with summary stats and log line numbers |
+| Internal diagnostics | `md` | Human-readable summary with per-case commands, output, log line references, and diagnostic status |
+| Structured data | `json` | Machine-readable with summary stats, diagnostic status, remediation history, and log line numbers |
 | UART RAW log | `DUT.log` / `STA.log` | serialwrap WAL decoded per-run UART communication records |
 
 Output files location: `plugins/wifi_llapi/reports/`
+
+Current workbook-calibration campaign artifacts live at repo root:
+
+- `compare-0401.md`
+- `compare-0401.json`
+- answer authority: `0401.xlsx`
+- workbook procedure authority for calibration: `Wifi_LLAPI` columns `G/H`
+- current live campaign blocker: serialwrap daemon is up but the environment currently exposes no `/dev/ttyUSB*` / `/dev/serial/by-id` devices, so a fresh live full run cannot start until DUT/STA UART connectivity returns
 
 ### System Architecture
 
@@ -260,7 +307,7 @@ testpilot/
 
 ```bash
 uv pip install -e ".[dev]"    # Install (first time only)
-uv run pytest -q              # Run full test suite (~1500 tests)
+uv run pytest -q              # Run full test suite (currently 1600 tests)
 ```
 
 ### License
@@ -278,9 +325,11 @@ plugin-based 嵌入式裝置測試自動化框架（prplOS / OpenWrt）。
 TestPilot 是一套 plugin-based 嵌入式裝置測試自動化框架，面向 prplOS / OpenWrt 裝置。系統架構分為兩個平面：
 
 - **Deterministic verdict kernel**：負責測試執行、證據蒐集、pass/fail 判定與報表投影
-- **Copilot SDK control plane**：負責 session 管理、custom agents、advisory audit、remediation planning
+- **Copilot SDK control plane**：負責 session 管理、custom agents、advisory audit、hook-governed safe remediation
 
 核心原則：**Copilot SDK 負責 control plane，不負責最終 verdict**。
+
+`wifi_llapi` 目前已支援 retry attempt 之間的 in-run safe remediation；範圍只限環境修復：serial session recover、STA reconnect、band baseline rebuild、env re-verify，不會改寫 YAML semantics、step 指令或 pass criteria。
 
 ### 環境需求
 
@@ -310,6 +359,20 @@ uv pip install -e ".[dev]"                              # 安裝
 cp configs/testbed.yaml.example configs/testbed.yaml    # 首次設定
 testpilot list-cases wifi_llapi                         # 驗證
 testpilot run wifi_llapi --dut-fw-ver BGW720-B0-403     # 執行
+```
+
+### CLI 入口
+
+可使用安裝後的 `testpilot` 指令，或直接用 Python module 入口。
+
+`run` 指令格式為 `testpilot run PLUGIN_NAME [--case CASE_ID] [--dut-fw-ver FW_VER]`。由於 TestPilot 是多 plugin 架構，`PLUGIN_NAME` 為必填參數。
+
+```bash
+testpilot --version
+python -m testpilot.cli --version
+python -m testpilot.cli list-plugins
+python -m testpilot.cli list-cases wifi_llapi
+python -m testpilot.cli run wifi_llapi --case wifi-llapi-D004-kickstation
 ```
 
 ### 認證方式
@@ -366,8 +429,31 @@ testpilot run wifi_llapi \
   --case wifi-llapi-D004-kickstation \
   --dut-fw-ver BGW720-B0-403
 
-# 全量執行（420 discoverable cases）
+# 全量執行（420 筆 discoverable 官方案例）
 testpilot run wifi_llapi --dut-fw-ver BGW720-B0-403
+
+# 以 0401.xlsx 重新產生 compare 報告（疊加已完成的 live overlay）
+python scripts/compare_0401_answers.py \
+  20260401T152827516151 \
+  20260401T230006391661 \
+  20260401T232631531561 \
+  20260402T013838223177 \
+  20260402T020432759837 \
+  20260402T021317975166 \
+  20260402T021716841976 \
+  20260402T023927691290 \
+  20260402T030604339596 \
+  20260402T034832813249 \
+  20260402T040807394935 \
+  20260402T051006378317 \
+  20260402T054957340010 \
+  20260402T060543524189 \
+  20260402T063003376730 \
+  20260402T071356233843 \
+  20260402T095404127199 \
+  20260402T105808547293 \
+  --output-md compare-0401.md \
+  --output-json compare-0401.json
 
 # 使用 Azure OpenAI
 testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
@@ -378,11 +464,17 @@ testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
 | 軌道 | 格式 | 用途 |
 |------|------|------|
 | 對外交付 | `xlsx` | Pass / Fail only，寫入 Excel 報告 |
-| 內部診斷 | `md` | 人可讀摘要，含 per-case 指令、輸出與 log 行號引用 |
-| 結構化資料 | `json` | 機器可讀，含 summary 統計與 log 行號 |
+| 內部診斷 | `md` | 人可讀摘要，含 per-case 指令、輸出、log 行號引用與 diagnostic status |
+| 結構化資料 | `json` | 機器可讀，含 summary 統計、diagnostic status、remediation history 與 log 行號 |
 | UART RAW log | `DUT.log` / `STA.log` | serialwrap WAL 解碼，per-run DUT/STA 原始 UART 通訊記錄 |
 
 輸出位置：`plugins/wifi_llapi/reports/`
+
+目前 workbook 校正活動的 repo-root 產物：
+
+- `compare-0401.md`
+- `compare-0401.json`
+- answer authority：`0401.xlsx`
 
 ### 系統架構
 
@@ -525,7 +617,7 @@ testpilot/
 
 ```bash
 uv pip install -e ".[dev]"    # 安裝（僅首次）
-uv run pytest -q              # 執行全部測試（約 1500 筆）
+uv run pytest -q              # 執行全部測試（目前 1600 筆）
 ```
 
 ### 授權
