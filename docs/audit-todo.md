@@ -402,7 +402,8 @@ If any item above is not satisfied, the case stays open or moves to blocker trac
 - Progress note:
   - the first verified 6G getter-only subset is aligned: `D009`, `D010`, `D016`, `D019`, `D027`
   - the second verified 5G subset is aligned: `D011`, `D015`, `D017`, `D018`
-  - the third verified 5G subset is aligned: `D021`, `D022`, `D024`, `D025`, `D026`
+  - the third verified 5G subset is currently aligned only for `D021`, `D022`
+  - offline survey confirms `0401.xlsx` row drift for `D024` / `D025` / `D026` (`24` / `25` / `26` in workbook vs `21` / `22` / `23` in current YAML metadata), so these three remain pending the next live rewrite instead of being counted as aligned
   - regression guards were added for these patterns in `tests/test_wifi_llapi_plugin_runtime.py`
   - `D019` workbook `v4.0.3` expectation is confirmed as `Pass/Pass/Pass`; the older YAML `To be tested` reference was stale
   - `D014` remains blocker-only because workbook `v4.0.3` is still `To be tested` and the current lab has no Radius-backed path to validate `ChargeableUserId`
@@ -424,19 +425,22 @@ If any item above is not satisfied, the case stays open or moves to blocker trac
   - locked calibration authority to workbook `G/H` and explicitly ignored `F`
   - re-ran preflight guardrails: multiline block-scalar ban passed, serialwrap 120-char staging tests passed
   - added official-case `>120` char command inventory guardrail; current tracked inventory = `597`
-  - re-ran full suite again after the new guardrail (`1600 passed`)
+  - re-ran full suite again after the offline-survey regression guard (`1601 passed`)
   - attempted fresh live full-run preflight, but serialwrap daemon reported `0` devices / `0` sessions and the environment exposed no `/dev/ttyUSB*` or `/dev/serial/by-id`, so live Phase 3 is blocked pending DUT/STA UART return
 - Progress record:
   - latest aligned case: `D023 Inactive` via run `20260402T105808547293`
   - latest compare summary: `264 / 420` full matches, `156` mismatches
   - latest stable fail-shaped mismatches: `D011`, `D013`, `D020`
   - next ready case after resume: `D024 LastDataDownlinkRate`
+  - `D024` offline survey is complete: workbook authority is row `24`, workbook `G/H` and the source model both point to DUT `wl -i wl0 sta_info $STA_MAC` `rate of last tx pkt` as the AP -> STA truth source
+  - old run `20260401T152827516151` already captured matching `LastDataDownlinkRate=541600` and `DriverLastDownlinkRateRounded=541600`; the historical `step4` fail is therefore treated as consistent with the older shell-pipeline success-classifier bug that is now covered by runtime regression guards
+  - adjacent follow-up rows are also stale in current YAML metadata: `D025` should map to row `25`, `D026` should map to row `26`
   - current live blocker: no serial devices present; `COM0/COM1` do not exist, so fresh full run and subsequent live calibration cannot start
 - Resume instructions:
   - start from this file plus `compare-0401.{md,json}`
   - use `compare-0401.{md,json}` rebuilt through `20260402T105808547293`
   - before any live run, restore UART visibility so serialwrap can see `/dev/ttyUSB*` / `/dev/serial/by-id`, then rebuild `COM0/COM1` sessions and confirm `session self-test` passes
-  - resume with offline survey of `D024`, then run the standard single-case live loop
+  - resume by live-rerunning `D024` against workbook row `24`, then continue the same AssociatedDevice rate/bandwidth slice with `D025` row `25` and `D026` row `26`
 - [ ] `CAL-201` Validate object identity semantics:
   - STA MAC vs AP BSSID
   - object instance vs wildcard query

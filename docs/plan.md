@@ -28,11 +28,11 @@ TestPilot 的主目標是：
 4. Per-case dispatcher、selection trace、retry-aware timeout、attempt trace 已落地。
 5. 正式 hot path 仍由 `setup_env -> verify_env -> execute_step -> evaluate` 決定。
 6. `wifi_llapi` discoverable 官方案例仍維持 420 筆；目前正進行以 repo-root `0401.xlsx` 為 authority 的 compare-driven 單案校正，已 live 對齊 `D004`、`D005`、`D006`、`D007`、`D009`、`D010`。
-7. 最新 `compare-0401` 疊代到 run `20260402T105808547293` 後，狀態為 **264 / 420 full matches**、**156 mismatches**；`D015 ConnectionDuration`、`D016 DownlinkBandwidth`、`D017 DownlinkMCS`、`D018 DownlinkShortGuard` 與 `D023 Inactive` 已完成 row 15 / row 16 / row 17 / row 18 / row 23 三 band live 對齊，`D011 AvgSignalStrength`、`D013 Capabilities` 與 `D020 FrequencyCapabilities` 皆維持已驗證的 fail-shaped mismatch，下一個 ready case 轉為 `D024 LastDataDownlinkRate`。
+7. 最新 `compare-0401` 疊代到 run `20260402T105808547293` 後，狀態為 **264 / 420 full matches**、**156 mismatches**；`D015 ConnectionDuration`、`D016 DownlinkBandwidth`、`D017 DownlinkMCS`、`D018 DownlinkShortGuard` 與 `D023 Inactive` 已完成 row 15 / row 16 / row 17 / row 18 / row 23 三 band live 對齊，`D011 AvgSignalStrength`、`D013 Capabilities` 與 `D020 FrequencyCapabilities` 皆維持已驗證的 fail-shaped mismatch；下一個 ready case 為 `D024 LastDataDownlinkRate`，且 offline survey 已確認目前 YAML metadata 在 `D024/D025/D026` 仍沿用舊 row `21/22/23`，實際 `0401.xlsx` row 應為 `24/25/26`，待 UART 恢復後需以 live rewrite 一併刷新。
 8. `wifi_llapi_template.xlsx` 已重新由 repo-root `0401.xlsx` 重建，alignment manifest 現在回指 `source_workbook=0401.xlsx`；先前的 template row drift 不再是 `D017/D018` 的假 warning 來源。
 9. 本輪 campaign 已固定忽略 workbook `F` 欄；manual procedure authority 改以 `Wifi_LLAPI` 的 `G=Test steps` / `H=Command Output` 為準。
 10. preflight guardrail audit 已完成：official-case multiline block scalar ban 仍有效，serialwrap 120-char staging guardrail 仍有效，並新增 official-case `>120` 字元 command inventory guardrail；目前 inventory 為 **597**，先作為 tracked risk 保留，依賴 transport temp-script staging 執行。
-11. baseline hardening 已完成；最新 full repo suite 為 **1600 passed**。
+11. baseline hardening 已完成；最新 full repo suite 為 **1601 passed**。
 12. fresh live full run 目前被 lab blocker 卡住：serialwrap daemon 雖在線，但目前環境沒有 `/dev/ttyUSB*` / `/dev/serial/by-id`、也沒有 `COM0/COM1` session，因此無法啟動新的 live full run；待 UART 裝置恢復後，應先重建 session 再續行 Phase 3。
 13. reboot 後的 default lab baseline 已重建並落成文件：5G `testpilot5G` / 2.4G `testpilot2G` 使用 `WPA2-Personal + 00000000`，6G `testpilot6G` 固定使用 `WPA3-Personal + key_mgmt=SAE + 00000000`。
 14. 第三次重構的 Copilot SDK 深度研究已完成，並已複製到 `docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`。
