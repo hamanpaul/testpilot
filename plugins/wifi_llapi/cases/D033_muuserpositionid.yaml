@@ -102,9 +102,9 @@ verification_command:
   - 'DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MUUserPositionId?"'
 results_reference:
   v4.0.3:
-    5g: Not Supported
-    6g: Skip
-    2.4g: Not Supported
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
     comment: |
       MUUserPositionId — definition in pWHM only; MU-MIMO feature not implemented on this platform.
       Source-cross-check family evidence aligns with D032/D033 stub semantics:

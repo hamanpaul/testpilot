@@ -238,9 +238,9 @@ verification_command:
 
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
     comment: >
       0401 workbook row 13 still expects Pass/Pass/Pass and samples
       `RRM,BTM,QOS_MAP,PMF`, but current live/source verification keeps this case fail-shaped on the

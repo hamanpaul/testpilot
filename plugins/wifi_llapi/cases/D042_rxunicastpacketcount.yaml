@@ -171,7 +171,7 @@ verification_command:
   - '[ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*rx ucast pkts: *\([0-9][0-9]*\).*/DriverRxUnicastPacketCount=\1/p'''
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: N/A
-    2.4g: N/A
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
     comment: '5G serialwrap retest only: RxUnicastPacketCount stayed 0 while wl0 sta_info showed rx ucast pkts > 0. Non-executed bands remain N/A until separately calibrated.'

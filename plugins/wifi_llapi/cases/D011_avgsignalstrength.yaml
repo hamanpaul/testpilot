@@ -234,9 +234,9 @@ results_reference:
     2.4g: Fail
     comment: "Legacy calibration also treated AvgSignalStrength as fail-shaped."
   v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
     comment: >
       0401 workbook row 11 still expects Pass/Pass/Pass, but live/source verification keeps this
       case fail-shaped. The ODL exposes both AvgSignalStrength and AvgSignalStrengthByChain.

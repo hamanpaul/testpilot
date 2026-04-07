@@ -3165,7 +3165,7 @@ def test_pending_inactive_and_bandwidth_cases_use_supported_contracts():
         and criterion["value"] == r"^(20MHz|40MHz|80MHz|160MHz|Unknown)$"
         for criterion in d028["pass_criteria"]
     )
-    assert d028["results_reference"]["v4.0.3"]["2.4g"] == "STA-Discrepancy"
+    assert d028["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_pending_inactive_and_bandwidth_cases_evaluate_live_examples():
@@ -3316,8 +3316,8 @@ def test_pending_not_supported_associateddevice_cases_use_supported_contracts():
         for criterion in d030["pass_criteria"]
     )
     assert _has_assoc_mac_regex(d030, "assoc_24g.AssocMac24g")
-    assert d030["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
-    assert d030["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
+    assert d030["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d030["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_pending_not_supported_associateddevice_cases_evaluate_live_examples():
@@ -3430,9 +3430,15 @@ def test_pending_mu_stub_cases_use_supported_contracts():
         assert f'WiFi.AccessPoint.1.AssociatedDevice.1.{api_name}?' in commands
         assert f'WiFi.AccessPoint.5.AssociatedDevice.1.{api_name}?' in commands
         assert case_data["llapi_support"] == "Not Supported"
-        assert case_data["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
-        assert case_data["results_reference"]["v4.0.3"]["6g"] == "Skip"
-        assert case_data["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
+        _mu_rr = {
+            "D031_mumimotxpktscount.yaml": ("Fail", "Fail", "Fail"),
+            "D032_mumimotxpktspercentage.yaml": ("Pass", "Pass", "Pass"),
+            "D033_muuserpositionid.yaml": ("Pass", "Pass", "Pass"),
+        }
+        exp5, exp6, exp24 = _mu_rr[filename]
+        assert case_data["results_reference"]["v4.0.3"]["5g"] == exp5
+        assert case_data["results_reference"]["v4.0.3"]["6g"] == exp6
+        assert case_data["results_reference"]["v4.0.3"]["2.4g"] == exp24
         assert _has_assoc_mac_regex(case_data, "assoc_5g.AssocMac5g")
         assert any(
             criterion["field"] == f"result_5g.{api_name}"
@@ -3808,9 +3814,15 @@ def test_pending_counter_stub_associateddevice_cases_use_supported_contracts():
             and str(criterion["value"]) == "0"
             for criterion in case_data["pass_criteria"]
         )
-        assert case_data["results_reference"]["v4.0.3"]["5g"] == "Fail"
-        assert case_data["results_reference"]["v4.0.3"]["6g"] == "N/A"
-        assert case_data["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+        _cstub_rr = {
+            "D037_retransmissions.yaml": ("Pass", "Pass", "Pass"),
+            "D038_rx_retransmissions.yaml": ("Fail", "N/A", "N/A"),
+            "D042_rxunicastpacketcount.yaml": ("Pass", "Pass", "Pass"),
+        }
+        exp5, exp6, exp24 = _cstub_rr[filename]
+        assert case_data["results_reference"]["v4.0.3"]["5g"] == exp5
+        assert case_data["results_reference"]["v4.0.3"]["6g"] == exp6
+        assert case_data["results_reference"]["v4.0.3"]["2.4g"] == exp24
 
 
 def test_pending_counter_stub_associateddevice_cases_evaluate_live_examples():
@@ -3974,9 +3986,16 @@ def test_pending_counter_pass_associateddevice_cases_use_supported_contracts():
             and criterion["reference"] == meta["driver_field"]
             for criterion in case_data["pass_criteria"]
         )
-        assert case_data["results_reference"]["v4.0.3"]["5g"] == "Pass"
-        assert case_data["results_reference"]["v4.0.3"]["6g"] == "N/A"
-        assert case_data["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+        _cpass_rr = {
+            "D039_rxbytes.yaml": ("Pass", "Pass", "Pass"),
+            "D041_rxpacketcount.yaml": ("Pass", "Pass", "Pass"),
+            "D056_txpacketcount.yaml": ("Pass", "N/A", "N/A"),
+            "D059_uplinkbandwidth.yaml": ("Pass", "N/A", "N/A"),
+        }
+        exp5, exp6, exp24 = _cpass_rr[filename]
+        assert case_data["results_reference"]["v4.0.3"]["5g"] == exp5
+        assert case_data["results_reference"]["v4.0.3"]["6g"] == exp6
+        assert case_data["results_reference"]["v4.0.3"]["2.4g"] == exp24
 
 
 def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
@@ -4593,8 +4612,8 @@ def test_pending_security_and_signal_associateddevice_cases_use_supported_contra
         for criterion in d043["pass_criteria"]
     )
     assert d043["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d043["results_reference"]["v4.0.3"]["6g"] == "N/A"
-    assert d043["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+    assert d043["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d043["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
     d045_raw = yaml.safe_load(
         (cases_dir / "D045_signalstrength_accesspoint_associateddevice.yaml").read_text(

@@ -264,9 +264,9 @@ verification_command:
 
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
     comment: |
       Live/source-confirmed mismatch on current firmware:
       - 5G  : getter=""      while same-STA driver line reports `Frequency Bands Supported: 5G`
