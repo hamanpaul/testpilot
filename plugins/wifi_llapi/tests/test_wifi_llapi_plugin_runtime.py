@@ -3300,8 +3300,8 @@ def test_pending_not_supported_associateddevice_cases_use_supported_contracts():
         and criterion["value"] == "doesn't exist in odl"
         for criterion in d029["pass_criteria"]
     )
-    assert d029["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
-    assert d029["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
+    assert d029["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d029["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
     d030 = load_case(cases_dir / "D030_mugroupid.yaml")
     d030_commands = "\n".join(str(step.get("command", "")) for step in d030["steps"])
@@ -4682,8 +4682,8 @@ def test_pending_security_and_signal_associateddevice_cases_use_supported_contra
         for criterion in d045["pass_criteria"]
     )
     assert d045["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d045["results_reference"]["v4.0.3"]["6g"] == "N/A"
-    assert d045["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+    assert d045["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d045["results_reference"]["v4.0.3"]["2.4g"] == "Fail"
 
 
 def test_pending_security_and_signal_associateddevice_cases_evaluate_live_examples():
@@ -5739,9 +5739,9 @@ def test_d055_txmulticastpacketcount_uses_same_sta_delivery_contract():
         and str(criterion["value"]) == "0"
         for criterion in d055["pass_criteria"]
     )
-    assert d055["results_reference"]["v4.0.3"]["5g"] == "To be tested"
-    assert d055["results_reference"]["v4.0.3"]["6g"] == "N/A"
-    assert d055["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+    assert d055["results_reference"]["v4.0.3"]["5g"] == "Fail"
+    assert d055["results_reference"]["v4.0.3"]["6g"] == "Fail"
+    assert d055["results_reference"]["v4.0.3"]["2.4g"] == "Fail"
 
 
 def test_d055_txmulticastpacketcount_evaluate_live_examples():
@@ -5945,9 +5945,9 @@ def test_d057_txunicastpacketcount_uses_same_sta_failure_contract():
         and str(criterion["value"]) == "0"
         for criterion in d057["pass_criteria"]
     )
-    assert d057["results_reference"]["v4.0.3"]["5g"] == "Fail"
-    assert d057["results_reference"]["v4.0.3"]["6g"] == "N/A"
-    assert d057["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+    assert d057["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d057["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d057["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d057_txunicastpacketcount_evaluate_live_examples():

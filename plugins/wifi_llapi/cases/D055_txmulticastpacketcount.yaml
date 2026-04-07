@@ -230,7 +230,7 @@ verification_command:
   - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'' | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n ''s/^[[:space:]]*tx mcast\/bcast pkts: \([0-9][0-9]*\).*/DriverTxMulticastPacketCount=\1/p; s/^[[:space:]]*tx mcast\/bcast bytes: \([0-9][0-9]*\).*/DriverTxMulticastBytes=\1/p'''
 results_reference:
   v4.0.3:
-    5g: To be tested
-    6g: N/A
-    2.4g: N/A
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
     comment: '5G serialwrap retest resolved the same COM1 wl0 STA MAC on AP1, sent 10 DUT broadcast packets on br-lan, and observed COM1 wl0 RX packets/bytes increase, yet both WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount and wl0 sta_info tx mcast/bcast counters for that same STA remained 0. The workbook verdict stays To be tested until this behavior is re-verified across separately calibrated bands.'

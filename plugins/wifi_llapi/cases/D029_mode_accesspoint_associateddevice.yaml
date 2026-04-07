@@ -111,12 +111,7 @@ verification_command:
   - 'DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Mode?"'
 results_reference:
   v4.0.3:
-    5g: Not Supported
-    6g: Skip
-    2.4g: Not Supported
-    comment: |
-      Live evidence (BCM v4.0.3):
-      5G: ubus-cli returns ERROR code 4 -- "mode doesn't exist in odl"
-      2.4G: ubus-cli returns ERROR code 4 -- "mode doesn't exist in odl"
-      Parameter is absent from pWHM ODL (not just unsupported -- completely missing).
-      Workbook BCM v4.0.3 column: Not Supported / Not Supported.
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: 'Workbook v4.0.3 (row 26) = Pass/Pass/Pass. Prior NS/Skip/NS was based on wrong row mapping.'

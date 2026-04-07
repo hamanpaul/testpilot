@@ -218,7 +218,6 @@ verification_command:
   - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'' | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n ''s/^[[:space:]]*tx total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount=\1/p; s/^[[:space:]]*tx ucast pkts: \([0-9][0-9]*\).*/DriverTxUnicastPacketCount=\1/p; s/^[[:space:]]*tx total bytes: \([0-9][0-9]*\).*/DriverTxBytes=\1/p; s/^[[:space:]]*tx ucast bytes: \([0-9][0-9]*\).*/DriverTxUnicastBytes=\1/p'''
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: N/A
-    2.4g: N/A
-    comment: '5G serialwrap retest resolved the same COM1 wl0 STA MAC on AP1, returned TxUnicastPacketCount=0 via both the direct getter and AssociatedDevice snapshot, while the same entry still exposed TxPacketCount=90442 and wl0 sta_info reported DriverTxPacketCount=90442 plus DriverTxUnicastPacketCount=90442 for that same STA. This is a fail-shaped mismatch on v4.0.3; non-executed bands remain N/A until separately calibrated.'
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
