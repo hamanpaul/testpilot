@@ -23,9 +23,9 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
   links: []
-test_environment: "Topology:\n  - DUT: COM0 (B0, AP role)\n  Transport:\n  - DUT via serialwrap COM0\n  Baseline:\n  - 5G  = AP1 / wl0 / testpilot5G / WPA2-Personal\n  - 6G  = AP3 / wl1 / testpilot6G / WPA3-Personal / SAE\n  - 2.4G = AP5 / wl2 / testpilot2G / WPA2-Personal\n  Notes:\n  - 5G AP1: baseline=0, set=1→wps_state=2, restore=0→wps_state=0 → Pass\n  - 6G AP3: baseline=0, set=1→wps_state stays 0 → Not Supported\n  - 2.4G AP5: baseline=1, set=0→wps_state=0, restore=1→wps_state=2 → Pass"
+test_environment: "Topology:\n  - DUT: COM1 (B0, AP role)\n  Transport:\n  - DUT via serialwrap COM0\n  Baseline:\n  - 5G  = AP1 / wl0 / testpilot5G / WPA2-Personal\n  - 6G  = AP3 / wl1 / testpilot6G / WPA3-Personal / SAE\n  - 2.4G = AP5 / wl2 / testpilot2G / WPA2-Personal\n  Notes:\n  - 5G AP1: baseline=0, set=1→wps_state=2, restore=0→wps_state=0 → Pass\n  - 6G AP3: baseline=0, set=1→wps_state stays 0 → Not Supported\n  - 2.4G AP5: baseline=1, set=0→wps_state=0, restore=1→wps_state=2 → Pass"
 steps:
 - id: step_5g_setter
   action: exec

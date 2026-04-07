@@ -16,11 +16,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
 steps:
 - id: step_5g_assoc_check
   target: dut

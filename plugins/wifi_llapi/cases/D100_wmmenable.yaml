@@ -23,9 +23,9 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
   links: []
-test_environment: "Topology:\n  - DUT: COM0 (B0, AP role)\n  Transport:\n  - DUT via serialwrap COM0\n  Baseline:\n  - 5G  = AP1 / wl0 / testpilot5G / WPA2-Personal\n  - 6G  = AP3 / wl1 / testpilot6G / WPA3-Personal / SAE\n  - 2.4G = AP5 / wl2 / testpilot2G / WPA2-Personal\n  Notes:\n  - Setter round-trip on all 3 bands\n  - Workbook marks Not Support but live evidence shows convergence\n  - hostapd wmm_enabled flips correctly on all bands\n  - Setter triggers BSS restart"
+test_environment: "Topology:\n  - DUT: COM1 (B0, AP role)\n  Transport:\n  - DUT via serialwrap COM0\n  Baseline:\n  - 5G  = AP1 / wl0 / testpilot5G / WPA2-Personal\n  - 6G  = AP3 / wl1 / testpilot6G / WPA3-Personal / SAE\n  - 2.4G = AP5 / wl2 / testpilot2G / WPA2-Personal\n  Notes:\n  - Setter round-trip on all 3 bands\n  - Workbook marks Not Support but live evidence shows convergence\n  - hostapd wmm_enabled flips correctly on all bands\n  - Setter triggers BSS restart"
 steps:
 - id: step_5g_setter
   action: exec

@@ -18,11 +18,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
       config:
         - iface: 5g
           mode: sta
@@ -48,8 +48,8 @@ topology:
       band: 2.4g
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role)
-  - STA: COM1 (single active STA link only; validate 5G -> 6G -> 2.4G sequentially)
+  - DUT: COM1 (AP role)
+  - STA: COM0 (single active STA link only; validate 5G -> 6G -> 2.4G sequentially)
   Mapping:
   - 5G = wl0 / SSID.4 / STA MAC 2c:59:17:00:04:85
   - 6G = wl1 / SSID.6 / STA MAC 2c:59:17:00:04:86

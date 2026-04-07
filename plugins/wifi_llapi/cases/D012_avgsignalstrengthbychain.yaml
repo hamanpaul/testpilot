@@ -19,11 +19,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
   links:
     - from: STA
       to: DUT
@@ -36,8 +36,8 @@ topology:
       band: 2.4g
 test_environment: |
   Topology:
-  - DUT: COM0 (BGW720-300, AP role)
-  - STA: COM1 (BCM board, STA role)
+  - DUT: COM1 (BGW720-300, AP role)
+  - STA: COM0 (BCM board, STA role)
   Transport:
   - serialwrap attach COM0 / COM1
   Band mapping (live baseline 2026-04-02):
