@@ -1784,12 +1784,12 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         "D327_errorsreceived_ssid_stats.yaml": {"row": 251, "api": "ErrorsReceived", "driver": "DriverErrorsReceived", "awk_field": "$4", "expected": "To be tested"},
         "D328_errorssent_ssid_stats.yaml": {"row": 252, "api": "ErrorsSent", "driver": "DriverErrorsSent", "awk_field": "$12", "expected": "To be tested"},
         "D329_failedretranscount_ssid_stats.yaml": {"row": 253, "api": "FailedRetransCount", "expected": "To be tested"},
-        "D330_multicastpacketsreceived.yaml": {"row": 254, "api": "MulticastPacketsReceived", "driver": "DriverMulticastPacketsReceived", "awk_field": "$9", "expected": "Pass"},
-        "D331_multicastpacketssent.yaml": {"row": 255, "api": "MulticastPacketsSent", "driver": "DriverMulticastPacketsSent", "awk_field": "$18", "expected": "Pass"},
+        "D330_multicastpacketsreceived.yaml": {"row": 254, "api": "MulticastPacketsReceived", "driver": "DriverMulticastPacketsReceived", "awk_field": "$9", "expected": "Fail"},
+        "D331_multicastpacketssent.yaml": {"row": 255, "api": "MulticastPacketsSent", "driver": "DriverMulticastPacketsSent", "awk_field": "$18", "expected": "Fail"},
         "D332_packetsreceived_ssid_stats.yaml": {"row": 256, "api": "PacketsReceived", "driver": "DriverPacketsReceived", "awk_field": "$3", "expected": "Pass"},
         "D333_packetssent_ssid_stats.yaml": {"row": 257, "api": "PacketsSent", "driver": "DriverPacketsSent", "awk_field": "$11", "expected": "Pass"},
         "D334_retranscount_ssid_stats.yaml": {"row": 258, "api": "RetransCount", "expected": "To be tested"},
-        "D335_unicastpacketsreceived.yaml": {"row": 259, "api": "UnicastPacketsReceived", "driver": "DriverUnicastPacketsReceived", "awk_field": "$21", "expected": "Pass"},
+        "D335_unicastpacketsreceived.yaml": {"row": 259, "api": "UnicastPacketsReceived", "driver": "DriverUnicastPacketsReceived", "awk_field": "$21", "expected": "Fail"},
         "D336_unicastpacketssent.yaml": {"row": 260, "api": "UnicastPacketsSent", "driver": "DriverUnicastPacketsSent", "awk_field": "$22", "expected": "Pass"},
         "D337_unknownprotopacketsreceived_ssid_stats.yaml": {"row": 261, "api": "UnknownProtoPacketsReceived", "expected": "To be tested"},
         "D406_multipleretrycount_ssid_stats.yaml": {"row": 301, "api": "MultipleRetryCount", "expected": "To be tested"},
@@ -1845,9 +1845,9 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
             )
 
     multiband_getssid_cases = {
-        "D300_getssidstats_broadcastpacketsreceived.yaml": {"row": 225, "api": "BroadcastPacketsReceived", "expected": "Pass"},
-        "D301_getssidstats_broadcastpacketssent.yaml": {"row": 226, "api": "BroadcastPacketsSent", "expected": "Pass"},
-        "D302_getssidstats_bytesreceived.yaml": {"row": 227, "api": "BytesReceived", "expected": "Pass"},
+        "D300_getssidstats_broadcastpacketsreceived.yaml": {"row": 225, "api": "BroadcastPacketsReceived", "expected": "Fail"},
+        "D301_getssidstats_broadcastpacketssent.yaml": {"row": 226, "api": "BroadcastPacketsSent", "expected": "Fail"},
+        "D302_getssidstats_bytesreceived.yaml": {"row": 227, "api": "BytesReceived", "expected": "Fail"},
         "D303_getssidstats_bytessent.yaml": {"row": 228, "api": "BytesSent", "expected": "Pass"},
         "D304_getssidstats_discardpacketsreceived.yaml": {"row": 229, "api": "DiscardPacketsReceived", "expected": "Pass"},
         "D305_getssidstats_discardpacketssent.yaml": {"row": 230, "api": "DiscardPacketsSent", "expected": "Pass"},
@@ -1899,6 +1899,30 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
             for criterion in case_data["pass_criteria"]
         )
 
+    # Per-case expected results_reference after workbook alignment.
+    # Cases not listed default to all-Pass.
+    _wmm_expected = {
+        496: ("Fail", "Fail", "Fail"),
+        499: ("Fail", "Fail", "Fail"),
+        502: ("Fail", "Fail", "Fail"),
+        505: ("Fail", "Fail", "Fail"),
+        506: ("Fail", "Fail", "Fail"),
+        507: ("Fail", "Fail", "Fail"),
+        508: ("Fail", "Fail", "Fail"),
+        510: ("Fail", "Fail", "Fail"),
+        512: ("Fail", "Fail", "Fail"),
+        513: ("Fail", "Fail", "Fail"),
+        517: ("Pass", "Fail", "Pass"),
+        518: ("Pass", "Fail", "Fail"),
+        519: ("Fail", "Fail", "Fail"),
+        520: ("Fail", "Fail", "Fail"),
+        521: ("Fail", "Fail", "Fail"),
+        522: ("Fail", "Fail", "Fail"),
+        523: ("Fail", "Fail", "Fail"),
+        524: ("Fail", "Fail", "Fail"),
+        525: ("Fail", "Fail", "Fail"),
+        526: ("Fail", "Fail", "Fail"),
+    }
     for case_num in range(496, 528):
         filename = next(cases_dir.glob(f"D{case_num}_*.yaml"))
         case_data = yaml.safe_load(filename.read_text(encoding="utf-8"))
@@ -1909,9 +1933,10 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         assert case_data["source"]["baseline"] == "0310-BGW720-300"
         assert case_data["source"]["row"] == case_num - 133
         assert case_data["bands"] == ["5g", "6g", "2.4g"]
-        assert case_data["results_reference"]["v4.0.3"]["5g"] == "Pass"
-        assert case_data["results_reference"]["v4.0.3"]["6g"] == "Pass"
-        assert case_data["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+        exp5, exp6, exp24 = _wmm_expected.get(case_num, ("Pass", "Pass", "Pass"))
+        assert case_data["results_reference"]["v4.0.3"]["5g"] == exp5
+        assert case_data["results_reference"]["v4.0.3"]["6g"] == exp6
+        assert case_data["results_reference"]["v4.0.3"]["2.4g"] == exp24
         assert f"WiFi.SSID.4.Stats.{metric}.{ac}?" in commands
         assert f"WiFi.SSID.6.Stats.{metric}.{ac}?" in commands
         assert f"WiFi.SSID.8.Stats.{metric}.{ac}?" in commands
@@ -4828,7 +4853,7 @@ def test_d046_signalstrengthbychain_uses_supported_contracts():
         and criterion["reference"] == "driver_signal.DriverSignalStrengthByChain"
         for criterion in d046["pass_criteria"]
     )
-    assert d046["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d046["results_reference"]["v4.0.3"]["5g"] == "Fail"
     assert d046["results_reference"]["v4.0.3"]["6g"] == "N/A"
     assert d046["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
 
@@ -6567,9 +6592,9 @@ def test_d065_bridgeinterface_uses_ap_only_multiband_pass_contract():
         and criterion.get("reference") == "result_24g.BridgeInterface"
         for criterion in d065["pass_criteria"]
     )
-    assert d065["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d065["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d065["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+    assert d065["results_reference"]["v4.0.3"]["5g"] == "Fail"
+    assert d065["results_reference"]["v4.0.3"]["6g"] == "Fail"
+    assert d065["results_reference"]["v4.0.3"]["2.4g"] == "Fail"
 
 
 def test_d065_bridgeinterface_setup_env_uses_only_dut_transport(monkeypatch):
@@ -6960,7 +6985,7 @@ def test_d067_discoverymethodenabled_accesspoint_upr_contract():
         for criterion in d067["pass_criteria"]
     )
     assert d067["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
-    assert d067["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d067["results_reference"]["v4.0.3"]["6g"] == "Fail"
     assert d067["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
 
 
@@ -10874,9 +10899,9 @@ def test_d094_status_accesspoint_contract():
     assert len(d094["pass_criteria"]) == 6
     assert d094["bands"] == ["5g", "6g", "2.4g"]
     ref = d094["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
+    assert ref["5g"] == "Fail"
+    assert ref["6g"] == "Fail"
+    assert ref["2.4g"] == "Fail"
 
 
 def test_d094_status_accesspoint_setup_env(monkeypatch):
@@ -10928,9 +10953,9 @@ def test_d095_uapsdcapability_contract():
     assert len(d095["pass_criteria"]) == 3
     assert d095["bands"] == ["5g", "6g", "2.4g"]
     ref = d095["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
+    assert ref["5g"] == "Fail"
+    assert ref["6g"] == "Fail"
+    assert ref["2.4g"] == "Fail"
 
 
 def test_d095_uapsdcapability_setup_env(monkeypatch):
@@ -11131,7 +11156,7 @@ def test_d098_wdsenable_contract():
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 18
     assert case["bands"] == ["5g", "6g", "2.4g"]
-    assert case["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert case["results_reference"]["v4.0.3"]["5g"] == "Fail"
 
 
 def test_d098_wdsenable_setup_env(monkeypatch):
@@ -16696,8 +16721,8 @@ def test_d294_getnastationstats_evaluate():
 _ACTION_METHOD_CASES = [
     # (yaml_file, row, method, verdict)
     ("D295_scan.yaml", 220, "scan", "To be tested"),
-    ("D296_startacs.yaml", 221, "startACS", "Pass"),
-    ("D297_startautochannelselection.yaml", 222, "startAutoChannelSelection", "Pass"),
+    ("D296_startacs.yaml", 221, "startACS", "Fail"),
+    ("D297_startautochannelselection.yaml", 222, "startAutoChannelSelection", "Fail"),
     ("D298_startscan.yaml", 223, "startScan", "To be tested"),
     ("D299_stopscan.yaml", 224, "stopScan", "To be tested"),
 ]
@@ -16752,9 +16777,9 @@ def test_action_method_evaluate(yaml_file, row, method, verdict):
 
 _SSID_STATS_CASES = [
     # (yaml_file, row, field, verdict)
-    ("D300_getssidstats_broadcastpacketsreceived.yaml", 225, "BroadcastPacketsReceived", "Pass"),
-    ("D301_getssidstats_broadcastpacketssent.yaml", 226, "BroadcastPacketsSent", "Pass"),
-    ("D302_getssidstats_bytesreceived.yaml", 227, "BytesReceived", "Pass"),
+    ("D300_getssidstats_broadcastpacketsreceived.yaml", 225, "BroadcastPacketsReceived", "Fail"),
+    ("D301_getssidstats_broadcastpacketssent.yaml", 226, "BroadcastPacketsSent", "Fail"),
+    ("D302_getssidstats_bytesreceived.yaml", 227, "BytesReceived", "Fail"),
     ("D303_getssidstats_bytessent.yaml", 228, "BytesSent", "Pass"),
     ("D304_getssidstats_discardpacketsreceived.yaml", 229, "DiscardPacketsReceived", "Pass"),
     ("D305_getssidstats_discardpacketssent.yaml", 230, "DiscardPacketsSent", "Pass"),

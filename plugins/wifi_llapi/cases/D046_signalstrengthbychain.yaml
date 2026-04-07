@@ -179,7 +179,7 @@ verification_command:
   - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC" | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC_LOWER | sed -n ''s/.*per antenna average rssi of rx data frames: *//p'' | tr '' '' ''\n'' | sed ''/^$/d;s/$/.0/'' | paste -sd, - | sed ''s/^/DriverSignalStrengthByChain=/'''
 results_reference:
   v4.0.3:
-    5g: Pass
+    5g: Fail
     6g: N/A
     2.4g: N/A
     comment: '5G serialwrap retest returned SignalStrengthByChain="-28.0,-33.0,-36.0,-32.0" and wl0 sta_info per antenna average rssi matched -28 -33 -36 -32 for the same AssociatedDevice MAC. Non-executed bands remain N/A until separately calibrated.'

@@ -203,6 +203,6 @@ verification_command:
 results_reference:
   v4.0.3:
     5g: Not Supported
-    6g: Pass
+    6g: Fail
     2.4g: Not Supported
     comment: 'AP1/AP3/AP5 all started at DiscoveryMethodEnabled="Default"; AP1 and AP5 rejected UPR with error 10/invalid value, while AP3 accepted UPR and read back as UPR; all three bands were restored to Default. This case is calibrated as 5G Not Supported / 6G Pass / 2.4G Not Supported.'

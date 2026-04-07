@@ -181,7 +181,7 @@ results_reference:
     2.4g: Pass
     comment: 'ARC : 6G radio support only 11ax(HE) and 11be(EHT)'
   v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
     comment: '5G serialwrap retest: LLAPI HtCapabilities="40MHz,SGI20,SGI40" and wl0 sta_info HT caps contained 40MHz SGI20 SGI40, matching workbook Pass.'

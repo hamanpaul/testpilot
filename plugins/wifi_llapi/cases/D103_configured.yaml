@@ -68,6 +68,6 @@ verification_command:
 results_reference:
   v4.0.3:
     5g: Pass
-    6g: Pass
+    6g: Fail
     2.4g: Pass
     comment: 'All 3 bands: Configured=1.'
