@@ -122,6 +122,7 @@ class Plugin(PluginBase):
         self._device_specs: dict[str, dict[str, Any]] = {}
         self._sta_env_verified = False
         self._command_resolver = CommandResolver(self)
+        self._sta_available_bands: tuple[str, ...] = ("5g", "6g", "2.4g")
 
     @property
     def name(self) -> str:
@@ -1449,7 +1450,7 @@ class Plugin(PluginBase):
             for band, patterns in band_patterns
             if any(re.search(pattern, haystack) for pattern in patterns)
         ]
-        return tuple(selected or ("5g", "6g", "2.4g"))
+        return tuple(selected or self._sta_available_bands)
 
     @staticmethod
     def _has_custom_env_setup(case: dict[str, Any]) -> bool:
@@ -2064,6 +2065,10 @@ class Plugin(PluginBase):
                 )
                 return False
 
+        # For 6G: patch ocv=0 into hapd.conf after wld regeneration to prevent mfp_ocv BSS loop.
+        if "6g" in selected_bands:
+            self._apply_6g_ocv_fix(dut, case_id)
+
         # Wait for hostapd to reload after DUT config changes.
         self._execute_env_command(dut, "sleep 5", timeout=10.0)
         return self._ensure_selected_dut_bss_ready(case)
@@ -2163,6 +2168,8 @@ class Plugin(PluginBase):
         result = self._execute_env_command(dut, command, timeout=60.0)
         if self._env_command_succeeded(command, result):
             self._execute_env_command(dut, "sleep 5", timeout=10.0)
+            if band == "6g":
+                self._apply_6g_ocv_fix(dut, case_id)
             return True
         self._record_runtime_failure(
             case,
@@ -2221,6 +2228,50 @@ class Plugin(PluginBase):
         )
         return False
 
+    def _apply_6g_ocv_fix(self, dut: Any, case_id: str) -> None:
+        """Patch ocv=0 into /tmp/wl1_hapd.conf and restart hostapd to prevent mfp_ocv BSS loop.
+
+        BCM 6G firmware returns -23 (UNSUPPORTED) for the mfp_ocv IOCTL when ieee80211w=2
+        is configured with SAE. Inserting ocv=0 prevents the IOCTL call and stops the
+        ~11-second BSS loop. Must be called after every wld-triggered 6G hostapd restart.
+        Only wl1 is targeted because AP4 (wl1.1) is disabled in the 6G baseline.
+        """
+        # Poll until wld regenerates wl1_hapd.conf with ieee80211w= present (MFP/SAE config).
+        poll_cmd = "grep -q ieee80211w /tmp/wl1_hapd.conf 2>/dev/null && echo READY || echo WAIT"
+        ready = False
+        for _ in range(6):
+            result = self._execute_env_command(dut, poll_cmd, timeout=5.0)
+            if "READY" in self._env_output_text(result):
+                ready = True
+                break
+            self._execute_env_command(dut, "sleep 2", timeout=5.0)
+        if not ready:
+            log.warning(
+                "[%s] verify_env: %s 6G wl1_hapd.conf ieee80211w= not found after 12s, patching anyway",
+                self.name,
+                case_id,
+            )
+        # Replace-or-insert: delete any existing ocv= line, then add ocv=0 after ieee80211w=.
+        # This corrects both missing and wrong (ocv=1) values.
+        patch_cmd = "sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl1_hapd.conf"
+        self._execute_env_command(dut, patch_cmd, timeout=10.0)
+        # Verify patch was written.
+        verify_result = self._execute_env_command(dut, "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1", timeout=5.0)
+        if "ocv=0" not in self._env_output_text(verify_result):
+            log.warning(
+                "[%s] verify_env: %s 6G ocv=0 verify failed — BSS loop may persist",
+                self.name,
+                case_id,
+            )
+        # Safe kill (pgrep empty → $() returns empty → kill gets no arg → harmless).
+        for cmd in (
+            "kill $(pgrep -f wl1_hapd 2>/dev/null) 2>/dev/null; true",
+            "sleep 2",
+            "hostapd -ddt -B /tmp/wl1_hapd.conf",
+        ):
+            self._execute_env_command(dut, cmd, timeout=15.0)
+        log.info("[%s] verify_env: %s 6G ocv=0 fix applied, wl1 hostapd restarted", self.name, case_id)
+
     def _bounce_dut_band(
         self,
         case: dict[str, Any],
@@ -2266,6 +2317,8 @@ class Plugin(PluginBase):
                 self._preview_value(self._env_output_text(result)),
             )
             return False
+        if band == "6g":
+            self._apply_6g_ocv_fix(dut, case_id)
         return True
 
     def _verify_sta_band_connectivity(self, case: dict[str, Any]) -> bool:
@@ -2376,11 +2429,30 @@ class Plugin(PluginBase):
             return False
         return True
 
+    def _read_sta_available_bands(self, topology: Any) -> None:
+        """Read sta_available_bands from testbed.variables and cache in self._sta_available_bands."""
+        raw = getattr(topology, "raw", {})
+        if not isinstance(raw, dict):
+            return
+        variables = raw.get("testbed", {}).get("variables", {})
+        if not isinstance(variables, dict):
+            return
+        raw_val = variables.get("sta_available_bands")
+        if isinstance(raw_val, list):
+            parsed = tuple(str(b).strip().lower() for b in raw_val if str(b).strip())
+            if parsed:
+                self._sta_available_bands = parsed
+        elif isinstance(raw_val, str) and raw_val.strip():
+            parsed = tuple(b.strip().lower() for b in raw_val.split(",") if b.strip())
+            if parsed:
+                self._sta_available_bands = parsed
+
     def setup_env(self, case: dict[str, Any], topology: Any) -> bool:
         """佈建 WiFi 測試環境。"""
         if self._transports:
             self.teardown(case, topology)
         self._sta_env_verified = False
+        self._read_sta_available_bands(topology)
         case.pop("_last_failure", None)
         if not self._open_case_transports(case, topology, run_case_setup=True):
             return False
