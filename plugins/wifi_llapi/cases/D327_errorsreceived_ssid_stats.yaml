@@ -4,7 +4,7 @@ version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 251
+  row: 327
   object: WiFi.SSID.{i}.Stats.
   api: ErrorsReceived
 platform:
@@ -93,9 +93,16 @@ sta_env_setup: |
     wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
     wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
   6G example:
+    iw dev wl1 disconnect 2>/dev/null || true
+    ifconfig wl1 down
+    wl -i wl1 down
+    wl -i wl1 ap 0
     iw dev wl1 set type managed
+    wl -i wl1 up
     ifconfig wl1 up
     wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant
+    wpa_cli -p /var/run/wpa_supplicant -i wl1 enable_network 0
+    wpa_cli -p /var/run/wpa_supplicant -i wl1 select_network 0
     wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect
   2.4G example:
     iw dev wl2 set type managed
@@ -113,7 +120,7 @@ test_procedure: |
   2) For each band, capture assoclist, direct Stats, getSSIDStats(), and the matching driver view before the traffic attempt.
   3) Attempt STA-generated ping traffic with a static IP on the active STA interface, wait 2 seconds, then reread the same counter.
   4) Use the final reread for the manual judgment.
-  5) Record direct/getSSIDStats()/driver equality as repeatable evidence, but keep the verdict workbook-gated open because v4.0.3 is still To be tested.
+  5) Pass when direct Stats.ErrorsReceived equals getSSIDStats().ErrorsReceived on 5G/6G/2.4G and the matching wl if_counters rxerror readback.
 steps:
 - id: assoc_5g
   action: exec
@@ -135,7 +142,7 @@ steps:
 - id: driver_5g
   action: exec
   target: DUT
-  command: awk '$1=="wl0:" {print "DriverErrorsReceived5g=" $4}' /proc/net/dev_extstats
+  command: wl -i wl0 if_counters | sed -n 's/.*rxerror \([0-9][0-9]*\).*/DriverErrorsReceived5g=\1/p'
   depends_on: getssid_5g
   capture: driver_5g
 - id: assoc_6g
@@ -158,7 +165,7 @@ steps:
 - id: driver_6g
   action: exec
   target: DUT
-  command: awk '$1=="wl1:" {print "DriverErrorsReceived6g=" $4}' /proc/net/dev_extstats
+  command: wl -i wl1 if_counters | sed -n 's/.*rxerror \([0-9][0-9]*\).*/DriverErrorsReceived6g=\1/p'
   depends_on: getssid_6g
   capture: driver_6g
 - id: assoc_24g
@@ -181,7 +188,7 @@ steps:
 - id: driver_24g
   action: exec
   target: DUT
-  command: awk '$1=="wl2:" {print "DriverErrorsReceived24g=" $4}' /proc/net/dev_extstats
+  command: wl -i wl2 if_counters | sed -n 's/.*rxerror \([0-9][0-9]*\).*/DriverErrorsReceived24g=\1/p'
   depends_on: getssid_24g
   capture: driver_24g
 pass_criteria:
@@ -196,7 +203,7 @@ pass_criteria:
 - field: direct_5g.ErrorsReceived
   operator: equals
   reference: driver_5g.DriverErrorsReceived5g
-  description: 5g direct Stats.ErrorsReceived must match /proc/net/dev_extstats field $4 on wl0.
+  description: 5g direct Stats.ErrorsReceived must match wl0 if_counters rxerror.
 - field: assoc_6g.AssocMac6g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -208,7 +215,7 @@ pass_criteria:
 - field: direct_6g.ErrorsReceived
   operator: equals
   reference: driver_6g.DriverErrorsReceived6g
-  description: 6g direct Stats.ErrorsReceived must match /proc/net/dev_extstats field $4 on wl1.
+  description: 6g direct Stats.ErrorsReceived must match wl1 if_counters rxerror.
 - field: assoc_24g.AssocMac24g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -220,25 +227,25 @@ pass_criteria:
 - field: direct_24g.ErrorsReceived
   operator: equals
   reference: driver_24g.DriverErrorsReceived24g
-  description: 2.4g direct Stats.ErrorsReceived must match /proc/net/dev_extstats field $4 on wl2.
+  description: 2.4g direct Stats.ErrorsReceived must match wl2 if_counters rxerror.
 verification_command: 
   - '# 5g'
   - wl -i wl0 assoclist
   - ubus-cli "WiFi.SSID.4.Stats.ErrorsReceived?"
   - 'ubus-cli "WiFi.SSID.4.getSSIDStats()" | grep "ErrorsReceived"'
-  - "awk '$1==\"wl0:\" {print \"DriverErrorsReceived5g=\" $4}' /proc/net/dev_extstats"
+  - "wl -i wl0 if_counters | sed -n 's/.*rxerror \\([0-9][0-9]*\\).*/DriverErrorsReceived5g=\\1/p'"
   - ''
   - '# 6g'
   - wl -i wl1 assoclist
   - ubus-cli "WiFi.SSID.6.Stats.ErrorsReceived?"
   - 'ubus-cli "WiFi.SSID.6.getSSIDStats()" | grep "ErrorsReceived"'
-  - "awk '$1==\"wl1:\" {print \"DriverErrorsReceived6g=\" $4}' /proc/net/dev_extstats"
+  - "wl -i wl1 if_counters | sed -n 's/.*rxerror \\([0-9][0-9]*\\).*/DriverErrorsReceived6g=\\1/p'"
   - ''
   - '# 2.4g'
   - wl -i wl2 assoclist
   - ubus-cli "WiFi.SSID.8.Stats.ErrorsReceived?"
   - 'ubus-cli "WiFi.SSID.8.getSSIDStats()" | grep "ErrorsReceived"'
-  - "awk '$1==\"wl2:\" {print \"DriverErrorsReceived24g=\" $4}' /proc/net/dev_extstats"
+  - "wl -i wl2 if_counters | sed -n 's/.*rxerror \\([0-9][0-9]*\\).*/DriverErrorsReceived24g=\\1/p'"
 results_reference:
   v4.0.1:
     5g: To be tested
@@ -249,4 +256,4 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
-    comment: 'ARC | Multiband serialwrap probe observed 5g=0, 6g=0, 2.4g=0; direct Stats matched getSSIDStats() and /proc/net/dev_extstats field $4, but workbook v4.0.3 still remains To be tested.'
+    comment: 'Multiband serialwrap/source-backed retest: direct Stats matched getSSIDStats(), wl if_counters rxerror, and legacy /proc field $4 on SSID.4/6/8 (manual probe 5g=0, 6g=0, 2.4g=0), so the active 0403 oracle is locked to rxerror while workbook row identity is refreshed to 327.'

@@ -1,7 +1,7 @@
 id: d320-ssid-ssid
 name: D320 SSID SSID
 source:
-  row: 322
+  row: 320
   object: WiFi.SSID.{i}.
   api: SSID
   baseline: 0310-BGW720-300

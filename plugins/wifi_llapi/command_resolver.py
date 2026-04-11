@@ -95,6 +95,8 @@ class CommandResolver:
         normalized = p._normalize_command_text(raw_command).lower()
         if candidate_commands and any("?" in command for command in candidate_commands):
             return None
+        if any(operator in raw_command for operator in ("|", "&&", "||", ";", "$(")):
+            return None
         if not self.command_starts_executable(raw_command):
             return synthesized
         first_token = normalized.split(maxsplit=1)[0].strip("`'\"") if normalized else ""
@@ -231,6 +233,25 @@ class CommandResolver:
         combined = f"{result.get('stdout', '')}\n{result.get('stderr', '')}".lower()
         return ("not found" in combined) or ("unknown command" in combined) or ("syntax error" in combined)
 
+    @staticmethod
+    def is_timeout_result(result: dict[str, Any]) -> bool:
+        try:
+            rc = int(result.get("returncode", 0))
+        except (TypeError, ValueError):
+            rc = 0
+        if rc == 124:
+            return True
+        combined = f"{result.get('stdout', '')}\n{result.get('stderr', '')}".lower()
+        return ("cmd status timeout" in combined) or ("serialwrap cmd status timeout" in combined)
+
+    def select_scan_output_reduction(self, command: str) -> str | None:
+        normalized = self.sanitize_cli_fragment(command)
+        if "getscanresults()" not in normalized.lower():
+            return None
+        if "|" in normalized:
+            return None
+        return normalized + " | head -60 | sed -n '/BSSID = /,/^        },/p'"
+
     def select_fallback_commands(
         self,
         case: dict[str, Any],
@@ -347,6 +368,11 @@ class CommandResolver:
         if current_fallback_reason:
             return None
         result_map = self.as_mapping(result)
+        primary_command = current_commands[0] if current_commands else stringify_step_command(step.get("command"))
+        if self.is_timeout_result(result_map):
+            reduced_command = self.select_scan_output_reduction(primary_command)
+            if reduced_command and [reduced_command] != current_commands:
+                return [reduced_command], "scan_first_result_capture"
         if not self.is_unexecutable_result(result_map):
             return None
         raw_command = stringify_step_command(step.get("command"))

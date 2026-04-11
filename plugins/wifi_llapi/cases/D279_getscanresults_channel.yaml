@@ -1,7 +1,7 @@
 id: d279-getscanresults-channel
 name: D279 getScanResults Channel
 source:
-  row: 281
+  row: 279
   object: WiFi.Radio.{i}.
   api: getScanResults()
   baseline: 0310-BGW720-300
@@ -24,32 +24,35 @@ topology:
 steps:
 - id: step_5g_scan
   target: dut
-  action: read
+  action: exec
   capture: scan_5g
-  command: ubus-cli "WiFi.Radio.1.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.1 (5g) getScanResults()
+  command: 'BSSID=$(ubus-cli "WiFi.Radio.1.getScanResults()" | sed -n "/BSSID = /{s/.*BSSID = \"\\([^\"]*\\)\".*/\\1/p;q;}"); CH=$(ubus-cli "WiFi.Radio.1.getScanResults()" | sed -n "/^[[:space:]]*Channel = /{s/.*Channel = \\([0-9][0-9]*\\).*/\\1/p;q;}"); FREQ=$(iw dev wl0 scan | grep -A8 -im1 "^BSS $BSSID" | sed -n "s/^[[:space:]]*freq: \\([0-9][0-9]*\\).*/\\1/p" | head -n 1); if [ -n "$FREQ" ]; then if [ "$FREQ" -eq 2484 ]; then IW_CH=14; elif [ "$FREQ" -lt 2500 ]; then IW_CH=$(( (FREQ - 2407) / 5 )); elif [ "$FREQ" -lt 5900 ]; then IW_CH=$(( (FREQ - 5000) / 5 )); else IW_CH=$(( (FREQ - 5950) / 5 )); fi; fi; [ -n "$CH" ] && printf "Channel=%s\n" "$CH"; [ -n "$IW_CH" ] && printf "IwChannel=%s\n" "$IW_CH"'
+  expected: 5G getScanResults() Channel 需能與同 target iw freq 換算出的 channel 對位
+  description: Radio.1 (5g) 以 target BSSID 對位 LLAPI Channel 與 iw freq-derived channel
 - id: step_6g_scan
   target: dut
-  action: read
+  action: exec
   capture: scan_6g
-  command: ubus-cli "WiFi.Radio.2.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.2 (6g) getScanResults()
+  command: 'BSSID=$(ubus-cli "WiFi.Radio.2.getScanResults()" | sed -n "/BSSID = /{s/.*BSSID = \"\\([^\"]*\\)\".*/\\1/p;q;}"); CH=$(ubus-cli "WiFi.Radio.2.getScanResults()" | sed -n "/^[[:space:]]*Channel = /{s/.*Channel = \\([0-9][0-9]*\\).*/\\1/p;q;}"); FREQ=$(iw dev wl1 scan | grep -A8 -im1 "^BSS $BSSID" | sed -n "s/^[[:space:]]*freq: \\([0-9][0-9]*\\).*/\\1/p" | head -n 1); if [ -n "$FREQ" ]; then if [ "$FREQ" -eq 2484 ]; then IW_CH=14; elif [ "$FREQ" -lt 2500 ]; then IW_CH=$(( (FREQ - 2407) / 5 )); elif [ "$FREQ" -lt 5900 ]; then IW_CH=$(( (FREQ - 5000) / 5 )); else IW_CH=$(( (FREQ - 5950) / 5 )); fi; fi; [ -n "$CH" ] && printf "Channel=%s\n" "$CH"; [ -n "$IW_CH" ] && printf "IwChannel=%s\n" "$IW_CH"'
+  expected: 6G getScanResults() Channel 需能與同 target iw freq 換算出的 channel 對位
+  description: Radio.2 (6g) 以 target BSSID 對位 LLAPI Channel 與 iw freq-derived channel
 - id: step_24g_scan
   target: dut
-  action: read
+  action: exec
   capture: scan_24g
-  command: ubus-cli "WiFi.Radio.3.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.3 (2.4g) getScanResults()
+  command: 'BSSID=$(ubus-cli "WiFi.Radio.3.getScanResults()" | sed -n "/BSSID = /{s/.*BSSID = \"\\([^\"]*\\)\".*/\\1/p;q;}"); CH=$(ubus-cli "WiFi.Radio.3.getScanResults()" | sed -n "/^[[:space:]]*Channel = /{s/.*Channel = \\([0-9][0-9]*\\).*/\\1/p;q;}"); FREQ=$(iw dev wl2 scan | grep -A8 -im1 "^BSS $BSSID" | sed -n "s/^[[:space:]]*freq: \\([0-9][0-9]*\\).*/\\1/p" | head -n 1); if [ -n "$FREQ" ]; then if [ "$FREQ" -eq 2484 ]; then IW_CH=14; elif [ "$FREQ" -lt 2500 ]; then IW_CH=$(( (FREQ - 2407) / 5 )); elif [ "$FREQ" -lt 5900 ]; then IW_CH=$(( (FREQ - 5000) / 5 )); else IW_CH=$(( (FREQ - 5950) / 5 )); fi; fi; [ -n "$CH" ] && printf "Channel=%s\n" "$CH"; [ -n "$IW_CH" ] && printf "IwChannel=%s\n" "$IW_CH"'
+  expected: 2.4G getScanResults() Channel 需能與同 target iw freq 換算出的 channel 對位
+  description: Radio.3 (2.4g) 以 target BSSID 對位 LLAPI Channel 與 iw freq-derived channel
 pass_criteria:
-- field: scan_5g.Channel
-  operator: regex
-  value: '.+'
-- field: scan_6g.Channel
-  operator: regex
-  value: '.+'
-- field: scan_24g.Channel
-  operator: regex
-  value: '.+'
+- field: scan_5g.IwChannel
+  operator: equals
+  reference: scan_5g.Channel
+  description: 5G iw freq 換算出的 channel 必須與 LLAPI Channel 相同
+- field: scan_6g.IwChannel
+  operator: equals
+  reference: scan_6g.Channel
+  description: 6G iw freq 換算出的 channel 必須與 LLAPI Channel 相同
+- field: scan_24g.IwChannel
+  operator: equals
+  reference: scan_24g.Channel
+  description: 2.4G iw freq 換算出的 channel 必須與 LLAPI Channel 相同

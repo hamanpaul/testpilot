@@ -119,8 +119,75 @@ def test_help_text_for_wifi_llapi_group():
     runner = CliRunner()
     result = runner.invoke(main, ["wifi-llapi", "--help"])
     assert result.exit_code == 0
+    assert "baseline-qualify" in result.output
     assert "build-template-report" in result.output
     assert "audit-yaml-commands" in result.output
+
+
+def test_baseline_qualify_invokes_wifi_llapi_plugin(monkeypatch):
+    """wifi-llapi baseline-qualify dispatches to plugin.qualify_baseline."""
+    _clear_provider_env(monkeypatch)
+    calls: list[dict[str, Any]] = []
+
+    class FakePlugin:
+        def qualify_baseline(self, topology, *, bands, repeat_count, soak_minutes):
+            calls.append(
+                {
+                    "topology": topology,
+                    "bands": bands,
+                    "repeat_count": repeat_count,
+                    "soak_minutes": soak_minutes,
+                }
+            )
+            return {
+                "overall_status": "stable",
+                "bands": [{"band": "5g", "stable": True}],
+                "repeat_count": repeat_count,
+                "soak_minutes": soak_minutes,
+            }
+
+    class FakeLoader:
+        def __init__(self) -> None:
+            self.plugin = FakePlugin()
+
+        def load(self, plugin_name: str):
+            assert plugin_name == "wifi_llapi"
+            return self.plugin
+
+    class FakeOrchestrator:
+        def __init__(self, project_root):
+            self.project_root = project_root
+            self.loader = FakeLoader()
+            self.config = {"name": "fake-topology"}
+
+    monkeypatch.setattr(testpilot.cli, "Orchestrator", FakeOrchestrator)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "wifi-llapi",
+            "baseline-qualify",
+            "--band",
+            "5g",
+            "--repeat-count",
+            "1",
+            "--soak-minutes",
+            "0",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert calls == [
+        {
+            "topology": {"name": "fake-topology"},
+            "bands": ("5g",),
+            "repeat_count": 1,
+            "soak_minutes": 0,
+        }
+    ]
+    assert "overall_status" in result.output
+    assert "stable" in result.output
 
 
 def test_help_text_for_run():

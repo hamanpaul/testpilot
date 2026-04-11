@@ -10,15 +10,16 @@ import re
 import shlex
 import subprocess
 import time
-from typing import Any
+from typing import Any, Sequence
 
 from testpilot.core.case_utils import stringify_step_command, step_command_lines
 from testpilot.core.plugin_base import PluginBase
 from testpilot.serialwrap_binary import resolve_serialwrap_binary
-from testpilot.schema.case_schema import load_cases_dir
+from testpilot.schema.case_schema import load_cases_dir, load_wifi_band_baselines
 from testpilot.transport.base import StubTransport
 from testpilot.yaml_command_audit import looks_like_shell_command
 
+from baseline_qualifier import BaselineQualifier
 from command_resolver import CommandResolver
 
 log = logging.getLogger(__name__)
@@ -30,6 +31,19 @@ class Plugin(PluginBase):
     測試 prplOS WiFi.Radio / WiFi.AccessPoint 的 LLAPI 介面，
     透過 ubus-cli 與 wl 指令驗證參數讀寫與功能正確性。
     """
+
+    TESTBED_BINDING_KEYS = (
+        "selector",
+        "alias",
+        "session_id",
+        "serial_port",
+        "baudrate",
+        "host",
+        "user",
+        "password",
+        "port",
+        "adb_serial",
+    )
 
     CLI_FALLBACK_TOKENS = (
         "ubus-cli",
@@ -84,44 +98,17 @@ class Plugin(PluginBase):
         "{",
         "}",
     }
-    DEFAULT_BAND_BASELINES: dict[str, dict[str, str]] = {
-        "5g": {
-            "iface": "wl0",
-            "radio": "1",
-            "ap": "1",
-            "ssid_index": "4",
-            "ssid": "testpilot5G",
-            "mode": "WPA2-Personal",
-            "key": "00000000",
-            "mfp": "Disabled",
-        },
-        "6g": {
-            "iface": "wl1",
-            "radio": "2",
-            "ap": "3",
-            "ssid_index": "6",
-            "ssid": "testpilot6G",
-            "mode": "WPA3-Personal",
-            "key": "00000000",
-            "mfp": "Required",
-        },
-        "2.4g": {
-            "iface": "wl2",
-            "radio": "3",
-            "ap": "5",
-            "ssid_index": "8",
-            "ssid": "testpilot2G",
-            "mode": "WPA2-Personal",
-            "key": "00000000",
-            "mfp": "Disabled",
-        },
-    }
+    BAND_BASELINES_FILE = Path(__file__).parent / "band-baselines.yaml"
+    DEFAULT_BAND_BASELINES: dict[str, dict[str, Any]] = {}
+    ASSOC_MAC_CAPTURE_FIELD_RE = re.compile(r"^AssocMac(?:5g|6g|24g)$", re.IGNORECASE)
+    MAC_ADDRESS_RE = re.compile(r"([0-9a-f]{2}:){5}[0-9a-f]{2}", re.IGNORECASE)
 
     def __init__(self) -> None:
         self._transports: dict[str, Any] = {}
         self._device_specs: dict[str, dict[str, Any]] = {}
         self._sta_env_verified = False
         self._command_resolver = CommandResolver(self)
+        self.DEFAULT_BAND_BASELINES = load_wifi_band_baselines(self.BAND_BASELINES_FILE)
         self._sta_available_bands: tuple[str, ...] = ("5g", "6g", "2.4g")
 
     @property
@@ -199,6 +186,69 @@ class Plugin(PluginBase):
             "2g": "2.4g",
         }
         return aliases.get(text, "")
+
+    def _band_baseline_profile(self, band: str) -> dict[str, Any] | None:
+        normalized_band = self._normalize_band_name(band)
+        profile = self.DEFAULT_BAND_BASELINES.get(normalized_band)
+        if not isinstance(profile, dict):
+            return None
+        return dict(profile)
+
+    @staticmethod
+    def _render_baseline_template(text: str, profile: dict[str, Any]) -> str:
+        rendered = str(text)
+        for key, value in profile.items():
+            if isinstance(value, (str, int, float)):
+                rendered = rendered.replace(f"{{{{{key}}}}}", str(value))
+        return rendered
+
+    def _profile_command(self, profile: dict[str, Any], field: str) -> str:
+        return self._render_baseline_template(str(profile.get(field, "")), profile)
+
+    def _profile_command_list(self, profile: dict[str, Any], field: str) -> list[str]:
+        raw_commands = profile.get(field, [])
+        if not isinstance(raw_commands, list):
+            return []
+        return [self._render_baseline_template(str(command), profile) for command in raw_commands]
+
+    def _sta_wpa_config_path(self, profile: dict[str, Any]) -> str:
+        return f"/tmp/wpa_{profile['iface']}.conf"
+
+    def _sta_wpa_config_commands(self, profile: dict[str, Any]) -> list[str]:
+        config_path = self._sta_wpa_config_path(profile)
+        lines = [
+            *profile.get("sta_global_config", []),
+            "network={",
+            *profile.get("sta_network_config", []),
+            "}",
+        ]
+        commands: list[str] = []
+        for index, raw_line in enumerate(lines):
+            line = self._render_baseline_template(str(raw_line), profile)
+            redirect = ">" if index == 0 else ">>"
+            commands.append(f"printf '%s\\n' {shlex.quote(line)} {redirect} {config_path}")
+        return commands
+
+    def _dut_baseline_commands(self, profile: dict[str, Any]) -> list[str]:
+        ap = str(profile["ap"])
+        commands = [
+            f"ubus-cli WiFi.Radio.{profile['radio']}.Enable=1",
+            f"ubus-cli WiFi.AccessPoint.{profile['secondary_ap']}.Enable=0",
+            f"ubus-cli WiFi.AccessPoint.{ap}.Enable=0",
+            f"ubus-cli WiFi.SSID.{profile['ssid_index']}.SSID={profile['ssid']}",
+            f"ubus-cli WiFi.AccessPoint.{ap}.Security.ModeEnabled={profile['mode']}",
+        ]
+        for field in profile.get("dut_secret_fields", []):
+            commands.append(
+                f'ubus-cli \'WiFi.AccessPoint.{ap}.Security.{field}="{profile["key"]}"\''
+            )
+        commands.extend(
+            [
+                f"ubus-cli WiFi.AccessPoint.{ap}.Security.MFPConfig={profile['mfp']}",
+                f"ubus-cli WiFi.AccessPoint.{ap}.Enable=1",
+            ]
+        )
+        return commands
 
     def _case_declared_bands(self, case: dict[str, Any]) -> tuple[str, ...]:
         for key in ("_force_sta_bands", "bands"):
@@ -283,6 +333,19 @@ class Plugin(PluginBase):
         if re.search(r"\bwl2(?:\.\d+)?\b|WiFi\.AccessPoint\.(?:5|6)\b", normalized):
             return "2.4g"
         return ""
+
+    @classmethod
+    def _script_references_band(cls, text: str, band: Any) -> bool:
+        normalized_band = cls._normalize_band_name(band)
+        if normalized_band == "5g":
+            pattern = r"\bwl0(?:\.\d+)?\b|WiFi\.AccessPoint\.(?:1|2)\b"
+        elif normalized_band == "6g":
+            pattern = r"\bwl1(?:\.\d+)?\b|WiFi\.AccessPoint\.(?:3|4)\b"
+        elif normalized_band == "2.4g":
+            pattern = r"\bwl2(?:\.\d+)?\b|WiFi\.AccessPoint\.(?:5|6)\b"
+        else:
+            return False
+        return bool(re.search(pattern, cls._normalize_command_text(text)))
 
     def _case_for_bands(self, case: dict[str, Any], bands: tuple[str, ...]) -> dict[str, Any]:
         scoped = dict(case)
@@ -422,6 +485,10 @@ class Plugin(PluginBase):
 
             merged = dict(testbed_cfg)
             merged.update(case_cfg)
+            for binding_key in self.TESTBED_BINDING_KEYS:
+                value = testbed_cfg.get(binding_key)
+                if value not in (None, ""):
+                    merged[binding_key] = value
             transport_type = str(
                 case_cfg.get("transport") or testbed_cfg.get("transport") or "stub"
             ).strip() or "stub"
@@ -641,6 +708,24 @@ class Plugin(PluginBase):
                 return suffix.rstrip("()").split(".")[-1]
         return ""
 
+    @classmethod
+    def _first_mac_address(cls, text: str) -> str:
+        match = cls.MAC_ADDRESS_RE.search(str(text or ""))
+        if match is None:
+            return ""
+        return match.group(0).lower()
+
+    @staticmethod
+    def _band_from_assoc_capture_field(field_name: str) -> str:
+        lowered = str(field_name).strip().lower()
+        if lowered.endswith("24g"):
+            return "2.4g"
+        if lowered.endswith("6g"):
+            return "6g"
+        if lowered.endswith("5g"):
+            return "5g"
+        return ""
+
     def _synthesize_readback_command(self, case: dict[str, Any], capture_name: str) -> str | None:
         source = self._as_mapping(case.get("source"))
         object_path = str(source.get("object", "")).strip()
@@ -821,10 +906,10 @@ class Plugin(PluginBase):
             if not match:
                 continue
             key, value = match.groups()
-            normalized = value.strip().strip("'\"")
-            # Strip trailing ubus object/array delimiters left by
-            # method-call outputs like getRadioAirStats() / getRadioStats().
-            normalized = re.sub(r"[,}\]]+$", "", normalized).strip()
+            # Strip trailing ubus object/array delimiters first so quotes
+            # immediately before commas/brackets still get normalized away.
+            normalized = re.sub(r"[,}\]]+$", "", value).strip()
+            normalized = normalized.strip("'\"")
             if normalized or value.strip() in {"", '""', "''"}:
                 captured[key] = normalized
 
@@ -952,6 +1037,8 @@ class Plugin(PluginBase):
         normalized_expected = expected_text.strip().strip("'\"")
         compact_actual = self._normalize_compare_text(actual_text)
         compact_expected = self._normalize_compare_text(expected_text)
+        actual_mac = self._first_mac_address(actual_text)
+        expected_mac = self._first_mac_address(expected_text)
 
         if op in {"contains"}:
             return (
@@ -970,12 +1057,14 @@ class Plugin(PluginBase):
                 actual_text == expected_text
                 or normalized_actual == normalized_expected
                 or compact_actual == compact_expected
+                or (actual_mac and expected_mac and actual_mac == expected_mac)
             )
         if op in {"!=", "not_equals", "ne"}:
             return (
                 actual_text != expected_text
                 and normalized_actual != normalized_expected
                 and compact_actual != compact_expected
+                and not (actual_mac and expected_mac and actual_mac == expected_mac)
             )
         if op in {"regex", "matches"}:
             try:
@@ -1138,6 +1227,13 @@ class Plugin(PluginBase):
 
         case_id = str(case.get("id", ""))
         custom_wifi_gate_pending = field_name == "sta_env_setup" and self._has_explicit_wifi_bands(case)
+        custom_6g_ocv_pending = (
+            field_name == "sta_env_setup"
+            and (
+                "6g" in self._selected_sta_bands(case)
+                or self._script_references_band(script, "6g")
+            )
+        )
         sta_wpa_hygiene_ifaces: set[str] = set()
         for index, (target_name, raw_command) in enumerate(
             self._iter_env_script_commands(script),
@@ -1166,6 +1262,11 @@ class Plugin(PluginBase):
                     or self._is_sta_link_check_command(command)
                 )
             ):
+                if custom_6g_ocv_pending:
+                    dut_transport = self._transports.get("DUT")
+                    if dut_transport is not None:
+                        self._apply_6g_ocv_fix(dut_transport, case_id)
+                    custom_6g_ocv_pending = False
                 if not self._ensure_selected_dut_bss_ready(case):
                     return False
                 custom_wifi_gate_pending = False
@@ -1459,6 +1560,13 @@ class Plugin(PluginBase):
             and case["sta_env_setup"].strip()
         )
 
+    def _should_auto_prepare_wifi_bands(self, case: dict[str, Any]) -> bool:
+        return (
+            not self._has_custom_env_setup(case)
+            and self._has_explicit_wifi_bands(case)
+            and self._transports.get("STA") is not None
+        )
+
     def _has_explicit_wifi_bands(self, case: dict[str, Any]) -> bool:
         """Return True when the case explicitly references WiFi AP/radio bands."""
         if self._case_declared_bands(case):
@@ -1500,13 +1608,12 @@ class Plugin(PluginBase):
         )
         return any(re.search(p, haystack) for p in band_patterns)
 
-    @staticmethod
-    def _sta_band_iface(band: str) -> str | None:
-        return {
-            "5g": "wl0",
-            "6g": "wl1",
-            "2.4g": "wl2",
-        }.get(str(band).strip().lower())
+    def _sta_band_iface(self, band: str) -> str | None:
+        profile = self._band_baseline_profile(band)
+        if profile is None:
+            return None
+        iface = str(profile.get("iface", "")).strip()
+        return iface or None
 
     @classmethod
     def _is_explicit_sta_connect_step(cls, command: str) -> bool:
@@ -1561,31 +1668,34 @@ class Plugin(PluginBase):
 
     def _sta_band_client_prep_commands(self, band: str) -> list[str]:
         normalized_band = str(band).strip().lower()
-        iface = self._sta_band_iface(normalized_band)
-        if iface is None:
+        profile = self._band_baseline_profile(normalized_band)
+        if profile is None:
             return []
-        ap_commands = {
-            "5g": (
-                "ubus-cli WiFi.AccessPoint.1.Enable=0",
-                "ubus-cli WiFi.AccessPoint.2.Enable=0",
-            ),
-            "6g": (
-                "ubus-cli WiFi.AccessPoint.3.Enable=0",
-                "ubus-cli WiFi.AccessPoint.4.Enable=0",
-            ),
-            "2.4g": (
-                "ubus-cli WiFi.AccessPoint.5.Enable=0",
-                "ubus-cli WiFi.AccessPoint.6.Enable=0",
-            ),
-        }.get(normalized_band, ())
+        iface = str(profile["iface"]).strip()
+        ap_commands = (
+            f"ubus-cli WiFi.AccessPoint.{profile['ap']}.Enable=0",
+            f"ubus-cli WiFi.AccessPoint.{profile['secondary_ap']}.Enable=0",
+        )
+        pre_mode_commands = self._profile_command_list(profile, "sta_pre_mode_commands")
+        pre_start_commands = self._profile_command_list(profile, "sta_pre_start_commands")
+        if not pre_mode_commands and normalized_band != "6g":
+            pre_mode_commands = [f"ifconfig {iface} down"]
+        if not pre_start_commands and normalized_band != "6g":
+            pre_start_commands = [f"wl -i {iface} up", f"ifconfig {iface} up"]
         return [
             *ap_commands,
             "sleep 3",
             f"wpa_cli -i {iface} terminate 2>/dev/null || true",
             f"iw dev {iface}.1 del 2>/dev/null || true",
             f"iw dev {iface} disconnect 2>/dev/null || true",
-            f"wl -i {iface} ap 0",
+            *(
+                []
+                if normalized_band == "6g"
+                else [f"wl -i {iface} ap 0"]
+            ),
+            *pre_mode_commands,
             f"iw dev {iface} set type managed",
+            *pre_start_commands,
         ]
 
     def _case_sta_band_verify_command(self, commands: list[str], band: str) -> str:
@@ -1709,10 +1819,17 @@ class Plugin(PluginBase):
         case_id: str,
         label: str,
         connect_cmd: str,
-        verify_cmd: str,
+        verify_cmd: str | Sequence[str],
         attempts: int = 3,
         sleep_seconds: int = 3,
     ) -> bool:
+        verify_commands = (
+            (verify_cmd,)
+            if isinstance(verify_cmd, str)
+            else tuple(command for command in verify_cmd if command)
+        )
+        if not verify_commands:
+            return False
         for attempt in range(1, max(1, attempts) + 1):
             self._run_required_command(
                 transport=transport,
@@ -1728,9 +1845,14 @@ class Plugin(PluginBase):
                 command=f"sleep {sleep_seconds}",
                 timeout=max(5.0, float(sleep_seconds + 2)),
             )
-            verify_result = self._execute_env_command(transport, verify_cmd, timeout=20.0)
-            if self._env_command_succeeded(verify_cmd, verify_result):
-                return True
+            for candidate_verify_cmd in verify_commands:
+                verify_result = self._execute_env_command(
+                    transport,
+                    candidate_verify_cmd,
+                    timeout=20.0,
+                )
+                if self._env_command_succeeded(candidate_verify_cmd, verify_result):
+                    return True
             log.warning(
                 "[%s] verify_env: %s %s verify attempt=%d failed",
                 self.name,
@@ -1740,12 +1862,96 @@ class Plugin(PluginBase):
             )
         return False
 
+    def _wait_for_6g_sta_ap_teardown(
+        self,
+        *,
+        transport: Any,
+        case_id: str,
+        iface: str,
+        attempts: int = 10,
+        sleep_seconds: float = 1.0,
+    ) -> bool:
+        for attempt in range(1, max(1, attempts) + 1):
+            bss_result = self._execute_env_command(transport, f"wl -i {iface} bss", timeout=10.0)
+            bss_output = self._env_output_text(bss_result).strip().lower()
+            vif_result = self._execute_env_command(
+                transport, f"iw dev {iface}.1 info", timeout=10.0
+            )
+            vif_output = self._env_output_text(vif_result).strip()
+            vif_present = int(vif_result.get("returncode", 1)) == 0 and bool(vif_output)
+            if bss_output.endswith("down"):
+                if vif_present:
+                    self._execute_env_command(
+                        transport, f"iw dev {iface}.1 del 2>/dev/null || true", timeout=10.0
+                    )
+                return True
+            if vif_present:
+                self._execute_env_command(
+                    transport, f"iw dev {iface}.1 del 2>/dev/null || true", timeout=10.0
+                )
+            if not bss_output.endswith("down"):
+                self._execute_env_command(
+                    transport, f"iw dev {iface} disconnect 2>/dev/null || true", timeout=10.0
+                )
+            time.sleep(max(0.0, sleep_seconds))
+
+        log.warning(
+            "[%s] verify_env: %s sta_6g teardown did not settle (iface=%s, bss=%s, vif_present=%s)",
+            self.name,
+            case_id,
+            iface,
+            self._preview_value(bss_output or "<empty>", limit=64),
+            vif_present,
+        )
+        return False
+
+    def _capture_assoc_mac_fallback(
+        self,
+        *,
+        case: dict[str, Any],
+        step: dict[str, Any],
+        target_name: str,
+        transport: Any,
+        timeout: float,
+    ) -> tuple[dict[str, Any], str, str] | None:
+        if str(target_name).strip().upper() != "DUT":
+            return None
+
+        capture_name = str(step.get("capture", "")).strip()
+        if not capture_name:
+            return None
+        field_name = self._field_name_from_capture(case, capture_name)
+        if not self.ASSOC_MAC_CAPTURE_FIELD_RE.fullmatch(field_name):
+            return None
+
+        band = self._normalize_band_name(step.get("band"))
+        if not band:
+            band = self._band_from_text(stringify_step_command(step.get("command")))
+        if not band:
+            band = self._band_from_assoc_capture_field(field_name)
+        profile = self._band_baseline_profile(band)
+        if not isinstance(profile, dict):
+            return None
+
+        ap_index = str(profile.get("ap", "")).strip()
+        if not ap_index:
+            return None
+        fallback_command = f'ubus-cli "WiFi.AccessPoint.{ap_index}.AssociatedDevice.*.MACAddress?"'
+        result = self._execute_env_command(transport, fallback_command, timeout=max(timeout, 15.0))
+        if not self._env_command_succeeded(fallback_command, result):
+            return None
+
+        mac = self._first_mac_address(self._env_output_text(result))
+        if not mac:
+            return None
+        return {field_name: mac}, f"{field_name}={mac}", fallback_command
+
     def _run_sta_band_connect_sequence(self, case: dict[str, Any]) -> bool:
         case_id = str(case.get("id", ""))
         sta = self._transports.get("STA")
         if sta is None:
             return False
-        selected_bands = set(self._selected_sta_bands(case))
+        selected_bands = self._selected_sta_bands(case)
 
         # Suppress kernel console messages to prevent UART prompt detection issues
         # (Broadcom dhd driver floods console during WiFi mode switches).
@@ -1753,6 +1959,12 @@ class Plugin(PluginBase):
 
         # 5G (WPA2-Personal via wpa_supplicant)
         if "5g" in selected_bands:
+            profile = self._band_baseline_profile("5g")
+            if profile is None:
+                return False
+            iface = str(profile["iface"])
+            ctrl_command = self._profile_command(profile, "sta_ctrl_command")
+            connect_command = self._profile_command(profile, "sta_connect_command")
             case_sequence_ok = self._run_case_sta_band_connect_sequence(
                 case=case,
                 band="5g",
@@ -1766,31 +1978,26 @@ class Plugin(PluginBase):
                 )
             if case_sequence_ok is not True:
                 five_g_prep = (
-                    "ubus-cli WiFi.AccessPoint.1.Enable=0",
-                    "ubus-cli WiFi.AccessPoint.2.Enable=0",
+                    f"ubus-cli WiFi.AccessPoint.{profile['ap']}.Enable=0",
+                    f"ubus-cli WiFi.AccessPoint.{profile['secondary_ap']}.Enable=0",
                     "killall wpa_supplicant 2>/dev/null || true",
-                    "iw dev wl0.1 del 2>/dev/null || true",
-                    "iw dev wl0 disconnect 2>/dev/null || true",
-                    "ifconfig wl0 down",
-                    "wl -i wl0 down",
-                    "wl -i wl0 ap 0",
-                    "iw dev wl0 set type managed",
-                    "wl -i wl0 up",
-                    "ifconfig wl0 up",
+                    f"iw dev {iface}.1 del 2>/dev/null || true",
+                    f"iw dev {iface} disconnect 2>/dev/null || true",
+                    f"ifconfig {iface} down",
+                    f"wl -i {iface} down",
+                    f"wl -i {iface} ap 0",
+                    f"iw dev {iface} set type managed",
+                    f"wl -i {iface} up",
+                    f"ifconfig {iface} up",
                     "rm -rf /var/run/wpa_supplicant",
                     "mkdir -p /var/run/wpa_supplicant",
-                    "printf '%s\\n' 'ctrl_interface=/var/run/wpa_supplicant' > /tmp/wpa_wl0.conf",
-                    "printf '%s\\n' 'update_config=1' >> /tmp/wpa_wl0.conf",
-                    "printf '%s\\n' 'network={' >> /tmp/wpa_wl0.conf",
-                    "printf '%s\\n' 'ssid=\"testpilot5G\"' >> /tmp/wpa_wl0.conf",
-                    "printf '%s\\n' 'key_mgmt=WPA-PSK' >> /tmp/wpa_wl0.conf",
-                    "printf '%s\\n' 'psk=\"00000000\"' >> /tmp/wpa_wl0.conf",
-                    "printf '%s\\n' 'scan_ssid=1' >> /tmp/wpa_wl0.conf",
-                    "printf '%s\\n' '}' >> /tmp/wpa_wl0.conf",
-                    "wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant",
+                    *self._sta_wpa_config_commands(profile),
+                    f"wpa_supplicant -B -D nl80211 -i {iface} -c {self._sta_wpa_config_path(profile)} -C /var/run/wpa_supplicant",
                     "sleep 5",
-                    "wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0",
-                    "wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0",
+                    *(
+                        self._render_baseline_template(command, profile)
+                        for command in profile.get("sta_post_start_commands", [])
+                    ),
                 )
                 for idx, cmd in enumerate(five_g_prep, start=1):
                     if not self._run_required_command(
@@ -1804,8 +2011,8 @@ class Plugin(PluginBase):
                     transport=sta,
                     case_id=case_id,
                     label="sta_5g_ctrl",
-                    connect_cmd="wpa_cli -p /var/run/wpa_supplicant -i wl0 ping",
-                    verify_cmd="wpa_cli -p /var/run/wpa_supplicant -i wl0 ping",
+                    connect_cmd=ctrl_command,
+                    verify_cmd=ctrl_command,
                     attempts=3,
                     sleep_seconds=1,
                 ):
@@ -1814,17 +2021,20 @@ class Plugin(PluginBase):
                     transport=sta,
                     case_id=case_id,
                     label="sta_5g",
-                    connect_cmd="wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0",
-                    verify_cmd="iw dev wl0 link",
+                    connect_cmd=connect_command,
+                    verify_cmd=f"iw dev {iface} link",
                     attempts=3,
                     sleep_seconds=5,
                 ):
+                    driver_join_command = self._profile_command(profile, "sta_driver_join_command")
+                    if not driver_join_command:
+                        return False
                     if not self._connect_with_retry(
                         transport=sta,
                         case_id=case_id,
                         label="sta_5g_driver",
-                        connect_cmd="wl -i wl0 join testpilot5G imode bss",
-                        verify_cmd="wl -i wl0 status",
+                        connect_cmd=driver_join_command,
+                        verify_cmd=f"wl -i {iface} status",
                         attempts=3,
                         sleep_seconds=5,
                     ):
@@ -1833,34 +2043,37 @@ class Plugin(PluginBase):
         # 6G (SAE) — non-fatal: STA Broadcom dhd driver may not support
         # SAE-H2E required by DUT 6G; failure is logged but does not block.
         if "6g" in selected_bands:
+            profile = self._band_baseline_profile("6g")
+            if profile is None:
+                return False
+            iface = str(profile["iface"])
+            ctrl_command = self._profile_command(profile, "sta_ctrl_command")
+            connect_command = self._profile_command(profile, "sta_connect_command")
+            status_command = self._profile_command(profile, "sta_status_command")
+            pre_mode_commands = self._profile_command_list(profile, "sta_pre_mode_commands")
+            pre_start_commands = self._profile_command_list(profile, "sta_pre_start_commands")
             six_g_prep = (
-                "ubus-cli WiFi.AccessPoint.3.Enable=0",
-                "ubus-cli WiFi.AccessPoint.4.Enable=0",
-                "wpa_cli -i wl1 terminate 2>/dev/null || true",
-                "rm -f /var/run/wpa_supplicant/wl1 2>/dev/null || true",
-                "iw dev wl1.1 del 2>/dev/null || true",
-                "iw dev wl1 disconnect 2>/dev/null || true",
-                "ifconfig wl1 down",
-                "wl -i wl1 ap 0",
-                "iw dev wl1 set type managed",
-                "wl -i wl1 up",
-                "ifconfig wl1 up",
+                f"ubus-cli WiFi.AccessPoint.{profile['ap']}.Enable=0",
+                f"ubus-cli WiFi.AccessPoint.{profile['secondary_ap']}.Enable=0",
+                "sleep 3",
+                f"wpa_cli -i {iface} terminate 2>/dev/null || true",
+                f"rm -f /var/run/wpa_supplicant/{iface} 2>/dev/null || true",
+                f"iw dev {iface}.1 del 2>/dev/null || true",
+                f"iw dev {iface} disconnect 2>/dev/null || true",
+                *pre_mode_commands,
+                f"iw dev {iface} set type managed",
+                *pre_start_commands,
                 "mkdir -p /var/run/wpa_supplicant",
-                "printf '%s\\n' 'ctrl_interface=/var/run/wpa_supplicant' > /tmp/wpa_wl1.conf",
-                "printf '%s\\n' 'update_config=1' >> /tmp/wpa_wl1.conf",
-                "printf '%s\\n' 'sae_pwe=2' >> /tmp/wpa_wl1.conf",
-                "printf '%s\\n' 'network={' >> /tmp/wpa_wl1.conf",
-                "printf '%s\\n' 'ssid=\"testpilot6G\"' >> /tmp/wpa_wl1.conf",
-                "printf '%s\\n' 'key_mgmt=SAE' >> /tmp/wpa_wl1.conf",
-                "printf '%s\\n' 'sae_password=\"00000000\"' >> /tmp/wpa_wl1.conf",
-                "printf '%s\\n' 'ieee80211w=2' >> /tmp/wpa_wl1.conf",
-                "printf '%s\\n' 'scan_ssid=1' >> /tmp/wpa_wl1.conf",
-                "printf '%s\\n' '}' >> /tmp/wpa_wl1.conf",
-                "wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant",
+                *self._sta_wpa_config_commands(profile),
+                f"wpa_supplicant -B -D nl80211 -i {iface} -c {self._sta_wpa_config_path(profile)} -C /var/run/wpa_supplicant",
                 "sleep 5",
+                *(
+                    self._render_baseline_template(command, profile)
+                    for command in profile.get("sta_post_start_commands", [])
+                ),
             )
             six_g_ok = True
-            for idx, cmd in enumerate(six_g_prep, start=1):
+            for idx, cmd in enumerate(six_g_prep[:7], start=1):
                 if not self._run_required_command(
                     transport=sta,
                     case_id=case_id,
@@ -1870,12 +2083,28 @@ class Plugin(PluginBase):
                     six_g_ok = False
                     break
             if six_g_ok:
+                six_g_ok = self._wait_for_6g_sta_ap_teardown(
+                    transport=sta,
+                    case_id=case_id,
+                    iface=iface,
+                )
+            if six_g_ok:
+                for idx, cmd in enumerate(six_g_prep[7:], start=8):
+                    if not self._run_required_command(
+                        transport=sta,
+                        case_id=case_id,
+                        label=f"sta_6g_prep.{idx}",
+                        command=cmd,
+                    ):
+                        six_g_ok = False
+                        break
+            if six_g_ok:
                 six_g_ok = self._connect_with_retry(
                     transport=sta,
                     case_id=case_id,
                     label="sta_6g_ctrl",
-                    connect_cmd="wpa_cli -p /var/run/wpa_supplicant -i wl1 ping",
-                    verify_cmd="wpa_cli -p /var/run/wpa_supplicant -i wl1 ping",
+                    connect_cmd=ctrl_command,
+                    verify_cmd=ctrl_command,
                     attempts=3,
                     sleep_seconds=1,
                 )
@@ -1884,8 +2113,12 @@ class Plugin(PluginBase):
                     transport=sta,
                     case_id=case_id,
                     label="sta_6g",
-                    connect_cmd="wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect",
-                    verify_cmd="iw dev wl1 link",
+                    connect_cmd=connect_command,
+                    verify_cmd=(
+                        f"iw dev {iface} link",
+                        status_command,
+                        f"wl -i {iface} status",
+                    ),
                     attempts=3,
                     sleep_seconds=8,
                 )
@@ -1894,7 +2127,7 @@ class Plugin(PluginBase):
                     transport=sta,
                     case_id=case_id,
                     label="sta_6g_status",
-                    command="wpa_cli -p /var/run/wpa_supplicant -i wl1 status",
+                    command=status_command,
                     timeout=20.0,
                 )
             if not six_g_ok:
@@ -1906,6 +2139,12 @@ class Plugin(PluginBase):
 
         # 2.4G (WPA2-Personal via wpa_supplicant)
         if "2.4g" in selected_bands:
+            profile = self._band_baseline_profile("2.4g")
+            if profile is None:
+                return False
+            iface = str(profile["iface"])
+            ctrl_command = self._profile_command(profile, "sta_ctrl_command")
+            connect_command = self._profile_command(profile, "sta_connect_command")
             case_sequence_ok = self._run_case_sta_band_connect_sequence(
                 case=case,
                 band="2.4g",
@@ -1919,30 +2158,26 @@ class Plugin(PluginBase):
                 )
             if case_sequence_ok is not True:
                 two_g_prep = (
-                    "ubus-cli WiFi.AccessPoint.5.Enable=0",
-                    "ubus-cli WiFi.AccessPoint.6.Enable=0",
-                    "wpa_cli -i wl2 terminate 2>/dev/null || true",
-                    "iw dev wl2.1 del 2>/dev/null || true",
-                    "iw dev wl2 disconnect 2>/dev/null || true",
-                    "ifconfig wl2 down",
-                    "wl -i wl2 ap 0",
-                    "iw dev wl2 set type managed",
-                    "wl -i wl2 up",
-                    "ifconfig wl2 up",
-                    "rm -f /var/run/wpa_supplicant/wl2 2>/dev/null || true",
+                    f"ubus-cli WiFi.AccessPoint.{profile['ap']}.Enable=0",
+                    f"ubus-cli WiFi.AccessPoint.{profile['secondary_ap']}.Enable=0",
+                    f"wpa_cli -i {iface} terminate 2>/dev/null || true",
+                    f"iw dev {iface}.1 del 2>/dev/null || true",
+                    f"iw dev {iface} disconnect 2>/dev/null || true",
+                    f"ifconfig {iface} down",
+                    f"wl -i {iface} down",
+                    f"wl -i {iface} ap 0",
+                    f"iw dev {iface} set type managed",
+                    f"wl -i {iface} up",
+                    f"ifconfig {iface} up",
+                    f"rm -f /var/run/wpa_supplicant/{iface} 2>/dev/null || true",
                     "mkdir -p /var/run/wpa_supplicant",
-                    "printf '%s\\n' 'ctrl_interface=/var/run/wpa_supplicant' > /tmp/wpa_wl2.conf",
-                    "printf '%s\\n' 'update_config=1' >> /tmp/wpa_wl2.conf",
-                    "printf '%s\\n' 'network={' >> /tmp/wpa_wl2.conf",
-                    "printf '%s\\n' 'ssid=\"testpilot2G\"' >> /tmp/wpa_wl2.conf",
-                    "printf '%s\\n' 'key_mgmt=WPA-PSK' >> /tmp/wpa_wl2.conf",
-                    "printf '%s\\n' 'psk=\"00000000\"' >> /tmp/wpa_wl2.conf",
-                    "printf '%s\\n' 'scan_ssid=1' >> /tmp/wpa_wl2.conf",
-                    "printf '%s\\n' '}' >> /tmp/wpa_wl2.conf",
-                    "wpa_supplicant -B -D nl80211 -i wl2 -c /tmp/wpa_wl2.conf -C /var/run/wpa_supplicant",
+                    *self._sta_wpa_config_commands(profile),
+                    f"wpa_supplicant -B -D nl80211 -i {iface} -c {self._sta_wpa_config_path(profile)} -C /var/run/wpa_supplicant",
                     "sleep 5",
-                    "wpa_cli -p /var/run/wpa_supplicant -i wl2 enable_network 0",
-                    "wpa_cli -p /var/run/wpa_supplicant -i wl2 select_network 0",
+                    *(
+                        self._render_baseline_template(command, profile)
+                        for command in profile.get("sta_post_start_commands", [])
+                    ),
                 )
                 for idx, cmd in enumerate(two_g_prep, start=1):
                     if not self._run_required_command(
@@ -1956,8 +2191,8 @@ class Plugin(PluginBase):
                     transport=sta,
                     case_id=case_id,
                     label="sta_24g_ctrl",
-                    connect_cmd="wpa_cli -p /var/run/wpa_supplicant -i wl2 ping",
-                    verify_cmd="wpa_cli -p /var/run/wpa_supplicant -i wl2 ping",
+                    connect_cmd=ctrl_command,
+                    verify_cmd=ctrl_command,
                     attempts=3,
                     sleep_seconds=1,
                 ):
@@ -1966,10 +2201,13 @@ class Plugin(PluginBase):
                     transport=sta,
                     case_id=case_id,
                     label="sta_24g",
-                    connect_cmd="wpa_cli -p /var/run/wpa_supplicant -i wl2 select_network 0",
-                    verify_cmd="iw dev wl2 link",
+                    connect_cmd=connect_command,
+                    verify_cmd=(
+                        f"iw dev {iface} link",
+                        f"wl -i {iface} status",
+                    ),
                     attempts=3,
-                    sleep_seconds=5,
+                    sleep_seconds=8,
                 ):
                     return False
         return True
@@ -1979,20 +2217,20 @@ class Plugin(PluginBase):
         dut = self._transports.get("DUT")
         if dut is None:
             return False
-        selected_bands = set(self._selected_sta_bands(case))
+        selected_bands = self._selected_sta_bands(case)
 
         # Baseline repair must converge to deterministic SSID/security, not merely
         # "BSS is up". Otherwise remediation may succeed transiently but the next
         # attempt still inherits a drifted AP profile.
-        bss_map = {"5g": "wl0", "6g": "wl1", "2.4g": "wl2"}
         all_up = True
         for band in selected_bands:
-            iface = bss_map.get(band)
-            if iface:
-                result = self._execute_env_command(dut, f"wl -i {iface} bss", timeout=10.0)
-                if "up" not in self._env_output_text(result).strip().lower():
-                    all_up = False
-                    break
+            profile = self._band_baseline_profile(band)
+            if profile is None:
+                return False
+            result = self._execute_env_command(dut, f"wl -i {profile['iface']} bss", timeout=10.0)
+            if "up" not in self._env_output_text(result).strip().lower():
+                all_up = False
+                break
         if all_up:
             log.info(
                 "[%s] verify_env: %s BSS already up, re-applying deterministic DUT baseline",
@@ -2001,43 +2239,11 @@ class Plugin(PluginBase):
             )
 
         dut_commands: list[str] = []
-        if "5g" in selected_bands:
-            profile = self.DEFAULT_BAND_BASELINES["5g"]
-            dut_commands.extend(
-                (
-                    f"ubus-cli WiFi.Radio.{profile['radio']}.Enable=1",
-                    f"ubus-cli WiFi.SSID.{profile['ssid_index']}.SSID={profile['ssid']}",
-                    f"ubus-cli WiFi.AccessPoint.{profile['ap']}.Security.ModeEnabled={profile['mode']}",
-                    f'ubus-cli \'WiFi.AccessPoint.{profile["ap"]}.Security.KeyPassPhrase="{profile["key"]}"\'',
-                    f"ubus-cli WiFi.AccessPoint.{profile['ap']}.Security.MFPConfig={profile['mfp']}",
-                    f"ubus-cli WiFi.AccessPoint.{profile['ap']}.Enable=1",
-                )
-            )
-        if "6g" in selected_bands:
-            profile = self.DEFAULT_BAND_BASELINES["6g"]
-            dut_commands.extend(
-                (
-                    f"ubus-cli WiFi.Radio.{profile['radio']}.Enable=1",
-                    f"ubus-cli WiFi.SSID.{profile['ssid_index']}.SSID={profile['ssid']}",
-                    f"ubus-cli WiFi.AccessPoint.{profile['ap']}.Security.ModeEnabled={profile['mode']}",
-                    f'ubus-cli \'WiFi.AccessPoint.{profile["ap"]}.Security.SAEPassphrase="{profile["key"]}"\'',
-                    f'ubus-cli \'WiFi.AccessPoint.{profile["ap"]}.Security.KeyPassPhrase="{profile["key"]}"\'',
-                    f"ubus-cli WiFi.AccessPoint.{profile['ap']}.Security.MFPConfig={profile['mfp']}",
-                    f"ubus-cli WiFi.AccessPoint.{profile['ap']}.Enable=1",
-                )
-            )
-        if "2.4g" in selected_bands:
-            profile = self.DEFAULT_BAND_BASELINES["2.4g"]
-            dut_commands.extend(
-                (
-                    f"ubus-cli WiFi.Radio.{profile['radio']}.Enable=1",
-                    f"ubus-cli WiFi.SSID.{profile['ssid_index']}.SSID={profile['ssid']}",
-                    f"ubus-cli WiFi.AccessPoint.{profile['ap']}.Security.ModeEnabled={profile['mode']}",
-                    f'ubus-cli \'WiFi.AccessPoint.{profile["ap"]}.Security.KeyPassPhrase="{profile["key"]}"\'',
-                    f"ubus-cli WiFi.AccessPoint.{profile['ap']}.Security.MFPConfig={profile['mfp']}",
-                    f"ubus-cli WiFi.AccessPoint.{profile['ap']}.Enable=1",
-                )
-            )
+        for band in selected_bands:
+            profile = self._band_baseline_profile(band)
+            if profile is None:
+                return False
+            dut_commands.extend(self._dut_baseline_commands(profile))
         # Apply DUT config. We avoid forcing wld_gen here because live DUT runs
         # may drop BSS into prolonged down state during remediation loops.
         for index, command in enumerate(dut_commands, start=1):
@@ -2074,14 +2280,12 @@ class Plugin(PluginBase):
         return self._ensure_selected_dut_bss_ready(case)
 
     def _selected_dut_bss_checks(self, case: dict[str, Any]) -> list[tuple[str, str]]:
-        selected_bands = set(self._selected_sta_bands(case))
+        selected_bands = self._selected_sta_bands(case)
         bss_checks: list[tuple[str, str]] = []
-        if "5g" in selected_bands:
-            bss_checks.append(("5g", "wl -i wl0 bss"))
-        if "6g" in selected_bands:
-            bss_checks.append(("6g", "wl -i wl1 bss"))
-        if "2.4g" in selected_bands:
-            bss_checks.append(("2.4g", "wl -i wl2 bss"))
+        for band in selected_bands:
+            iface = self._sta_band_iface(band)
+            if iface:
+                bss_checks.append((band, f"wl -i {iface} bss"))
         return bss_checks
 
     def _ensure_selected_dut_bss_ready(self, case: dict[str, Any]) -> bool:
@@ -2105,7 +2309,8 @@ class Plugin(PluginBase):
                 poll_interval=bss_poll_interval,
             ):
                 continue
-            if self._has_custom_env_setup(case):
+            needs_stack_reload = self._has_custom_env_setup(case) or band == "6g"
+            if needs_stack_reload:
                 reloaded = self._reload_dut_wifi_stack(case, dut, case_id=case_id, band=band)
                 if reloaded and self._wait_for_dut_bss_ready(
                     case,
@@ -2254,22 +2459,75 @@ class Plugin(PluginBase):
         # Replace-or-insert: delete any existing ocv= line, then add ocv=0 after ieee80211w=.
         # This corrects both missing and wrong (ocv=1) values.
         patch_cmd = "sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl1_hapd.conf"
-        self._execute_env_command(dut, patch_cmd, timeout=10.0)
-        # Verify patch was written.
-        verify_result = self._execute_env_command(dut, "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1", timeout=5.0)
-        if "ocv=0" not in self._env_output_text(verify_result):
+        verify_cmd = "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1"
+        hostapd_socket_cmd = "test -S /var/run/hostapd/wl1 && echo READY || echo WAIT"
+        bss_cmd = "wl -i wl1 bss"
+
+        def patch_and_verify() -> bool:
+            self._execute_env_command(dut, patch_cmd, timeout=10.0)
+            verify_result = self._execute_env_command(dut, verify_cmd, timeout=5.0)
+            return "ocv=0" in self._env_output_text(verify_result)
+
+        def restart_hostapd() -> None:
+            # wl1 can drift back to managed mode after wld/hostapd crashes; restore AP mode first.
+            for cmd in (
+                "pid=$(pgrep -f '/tmp/wl1_hapd.conf' 2>/dev/null | head -n1); if [ -n \"$pid\" ]; then kill \"$pid\" 2>/dev/null || true; fi",
+                "sleep 2",
+                "rm -f /var/run/hostapd/wl1 /var/run/hostapd/wl1.1",
+                "wl -i wl1 ap 1",
+                "wl -i wl1 up",
+                "ifconfig wl1 up",
+                "hostapd -ddt -B /tmp/wl1_hapd.conf",
+                "sleep 2",
+            ):
+                self._execute_env_command(dut, cmd, timeout=15.0)
+
+        stabilized = False
+        for attempt in range(1, 4):
+            if not patch_and_verify():
+                log.warning(
+                    "[%s] verify_env: %s 6G ocv=0 verify failed — BSS loop may persist",
+                    self.name,
+                    case_id,
+                )
+            # On current lab firmware, restarting wl1 hostapd can leave stale control
+            # sockets behind, flip wl1 back to managed mode, and trigger a wld rewrite
+            # that drops ocv=0. Restore AP mode first and keep looping until ocv, the
+            # hostapd socket, and the DUT BSS all stay present together for a short window.
+            restart_hostapd()
+            for cmd in (
+                "wl -i wl1 bss up",
+                "sleep 2",
+                "sleep 3",
+            ):
+                self._execute_env_command(dut, cmd, timeout=15.0)
+            ocv_ok = "ocv=0" in self._env_output_text(
+                self._execute_env_command(dut, verify_cmd, timeout=5.0)
+            )
+            socket_ok = "READY" in self._env_output_text(
+                self._execute_env_command(dut, hostapd_socket_cmd, timeout=5.0)
+            )
+            bss_ok = self._env_output_text(
+                self._execute_env_command(dut, bss_cmd, timeout=5.0)
+            ).strip().lower() == "up"
+            if ocv_ok and socket_ok and bss_ok:
+                stabilized = True
+                break
+            log.info(
+                "[%s] verify_env: %s 6G restart attempt=%d unstable (ocv=%s socket=%s bss=%s), retrying",
+                self.name,
+                case_id,
+                attempt,
+                ocv_ok,
+                socket_ok,
+                bss_ok,
+            )
+        if not stabilized:
             log.warning(
-                "[%s] verify_env: %s 6G ocv=0 verify failed — BSS loop may persist",
+                "[%s] verify_env: %s 6G ocv fix did not stabilize wl1 after retries",
                 self.name,
                 case_id,
             )
-        # Safe kill (pgrep empty → $() returns empty → kill gets no arg → harmless).
-        for cmd in (
-            "kill $(pgrep -f wl1_hapd 2>/dev/null) 2>/dev/null; true",
-            "sleep 2",
-            "hostapd -ddt -B /tmp/wl1_hapd.conf",
-        ):
-            self._execute_env_command(dut, cmd, timeout=15.0)
         log.info("[%s] verify_env: %s 6G ocv=0 fix applied, wl1 hostapd restarted", self.name, case_id)
 
     def _bounce_dut_band(
@@ -2280,13 +2538,15 @@ class Plugin(PluginBase):
         case_id: str,
         band: str,
     ) -> bool:
-        profile = self.DEFAULT_BAND_BASELINES.get(band)
+        profile = self._band_baseline_profile(band)
         if profile is None:
             return False
         bounce_commands = (
+            f"ubus-cli WiFi.AccessPoint.{profile['secondary_ap']}.Enable=0",
             f"ubus-cli WiFi.AccessPoint.{profile['ap']}.Enable=0",
             "sleep 2",
             f"ubus-cli WiFi.Radio.{profile['radio']}.Enable=1",
+            f"ubus-cli WiFi.AccessPoint.{profile['secondary_ap']}.Enable=0",
             f"ubus-cli WiFi.AccessPoint.{profile['ap']}.Enable=1",
             "sleep 5",
         )
@@ -2429,6 +2689,16 @@ class Plugin(PluginBase):
             return False
         return True
 
+    def _prepare_case_band(self, case: dict[str, Any], topology: Any, band: str) -> bool:
+        normalized_band = self._normalize_band_name(band)
+        if not normalized_band:
+            return True
+        scoped_case = self._case_for_bands(case, (normalized_band,))
+        if not self._ensure_sta_band_ready(scoped_case, topology):
+            return False
+        case["_active_step_band"] = normalized_band
+        return True
+
     def _read_sta_available_bands(self, topology: Any) -> None:
         """Read sta_available_bands from testbed.variables and cache in self._sta_available_bands."""
         raw = getattr(topology, "raw", {})
@@ -2452,6 +2722,7 @@ class Plugin(PluginBase):
         if self._transports:
             self.teardown(case, topology)
         self._sta_env_verified = False
+        case.pop("_active_step_band", None)
         self._read_sta_available_bands(topology)
         case.pop("_last_failure", None)
         if not self._open_case_transports(case, topology, run_case_setup=True):
@@ -2496,13 +2767,13 @@ class Plugin(PluginBase):
 
         # Run default band baseline only when the case does NOT provide its
         # own sta_env_setup AND explicitly references WiFi AP/radio bands.
-        has_custom_env = self._has_custom_env_setup(case)
-        needs_wifi = self._has_explicit_wifi_bands(case)
         sta = self._transports.get("STA")
-        if not has_custom_env and needs_wifi and sta is not None:
+        if self._should_auto_prepare_wifi_bands(case) and sta is not None:
             # Suppress kernel console messages on STA too.
             self._execute_env_command(sta, "dmesg -n 1", timeout=5.0)
-            if not self._ensure_sta_band_ready(case, topology):
+            selected_bands = self._selected_sta_bands(case)
+            initial_band = selected_bands[0] if selected_bands else ""
+            if not self._prepare_case_band(case, topology, initial_band):
                 selected_bands = self._selected_sta_bands(case)
                 self._record_runtime_failure(
                     case,
@@ -2516,6 +2787,20 @@ class Plugin(PluginBase):
                 )
                 log.warning("[%s] verify_env: %s STA band baseline/connect failed", self.name, case_id)
                 return False
+
+            # Cold-boot multi-band cases are the most likely to expose first-switch
+            # drift, so pre-warm the remaining bands once without making them hard
+            # verify_env blockers. execute_step() still re-prepares bands on demand.
+            for warmup_band in selected_bands[1:]:
+                if self._normalize_band_name(warmup_band) == self._normalize_band_name(initial_band):
+                    continue
+                if not self._prepare_case_band(case, topology, warmup_band):
+                    log.info(
+                        "[%s] verify_env: %s warm-up band %s deferred to execute_step",
+                        self.name,
+                        case_id,
+                        warmup_band,
+                    )
 
         env_verify = case.get("env_verify")
         if not isinstance(env_verify, list):
@@ -2621,6 +2906,7 @@ class Plugin(PluginBase):
         action = str(step.get("action", "exec")).strip().lower()
         target_name = str(step.get("target", "DUT")).strip() or "DUT"
         timeout = self._to_float(step.get("timeout"), 30.0)
+        skip_echo = f'[skip] non-executable step {step_id}'
 
         if action == "wait":
             duration = max(0.0, self._to_float(step.get("duration"), 0.0))
@@ -2632,6 +2918,17 @@ class Plugin(PluginBase):
                 "output": f"waited {duration:.3f}s",
                 "captured": {"duration": duration},
                 "timing": elapsed,
+            }
+
+        if action == "skip":
+            return {
+                "success": True,
+                "output": skip_echo,
+                "captured": {},
+                "timing": 0.0,
+                "command": f'echo "{skip_echo}"',
+                "fallback_reason": "fallback_skip_echo",
+                "returncode": 0,
             }
 
         transport = self._transports.get(target_name) or self._transports.get("DUT")
@@ -2651,6 +2948,32 @@ class Plugin(PluginBase):
                 "timing": 0.0,
             }
 
+        if self._should_auto_prepare_wifi_bands(case):
+            selected_bands = self._selected_sta_bands(case)
+            step_band = self._normalize_band_name(step.get("band"))
+            if not step_band:
+                step_band = self._band_from_text(stringify_step_command(step.get("command")))
+            active_band = self._normalize_band_name(case.get("_active_step_band"))
+            if len(selected_bands) > 1 and step_band and step_band != active_band:
+                if not self._prepare_case_band(case, topology, step_band):
+                    self._record_runtime_failure(
+                        case,
+                        phase="execute_step",
+                        comment=f"failed to prepare band {step_band} before {step_id}",
+                        category="environment",
+                        reason_code="sta_band_not_ready",
+                        device="STA",
+                        band=step_band,
+                        metadata={"step_id": step_id},
+                    )
+                    return {
+                        "success": False,
+                        "output": f"failed to prepare band {step_band} before {step_id}",
+                        "captured": {},
+                        "timing": 0.0,
+                        "returncode": 1,
+                    }
+
         commands_to_run, fallback_reason = self._command_resolver.resolve(case, step, topology)
         expanded_commands: list[str] = []
         for command_to_run in commands_to_run:
@@ -2666,6 +2989,7 @@ class Plugin(PluginBase):
         total_elapsed = 0.0
         success = True
         final_returncode = 0
+        capture_name = str(step.get("capture", "")).strip()
 
         index = 0
         while index < len(commands_to_run):
@@ -2779,6 +3103,33 @@ class Plugin(PluginBase):
                     final_returncode = 1
                 break
             index += 1
+
+        expected_capture_field = self._field_name_from_capture(case, capture_name)
+        if success and capture_name and expected_capture_field and expected_capture_field not in captured:
+            capture_fallback = self._capture_assoc_mac_fallback(
+                case=case,
+                step=step,
+                target_name=target_name,
+                transport=transport,
+                timeout=timeout,
+            )
+            if capture_fallback is not None:
+                fallback_captured, fallback_output, fallback_command = capture_fallback
+                captured.update(fallback_captured)
+                if fallback_output:
+                    outputs.append(fallback_output)
+                fallback_reason = (
+                    f"{fallback_reason}+capture_assoc_mac_query"
+                    if fallback_reason
+                    else "capture_assoc_mac_query"
+                )
+                log.info(
+                    "[%s] execute_step: %s.%s fallback capture via %s",
+                    self.name,
+                    case.get("id"),
+                    step_id,
+                    self._preview_value(fallback_command, limit=96),
+                )
 
         return {
             "success": success,
@@ -3171,3 +3522,19 @@ class Plugin(PluginBase):
         self._device_specs.clear()
         self._sta_env_verified = False
         log.info("[%s] teardown: %s done", self.name, case_id)
+
+    def qualify_baseline(
+        self,
+        topology: Any,
+        *,
+        bands: tuple[str, ...] = (),
+        repeat_count: int = 5,
+        soak_minutes: int = 15,
+    ) -> dict[str, Any]:
+        """Qualify reusable DUT/STA baseline connectivity for selected bands."""
+        qualifier = BaselineQualifier(self, topology)
+        return qualifier.run(
+            bands=bands,
+            repeat_count=repeat_count,
+            soak_minutes=soak_minutes,
+        )

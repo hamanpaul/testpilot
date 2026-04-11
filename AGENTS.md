@@ -37,9 +37,10 @@ cp configs/testbed.yaml.example configs/testbed.yaml   # 首次設定
 python -m testpilot.cli --version
 python -m testpilot.cli list-plugins
 python -m testpilot.cli list-cases wifi_llapi
+python -m testpilot.cli wifi-llapi baseline-qualify --repeat-count 5 --soak-minutes 15
 python -m testpilot.cli run wifi_llapi
 python -m testpilot.cli wifi-llapi build-template-report --source-xlsx <path>
-pytest
+uv run pytest -q
 ```
 
 ## Todo Governance（嚴格）

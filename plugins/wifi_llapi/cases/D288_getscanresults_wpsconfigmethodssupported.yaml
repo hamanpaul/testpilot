@@ -1,7 +1,7 @@
 id: d288-getscanresults-wpsconfigmethodssupported
 name: D288 getScanResults WPSConfigMethodsSupported
 source:
-  row: 290
+  row: 288
   object: WiFi.Radio.{i}.
   api: getScanResults()
   baseline: 0310-BGW720-300
@@ -24,32 +24,35 @@ topology:
 steps:
 - id: step_5g_scan
   target: dut
-  action: read
+  action: exec
   capture: scan_5g
-  command: ubus-cli "WiFi.Radio.1.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.1 (5g) getScanResults()
+  command: 'VAL=$(ubus-cli "WiFi.Radio.1.getScanResults()" | sed -n ''s/^[[:space:]]*WPSConfigMethodsSupported = "\([^"]*\)".*/\1/p'' | head -n1); printf "WPSConfigMethodsSupported=%s\n" "$VAL"'
+  expected: 5G getScanResults() 的 WPSConfigMethodsSupported 需可萃取為空字串 fail shape
+  description: Radio.1 (5g) 擷取 neighboring scan 的 WPSConfigMethodsSupported live shape
 - id: step_6g_scan
   target: dut
-  action: read
+  action: exec
   capture: scan_6g
-  command: ubus-cli "WiFi.Radio.2.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.2 (6g) getScanResults()
+  command: 'VAL=$(ubus-cli "WiFi.Radio.2.getScanResults()" | sed -n ''s/^[[:space:]]*WPSConfigMethodsSupported = "\([^"]*\)".*/\1/p'' | head -n1); printf "WPSConfigMethodsSupported=%s\n" "$VAL"'
+  expected: 6G getScanResults() 的 WPSConfigMethodsSupported 需可萃取為空字串 fail shape
+  description: Radio.2 (6g) 擷取 neighboring scan 的 WPSConfigMethodsSupported live shape
 - id: step_24g_scan
   target: dut
-  action: read
+  action: exec
   capture: scan_24g
-  command: ubus-cli "WiFi.Radio.3.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.3 (2.4g) getScanResults()
+  command: 'VAL=$(ubus-cli "WiFi.Radio.3.getScanResults()" | sed -n ''s/^[[:space:]]*WPSConfigMethodsSupported = "\([^"]*\)".*/\1/p'' | head -n1); printf "WPSConfigMethodsSupported=%s\n" "$VAL"'
+  expected: 2.4G getScanResults() 的 WPSConfigMethodsSupported 需可萃取為空字串 fail shape
+  description: Radio.3 (2.4g) 擷取 neighboring scan 的 WPSConfigMethodsSupported live shape
 pass_criteria:
 - field: scan_5g.WPSConfigMethodsSupported
-  operator: regex
-  value: '.*'
+  operator: equals
+  value: ''
+  description: 5G neighboring scan 未提供 WPSConfigMethodsSupported，live shape 應維持空字串
 - field: scan_6g.WPSConfigMethodsSupported
-  operator: regex
-  value: '.*'
+  operator: equals
+  value: ''
+  description: 6G neighboring scan 未提供 WPSConfigMethodsSupported，live shape 應維持空字串
 - field: scan_24g.WPSConfigMethodsSupported
-  operator: regex
-  value: '.*'
+  operator: equals
+  value: ''
+  description: 2.4G neighboring scan 未提供 WPSConfigMethodsSupported，live shape 應維持空字串

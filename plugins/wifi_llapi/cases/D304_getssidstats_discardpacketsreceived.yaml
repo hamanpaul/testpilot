@@ -1,7 +1,7 @@
 id: d304-getssidstats-discardpacketsreceived
 name: D304 getSSIDStats DiscardPacketsReceived
 source:
-  row: 229
+  row: 304
   object: WiFi.SSID.{i}.
   api: getSSIDStats()
   baseline: 0310-BGW720-300

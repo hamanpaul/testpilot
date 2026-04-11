@@ -1,7 +1,7 @@
 id: d275-getradiostats-unicastpacketsreceived
 name: D275 getRadioStats UnicastPacketsReceived
 source:
-  row: 277
+  row: 275
   object: WiFi.Radio.{i}.
   api: getRadioStats()
   baseline: 0310-BGW720-300

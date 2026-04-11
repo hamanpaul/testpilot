@@ -87,6 +87,12 @@ class TestCLIDocAlignment:
         result = runner.invoke(main, ["wifi-llapi", "build-template-report", "--help"])
         assert result.exit_code == 0
 
+    def test_baseline_qualify_exists(self):
+        """wifi-llapi baseline-qualify exists."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["wifi-llapi", "baseline-qualify", "--help"])
+        assert result.exit_code == 0
+
     def test_audit_yaml_commands_exists(self):
         """wifi-llapi audit-yaml-commands exists."""
         runner = CliRunner()

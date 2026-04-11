@@ -1,7 +1,7 @@
 id: d278-getscanresults-bssid
 name: D278 getScanResults BSSID
 source:
-  row: 280
+  row: 278
   object: WiFi.Radio.{i}.
   api: getScanResults()
   baseline: 0310-BGW720-300
@@ -24,32 +24,68 @@ topology:
 steps:
 - id: step_5g_scan
   target: dut
-  action: read
-  capture: scan_5g
-  command: ubus-cli "WiFi.Radio.1.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.1 (5g) getScanResults()
+  action: exec
+  capture: llapi_5g
+  command: 'BSSID=$(ubus-cli "WiFi.Radio.1.getScanResults()" | sed -n "/BSSID = /{s/.*BSSID = \"\\([^\"]*\\)\".*/\\1/p;q;}"); [ -n "$BSSID" ] && printf "LlapiBssid5g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"'
+  expected: getScanResults() 需先解析出 5G target BSSID
+  description: Radio.1 (5g) getScanResults() 先擷取 workbook compare 使用的 target BSSID
+- id: step_5g_iw_scan
+  target: dut
+  action: exec
+  capture: iw_5g
+  command: 'TARGET="{{llapi_5g.LlapiBssid5g}}"; MATCH=$(iw dev wl0 scan | grep -im1 "^BSS $TARGET" | sed -n "s/^BSS \\([^ (]*\\).*/\\1/p"); [ -n "$MATCH" ] && printf "IwBssid5g=%s\n" "$(printf "%s" "$MATCH" | tr "A-F" "a-f")"'
+  expected: iw dev wl0 scan 需能找到相同 5G BSSID
+  description: wl0 scan 交叉比對 workbook target BSSID
 - id: step_6g_scan
   target: dut
-  action: read
-  capture: scan_6g
-  command: ubus-cli "WiFi.Radio.2.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.2 (6g) getScanResults()
+  action: exec
+  capture: llapi_6g
+  command: 'BSSID=$(ubus-cli "WiFi.Radio.2.getScanResults()" | sed -n "/BSSID = /{s/.*BSSID = \"\\([^\"]*\\)\".*/\\1/p;q;}"); [ -n "$BSSID" ] && printf "LlapiBssid6g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"'
+  expected: getScanResults() 需先解析出 6G target BSSID
+  description: Radio.2 (6g) getScanResults() 先擷取 workbook compare 使用的 target BSSID
+- id: step_6g_iw_scan
+  target: dut
+  action: exec
+  capture: iw_6g
+  command: 'TARGET="{{llapi_6g.LlapiBssid6g}}"; MATCH=$(iw dev wl1 scan | grep -im1 "^BSS $TARGET" | sed -n "s/^BSS \\([^ (]*\\).*/\\1/p"); [ -n "$MATCH" ] && printf "IwBssid6g=%s\n" "$(printf "%s" "$MATCH" | tr "A-F" "a-f")"'
+  expected: iw dev wl1 scan 需能找到相同 6G BSSID
+  description: wl1 scan 交叉比對 workbook target BSSID
 - id: step_24g_scan
   target: dut
-  action: read
-  capture: scan_24g
-  command: ubus-cli "WiFi.Radio.3.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.3 (2.4g) getScanResults()
+  action: exec
+  capture: llapi_24g
+  command: 'BSSID=$(ubus-cli "WiFi.Radio.3.getScanResults()" | sed -n "/BSSID = /{s/.*BSSID = \"\\([^\"]*\\)\".*/\\1/p;q;}"); [ -n "$BSSID" ] && printf "LlapiBssid24g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"'
+  expected: getScanResults() 需先解析出 2.4G target BSSID
+  description: Radio.3 (2.4g) getScanResults() 先擷取 workbook compare 使用的 target BSSID
+- id: step_24g_iw_scan
+  target: dut
+  action: exec
+  capture: iw_24g
+  command: 'TARGET="{{llapi_24g.LlapiBssid24g}}"; MATCH=$(iw dev wl2 scan | grep -im1 "^BSS $TARGET" | sed -n "s/^BSS \\([^ (]*\\).*/\\1/p"); [ -n "$MATCH" ] && printf "IwBssid24g=%s\n" "$(printf "%s" "$MATCH" | tr "A-F" "a-f")"'
+  expected: iw dev wl2 scan 需能找到相同 2.4G BSSID
+  description: wl2 scan 交叉比對 workbook target BSSID
 pass_criteria:
-- field: scan_5g.BSSID
+- field: llapi_5g.LlapiBssid5g
   operator: regex
-  value: '.+'
-- field: scan_6g.BSSID
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  description: 5G LLAPI scan 必須先解析出 target BSSID
+- field: iw_5g.IwBssid5g
+  operator: equals
+  reference: llapi_5g.LlapiBssid5g
+  description: wl0 scan 必須找到與 5G LLAPI 相同的 target BSSID
+- field: llapi_6g.LlapiBssid6g
   operator: regex
-  value: '.+'
-- field: scan_24g.BSSID
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  description: 6G LLAPI scan 必須先解析出 target BSSID
+- field: iw_6g.IwBssid6g
+  operator: equals
+  reference: llapi_6g.LlapiBssid6g
+  description: wl1 scan 必須找到與 6G LLAPI 相同的 target BSSID
+- field: llapi_24g.LlapiBssid24g
   operator: regex
-  value: '.+'
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  description: 2.4G LLAPI scan 必須先解析出 target BSSID
+- field: iw_24g.IwBssid24g
+  operator: equals
+  reference: llapi_24g.LlapiBssid24g
+  description: wl2 scan 必須找到與 2.4G LLAPI 相同的 target BSSID

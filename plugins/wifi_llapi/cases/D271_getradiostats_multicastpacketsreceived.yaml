@@ -1,7 +1,7 @@
 id: d271-getradiostats-multicastpacketsreceived
 name: D271 getRadioStats MulticastPacketsReceived
 source:
-  row: 273
+  row: 271
   object: WiFi.Radio.{i}.
   api: getRadioStats()
   baseline: 0310-BGW720-300

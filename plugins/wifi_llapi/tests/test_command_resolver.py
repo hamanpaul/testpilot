@@ -181,6 +181,44 @@ class TestHandleRuntimeFallback:
         # Should return a tuple (commands, reason) or None
         assert result is None or (isinstance(result, tuple) and len(result) == 2)
 
+    def test_retries_scan_timeout_with_reduced_capture(self, resolver: CommandResolver) -> None:
+        result = resolver.handle_runtime_fallback(
+            case={"id": "D277"},
+            step={"id": "step_5g_scan", "command": 'ubus-cli "WiFi.Radio.1.getScanResults()"'},
+            topology=None,
+            result={
+                "returncode": 124,
+                "stdout": "",
+                "stderr": "serialwrap cmd status timeout: command did not finish",
+            },
+            current_commands=['ubus-cli "WiFi.Radio.1.getScanResults()"'],
+            current_fallback_reason="",
+        )
+        assert result is not None
+        commands, reason = result
+        assert reason == "scan_first_result_capture"
+        assert commands == [
+            "ubus-cli WiFi.Radio.1.getScanResults() | head -60 | sed -n '/BSSID = /,/^        },/p'"
+        ]
+
+    def test_does_not_reduce_piped_scan_command_on_timeout(self, resolver: CommandResolver) -> None:
+        result = resolver.handle_runtime_fallback(
+            case={"id": "D277"},
+            step={
+                "id": "step_5g_scan",
+                "command": 'ubus-cli "WiFi.Radio.1.getScanResults()" | head -40',
+            },
+            topology=None,
+            result={
+                "returncode": 124,
+                "stdout": "",
+                "stderr": "serialwrap cmd status timeout: command did not finish",
+            },
+            current_commands=['ubus-cli "WiFi.Radio.1.getScanResults()" | head -40'],
+            current_fallback_reason="",
+        )
+        assert result is None
+
 
 # ---------------------------------------------------------------------------
 # extract_cli_fragments()
@@ -272,6 +310,27 @@ class TestIsUnexecutableResult:
     def test_generic_failure_not_unexecutable(self) -> None:
         assert CommandResolver.is_unexecutable_result(
             {"returncode": 1, "stdout": "timeout", "stderr": ""}
+        ) is False
+
+
+class TestIsTimeoutResult:
+    def test_return_code_124(self) -> None:
+        assert CommandResolver.is_timeout_result(
+            {"returncode": 124, "stdout": "", "stderr": ""}
+        ) is True
+
+    def test_serialwrap_timeout_stderr(self) -> None:
+        assert CommandResolver.is_timeout_result(
+            {
+                "returncode": 1,
+                "stdout": "",
+                "stderr": "serialwrap cmd status timeout: command did not finish",
+            }
+        ) is True
+
+    def test_generic_failure_not_timeout(self) -> None:
+        assert CommandResolver.is_timeout_result(
+            {"returncode": 1, "stdout": "", "stderr": "some other failure"}
         ) is False
 
 

@@ -88,6 +88,7 @@ sta_env_setup: |
     ubus-cli WiFi.SSID.6.SSID=TestPilot_BTM
     ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet=
     ubus-cli WiFi.AccessPoint.4.IEEE80211u.QoSMapSet=
+    sleep 3
     ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
     ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase=testpilot6g
     ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Required
@@ -102,15 +103,21 @@ sta_env_setup: |
     rm -f /var/run/wpa_supplicant/wl1 2>/dev/null || true
     iw dev wl1.1 del 2>/dev/null || true
     iw dev wl1 disconnect 2>/dev/null || true
+    ifconfig wl1 down
+    wl -i wl1 down
+    wl -i wl1 ap 0
     iw dev wl1 set type managed
+    wl -i wl1 up
     ifconfig wl1 up
     mkdir -p /var/run/wpa_supplicant
     printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\nnetwork={\nssid="TestPilot_BTM"\nkey_mgmt=SAE\nsae_password="testpilot6g"\nieee80211w=2\nscan_ssid=1\n}\n' > /tmp/wpa_wl1.conf
     wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant
+    wpa_cli -p /var/run/wpa_supplicant -i wl1 enable_network 0
+    wpa_cli -p /var/run/wpa_supplicant -i wl1 select_network 0
     sleep 3
   STA 6G connect verify:
     wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect
-    sleep 8
+    sleep 15
     iw dev wl1 link
     wpa_cli -p /var/run/wpa_supplicant -i wl1 status
   DUT association evidence:

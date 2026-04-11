@@ -206,6 +206,55 @@ def wifi_llapi_group() -> None:
     """wifi_llapi plugin helper commands."""
 
 
+@wifi_llapi_group.command("baseline-qualify")
+@click.option(
+    "--band",
+    "bands",
+    multiple=True,
+    type=click.Choice(["5g", "6g", "2.4g"], case_sensitive=False),
+    help="Band to qualify. Repeatable. Defaults to all enabled sta_available_bands.",
+)
+@click.option(
+    "--repeat-count",
+    default=5,
+    show_default=True,
+    type=click.IntRange(min=1),
+    help="Consecutive successful rounds required per band.",
+)
+@click.option(
+    "--soak-minutes",
+    default=15,
+    show_default=True,
+    type=click.IntRange(min=0),
+    help="Soak time after each successful round.",
+)
+@click.pass_context
+def baseline_qualify(
+    ctx: click.Context,
+    bands: tuple[str, ...],
+    repeat_count: int,
+    soak_minutes: int,
+) -> None:
+    """Qualify reusable DUT/STA baseline connectivity before full wifi_llapi runs."""
+    orch: Orchestrator = ctx.obj["orchestrator"]
+    plugin = orch.loader.load("wifi_llapi")
+    qualify = getattr(plugin, "qualify_baseline", None)
+    if not callable(qualify):
+        raise click.ClickException("wifi_llapi plugin does not support baseline qualification")
+    try:
+        result = qualify(
+            orch.config,
+            bands=tuple(str(band).lower() for band in bands),
+            repeat_count=repeat_count,
+            soak_minutes=soak_minutes,
+        )
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+    console.print(result)
+    if str(result.get("overall_status", "")).lower() != "stable":
+        raise SystemExit(1)
+
+
 @wifi_llapi_group.command("build-template-report")
 @click.option(
     "--source-xlsx",

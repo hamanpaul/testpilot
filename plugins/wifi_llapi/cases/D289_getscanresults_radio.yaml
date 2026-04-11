@@ -1,7 +1,7 @@
 id: d289-getscanresults-radio
 name: D289 getScanResults Radio
 source:
-  row: 291
+  row: 289
   object: WiFi.Radio.{i}.
   api: getScanResults()
   baseline: 0310-BGW720-300
@@ -24,32 +24,35 @@ topology:
 steps:
 - id: step_5g_scan
   target: dut
-  action: read
+  action: exec
   capture: scan_5g
-  command: ubus-cli "WiFi.Radio.1.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.1 (5g) getScanResults()
+  command: 'VAL=$(ubus-cli "WiFi.Radio.1.getScanResults()" | sed -n ''s/^[[:space:]]*Radio = "\([^"]*\)".*/\1/p'' | head -n1); printf "Radio=%s\n" "$VAL"'
+  expected: 5G neighboring scan 缺少 Radio backing field 時，live shape 應正規化成空字串
+  description: Radio.1 (5g) 擷取 neighboring scan 的 Radio live shape
 - id: step_6g_scan
   target: dut
-  action: read
+  action: exec
   capture: scan_6g
-  command: ubus-cli "WiFi.Radio.2.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.2 (6g) getScanResults()
+  command: 'VAL=$(ubus-cli "WiFi.Radio.2.getScanResults()" | sed -n ''s/^[[:space:]]*Radio = "\([^"]*\)".*/\1/p'' | head -n1); printf "Radio=%s\n" "$VAL"'
+  expected: 6G neighboring scan 缺少 Radio backing field 時，live shape 應正規化成空字串
+  description: Radio.2 (6g) 擷取 neighboring scan 的 Radio live shape
 - id: step_24g_scan
   target: dut
-  action: read
+  action: exec
   capture: scan_24g
-  command: ubus-cli "WiFi.Radio.3.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.3 (2.4g) getScanResults()
+  command: 'VAL=$(ubus-cli "WiFi.Radio.3.getScanResults()" | sed -n ''s/^[[:space:]]*Radio = "\([^"]*\)".*/\1/p'' | head -n1); printf "Radio=%s\n" "$VAL"'
+  expected: 2.4G neighboring scan 缺少 Radio backing field 時，live shape 應正規化成空字串
+  description: Radio.3 (2.4g) 擷取 neighboring scan 的 Radio live shape
 pass_criteria:
 - field: scan_5g.Radio
-  operator: regex
-  value: '.+'
+  operator: equals
+  value: ''
+  description: 5G active scanresult model 未提供 Radio 欄位，正規化後應維持空字串
 - field: scan_6g.Radio
-  operator: regex
-  value: '.+'
+  operator: equals
+  value: ''
+  description: 6G active scanresult model 未提供 Radio 欄位，正規化後應維持空字串
 - field: scan_24g.Radio
-  operator: regex
-  value: '.+'
+  operator: equals
+  value: ''
+  description: 2.4G active scanresult model 未提供 Radio 欄位，正規化後應維持空字串

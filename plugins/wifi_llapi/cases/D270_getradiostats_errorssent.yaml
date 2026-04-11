@@ -1,7 +1,7 @@
 id: d270-getradiostats-errorssent
 name: D270 getRadioStats ErrorsSent
 source:
-  row: 272
+  row: 270
   object: WiFi.Radio.{i}.
   api: getRadioStats()
   baseline: 0310-BGW720-300

@@ -4,7 +4,7 @@ version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 258
+  row: 334
   object: WiFi.SSID.{i}.Stats.
   api: RetransCount
 platform:
@@ -93,9 +93,16 @@ sta_env_setup: |
     wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
     wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
   6G example:
+    iw dev wl1 disconnect 2>/dev/null || true
+    ifconfig wl1 down
+    wl -i wl1 down
+    wl -i wl1 ap 0
     iw dev wl1 set type managed
+    wl -i wl1 up
     ifconfig wl1 up
     wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant
+    wpa_cli -p /var/run/wpa_supplicant -i wl1 enable_network 0
+    wpa_cli -p /var/run/wpa_supplicant -i wl1 select_network 0
     wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect
   2.4G example:
     iw dev wl2 set type managed
@@ -113,7 +120,7 @@ test_procedure: |
   2) For each band, capture assoclist, direct Stats, getSSIDStats(), and the matching driver view before the traffic attempt.
   3) Attempt STA-generated ping traffic with a static IP on the active STA interface, wait 2 seconds, then reread the same counter.
   4) Use the final reread for the manual judgment.
-  5) Record direct/getSSIDStats()/driver equality as repeatable evidence, but keep the verdict workbook-gated open because v4.0.3 is still To be tested.
+  5) Pass when direct Stats.RetransCount equals getSSIDStats().RetransCount on 5G/6G/2.4G and the matching low-32 view of wl if_counters txretrans.
 steps:
 - id: assoc_5g
   action: exec
@@ -129,9 +136,15 @@ steps:
 - id: getssid_5g
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n 's/.*RetransCount = \([0-9][0-9]*\).*/GetSSIDStatsRetransCount5g=\1/p'
+  command: ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n 's/^[[:space:]]*RetransCount = \([0-9][0-9]*\).*/GetSSIDStatsRetransCount5g=\1/p'
   depends_on: direct_5g
   capture: getssid_5g
+- id: driver_5g
+  action: exec
+  target: DUT
+  command: v=$(wl -i wl0 if_counters | sed -n 's/.*txretrans \([0-9][0-9]*\).*/\1/p'); printf "DriverRetransCount5g=%u\n" "$((v & 4294967295))"
+  depends_on: getssid_5g
+  capture: driver_5g
 - id: assoc_6g
   action: exec
   target: DUT
@@ -146,9 +159,15 @@ steps:
 - id: getssid_6g
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n 's/.*RetransCount = \([0-9][0-9]*\).*/GetSSIDStatsRetransCount6g=\1/p'
+  command: ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n 's/^[[:space:]]*RetransCount = \([0-9][0-9]*\).*/GetSSIDStatsRetransCount6g=\1/p'
   depends_on: direct_6g
   capture: getssid_6g
+- id: driver_6g
+  action: exec
+  target: DUT
+  command: v=$(wl -i wl1 if_counters | sed -n 's/.*txretrans \([0-9][0-9]*\).*/\1/p'); printf "DriverRetransCount6g=%u\n" "$((v & 4294967295))"
+  depends_on: getssid_6g
+  capture: driver_6g
 - id: assoc_24g
   action: exec
   target: DUT
@@ -163,9 +182,15 @@ steps:
 - id: getssid_24g
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n 's/.*RetransCount = \([0-9][0-9]*\).*/GetSSIDStatsRetransCount24g=\1/p'
+  command: ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n 's/^[[:space:]]*RetransCount = \([0-9][0-9]*\).*/GetSSIDStatsRetransCount24g=\1/p'
   depends_on: direct_24g
   capture: getssid_24g
+- id: driver_24g
+  action: exec
+  target: DUT
+  command: v=$(wl -i wl2 if_counters | sed -n 's/.*txretrans \([0-9][0-9]*\).*/\1/p'); printf "DriverRetransCount24g=%u\n" "$((v & 4294967295))"
+  depends_on: getssid_24g
+  capture: driver_24g
 pass_criteria:
 - field: assoc_5g.AssocMac5g
   operator: regex
@@ -175,6 +200,10 @@ pass_criteria:
   operator: equals
   reference: getssid_5g.GetSSIDStatsRetransCount5g
   description: 5g direct Stats.RetransCount must match getSSIDStats().RetransCount.
+- field: direct_5g.RetransCount
+  operator: equals
+  reference: driver_5g.DriverRetransCount5g
+  description: 5g direct Stats.RetransCount must match the low-32 view of wl0 if_counters txretrans.
 - field: assoc_6g.AssocMac6g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -183,6 +212,10 @@ pass_criteria:
   operator: equals
   reference: getssid_6g.GetSSIDStatsRetransCount6g
   description: 6g direct Stats.RetransCount must match getSSIDStats().RetransCount.
+- field: direct_6g.RetransCount
+  operator: equals
+  reference: driver_6g.DriverRetransCount6g
+  description: 6g direct Stats.RetransCount must match the low-32 view of wl1 if_counters txretrans.
 - field: assoc_24g.AssocMac24g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -191,21 +224,28 @@ pass_criteria:
   operator: equals
   reference: getssid_24g.GetSSIDStatsRetransCount24g
   description: 2.4g direct Stats.RetransCount must match getSSIDStats().RetransCount.
+- field: direct_24g.RetransCount
+  operator: equals
+  reference: driver_24g.DriverRetransCount24g
+  description: 2.4g direct Stats.RetransCount must match the low-32 view of wl2 if_counters txretrans.
 verification_command: 
   - '# 5g'
   - wl -i wl0 assoclist
   - ubus-cli "WiFi.SSID.4.Stats.RetransCount?"
-  - 'ubus-cli "WiFi.SSID.4.getSSIDStats()" | grep "RetransCount"'
+  - 'ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n "s/^[[:space:]]*RetransCount = \([0-9][0-9]*\).*/GetSSIDStatsRetransCount5g=\1/p"'
+  - 'v=$(wl -i wl0 if_counters | sed -n "s/.*txretrans \([0-9][0-9]*\).*/\1/p"); printf "DriverRetransCount5g=%u\n" "$((v & 4294967295))"'
   - ''
   - '# 6g'
   - wl -i wl1 assoclist
   - ubus-cli "WiFi.SSID.6.Stats.RetransCount?"
-  - 'ubus-cli "WiFi.SSID.6.getSSIDStats()" | grep "RetransCount"'
+  - 'ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n "s/^[[:space:]]*RetransCount = \([0-9][0-9]*\).*/GetSSIDStatsRetransCount6g=\1/p"'
+  - 'v=$(wl -i wl1 if_counters | sed -n "s/.*txretrans \([0-9][0-9]*\).*/\1/p"); printf "DriverRetransCount6g=%u\n" "$((v & 4294967295))"'
   - ''
   - '# 2.4g'
   - wl -i wl2 assoclist
   - ubus-cli "WiFi.SSID.8.Stats.RetransCount?"
-  - 'ubus-cli "WiFi.SSID.8.getSSIDStats()" | grep "RetransCount"'
+  - 'ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n "s/^[[:space:]]*RetransCount = \([0-9][0-9]*\).*/GetSSIDStatsRetransCount24g=\1/p"'
+  - 'v=$(wl -i wl2 if_counters | sed -n "s/.*txretrans \([0-9][0-9]*\).*/\1/p"); printf "DriverRetransCount24g=%u\n" "$((v & 4294967295))"'
 results_reference:
   v4.0.1:
     5g: Fail
@@ -216,4 +256,4 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
-    comment: 'Brcm | Multiband serialwrap probe observed 5g=0, 6g=0, 2.4g=0; direct Stats matched getSSIDStats(), but workbook v4.0.3 still remains To be tested.'
+    comment: 'Multiband serialwrap/source-backed retest: workbook replay exact-closed direct Stats and getSSIDStats(), but active 0403 direct-property source is `wldm_SSID_TrafficStats()` -> `wl if_counters txretrans` without WDS accumulation. Current focused live probe closed direct Stats / getSSIDStats / low-32(txretrans) at 5g=4294967295, 6g=4294963915, 2.4g=0, so workbook row identity is refreshed to 334 and the oracle is locked to the low-32 driver view.'

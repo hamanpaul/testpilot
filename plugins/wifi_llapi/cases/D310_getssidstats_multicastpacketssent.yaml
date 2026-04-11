@@ -1,7 +1,7 @@
 id: d310-getssidstats-multicastpacketssent
 name: D310 getSSIDStats MulticastPacketsSent
 source:
-  row: 235
+  row: 310
   object: WiFi.SSID.{i}.
   api: getSSIDStats()
   baseline: 0310-BGW720-300

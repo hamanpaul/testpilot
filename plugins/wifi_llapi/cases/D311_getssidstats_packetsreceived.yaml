@@ -1,7 +1,7 @@
 id: d311-getssidstats-packetsreceived
 name: D311 getSSIDStats PacketsReceived
 source:
-  row: 236
+  row: 311
   object: WiFi.SSID.{i}.
   api: getSSIDStats()
   baseline: 0310-BGW720-300

@@ -1,7 +1,7 @@
 id: d263-getradiostats-broadcastpacketsreceived
 name: D263 getRadioStats BroadcastPacketsReceived
 source:
-  row: 265
+  row: 263
   object: WiFi.Radio.{i}.
   api: getRadioStats()
   baseline: 0310-BGW720-300

@@ -1,7 +1,7 @@
 id: d267-getradiostats-discardpacketsreceived
 name: D267 getRadioStats DiscardPacketsReceived
 source:
-  row: 269
+  row: 267
   object: WiFi.Radio.{i}.
   api: getRadioStats()
   baseline: 0310-BGW720-300

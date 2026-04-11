@@ -4,7 +4,7 @@ version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 245
+  row: 321
   object: WiFi.SSID.{i}.Stats.
   api: BroadcastPacketsReceived
 platform:
@@ -93,9 +93,16 @@ sta_env_setup: |
     wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
     wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
   6G example:
+    iw dev wl1 disconnect 2>/dev/null || true
+    ifconfig wl1 down
+    wl -i wl1 down
+    wl -i wl1 ap 0
     iw dev wl1 set type managed
+    wl -i wl1 up
     ifconfig wl1 up
     wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant
+    wpa_cli -p /var/run/wpa_supplicant -i wl1 enable_network 0
+    wpa_cli -p /var/run/wpa_supplicant -i wl1 select_network 0
     wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect
   2.4G example:
     iw dev wl2 set type managed

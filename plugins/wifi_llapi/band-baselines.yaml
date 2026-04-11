@@ -1,0 +1,91 @@
+version: "2026-04-09"
+profiles:
+  5g:
+    iface: wl0
+    radio: "1"
+    ap: "1"
+    secondary_ap: "2"
+    ssid_index: "4"
+    ssid: testpilot5G
+    mode: WPA2-Personal
+    key: "00000000"
+    mfp: Disabled
+    dut_secret_fields:
+      - KeyPassPhrase
+    sta_global_config:
+      - ctrl_interface=/var/run/wpa_supplicant
+      - update_config=1
+    sta_network_config:
+      - ssid="{{ssid}}"
+      - key_mgmt=WPA-PSK
+      - psk="{{key}}"
+      - scan_ssid=1
+    sta_post_start_commands:
+      - wpa_cli -p /var/run/wpa_supplicant -i {{iface}} enable_network 0
+      - wpa_cli -p /var/run/wpa_supplicant -i {{iface}} select_network 0
+    sta_ctrl_command: wpa_cli -p /var/run/wpa_supplicant -i {{iface}} ping
+    sta_connect_command: wpa_cli -p /var/run/wpa_supplicant -i {{iface}} select_network 0
+    sta_status_command: wpa_cli -p /var/run/wpa_supplicant -i {{iface}} status
+    sta_driver_join_command: wl -i {{iface}} join {{ssid}} imode bss
+  6g:
+    iface: wl1
+    radio: "2"
+    ap: "3"
+    secondary_ap: "4"
+    ssid_index: "6"
+    ssid: testpilot6G
+    mode: WPA3-Personal
+    key: "00000000"
+    mfp: Required
+    dut_secret_fields:
+      - SAEPassphrase
+      - KeyPassPhrase
+    sta_global_config:
+      - ctrl_interface=/var/run/wpa_supplicant
+      - update_config=1
+      - sae_pwe=2
+    sta_network_config:
+      - ssid="{{ssid}}"
+      - key_mgmt=SAE
+      - sae_password="{{key}}"
+      - ieee80211w=2
+      - scan_ssid=1
+    sta_pre_mode_commands:
+      - ifconfig {{iface}} down
+      - wl -i {{iface}} down
+      - wl -i {{iface}} ap 0
+    sta_pre_start_commands:
+      - wl -i {{iface}} up
+      - ifconfig {{iface}} up
+    sta_post_start_commands:
+      - wpa_cli -p /var/run/wpa_supplicant -i {{iface}} enable_network 0
+      - wpa_cli -p /var/run/wpa_supplicant -i {{iface}} select_network 0
+    sta_ctrl_command: wpa_cli -p /var/run/wpa_supplicant -i {{iface}} ping
+    sta_connect_command: wpa_cli -p /var/run/wpa_supplicant -i {{iface}} select_network 0
+    sta_status_command: wpa_cli -p /var/run/wpa_supplicant -i {{iface}} status
+  2.4g:
+    iface: wl2
+    radio: "3"
+    ap: "5"
+    secondary_ap: "6"
+    ssid_index: "8"
+    ssid: testpilot2G
+    mode: WPA2-Personal
+    key: "00000000"
+    mfp: Disabled
+    dut_secret_fields:
+      - KeyPassPhrase
+    sta_global_config:
+      - ctrl_interface=/var/run/wpa_supplicant
+      - update_config=1
+    sta_network_config:
+      - ssid="{{ssid}}"
+      - key_mgmt=WPA-PSK
+      - psk="{{key}}"
+      - scan_ssid=1
+    sta_post_start_commands:
+      - wpa_cli -p /var/run/wpa_supplicant -i {{iface}} enable_network 0
+      - wpa_cli -p /var/run/wpa_supplicant -i {{iface}} select_network 0
+    sta_ctrl_command: wpa_cli -p /var/run/wpa_supplicant -i {{iface}} ping
+    sta_connect_command: wpa_cli -p /var/run/wpa_supplicant -i {{iface}} select_network 0
+    sta_status_command: wpa_cli -p /var/run/wpa_supplicant -i {{iface}} status

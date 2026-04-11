@@ -1,7 +1,7 @@
 id: d266-getradiostats-bytessent
 name: D266 getRadioStats BytesSent
 source:
-  row: 268
+  row: 266
   object: WiFi.Radio.{i}.
   api: getRadioStats()
   baseline: 0310-BGW720-300

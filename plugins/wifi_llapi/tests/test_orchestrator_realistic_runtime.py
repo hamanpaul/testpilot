@@ -100,6 +100,8 @@ def _prepare_runtime_project(tmp_path: Path) -> tuple[Path, Path]:
     shutil.copy2(source_plugin_dir / "plugin.py", plugin_dir / "plugin.py")
     shutil.copy2(source_plugin_dir / "command_resolver.py", plugin_dir / "command_resolver.py")
     shutil.copy2(source_plugin_dir / "agent-config.yaml", plugin_dir / "agent-config.yaml")
+    shutil.copy2(source_plugin_dir / "band-baselines.yaml", plugin_dir / "band-baselines.yaml")
+    shutil.copy2(source_plugin_dir / "baseline_qualifier.py", plugin_dir / "baseline_qualifier.py")
 
     _write_testbed_yaml(project_root / "configs" / "testbed.yaml")
     source_xlsx = project_root / "source.xlsx"

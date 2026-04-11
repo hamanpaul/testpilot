@@ -229,6 +229,28 @@ def _has_assoc_mac_regex(case_data: dict[str, Any], field: str) -> bool:
     )
 
 
+def test_plugin_loads_shared_wifi_band_baselines_yaml():
+    plugin = _load_plugin()
+
+    assert plugin.DEFAULT_BAND_BASELINES["5g"]["ssid"] == "testpilot5G"
+    assert plugin.DEFAULT_BAND_BASELINES["5g"]["dut_secret_fields"] == ["KeyPassPhrase"]
+    assert plugin.DEFAULT_BAND_BASELINES["6g"]["iface"] == "wl1"
+    assert plugin.DEFAULT_BAND_BASELINES["6g"]["dut_secret_fields"] == [
+        "SAEPassphrase",
+        "KeyPassPhrase",
+    ]
+    assert plugin.DEFAULT_BAND_BASELINES["6g"]["sta_pre_mode_commands"] == [
+        "ifconfig {{iface}} down",
+        "wl -i {{iface}} down",
+        "wl -i {{iface}} ap 0",
+    ]
+    assert plugin.DEFAULT_BAND_BASELINES["6g"]["sta_pre_start_commands"] == [
+        "wl -i {{iface}} up",
+        "ifconfig {{iface}} up",
+    ]
+    assert plugin.DEFAULT_BAND_BASELINES["2.4g"]["ssid"] == "testpilot2G"
+
+
 def _install_fake_factory(monkeypatch, recorder: _FactoryRecorder) -> None:
     module = types.ModuleType("testpilot.transport.factory")
     module.create_transport = recorder.create_transport
@@ -282,6 +304,293 @@ def _execute_step_shell_sequence(
         stdout="".join(stdout_chunks),
         stderr="".join(stderr_chunks),
     )
+
+
+def test_qualify_baseline_reaches_repeat_target(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    qualifier_cls = plugin.qualify_baseline.__globals__["BaselineQualifier"]
+
+    setup_calls: list[str] = []
+    verify_calls: list[str] = []
+    teardown_calls: list[str] = []
+
+    def fake_setup(case: dict[str, Any], topology: Any) -> bool:
+        del topology
+        setup_calls.append(str(case.get("id", "")))
+        plugin._transports = {"DUT": object(), "STA": object()}
+        return True
+
+    def fake_verify(case: dict[str, Any], topology: Any) -> bool:
+        del topology
+        verify_calls.append(str(case.get("id", "")))
+        return True
+
+    def fake_teardown(case: dict[str, Any], topology: Any) -> None:
+        del topology
+        teardown_calls.append(str(case.get("id", "")))
+        plugin._transports.clear()
+
+    def fake_snapshot(self, case: dict[str, Any], band: str, *, phase: str) -> dict[str, Any]:
+        del self, case, band
+        return {
+            "phase": phase,
+            "trusted": True,
+            "issues": [],
+            "hard_failures": [],
+            "commands": {},
+        }
+
+    def fake_soak(self, case: dict[str, Any], band: str, soak_minutes: int) -> dict[str, Any]:
+        del self, case, band, soak_minutes
+        return {
+            "success": True,
+            "duration_seconds": 0,
+            "checks": [],
+        }
+
+    monkeypatch.setattr(plugin, "setup_env", fake_setup)
+    monkeypatch.setattr(plugin, "verify_env", fake_verify)
+    monkeypatch.setattr(plugin, "teardown", fake_teardown)
+    monkeypatch.setattr(qualifier_cls, "_collect_snapshot", fake_snapshot)
+    monkeypatch.setattr(qualifier_cls, "_run_soak", fake_soak)
+
+    result = plugin.qualify_baseline(
+        topology,
+        bands=("5g",),
+        repeat_count=2,
+        soak_minutes=0,
+    )
+
+    assert result["overall_status"] == "stable"
+    assert len(result["bands"]) == 1
+    assert result["bands"][0]["band"] == "5g"
+    assert result["bands"][0]["stable"] is True
+    assert result["bands"][0]["completed_rounds"] == 2
+    assert len(result["bands"][0]["rounds"]) == 2
+    assert setup_calls == [
+        "wifi-llapi-baseline-qualify-5g",
+        "wifi-llapi-baseline-qualify-5g",
+    ]
+    assert verify_calls == [
+        "wifi-llapi-baseline-qualify-5g",
+        "wifi-llapi-baseline-qualify-5g",
+    ]
+    assert teardown_calls == [
+        "wifi-llapi-baseline-qualify-5g",
+        "wifi-llapi-baseline-qualify-5g",
+    ]
+
+
+def test_qualify_baseline_uses_factory_reset_for_untrusted_preflight(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    qualifier_cls = plugin.qualify_baseline.__globals__["BaselineQualifier"]
+
+    def fake_setup(case: dict[str, Any], topology: Any) -> bool:
+        del case, topology
+        plugin._transports = {"DUT": object(), "STA": object()}
+        return True
+
+    def fake_verify(case: dict[str, Any], topology: Any) -> bool:
+        del case, topology
+        return True
+
+    def fake_teardown(case: dict[str, Any], topology: Any) -> None:
+        del case, topology
+        plugin._transports.clear()
+
+    snapshots = iter(
+        [
+            {
+                "phase": "preflight",
+                "trusted": False,
+                "issues": ["dut_gate_failed"],
+                "hard_failures": [],
+                "commands": {},
+            },
+            {
+                "phase": "preflight-recheck",
+                "trusted": False,
+                "issues": ["dut_gate_failed"],
+                "hard_failures": [],
+                "commands": {},
+            },
+            {
+                "phase": "preflight-after-reset",
+                "trusted": True,
+                "issues": [],
+                "hard_failures": [],
+                "commands": {},
+            },
+            {
+                "phase": "post-verify",
+                "trusted": True,
+                "issues": [],
+                "hard_failures": [],
+                "commands": {},
+            },
+        ]
+    )
+    reset_calls: list[str] = []
+
+    def fake_snapshot(self, case: dict[str, Any], band: str, *, phase: str) -> dict[str, Any]:
+        del self, case, band, phase
+        return next(snapshots)
+
+    def fake_recover(self, case: dict[str, Any], *, devices: tuple[str, ...], reason: str) -> dict[str, Any]:
+        del self, case, devices
+        return {
+            "success": True,
+            "reason": reason,
+        }
+
+    def fake_reset(self, case: dict[str, Any], *, reason: str) -> dict[str, Any]:
+        del self, case
+        reset_calls.append(reason)
+        return {
+            "success": True,
+            "reason": reason,
+            "devices": [],
+        }
+
+    def fake_soak(self, case: dict[str, Any], band: str, soak_minutes: int) -> dict[str, Any]:
+        del self, case, band, soak_minutes
+        return {
+            "success": True,
+            "duration_seconds": 0,
+            "checks": [],
+        }
+
+    monkeypatch.setattr(plugin, "setup_env", fake_setup)
+    monkeypatch.setattr(plugin, "verify_env", fake_verify)
+    monkeypatch.setattr(plugin, "teardown", fake_teardown)
+    monkeypatch.setattr(qualifier_cls, "_collect_snapshot", fake_snapshot)
+    monkeypatch.setattr(qualifier_cls, "_recover_and_reopen", fake_recover)
+    monkeypatch.setattr(qualifier_cls, "_factory_reset_and_reopen", fake_reset)
+    monkeypatch.setattr(qualifier_cls, "_run_soak", fake_soak)
+
+    result = plugin.qualify_baseline(
+        topology,
+        bands=("6g",),
+        repeat_count=1,
+        soak_minutes=0,
+    )
+
+    assert result["overall_status"] == "stable"
+    assert reset_calls == ["preflight_untrusted"]
+    round_result = result["bands"][0]["rounds"][0]
+    assert round_result["preflight_restore"]["strategy"] == "factory_reset"
+    assert round_result["success"] is True
+
+
+def test_qualify_baseline_records_runtime_exception_instead_of_crashing(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    qualifier_cls = plugin.qualify_baseline.__globals__["BaselineQualifier"]
+
+    def fake_setup(case: dict[str, Any], topology: Any) -> bool:
+        del case, topology
+        plugin._transports = {"DUT": object(), "STA": object()}
+        return True
+
+    def fake_verify(case: dict[str, Any], topology: Any) -> bool:
+        del case, topology
+        raise RuntimeError("serialwrap cmd submit failed")
+
+    def fake_teardown(case: dict[str, Any], topology: Any) -> None:
+        del case, topology
+        plugin._transports.clear()
+
+    def fake_snapshot(self, case: dict[str, Any], band: str, *, phase: str) -> dict[str, Any]:
+        del self, case, band
+        return {
+            "phase": phase,
+            "trusted": True,
+            "issues": [],
+            "hard_failures": [],
+            "commands": {},
+        }
+
+    def fake_recover(self, case: dict[str, Any], *, devices: tuple[str, ...], reason: str) -> dict[str, Any]:
+        del self, case, devices, reason
+        return {
+            "success": False,
+            "recovery": {"devices": []},
+        }
+
+    def fake_reset(self, case: dict[str, Any], *, reason: str) -> dict[str, Any]:
+        del self, case, reason
+        return {
+            "success": False,
+            "devices": [],
+        }
+
+    monkeypatch.setattr(plugin, "setup_env", fake_setup)
+    monkeypatch.setattr(plugin, "verify_env", fake_verify)
+    monkeypatch.setattr(plugin, "teardown", fake_teardown)
+    monkeypatch.setattr(qualifier_cls, "_collect_snapshot", fake_snapshot)
+    monkeypatch.setattr(qualifier_cls, "_recover_and_reopen", fake_recover)
+    monkeypatch.setattr(qualifier_cls, "_factory_reset_and_reopen", fake_reset)
+
+    result = plugin.qualify_baseline(
+        topology,
+        bands=("6g",),
+        repeat_count=1,
+        soak_minutes=0,
+    )
+
+    assert result["overall_status"] == "unstable"
+    last_failure = result["bands"][0]["last_failure"]
+    assert last_failure["phase"] == "verify_env"
+    assert last_failure["reason_code"] == "runtime_exception"
+    assert "serialwrap cmd submit failed" in last_failure["output"]
+
+
+def test_collect_snapshot_keeps_secondary_6g_bss_as_warning(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    qualifier_cls = plugin.qualify_baseline.__globals__["BaselineQualifier"]
+    qualifier = qualifier_cls(plugin, topology)
+    plugin._transports = {"DUT": object(), "STA": object()}
+
+    def fake_snapshot_command(transport: Any, command: str, timeout: float = 10.0) -> dict[str, Any]:
+        del transport, timeout
+        output = ""
+        if command == 'echo "__testpilot_baseline_gate__"':
+            output = "__testpilot_baseline_gate__"
+        elif command == "iw dev":
+            output = "Interface wl1\ntype managed\n"
+        elif command == "iw dev wl1 link":
+            output = "Connected to 2c:59:17:00:19:96 (on wl1)\nSSID: testpilot6G\nfreq: 5955"
+        elif command == "wl -i wl1 status":
+            output = 'SSID: "testpilot6G"\nMode: Managed'
+        elif command == "grep -nE '^(ssid=|wpa_key_mgmt=|sae_pwe=|ieee80211w=|ocv=|ieee80211be=|bss=|multi_ap=|mld_unit=|mlo_aff_link_kde=)' /tmp/wl1_hapd.conf 2>/dev/null || true":
+            output = "\n".join(
+                [
+                    "16:ssid=testpilot6G",
+                    "23:wpa_key_mgmt=SAE",
+                    "34:ieee80211w=2",
+                    "35:ocv=0",
+                    "36:sae_pwe=1",
+                    "57:bss=wl1.1",
+                ]
+            )
+        return {
+            "command": command,
+            "returncode": 0,
+            "status": "done",
+            "success": True,
+            "output": output,
+        }
+
+    monkeypatch.setattr(qualifier, "_snapshot_command", fake_snapshot_command)
+
+    snapshot = qualifier._collect_snapshot({}, "6g", phase="post-verify")
+
+    assert "dut_secondary_bss_present" in snapshot["issues"]
+    assert "dut_ocv_not_zero" not in snapshot["issues"]
+    assert snapshot["hard_failures"] == []
 
 
 def test_execute_step_command_fallback_priority(monkeypatch):
@@ -418,6 +727,57 @@ def test_execute_step_supports_multiline_shell_sequence(monkeypatch):
     assert result["success"] is True
     assert dut.executed_commands == [wrapped_command]
     assert result["command"] == wrapped_command
+    plugin.teardown(case, topology=topology)
+
+
+def test_execute_step_skip_action_bypasses_band_prepare(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+
+    case = {
+        "id": "wifi-llapi-runtime-skip-band-prepare",
+        "topology": {
+            "devices": {
+                "DUT": {"transport": "serial"},
+                "STA": {"transport": "adb"},
+            },
+            "links": [
+                {"from": "STA", "to": "DUT", "band": "5g"},
+                {"from": "STA", "to": "DUT", "band": "6g"},
+                {"from": "STA", "to": "DUT", "band": "2.4g"},
+            ],
+        },
+        "steps": [
+            {
+                "id": "skip6g",
+                "action": "skip",
+                "target": "DUT",
+                "band": "6g",
+                "reason": "explicit skip should not trigger band prepare",
+            }
+        ],
+        "pass_criteria": [{"field": "result", "operator": "contains", "value": "OK"}],
+    }
+
+    prepare_calls: list[str] = []
+
+    def fake_prepare(case_arg: dict[str, Any], topology_arg: Any, band: str) -> bool:
+        del case_arg, topology_arg
+        prepare_calls.append(str(band))
+        return False
+
+    assert plugin.setup_env(case, topology=topology) is True
+    monkeypatch.setattr(plugin, "_prepare_case_band", fake_prepare)
+
+    result = plugin.execute_step(case, case["steps"][0], topology=topology)
+
+    assert result["success"] is True
+    assert result["command"] == 'echo "[skip] non-executable step skip6g"'
+    assert result["output"] == "[skip] non-executable step skip6g"
+    assert result["fallback_reason"] == "fallback_skip_echo"
+    assert prepare_calls == []
     plugin.teardown(case, topology=topology)
 
 
@@ -727,6 +1087,53 @@ def test_setup_env_runs_yaml_sta_env_setup(monkeypatch):
     plugin.teardown(case, topology=topology)
 
 
+def test_setup_env_applies_6g_ocv_fix_before_custom_sta_connect(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    events: list[tuple[str, str, str]] = []
+
+    def fake_apply_6g_ocv_fix(dut, case_id):
+        events.append(("ocv", dut.transport_type, case_id))
+
+    def fake_ensure_selected_dut_bss_ready(case):
+        events.append(("ensure_bss", "", str(case.get("id", ""))))
+        return True
+
+    monkeypatch.setattr(plugin, "_apply_6g_ocv_fix", fake_apply_6g_ocv_fix)
+    monkeypatch.setattr(plugin, "_ensure_selected_dut_bss_ready", fake_ensure_selected_dut_bss_ready)
+
+    case = {
+        "id": "wifi-llapi-runtime-custom-6g-ocv-hook",
+        "topology": {
+            "devices": {
+                "DUT": {"transport": "serial"},
+                "STA": {"transport": "adb"},
+            }
+        },
+        "sta_env_setup": """
+        DUT 6G setup:
+          ubus-cli WiFi.AccessPoint.3.Enable=1
+        STA 6G setup:
+          iw dev wl1 set type managed
+          ifconfig wl1 up
+        STA 6G connect verify:
+          wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect
+          iw dev wl1 link
+        """,
+        "verification_command": "iw dev wl1 link",
+        "steps": [{"id": "s1", "command": "iw dev wl1 link"}],
+    }
+
+    assert plugin.setup_env(case, topology=topology) is True
+    assert events == [
+        ("ocv", "serial", "wifi-llapi-runtime-custom-6g-ocv-hook"),
+        ("ensure_bss", "", "wifi-llapi-runtime-custom-6g-ocv-hook"),
+    ]
+    plugin.teardown(case, topology=topology)
+
+
 def test_setup_env_syncs_psk_from_custom_wpa3_sae_passphrase(monkeypatch):
     plugin = _load_plugin()
     topology = _FakeTopology()
@@ -924,6 +1331,90 @@ def test_verify_env_only_runs_generic_gates(monkeypatch):
     plugin.teardown(case, topology=topology)
 
 
+def test_setup_env_prefers_testbed_binding_over_case_selector(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    topology._devices["DUT"] = {
+        "transport": "serial",
+        "selector": "COM0",
+        "serial_port": "/dev/ttyUSB0",
+        "baudrate": 115200,
+    }
+    topology._devices["STA"] = {
+        "transport": "serial",
+        "selector": "COM1",
+        "serial_port": "/dev/ttyUSB1",
+        "baudrate": 115200,
+    }
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+
+    case = {
+        "id": "wifi-llapi-runtime-testbed-binding-priority",
+        "topology": {
+            "devices": {
+                "DUT": {
+                    "transport": "serial",
+                    "selector": "COM1",
+                    "serial_port": "/dev/ttyUSB9",
+                },
+                "STA": {
+                    "transport": "serial",
+                    "selector": "COM0",
+                    "serial_port": "/dev/ttyUSB8",
+                },
+            }
+        },
+        "steps": [],
+    }
+
+    assert plugin.setup_env(case, topology=topology) is True
+    assert recorder.calls[0][1]["selector"] == "COM0"
+    assert recorder.calls[0][1]["serial_port"] == "/dev/ttyUSB0"
+    assert recorder.calls[1][1]["selector"] == "COM1"
+    assert recorder.calls[1][1]["serial_port"] == "/dev/ttyUSB1"
+    assert plugin._device_specs["DUT"]["selector"] == "COM0"
+    assert plugin._device_specs["STA"]["selector"] == "COM1"
+    plugin.teardown(case, topology=topology)
+
+
+def test_ensure_selected_dut_bss_ready_reload_6g_before_bounce(monkeypatch):
+    plugin = _load_plugin()
+    dut = object()
+    plugin._transports["DUT"] = dut
+    waits: list[tuple[float, str]] = []
+    reloads: list[str] = []
+    bounces: list[str] = []
+
+    case = {
+        "id": "wifi-llapi-runtime-generic-6g-bss-reload",
+        "steps": [{"id": "s1", "band": "6g", "command": "wl -i wl1 assoclist"}],
+    }
+
+    def fake_wait(*args, **kwargs):
+        waits.append((kwargs["timeout_seconds"], kwargs["band"]))
+        return len(waits) > 1
+
+    def fake_reload(case_arg, dut_arg, *, case_id, band):
+        del case_arg, dut_arg, case_id
+        reloads.append(band)
+        return True
+
+    def fake_bounce(case_arg, dut_arg, *, case_id, band):
+        del case_arg, dut_arg, case_id
+        bounces.append(band)
+        return True
+
+    monkeypatch.setattr(plugin, "_wait_for_dut_bss_ready", fake_wait)
+    monkeypatch.setattr(plugin, "_reload_dut_wifi_stack", fake_reload)
+    monkeypatch.setattr(plugin, "_bounce_dut_band", fake_bounce)
+
+    assert plugin._ensure_selected_dut_bss_ready(case) is True
+    assert waits == [(60.0, "6g"), (30.0, "6g")]
+    assert reloads == ["6g"]
+    assert bounces == []
+
+
 def test_execute_remediation_tolerates_null_band_params(monkeypatch):
     plugin = _load_plugin()
     topology = _FakeTopology()
@@ -1110,15 +1601,71 @@ def test_verify_env_reapplies_deterministic_generic_baseline(monkeypatch):
     assert "ubus-cli WiFi.SSID.4.SSID=testpilot5G" in dut.executed_commands
     assert "ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal" in dut.executed_commands
     assert "ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled" in dut.executed_commands
+    assert "iw dev wl0 set type managed" in sta.executed_commands
+    assert "wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0" in sta.executed_commands
+    assert "wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0" in sta.executed_commands
     assert "ubus-cli WiFi.SSID.8.SSID=testpilot2G" in dut.executed_commands
     assert "ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal" in dut.executed_commands
     assert "ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled" in dut.executed_commands
-    assert "iw dev wl0 set type managed" in sta.executed_commands
     assert "iw dev wl2 set type managed" in sta.executed_commands
-    assert "wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0" in sta.executed_commands
-    assert "wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0" in sta.executed_commands
     assert "wpa_cli -p /var/run/wpa_supplicant -i wl2 enable_network 0" in sta.executed_commands
     assert "wpa_cli -p /var/run/wpa_supplicant -i wl2 select_network 0" in sta.executed_commands
+    assert case["_active_step_band"] == "2.4g"
+
+    first_result = plugin.execute_step(case, case["steps"][0], topology=topology)
+    assert first_result["success"] is True
+    assert case["_active_step_band"] == "5g"
+
+    result = plugin.execute_step(case, case["steps"][1], topology=topology)
+    assert result["success"] is True
+    assert case["_active_step_band"] == "2.4g"
+    plugin.teardown(case, topology=topology)
+
+
+def test_verify_env_defers_failed_band_warmup_to_execute_step(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+
+    case = {
+        "id": "wifi-llapi-runtime-generic-band-warmup-defer",
+        "topology": {
+            "devices": {
+                "DUT": {"transport": "serial"},
+                "STA": {"transport": "adb"},
+            },
+            "links": [
+                {"from": "STA", "to": "DUT", "band": "5g"},
+                {"from": "STA", "to": "DUT", "band": "6g"},
+                {"from": "STA", "to": "DUT", "band": "2.4g"},
+            ],
+        },
+        "steps": [
+            {"id": "s1", "band": "5g", "command": "wl -i wl0 assoclist"},
+            {"id": "s2", "band": "6g", "command": "wl -i wl1 assoclist"},
+            {"id": "s3", "band": "2.4g", "command": "wl -i wl2 assoclist"},
+        ],
+        "pass_criteria": [{"field": "result", "operator": "contains", "value": "OK"}],
+    }
+
+    calls: list[str] = []
+
+    def fake_prepare(case_arg, topology_arg, band):
+        del topology_arg
+        normalized = plugin._normalize_band_name(band)
+        calls.append(normalized)
+        if normalized == "6g":
+            return False
+        case_arg["_active_step_band"] = normalized
+        return True
+
+    assert plugin.setup_env(case, topology=topology) is True
+    monkeypatch.setattr(plugin, "_prepare_case_band", fake_prepare)
+
+    assert plugin.verify_env(case, topology=topology) is True
+    assert calls == ["5g", "6g", "2.4g"]
+    assert case["_active_step_band"] == "2.4g"
     plugin.teardown(case, topology=topology)
 
 
@@ -1161,7 +1708,36 @@ def test_env_command_succeeded_allows_macaddress_shell_pipeline():
     assert plugin._env_command_succeeded(command, result) is True
 
 
-def test_run_sta_band_baseline_bounces_down_bss(monkeypatch):
+@pytest.mark.parametrize(
+    ("band", "ap", "secondary_ap", "ssid_index", "ssid", "mode"),
+    [
+        ("5g", "1", "2", "4", "testpilot5G", "WPA2-Personal"),
+        ("6g", "3", "4", "6", "testpilot6G", "WPA3-Personal"),
+        ("2.4g", "5", "6", "8", "testpilot2G", "WPA2-Personal"),
+    ],
+)
+def test_dut_baseline_commands_disable_primary_before_reconfig(
+    band, ap, secondary_ap, ssid_index, ssid, mode
+):
+    plugin = _load_plugin()
+
+    profile = plugin._band_baseline_profile(band)
+    assert profile is not None
+
+    commands = plugin._dut_baseline_commands(profile)
+    assert commands.index(f"ubus-cli WiFi.AccessPoint.{secondary_ap}.Enable=0") < commands.index(
+        f"ubus-cli WiFi.AccessPoint.{ap}.Enable=0"
+    )
+    assert commands.index(f"ubus-cli WiFi.AccessPoint.{ap}.Enable=0") < commands.index(
+        f"ubus-cli WiFi.SSID.{ssid_index}.SSID={ssid}"
+    )
+    assert commands.index(f"ubus-cli WiFi.AccessPoint.{ap}.Enable=0") < commands.index(
+        f"ubus-cli WiFi.AccessPoint.{ap}.Security.ModeEnabled={mode}"
+    )
+    assert commands[-1] == f"ubus-cli WiFi.AccessPoint.{ap}.Enable=1"
+
+
+def test_run_sta_band_baseline_disables_primary_before_reconfig(monkeypatch):
     plugin = _load_plugin()
     dut = object()
     plugin._transports["DUT"] = dut
@@ -1180,6 +1756,8 @@ def test_run_sta_band_baseline_bounces_down_bss(monkeypatch):
                 return {"returncode": 0, "stdout": "down", "stderr": ""}
             return {"returncode": 0, "stdout": "up", "stderr": ""}
         if command == "wl -i wl2 bss":
+            if "ubus-cli WiFi.AccessPoint.5.Enable=0" not in executed:
+                return {"returncode": 0, "stdout": "down", "stderr": ""}
             return {"returncode": 0, "stdout": "up", "stderr": ""}
         return {"returncode": 0, "stdout": "", "stderr": ""}
 
@@ -1201,8 +1779,19 @@ def test_run_sta_band_baseline_bounces_down_bss(monkeypatch):
 
     assert plugin._run_sta_band_baseline(case) is True
     assert "ubus-cli WiFi.AccessPoint.1.Enable=0" in executed
-    assert "ubus-cli WiFi.Radio.1.Enable=1" in executed
-    assert executed.count("ubus-cli WiFi.AccessPoint.1.Enable=1") >= 2
+    assert "ubus-cli WiFi.AccessPoint.2.Enable=0" in executed
+    assert executed.index("ubus-cli WiFi.AccessPoint.1.Enable=0") < executed.index(
+        "ubus-cli WiFi.SSID.4.SSID=testpilot5G"
+    )
+    assert executed.count("ubus-cli WiFi.Radio.1.Enable=1") == 1
+    assert executed.count("ubus-cli WiFi.AccessPoint.1.Enable=1") == 1
+    assert "ubus-cli WiFi.AccessPoint.5.Enable=0" in executed
+    assert executed.index("ubus-cli WiFi.AccessPoint.5.Enable=0") < executed.index(
+        "ubus-cli WiFi.SSID.8.SSID=testpilot2G"
+    )
+    assert executed.count("ubus-cli WiFi.Radio.3.Enable=1") == 1
+    assert executed.count("ubus-cli WiFi.AccessPoint.5.Enable=1") == 1
+    assert "ubus-cli WiFi.AccessPoint.6.Enable=0" in executed
 
 
 def test_run_sta_band_baseline_sets_6g_sae_passphrase(monkeypatch):
@@ -1236,11 +1825,150 @@ def test_run_sta_band_baseline_sets_6g_sae_passphrase(monkeypatch):
 
     assert plugin._run_sta_band_baseline(case) is True
     assert "ubus-cli WiFi.Radio.2.Enable=1" in executed
+    assert "ubus-cli WiFi.AccessPoint.4.Enable=0" in executed
     assert "ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal" in executed
     assert "ubus-cli 'WiFi.AccessPoint.3.Security.SAEPassphrase=\"00000000\"'" in executed
     assert "ubus-cli 'WiFi.AccessPoint.3.Security.KeyPassPhrase=\"00000000\"'" in executed
     assert "ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Required" in executed
     assert "ubus-cli WiFi.AccessPoint.3.Enable=1" in executed
+
+
+def test_bounce_dut_band_disables_secondary_ap_before_reenable(monkeypatch):
+    plugin = _load_plugin()
+    dut = object()
+    executed: list[str] = []
+
+    def fake_execute_env_command(transport, command, *, timeout=30.0):
+        del timeout
+        assert transport is dut
+        executed.append(command)
+        return {"returncode": 0, "stdout": "", "stderr": ""}
+
+    ocv_fix_calls: list[tuple[Any, str]] = []
+
+    monkeypatch.setattr(plugin, "_execute_env_command", fake_execute_env_command)
+    monkeypatch.setattr(
+        plugin,
+        "_apply_6g_ocv_fix",
+        lambda transport, case_id: ocv_fix_calls.append((transport, case_id)),
+    )
+
+    case = {"id": "wifi-llapi-runtime-6g-bounce"}
+
+    assert plugin._bounce_dut_band(case, dut, case_id="wifi-llapi-runtime-6g-bounce", band="6g") is True
+    assert executed == [
+        "ubus-cli WiFi.AccessPoint.4.Enable=0",
+        "ubus-cli WiFi.AccessPoint.3.Enable=0",
+        "sleep 2",
+        "ubus-cli WiFi.Radio.2.Enable=1",
+        "ubus-cli WiFi.AccessPoint.4.Enable=0",
+        "ubus-cli WiFi.AccessPoint.3.Enable=1",
+        "sleep 5",
+    ]
+    assert ocv_fix_calls == [(dut, "wifi-llapi-runtime-6g-bounce")]
+
+
+def test_apply_6g_ocv_fix_cleans_control_sockets_and_forces_bss_up(monkeypatch):
+    plugin = _load_plugin()
+    dut = object()
+    executed: list[str] = []
+
+    def fake_execute_env_command(transport, command, *, timeout=30.0):
+        del timeout
+        assert transport is dut
+        executed.append(command)
+        if command == "grep -q ieee80211w /tmp/wl1_hapd.conf 2>/dev/null && echo READY || echo WAIT":
+            return {"returncode": 0, "stdout": "READY", "stderr": ""}
+        if command == "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1":
+            return {"returncode": 0, "stdout": "ocv=0\nocv=0\n", "stderr": ""}
+        if command == "test -S /var/run/hostapd/wl1 && echo READY || echo WAIT":
+            return {"returncode": 0, "stdout": "READY", "stderr": ""}
+        if command == "wl -i wl1 bss":
+            return {"returncode": 0, "stdout": "up", "stderr": ""}
+        return {"returncode": 0, "stdout": "", "stderr": ""}
+
+    monkeypatch.setattr(plugin, "_execute_env_command", fake_execute_env_command)
+
+    plugin._apply_6g_ocv_fix(dut, "wifi-llapi-runtime-6g-ocv")
+
+    assert executed == [
+        "grep -q ieee80211w /tmp/wl1_hapd.conf 2>/dev/null && echo READY || echo WAIT",
+        "sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl1_hapd.conf",
+        "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1",
+        "pid=$(pgrep -f '/tmp/wl1_hapd.conf' 2>/dev/null | head -n1); if [ -n \"$pid\" ]; then kill \"$pid\" 2>/dev/null || true; fi",
+        "sleep 2",
+        "rm -f /var/run/hostapd/wl1 /var/run/hostapd/wl1.1",
+        "wl -i wl1 ap 1",
+        "wl -i wl1 up",
+        "ifconfig wl1 up",
+        "hostapd -ddt -B /tmp/wl1_hapd.conf",
+        "sleep 2",
+        "wl -i wl1 bss up",
+        "sleep 2",
+        "sleep 3",
+        "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1",
+        "test -S /var/run/hostapd/wl1 && echo READY || echo WAIT",
+        "wl -i wl1 bss",
+    ]
+
+
+def test_apply_6g_ocv_fix_restarts_again_when_ocv_disappears_after_restart(monkeypatch):
+    plugin = _load_plugin()
+    dut = object()
+    executed: list[str] = []
+    verify_outputs = iter(("ocv=0\n", "", "ocv=0\n", "ocv=0\n"))
+    socket_outputs = iter(("WAIT", "READY"))
+    bss_outputs = iter(("down", "up"))
+
+    def fake_execute_env_command(transport, command, *, timeout=30.0):
+        del timeout
+        assert transport is dut
+        executed.append(command)
+        if command == "grep -q ieee80211w /tmp/wl1_hapd.conf 2>/dev/null && echo READY || echo WAIT":
+            return {"returncode": 0, "stdout": "READY", "stderr": ""}
+        if command == "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1":
+            return {"returncode": 0, "stdout": next(verify_outputs), "stderr": ""}
+        if command == "test -S /var/run/hostapd/wl1 && echo READY || echo WAIT":
+            return {"returncode": 0, "stdout": next(socket_outputs), "stderr": ""}
+        if command == "wl -i wl1 bss":
+            return {"returncode": 0, "stdout": next(bss_outputs), "stderr": ""}
+        return {"returncode": 0, "stdout": "", "stderr": ""}
+
+    monkeypatch.setattr(plugin, "_execute_env_command", fake_execute_env_command)
+
+    plugin._apply_6g_ocv_fix(dut, "wifi-llapi-runtime-6g-ocv-restart")
+
+    restart_commands = [
+        "pid=$(pgrep -f '/tmp/wl1_hapd.conf' 2>/dev/null | head -n1); if [ -n \"$pid\" ]; then kill \"$pid\" 2>/dev/null || true; fi",
+        "sleep 2",
+        "rm -f /var/run/hostapd/wl1 /var/run/hostapd/wl1.1",
+        "wl -i wl1 ap 1",
+        "wl -i wl1 up",
+        "ifconfig wl1 up",
+        "hostapd -ddt -B /tmp/wl1_hapd.conf",
+        "sleep 2",
+    ]
+    assert executed == [
+        "grep -q ieee80211w /tmp/wl1_hapd.conf 2>/dev/null && echo READY || echo WAIT",
+        "sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl1_hapd.conf",
+        "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1",
+        *restart_commands,
+        "wl -i wl1 bss up",
+        "sleep 2",
+        "sleep 3",
+        "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1",
+        "test -S /var/run/hostapd/wl1 && echo READY || echo WAIT",
+        "wl -i wl1 bss",
+        "sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl1_hapd.conf",
+        "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1",
+        *restart_commands,
+        "wl -i wl1 bss up",
+        "sleep 2",
+        "sleep 3",
+        "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1",
+        "test -S /var/run/hostapd/wl1 && echo READY || echo WAIT",
+        "wl -i wl1 bss",
+    ]
 
 
 def test_env_command_succeeds_for_iw_link_with_ssid_metrics():
@@ -1304,6 +2032,53 @@ def test_env_command_fails_for_wl_status_when_not_associated():
     }
 
     assert plugin._env_command_succeeded("wl -i wl2 status", result) is False
+
+
+def test_connect_with_retry_accepts_fallback_verify_commands(monkeypatch):
+    plugin = _load_plugin()
+    command_log: list[tuple[str, str]] = []
+    verify_log: list[str] = []
+
+    def fake_run_required_command(*, transport, case_id, label, command, timeout=30.0):
+        del transport, case_id, timeout
+        command_log.append((label, command))
+        return True
+
+    def fake_execute_env_command(transport, command, *, timeout=20.0):
+        del transport, timeout
+        verify_log.append(command)
+        if command == "iw dev wl2 link":
+            return {"returncode": 0, "stdout": "Not connected.\n", "stderr": ""}
+        if command == "wl -i wl2 status":
+            return {
+                "returncode": 0,
+                "stdout": (
+                    "SSID: testpilot2G\n"
+                    "Mode: Managed RSSI: -55 dBm noise: -92 dBm Channel: 1\n"
+                    "BSSID: 2c:59:17:00:19:95 Capability: ESS ShortSlot\n"
+                ),
+                "stderr": "",
+            }
+        raise AssertionError(f"unexpected verify command: {command}")
+
+    monkeypatch.setattr(plugin, "_run_required_command", fake_run_required_command)
+    monkeypatch.setattr(plugin, "_execute_env_command", fake_execute_env_command)
+
+    assert plugin._connect_with_retry(
+        transport=object(),
+        case_id="wifi-llapi-runtime-24g-fallback",
+        label="sta_24g",
+        connect_cmd="wpa_cli -p /var/run/wpa_supplicant -i wl2 select_network 0",
+        verify_cmd=("iw dev wl2 link", "wl -i wl2 status"),
+        attempts=3,
+        sleep_seconds=8,
+    )
+
+    assert command_log == [
+        ("sta_24g.connect.1", "wpa_cli -p /var/run/wpa_supplicant -i wl2 select_network 0"),
+        ("sta_24g.sleep.1", "sleep 8"),
+    ]
+    assert verify_log == ["iw dev wl2 link", "wl -i wl2 status"]
 
 
 def test_case_yaml_band_baselines_reset_radio_defaults():
@@ -1761,11 +2536,11 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
     assert d027["source"]["row"] == 24
     assert "MACAddress?" in d027["hlapi_command"]
     assert "MACAddress=AA:6B:30:4E:8E:5C" not in d027["hlapi_command"]
-    assert "StaMAC=" in d027_commands
+    assert "wpa_cli -p /var/run/wpa_supplicant -i wl1 status" in d027_commands
     assert "AssocMAC=" in d027_commands
     assert any(
         criterion["field"] == "assoc_driver.AssocMAC"
-        and criterion["reference"] == "sta_status.STAMAC"
+        and criterion["reference"] == "sta_status.address"
         for criterion in d027["pass_criteria"]
     )
     assert any(
@@ -1775,25 +2550,25 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
     )
 
     multiband_direct_cases = {
-        "D321_broadcastpacketsreceived.yaml": {"row": 245, "api": "BroadcastPacketsReceived", "driver": "DriverBroadcastPacketsReceived", "awk_field": "$23", "expected": "Pass"},
+        "D321_broadcastpacketsreceived.yaml": {"row": 321, "api": "BroadcastPacketsReceived", "driver": "DriverBroadcastPacketsReceived", "awk_field": "$23", "expected": "Pass"},
         "D322_broadcastpacketssent.yaml": {"row": 246, "api": "BroadcastPacketsSent", "driver": "DriverBroadcastPacketsSent", "awk_field": "$24", "expected": "Pass"},
         "D323_bytesreceived_ssid_stats.yaml": {"row": 247, "api": "BytesReceived", "driver": "DriverBytesReceived", "awk_field": "$2", "expected": "Pass"},
-        "D324_bytessent_ssid_stats.yaml": {"row": 248, "api": "BytesSent", "driver": "DriverBytesSent", "awk_field": "$10", "expected": "Pass"},
-        "D325_discardpacketsreceived.yaml": {"row": 249, "api": "DiscardPacketsReceived", "driver": "DriverDiscardPacketsReceived", "awk_field": "$5", "expected": "Pass"},
-        "D326_discardpacketssent.yaml": {"row": 250, "api": "DiscardPacketsSent", "driver": "DriverDiscardPacketsSent", "awk_field": "$13", "expected": "Pass"},
-        "D327_errorsreceived_ssid_stats.yaml": {"row": 251, "api": "ErrorsReceived", "driver": "DriverErrorsReceived", "awk_field": "$4", "expected": "Pass"},
-        "D328_errorssent_ssid_stats.yaml": {"row": 252, "api": "ErrorsSent", "driver": "DriverErrorsSent", "awk_field": "$12", "expected": "To be tested"},
-        "D329_failedretranscount_ssid_stats.yaml": {"row": 253, "api": "FailedRetransCount", "expected": "To be tested"},
+        "D324_bytessent_ssid_stats.yaml": {"row": 324, "api": "BytesSent", "driver": "DriverBytesSent", "awk_field": "txbyte", "expected": "Pass"},
+        "D325_discardpacketsreceived.yaml": {"row": 325, "api": "DiscardPacketsReceived", "driver": "DriverDiscardPacketsReceived", "awk_field": "rxdiscard", "expected": "Pass"},
+        "D326_discardpacketssent.yaml": {"row": 326, "api": "DiscardPacketsSent", "driver": "DriverDiscardPacketsSent", "awk_field": "txdiscard", "expected": "Pass"},
+        "D327_errorsreceived_ssid_stats.yaml": {"row": 327, "api": "ErrorsReceived", "driver": "DriverErrorsReceived", "awk_field": "rxerror", "expected": "Pass"},
+        "D328_errorssent_ssid_stats.yaml": {"row": 328, "api": "ErrorsSent", "driver": "DriverErrorsSent", "awk_field": "txerror", "expected": "Pass"},
+        "D329_failedretranscount_ssid_stats.yaml": {"row": 329, "api": "FailedRetransCount", "driver": "DriverFailedRetransCount", "awk_field": "txretransfail", "expected": "Pass"},
         "D330_multicastpacketsreceived.yaml": {"row": 254, "api": "MulticastPacketsReceived", "driver": "DriverMulticastPacketsReceived", "awk_field": "$9", "expected": "Fail"},
         "D331_multicastpacketssent.yaml": {"row": 255, "api": "MulticastPacketsSent", "driver": "DriverMulticastPacketsSent", "awk_field": "$18", "expected": "Fail"},
         "D332_packetsreceived_ssid_stats.yaml": {"row": 256, "api": "PacketsReceived", "driver": "DriverPacketsReceived", "awk_field": "$3", "expected": "Pass"},
         "D333_packetssent_ssid_stats.yaml": {"row": 257, "api": "PacketsSent", "driver": "DriverPacketsSent", "awk_field": "$11", "expected": "Pass"},
-        "D334_retranscount_ssid_stats.yaml": {"row": 258, "api": "RetransCount", "expected": "Pass"},
+        "D334_retranscount_ssid_stats.yaml": {"row": 334, "api": "RetransCount", "driver": "DriverRetransCount", "awk_field": "txretrans", "expected": "Pass"},
         "D335_unicastpacketsreceived.yaml": {"row": 259, "api": "UnicastPacketsReceived", "driver": "DriverUnicastPacketsReceived", "awk_field": "$21", "expected": "Fail"},
         "D336_unicastpacketssent.yaml": {"row": 260, "api": "UnicastPacketsSent", "driver": "DriverUnicastPacketsSent", "awk_field": "$22", "expected": "Pass"},
-        "D337_unknownprotopacketsreceived_ssid_stats.yaml": {"row": 261, "api": "UnknownProtoPacketsReceived", "expected": "To be tested"},
-        "D406_multipleretrycount_ssid_stats.yaml": {"row": 301, "api": "MultipleRetryCount", "expected": "Pass"},
-        "D407_retrycount_ssid_stats_basic.yaml": {"row": 302, "api": "RetryCount", "expected": "Pass"},
+        "D337_unknownprotopacketsreceived_ssid_stats.yaml": {"row": 337, "api": "UnknownProtoPacketsReceived", "driver": "DriverUnknownProtoPacketsReceived", "awk_field": "rxbadprotopkts", "expected": "Pass"},
+        "D406_multipleretrycount_ssid_stats.yaml": {"row": 406, "api": "MultipleRetryCount", "driver": "DriverMultipleRetryCount", "awk_field": "txretrie", "expected": "Pass"},
+        "D407_retrycount_ssid_stats_basic.yaml": {"row": 407, "api": "RetryCount", "driver": "DriverRetryCount", "awk_field": "txretry", "expected": "Pass"},
         "D495_retrycount_ssid_stats_verified.yaml": {"row": 362, "api": "RetryCount", "expected": "Not Supported"},
     }
 
@@ -1845,23 +2620,23 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
             )
 
     multiband_getssid_cases = {
-        "D300_getssidstats_broadcastpacketsreceived.yaml": {"row": 225, "api": "BroadcastPacketsReceived", "expected": "Fail"},
-        "D301_getssidstats_broadcastpacketssent.yaml": {"row": 226, "api": "BroadcastPacketsSent", "expected": "Fail"},
+        "D300_getssidstats_broadcastpacketsreceived.yaml": {"row": 300, "api": "BroadcastPacketsReceived", "expected": "Pass"},
+        "D301_getssidstats_broadcastpacketssent.yaml": {"row": 301, "api": "BroadcastPacketsSent", "expected": "Pass"},
         "D302_getssidstats_bytesreceived.yaml": {"row": 227, "api": "BytesReceived", "expected": "Fail"},
         "D303_getssidstats_bytessent.yaml": {"row": 228, "api": "BytesSent", "expected": "Pass"},
-        "D304_getssidstats_discardpacketsreceived.yaml": {"row": 229, "api": "DiscardPacketsReceived", "expected": "Pass"},
-        "D305_getssidstats_discardpacketssent.yaml": {"row": 230, "api": "DiscardPacketsSent", "expected": "Pass"},
-        "D306_getssidstats_errorsreceived.yaml": {"row": 231, "api": "ErrorsReceived", "expected": "Pass"},
-        "D307_getssidstats_errorssent.yaml": {"row": 232, "api": "ErrorsSent", "expected": "Pass"},
-        "D308_getssidstats_failedretranscount.yaml": {"row": 233, "api": "FailedRetransCount", "expected": "Pass"},
-        "D309_getssidstats_multicastpacketsreceived.yaml": {"row": 234, "api": "MulticastPacketsReceived", "expected": "Pass"},
-        "D310_getssidstats_multicastpacketssent.yaml": {"row": 235, "api": "MulticastPacketsSent", "expected": "Pass"},
-        "D311_getssidstats_packetsreceived.yaml": {"row": 236, "api": "PacketsReceived", "expected": "Pass"},
-        "D312_getssidstats_packetssent.yaml": {"row": 237, "api": "PacketsSent", "expected": "Pass"},
-        "D313_getssidstats_retranscount.yaml": {"row": 238, "api": "RetransCount", "expected": "Pass"},
-        "D314_getssidstats_unicastpacketsreceived.yaml": {"row": 239, "api": "UnicastPacketsReceived", "expected": "Pass"},
-        "D315_getssidstats_unicastpacketssent.yaml": {"row": 240, "api": "UnicastPacketsSent", "expected": "Pass"},
-        "D316_getssidstats_unknownprotopacketsreceived.yaml": {"row": 241, "api": "UnknownProtoPacketsReceived", "expected": "Pass"},
+        "D304_getssidstats_discardpacketsreceived.yaml": {"row": 304, "api": "DiscardPacketsReceived", "expected": "Pass"},
+        "D305_getssidstats_discardpacketssent.yaml": {"row": 305, "api": "DiscardPacketsSent", "expected": "Pass"},
+        "D306_getssidstats_errorsreceived.yaml": {"row": 306, "api": "ErrorsReceived", "expected": "Pass"},
+        "D307_getssidstats_errorssent.yaml": {"row": 307, "api": "ErrorsSent", "expected": "Pass"},
+        "D308_getssidstats_failedretranscount.yaml": {"row": 308, "api": "FailedRetransCount", "expected": "Pass"},
+        "D309_getssidstats_multicastpacketsreceived.yaml": {"row": 309, "api": "MulticastPacketsReceived", "expected": "Pass"},
+        "D310_getssidstats_multicastpacketssent.yaml": {"row": 310, "api": "MulticastPacketsSent", "expected": "Pass"},
+        "D311_getssidstats_packetsreceived.yaml": {"row": 311, "api": "PacketsReceived", "expected": "Pass"},
+        "D312_getssidstats_packetssent.yaml": {"row": 312, "api": "PacketsSent", "expected": "Pass"},
+        "D313_getssidstats_retranscount.yaml": {"row": 313, "api": "RetransCount", "expected": "Pass"},
+        "D314_getssidstats_unicastpacketsreceived.yaml": {"row": 314, "api": "UnicastPacketsReceived", "expected": "Pass"},
+        "D315_getssidstats_unicastpacketssent.yaml": {"row": 315, "api": "UnicastPacketsSent", "expected": "Pass"},
+        "D316_getssidstats_unknownprotopacketsreceived.yaml": {"row": 316, "api": "UnknownProtoPacketsReceived", "expected": "Pass"},
     }
 
     for filename, meta in multiband_getssid_cases.items():
@@ -2306,7 +3081,7 @@ def test_pending_readonly_associateddevice_cases_use_live_cross_checks():
     assert any(
         criterion["field"] == "driver_rrm_5g.DriverRrmCapability5g"
         and criterion["operator"] == "equals"
-        and str(criterion["value"]) == "0x0"
+        and str(criterion["value"]) == "0x32"
         for criterion in d013["pass_criteria"]
     )
     assert any(
@@ -2318,12 +3093,13 @@ def test_pending_readonly_associateddevice_cases_use_live_cross_checks():
     assert any(
         criterion["field"] == "driver_rrm_24g.DriverRrmCapability24g"
         and criterion["operator"] == "equals"
-        and str(criterion["value"]) == "0x0"
+        and str(criterion["value"]) == "0x32"
         for criterion in d013["pass_criteria"]
     )
     assert any(
         criterion["field"] == "result_5g.Capabilities"
-        and criterion["operator"] == "empty"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "RRM,BTM,QOS_MAP"
         for criterion in d013["pass_criteria"]
     )
     assert any(
@@ -2334,7 +3110,8 @@ def test_pending_readonly_associateddevice_cases_use_live_cross_checks():
     )
     assert any(
         criterion["field"] == "result_24g.Capabilities"
-        and criterion["operator"] == "empty"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "RRM,BTM,QOS_MAP"
         for criterion in d013["pass_criteria"]
     )
 
@@ -2521,14 +3298,14 @@ def test_pending_readonly_associateddevice_cases_evaluate_live_examples():
             },
             "step3_5g_rrm": {
                 "success": True,
-                "output": "DriverRrmCapability5g=0x0",
-                "captured": {"DriverRrmCapability5g": "0x0"},
+                "output": "DriverRrmCapability5g=0x32",
+                "captured": {"DriverRrmCapability5g": "0x32"},
                 "timing": 0.01,
             },
             "step4_5g_get": {
                 "success": True,
-                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities=""',
-                "captured": {"Capabilities": ""},
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities="RRM,BTM,QOS_MAP"',
+                "captured": {"Capabilities": "RRM,BTM,QOS_MAP"},
                 "timing": 0.01,
             },
             "step6_6g_assoc": {
@@ -2557,14 +3334,14 @@ def test_pending_readonly_associateddevice_cases_evaluate_live_examples():
             },
             "step11_24g_rrm": {
                 "success": True,
-                "output": "DriverRrmCapability24g=0x0",
-                "captured": {"DriverRrmCapability24g": "0x0"},
+                "output": "DriverRrmCapability24g=0x32",
+                "captured": {"DriverRrmCapability24g": "0x32"},
                 "timing": 0.01,
             },
             "step12_24g_get": {
                 "success": True,
-                "output": 'WiFi.AccessPoint.5.AssociatedDevice.1.Capabilities=""',
-                "captured": {"Capabilities": ""},
+                "output": 'WiFi.AccessPoint.5.AssociatedDevice.1.Capabilities="RRM,BTM,QOS_MAP"',
+                "captured": {"Capabilities": "RRM,BTM,QOS_MAP"},
                 "timing": 0.01,
             },
         }
@@ -2576,8 +3353,8 @@ def test_pending_readonly_associateddevice_cases_evaluate_live_examples():
             **d013_results["steps"],
             "step8_6g_get": {
                 "success": True,
-                "output": 'WiFi.AccessPoint.3.AssociatedDevice.1.Capabilities="RRM,BTM,QOS_MAP,PMF"',
-                "captured": {"Capabilities": "RRM,BTM,QOS_MAP,PMF"},
+                "output": 'WiFi.AccessPoint.3.AssociatedDevice.1.Capabilities="RRM,BTM,QOS_MAP"',
+                "captured": {"Capabilities": "RRM,BTM,QOS_MAP"},
                 "timing": 0.01,
             },
         }
@@ -11818,7 +12595,7 @@ def test_d111_getstationstats_associationtime_evaluate():
             },
             "step2_getstationstats": {
                 "success": True,
-                "output": "AssociationTime=2026-03-19T10:18:49Z",
+                "output": 'AssociationTime = "2026-03-19T10:18:49Z",',
                 "timing": 0.01,
             },
         }
@@ -13530,6 +14307,12 @@ def test_extract_key_values_preserves_prompted_comma_separated_value():
     )
 
 
+def test_extract_key_values_strips_quotes_before_trailing_comma():
+    plugin = _load_plugin()
+    parsed = plugin._extract_key_values('AssociationTime = "2026-03-19T10:18:49Z",\n')
+    assert parsed["AssociationTime"] == "2026-03-19T10:18:49Z"
+
+
 def test_extract_key_values_captures_bare_empty_value():
     plugin = _load_plugin()
     parsed = plugin._extract_key_values(
@@ -13611,6 +14394,56 @@ def test_execute_step_capture_prefers_synthesized_readback_query(monkeypatch):
     )
     assert result["captured"]["WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities"] == "RRM,BTM,QOS_MAP,PMF"
     plugin.teardown(case, topology=topology)
+
+
+def test_execute_step_assoc_capture_falls_back_to_associated_device_query(monkeypatch):
+    plugin = _load_plugin()
+    dut = _FakeTransport("serial", {})
+    plugin._transports["DUT"] = dut
+
+    case = {
+        "id": "wifi-llapi-runtime-assoc-fallback",
+        "steps": [
+            {
+                "id": "step6_6g_assoc",
+                "action": "exec",
+                "target": "DUT",
+                "band": "6g",
+                "capture": "assoc_6g",
+                "command": (
+                    "wl -i wl1 assoclist | tr 'A-F' 'a-f' | "
+                    "sed -n 's/^assoclist \\([^ ]*\\).*$/AssocMac6g=\\1/p'"
+                ),
+            }
+        ],
+        "pass_criteria": [
+            {"field": "assoc_6g.AssocMac6g", "operator": "regex", "value": _ASSOC_MAC_REGEX}
+        ],
+    }
+
+    monkeypatch.setattr(plugin, "_should_auto_prepare_wifi_bands", lambda _case: False)
+
+    def fake_execute(command: str, timeout: float = 30.0) -> dict[str, Any]:
+        del timeout
+        dut.executed_commands.append(command)
+        if command.startswith("wl -i wl1 assoclist"):
+            return {"returncode": 0, "stdout": "assoclist ", "stderr": "", "elapsed": 0.01}
+        if command == 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.*.MACAddress?"':
+            return {
+                "returncode": 0,
+                "stdout": 'WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress="2C:59:17:00:19:96"',
+                "stderr": "",
+                "elapsed": 0.01,
+            }
+        return {"returncode": 1, "stdout": "", "stderr": "unexpected", "elapsed": 0.01}
+
+    monkeypatch.setattr(dut, "execute", fake_execute)
+    result = plugin.execute_step(case, case["steps"][0], topology=None)
+
+    assert result["success"] is True
+    assert result["fallback_reason"] == "capture_assoc_mac_query"
+    assert result["captured"]["AssocMac6g"] == "2c:59:17:00:19:96"
+    assert result["output"].endswith("AssocMac6g=2c:59:17:00:19:96")
 
 
 def test_execute_step_strips_command_echo_before_capture(monkeypatch):
@@ -13824,6 +14657,73 @@ def test_no_multiline_block_scalar_commands_in_official_cases():
     assert violations == [], f"Multiline block scalars found:\n" + "\n".join(violations)
 
 
+def test_manual_6g_sta_env_setup_uses_full_client_rebase_and_network_selection():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    required_commands = [
+        "ifconfig wl1 down",
+        "wl -i wl1 down",
+        "wl -i wl1 ap 0",
+        "iw dev wl1 set type managed",
+        "wl -i wl1 up",
+        "ifconfig wl1 up",
+        "wpa_cli -p /var/run/wpa_supplicant -i wl1 enable_network 0",
+        "wpa_cli -p /var/run/wpa_supplicant -i wl1 select_network 0",
+    ]
+    violations: list[str] = []
+
+    for yaml_path in sorted(cases_dir.glob("D*.yaml")):
+        case = load_case(yaml_path)
+        sta_env_setup = case.get("sta_env_setup", "")
+        if not isinstance(sta_env_setup, str):
+            continue
+        if "wpa_supplicant -B -D nl80211 -i wl1" not in sta_env_setup:
+            continue
+        missing = [command for command in required_commands if command not in sta_env_setup]
+        if missing:
+            violations.append(f"{yaml_path.name}: missing {', '.join(missing)}")
+
+    assert violations == [], (
+        "Manual 6G sta_env_setup missing full client rebase/network selection:\n"
+        + "\n".join(violations)
+    )
+
+
+def test_evaluate_mac_equality_is_case_insensitive():
+    plugin = _load_plugin()
+    case = {
+        "id": "wifi-llapi-runtime-mac-compare",
+        "steps": [
+            {"id": "s1", "capture": "assoc_driver"},
+            {"id": "s2", "capture": "result"},
+        ],
+        "pass_criteria": [
+            {
+                "field": "result.MACAddress",
+                "operator": "equals",
+                "reference": "assoc_driver.AssocMAC",
+            }
+        ],
+    }
+    results = {
+        "steps": {
+            "s1": {
+                "success": True,
+                "output": "AssocMAC=2C:59:17:00:04:86",
+                "captured": {"AssocMAC": "2C:59:17:00:04:86"},
+                "timing": 0.01,
+            },
+            "s2": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress="2c:59:17:00:04:86"',
+                "captured": {"MACAddress": "2c:59:17:00:04:86"},
+                "timing": 0.01,
+            },
+        }
+    }
+
+    assert plugin.evaluate(case, results) is True
+
+
 def test_evaluate_normalizes_quote_only_mismatch(monkeypatch):
     plugin = _load_plugin()
     topology = _FakeTopology()
@@ -14030,6 +14930,23 @@ def test_synthesize_readback_command_skips_non_get_method():
     }
 
     assert plugin._synthesize_readback_command(case, "result") is None
+
+
+def test_multiband_direct_stats_preserve_authored_getssid_pipeline_commands():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+
+    for filename in (
+        "D321_broadcastpacketsreceived.yaml",
+        "D322_broadcastpacketssent.yaml",
+    ):
+        case_data = yaml.safe_load((cases_dir / filename).read_text(encoding="utf-8"))
+        step = next(item for item in case_data["steps"] if item["id"] == "getssid_5g")
+
+        commands, reason = plugin._command_resolver.resolve(case_data, step, topology=None)
+
+        assert commands == [step["command"]]
+        assert reason == ""
 
 
 def test_extract_cli_fragments_splits_multi_command_prose_line():
@@ -15719,6 +16636,10 @@ def test_run_sta_band_connect_sequence_keeps_6g_ctrl_alive(monkeypatch):
 
     def fake_execute_env_command(transport, command, *, timeout=30.0):
         del transport, timeout
+        if command == "wl -i wl1 bss":
+            return {"returncode": 0, "stdout": "down", "stderr": ""}
+        if command == "iw dev wl1.1 info":
+            return {"returncode": 1, "stdout": "", "stderr": "No such device"}
         return {"returncode": 0, "stdout": "", "stderr": ""}
 
     def fake_run_required_command(*, transport, case_id, label, command, timeout=30.0):
@@ -15753,11 +16674,27 @@ def test_run_sta_band_connect_sequence_keeps_6g_ctrl_alive(monkeypatch):
     assert "iw dev wl0 set type managed" in command_values
     assert "iw dev wl1 set type managed" in command_values
     assert "iw dev wl2 set type managed" in command_values
+    six_g_prep_commands = [
+        command for label, command in commands if label.startswith("sta_6g_prep.")
+    ]
+    assert six_g_prep_commands[:3] == [
+        "ubus-cli WiFi.AccessPoint.3.Enable=0",
+        "ubus-cli WiFi.AccessPoint.4.Enable=0",
+        "sleep 3",
+    ]
+    assert "ifconfig wl1 down" in six_g_prep_commands
+    assert "wl -i wl1 down" in six_g_prep_commands
+    assert "wl -i wl1 ap 0" in six_g_prep_commands
+    assert "iw dev wl1 set type managed" in six_g_prep_commands
+    assert "wl -i wl1 up" in six_g_prep_commands
+    assert "ifconfig wl1 up" in six_g_prep_commands
     assert command_values.count("killall wpa_supplicant 2>/dev/null || true") == 1
     assert "wpa_cli -i wl1 terminate 2>/dev/null || true" in command_values
     assert "wpa_cli -i wl2 terminate 2>/dev/null || true" in command_values
     assert "wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0" in command_values
     assert "wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0" in command_values
+    assert "wpa_cli -p /var/run/wpa_supplicant -i wl1 enable_network 0" in command_values
+    assert "wpa_cli -p /var/run/wpa_supplicant -i wl1 select_network 0" in command_values
     assert "wpa_cli -p /var/run/wpa_supplicant -i wl2 enable_network 0" in command_values
     assert "wpa_cli -p /var/run/wpa_supplicant -i wl2 select_network 0" in command_values
     assert "wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant" in command_values
@@ -15786,8 +16723,12 @@ def test_run_sta_band_connect_sequence_keeps_6g_ctrl_alive(monkeypatch):
     ) in connect_calls
     assert (
         "sta_6g",
-        "wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect",
-        "iw dev wl1 link",
+        "wpa_cli -p /var/run/wpa_supplicant -i wl1 select_network 0",
+        (
+            "iw dev wl1 link",
+            "wpa_cli -p /var/run/wpa_supplicant -i wl1 status",
+            "wl -i wl1 status",
+        ),
     ) in connect_calls
     assert (
         "sta_24g_ctrl",
@@ -15797,7 +16738,7 @@ def test_run_sta_band_connect_sequence_keeps_6g_ctrl_alive(monkeypatch):
     assert (
         "sta_24g",
         "wpa_cli -p /var/run/wpa_supplicant -i wl2 select_network 0",
-        "iw dev wl2 link",
+        ("iw dev wl2 link", "wl -i wl2 status"),
     ) in connect_calls
 
 
@@ -15928,6 +16869,10 @@ def test_run_sta_band_connect_sequence_prefers_case_sta_join_steps(monkeypatch):
     def fake_execute_env_command(transport, command, *, timeout=30.0):
         del transport, timeout
         env_commands.append(command)
+        if command == "wl -i wl1 bss":
+            return {"returncode": 0, "stdout": "down", "stderr": ""}
+        if command == "iw dev wl1.1 info":
+            return {"returncode": 1, "stdout": "", "stderr": "No such device"}
         if command == "wl -i wl0 status":
             return {
                 "returncode": 0,
@@ -15981,6 +16926,8 @@ def test_run_sta_band_connect_sequence_prefers_case_sta_join_steps(monkeypatch):
     assert "wl -i wl0 join testpilot5G imode bss" in command_values
     assert "iw dev wl0 set type managed" in command_values
     assert "iw dev wl1 set type managed" in command_values
+    assert "wl -i wl1 up" in command_values
+    assert "ifconfig wl1 up" in command_values
     assert "wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant" in command_values
     assert any('ssid="testpilot6G"' in command for command in command_values)
     assert "ubus-cli WiFi.AccessPoint.5.Enable=0" in command_values
@@ -16001,8 +16948,12 @@ def test_run_sta_band_connect_sequence_prefers_case_sta_join_steps(monkeypatch):
     ) in connect_calls
     assert (
         "sta_6g",
-        "wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect",
-        "iw dev wl1 link",
+        "wpa_cli -p /var/run/wpa_supplicant -i wl1 select_network 0",
+        (
+            "iw dev wl1 link",
+            "wpa_cli -p /var/run/wpa_supplicant -i wl1 status",
+            "wl -i wl1 status",
+        ),
     ) in connect_calls
     assert (
         "sta_24g",
@@ -16027,6 +16978,10 @@ def test_run_sta_band_connect_sequence_falls_back_after_case_sta_join_failure(mo
     def fake_execute_env_command(transport, command, *, timeout=30.0):
         del transport, timeout
         env_commands.append(command)
+        if command == "wl -i wl1 bss":
+            return {"returncode": 0, "stdout": "down", "stderr": ""}
+        if command == "iw dev wl1.1 info":
+            return {"returncode": 1, "stdout": "", "stderr": "No such device"}
         if command in {"wl -i wl0 status", "wl -i wl2 status"}:
             return {
                 "returncode": 0,
@@ -16062,9 +17017,12 @@ def test_run_sta_band_connect_sequence_falls_back_after_case_sta_join_failure(mo
 
     command_values = [command for _, command in commands]
     assert "wl -i wl0 join testpilot5G imode bss" in command_values
+    assert "wl -i wl1 up" in command_values
+    assert "ifconfig wl1 up" in command_values
     assert "wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant" in command_values
     assert any('ssid="testpilot6G"' in command for command in command_values)
     assert "wl -i wl2 join testpilot2G imode bss" in command_values
+    assert "wl -i wl2 down" in command_values
     assert "printf '%s\\n' 'ssid=\"testpilot5G\"' >> /tmp/wpa_wl0.conf" in command_values
     assert "printf '%s\\n' 'psk=\"00000000\"' >> /tmp/wpa_wl0.conf" in command_values
     assert "printf '%s\\n' 'ssid=\"testpilot2G\"' >> /tmp/wpa_wl2.conf" in command_values
@@ -16087,7 +17045,7 @@ def test_run_sta_band_connect_sequence_falls_back_after_case_sta_join_failure(mo
     assert (
         "sta_24g",
         "wpa_cli -p /var/run/wpa_supplicant -i wl2 select_network 0",
-        "iw dev wl2 link",
+        ("iw dev wl2 link", "wl -i wl2 status"),
     ) in connect_calls
     assert (
         "sta_6g_ctrl",
@@ -16096,8 +17054,12 @@ def test_run_sta_band_connect_sequence_falls_back_after_case_sta_join_failure(mo
     ) in connect_calls
     assert (
         "sta_6g",
-        "wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect",
-        "iw dev wl1 link",
+        "wpa_cli -p /var/run/wpa_supplicant -i wl1 select_network 0",
+        (
+            "iw dev wl1 link",
+            "wpa_cli -p /var/run/wpa_supplicant -i wl1 status",
+            "wl -i wl1 status",
+        ),
     ) in connect_calls
     assert env_commands.count("wl -i wl0 status") == 3
     assert env_commands.count("wl -i wl2 status") == 3
@@ -16482,21 +17444,21 @@ _METHOD_STATS_CASES = [
     ("D260_getradioairstats_totaltime.yaml", 262, "getRadioAirStats", "TotalTime", "3", "26", "17"),
     ("D261_getradioairstats_txtime.yaml", 263, "getRadioAirStats", "TxTime", "0", "0", "3851"),
     # getRadioStats field cases — workbook Pass
-    ("D263_getradiostats_broadcastpacketsreceived.yaml", 265, "getRadioStats", "BroadcastPacketsReceived", "0", "0", "0"),
-    ("D264_getradiostats_broadcastpacketssent.yaml", 266, "getRadioStats", "BroadcastPacketsSent", "0", "0", "0"),
-    ("D265_getradiostats_bytesreceived.yaml", 267, "getRadioStats", "BytesReceived", "185053", "0", "0"),
-    ("D266_getradiostats_bytessent.yaml", 268, "getRadioStats", "BytesSent", "573376410", "383599818", "383764788"),
-    ("D267_getradiostats_discardpacketsreceived.yaml", 269, "getRadioStats", "DiscardPacketsReceived", "784", "175", "183"),
+    ("D263_getradiostats_broadcastpacketsreceived.yaml", 263, "getRadioStats", "BroadcastPacketsReceived", "0", "0", "0"),
+    ("D264_getradiostats_broadcastpacketssent.yaml", 264, "getRadioStats", "BroadcastPacketsSent", "0", "0", "0"),
+    ("D265_getradiostats_bytesreceived.yaml", 265, "getRadioStats", "BytesReceived", "185053", "0", "0"),
+    ("D266_getradiostats_bytessent.yaml", 266, "getRadioStats", "BytesSent", "573376410", "383599818", "383764788"),
+    ("D267_getradiostats_discardpacketsreceived.yaml", 267, "getRadioStats", "DiscardPacketsReceived", "784", "175", "183"),
     # --- Batch 3: D268-D276 remaining getRadioStats fields ---
-    ("D268_getradiostats_discardpacketssent.yaml", 270, "getRadioStats", "DiscardPacketsSent", "0", "0", "0"),
-    ("D269_getradiostats_errorsreceive.yaml", 271, "getRadioStats", "ErrorsReceived", "20", "8", "13"),
-    ("D270_getradiostats_errorssent.yaml", 272, "getRadioStats", "ErrorsSent", "0", "0", "0"),
-    ("D271_getradiostats_multicastpacketsreceived.yaml", 273, "getRadioStats", "MulticastPacketsReceived", "4", "0", "0"),
-    ("D272_getradiostats_multicastpacketssent.yaml", 274, "getRadioStats", "MulticastPacketsSent", "628763", "824904", "567311"),
-    ("D273_getradiostats_packetsreceived.yaml", 275, "getRadioStats", "PacketsReceived", "264", "0", "0"),
-    ("D274_getradiostats_packetssent.yaml", 276, "getRadioStats", "PacketsSent", "1040842", "824935", "825369"),
-    ("D275_getradiostats_unicastpacketsreceived.yaml", 277, "getRadioStats", "UnicastPacketsReceived", "1673", "0", "0"),
-    ("D276_getradiostats_unicastpacketssent.yaml", 278, "getRadioStats", "UnicastPacketsSent", "1040842", "824935", "825369"),
+    ("D268_getradiostats_discardpacketssent.yaml", 268, "getRadioStats", "DiscardPacketsSent", "0", "0", "0"),
+    ("D269_getradiostats_errorsreceive.yaml", 269, "getRadioStats", "ErrorsReceived", "20", "8", "13"),
+    ("D270_getradiostats_errorssent.yaml", 270, "getRadioStats", "ErrorsSent", "0", "0", "0"),
+    ("D271_getradiostats_multicastpacketsreceived.yaml", 271, "getRadioStats", "MulticastPacketsReceived", "4", "0", "0"),
+    ("D272_getradiostats_multicastpacketssent.yaml", 272, "getRadioStats", "MulticastPacketsSent", "628763", "824904", "567311"),
+    ("D273_getradiostats_packetsreceived.yaml", 273, "getRadioStats", "PacketsReceived", "264", "0", "0"),
+    ("D274_getradiostats_packetssent.yaml", 274, "getRadioStats", "PacketsSent", "1040842", "824935", "825369"),
+    ("D275_getradiostats_unicastpacketsreceived.yaml", 275, "getRadioStats", "UnicastPacketsReceived", "1673", "0", "0"),
+    ("D276_getradiostats_unicastpacketssent.yaml", 276, "getRadioStats", "UnicastPacketsSent", "1040842", "824935", "825369"),
     # --- Batch 5c: getRadioStats fields ---
     ("D394_bytesreceived_radio_stats.yaml", 289, "getRadioStats", "BytesReceived", "189265", "0", "0"),
     ("D395_bytessent_radio_stats.yaml", 290, "getRadioStats", "BytesSent", "588249079", "393557814", "393818836"),
@@ -16609,7 +17571,7 @@ def test_d262_void_contract():
     """D262 getRadioAirStats Void YAML loads with correct 3-band structure."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D262_getradioairstats_void.yaml")
-    assert case["source"]["row"] == 264
+    assert case["source"]["row"] == 262
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 3
     for pc in case["pass_criteria"]:
@@ -16638,9 +17600,9 @@ def test_d262_void_evaluate():
 _SCAN_RESULTS_CASES = [
     # (yaml_file, row, field)
     ("D277_getscanresults_bandwidth.yaml", 279, "Bandwidth"),
-    ("D278_getscanresults_bssid.yaml", 280, "BSSID"),
-    ("D279_getscanresults_channel.yaml", 281, "Channel"),
-    ("D280_getscanresults_encryptionmode.yaml", 282, "EncryptionMode"),
+    ("D278_getscanresults_bssid.yaml", 278, "BSSID"),
+    ("D279_getscanresults_channel.yaml", 279, "Channel"),
+    ("D280_getscanresults_encryptionmode.yaml", 280, "EncryptionMode"),
     ("D281_getscanresults_noise.yaml", 283, "Noise"),
     ("D282_getscanresults_operatingstandards.yaml", 284, "OperatingStandards"),
     ("D283_getscanresults_rssi.yaml", 285, "RSSI"),
@@ -16648,8 +17610,8 @@ _SCAN_RESULTS_CASES = [
     ("D285_getscanresults_signalnoiseratio.yaml", 287, "SignalNoiseRatio"),
     ("D286_getscanresults_signalstrength.yaml", 288, "SignalStrength"),
     ("D287_getscanresults_ssid.yaml", 289, "SSID"),
-    ("D288_getscanresults_wpsconfigmethodssupported.yaml", 290, "WPSConfigMethodsSupported"),
-    ("D289_getscanresults_radio.yaml", 291, "Radio"),
+    ("D288_getscanresults_wpsconfigmethodssupported.yaml", 288, "WPSConfigMethodsSupported"),
+    ("D289_getscanresults_radio.yaml", 289, "Radio"),
     ("D290_getscanresults_centrechannel.yaml", 292, "CentreChannel"),
 ]
 
@@ -16663,8 +17625,15 @@ def test_scan_results_contract(yaml_file, row, field):
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
     assert case["llapi_support"] == "Support"
-    assert len(case["steps"]) == 3
-    assert len(case["pass_criteria"]) == 3
+    if yaml_file == "D278_getscanresults_bssid.yaml":
+        assert len(case["steps"]) == 6
+        assert len(case["pass_criteria"]) == 6
+    elif yaml_file == "D280_getscanresults_encryptionmode.yaml":
+        assert len(case["steps"]) == 6
+        assert len(case["pass_criteria"]) == 15
+    else:
+        assert len(case["steps"]) == 3
+        assert len(case["pass_criteria"]) == 3
     assert case["bands"] == ["5g", "6g", "2.4g"]
 
 
@@ -16687,6 +17656,86 @@ def test_scan_results_evaluate(yaml_file, row, field):
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
+    if yaml_file == "D278_getscanresults_bssid.yaml":
+        results = {
+            "steps": {
+                "step_5g_scan": {"success": True, "output": "LlapiBssid5g=aa:bb:cc:dd:ee:01\n", "timing": 0.01},
+                "step_5g_iw_scan": {"success": True, "output": "IwBssid5g=aa:bb:cc:dd:ee:01\n", "timing": 0.01},
+                "step_6g_scan": {"success": True, "output": "LlapiBssid6g=aa:bb:cc:dd:ee:02\n", "timing": 0.01},
+                "step_6g_iw_scan": {"success": True, "output": "IwBssid6g=aa:bb:cc:dd:ee:02\n", "timing": 0.01},
+                "step_24g_scan": {"success": True, "output": "LlapiBssid24g=aa:bb:cc:dd:ee:03\n", "timing": 0.01},
+                "step_24g_iw_scan": {"success": True, "output": "IwBssid24g=aa:bb:cc:dd:ee:03\n", "timing": 0.01},
+            }
+        }
+        assert plugin.evaluate(case, results) is True
+        return
+    if yaml_file == "D280_getscanresults_encryptionmode.yaml":
+        results = {
+            "steps": {
+                "step_5g_scan": {"success": True, "output": "LlapiBssid5g=aa:bb:cc:dd:ee:01\nLlapiEncryptionMode5g=Default\nLlapiSecurityMode5g=WPA2-Personal\n", "timing": 0.01},
+                "step_5g_iw_scan": {"success": True, "output": "IwCipher5g=CCMP\nIwEncryptionMode5g=AES\n", "timing": 0.01},
+                "step_6g_scan": {"success": True, "output": "LlapiBssid6g=aa:bb:cc:dd:ee:02\nLlapiEncryptionMode6g=Default\nLlapiSecurityMode6g=WPA3-Personal\n", "timing": 0.01},
+                "step_6g_iw_scan": {"success": True, "output": "IwCipher6g=CCMP\nIwEncryptionMode6g=AES\n", "timing": 0.01},
+                "step_24g_scan": {"success": True, "output": "LlapiBssid24g=aa:bb:cc:dd:ee:03\nLlapiEncryptionMode24g=Default\nLlapiSecurityMode24g=WPA2-Personal\n", "timing": 0.01},
+                "step_24g_iw_scan": {"success": True, "output": "IwCipher24g=CCMP\nIwEncryptionMode24g=AES\n", "timing": 0.01},
+            }
+        }
+        assert plugin.evaluate(case, results) is True
+        return
+    if yaml_file == "D279_getscanresults_channel.yaml":
+        results = {
+            "steps": {
+                "step_5g_scan": {"success": True, "output": "Channel=36\nIwChannel=36\n", "timing": 0.01},
+                "step_6g_scan": {"success": True, "output": "Channel=5\nIwChannel=5\n", "timing": 0.01},
+                "step_24g_scan": {"success": True, "output": "Channel=1\nIwChannel=1\n", "timing": 0.01},
+            }
+        }
+        assert plugin.evaluate(case, results) is True
+        return
+    if yaml_file == "D288_getscanresults_wpsconfigmethodssupported.yaml":
+        results = {
+            "steps": {
+                "step_5g_scan": {
+                    "success": True,
+                    "output": "WPSConfigMethodsSupported=\n",
+                    "timing": 0.01,
+                },
+                "step_6g_scan": {
+                    "success": True,
+                    "output": "WPSConfigMethodsSupported=\n",
+                    "timing": 0.01,
+                },
+                "step_24g_scan": {
+                    "success": True,
+                    "output": "WPSConfigMethodsSupported=\n",
+                    "timing": 0.01,
+                },
+            }
+        }
+        assert plugin.evaluate(case, results) is True
+        return
+    if yaml_file == "D289_getscanresults_radio.yaml":
+        results = {
+            "steps": {
+                "step_5g_scan": {
+                    "success": True,
+                    "output": "Radio=\n",
+                    "timing": 0.01,
+                },
+                "step_6g_scan": {
+                    "success": True,
+                    "output": "Radio=\n",
+                    "timing": 0.01,
+                },
+                "step_24g_scan": {
+                    "success": True,
+                    "output": "Radio=\n",
+                    "timing": 0.01,
+                },
+            }
+        }
+        assert plugin.evaluate(case, results) is True
+        return
     val = "-42" if field in ("Noise", "RSSI", "SignalStrength") else "TestVal"
     if field == "WPSConfigMethodsSupported":
         val = ""
@@ -16702,6 +17751,7 @@ def test_scan_results_evaluate(yaml_file, row, field):
             "success": True, "output": output, "timing": 0.01,
         }
     assert plugin.evaluate(case, results) is True
+
 
 
 # --- Batch 4a: D294 getNaStationStats (Skip) ---
@@ -16739,11 +17789,11 @@ def test_d294_getnastationstats_evaluate():
 
 _ACTION_METHOD_CASES = [
     # (yaml_file, row, method, verdict)
-    ("D295_scan.yaml", 220, "scan", "To be tested"),
+    ("D295_scan.yaml", 295, "scan", "Pass"),
     ("D296_startacs.yaml", 221, "startACS", "Fail"),
     ("D297_startautochannelselection.yaml", 222, "startAutoChannelSelection", "Fail"),
-    ("D298_startscan.yaml", 223, "startScan", "To be tested"),
-    ("D299_stopscan.yaml", 224, "stopScan", "To be tested"),
+    ("D298_startscan.yaml", 298, "startScan", "Pass"),
+    ("D299_stopscan.yaml", 299, "stopScan", "Pass"),
 ]
 
 _ACTION_IDS = [t[0].split(".")[0] for t in _ACTION_METHOD_CASES]
@@ -16796,23 +17846,23 @@ def test_action_method_evaluate(yaml_file, row, method, verdict):
 
 _SSID_STATS_CASES = [
     # (yaml_file, row, field, verdict)
-    ("D300_getssidstats_broadcastpacketsreceived.yaml", 225, "BroadcastPacketsReceived", "Fail"),
-    ("D301_getssidstats_broadcastpacketssent.yaml", 226, "BroadcastPacketsSent", "Fail"),
+    ("D300_getssidstats_broadcastpacketsreceived.yaml", 300, "BroadcastPacketsReceived", "Pass"),
+    ("D301_getssidstats_broadcastpacketssent.yaml", 301, "BroadcastPacketsSent", "Pass"),
     ("D302_getssidstats_bytesreceived.yaml", 227, "BytesReceived", "Fail"),
     ("D303_getssidstats_bytessent.yaml", 228, "BytesSent", "Pass"),
-    ("D304_getssidstats_discardpacketsreceived.yaml", 229, "DiscardPacketsReceived", "Pass"),
-    ("D305_getssidstats_discardpacketssent.yaml", 230, "DiscardPacketsSent", "Pass"),
-    ("D306_getssidstats_errorsreceived.yaml", 231, "ErrorsReceived", "Pass"),
-    ("D307_getssidstats_errorssent.yaml", 232, "ErrorsSent", "Pass"),
-    ("D308_getssidstats_failedretranscount.yaml", 233, "FailedRetransCount", "Pass"),
-    ("D309_getssidstats_multicastpacketsreceived.yaml", 234, "MulticastPacketsReceived", "Pass"),
-    ("D310_getssidstats_multicastpacketssent.yaml", 235, "MulticastPacketsSent", "Pass"),
-    ("D311_getssidstats_packetsreceived.yaml", 236, "PacketsReceived", "Pass"),
-    ("D312_getssidstats_packetssent.yaml", 237, "PacketsSent", "Pass"),
-    ("D313_getssidstats_retranscount.yaml", 238, "RetransCount", "Pass"),
-    ("D314_getssidstats_unicastpacketsreceived.yaml", 239, "UnicastPacketsReceived", "Pass"),
-    ("D315_getssidstats_unicastpacketssent.yaml", 240, "UnicastPacketsSent", "Pass"),
-    ("D316_getssidstats_unknownprotopacketsreceived.yaml", 241, "UnknownProtoPacketsReceived", "Pass"),
+    ("D304_getssidstats_discardpacketsreceived.yaml", 304, "DiscardPacketsReceived", "Pass"),
+    ("D305_getssidstats_discardpacketssent.yaml", 305, "DiscardPacketsSent", "Pass"),
+    ("D306_getssidstats_errorsreceived.yaml", 306, "ErrorsReceived", "Pass"),
+    ("D307_getssidstats_errorssent.yaml", 307, "ErrorsSent", "Pass"),
+    ("D308_getssidstats_failedretranscount.yaml", 308, "FailedRetransCount", "Pass"),
+    ("D309_getssidstats_multicastpacketsreceived.yaml", 309, "MulticastPacketsReceived", "Pass"),
+    ("D310_getssidstats_multicastpacketssent.yaml", 310, "MulticastPacketsSent", "Pass"),
+    ("D311_getssidstats_packetsreceived.yaml", 311, "PacketsReceived", "Pass"),
+    ("D312_getssidstats_packetssent.yaml", 312, "PacketsSent", "Pass"),
+    ("D313_getssidstats_retranscount.yaml", 313, "RetransCount", "Pass"),
+    ("D314_getssidstats_unicastpacketsreceived.yaml", 314, "UnicastPacketsReceived", "Pass"),
+    ("D315_getssidstats_unicastpacketssent.yaml", 315, "UnicastPacketsSent", "Pass"),
+    ("D316_getssidstats_unknownprotopacketsreceived.yaml", 316, "UnknownProtoPacketsReceived", "Pass"),
 ]
 
 _SSID_STATS_IDS = [t[0].split(".")[0] for t in _SSID_STATS_CASES]
@@ -16871,7 +17921,7 @@ def test_d317_bssid_ssid_contract():
     """D317 BSSID SSID loads as 3-band property getter."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D317_bssid_ssid.yaml")
-    assert case["source"]["row"] == 242
+    assert case["source"]["row"] == 317
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 3
@@ -17203,22 +18253,22 @@ def test_ssid_wmm_stats_evaluate(yaml_file, row, ac_category, wmm_metric):
 # Batch 6 — Spectrum (D528-D533): getSpectrumInfo method-call fields
 # ---------------------------------------------------------------------------
 _SPECTRUM_CASES = [
-    ("D528_getspectruminfo_bandwidth.yaml", 530, "bandwidth"),
-    ("D529_getspectruminfo_channel.yaml", 531, "channel"),
-    ("D530_getspectruminfo_noiselevel.yaml", 532, "noiselevel"),
-    ("D531_getspectruminfo_accesspoints.yaml", 533, "accesspoints"),
-    ("D532_getspectruminfo_ourusage.yaml", 534, "ourUsage"),
-    ("D533_getspectruminfo_availability.yaml", 535, "availability"),
+    ("D528_getspectruminfo_bandwidth.yaml", 530, "bandwidth", "20MHz"),
+    ("D529_getspectruminfo_channel.yaml", 531, "channel", "42"),
+    ("D530_getspectruminfo_noiselevel.yaml", 532, "noiselevel", "42"),
+    ("D531_getspectruminfo_accesspoints.yaml", 533, "accesspoints", "42"),
+    ("D532_getspectruminfo_ourusage.yaml", 534, "ourUsage", "42"),
+    ("D533_getspectruminfo_availability.yaml", 535, "availability", "42"),
 ]
 _SPECTRUM_IDS = [t[0].split(".")[0] for t in _SPECTRUM_CASES]
 
 
 @pytest.mark.parametrize(
-    "yaml_file,row,field",
+    "yaml_file,row,field,sample_value",
     _SPECTRUM_CASES,
     ids=_SPECTRUM_IDS,
 )
-def test_spectrum_load(yaml_file, row, field):
+def test_spectrum_load(yaml_file, row, field, sample_value):
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
@@ -17226,11 +18276,11 @@ def test_spectrum_load(yaml_file, row, field):
 
 
 @pytest.mark.parametrize(
-    "yaml_file,row,field",
+    "yaml_file,row,field,sample_value",
     _SPECTRUM_CASES,
     ids=_SPECTRUM_IDS,
 )
-def test_spectrum_discover(yaml_file, row, field):
+def test_spectrum_discover(yaml_file, row, field, sample_value):
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     plugin = _load_plugin()
@@ -17239,21 +18289,23 @@ def test_spectrum_discover(yaml_file, row, field):
 
 
 @pytest.mark.parametrize(
-    "yaml_file,row,field",
+    "yaml_file,row,field,sample_value",
     _SPECTRUM_CASES,
     ids=_SPECTRUM_IDS,
 )
-def test_spectrum_evaluate(yaml_file, row, field):
+def test_spectrum_evaluate(yaml_file, row, field, sample_value):
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     case = load_case(cases_dir / yaml_file)
     radio_map = {"5g": 1, "6g": 2, "2.4g": 3}
     results = {"steps": {}}
+    needs_quote = not sample_value.lstrip("-").isdigit()
     for step in case["steps"]:
         sid = step["id"]
         band = "5g" if "5g" in sid else ("6g" if "6g" in sid else "2.4g")
         rid = radio_map[band]
-        output = f"        WiFi.Radio.{rid}.getSpectrumInfo().{field} = 42,"
+        value = f'"{sample_value}"' if needs_quote else sample_value
+        output = f"        WiFi.Radio.{rid}.getSpectrumInfo().{field} = {value},"
         results["steps"][sid] = {"success": True, "output": output, "timing": 0.01}
     assert plugin.evaluate(case, results) is True
 
@@ -17341,8 +18393,8 @@ def test_assocdev_getter_evaluate(yaml_file, row, api_field):
 # ---------------------------------------------------------------------------
 _AP_SSID_SECURITY_CASES = [
     ("D359_isolationenable.yaml", 361, "IsolationEnable", "WiFi.AccessPoint.{i}."),
-    ("D319_macaddress_ssid.yaml", 321, "MACAddress", "WiFi.SSID.{i}."),
-    ("D320_ssid.yaml", 322, "SSID", "WiFi.SSID.{i}."),
+    ("D319_macaddress_ssid.yaml", 319, "MACAddress", "WiFi.SSID.{i}."),
+    ("D320_ssid.yaml", 320, "SSID", "WiFi.SSID.{i}."),
     ("D588_mldunit.yaml", 591, "MLDUnit", "WiFi.SSID.{i}."),
     ("D436_owetransitioninterface.yaml", 438, "OWETransitionInterface", "WiFi.AccessPoint.{i}.Security."),
     ("D437_saepassphrase.yaml", 439, "SAEPassphrase", "WiFi.AccessPoint.{i}.Security."),
