@@ -1,93 +1,80 @@
-# D283 getScanResults() RSSI blocker
+# D283 getScanResults() RSSI resolution notes
 
-## Status
+## Scope
 
 - case id: `d283-getscanresults-rssi`
 - current YAML: `plugins/wifi_llapi/cases/D283_getscanresults_rssi.yaml`
 - workbook authority: `0401.xlsx` `Wifi_LLAPI` row `283`
-- current YAML row metadata: `285`
-- latest full-run evidence: `20260409T213837737224`
-- latest isolated rerun: `20260411T214050136894` (hung after `setup_env`)
-- status: blocked
-- blocker type: **the committed full-payload replay still hangs on the 6G scan path, and the active public `RSSI` field is the same `ssid->rssi` family already shared with `D286 SignalStrength`**
+- current YAML row metadata: refreshed to `283`
+- earlier decisive blocker rerun: `20260411T214050136894`
+- resolving official reruns: `20260412T013944779069`, `20260412T014018880783`
 
-## Why this case is blocked
+## Historical blocker
 
-The old D283 blocker said this row was blocked on the same raw 6G scan transport issue as D277. That is no longer precise enough.
+The earlier committed generic case still used a full-payload `read` against `WiFi.Radio.{i}.getScanResults()`. On the active 0403 lab state, that shape reproduced the old transport failure:
 
-`D277` was eventually unblocked by switching its workbook-style replay to a transport-safe first-object capture. `D283` has now been re-tested on the current repo state, and the **committed generic full-payload case still hangs** after `setup_env`. So the old transport problem is still real for the current D283 shape, even though D277 itself has since been aligned with a different replay strategy.
+1. historical full run `20260409T213837737224` already failed at `step_6g_scan`
+2. isolated rerun `20260410T164405221878` hung after `setup_env`
+3. isolated rerun `20260411T214050136894` again emitted no step output, no top-level report files, and left `plugins/wifi_llapi/reports/agent_trace/20260411T214050136894/` empty
 
-At the same time, active 0403 source tracing shows D283 is not an isolated source path:
+So the blocker was real for the committed full-payload shape, but it was not the end-state of the row itself.
+
+## Corrected source trace
+
+Active 0403 source tracing shows `D283 RSSI` is the same public field family as `D286 SignalStrength`:
 
 1. `wld_nl80211_parser.c` fills `pResult->rssi` from `NL80211_BSS_SIGNAL_UNSPEC` or `NL80211_BSS_SIGNAL_MBM`
-2. `wld_rad_scan.c` serializes public `RSSI` from `ssid->rssi`
-3. the same file also serializes public `SignalStrength` from that same `ssid->rssi`
+2. `wld_rad_scan.c` serializes public `RSSI = ssid->rssi`
+3. the same file also serializes public `SignalStrength = ssid->rssi`
 
-So `D283 RSSI` and `D286 SignalStrength` are the same public field family on the active ubus path. Until a transport-safe replay exists for D283 and a durable same-source oracle exists for the shared `ssid->rssi` family, no YAML rewrite is justified.
+So the durable public replay for this row is not another raw full-payload probe; it is a transport-safe first-object capture that proves the public scan object exposes a parseable BSSID and that public `RSSI` / public `SignalStrength` stay equal on the same serialized target.
 
-## Active public 0403 source path
+## Resolving official reruns
 
-Key citations:
-
-- `src/nl80211/wld_nl80211_parser.c:1471-1482`
-  - fills `pResult->rssi` from `NL80211_BSS_SIGNAL_UNSPEC` or `NL80211_BSS_SIGNAL_MBM`
-- `src/RadMgt/wld_rad_scan.c:584`
-  - serializes public `RSSI = ssid->rssi`
-- `src/RadMgt/wld_rad_scan.c:588`
-  - serializes public `SignalStrength = ssid->rssi`
-- `src/RadMgt/wld_rad_scan.c:1510`
-  - the diagnostic scan map also serializes `SignalStrength = pSsid->rssi`
-
-The older Broadcom path still exists:
-
-- `bcmdrivers/.../wldm_lib_wifi.c:892`
-  - maps neighboring diagnostic `SignalStrength` to raw `RSSI: `
-- `bcmdrivers/.../wldm_lib_wifi.c:4928-4933`
-  - parses that token into `neighbor[i].ap_SignalStrength`
-
-But that legacy parser is not enough to treat D283 as an independent source line anymore; the active public ubus model clearly exposes both `RSSI` and `SignalStrength` from the same `ssid->rssi` field.
-
-## Live evidence
-
-### Historical full-run evidence (`20260409T213837737224`)
-
-- `0410summary.md` rows `277-290` already showed `step_6g_scan (failed after 2/2 attempts)`
-- `bgw720-0403-verify_wifi_llapi_20260409t213837737224.md` recorded D283 as `step failed: step_6g_scan`, with failure snapshot `serialwrap cmd status timeout`
-
-### Older isolated rerun (`20260410T164405221878`)
-
-- run never emitted step output after `setup_env`
-- no per-case agent-trace JSON was written
-- after the hung run was stopped, `COM0` briefly regressed to `ATTACHED / PROMPT_TIMEOUT` before self-test recovered it to `READY`
-
-### Current isolated rerun on the aligned repo state (`20260411T214050136894`)
-
-Command:
+The resolving rewrite switched D283 to the same transport-safe first-object pattern that had already unblocked D277:
 
 ```bash
-uv run python -m testpilot.cli run wifi_llapi --case d283-getscanresults-rssi --dut-fw-ver BGW720-0403
+BLOCK=$(ubus-cli "WiFi.Radio.N.getScanResults()" | head -60 | sed -n "/BSSID = /,/^        },/p")
 ```
 
-Observed shape:
+Each band then extracts:
 
-1. runner reached only:
+- the first serialized `BSSID`
+- public `RSSI`
+- public `SignalStrength`
 
-```text
-[wifi_llapi] setup_env: d283-getscanresults-rssi connected=True devices=['DUT']
-```
+and validates:
 
-2. no step output followed
-3. no top-level markdown/json/xlsx report files were produced
-4. `plugins/wifi_llapi/reports/agent_trace/20260411T214050136894/` was created but remained empty
-5. after the hung run was stopped:
-   - `COM1` recovered back to `READY / OK`
-   - `COM0` became `TARGET_UNRESPONSIVE` and required recovery before returning to `READY / OK`
+- `BSSID` is parseable
+- `RSSI` is numeric
+- `SignalStrength == RSSI`
 
-So the current committed D283 shape still reproduces a real transport-stage hang.
+### Official rerun `20260412T013944779069`
 
-## Decision
+- 5G: `38:88:71:2f:f6:a7 / -66 / -66`
+- 6G: `6e:15:db:9e:33:72 / -95 / -95`
+- 2.4G: `2c:59:17:00:03:f7 / -47 / -47`
+- `diagnostic_status=Pass`
 
-1. keep `D283` blocked on the current committed full-payload transport issue
-2. do not rewrite `plugins/wifi_llapi/cases/D283_getscanresults_rssi.yaml` yet
-3. if this row is reopened, the first step should be a **local-only transport-safe first-object replay** (like the eventual D277 strategy), not another full-payload generic rerun
-4. after transport is made safe, treat D283 together with the shared `ssid->rssi` field family already evidenced in `D286_block.md`
+### Follow-up rerun `20260412T014018880783`
+
+- 5G: `38:88:71:2f:f6:a7 / -66 / -66`
+- 6G: `6e:15:db:9e:33:72 / -95 / -95`
+- 2.4G: `2c:59:17:00:03:f7 / -47 / -47`
+- `diagnostic_status=Pass`
+
+The follow-up rerun reproduced the same all-band shape exactly, so the new committed replay is durable enough for the official acceptance path.
+
+## Current decision
+
+`D283` is now **aligned**.
+
+- YAML metadata is refreshed from stale row `285` to workbook row `283`
+- the committed case uses transport-safe first-object replay rather than the older full-payload scan
+- the committed oracle is: parseable public BSSID + numeric public RSSI + `SignalStrength == RSSI` on the same first scan object for all three bands
+- this file is retained as historical resolution notes for the rejected full-payload transport shape
+
+## Next direction
+
+1. Keep `D286` blocked until its own committed oracle is explicitly revalidated; D283's shared-field-family result should inform that revisit, but it does not by itself close D286.
+2. Resume from the next remaining scan-results blocker in the current queue: `D284`.
