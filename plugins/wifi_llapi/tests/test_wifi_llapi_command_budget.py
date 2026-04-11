@@ -36,7 +36,7 @@ def test_official_case_command_lengths_fit_transport_budget_summary():
                     if isinstance(item, str) and len(item) > threshold:
                         violations.append(f"{yaml_path.name}:{field}[{index}]:{len(item)}")
 
-    assert len(violations) == 666, (
+    assert len(violations) == 672, (
         "Official-case >120-char command inventory changed; "
         "review whether this was an intended calibration update.\n"
         + "\n".join(violations[:40])

@@ -2552,7 +2552,7 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
     multiband_direct_cases = {
         "D321_broadcastpacketsreceived.yaml": {"row": 321, "api": "BroadcastPacketsReceived", "driver": "DriverBroadcastPacketsReceived", "awk_field": "$23", "expected": "Pass"},
         "D322_broadcastpacketssent.yaml": {"row": 246, "api": "BroadcastPacketsSent", "driver": "DriverBroadcastPacketsSent", "awk_field": "$24", "expected": "Pass"},
-        "D323_bytesreceived_ssid_stats.yaml": {"row": 247, "api": "BytesReceived", "driver": "DriverBytesReceived", "awk_field": "$2", "expected": "Pass"},
+        "D323_bytesreceived_ssid_stats.yaml": {"row": 323, "api": "BytesReceived", "driver": "DriverBytesReceived", "awk_field": "rxbyte", "expected": "Pass"},
         "D324_bytessent_ssid_stats.yaml": {"row": 324, "api": "BytesSent", "driver": "DriverBytesSent", "awk_field": "txbyte", "expected": "Pass"},
         "D325_discardpacketsreceived.yaml": {"row": 325, "api": "DiscardPacketsReceived", "driver": "DriverDiscardPacketsReceived", "awk_field": "rxdiscard", "expected": "Pass"},
         "D326_discardpacketssent.yaml": {"row": 326, "api": "DiscardPacketsSent", "driver": "DriverDiscardPacketsSent", "awk_field": "txdiscard", "expected": "Pass"},
