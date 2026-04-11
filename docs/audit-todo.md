@@ -114,7 +114,8 @@
   - `D331 MulticastPacketsSent` is now formalized in `plugins/wifi_llapi/reports/D331_block.md`
   - trial reruns `20260411T192138186700` and `20260411T192524301950` both rejected the stale workbook `/proc/net/dev_extstats` `$18` path, but 5G still stayed at a fixed `driver = direct + 4` drift (`259962 / 259966`, `260097 / 260101`, then `260377 / 260381`, `260613 / 260617`)
   - the superseding official rerun `20260411T234124237416` then proved the rewrite is still not durable in the real runner path: 5G drift widened to `286001 / 286006` and then `286140 / 286192`, while 6G/2.4G only exact-closed on the second attempt
-  - focused DUT-only probes still exact-close the same formula outside the runner, so the local rewrite was rolled back and `D331` remains blocked until a runner-stable oracle exists
+  - the post-`verify_env` settle retrial `20260412T003609854183` materially narrowed that shape — 5G and 2.4G exact-closed on both attempts after `sleep 2` — but 6G still failed at `181336 / 181336 / 181337` and `181375 / 181375 / 181377`
+  - focused DUT-only probes still exact-close the same formula outside the runner, so the local rewrite was rolled back again and `D331` remains blocked until a runner-stable 6G oracle exists
   - `D333 PacketsSent` is now formalized in `plugins/wifi_llapi/reports/D333_block.md`
   - stale replay `20260411T194816992700` re-proved both the loose `getSSIDStats()` overmatch (`26411/26413`) and the non-authoritative workbook `/proc/net/dev_extstats` `$11` path
   - source-backed trial rerun `20260411T195140855058` exact-closed 6G/2.4G, but 5G still held a fixed `driver = direct + 5` drift (`293527 / 293532`, `293669 / 293674`)
@@ -148,7 +149,7 @@
   - `D322 BroadcastPacketsSent` is now aligned. The earlier blocker shape turned out to be runner timing, not stale authority: official rerun `20260412T002445088386` kept the workbook `/proc $24` oracle but added a short post-`verify_env` settle (`sleep 2`), after which attempt 2 exact-closed all three bands (`4596/4596/4596`, `4772/4772/4772`, `5121/5121/5121`). The committed metadata is now refreshed from stale row `246` to workbook row `322`, and `plugins/wifi_llapi/reports/D322_block.md` is retained only as historical trial evidence
   - `D323 BytesReceived` is now aligned. The earlier blocker turned out to be a stale workbook `/proc/net/dev_extstats` `$2` heuristic plus an incorrect source explanation: corrected 0403 tracing now shows `whm_brcm_get_if_stats()` seeds `BytesReceived` from `wl if_counters rxbyte`, `whm_brcm_vap_ap_stats_accu()` adds matching `wds*` `rxbyte`, and `whm_brcm_vap_update_ap_stats()` does not restore `BytesReceived` from `tmp_stats`. After rewriting the case to that source-backed oracle, official rerun `20260411T231952006453` exact-closed 5G/6G/2.4G at `276282/276282/276282`, `122610/122610/122610`, and `73193/73193/73193`; the committed metadata is now refreshed from stale row `247` to workbook row `323`, and `plugins/wifi_llapi/reports/D323_block.md` is retained as historical resolution notes
 - Practical next resume order:
-  1. resume the remaining unresolved queue from `D331`, `D333`
+  1. resume the remaining unresolved queue from `D333` (latest `D331` settle retrial is now checkpointed)
   2. keep `D331` / `D333` blocked unless their drifts are explained with deterministic source-backed corrections
   3. revisit `D281-D287` only if new same-source external replay evidence appears
 

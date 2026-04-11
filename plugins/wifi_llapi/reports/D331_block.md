@@ -9,6 +9,7 @@
   - `20260411T192138186700`
   - `20260411T192524301950`
   - `20260411T234124237416` (superseding official rerun)
+  - `20260412T003609854183` (post-`verify_env` settle retrial)
 
 ## Workbook-style procedure replay
 
@@ -77,6 +78,27 @@ Official rerun `20260411T234124237416` retried the same source-backed formula af
 
 This supersedes the earlier fixed-`+4` reading: in the real runner path the 5G delta is now non-deterministic (`+5`, then `+52`), 6G only exact-closes on the second attempt, and 2.4G still showed a `+1` first-attempt drift before exact-closing.
 
+### Trial 3 — post-`verify_env` settle still leaves a 6G delta
+
+Official rerun `20260412T003609854183` retried the same source-backed formula again, but inserted the same short settle (`sleep 2`) that resolved `D322`:
+
+- attempt 1
+  - 5G: `direct / getSSIDStats / formula = 291686 / 291686 / 291686`
+  - 6G: `181336 / 181336 / 181337`
+  - 2.4G: `307396 / 307396 / 307396`
+- attempt 2
+  - 5G: `291887 / 291887 / 291887`
+  - 6G: `181375 / 181375 / 181377`
+  - 2.4G: `307560 / 307560 / 307560`
+
+This trial materially narrowed the runner drift shape:
+
+- 5G exact-closed on both attempts
+- 2.4G exact-closed on both attempts
+- but 6G still stayed above the public field by `+1`, then `+2`
+
+So the short settle helps, but it does **not** close the real runner path deterministically the way it did for `D322`.
+
 Focused DUT-only probes still exact-close the same formula outside the full runner path, including repeated delayed replays (`Direct / Get / Driver = 123422 / 123422 / 123422` across five loops), so the acceptance authority must remain the official runner rather than the isolated probe.
 
 ## Why YAML is not updated yet
@@ -85,8 +107,7 @@ The source-backed formula is directionally correct and much closer than the stal
 
 - the first two trial reruns kept the same fixed `+4` 5G delta
 - the superseding official rerun widened the 5G drift to `+5`, then `+52`
-- 6G exact-closed only on the second official attempt
-- 2.4G still showed a first-attempt `+1` drift before exact-closing
+- the post-`verify_env` settle retrial removed the 5G/2.4G drift, but 6G still failed at `181336 / 181336 / 181337` and `181375 / 181375 / 181377`
 
 So there is still no live-validated reason to commit the formula rewrite into the official YAML.
 
@@ -100,6 +121,6 @@ So there is still no live-validated reason to commit the formula rewrite into th
 
 ## Next direction
 
-1. Trace why the full runner path can still inflate the 5G source-backed formula after the 6G OCV/hostapd stabilization sequence, even when isolated DUT probes exact-close.
-2. Check whether the public field is sampling a post-merge/public snapshot that lags the raw TX-side subtraction formula under runner timing.
-3. If a deterministic runner-stable oracle can be proven, rerun the direct-property case; otherwise keep D331 blocked and move on to `D333` / `D336`.
+1. Trace why the full runner path can still inflate the 6G source-backed formula after the 6G OCV/hostapd stabilization sequence, even when the same settle fixed 5G/2.4G.
+2. Check whether the public field is sampling a post-merge/public snapshot that lags the raw TX-side subtraction formula specifically on the 6G retry path.
+3. Keep `D331` blocked for now and move on to `D333`; only reopen if a deterministic runner-stable 6G correction can be proven.
