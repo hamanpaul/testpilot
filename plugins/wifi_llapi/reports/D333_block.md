@@ -8,6 +8,7 @@
 - Latest stale replay run: `20260411T194816992700`
 - Latest source-backed trial run: `20260411T195140855058`
 - Superseding official rerun: `20260411T235643720137`
+- Post-`verify_env` settle retrial: `20260412T004816450100`
 
 ## Workbook-style replay result
 
@@ -79,6 +80,26 @@ Official rerun `20260411T235643720137` retried the same anchored extractor plus 
 
 This re-proved that the 5G runner-path drift is still the same fixed `+5`, while 6G/2.4G are also not fully durable across all attempts.
 
+### Post-`verify_env` settle retrial — fixed `+5` narrows, but does not close
+
+Official rerun `20260412T004816450100` retried the same anchored extractor plus `txframe + matching wds txframe` formula again, but inserted the same short settle (`sleep 2`) that resolved `D322`:
+
+- attempt 1
+  - 5G: `direct / getSSIDStats / formula = 324804 / 324804 / 324805`
+  - 6G: `212209 / 212209 / 212209`
+  - 2.4G: `333730 / 333730 / 333730`
+- attempt 2
+  - 5G: `324947 / 324947 / 324947`
+  - 6G: `212232 / 212232 / 212234`
+  - 2.4G: `333958 / 333958 / 333958`
+
+This materially narrowed the earlier fixed-`+5` 5G blocker, but it still did not produce a deterministic all-band official replay:
+
+- attempt 1 now failed only on 5G, and only by `+1`
+- attempt 2 exact-closed 5G/2.4G, but 6G still failed by `+2`
+
+So the short settle helps, but it still does **not** make the real runner path durable enough to commit.
+
 Focused DUT-only probes still exact-close the same formula outside the full runner path (`2415/2415/2415`, `1058/1058/1058`, `734/734/734` on 5G/6G/2.4G with no active `wds*` peer), so the official runner remains the acceptance authority.
 
 ## Current decision
@@ -87,10 +108,11 @@ Focused DUT-only probes still exact-close the same formula outside the full runn
 
 - the stale workbook `/proc $11` path is rejected
 - the source-backed `txframe + matching wds txframe` trial is directionally correct but still not deterministic enough to commit on the real runner path
+- the post-`verify_env` settle retrial narrowed the drift to `5G +1` then `6G +2`, but still failed the official runner acceptance path
 - the official YAML is reverted to its pre-trial state while this blocker note carries the new evidence
 
 ## Next direction
 
-1. Trace why the 5G runner path still injects the same fixed `+5` after the 6G OCV/hostapd stabilization sequence, even when isolated DUT probes exact-close.
-2. Check whether the public `PacketsSent` snapshot lags a small post-merge/public adjustment that raw `txframe + matching wds txframe` does not model.
-3. If no exact deterministic source-backed oracle can be proven, keep D333 blocked and move on to `D336`.
+1. Trace why the residual runner drift now migrates from 5G attempt 1 to 6G attempt 2 after the post-`verify_env` settle.
+2. Check whether the public `PacketsSent` snapshot lags a small post-merge/public adjustment that raw `txframe + matching wds txframe` still does not model under the official retry path.
+3. Keep `D333` blocked for now and move on to the remaining blocked direct-stats/open-set work, starting from `D324`.
