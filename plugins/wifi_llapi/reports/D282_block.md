@@ -7,7 +7,7 @@
 - workbook authority: `0401.xlsx` `Wifi_LLAPI` row `282`
 - current YAML row metadata: `284`
 - disposition: **blocked / keep YAML unchanged**
-- blocker type: **active 0403 public `getScanResults().OperatingStandards` is a standalone parsed bitmask, but the public row does not expose the sibling `SupportedStandards` bitmask, so current external capability replay is still not a durable same-source oracle**
+- blocker type: **active 0403 public `getScanResults().OperatingStandards` does have a same-source sibling in `WiFi.NeighboringWiFiDiagnostic()`, but live runtime currently reports only `wl2`; `wl0`/`wl1` still fail, so the oracle is not yet durable enough to commit**
 
 ## Why this case is blocked
 
@@ -25,9 +25,10 @@ The newer source reading also tightens the model further:
 
 The blocker is now narrower:
 
-1. the old `wl escanresults`-style replay is not guaranteed to be the same-source oracle for public `OperatingStandards`
-2. 6G still lacks a durable same-target external replay
-3. 2.4G still shows an extra external `be`, which now looks more like a replay of **supported/capability-family** semantics than of the active public `OperatingStandards` bitmask
+1. the old `iw` / capability-family replay is not guaranteed to be the same-source oracle for public `OperatingStandards`
+2. a same-source sibling serializer does exist in the active pWHM ubus path: `WiFi.NeighboringWiFiDiagnostic()`
+3. that sibling path already exact-closes 2.4G same-target `OperatingStandards`, but live runtime still returns `FailedRadios = "wl0,wl1"` / `ReportingRadios = "wl2"`
+4. so 5G/6G still lack a durable same-target sibling replay even though the right source family is now identified
 
 ## Active public 0403 path
 
@@ -39,7 +40,7 @@ The active `ubus-cli "WiFi.Radio.{i}.getScanResults()"` chain is:
 4. the same parser also copies `pWirelessDevIE->supportedStandards` into `wld_scanResultSSID_t.supportedStandards`
 5. `wifiGen_rad_getScanResults(...)` returns copies of `pRad->scanState.lastScanResults`
 6. `_getScanResults()` / `s_getScanResults()` serializes only `ssid->operatingStandards` to the public `OperatingStandards` string with `SWL_RADSTD_FORMAT_STANDARD`
-7. the sibling `SupportedStandards` string is serialized elsewhere (`s_addDiagSingleResultToMap(...)`), but not in `_getScanResults()`
+7. the sibling diagnostic path `WiFi.NeighboringWiFiDiagnostic()` serializes **both** `OperatingStandards` and `SupportedStandards` from the same `wld_scanResultSSID_t`
 
 Key citations:
 
@@ -49,6 +50,8 @@ Key citations:
 - `src/Plugin/wifiGen_rad.c:1110-1119`
 - `src/RadMgt/wld_rad_scan.c:544-605`
 - `src/RadMgt/wld_rad_scan.c:1492-1520`
+- `odl/wld_definitions.odl:160-168`
+- `src/RadMgt/wld_rad_scan.c:1629-1665`
 - `targets/BGW720-300/fs.build/public/include/prplos/swl/swl_common_radioStandards.h:128-172`
 
 The critical shared-model points are:
@@ -122,23 +125,47 @@ The follow-up baseline probes also did not close the gap:
 
 This reinforces that the current external replay is not a durable same-source oracle for the active public field.
 
+### Manual sibling-diagnostic probe on the active ubus path
+
+After the source survey identified `WiFi.NeighboringWiFiDiagnostic()` as the same-source sibling serializer, a direct live probe was run on DUT (`COM1`) without changing YAML.
+
+Observed runtime facts:
+
+1. `ubus-cli "WiFi.Radio.3.getScanResults()" | head -22` currently returns first 2.4G target `BSSID = "04:70:56:D2:22:4F"` with `OperatingStandards = "b,g,n,ax"`
+2. `ubus-cli "WiFi.NeighboringWiFiDiagnostic()" | grep -i -A16 -B1 "04:70:56:D2:22:4F"` returns the same target on `Radio = "WiFi.Radio.3"` with:
+   - `OperatingStandards = "b,g,n,ax"`
+   - `SupportedStandards = "b,g,n,ax"`
+3. `ubus-cli "WiFi.Radio.1.getScanResults()" | head -30` currently returns first 5G target `BSSID = "62:15:DB:9E:31:F1"` with `OperatingStandards = "a,n,ac,ax,be"`
+4. `ubus-cli "WiFi.Radio.2.getScanResults()" | head -30` currently returns first 6G target `BSSID = "2C:59:17:00:19:96"` with `OperatingStandards = "ax,be"`
+5. but `ubus-cli "WiFi.NeighboringWiFiDiagnostic()" | grep -E "FailedRadios|ReportingRadios"` currently reports:
+
+```text
+FailedRadios = "wl0,wl1"
+ReportingRadios = "wl2"
+```
+
+So the new sibling path is real and source-correct, but it is only usable on 2.4G in the current live environment. That is not enough to promote D282 to a committed all-band replay.
+
 ## Why no YAML rewrite landed
 
 1. the active public source is now traced to nl80211 IE parsing plus shared bitmask serialization, not to the old Broadcom helper
-2. the public workbook row only exports `OperatingStandards`, even though the parser also populated `supportedStandards`
-3. 6G still does not yield a deterministic same-target external replay
-4. 2.4G still suggests a supported/capability-family drift (`...,+be`) rather than a clean replay of the public `OperatingStandards` bitmask
-5. there is still no live-authoritative basis to:
+2. the public workbook row only exports `OperatingStandards`, but the sibling diagnostic path does expose both `OperatingStandards` and `SupportedStandards` from the same `wld_scanResultSSID_t`
+3. the new sibling path exact-closes same-target 2.4G, so it is a valid reopen candidate in principle
+4. however, live `WiFi.NeighboringWiFiDiagnostic()` currently reports only `wl2` and fails `wl0`/`wl1`
+5. therefore there is still no live-authoritative basis to:
    - refresh `source.row` from `284` to `282`
    - commit any new workbook-style equality semantics
-   - declare raw `wl escanresults`-derived standards as the authoritative 0403 oracle for this row
+   - declare `WiFi.NeighboringWiFiDiagnostic()` durable enough as the all-band sibling oracle for this row
 
 So D282 must remain blocked and the committed YAML stays unchanged for now.
 
 ## Best next direction if this row is reopened
 
-1. find a replayable same-target oracle that exposes **both** parsed `OperatingStandards` and `SupportedStandards` semantics, not just raw capability text
-2. if reopening this row, avoid treating external `HT/VHT/HE/EHT` capability accumulation as equivalent to public `OperatingStandards` without first proving whether it actually matches the hidden `supportedStandards` bitmask instead
-3. only after a same-source oracle exists, decide whether D282 should become:
+1. first stabilize `WiFi.NeighboringWiFiDiagnostic()` so it reports `wl0` / `wl1` / `wl2` together under the current baseline
+2. if that succeeds, reopen D282 with a same-target replay shape:
+   - `getScanResults()` captures `BSSID + OperatingStandards`
+   - `NeighboringWiFiDiagnostic().Result[]` replays the same `Radio + BSSID`
+   - `SupportedStandards` is kept as evidence only, not as the row-282 verdict source
+3. only after the sibling oracle becomes all-band durable, decide whether D282 should become:
    - a workbook-style plain `Pass`, or
    - a source-backed mixed verdict / fail-shaped mismatch
