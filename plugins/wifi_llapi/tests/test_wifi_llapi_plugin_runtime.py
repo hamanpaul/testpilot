@@ -2697,7 +2697,17 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         "D328_errorssent_ssid_stats.yaml": {"row": 328, "api": "ErrorsSent", "driver": "DriverErrorsSent", "awk_field": "txerror", "expected": "Pass"},
         "D329_failedretranscount_ssid_stats.yaml": {"row": 329, "api": "FailedRetransCount", "driver": "DriverFailedRetransCount", "awk_field": "txretransfail", "expected": "Pass"},
         "D330_multicastpacketsreceived.yaml": {"row": 330, "api": "MulticastPacketsReceived", "driver": "DriverMulticastPacketsReceived", "awk_field": "rxmulti", "expected": "Pass"},
-        "D331_multicastpacketssent.yaml": {"row": 255, "api": "MulticastPacketsSent", "driver": "DriverMulticastPacketsSent", "awk_field": "$18", "expected": "Fail"},
+        "D331_multicastpacketssent.yaml": {
+            "row": 331,
+            "api": "MulticastPacketsSent",
+            "driver": "DriverMulticastPacketsSent",
+            "awk_field": "txmulti",
+            "expected": "Pass",
+            "assoc_field": "snapshot_5g.AssocMac5g",
+            "direct_field": "snapshot_5g.DirectMulticastPacketsSent5g",
+            "get_ref": "snapshot_5g.GetSSIDStatsMulticastPacketsSent5g",
+            "driver_ref": "snapshot_5g.DriverMulticastPacketsSent5g",
+        },
         "D332_packetsreceived_ssid_stats.yaml": {"row": 332, "api": "PacketsReceived", "driver": "DriverPacketsReceived", "awk_field": "rxframe", "expected": "Pass"},
         "D333_packetssent_ssid_stats.yaml": {"row": 257, "api": "PacketsSent", "driver": "DriverPacketsSent", "awk_field": "$11", "expected": "Pass"},
         "D334_retranscount_ssid_stats.yaml": {"row": 334, "api": "RetransCount", "driver": "DriverRetransCount", "awk_field": "txretrans", "expected": "Pass"},
@@ -2712,6 +2722,9 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
     for filename, meta in multiband_direct_cases.items():
         case_data = yaml.safe_load((cases_dir / filename).read_text(encoding="utf-8"))
         commands = "\n".join(str(step.get("command", "")) for step in case_data["steps"])
+        assoc_field = meta.get("assoc_field", "assoc_5g.AssocMac5g")
+        direct_field = meta.get("direct_field", f"direct_5g.{meta['api']}")
+        get_ref = meta.get("get_ref", f"getssid_5g.GetSSIDStats{meta['api']}5g")
         assert "aliases" not in case_data
         assert case_data["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
         assert case_data["source"]["row"] == meta["row"]
@@ -2730,22 +2743,23 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         assert case_data["results_reference"]["v4.0.3"]["5g"] == meta["expected"]
         assert case_data["results_reference"]["v4.0.3"]["6g"] == meta["expected"]
         assert case_data["results_reference"]["v4.0.3"]["2.4g"] == meta["expected"]
-        assert _has_assoc_mac_regex(case_data, "assoc_5g.AssocMac5g")
+        assert _has_assoc_mac_regex(case_data, assoc_field)
         assert any(
-            criterion["field"] == f"direct_5g.{meta['api']}"
+            criterion["field"] == direct_field
             and criterion["operator"] == "equals"
-            and criterion["reference"] == f"getssid_5g.GetSSIDStats{meta['api']}5g"
+            and criterion["reference"] == get_ref
             for criterion in case_data["pass_criteria"]
         )
         if "driver" in meta:
+            driver_ref = meta.get("driver_ref", f"driver_5g.{meta['driver']}5g")
             assert f"{meta['driver']}5g=" in commands
             assert f"{meta['driver']}6g=" in commands
             assert f"{meta['driver']}24g=" in commands
             assert meta["awk_field"] in commands
             assert any(
-                criterion["field"] == f"direct_5g.{meta['api']}"
+                criterion["field"] == direct_field
                 and criterion["operator"] == "equals"
-                and criterion["reference"] == f"driver_5g.{meta['driver']}5g"
+                and criterion["reference"] == driver_ref
                 for criterion in case_data["pass_criteria"]
             )
         elif meta["expected"] == "Not Supported":

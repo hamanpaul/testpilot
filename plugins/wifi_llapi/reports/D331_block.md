@@ -1,15 +1,16 @@
-# D331 MulticastPacketsSent blocker
+# D331 MulticastPacketsSent resolution notes
 
 ## Scope
 
 - Case: `wifi-llapi-d331-multicastpacketssent`
 - Workbook row authority: `D331` / workbook row `331`
-- Current YAML metadata remains reverted to stale workbook-style row `255`
+- Current YAML metadata is now refreshed from stale workbook-style row `255` to workbook row `331`
 - Latest formula trial reruns:
   - `20260411T192138186700`
   - `20260411T192524301950`
   - `20260411T234124237416` (superseding official rerun)
   - `20260412T003609854183` (post-`verify_env` settle retrial)
+  - `20260412T040941971904` (resolving clean-start official rerun)
 
 ## Workbook-style procedure replay
 
@@ -101,26 +102,35 @@ So the short settle helps, but it does **not** close the real runner path determ
 
 Focused DUT-only probes still exact-close the same formula outside the full runner path, including repeated delayed replays (`Direct / Get / Driver = 123422 / 123422 / 123422` across five loops), so the acceptance authority must remain the official runner rather than the isolated probe.
 
-## Why YAML is not updated yet
+## Resolution
 
-The source-backed formula is directionally correct and much closer than the stale workbook `/proc $18` compare, but it still is not exact or deterministic on the real runner path:
+Clean-start official rerun `20260412T040941971904` resolved the remaining runner-path drift by changing the per-band command ordering inside the real acceptance path:
 
-- the first two trial reruns kept the same fixed `+4` 5G delta
-- the superseding official rerun widened the 5G drift to `+5`, then `+52`
-- the post-`verify_env` settle retrial removed the 5G/2.4G drift, but 6G still failed at `181336 / 181336 / 181337` and `181375 / 181375 / 181377`
+1. sample raw `wl if_counters txmulti + matching wds txmulti` first
+2. capture one `getSSIDStats()` snapshot and parse both `MulticastPacketsSent` and `BroadcastPacketsSent`
+3. read the direct getter in the same shell step
+4. evaluate `max((txmulti + matching wds txmulti) - BroadcastPacketsSent, 0)` against that same public snapshot
 
-So there is still no live-validated reason to commit the formula rewrite into the official YAML.
+That run exact-closed the full runner path on attempt 1:
+
+- 5G: `direct / getSSIDStats / formula = 904 / 904 / 904`
+- 6G: `732 / 732 / 732`
+- 2.4G: `973 / 973 / 973`
+
+So the earlier `+4`, `+5`, `+52`, then `+1/+2` drifts were not an authority mismatch in the formula itself; they were still command-order noise inside the runner path. The committed YAML now keeps the source-backed formula, but captures it as a raw-first single snapshot per band.
+
+An immediate back-to-back rerun was started afterward, but it stayed in repeated 6G `verify_env` OCV repair loops without reaching `evaluate`; that reused-environment attempt was discarded as non-authoritative for this case and is kept only as baseline-noise context.
 
 ## Current decision
 
-`D331` remains **blocked**.
+`D331` is now **aligned**.
 
-- keep the committed YAML on its pre-trial state
-- do not promote the source-backed formula to a committed pass oracle yet
-- carry the case forward as part of the patch-scope open set
+- keep the committed YAML on the raw-first single-snapshot source-backed formula
+- keep workbook row metadata at `331`
+- keep `results_reference.v4.0.3` at `Pass / Pass / Pass`
+- retain this file only as historical trial and resolution evidence
 
 ## Next direction
 
-1. Trace why the full runner path can still inflate the 6G source-backed formula after the 6G OCV/hostapd stabilization sequence, even when the same settle fixed 5G/2.4G.
-2. Check whether the public field is sampling a post-merge/public snapshot that lags the raw TX-side subtraction formula specifically on the 6G retry path.
-3. Keep `D331` blocked for now and move on to `D333`; only reopen if a deterministic runner-stable 6G correction can be proven.
+1. Move the next open-set direct-stats revisit to `D333`.
+2. Keep immediate reused-environment rerun noise separate from accepted per-case authority; when reopening adjacent stats cases, prefer clean-start official reruns over back-to-back retries if 6G `verify_env` starts looping before `evaluate`.

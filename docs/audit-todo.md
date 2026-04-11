@@ -88,7 +88,7 @@
   - `67 metadata drifts`
 - Interpreted via `evaluation_verdict` rather than stale synthesized per-band `results_reference`, the remaining workbook-Pass gaps are:
   - `77` total workbook-Pass gaps
-  - `12` patch-scope true-open cases in the current repo inventory: `D281-D287`, `D290`, `D295`, `D324`, `D331`, `D333`
+  - `11` patch-scope true-open cases in the current repo inventory: `D281-D287`, `D290`, `D295`, `D324`, `D333`
   - this detached compare snapshot is still pre-`D330` rewrite evidence; the local repo state below is newer than the detached run results
 - Latest aligned spectrum follow-up:
   - `D532 getSpectrumInfo ourUsage` rerun `20260411T183356920330` = `Pass`
@@ -118,6 +118,11 @@
   - the superseding official rerun `20260411T234124237416` then proved the rewrite is still not durable in the real runner path: 5G drift widened to `286001 / 286006` and then `286140 / 286192`, while 6G/2.4G only exact-closed on the second attempt
   - the post-`verify_env` settle retrial `20260412T003609854183` materially narrowed that shape — 5G and 2.4G exact-closed on both attempts after `sleep 2` — but 6G still failed at `181336 / 181336 / 181337` and `181375 / 181375 / 181377`
   - focused DUT-only probes still exact-close the same formula outside the runner, so the local rewrite was rolled back again and `D331` remains blocked until a runner-stable 6G oracle exists
+- Latest aligned direct-stats follow-up after that:
+  - `D331 MulticastPacketsSent` is now aligned, and `plugins/wifi_llapi/reports/D331_block.md` is retained only as historical trial evidence
+  - clean-start official rerun `20260412T040941971904` resolved the remaining runner-path drift by making each band emit one raw-first snapshot: sample `wl if_counters txmulti + matching wds txmulti` first, then capture a single `getSSIDStats()` snapshot for both `MulticastPacketsSent` and `BroadcastPacketsSent`, and finally cross-check the direct getter in the same shell step
+  - that rerun exact-closed `direct / getSSIDStats / driver-formula` on all three bands: `5G 904/904/904`, `6G 732/732/732`, `2.4G 973/973/973`
+  - the committed metadata is now refreshed from stale row `255` to workbook row `331`, and `results_reference.v4.0.3` is now `Pass / Pass / Pass`
   - `D333 PacketsSent` is now formalized in `plugins/wifi_llapi/reports/D333_block.md`
   - stale replay `20260411T194816992700` re-proved both the loose `getSSIDStats()` overmatch (`26411/26413`) and the non-authoritative workbook `/proc/net/dev_extstats` `$11` path
   - source-backed trial rerun `20260411T195140855058` exact-closed 6G/2.4G, but 5G still held a fixed `driver = direct + 5` drift (`293527 / 293532`, `293669 / 293674`)
@@ -169,10 +174,10 @@
   - latest shared-baseline continuation after that: unresolved placeholder `sta_env_setup` templates are now skipped instead of replayed at runtime, `_env_command_succeeded()` now rejects missing wpa config / ctrl-ifname / placeholder-traffic failures, and the 6G OCV stabilization loop now accepts a restarted `wl1` `hostapd` process even when `/var/run/hostapd/wl1` is still absent during clean start
   - clean-start official rerun `20260412T033924192464` therefore no longer died in `verify_env`: both attempts reached `evaluate`, 5G assoc was present on both attempts, and the older `assoc_5g.AssocMac5g`-missing failure did not recur
   - `D324` still remains blocked, but now with pure verdict-layer evidence: attempt 1 `5G 329835/329835/305843`, `6G 271290/271290/270724`, `2.4G 381499/381499/381341`; attempt 2 `5G 562142/562414/537347`, `6G 402490/402490/402332`, `2.4G 611651/611651/611493`
-  - targeted guardrails after the shared fix are `11 passed`, the full repo regression is `1640 passed`, `plugins/wifi_llapi/reports/D324_block.md` is the superseding blocker authority, and the next resume pointer now moves to `D331`
+  - `D331` is now aligned via clean-start official rerun `20260412T040941971904`, so `plugins/wifi_llapi/reports/D324_block.md` remains the superseding blocker authority, `plugins/wifi_llapi/reports/D331_block.md` becomes historical resolution evidence, and the next resume pointer now moves to `D333`
 - Practical next resume order:
-  1. resume the remaining open-set blocker work from `D331`
-  2. keep `D324` / `D331` / `D333` blocked unless their drifts are explained with deterministic source-backed corrections
+  1. resume the remaining open-set blocker work from `D333`
+  2. keep `D324` / `D333` blocked unless their drifts are explained with deterministic source-backed corrections
   3. keep `D281` / `D282` / `D295` as the remaining non-direct blocker slice unless a new deterministic replay closes them
 
 ## How to resume this work next time
