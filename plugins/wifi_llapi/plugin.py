@@ -526,17 +526,25 @@ class Plugin(PluginBase):
         if not (all_connected and bool(self._transports)):
             return False
 
-        if run_case_setup and not self._run_sta_env_setup(case, topology):
-            last_failure = self._snapshot_mapping(case.get("_last_failure"))
-            if str(last_failure.get("phase", "")).strip().lower() != "setup_env":
-                self._record_runtime_failure(
-                    case,
-                    phase="setup_env",
-                    comment="sta_env_setup failed",
-                    category="configuration",
-                    reason_code="sta_env_setup_failed",
+        if run_case_setup:
+            if self._sta_env_setup_has_unresolved_placeholders(case):
+                log.info(
+                    "[%s] setup_env: %s sta_env_setup contains unresolved placeholders; "
+                    "skip runtime replay and rely on deterministic auto-baseline",
+                    self.name,
+                    case_id,
                 )
-            return False
+            elif self._has_custom_env_setup(case) and not self._run_sta_env_setup(case, topology):
+                last_failure = self._snapshot_mapping(case.get("_last_failure"))
+                if str(last_failure.get("phase", "")).strip().lower() != "setup_env":
+                    self._record_runtime_failure(
+                        case,
+                        phase="setup_env",
+                        comment="sta_env_setup failed",
+                        category="configuration",
+                        reason_code="sta_env_setup_failed",
+                    )
+                return False
         return True
 
     def _extract_cli_fragment(self, text: str) -> str | None:
@@ -1368,6 +1376,11 @@ class Plugin(PluginBase):
                 "unknown command",
                 "/bin/ash:",
                 "not found",
+                "failed to open config file",
+                "failed to read or parse configuration",
+                "failed to connect to non-global ctrl_ifname",
+                "ifconfig: bad address",
+                "ping: so_bindtodevice",
             )
         ):
             return False
@@ -1558,6 +1571,18 @@ class Plugin(PluginBase):
         return bool(
             isinstance(case.get("sta_env_setup"), str)
             and case["sta_env_setup"].strip()
+            and not Plugin._sta_env_setup_has_unresolved_placeholders(case)
+        )
+
+    @classmethod
+    def _sta_env_setup_has_unresolved_placeholders(cls, case: dict[str, Any]) -> bool:
+        script = case.get("sta_env_setup")
+        if not isinstance(script, str) or not script.strip():
+            return False
+        normalized = cls._normalize_command_text(script)
+        return bool(
+            re.search(r"\bwlx\b", normalized, re.IGNORECASE)
+            or re.search(r"\b192\.168\.1\.x\b", normalized, re.IGNORECASE)
         )
 
     def _should_auto_prepare_wifi_bands(self, case: dict[str, Any]) -> bool:
@@ -2461,6 +2486,7 @@ class Plugin(PluginBase):
         patch_cmd = "sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl1_hapd.conf"
         verify_cmd = "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1"
         hostapd_socket_cmd = "test -S /var/run/hostapd/wl1 && echo READY || echo WAIT"
+        hostapd_process_cmd = "pgrep -f '/tmp/wl1_hapd.conf' >/dev/null && echo READY || echo WAIT"
         bss_cmd = "wl -i wl1 bss"
 
         def patch_and_verify() -> bool:
@@ -2492,8 +2518,9 @@ class Plugin(PluginBase):
                 )
             # On current lab firmware, restarting wl1 hostapd can leave stale control
             # sockets behind, flip wl1 back to managed mode, and trigger a wld rewrite
-            # that drops ocv=0. Restore AP mode first and keep looping until ocv, the
-            # hostapd socket, and the DUT BSS all stay present together for a short window.
+            # that drops ocv=0. Restore AP mode first and keep looping until ocv and the
+            # DUT BSS stay present together, plus either the hostapd control socket or the
+            # restarted hostapd process is visible.
             restart_hostapd()
             for cmd in (
                 "wl -i wl1 bss up",
@@ -2507,19 +2534,24 @@ class Plugin(PluginBase):
             socket_ok = "READY" in self._env_output_text(
                 self._execute_env_command(dut, hostapd_socket_cmd, timeout=5.0)
             )
+            process_ok = "READY" in self._env_output_text(
+                self._execute_env_command(dut, hostapd_process_cmd, timeout=5.0)
+            )
             bss_ok = self._env_output_text(
                 self._execute_env_command(dut, bss_cmd, timeout=5.0)
             ).strip().lower() == "up"
-            if ocv_ok and socket_ok and bss_ok:
+            if ocv_ok and (socket_ok or process_ok) and bss_ok:
                 stabilized = True
                 break
             log.info(
-                "[%s] verify_env: %s 6G restart attempt=%d unstable (ocv=%s socket=%s bss=%s), retrying",
+                "[%s] verify_env: %s 6G restart attempt=%d unstable "
+                "(ocv=%s socket=%s process=%s bss=%s), retrying",
                 self.name,
                 case_id,
                 attempt,
                 ocv_ok,
                 socket_ok,
+                process_ok,
                 bss_ok,
             )
         if not stabilized:

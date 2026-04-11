@@ -98,6 +98,74 @@ python -m testpilot.cli wifi-llapi baseline-qualify --band 2.4g --repeat-count 5
 - `5G-STA-sccuss-exp.md`
 - `6G-STA-exp.md`
 
+## Shared baseline hardening checkpoint (2026-04-12)
+
+### Newly confirmed root cause
+
+1. 一批 stats-family case 的 `sta_env_setup` 其實是 unresolved placeholder template，而不是可直接執行的 runtime script。
+   - clean-start rerun 已直接打出 `/tmp/wpa_wl0.conf` / `/tmp/wpa_wl1.conf` missing、
+     `Failed to connect to non-global ctrl_ifname`、`ifconfig wlX 192.168.1.X`
+     與 `ping -I wlX` 這類 placeholder failure。
+   - 舊 runtime 仍把這類 `sta_env_setup` 視為 custom env，因此會阻止 deterministic auto-baseline，
+     但又不會把這些錯誤視為 setup failure。
+2. 6G OCV repair 的第一版 hot path 把 `/var/run/hostapd/wl1` socket 當成 hard gate，
+   但 clean-start live log 已證明 wl1 有時會先進到 `ctrl_iface not configured!`，
+   此時 `hostapd` process 與 `wl -i wl1 bss = up` 都已存在，只有 control socket 缺席。
+
+### Repo changes from this checkpoint
+
+- `plugins/wifi_llapi/plugin.py`
+  - placeholder `sta_env_setup`（如 `wlX` / `192.168.1.X`）現在會被視為 template，runtime 直接 skip，改走 deterministic auto-baseline。
+  - `_env_command_succeeded()` 現在會把缺 config / ctrl-ifname / placeholder address / placeholder device 的輸出判成 failure。
+  - `_apply_6g_ocv_fix()` 現在在 clean-start 下接受 `hostapd` process fallback，不再把缺 socket 視為唯一不穩訊號。
+- `plugins/wifi_llapi/tests/test_wifi_llapi_plugin_runtime.py`
+  - 新增 placeholder custom env skip test。
+  - 新增 env failure marker tests。
+  - 新增 6G OCV process-fallback test。
+
+### Clean-start proof
+
+```bash
+# dual reset before validation
+firstboot -y;sync;sync;sync;reboot -f
+
+# official rerun after shared fix
+uv run python -m testpilot.cli run wifi_llapi --case wifi-llapi-d324-bytessent --dut-fw-ver BGW720-B0-403
+```
+
+- clean-start official rerun：`20260412T033924192464`
+- preflight：
+  - DUT 三 band `assoclist` 空
+  - STA 三介面 `iw dev wlX link` 全部 `Not connected`
+- rerun 行為：
+  - `sta_env_setup contains unresolved placeholders; skip runtime replay and rely on deterministic auto-baseline`
+  - 6G 第一次 repair 仍可能先打出 `ocv=False socket=False process=True bss=True`
+  - 第二拍後可收斂成 `6G ocv=0 fix applied, wl1 hostapd restarted`
+- 關鍵結論：
+  - 這輪已不再失敗於 `assoc_5g` 缺值或 baseline setup
+  - 兩次 attempt 都真正進到 `evaluate`
+  - 目前殘留的是 D324 自己的 counter drift，而不是 shared baseline bring-up failure
+
+### Latest live evidence shape
+
+- attempt 1：
+  - 5G `329835 / 329835 / 305843`
+  - 6G `271290 / 271290 / 270724`
+  - 2.4G `381499 / 381499 / 381341`
+- attempt 2：
+  - 5G `562142 / 562414 / 537347`
+  - 6G `402490 / 402490 / 402332`
+  - 2.4G `611651 / 611651 / 611493`
+
+### Regression proof
+
+- targeted runtime guardrails：
+  - `uv run pytest -q plugins/wifi_llapi/tests/test_wifi_llapi_plugin_runtime.py -k 'placeholder_sta_env_setup or env_command_succeeded or apply_6g_ocv_fix or setup_env_runs_yaml_sta_env_setup or setup_env_syncs_psk_from_custom_wpa3_sae_passphrase'`
+  - `11 passed`
+- full repo suite：
+  - `uv run pytest -q`
+  - `1640 passed`
+
 ## 6G breakthrough checkpoint (2026-04-08)
 
 ### Root cause that matched live evidence

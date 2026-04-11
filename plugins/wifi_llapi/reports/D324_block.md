@@ -106,6 +106,37 @@ But the official runner still did **not** produce a commit-worthy deterministic 
 
 That means the WDS-sum direction is valid, but the sequential runner path still refreshes these counters fast enough that equality is not durable.
 
+## Superseding clean-start rerun `20260412T033924192464`
+
+This rerun was executed after two shared runtime fixes:
+
+1. unresolved placeholder `sta_env_setup` templates are now skipped instead of replayed at runtime
+2. the 6G OCV stabilization loop now accepts a restarted `wl1` `hostapd` process even when `/var/run/hostapd/wl1` is still absent during clean start
+
+### What changed
+
+- both attempts reached `evaluate`
+- `AssocMac5g` was present on both attempts
+- the earlier clean-reset blocker (`assoc_5g.AssocMac5g` missing) did not recur
+
+### Attempt 1
+
+- 5G: `329835 / 329835 / 305843`
+- 6G: `271290 / 271290 / 270724`
+- 2.4G: `381499 / 381499 / 381341`
+
+### Attempt 2
+
+- 5G: `562142 / 562414 / 537347`
+- 6G: `402490 / 402490 / 402332`
+- 2.4G: `611651 / 611651 / 611493`
+
+This clean-start rerun supersedes the earlier environment-layer failure:
+
+- the case now fails in `evaluate`, not `verify_env`
+- the dominant residual mismatch is still 5G `BytesSent`
+- attempt 2 also re-proves that direct `Stats.*` and `getSSIDStats()` can diverge by themselves (`562142` vs `562414`) before the later driver readback
+
 ## Why YAML is not updated yet
 
 The currently committed D324 oracle assumes base `wlX if_counters txbyte` is always the final authoritative driver view. The latest live reruns no longer support that assumption.
@@ -128,4 +159,4 @@ However, the next source-backed hypothesis has now also been exercised and rejec
 
 1. If D324 is revisited again, capture lower-level per-read evidence around the sequential refresh path to determine whether `Stats.*` and `getSSIDStats()` can ever be made to share one durable snapshot in the official runner.
 2. Do **not** commit any further timing-only workaround unless it exact-closes all three bands in the official runner path.
-3. Keep `D324` blocked for now and continue with the remaining non-direct open set, starting from `D281`.
+3. Keep `D324` blocked for now; `D281`/`D282` have already been re-triaged since the earlier rerun, so the next ready open-set revisit now moves to `D331`.

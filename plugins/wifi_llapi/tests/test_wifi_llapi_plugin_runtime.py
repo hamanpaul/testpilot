@@ -1177,6 +1177,57 @@ def test_setup_env_syncs_psk_from_custom_wpa3_sae_passphrase(monkeypatch):
     plugin.teardown(case, topology=topology)
 
 
+def test_setup_env_skips_placeholder_sta_env_setup_and_leaves_auto_baseline_available(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    replayed: list[str] = []
+
+    def fake_run_sta_env_setup(case, topology):
+        del case, topology
+        replayed.append("sta_env_setup")
+        return True
+
+    monkeypatch.setattr(plugin, "_run_sta_env_setup", fake_run_sta_env_setup)
+
+    case = {
+        "id": "wifi-llapi-runtime-placeholder-sta-env",
+        "topology": {
+            "devices": {
+                "DUT": {"transport": "serial"},
+                "STA": {"transport": "adb"},
+            }
+        },
+        "sta_env_setup": """
+        5G example:
+          iw dev wl0 set type managed
+        Traffic attempt:
+          ifconfig wlX 192.168.1.X netmask 255.255.255.0 up
+          ping -I wlX -c 5 -W 1 192.168.1.1
+        """,
+        "verification_command": "wl -i wl0 assoclist",
+        "steps": [
+            {
+                "id": "s1",
+                "action": "exec",
+                "target": "DUT",
+                "command": "wl -i wl0 assoclist",
+            }
+        ],
+    }
+
+    assert plugin._has_custom_env_setup(case) is False
+    assert plugin.setup_env(case, topology=topology) is True
+    assert plugin._should_auto_prepare_wifi_bands(case) is True
+    assert replayed == []
+    sta = next(
+        transport for transport in recorder.transports if transport.transport_type == "adb"
+    )
+    assert sta.executed_commands == []
+    plugin.teardown(case, topology=topology)
+
+
 def test_setup_env_runs_wpa_supplicant_hygiene_once_per_iface(monkeypatch):
     plugin = _load_plugin()
     topology = _FakeTopology()
@@ -1709,6 +1760,34 @@ def test_env_command_succeeded_allows_macaddress_shell_pipeline():
 
 
 @pytest.mark.parametrize(
+    ("command", "stdout"),
+    [
+        (
+            "wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant",
+            "Failed to open config file '/tmp/wpa_wl0.conf', error: No such file or directory",
+        ),
+        (
+            "wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect",
+            "Failed to connect to non-global ctrl_ifname: wl0  error: No such file or directory",
+        ),
+        (
+            "ifconfig wlX 192.168.1.X netmask 255.255.255.0 up",
+            "ifconfig: bad address '192.168.1.X'",
+        ),
+        (
+            "ping -I wlX -c 5 -W 1 192.168.1.1",
+            "ping: SO_BINDTODEVICE wlX: No such device",
+        ),
+    ],
+)
+def test_env_command_succeeded_rejects_placeholder_and_wpa_failures(command: str, stdout: str):
+    plugin = _load_plugin()
+    result = {"returncode": 0, "stdout": stdout, "stderr": ""}
+
+    assert plugin._env_command_succeeded(command, result) is False
+
+
+@pytest.mark.parametrize(
     ("band", "ap", "secondary_ap", "ssid_index", "ssid", "mode"),
     [
         ("5g", "1", "2", "4", "testpilot5G", "WPA2-Personal"),
@@ -1883,6 +1962,8 @@ def test_apply_6g_ocv_fix_cleans_control_sockets_and_forces_bss_up(monkeypatch):
             return {"returncode": 0, "stdout": "ocv=0\nocv=0\n", "stderr": ""}
         if command == "test -S /var/run/hostapd/wl1 && echo READY || echo WAIT":
             return {"returncode": 0, "stdout": "READY", "stderr": ""}
+        if command == "pgrep -f '/tmp/wl1_hapd.conf' >/dev/null && echo READY || echo WAIT":
+            return {"returncode": 0, "stdout": "READY", "stderr": ""}
         if command == "wl -i wl1 bss":
             return {"returncode": 0, "stdout": "up", "stderr": ""}
         return {"returncode": 0, "stdout": "", "stderr": ""}
@@ -1908,6 +1989,7 @@ def test_apply_6g_ocv_fix_cleans_control_sockets_and_forces_bss_up(monkeypatch):
         "sleep 3",
         "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1",
         "test -S /var/run/hostapd/wl1 && echo READY || echo WAIT",
+        "pgrep -f '/tmp/wl1_hapd.conf' >/dev/null && echo READY || echo WAIT",
         "wl -i wl1 bss",
     ]
 
@@ -1918,6 +2000,7 @@ def test_apply_6g_ocv_fix_restarts_again_when_ocv_disappears_after_restart(monke
     executed: list[str] = []
     verify_outputs = iter(("ocv=0\n", "", "ocv=0\n", "ocv=0\n"))
     socket_outputs = iter(("WAIT", "READY"))
+    process_outputs = iter(("WAIT", "READY"))
     bss_outputs = iter(("down", "up"))
 
     def fake_execute_env_command(transport, command, *, timeout=30.0):
@@ -1930,6 +2013,8 @@ def test_apply_6g_ocv_fix_restarts_again_when_ocv_disappears_after_restart(monke
             return {"returncode": 0, "stdout": next(verify_outputs), "stderr": ""}
         if command == "test -S /var/run/hostapd/wl1 && echo READY || echo WAIT":
             return {"returncode": 0, "stdout": next(socket_outputs), "stderr": ""}
+        if command == "pgrep -f '/tmp/wl1_hapd.conf' >/dev/null && echo READY || echo WAIT":
+            return {"returncode": 0, "stdout": next(process_outputs), "stderr": ""}
         if command == "wl -i wl1 bss":
             return {"returncode": 0, "stdout": next(bss_outputs), "stderr": ""}
         return {"returncode": 0, "stdout": "", "stderr": ""}
@@ -1958,6 +2043,7 @@ def test_apply_6g_ocv_fix_restarts_again_when_ocv_disappears_after_restart(monke
         "sleep 3",
         "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1",
         "test -S /var/run/hostapd/wl1 && echo READY || echo WAIT",
+        "pgrep -f '/tmp/wl1_hapd.conf' >/dev/null && echo READY || echo WAIT",
         "wl -i wl1 bss",
         "sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl1_hapd.conf",
         "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1",
@@ -1967,6 +2053,57 @@ def test_apply_6g_ocv_fix_restarts_again_when_ocv_disappears_after_restart(monke
         "sleep 3",
         "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1",
         "test -S /var/run/hostapd/wl1 && echo READY || echo WAIT",
+        "pgrep -f '/tmp/wl1_hapd.conf' >/dev/null && echo READY || echo WAIT",
+        "wl -i wl1 bss",
+    ]
+
+
+def test_apply_6g_ocv_fix_accepts_running_hostapd_without_socket(monkeypatch):
+    plugin = _load_plugin()
+    dut = object()
+    executed: list[str] = []
+
+    def fake_execute_env_command(transport, command, *, timeout=30.0):
+        del timeout
+        assert transport is dut
+        executed.append(command)
+        if command == "grep -q ieee80211w /tmp/wl1_hapd.conf 2>/dev/null && echo READY || echo WAIT":
+            return {"returncode": 0, "stdout": "READY", "stderr": ""}
+        if command == "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1":
+            return {"returncode": 0, "stdout": "ocv=0\n", "stderr": ""}
+        if command == "test -S /var/run/hostapd/wl1 && echo READY || echo WAIT":
+            return {"returncode": 0, "stdout": "WAIT", "stderr": ""}
+        if command == "pgrep -f '/tmp/wl1_hapd.conf' >/dev/null && echo READY || echo WAIT":
+            return {"returncode": 0, "stdout": "READY", "stderr": ""}
+        if command == "wl -i wl1 bss":
+            return {"returncode": 0, "stdout": "up", "stderr": ""}
+        return {"returncode": 0, "stdout": "", "stderr": ""}
+
+    monkeypatch.setattr(plugin, "_execute_env_command", fake_execute_env_command)
+
+    plugin._apply_6g_ocv_fix(dut, "wifi-llapi-runtime-6g-ocv-process-fallback")
+
+    restart_commands = [
+        "pid=$(pgrep -f '/tmp/wl1_hapd.conf' 2>/dev/null | head -n1); if [ -n \"$pid\" ]; then kill \"$pid\" 2>/dev/null || true; fi",
+        "sleep 2",
+        "rm -f /var/run/hostapd/wl1 /var/run/hostapd/wl1.1",
+        "wl -i wl1 ap 1",
+        "wl -i wl1 up",
+        "ifconfig wl1 up",
+        "hostapd -ddt -B /tmp/wl1_hapd.conf",
+        "sleep 2",
+    ]
+    assert executed == [
+        "grep -q ieee80211w /tmp/wl1_hapd.conf 2>/dev/null && echo READY || echo WAIT",
+        "sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl1_hapd.conf",
+        "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1",
+        *restart_commands,
+        "wl -i wl1 bss up",
+        "sleep 2",
+        "sleep 3",
+        "grep '^ocv=0' /tmp/wl1_hapd.conf 2>&1",
+        "test -S /var/run/hostapd/wl1 && echo READY || echo WAIT",
+        "pgrep -f '/tmp/wl1_hapd.conf' >/dev/null && echo READY || echo WAIT",
         "wl -i wl1 bss",
     ]
 
