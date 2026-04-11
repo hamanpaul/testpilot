@@ -106,10 +106,10 @@
   - `D295 scan()` is now re-aligned via official rerun `20260412T064317622551`
   - the rejected trial rerun `20260412T063939977577` proved `first scan BSSID == first driver BSSID` is not durable because driver-cache ordering drifted across retries even while the same public first target persisted
   - the committed oracle now keeps prepared `STA + links` topology but only requires the first `scan()` BSSID to exist somewhere in same-band `wl escanresults`; the resolving rerun exact-closed 5G `62:15:db:9e:31:f1`, 6G `86:82:fe:58:ac:a6`, and 2.4G `6a:d7:aa:02:d7:bf`
-- Latest reopened direct-stats blocker:
-  - `D324 BytesSent` is now formalized in `plugins/wifi_llapi/reports/D324_block.md`
-  - isolated rerun `20260411T190338070996` re-proved `direct == getSSIDStats()` but invalidated base `wlX if_counters txbyte` as a durable all-band oracle
-  - follow-up official rerun `20260412T005627796136` then exercised the source-backed `wlX txbyte + Σwds* txbyte` hypothesis and still failed in the real runner path: 5G kept a sequential `direct < getSSIDStats < driver` staircase on both attempts, 6G only exact-closed on attempt 2, and 2.4G still drifted (`157367729 / 157391543 / 157415359`, then `157517138 / 157517138 / 157517454`)
+- Latest scan-noise blocker refinement:
+  - `D281 getScanResults() Noise` remains blocked, but the blocker is now stronger and narrower than the earlier same-channel public-spectrum reruns alone
+  - 0403 source now proves `getScanResults().Noise` is back-filled from the scan-complete spectrum snapshot, while public `getSpectrumInfo()` first clears `scanState.spectrumResults` and rebuilds it from a fresh nl80211 survey; the current replay is therefore structurally cross-generation rather than same-snapshot
+  - source also exposes `scanCombinedData()/getScanCombinedData()` as the only public same-scan family, but current DUT probes still cannot turn that into a runner-stable oracle: `getScanCombinedData()` returns BSS data with empty `Spectrum`, and direct `scanCombinedData(...)` calls from both `ba-cli` and `ubus-cli` still fail with `status 1 - unknown error`
   - source trace now points at two coupled causes: `whm_brcm_vap_update_ap_stats()` can merge matching `wds*` peer stats into public `BytesSent`, and active pWHM `wld_ssid.c` shows both direct `Stats.*` and `getSSIDStats()` independently call `s_updateSsidStatsValues()` before serializing output
   - so the local WDS-sum rewrite was rolled back again and `D324` remains blocked
 - Latest new direct-stats blocker:

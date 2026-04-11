@@ -7,7 +7,7 @@
 - workbook authority: `0401.xlsx` `Wifi_LLAPI` row `281`
 - current YAML row metadata: `283`
 - disposition: **blocked / keep YAML unchanged**
-- blocker type: **active 0403 public `Noise` path is spectrum-backed, and the split-step same-channel replay narrows the issue to unstable 2.4G spectrum noise drift**
+- blocker type: **active 0403 public `Noise` replay is structurally cross-generation (`getScanResults()` snapshot vs fresh `getSpectrumInfo()` survey), and the only plausible same-scan public family is not currently usable as a runner-stable oracle**
 
 ## Why this case is blocked
 
@@ -307,16 +307,33 @@ So the newest source-backed conclusion is:
 2. active public `Noise` is at least partly **spectrum-backed / per-channel**
 3. the same-channel public `getSpectrumInfo().noiselevel` view is the correct replay family, but the 2.4G spectrum cache still is not durable enough in the official runner
 
+## 2026-04-12 same-scan oracle follow-up
+
+The newest source + live probe pass narrows the blocker further:
+
+1. `getSpectrumInfo()` is not just "later" than `getScanResults()`; it explicitly clears `scanState.spectrumResults` and rebuilds that list from a fresh nl80211 survey before serializing `noiselevel`
+2. so the currently tested `getScanResults().Noise -> getSpectrumInfo().noiselevel` compare is structurally cross-generation, even when 5G/6G often exact-close by chance
+3. source exposes only one plausible same-scan public family: deferred `scanCombinedData()` and cached `getScanCombinedData()`
+4. but current live DUT probes still cannot turn that family into an authoritative runner path:
+   - `ba-cli "Device.WiFi.Radio.3.getScanCombinedData()"` returns BSS entries but `Spectrum = []`
+   - `ba-cli "Device.WiFi.Radio.3.scanCombinedData(...)"` returns `status 1 - unknown error`
+   - `ubus-cli "WiFi.Radio.3.scanCombinedData()"` also returns `status 1 - unknown error`
+   - triggering `scanCombinedData(...)` and then re-reading `getScanCombinedData()` still leaves `Spectrum = []`
+
+So there is still no live-authoritative same-scan oracle that current CLI automation can use to replace the rejected split-step replay.
+
 ## Why no YAML rewrite landed
 
 1. the old direct `wl escanresults` same-target replay was built on the wrong authority assumption for active 0403 public `Noise`
 2. the newer split-step same-channel public-spectrum replay fixes the earlier 6G staging failure and exact-closes 5G/6G reliably
-3. but three consecutive official reruns still settle as `Fail -> pass after retry -> Fail`
-4. every surviving mismatch is isolated to 2.4G numerical drift (`Noise=-80` vs `SpectrumNoise=-78/-82`)
-5. therefore there is still no live-authoritative basis to:
+3. source now proves that replay is still structurally cross-generation because public `getSpectrumInfo()` re-samples survey state instead of exposing the paired scan-complete cache
+4. the only source-backed same-scan public family (`scanCombinedData()/getScanCombinedData()`) is still not usable through the current DUT CLI path
+5. three consecutive official reruns still settle as `Fail -> pass after retry -> Fail`
+6. every surviving mismatch is isolated to 2.4G numerical drift (`Noise=-80` vs `SpectrumNoise=-78/-82`)
+7. therefore there is still no live-authoritative basis to:
    - refresh `source.row` from `283` to `281`
    - commit any new exact-equality or tolerance-based semantics
-   - declare the same-channel public-spectrum equality as runner-stable on 0403
+   - declare either the split-step public-spectrum replay or a same-scan public sibling as runner-stable on 0403
 
 So D281 must remain blocked and the committed YAML stays unchanged for now.
 
