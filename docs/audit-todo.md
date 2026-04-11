@@ -119,9 +119,9 @@
   - stale replay `20260411T194816992700` re-proved both the loose `getSSIDStats()` overmatch (`26411/26413`) and the non-authoritative workbook `/proc/net/dev_extstats` `$11` path
   - source-backed trial rerun `20260411T195140855058` exact-closed 6G/2.4G, but 5G still held a fixed `driver = direct + 5` drift (`293527 / 293532`, `293669 / 293674`)
   - the superseding official rerun `20260411T235643720137` then re-proved that same runner-path `+5` on 5G (`319230 / 319235 / 319235`, `319376 / 319376 / 319381`), while focused DUT-only probes still exact-closed outside the runner, so the local rewrite was rolled back and the blocker stands
-  - `D336 UnicastPacketsSent` is now formalized in `plugins/wifi_llapi/reports/D336_block.md`
+  - `D336 UnicastPacketsSent` is now aligned, while `plugins/wifi_llapi/reports/D336_block.md` is kept as historical trial evidence
   - stale replay `20260411T201639103833` re-proved workbook `/proc/net/dev_extstats` `$22` as an all-band zero-shaped stale oracle (`26434/0`, `21540/0`, `10563/0`)
-  - source-backed trials `20260411T201939105374` and `20260411T202824539933` rejected both the first parser shape and the safer txframe/txmulti formula as durable all-band oracles: attempt 1 still drifted on 6G (`21654 / 21682`), while attempt 2 exact-closed 5G/6G but left 2.4G at `11690 / 11691`
+  - the resolving official rerun `20260412T000744842751` passed after switching the driver oracle to the unsigned 0403 formula `((txframe + matching wds txframe) - (d11_txmulti + matching wds d11_txmulti)) & 0xffffffff`: attempt 1 still drifted on 6G by `+1` (`24709 / 24710 / 24710`), but attempt 2 exact-closed 5G/6G/2.4G (`27172/27172/27172`, `24703/24703/24703`, `17117/17117/17117`)
 - Latest aligned scan-results follow-up:
   - `D277 getScanResults() Bandwidth` isolated rerun `20260411T205454026707` is now authoritative and no longer blocked
   - pre-reducing `getScanResults()` to the first scan object removed the old 6G full-payload broker recovery path, so the case now completes with `diagnostic_status=Pass`

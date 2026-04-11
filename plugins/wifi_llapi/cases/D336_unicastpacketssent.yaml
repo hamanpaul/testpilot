@@ -4,7 +4,7 @@ version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 260
+  row: 336
   object: WiFi.SSID.{i}.Stats.
   api: UnicastPacketsSent
 platform:
@@ -120,7 +120,7 @@ test_procedure: |
   2) For each band, capture assoclist, direct Stats, getSSIDStats(), and the matching driver view before the traffic attempt.
   3) Attempt STA-generated ping traffic with a static IP on the active STA interface, wait 2 seconds, then reread the same counter.
   4) Use the final reread for the manual judgment.
-  5) Pass when direct Stats.UnicastPacketsSent equals getSSIDStats().UnicastPacketsSent on 5G/6G/2.4G and /proc/net/dev_extstats field $22 when mapped.
+  5) Pass when direct Stats.UnicastPacketsSent equals getSSIDStats().UnicastPacketsSent on 5G/6G/2.4G and the active 0403 source-backed unsigned formula `((txframe + matching wds txframe) - (d11_txmulti + matching wds d11_txmulti)) & 0xffffffff`.
 steps:
 - id: assoc_5g
   action: exec
@@ -142,7 +142,7 @@ steps:
 - id: driver_5g
   action: exec
   target: DUT
-  command: awk '$1=="wl0:" {print "DriverUnicastPacketsSent5g=" $22}' /proc/net/dev_extstats
+  command: ap=wl0; set -- $(wl -i "$ap" if_counters | awk '/^txframe /{print $2} /^d11_txfrag /{print $4}'); f=$1; m=$2; wf=0; wm=0; for i in $(ls /sys/class/net | grep -E '^wds0\.0\.[0-9]+$' || true); do set -- $(wl -i "$i" if_counters 2>/dev/null | awk '/^txframe /{print $2} /^d11_txfrag /{print $4}'); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; printf 'DriverUnicastPacketsSent5g=%s\n' "$(( ((${f:-0}+wf)-(${m:-0}+wm)) & 0xffffffff ))"
   depends_on: getssid_5g
   capture: driver_5g
 - id: assoc_6g
@@ -165,7 +165,7 @@ steps:
 - id: driver_6g
   action: exec
   target: DUT
-  command: awk '$1=="wl1:" {print "DriverUnicastPacketsSent6g=" $22}' /proc/net/dev_extstats
+  command: ap=wl1; set -- $(wl -i "$ap" if_counters | awk '/^txframe /{print $2} /^d11_txfrag /{print $4}'); f=$1; m=$2; wf=0; wm=0; for i in $(ls /sys/class/net | grep -E '^wds1\.0\.[0-9]+$' || true); do set -- $(wl -i "$i" if_counters 2>/dev/null | awk '/^txframe /{print $2} /^d11_txfrag /{print $4}'); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; printf 'DriverUnicastPacketsSent6g=%s\n' "$(( ((${f:-0}+wf)-(${m:-0}+wm)) & 0xffffffff ))"
   depends_on: getssid_6g
   capture: driver_6g
 - id: assoc_24g
@@ -188,7 +188,7 @@ steps:
 - id: driver_24g
   action: exec
   target: DUT
-  command: awk '$1=="wl2:" {print "DriverUnicastPacketsSent24g=" $22}' /proc/net/dev_extstats
+  command: ap=wl2; set -- $(wl -i "$ap" if_counters | awk '/^txframe /{print $2} /^d11_txfrag /{print $4}'); f=$1; m=$2; wf=0; wm=0; for i in $(ls /sys/class/net | grep -E '^wds2\.0\.[0-9]+$' || true); do set -- $(wl -i "$i" if_counters 2>/dev/null | awk '/^txframe /{print $2} /^d11_txfrag /{print $4}'); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; printf 'DriverUnicastPacketsSent24g=%s\n' "$(( ((${f:-0}+wf)-(${m:-0}+wm)) & 0xffffffff ))"
   depends_on: getssid_24g
   capture: driver_24g
 pass_criteria:
@@ -203,7 +203,7 @@ pass_criteria:
 - field: direct_5g.UnicastPacketsSent
   operator: equals
   reference: driver_5g.DriverUnicastPacketsSent5g
-  description: 5g direct Stats.UnicastPacketsSent must match /proc/net/dev_extstats field $22 on wl0.
+  description: 5g direct Stats.UnicastPacketsSent must match the 0403 unsigned txframe/d11_txmulti formula on wl0.
 - field: assoc_6g.AssocMac6g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -215,7 +215,7 @@ pass_criteria:
 - field: direct_6g.UnicastPacketsSent
   operator: equals
   reference: driver_6g.DriverUnicastPacketsSent6g
-  description: 6g direct Stats.UnicastPacketsSent must match /proc/net/dev_extstats field $22 on wl1.
+  description: 6g direct Stats.UnicastPacketsSent must match the 0403 unsigned txframe/d11_txmulti formula on wl1.
 - field: assoc_24g.AssocMac24g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -227,23 +227,23 @@ pass_criteria:
 - field: direct_24g.UnicastPacketsSent
   operator: equals
   reference: driver_24g.DriverUnicastPacketsSent24g
-  description: 2.4g direct Stats.UnicastPacketsSent must match /proc/net/dev_extstats field $22 on wl2.
+  description: 2.4g direct Stats.UnicastPacketsSent must match the 0403 unsigned txframe/d11_txmulti formula on wl2.
 verification_command:
   - '# 5g'
   - wl -i wl0 assoclist
   - 'ubus-cli "WiFi.SSID.4.Stats.UnicastPacketsSent?"'
   - 'ubus-cli "WiFi.SSID.4.getSSIDStats()" | grep "UnicastPacketsSent"'
-  - 'awk ''$1=="wl0:" {print "DriverUnicastPacketsSent5g=" $22}'' /proc/net/dev_extstats'
+  - 'ap=wl0; set -- $(wl -i "$ap" if_counters | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); f=$1; m=$2; wf=0; wm=0; for i in $(ls /sys/class/net | grep -E ''^wds0\.0\.[0-9]+$'' || true); do set -- $(wl -i "$i" if_counters 2>/dev/null | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; printf ''DriverUnicastPacketsSent5g=%s\n'' "$(( ((${f:-0}+wf)-(${m:-0}+wm)) & 0xffffffff ))"'
   - '# 6g'
   - wl -i wl1 assoclist
   - 'ubus-cli "WiFi.SSID.6.Stats.UnicastPacketsSent?"'
   - 'ubus-cli "WiFi.SSID.6.getSSIDStats()" | grep "UnicastPacketsSent"'
-  - 'awk ''$1=="wl1:" {print "DriverUnicastPacketsSent6g=" $22}'' /proc/net/dev_extstats'
+  - 'ap=wl1; set -- $(wl -i "$ap" if_counters | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); f=$1; m=$2; wf=0; wm=0; for i in $(ls /sys/class/net | grep -E ''^wds1\.0\.[0-9]+$'' || true); do set -- $(wl -i "$i" if_counters 2>/dev/null | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; printf ''DriverUnicastPacketsSent6g=%s\n'' "$(( ((${f:-0}+wf)-(${m:-0}+wm)) & 0xffffffff ))"'
   - '# 2.4g'
   - wl -i wl2 assoclist
   - 'ubus-cli "WiFi.SSID.8.Stats.UnicastPacketsSent?"'
   - 'ubus-cli "WiFi.SSID.8.getSSIDStats()" | grep "UnicastPacketsSent"'
-  - 'awk ''$1=="wl2:" {print "DriverUnicastPacketsSent24g=" $22}'' /proc/net/dev_extstats'
+  - 'ap=wl2; set -- $(wl -i "$ap" if_counters | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); f=$1; m=$2; wf=0; wm=0; for i in $(ls /sys/class/net | grep -E ''^wds2\.0\.[0-9]+$'' || true); do set -- $(wl -i "$i" if_counters 2>/dev/null | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; printf ''DriverUnicastPacketsSent24g=%s\n'' "$(( ((${f:-0}+wf)-(${m:-0}+wm)) & 0xffffffff ))"'
 results_reference:
   v4.0.1:
     5g: Fail
@@ -292,4 +292,4 @@ WiFi.SSID.6.Stats.RetryCount=0
 WiFi.SSID.6.Stats.UnicastPacketsReceived=79917
 WiFi.SSID.6.Stats.UnicastPacketsSent=80006
 WiFi.SSID.6.Stats.UnknownProtoPacketsReceived=0
- | PWHM | Multiband serialwrap retest after STA traffic attempt: 5g=0, 6g=0, 2.4g=0; direct Stats matched getSSIDStats() and /proc/net/dev_extstats field $22 on SSID.4/6/8.'
+ | PWHM | Active 0403 source-backed oracle is the unsigned txframe/d11_txmulti formula, not workbook /proc/net/dev_extstats $22.'
