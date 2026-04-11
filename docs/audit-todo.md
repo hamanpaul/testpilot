@@ -79,6 +79,28 @@
   - do not create ad-hoc acceleration tools/scripts to skip the manual evidence loop
 - I will update YAML and regression tests directly in this repo after a case is proven live.
 
+## Latest repo handoff snapshot（2026-04-11）
+
+- Current detached full-run compare baseline: `20260411T074146043202`
+- Recomputed compare with the current local YAML overlay now sits at:
+  - `220 / 420 full matches`
+  - `200 mismatches`
+  - `67 metadata drifts`
+- Interpreted via `evaluation_verdict` rather than stale synthesized per-band `results_reference`, the remaining workbook-Pass gaps are:
+  - `77` total workbook-Pass gaps
+  - `19` patch-scope true-open cases: `D277`, `D281-D287`, `D290`, `D295`, `D322-D324`, `D330-D333`, `D335-D336`
+- Latest aligned spectrum follow-up:
+  - `D532 getSpectrumInfo ourUsage` rerun `20260411T183356920330` = `Pass`
+  - `D533 getSpectrumInfo availability` rerun `20260411T183405281629` = `Pass`
+  - both cases are now being carried as plain `Pass/Pass/Pass` instead of the stale fail-shaped workbook carry-over
+- Latest reopened runtime blocker:
+  - `D295 scan()` isolated rerun `20260411T183430680092` hung again after `setup_env`
+  - current issue is runtime/execution-path hang, not a newly proven semantic mismatch
+- Practical next resume order:
+  1. inspect the partial `D295` artifacts from `20260411T183430680092`
+  2. either close `D295` with new live evidence or formalize/update a blocker note
+  3. continue the patch-scope true-open set from `D324` / `D330-D333` / `D335-D336`
+
 ## How to resume this work next time
 
 If I open only this file in a future session, I should do the following in order:

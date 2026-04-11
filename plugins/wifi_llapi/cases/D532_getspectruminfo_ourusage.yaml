@@ -12,9 +12,10 @@ bands:
 llapi_support: Support
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: 'Multiband source-backed retest: active 0403 serializes `ourUsage` through `_getSpectrumInfo()` -> `s_prepareSpectrumOutputWithChanFilter()` -> `amxc_var_add_key(uint32_t, ..., "ourUsage", llEntry->ourUsage)`, and the sync refresh path `wld_rad_nl80211_updateUsageStatsFromSurveyInfo()` computes `chanInfo.ourUsage` from survey-derived airtime (`ourTime / total_time`). Real runner replay therefore locks the public 5g/6g/2.4g shape to integer percentage values rather than the stale fail-shaped workbook carry-over.'
 topology:
   devices:
     DUT:
