@@ -2,8 +2,8 @@ id: d530-spectruminfo-noiselevel
 name: D530 getSpectrumInfo noiselevel
 source:
   row: 532
-  object: WiFi.Radio.{i}.getSpectrumInfo()
-  api: noiselevel
+  object: WiFi.Radio.{i}.
+  api: getSpectrumInfo()
   baseline: 0310-BGW720-300
 bands:
 - 5g
@@ -15,6 +15,7 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: 'Multiband source-backed retest: active 0403 `getSpectrumInfo()` returns numeric spectrum noise through `_getSpectrumInfo()` -> `s_prepareSpectrumOutput()` -> `amxc_var_add_key(int32_t, "noiselevel", llEntry->noiselevel)`. Live rerun confirms all three bands emit numeric `noiselevel` values, but the survey-driven field itself remains dynamic across retries.'
 topology:
   devices:
     DUT:

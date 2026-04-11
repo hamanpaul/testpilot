@@ -136,8 +136,10 @@
   - the committed case now carries a source-backed `Pass / Fail / Pass` shape at workbook row `290`: 5G exact-closes `42/42`, 2.4G exact-closes `1/1`, and 6G is locked as the same-target fail-shaped mismatch `LlapiCentreChannel6g=31` vs `WlCentreChannel6g=15` on BSSID `6e:15:db:9e:33:72`
   - `D529 getSpectrumInfo channel` is now aligned. Active 0403 source keeps the public field on `_getSpectrumInfo()` -> `s_prepareSpectrumOutput()` -> `amxc_var_add_key(uint32_t, "channel", llEntry->channel)`, and fresh isolated rerun `20260411T221613327385` plus repeated direct probes now lock the first serialized spectrum-entry channels at `36 / 2 / 1` on `5g / 6g / 2.4g`
   - the committed case now fixes the template metadata shape (`object=WiFi.Radio.{i}.`, `api=getSpectrumInfo()`), replaces the old generic numeric regex with explicit first-entry channel extractors, keeps workbook row `531`, and remains plain `Pass / Pass / Pass`
+  - `D530 getSpectrumInfo noiselevel` is now aligned, but it stays a dynamic numeric case rather than a fixed-value case. Active 0403 source keeps the public field on `_getSpectrumInfo()` -> `s_prepareSpectrumOutput()` -> `amxc_var_add_key(int32_t, "noiselevel", llEntry->noiselevel)`, so the field is a survey-driven live reading
+  - the first exact-value trial was rejected after 2.4G drifted across retries/reruns (`-75 / -77 / -78`), so the committed case only fixes the template metadata shape (`object=WiFi.Radio.{i}.`, `api=getSpectrumInfo()`), preserves the source-correct numeric regex pass shape, and is green-locked by isolated rerun `20260411T222349217612`
 - Practical next resume order:
-  1. resume the remaining unresolved queue from `D530`, then `D322-D323`, `D331`, `D333`, `D336`
+  1. resume the remaining unresolved queue from `D531`, then `D322-D323`, `D331`, `D333`, `D336`
   2. keep `D331` / `D333` / `D336` blocked unless their drifts are explained with deterministic source-backed corrections
   3. revisit `D281-D287` only if new same-source external replay evidence appears
 
