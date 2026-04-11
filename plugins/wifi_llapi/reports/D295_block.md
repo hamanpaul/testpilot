@@ -1,4 +1,4 @@
-# D295 scan() blocker
+# D295 scan() resolution notes
 
 ## Scope
 
@@ -9,6 +9,8 @@
 - Latest isolated reruns:
   - `20260411T183430680092` (committed YAML, DUT-only topology)
   - `20260411T185559873987` (local experimental topology patch with `STA` + three band links; not committed)
+  - `20260412T063939977577` (official rerun proving first-driver-BSSID equality is not durable)
+  - `20260412T064317622551` (resolving official rerun, current authority)
 
 ## Workbook-style procedure replay
 
@@ -102,7 +104,7 @@ The current runtime behavior matches the plugin lifecycle:
 
 So the committed D295 YAML currently has no source-backed guarantee that `scan()` will execute after the radios fall back to `Dormant`.
 
-## Why YAML is not updated yet
+## Why earlier rewrites were rejected
 
 We now know two things:
 
@@ -111,16 +113,30 @@ We now know two things:
 
 That means there is still no live-validated, source-backed path that lets us promote D295 back into a confidently aligned plain-pass row.
 
+## Resolution
+
+Official rerun `20260412T064317622551` now provides a durable source-backed pass path:
+
+1. Keep `STA + links` topology so `_should_auto_prepare_wifi_bands()` and per-band `verify_env()` actually run before each band.
+2. Reject the earlier stricter `first scan BSSID == first driver BSSID` oracle. Official rerun `20260412T063939977577` showed that ordering is not durable: the 5G `scan()` first BSSID stayed fixed at `62:15:db:9e:31:f1`, while the first `wl0 escanresults` BSSID drifted across retries (`ca:45:e8:2a:49:0e` then `a8:a2:37:6b:e7:ec`).
+3. Use the stable driver-backed oracle instead: `scan()` first BSSID must exist somewhere in same-band `wl escanresults`.
+
+The resolving official rerun exact-closed all three bands:
+
+- 5G `62:15:db:9e:31:f1`
+- 6G `86:82:fe:58:ac:a6`
+- 2.4G `6a:d7:aa:02:d7:bf`
+
 ## Current decision
 
-`D295` remains **blocked**.
+`D295` is now aligned as **Pass / Pass / Pass**.
 
-- Do **not** keep the experimental `STA` topology patch
-- Do **not** treat the previously calibrated plain-pass shape as closed
-- Do **not** refresh documentation to claim D295 is aligned until a clean rerun reaches actual step output
+- Keep the authored `STA` topology + three band links
+- Keep the committed oracle on `scan() first BSSID exists in same-band wl escanresults`
+- Retain this file as historical blocker/resolution evidence
 
 ## Next direction
 
-1. Trace why the topology-patched rerun loops back into `verify_env` after the 6G OCV restart and then stalls without entering `step_5g`.
-2. Decide whether D295 needs a dedicated `sta_env_setup` / precondition flow instead of relying on generic band auto-prepare.
-3. Compare adjacent `D298 startScan()` / `D299 stopScan()` under the same dormant-vs-prepared environment, because the current manual probe shows `startScan()` is now failing with the same `unknown error` shape on a dormant radio.
+1. Continue with `D281` and `D282`, which are now the remaining open-set blockers.
+2. Treat the rejected `first-driver-BSSID` equality trial as ordering-noise evidence, not as the final D295 oracle.
+3. Keep adjacent `D298 startScan()` / `D299 stopScan()` notes as historical context only; D295 no longer blocks on their dormant-radio failure shape.

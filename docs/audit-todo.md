@@ -87,8 +87,8 @@
   - `200 mismatches`
   - `67 metadata drifts`
 - Interpreted via `evaluation_verdict` rather than stale synthesized per-band `results_reference`, the remaining workbook-Pass gaps are:
-  - `77` total workbook-Pass gaps
-  - `3` true-open cases in the current local repo inventory: `D281`, `D282`, `D295`
+  - `76` total workbook-Pass gaps
+  - `2` true-open cases in the current local repo inventory: `D281`, `D282`
   - this detached compare snapshot is still pre-`D330` rewrite evidence; the local repo state below is newer than the detached run results
 - Latest aligned spectrum follow-up:
   - `D532 getSpectrumInfo ourUsage` rerun `20260411T183356920330` = `Pass`
@@ -102,10 +102,10 @@
   - after refreshing the case to workbook row `332`, anchoring the `getSSIDStats()` extraction, and switching the driver oracle to `wl if_counters rxframe + matching wds rxframe`, rerun `20260411T194647490016` passed in one attempt
   - `D335 UnicastPacketsReceived` stale workbook replay `20260411T200329824574` re-proved `/proc/net/dev_extstats` `$21` drift on all three bands (`5G 2001/746`, `6G 788/391`, `2.4G 483/235` across direct/getSSIDStats vs proc)
   - active 0403 source explicitly derives `UnicastPacketsReceived = PacketsReceived - MulticastPacketsReceived` in `whm_brcm_api_ext.c`, then copies/accumulates that field in `whm_brcm_vap.c`; after switching the case to `(wl if_counters rxframe + matching wds rxframe) - (wl if_counters rxmulti + matching wds rxmulti)`, rerun `20260411T200851584762` exact-closed on 5G / 6G / 2.4G as `2003/2003/2003`, `794/794/794`, and `483/483/483`
-- Latest reopened runtime blocker:
-  - `D295 scan()` is now formalized in `plugins/wifi_llapi/reports/D295_block.md`
-  - committed DUT-only topology can fall back to `WiFi.Radio.{1,2,3}.Status="Dormant"` and then `scan()/startScan()` return `status 1 - unknown error`
-  - local `STA + links` topology experiment rerun `20260411T185559873987` only moved the failure deeper into `verify_env` / 6G OCV restart and still produced no step output
+- Latest aligned action-method follow-up:
+  - `D295 scan()` is now re-aligned via official rerun `20260412T064317622551`
+  - the rejected trial rerun `20260412T063939977577` proved `first scan BSSID == first driver BSSID` is not durable because driver-cache ordering drifted across retries even while the same public first target persisted
+  - the committed oracle now keeps prepared `STA + links` topology but only requires the first `scan()` BSSID to exist somewhere in same-band `wl escanresults`; the resolving rerun exact-closed 5G `62:15:db:9e:31:f1`, 6G `86:82:fe:58:ac:a6`, and 2.4G `6a:d7:aa:02:d7:bf`
 - Latest reopened direct-stats blocker:
   - `D324 BytesSent` is now formalized in `plugins/wifi_llapi/reports/D324_block.md`
   - isolated rerun `20260411T190338070996` re-proved `direct == getSSIDStats()` but invalidated base `wlX if_counters txbyte` as a durable all-band oracle

@@ -18357,7 +18357,7 @@ def test_action_method_contract(yaml_file, row, method, verdict):
 
 @pytest.mark.parametrize("yaml_file,row,method,verdict", _ACTION_METHOD_CASES, ids=_ACTION_IDS)
 def test_action_method_setup_env(yaml_file, row, method, verdict, monkeypatch):
-    """Action method is DUT-only; setup_env succeeds without STA."""
+    """Action method setup_env succeeds with the authored topology."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
@@ -18370,12 +18370,24 @@ def test_action_method_setup_env(yaml_file, row, method, verdict, monkeypatch):
 
 @pytest.mark.parametrize("yaml_file,row,method,verdict", _ACTION_METHOD_CASES, ids=_ACTION_IDS)
 def test_action_method_evaluate(yaml_file, row, method, verdict):
-    """Action method evaluate passes when no error is returned."""
+    """Action method evaluate passes when authored outputs satisfy criteria."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     results = {"steps": {}}
     for r, band in [("1", "5g"), ("2", "6g"), ("3", "24g")]:
+        if yaml_file == "D295_scan.yaml":
+            suffix = "24g" if band == "24g" else band
+            results["steps"][f"step_{band}"] = {
+                "success": True,
+                "output": (
+                    f"ScanCheck{suffix}=ok\n"
+                    f"ScanBSSID{suffix}=aa:bb:cc:dd:ee:{r}{r}\n"
+                    f"DriverMatch{suffix}=aa:bb:cc:dd:ee:{r}{r}\n"
+                ),
+                "timing": 0.5,
+            }
+            continue
         results["steps"][f"step_{band}"] = {
             "success": True,
             "output": f"WiFi.Radio.{r}.{method}() returned\n",
