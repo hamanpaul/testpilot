@@ -4,7 +4,7 @@ version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 246
+  row: 322
   object: WiFi.SSID.{i}.Stats.
   api: BroadcastPacketsSent
 platform:
@@ -117,15 +117,21 @@ sta_env_setup: |
     ping -I wlX -c 5 -W 1 192.168.1.1
 test_procedure: |
   1) Validate this counter sequentially on 5G, then 6G, then 2.4G; keep only one associated STA link active.
-  2) For each band, capture assoclist, direct Stats, getSSIDStats(), and the matching driver view before the traffic attempt.
+  2) After verify_env, allow a short settle before the first 5G snapshot, then capture assoclist, direct Stats, getSSIDStats(), and the matching driver view for each band.
   3) Attempt STA-generated ping traffic with a static IP on the active STA interface, wait 2 seconds, then reread the same counter.
   4) Use the final reread for the manual judgment.
   5) Pass when direct Stats.BroadcastPacketsSent equals getSSIDStats().BroadcastPacketsSent on 5G/6G/2.4G and /proc/net/dev_extstats field $24 when mapped.
 steps:
+- id: stabilize_after_env
+  action: exec
+  target: DUT
+  command: sleep 2
+  capture: stabilize_after_env
 - id: assoc_5g
   action: exec
   target: DUT
   command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+  depends_on: stabilize_after_env
   capture: assoc_5g
 - id: direct_5g
   action: exec

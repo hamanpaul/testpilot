@@ -88,7 +88,7 @@
   - `67 metadata drifts`
 - Interpreted via `evaluation_verdict` rather than stale synthesized per-band `results_reference`, the remaining workbook-Pass gaps are:
   - `77` total workbook-Pass gaps
-  - `17` patch-scope true-open cases in the current repo inventory: `D281-D287`, `D290`, `D295`, `D322`, `D324`, `D330-D333`, `D335-D336`
+  - `12` patch-scope true-open cases in the current repo inventory: `D281-D287`, `D290`, `D295`, `D324`, `D331`, `D333`
   - this detached compare snapshot is still pre-`D330` rewrite evidence; the local repo state below is newer than the detached run results
 - Latest aligned spectrum follow-up:
   - `D532 getSpectrumInfo ourUsage` rerun `20260411T183356920330` = `Pass`
@@ -145,11 +145,11 @@
   - `D532 getSpectrumInfo ourUsage` is now aligned, and it follows the same metadata-only dynamic numeric pattern. Active 0403 source keeps the public field on `_getSpectrumInfo()` -> `s_prepareSpectrumOutput()` -> `amxc_var_add_key(uint32_t, "ourUsage", llEntry->ourUsage)`, while `wld_rad_nl80211_updateUsageStatsFromSurveyInfo()` derives the live percentage from survey airtime (`ourTime / total_time`)
   - isolated rerun `20260411T223658523608` passed cleanly with the generic numeric verdict shape. That rerun also triggered a workbook re-check: `0401.xlsx` confirms the whole spectrum batch had stale `source.row` drift, so `D528-D533` are now corrected to the actual workbook rows `528-533` instead of the old `530-535` carry-over
   - `D533 getSpectrumInfo availability` is now aligned as the last metadata-only dynamic numeric case in this batch. Active 0403 source keeps the public field on `_getSpectrumInfo()` -> `s_prepareSpectrumOutput()` -> `amxc_var_add_key(uint32_t, "availability", llEntry->availability)`, while `wld_rad_nl80211_updateUsageStatsFromSurveyInfo()` derives the live percentage from survey idle/free-time timing; isolated rerun `20260411T224035464927` passed cleanly with the generic numeric verdict shape
-  - `D322 BroadcastPacketsSent` remains blocked. Focused DUT-only probes did exact-close the authored `direct / getSSIDStats / /proc $24` block (`20260411T225133238319`, plus 5G x5 and multiband x3 repeats), but the superseding official rerun `20260411T230829194313` still failed twice on the same 5G `+1` drift (`4390/4390/4391`, then `4394/4394/4395`) while 6G/2.4G exact-closed, so the YAML metadata stays stale at row `246`; see the updated blocker handoff in `plugins/wifi_llapi/reports/D322_block.md`
+  - `D322 BroadcastPacketsSent` is now aligned. The earlier blocker shape turned out to be runner timing, not stale authority: official rerun `20260412T002445088386` kept the workbook `/proc $24` oracle but added a short post-`verify_env` settle (`sleep 2`), after which attempt 2 exact-closed all three bands (`4596/4596/4596`, `4772/4772/4772`, `5121/5121/5121`). The committed metadata is now refreshed from stale row `246` to workbook row `322`, and `plugins/wifi_llapi/reports/D322_block.md` is retained only as historical trial evidence
   - `D323 BytesReceived` is now aligned. The earlier blocker turned out to be a stale workbook `/proc/net/dev_extstats` `$2` heuristic plus an incorrect source explanation: corrected 0403 tracing now shows `whm_brcm_get_if_stats()` seeds `BytesReceived` from `wl if_counters rxbyte`, `whm_brcm_vap_ap_stats_accu()` adds matching `wds*` `rxbyte`, and `whm_brcm_vap_update_ap_stats()` does not restore `BytesReceived` from `tmp_stats`. After rewriting the case to that source-backed oracle, official rerun `20260411T231952006453` exact-closed 5G/6G/2.4G at `276282/276282/276282`, `122610/122610/122610`, and `73193/73193/73193`; the committed metadata is now refreshed from stale row `247` to workbook row `323`, and `plugins/wifi_llapi/reports/D323_block.md` is retained as historical resolution notes
 - Practical next resume order:
-  1. resume the remaining unresolved queue from `D322`, `D331`, `D333`, `D336`
-  2. keep `D331` / `D333` / `D336` blocked unless their drifts are explained with deterministic source-backed corrections
+  1. resume the remaining unresolved queue from `D331`, `D333`
+  2. keep `D331` / `D333` blocked unless their drifts are explained with deterministic source-backed corrections
   3. revisit `D281-D287` only if new same-source external replay evidence appears
 
 ## How to resume this work next time
