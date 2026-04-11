@@ -8,6 +8,7 @@
 - Historical aligned rerun: `20260411T010328768651`
 - Latest failed full-run evidence: `20260411T074146043202`
 - Latest failed isolated rerun: `20260411T190338070996`
+- Latest failed official WDS-sum rerun: `20260412T005627796136`
 
 ## Workbook-style procedure replay
 
@@ -35,7 +36,7 @@ Pass currently requires `direct == getSSIDStats == wlX if_counters txbyte`.
 - 6G: `81927301 / 81927301 / 81927045` (`+256`)
 - 2.4G: `132049765 / 132049765 / 131682800` (`+366965`)
 
-### Key observation
+### Key observation from the earlier isolated replay
 
 - `direct == getSSIDStats()` still exact-closes on all three bands.
 - The failure is only on the independent driver oracle.
@@ -66,15 +67,54 @@ Active 0403 vendor code shows why the current base-interface oracle is incomplet
 
 Unlike `BroadcastPacketsSent`, `BytesSent` is **not** restored from `tmp_stats` at the end of this path. So the public `WiFi.SSID.{i}.Stats.BytesSent` field can legitimately be larger than the base `wlX if_counters txbyte` sample whenever extra matching peer stats are merged in.
 
+The active public pWHM layer also shows why sequential equality can still drift even after the WDS sum is added:
+
+- `wld_ssid.c:746-775`
+  - `s_updateSsidStatsValues()` refreshes SSID stats by calling `pAP->pFA->mfn_wvap_update_ap_stats(pAP)` and then copying `pSSID->stats` into the output object
+- `wld_ssid.c:777-799`
+  - `_SSID_getSSIDStats()` calls `s_updateSsidStatsValues()` before serializing the `Stats` object to the htable return
+- `wld_ssid.c:801-825`
+  - `_wld_ssid_getStats_orf()` also calls `s_updateSsidStatsValues()` before reading the direct `Stats.*` property object
+
+So `WiFi.SSID.{i}.Stats.BytesSent?` and `WiFi.SSID.{i}.getSSIDStats()` are **not** guaranteed to read the same frozen snapshot during one sequential replay: each access refreshes `pSSID->stats` again.
+
+## Superseding official rerun `20260412T005627796136`
+
+The next source-backed trial replaced base `wlX if_counters txbyte` with the active 0403 formula `wlX txbyte + Σ matching wds* txbyte` and re-ran the official runner path:
+
+### Attempt 1
+
+- 5G: `148970905 / 148971033 / 148971377`
+- 6G: `97196210 / 97196210 / 97196330`
+- 2.4G: `157367729 / 157391543 / 157415359`
+
+### Attempt 2
+
+- 5G: `149022147 / 149022215 / 149022559`
+- 6G: `97222418 / 97222418 / 97222418`
+- 2.4G: `157517138 / 157517138 / 157517454`
+
+This new rerun materially improved the older blocker shape:
+
+- the earlier large 2.4G gap (`+316040`, `+366965`) collapsed to a small residual `+316` driver lead on attempt 2
+- 6G exact-closed completely on attempt 2
+
+But the official runner still did **not** produce a commit-worthy deterministic replay:
+
+- 5G failed on both attempts with a staircase shape `direct < getSSIDStats < driver`
+- 2.4G attempt 1 also showed the same staircase shape, and attempt 2 still ended with `driver = direct + 316`
+
+That means the WDS-sum direction is valid, but the sequential runner path still refreshes these counters fast enough that equality is not durable.
+
 ## Why YAML is not updated yet
 
 The currently committed D324 oracle assumes base `wlX if_counters txbyte` is always the final authoritative driver view. The latest live reruns no longer support that assumption.
 
-We do have a source-backed next hypothesis now:
+However, the next source-backed hypothesis has now also been exercised and rejected for commit:
 
-- public `BytesSent` may need `wlX txbyte + Σ matching wds* txbyte`
-
-But that exact live sum was **not** captured during the same sequential run yet, so there is still no proven replacement criterion ready to commit.
+- `wlX txbyte + Σ matching wds* txbyte` is directionally correct
+- but the official runner still sees separate refreshes for direct `Stats.*`, `getSSIDStats()`, and the later driver readback
+- so the full three-way equality still drifts during the same sequential replay
 
 ## Current decision
 
@@ -82,11 +122,10 @@ But that exact live sum was **not** captured during the same sequential run yet,
 
 - Do **not** keep claiming `wlX if_counters txbyte` is a durable all-band oracle
 - Do **not** treat the earlier exact-close rerun as sufficient green-lock anymore
-- Do **not** refresh the YAML comment as aligned until the merged live source is captured
+- Do **not** refresh the YAML to the WDS-sum rewrite yet; the official runner still shows non-durable sequential refresh drift
 
 ## Next direction
 
-1. During an active D324-style run, capture the full matching interface set (`wlX` plus any `wds*` peers) before teardown.
-2. Verify whether `direct/getSSIDStats == wlX txbyte + Σ matching wds* txbyte` closes on the failing bands.
-3. If the merged sum closes, rewrite D324 to that oracle and rerun.
-4. If even the merged source-backed sum still drifts, keep D324 blocked and continue with `D330-D333` / `D335-D336`.
+1. If D324 is revisited again, capture lower-level per-read evidence around the sequential refresh path to determine whether `Stats.*` and `getSSIDStats()` can ever be made to share one durable snapshot in the official runner.
+2. Do **not** commit any further timing-only workaround unless it exact-closes all three bands in the official runner path.
+3. Keep `D324` blocked for now and continue with the remaining non-direct open set, starting from `D281`.

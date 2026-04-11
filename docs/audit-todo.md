@@ -109,7 +109,9 @@
 - Latest reopened direct-stats blocker:
   - `D324 BytesSent` is now formalized in `plugins/wifi_llapi/reports/D324_block.md`
   - isolated rerun `20260411T190338070996` re-proved `direct == getSSIDStats()` but invalidated base `wlX if_counters txbyte` as a durable all-band oracle
-  - source trace now points at `whm_brcm_vap_update_ap_stats()` merging matching `wds*` peer stats into public `BytesSent`
+  - follow-up official rerun `20260412T005627796136` then exercised the source-backed `wlX txbyte + Σwds* txbyte` hypothesis and still failed in the real runner path: 5G kept a sequential `direct < getSSIDStats < driver` staircase on both attempts, 6G only exact-closed on attempt 2, and 2.4G still drifted (`157367729 / 157391543 / 157415359`, then `157517138 / 157517138 / 157517454`)
+  - source trace now points at two coupled causes: `whm_brcm_vap_update_ap_stats()` can merge matching `wds*` peer stats into public `BytesSent`, and active pWHM `wld_ssid.c` shows both direct `Stats.*` and `getSSIDStats()` independently call `s_updateSsidStatsValues()` before serializing output
+  - so the local WDS-sum rewrite was rolled back again and `D324` remains blocked
 - Latest new direct-stats blocker:
   - `D331 MulticastPacketsSent` is now formalized in `plugins/wifi_llapi/reports/D331_block.md`
   - trial reruns `20260411T192138186700` and `20260411T192524301950` both rejected the stale workbook `/proc/net/dev_extstats` `$18` path, but 5G still stayed at a fixed `driver = direct + 4` drift (`259962 / 259966`, `260097 / 260101`, then `260377 / 260381`, `260613 / 260617`)
@@ -151,9 +153,9 @@
   - `D322 BroadcastPacketsSent` is now aligned. The earlier blocker shape turned out to be runner timing, not stale authority: official rerun `20260412T002445088386` kept the workbook `/proc $24` oracle but added a short post-`verify_env` settle (`sleep 2`), after which attempt 2 exact-closed all three bands (`4596/4596/4596`, `4772/4772/4772`, `5121/5121/5121`). The committed metadata is now refreshed from stale row `246` to workbook row `322`, and `plugins/wifi_llapi/reports/D322_block.md` is retained only as historical trial evidence
   - `D323 BytesReceived` is now aligned. The earlier blocker turned out to be a stale workbook `/proc/net/dev_extstats` `$2` heuristic plus an incorrect source explanation: corrected 0403 tracing now shows `whm_brcm_get_if_stats()` seeds `BytesReceived` from `wl if_counters rxbyte`, `whm_brcm_vap_ap_stats_accu()` adds matching `wds*` `rxbyte`, and `whm_brcm_vap_update_ap_stats()` does not restore `BytesReceived` from `tmp_stats`. After rewriting the case to that source-backed oracle, official rerun `20260411T231952006453` exact-closed 5G/6G/2.4G at `276282/276282/276282`, `122610/122610/122610`, and `73193/73193/73193`; the committed metadata is now refreshed from stale row `247` to workbook row `323`, and `plugins/wifi_llapi/reports/D323_block.md` is retained as historical resolution notes
 - Practical next resume order:
-  1. resume the remaining blocked direct-stats/open-set work from `D324`
-  2. keep `D331` / `D333` blocked unless their drifts are explained with deterministic source-backed corrections
-  3. revisit `D281-D287` only if new same-source external replay evidence appears
+  1. resume the remaining open-set blocker work from `D281`
+  2. keep `D324` / `D331` / `D333` blocked unless their drifts are explained with deterministic source-backed corrections
+  3. revisit `D282-D287` only after `D281` is checkpointed or new same-source external replay evidence appears
 
 ## How to resume this work next time
 
