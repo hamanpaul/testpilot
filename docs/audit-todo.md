@@ -89,10 +89,15 @@
 - Interpreted via `evaluation_verdict` rather than stale synthesized per-band `results_reference`, the remaining workbook-Pass gaps are:
   - `77` total workbook-Pass gaps
   - `19` patch-scope true-open cases: `D277`, `D281-D287`, `D290`, `D295`, `D322-D324`, `D330-D333`, `D335-D336`
+  - this detached compare snapshot is still pre-`D330` rewrite evidence; the local repo state below is newer than the detached run results
 - Latest aligned spectrum follow-up:
   - `D532 getSpectrumInfo ourUsage` rerun `20260411T183356920330` = `Pass`
   - `D533 getSpectrumInfo availability` rerun `20260411T183405281629` = `Pass`
   - both cases are now being carried as plain `Pass/Pass/Pass` instead of the stale fail-shaped workbook carry-over
+- Latest aligned direct-stats follow-up:
+  - `D330 MulticastPacketsReceived` isolated rerun `20260411T191809490680` now closes the active 0403 source-backed formula `max((rxmulti + matching wds_rxmulti) - BroadcastPacketsReceived, 0)` on 5G / 6G / 2.4G
+  - attempt 1 failed at the temp-script layer with `/tmp/_tp_cmd.sh: line 2: syntax error: unterminated quoted string`, but attempt 2 exact-closed `direct / getSSIDStats / driver-formula = 0 / 0 / 0` on all three bands
+  - the case YAML is now refreshed from stale row `254` to workbook row `330`
 - Latest reopened runtime blocker:
   - `D295 scan()` is now formalized in `plugins/wifi_llapi/reports/D295_block.md`
   - committed DUT-only topology can fall back to `WiFi.Radio.{1,2,3}.Status="Dormant"` and then `scan()/startScan()` return `status 1 - unknown error`
@@ -101,10 +106,14 @@
   - `D324 BytesSent` is now formalized in `plugins/wifi_llapi/reports/D324_block.md`
   - isolated rerun `20260411T190338070996` re-proved `direct == getSSIDStats()` but invalidated base `wlX if_counters txbyte` as a durable all-band oracle
   - source trace now points at `whm_brcm_vap_update_ap_stats()` merging matching `wds*` peer stats into public `BytesSent`
+- Latest new direct-stats blocker:
+  - `D331 MulticastPacketsSent` is now formalized in `plugins/wifi_llapi/reports/D331_block.md`
+  - trial reruns `20260411T192138186700` and `20260411T192524301950` both rejected the stale workbook `/proc/net/dev_extstats` `$18` path, but 5G still stayed at a fixed `driver = direct + 4` drift (`259962 / 259966`, `260097 / 260101`, then `260377 / 260381`, `260613 / 260617`)
+  - using the same `getSSIDStats()` snapshot for the subtraction term did not remove that `+4`, so the formula rewrite remains non-durable and uncommitted
 - Practical next resume order:
-  1. capture active `wlX + matching wds*` `txbyte` evidence during a live `D324`-style run
-  2. if that closes, rewrite `D324`; otherwise keep it blocked
-  3. continue the patch-scope true-open set from `D330-D333` / `D335-D336`
+  1. continue the patch-scope true-open set from `D332-D333` / `D335-D336`
+  2. keep `D331` blocked unless the fixed 5G `+4` drift is explained with a deterministic source-backed correction
+  3. only revisit `D324` if a live `wlX + matching wds*` `txbyte` oracle capture is needed
 
 ## How to resume this work next time
 

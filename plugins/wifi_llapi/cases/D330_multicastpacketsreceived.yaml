@@ -4,7 +4,7 @@ version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 254
+  row: 330
   object: WiFi.SSID.{i}.Stats.
   api: MulticastPacketsReceived
 platform:
@@ -120,7 +120,7 @@ test_procedure: |
   2) For each band, capture assoclist, direct Stats, getSSIDStats(), and the matching driver view before the traffic attempt.
   3) Attempt STA-generated ping traffic with a static IP on the active STA interface, wait 2 seconds, then reread the same counter.
   4) Use the final reread for the manual judgment.
-  5) Pass when direct Stats.MulticastPacketsReceived equals getSSIDStats().MulticastPacketsReceived on 5G/6G/2.4G and /proc/net/dev_extstats field $9 when mapped.
+  5) Pass when direct Stats.MulticastPacketsReceived equals getSSIDStats().MulticastPacketsReceived on 5G/6G/2.4G and the active 0403 source-backed formula `max((wl if_counters rxmulti + matching wds rxmulti) - BroadcastPacketsReceived, 0)`.
 steps:
 - id: assoc_5g
   action: exec
@@ -142,7 +142,7 @@ steps:
 - id: driver_5g
   action: exec
   target: DUT
-  command: awk '$1=="wl0:" {print "DriverMulticastPacketsReceived5g=" $9}' /proc/net/dev_extstats
+  command: ap=wl0; w=0; rx=$(wl -i "$ap" if_counters | sed -n 's/.*rxmulti \([0-9][0-9]*\).*/\1/p'); for i in $(ls /sys/class/net | grep -E '^wds0\.0\.[0-9]+$' || true); do v=$(wl -i "$i" if_counters 2>/dev/null | sed -n 's/.*rxmulti \([0-9][0-9]*\).*/\1/p'); w=$((w+${v:-0})); done; b=$(ubus-cli "WiFi.SSID.4.Stats.BroadcastPacketsReceived?" | sed -n 's/.*=\([0-9][0-9]*\).*/\1/p'); t=$(( ${rx:-0}+w )); [ "$t" -gt "${b:-0}" ] && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived5g=%s\n' "$r"
   depends_on: getssid_5g
   capture: driver_5g
 - id: assoc_6g
@@ -165,7 +165,7 @@ steps:
 - id: driver_6g
   action: exec
   target: DUT
-  command: awk '$1=="wl1:" {print "DriverMulticastPacketsReceived6g=" $9}' /proc/net/dev_extstats
+  command: ap=wl1; w=0; rx=$(wl -i "$ap" if_counters | sed -n 's/.*rxmulti \([0-9][0-9]*\).*/\1/p'); for i in $(ls /sys/class/net | grep -E '^wds1\.0\.[0-9]+$' || true); do v=$(wl -i "$i" if_counters 2>/dev/null | sed -n 's/.*rxmulti \([0-9][0-9]*\).*/\1/p'); w=$((w+${v:-0})); done; b=$(ubus-cli "WiFi.SSID.6.Stats.BroadcastPacketsReceived?" | sed -n 's/.*=\([0-9][0-9]*\).*/\1/p'); t=$(( ${rx:-0}+w )); [ "$t" -gt "${b:-0}" ] && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived6g=%s\n' "$r"
   depends_on: getssid_6g
   capture: driver_6g
 - id: assoc_24g
@@ -188,7 +188,7 @@ steps:
 - id: driver_24g
   action: exec
   target: DUT
-  command: awk '$1=="wl2:" {print "DriverMulticastPacketsReceived24g=" $9}' /proc/net/dev_extstats
+  command: ap=wl2; w=0; rx=$(wl -i "$ap" if_counters | sed -n 's/.*rxmulti \([0-9][0-9]*\).*/\1/p'); for i in $(ls /sys/class/net | grep -E '^wds2\.0\.[0-9]+$' || true); do v=$(wl -i "$i" if_counters 2>/dev/null | sed -n 's/.*rxmulti \([0-9][0-9]*\).*/\1/p'); w=$((w+${v:-0})); done; b=$(ubus-cli "WiFi.SSID.8.Stats.BroadcastPacketsReceived?" | sed -n 's/.*=\([0-9][0-9]*\).*/\1/p'); t=$(( ${rx:-0}+w )); [ "$t" -gt "${b:-0}" ] && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived24g=%s\n' "$r"
   depends_on: getssid_24g
   capture: driver_24g
 pass_criteria:
@@ -203,7 +203,7 @@ pass_criteria:
 - field: direct_5g.MulticastPacketsReceived
   operator: equals
   reference: driver_5g.DriverMulticastPacketsReceived5g
-  description: 5g direct Stats.MulticastPacketsReceived must match /proc/net/dev_extstats field $9 on wl0.
+  description: 5g direct Stats.MulticastPacketsReceived must match max((wl0 rxmulti + matching wds rxmulti) - BroadcastPacketsReceived, 0).
 - field: assoc_6g.AssocMac6g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -215,7 +215,7 @@ pass_criteria:
 - field: direct_6g.MulticastPacketsReceived
   operator: equals
   reference: driver_6g.DriverMulticastPacketsReceived6g
-  description: 6g direct Stats.MulticastPacketsReceived must match /proc/net/dev_extstats field $9 on wl1.
+  description: 6g direct Stats.MulticastPacketsReceived must match max((wl1 rxmulti + matching wds rxmulti) - BroadcastPacketsReceived, 0).
 - field: assoc_24g.AssocMac24g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -227,25 +227,25 @@ pass_criteria:
 - field: direct_24g.MulticastPacketsReceived
   operator: equals
   reference: driver_24g.DriverMulticastPacketsReceived24g
-  description: 2.4g direct Stats.MulticastPacketsReceived must match /proc/net/dev_extstats field $9 on wl2.
+  description: 2.4g direct Stats.MulticastPacketsReceived must match max((wl2 rxmulti + matching wds rxmulti) - BroadcastPacketsReceived, 0).
 verification_command: 
   - '# 5g'
   - wl -i wl0 assoclist
   - ubus-cli "WiFi.SSID.4.Stats.MulticastPacketsReceived?"
   - 'ubus-cli "WiFi.SSID.4.getSSIDStats()" | grep "MulticastPacketsReceived"'
-  - "awk '$1==\"wl0:\" {print \"DriverMulticastPacketsReceived5g=\" $9}' /proc/net/dev_extstats"
+  - "ap=wl0; w=0; rx=$(wl -i \"$ap\" if_counters | sed -n 's/.*rxmulti \\([0-9][0-9]*\\).*/\\1/p'); for i in $(ls /sys/class/net | grep -E '^wds0\\.0\\.[0-9]+$' || true); do v=$(wl -i \"$i\" if_counters 2>/dev/null | sed -n 's/.*rxmulti \\([0-9][0-9]*\\).*/\\1/p'); w=$((w+${v:-0})); done; b=$(ubus-cli \"WiFi.SSID.4.Stats.BroadcastPacketsReceived?\" | sed -n 's/.*=\\([0-9][0-9]*\\).*/\\1/p'); t=$(( ${rx:-0}+w )); [ \"$t\" -gt \"${b:-0}\" ] && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived5g=%s\\n' \"$r\""
   - ''
   - '# 6g'
   - wl -i wl1 assoclist
   - ubus-cli "WiFi.SSID.6.Stats.MulticastPacketsReceived?"
   - 'ubus-cli "WiFi.SSID.6.getSSIDStats()" | grep "MulticastPacketsReceived"'
-  - "awk '$1==\"wl1:\" {print \"DriverMulticastPacketsReceived6g=\" $9}' /proc/net/dev_extstats"
+  - "ap=wl1; w=0; rx=$(wl -i \"$ap\" if_counters | sed -n 's/.*rxmulti \\([0-9][0-9]*\\).*/\\1/p'); for i in $(ls /sys/class/net | grep -E '^wds1\\.0\\.[0-9]+$' || true); do v=$(wl -i \"$i\" if_counters 2>/dev/null | sed -n 's/.*rxmulti \\([0-9][0-9]*\\).*/\\1/p'); w=$((w+${v:-0})); done; b=$(ubus-cli \"WiFi.SSID.6.Stats.BroadcastPacketsReceived?\" | sed -n 's/.*=\\([0-9][0-9]*\\).*/\\1/p'); t=$(( ${rx:-0}+w )); [ \"$t\" -gt \"${b:-0}\" ] && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived6g=%s\\n' \"$r\""
   - ''
   - '# 2.4g'
   - wl -i wl2 assoclist
   - ubus-cli "WiFi.SSID.8.Stats.MulticastPacketsReceived?"
   - 'ubus-cli "WiFi.SSID.8.getSSIDStats()" | grep "MulticastPacketsReceived"'
-  - "awk '$1==\"wl2:\" {print \"DriverMulticastPacketsReceived24g=\" $9}' /proc/net/dev_extstats"
+  - "ap=wl2; w=0; rx=$(wl -i \"$ap\" if_counters | sed -n 's/.*rxmulti \\([0-9][0-9]*\\).*/\\1/p'); for i in $(ls /sys/class/net | grep -E '^wds2\\.0\\.[0-9]+$' || true); do v=$(wl -i \"$i\" if_counters 2>/dev/null | sed -n 's/.*rxmulti \\([0-9][0-9]*\\).*/\\1/p'); w=$((w+${v:-0})); done; b=$(ubus-cli \"WiFi.SSID.8.Stats.BroadcastPacketsReceived?\" | sed -n 's/.*=\\([0-9][0-9]*\\).*/\\1/p'); t=$(( ${rx:-0}+w )); [ \"$t\" -gt \"${b:-0}\" ] && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived24g=%s\\n' \"$r\""
 results_reference:
   v4.0.1:
     5g: Pass
@@ -253,7 +253,7 @@ results_reference:
     2.4g: Pass
     comment: ''
   v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
-    comment: 'Multiband serialwrap retest after STA traffic attempt: 5g=5, 6g=13, 2.4g=1; direct Stats matched getSSIDStats() and /proc/net/dev_extstats field $9 on SSID.4/6/8.'
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: 'Active 0403 source-backed formula is max((wl if_counters rxmulti + matching wds rxmulti) - BroadcastPacketsReceived, 0), not workbook /proc/net/dev_extstats $9. Isolated rerun 20260411T191442926703 re-proved /proc $9 is stale (5g 0 vs 740/741); follow-up rerun uses the broadcast-subtraction formula.'

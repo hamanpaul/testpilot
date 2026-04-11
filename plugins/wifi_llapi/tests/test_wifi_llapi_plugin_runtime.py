@@ -2559,7 +2559,7 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         "D327_errorsreceived_ssid_stats.yaml": {"row": 327, "api": "ErrorsReceived", "driver": "DriverErrorsReceived", "awk_field": "rxerror", "expected": "Pass"},
         "D328_errorssent_ssid_stats.yaml": {"row": 328, "api": "ErrorsSent", "driver": "DriverErrorsSent", "awk_field": "txerror", "expected": "Pass"},
         "D329_failedretranscount_ssid_stats.yaml": {"row": 329, "api": "FailedRetransCount", "driver": "DriverFailedRetransCount", "awk_field": "txretransfail", "expected": "Pass"},
-        "D330_multicastpacketsreceived.yaml": {"row": 254, "api": "MulticastPacketsReceived", "driver": "DriverMulticastPacketsReceived", "awk_field": "$9", "expected": "Fail"},
+        "D330_multicastpacketsreceived.yaml": {"row": 330, "api": "MulticastPacketsReceived", "driver": "DriverMulticastPacketsReceived", "awk_field": "rxmulti", "expected": "Pass"},
         "D331_multicastpacketssent.yaml": {"row": 255, "api": "MulticastPacketsSent", "driver": "DriverMulticastPacketsSent", "awk_field": "$18", "expected": "Fail"},
         "D332_packetsreceived_ssid_stats.yaml": {"row": 256, "api": "PacketsReceived", "driver": "DriverPacketsReceived", "awk_field": "$3", "expected": "Pass"},
         "D333_packetssent_ssid_stats.yaml": {"row": 257, "api": "PacketsSent", "driver": "DriverPacketsSent", "awk_field": "$11", "expected": "Pass"},
