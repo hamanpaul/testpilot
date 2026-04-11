@@ -134,8 +134,10 @@
   - the existing isolated rerun `20260410T182739821870` therefore stays blocked for a narrower reason: 5G and 2.4G exact-close on the same target BSSID, but 6G still exposes `3a:06:e6:2b:a3:1a` / `.ROAMTEST_RSNO_P10P_1` on LLAPI while both `iw` and direct raw `wl -i wl1 escanresults` fail to replay that same target. The committed YAML stays unchanged at stale row `289`; see `plugins/wifi_llapi/reports/D287_block.md`
   - `D290 getScanResults() CentreChannel` is now aligned and no longer blocked. The old blocker only lacked the right same-target replay path: after one-shot environment repair (`wifi-llapi baseline-qualify --repeat-count 1 --soak-minutes 0`), fresh isolated rerun `20260411T220324862766` closed same-target raw `wl escanresults` Chanspec replay on all three bands
   - the committed case now carries a source-backed `Pass / Fail / Pass` shape at workbook row `290`: 5G exact-closes `42/42`, 2.4G exact-closes `1/1`, and 6G is locked as the same-target fail-shaped mismatch `LlapiCentreChannel6g=31` vs `WlCentreChannel6g=15` on BSSID `6e:15:db:9e:33:72`
+  - `D529 getSpectrumInfo channel` is now aligned. Active 0403 source keeps the public field on `_getSpectrumInfo()` -> `s_prepareSpectrumOutput()` -> `amxc_var_add_key(uint32_t, "channel", llEntry->channel)`, and fresh isolated rerun `20260411T221613327385` plus repeated direct probes now lock the first serialized spectrum-entry channels at `36 / 2 / 1` on `5g / 6g / 2.4g`
+  - the committed case now fixes the template metadata shape (`object=WiFi.Radio.{i}.`, `api=getSpectrumInfo()`), replaces the old generic numeric regex with explicit first-entry channel extractors, keeps workbook row `531`, and remains plain `Pass / Pass / Pass`
 - Practical next resume order:
-  1. resume the remaining unresolved queue from `D529`, then `D322-D323`, `D331`, `D333`, `D336`
+  1. resume the remaining unresolved queue from `D530`, then `D322-D323`, `D331`, `D333`, `D336`
   2. keep `D331` / `D333` / `D336` blocked unless their drifts are explained with deterministic source-backed corrections
   3. revisit `D281-D287` only if new same-source external replay evidence appears
 

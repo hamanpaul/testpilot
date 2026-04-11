@@ -18328,7 +18328,7 @@ def test_ssid_wmm_stats_evaluate(yaml_file, row, ac_category, wmm_metric):
 # ---------------------------------------------------------------------------
 _SPECTRUM_CASES = [
     ("D528_getspectruminfo_bandwidth.yaml", 530, "bandwidth", "20MHz"),
-    ("D529_getspectruminfo_channel.yaml", 531, "channel", "42"),
+    ("D529_getspectruminfo_channel.yaml", 531, "channel", "36"),
     ("D530_getspectruminfo_noiselevel.yaml", 532, "noiselevel", "42"),
     ("D531_getspectruminfo_accesspoints.yaml", 533, "accesspoints", "42"),
     ("D532_getspectruminfo_ourusage.yaml", 534, "ourUsage", "42"),
@@ -18371,6 +18371,16 @@ def test_spectrum_evaluate(yaml_file, row, field, sample_value):
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     case = load_case(cases_dir / yaml_file)
+    if yaml_file == "D529_getspectruminfo_channel.yaml":
+        results = {
+            "steps": {
+                "step_5g_method": {"success": True, "output": "channel=36\n", "timing": 0.01},
+                "step_6g_method": {"success": True, "output": "channel=2\n", "timing": 0.01},
+                "step_24g_method": {"success": True, "output": "channel=1\n", "timing": 0.01},
+            }
+        }
+        assert plugin.evaluate(case, results) is True
+        return
     radio_map = {"5g": 1, "6g": 2, "2.4g": 3}
     results = {"steps": {}}
     needs_quote = not sample_value.lstrip("-").isdigit()
