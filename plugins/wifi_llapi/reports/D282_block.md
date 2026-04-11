@@ -7,7 +7,7 @@
 - workbook authority: `0401.xlsx` `Wifi_LLAPI` row `282`
 - current YAML row metadata: `284`
 - disposition: **blocked / keep YAML unchanged**
-- blocker type: **active 0403 public `getScanResults().OperatingStandards` does have a same-source sibling in `WiFi.NeighboringWiFiDiagnostic()`, but live runtime currently reports only `wl2`; `wl0`/`wl1` still fail, so the oracle is not yet durable enough to commit**
+- blocker type: **active 0403 public `getScanResults().OperatingStandards` does have a same-source sibling in `WiFi.NeighboringWiFiDiagnostic()`, but that sibling launches fresh internal scans and still cannot produce an all-band durable replay (`ReportingRadios="wl0"`, `FailedRadios="wl1,wl2"` in the newest same-window probe)**
 
 ## Why this case is blocked
 
@@ -27,8 +27,10 @@ The blocker is now narrower:
 
 1. the old `iw` / capability-family replay is not guaranteed to be the same-source oracle for public `OperatingStandards`
 2. a same-source sibling serializer does exist in the active pWHM ubus path: `WiFi.NeighboringWiFiDiagnostic()`
-3. that sibling path already exact-closes 2.4G same-target `OperatingStandards`, but live runtime still returns `FailedRadios = "wl0,wl1"` / `ReportingRadios = "wl2"`
-4. so 5G/6G still lack a durable same-target sibling replay even though the right source family is now identified
+3. but that sibling is **not** a cache dump; it launches a fresh internal scan on each radio and only serializes radios that actually finish that diagnostic scan
+4. so `getScanResults()` can legally still show 6G/2.4G targets while `NeighboringWiFiDiagnostic()` omits them in the same runtime window
+5. the sibling path already exact-closes one 2.4G same-target replay in principle, but the newest live probe still reports only `ReportingRadios = "wl0"` / `FailedRadios = "wl1,wl2"`
+6. therefore 6G and 2.4G still lack a durable all-band same-target sibling replay even though the right source family is now identified
 
 ## Active public 0403 path
 
@@ -51,7 +53,10 @@ Key citations:
 - `src/RadMgt/wld_rad_scan.c:544-605`
 - `src/RadMgt/wld_rad_scan.c:1492-1520`
 - `odl/wld_definitions.odl:160-168`
-- `src/RadMgt/wld_rad_scan.c:1629-1665`
+- `src/RadMgt/wld_rad_scan.c:1377-1404`
+- `src/RadMgt/wld_rad_scan.c:1551-1584`
+- `src/RadMgt/wld_rad_scan.c:1629-1668`
+- `src/wld_radio.c:3884-3890`
 - `targets/BGW720-300/fs.build/public/include/prplos/swl/swl_common_radioStandards.h:128-172`
 
 The critical shared-model points are:
@@ -146,26 +151,219 @@ ReportingRadios = "wl2"
 
 So the new sibling path is real and source-correct, but it is only usable on 2.4G in the current live environment. That is not enough to promote D282 to a committed all-band replay.
 
+### New readiness-gated sibling probe after focused baseline recovery
+
+The latest source + runtime pass clarifies **why** the sibling remains non-durable.
+
+Source now shows:
+
+1. `_NeighboringWiFiDiagnostic()` does **not** read cached `lastScanResults`
+2. it registers a scan-status callback and calls `s_startScan(..., SCAN_TYPE_INTERNAL)` on every radio
+3. `s_startScan()` first requires `wld_rad_isUpAndReady(pRad)`, i.e. detailed state in `CM_RAD_UP` / `CM_RAD_BG_CAC_EXT` / `CM_RAD_BG_CAC_EXT_NS` / `CM_RAD_DELAY_AP_UP`, and no scan already running
+4. radios only enter `ReportingRadios` when the diagnostic scan-complete callback sees `event->success=true`; start failures or unsuccessful completions land in `FailedRadios`
+5. only `completedRads` are later serialized into `NeighboringWiFiDiagnostic().Result[]`
+
+So the sibling oracle is a fresh-scan readiness-gated view, not a guaranteed replay of already visible `getScanResults()` cache entries.
+
+To test whether environment repair could make that sibling durable, a focused recovery run was executed:
+
+```bash
+uv run python -m testpilot.cli wifi-llapi baseline-qualify --band 6g --band 2.4g --repeat-count 1 --soak-minutes 0
+```
+
+Observed outcome:
+
+1. 2.4G qualification became stable and ended with DUT `wl2 bss=up`, STA linked to `testpilot2G`
+2. 6G still failed both qualification rounds at post-verify with `dut_ocv_not_zero`
+3. immediately after that recovery, live readback still showed:
+   - `Device.WiFi.Radio.1.ChannelMgt.RadioStatus="Up"`
+   - `Device.WiFi.Radio.2.ChannelMgt.RadioStatus="Down"`
+   - `Device.WiFi.Radio.3.ChannelMgt.RadioStatus="Down"`
+4. in the same time window, `getScanResults()` still returned first targets on all three radios:
+   - 5G `2C:59:17:00:03:E5` with `OperatingStandards="a,n,ac,ax,be"`
+   - 6G `2C:59:17:00:19:96` with `OperatingStandards="ax,be"`
+   - 2.4G `2C:59:17:00:03:F7` with `OperatingStandards="b,g,n,ax,be"`
+5. but the immediate sibling diagnostic still returned:
+
+```text
+FailedRadios = "wl1,wl2"
+ReportingRadios = "wl0"
+```
+
+and only included the 5G same-target entry `BSSID="2C:59:17:00:03:E5"`.
+
+This is the strongest live-authoritative evidence so far that the sibling method is still not an all-band durable replay oracle for row 282.
+
 ## Why no YAML rewrite landed
 
 1. the active public source is now traced to nl80211 IE parsing plus shared bitmask serialization, not to the old Broadcom helper
 2. the public workbook row only exports `OperatingStandards`, but the sibling diagnostic path does expose both `OperatingStandards` and `SupportedStandards` from the same `wld_scanResultSSID_t`
-3. the new sibling path exact-closes same-target 2.4G, so it is a valid reopen candidate in principle
-4. however, live `WiFi.NeighboringWiFiDiagnostic()` currently reports only `wl2` and fails `wl0`/`wl1`
-5. therefore there is still no live-authoritative basis to:
+3. source now proves that sibling diagnostic is a fresh internal-scan path gated by radio readiness and scan success, not a stable cache replay
+4. even after focused 6G/2.4G baseline recovery, same-window live probes still show `getScanResults()` data on all three radios while `NeighboringWiFiDiagnostic()` reports only `wl0`
+5. the best-case sibling replay is still limited to one band at a time (older 2.4G-only proof, newer 5G-only proof), never all three together
+6. therefore there is still no live-authoritative basis to:
    - refresh `source.row` from `284` to `282`
    - commit any new workbook-style equality semantics
    - declare `WiFi.NeighboringWiFiDiagnostic()` durable enough as the all-band sibling oracle for this row
 
 So D282 must remain blocked and the committed YAML stays unchanged for now.
 
+## Source-level investigation: full call path and FailedRadios mechanics
+
+### BGW720-0403-VERIFY build, wld_rad_scan.c
+
+**Key source file:**
+`pwhm-v7.6.38/src/RadMgt/wld_rad_scan.c`
+
+#### Complete `WiFi.NeighboringWiFiDiagnostic()` call path
+
+```
+ubus-cli "WiFi.NeighboringWiFiDiagnostic()"
+  → tr181-wifi plugin: _NeighboringWiFiDiagnostic() [dm_method.c:36]
+    → mod_wifi_neighboring_diagnostic(retval) [mod_wifi_intf.c:361]
+      → amxm_execute_function(SO_NAME, MODNAME_WIFICTRL, "execute_method", ...)
+        → wifi_radio_neighboring_diagnostic() [wifi_radio.c:2025]  (dispatch table: wifi_system.c:83)
+          → diag_start(ret)   -- DiagnosticsState = "Requested"
+          → diag_wait_for_complete()  -- 10s timeout in mod-wifi layer
+          → diag_collect_results(ret)
+             [parallel in WLD: _NeighboringWiFiDiagnostic() wld_rad_scan.c:1629]
+              → s_startScan(radio, SCAN_TYPE_INTERNAL) per Radio -- wld_rad_scan.c:1660
+              → swl_function_defer() -- async; scan events drive completion
+              → s_radScanStatusUpdateCb() -- wld_rad_scan.c:1377
+              → s_sendNeighboringWifiDiagnosticResult() -- wld_rad_scan.c:1587
+                → mfn_wrad_scan_results() per completedRad -- line 1609
+                → s_addDiagRadioResultsToMap() → s_addDiagSingleResultToMap() -- line 1492
+```
+
+#### FailedRadios / ReportingRadios state machine (wld_rad_scan.c)
+
+**Global state** (`g_neighWiFiDiag`, line 81): four `amxc_llist_t` lists:
+`runningRads`, `completedRads`, `failedRads`, `canceledRads`
+
+**Scan start (line 1654–1663):**
+```c
+// for each Radio instance:
+status = s_startScan(pRadio->pBus, func, &localArgs, retval, SCAN_TYPE_INTERNAL);
+if(status != amxd_status_deferred) {
+    amxc_llist_add_string(&g_neighWiFiDiag.failedRads, pRadio->Name);  // immediate fail
+}
+```
+
+`s_startScan()` fails and returns non-deferred when (line 300–393):
+1. `wld_scan_isRunning(pR)` — a scan is already running on this radio (`scanType != SCAN_TYPE_NONE`)
+2. `!wld_rad_isUpAndReady(pR)` — radio is not in up/ready state
+3. `s_isExternalScanFilter(pR)` — vendor scan filter active
+4. `wld_scan_start()` returns error from kernel/nl80211
+
+**Scan completion callback `s_radScanStatusUpdateCb()` (line 1377):**
+```c
+if(event->start) {
+    amxc_llist_add_string(&g_neighWiFiDiag.runningRads, pRadio->Name);  // added to running
+    return;
+}
+// on scan done:
+if(event->success) {
+    amxc_llist_append(&g_neighWiFiDiag.completedRads, it);  // → ReportingRadios
+} else {
+    amxc_llist_append(&g_neighWiFiDiag.failedRads, it);     // → FailedRadios
+}
+// if runningRads empty: s_sendNeighboringWifiDiagnosticResult()
+```
+
+**Result assembly `s_addDiagRadiosStatusToMap()` (line 1560):**
+```c
+if(!amxc_llist_is_empty(&g_neighWiFiDiag.runningRads)) {
+    // timeout path: any still-running radio goes to FailedRadios
+    s_addDiagRadiosListToMap(retval, "FailedRadios", &g_neighWiFiDiag.runningRads);
+    return;
+}
+s_addDiagRadiosListToMap(retval, "ReportingRadios", &g_neighWiFiDiag.completedRads);  // line 1582
+s_addDiagRadiosListToMap(retval, "FailedRadios",    &g_neighWiFiDiag.failedRads);     // line 1584
+```
+
+#### Why `wl0`/`wl1` end up in FailedRadios
+
+When `_NeighboringWiFiDiagnostic()` is called, `s_startScan()` is called for each radio
+in sequence. 5G (`wl0`) and 2.4G (`wl1`) fail at `s_startScan()` call time when they are
+already running a background scan (ACS, chanim, auto-scan) at that exact moment —
+`wld_scan_isRunning(pR)` returns `true` because `pR->scanState.scanType != SCAN_TYPE_NONE`.
+
+The "failing set" drifts between calls (`wl0,wl1` vs `wl1,wl2`) because background scans
+run periodically and asynchronously; whichever radios happen to be mid-scan when
+`_NeighboringWiFiDiagnostic()` iterates them determines the failing set.
+
+#### Why this does NOT affect `getScanResults()`
+
+`_getScanResults()` (line 655) → `s_getScanResults()` (line 544):
+```c
+if(pR->pFA->mfn_wrad_scan_results(pR, &res) < 0) { ... }
+```
+This reads cached scan results **without calling `s_startScan()` or `wld_scan_start()`**.
+No scan is initiated; no `s_isScanRequestReady()` check; no race with background scans.
+A radio being busy with an in-progress ACS scan does not affect `getScanResults()` at all.
+
+#### OperatingStandards source: confirmed identical for both paths
+
+`getScanResults()` path (line 602–605):
+```c
+swl_radStd_toChar(operatingStandardsChar, sizeof(operatingStandardsChar),
+                  ssid->operatingStandards, SWL_RADSTD_FORMAT_STANDARD, 0);
+amxc_var_add_key(cstring_t, pEntry, "OperatingStandards", operatingStandardsChar);
+```
+
+`NeighboringWiFiDiagnostic()` path via `s_addDiagSingleResultToMap()` (line 1515–1520):
+```c
+swl_radStd_toChar(operatingStandardsChar, sizeof(operatingStandardsChar),
+                  pSsid->operatingStandards, SWL_RADSTD_FORMAT_STANDARD, 0);
+swl_radStd_toChar(supportedStandardsChar, sizeof(supportedStandardsChar),
+                  pSsid->supportedStandards, SWL_RADSTD_FORMAT_STANDARD, 0);
+amxc_var_add_key(cstring_t, resulMap, "OperatingStandards", operatingStandardsChar);
+amxc_var_add_key(cstring_t, resulMap, "SupportedStandards", supportedStandardsChar);
+```
+
+Both use `wld_scanResultSSID_t.operatingStandards` + `SWL_RADSTD_FORMAT_STANDARD`.
+**The `OperatingStandards` values are guaranteed identical if the same scan cache entry is read.**
+
+Note: the `SupportedStandards` bug (SSW-8679, `supportedStandards = operatingStandards`)
+exists only in `fillFullScanResultsList()` (line 853–854, used for full-scan ODL updates),
+NOT in the `_NeighboringWiFiDiagnostic()` path. The diagnostic path correctly reads the
+separate `pSsid->supportedStandards` field.
+
+#### `SCAN_TYPE_INTERNAL` semantics
+
+From `wld.h:1123`:
+```c
+SCAN_TYPE_INTERNAL, // Internal middleware to know AP environment => no ODL update
+```
+The diagnostic scan does not update the ODL data model. Results are returned only via
+the deferred function call return value.
+
 ## Best next direction if this row is reopened
 
-1. first stabilize `WiFi.NeighboringWiFiDiagnostic()` so it reports `wl0` / `wl1` / `wl2` together under the current baseline
-2. if that succeeds, reopen D282 with a same-target replay shape:
-   - `getScanResults()` captures `BSSID + OperatingStandards`
-   - `NeighboringWiFiDiagnostic().Result[]` replays the same `Radio + BSSID`
-   - `SupportedStandards` is kept as evidence only, not as the row-282 verdict source
-3. only after the sibling oracle becomes all-band durable, decide whether D282 should become:
-   - a workbook-style plain `Pass`, or
-   - a source-backed mixed verdict / fail-shaped mismatch
+The source investigation confirms the FailedRadios problem is a **scan-busy race at call
+time**, not a configuration or protocol issue. `NeighboringWiFiDiagnostic()` calls
+`s_startScan()` which calls `s_isScanRequestReady()` — if a radio already has
+`scanState.scanType != SCAN_TYPE_NONE` (a background ACS/chanim scan in progress),
+`wl_scan_isRunning()` returns `true` and the radio is immediately added to `failedRads`
+before any scan is attempted. The set drifts because periodic background scans
+fire at unpredictable times.
+
+`getScanResults()` does NOT call `s_startScan()` — it reads the cached
+`wld_scanResultSSID_t` entries directly via `mfn_wrad_scan_results()`, so background
+scan activity is irrelevant.
+
+**Recommended path:**
+
+1. Switch the oracle to per-radio `getScanResults()` (three sequential calls).
+   This reads the same `wld_scanResultSSID_t.operatingStandards` field with the same
+   `swl_radStd_toChar(SWL_RADSTD_FORMAT_STANDARD)` serialization, but without the race.
+   - `WiFi.Radio.1.getScanResults()` → 5G BSSID + OperatingStandards
+   - `WiFi.Radio.2.getScanResults()` → 6G BSSID + OperatingStandards
+   - `WiFi.Radio.3.getScanResults()` → 2.4G BSSID + OperatingStandards
+
+2. The sibling `NeighboringWiFiDiagnostic()` probe can be kept as optional evidence
+   (confirming source identity on 2.4G) but must NOT be the primary verdict oracle.
+
+3. A `NeighboringWiFiDiagnostic()`-based D282 rewrite is only viable in a controlled
+   window where all background scans on all three radios are quiesced simultaneously —
+   which is not achievable in normal lab operation without dedicated firmware support.
