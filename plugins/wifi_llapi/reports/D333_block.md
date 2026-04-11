@@ -7,6 +7,7 @@
 - Current committed YAML remains on the pre-trial workbook-style state (`source.row=257`)
 - Latest stale replay run: `20260411T194816992700`
 - Latest source-backed trial run: `20260411T195140855058`
+- Superseding official rerun: `20260411T235643720137`
 
 ## Workbook-style replay result
 
@@ -63,16 +64,33 @@ Run `20260411T195140855058`:
 
 The anchored extractor fixed the bogus `getSSIDStats()` mismatch, and 6G/2.4G exact-closed, but 5G still held a stable `driver = direct + 5` drift on both attempts.
 
+### Superseding official rerun — same source-backed rewrite still fails in the real runner path
+
+Official rerun `20260411T235643720137` retried the same anchored extractor plus `txframe + matching wds txframe` formula after a temporary local rewrite:
+
+- attempt 1
+  - 5G: `direct / getSSIDStats / formula = 319230 / 319235 / 319235`
+  - 6G: `207464 / 207466 / 207466`
+  - 2.4G: `325162 / 325162 / 325164`
+- attempt 2
+  - 5G: `319376 / 319376 / 319381`
+  - 6G: `207490 / 207490 / 207490`
+  - 2.4G: `325389 / 325389 / 325391`
+
+This re-proved that the 5G runner-path drift is still the same fixed `+5`, while 6G/2.4G are also not fully durable across all attempts.
+
+Focused DUT-only probes still exact-close the same formula outside the full runner path (`2415/2415/2415`, `1058/1058/1058`, `734/734/734` on 5G/6G/2.4G with no active `wds*` peer), so the official runner remains the acceptance authority.
+
 ## Current decision
 
 `D333` remains **blocked**.
 
 - the stale workbook `/proc $11` path is rejected
-- the source-backed `txframe + matching wds txframe` trial is directionally correct but still not deterministic enough to commit
+- the source-backed `txframe + matching wds txframe` trial is directionally correct but still not deterministic enough to commit on the real runner path
 - the official YAML is reverted to its pre-trial state while this blocker note carries the new evidence
 
 ## Next direction
 
-1. Trace where the persistent 5G `+5` delta is injected after the public `PacketsSent` field is derived.
-2. Check whether a small fixed 5G-side control or peer contribution is shaved off before the public field is exposed.
-3. If no exact deterministic source-backed oracle can be proven, keep D333 blocked and move on to `D335`.
+1. Trace why the 5G runner path still injects the same fixed `+5` after the 6G OCV/hostapd stabilization sequence, even when isolated DUT probes exact-close.
+2. Check whether the public `PacketsSent` snapshot lags a small post-merge/public adjustment that raw `txframe + matching wds txframe` does not model.
+3. If no exact deterministic source-backed oracle can be proven, keep D333 blocked and move on to `D336`.
