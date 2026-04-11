@@ -100,6 +100,8 @@
   - the case YAML is now refreshed from stale row `254` to workbook row `330`
   - `D332 PacketsReceived` stale workbook replay `20260411T194312398713` re-proved both `/proc/net/dev_extstats` `$3` drift (`5G 2234/2237` vs direct `2000/2002`) and loose `getSSIDStats()` overmatch (`expected=0`)
   - after refreshing the case to workbook row `332`, anchoring the `getSSIDStats()` extraction, and switching the driver oracle to `wl if_counters rxframe + matching wds rxframe`, rerun `20260411T194647490016` passed in one attempt
+  - `D335 UnicastPacketsReceived` stale workbook replay `20260411T200329824574` re-proved `/proc/net/dev_extstats` `$21` drift on all three bands (`5G 2001/746`, `6G 788/391`, `2.4G 483/235` across direct/getSSIDStats vs proc)
+  - active 0403 source explicitly derives `UnicastPacketsReceived = PacketsReceived - MulticastPacketsReceived` in `whm_brcm_api_ext.c`, then copies/accumulates that field in `whm_brcm_vap.c`; after switching the case to `(wl if_counters rxframe + matching wds rxframe) - (wl if_counters rxmulti + matching wds rxmulti)`, rerun `20260411T200851584762` exact-closed on 5G / 6G / 2.4G as `2003/2003/2003`, `794/794/794`, and `483/483/483`
 - Latest reopened runtime blocker:
   - `D295 scan()` is now formalized in `plugins/wifi_llapi/reports/D295_block.md`
   - committed DUT-only topology can fall back to `WiFi.Radio.{1,2,3}.Status="Dormant"` and then `scan()/startScan()` return `status 1 - unknown error`
@@ -116,7 +118,7 @@
   - stale replay `20260411T194816992700` re-proved both the loose `getSSIDStats()` overmatch (`26411/26413`) and the non-authoritative workbook `/proc/net/dev_extstats` `$11` path
   - source-backed trial rerun `20260411T195140855058` exact-closed 6G/2.4G, but 5G still held a fixed `driver = direct + 5` drift (`293527 / 293532`, `293669 / 293674`), so the formula rewrite is reverted and carried as a blocker
 - Practical next resume order:
-  1. continue the patch-scope true-open set from `D335-D336`
+  1. continue the patch-scope true-open set from `D336`
   2. keep `D331` / `D333` blocked unless the fixed 5G `+4` / `+5` drifts are explained with deterministic source-backed corrections
   3. only revisit `D324` if a live `wlX + matching wds*` `txbyte` oracle capture is needed
 
