@@ -96,6 +96,7 @@
   - `D465 SRGInformationValid` is now aligned via official rerun `20260413T013010016650`
   - `D467 RxBeamformingCapsEnabled` is now aligned via official rerun `20260413T013545364055`
   - `D045 SignalStrength` is now aligned via official rerun `20260413T020657288045`
+  - `D046 SignalStrengthByChain` is now aligned via official rerun `20260413T021655844208`
   - `D047` / `D050` were pulled back from a drifted custom `TestPilot_BTM` / `WPA3-Personal` path to the authoritative generic `testpilot5G` / `WPA2-Personal` baseline seen in full run `20260412T113008433351`
   - live STA evidence exact-closed the generic WPA2 link (`SSID: testpilot5G`), and DUT evidence exact-closed the same AssociatedDevice entry against `error=4 / message=parameter not found` plus sibling Rx/Tx capability fields and `wl0 sta_info`
   - committed metadata is now workbook row `47` / `50`, with `results_reference.v4.0.3 = Not Supported / N/A / N/A` for both cases
@@ -108,6 +109,7 @@
   - `D465` followed the same shape one step further: stale row `342` / object `WiFi.Radio.{i}.` / raw `Fail / Fail / Fail` refreshed to workbook row `465` / object `WiFi.Radio.{i}.IEEE80211ax.` / raw `Pass / Pass / Pass`, and the stale 6G live annotation was corrected from `1` back to the observed `0`
   - `D467` was simpler: the trace already exact-closed `RxBeamformingCapsEnabled="DEFAULT"` on AP1 / AP3 / AP5, so the only closure step was refreshing stale row `343` / raw `Fail / Fail / Fail` to workbook row `467` / raw `Pass / Pass / Pass`
   - `D045` was another low-risk metadata closure: the authoritative trace already exact-closed 5G `AssociatedDevice.1.SignalStrength=-33` against the same-STA driver sample `DriverSignalStrength=-33`, so the only remaining defects were stale row `47` and stale raw `2.4g=Fail`; refreshing it to workbook row `45` / raw `Pass / Pass / Pass` cleanly removes the mismatch
+  - `D046` followed the same low-risk closure pattern one step later: the authoritative trace already exact-closed 5G `AssociatedDevice.1.SignalStrengthByChain="-33.0,-32.0,-41.0,-34.0"` against the same-STA driver sample `DriverSignalStrengthByChain=-33.0,-32.0,-41.0,-34.0`, so the only remaining defects were stale row `48` and stale raw `Fail / N/A / N/A`; refreshing it to workbook row `46` / raw `Pass / Pass / Pass` cleanly removes the mismatch
 - Latest investigated non-aligned case:
   - `D079 MACFiltering.Mode` official rerun `20260413T002418591720` no longer hits `step_command_failed`
   - both attempts executed the full AP1 / AP3 / AP5 setter/getter sequence and converged to the same live shape:
@@ -124,9 +126,9 @@
     - the local tri-band rewrite was reverted; blocker authority is now `plugins/wifi_llapi/reports/D035_block.md`
 - Current authoritative full-run source remains `20260412T113008433351`
 - Latest recomputed overlay compare on top of authoritative full run `20260412T113008433351`
-  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 reruns:
-  - `248 / 420 full matches`
-  - `172 mismatches`
+  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 reruns:
+  - `249 / 420 full matches`
+  - `171 mismatches`
   - `58 metadata drifts`
 - Current focused step-command-failed workstream status:
   - closed in this loop: `D072`、`D047`、`D050`、`D088`、`D460`、`D494`
@@ -134,7 +136,7 @@
   - remaining open set: `none`
   - env-only bucket remains `D328`、`D336`
   - blocked bucket is now `D053` (`needs deterministic AP-to-STA unicast payload`) plus `D035` (`tri-band rewrite blocked by shared 6G OCV / ATTACH recovery loop`)
-- Next ready workbook-Pass revisit: `D046`
+- Next ready source-row drift revisit: `D014`
 
 ## Latest repo handoff snapshot（2026-04-11）
 

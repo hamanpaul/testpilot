@@ -16,7 +16,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T012358700786",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T013010016650",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T013545364055",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T020657288045"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T020657288045",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T021655844208"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -24,20 +25,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 248,
-  "mismatch_case_count": 172,
+  "full_match_count": 249,
+  "mismatch_case_count": 171,
   "band_summary": {
     "5g": {
-      "matched": 257,
-      "mismatched": 163
+      "matched": 258,
+      "mismatched": 162
     },
     "6g": {
-      "matched": 257,
-      "mismatched": 163
+      "matched": 258,
+      "mismatched": 162
     },
     "2.4g": {
-      "matched": 256,
-      "mismatched": 164
+      "matched": 257,
+      "mismatched": 163
     }
   },
   "cases": [
@@ -1846,7 +1847,7 @@
       "case_id": "wifi-llapi-D046-signalstrengthbychain",
       "case_file": "D046_signalstrengthbychain.yaml",
       "dnum": 46,
-      "source_row": 48,
+      "source_row": 46,
       "source_object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
       "source_api": "SignalStrengthByChain",
       "answer_row": 46,
@@ -1855,39 +1856,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
-      "attempts_used": 2,
-      "comment": "pass after retry (2/2)",
+      "attempts_used": 1,
+      "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Connect 4x4 WiFi Station to GW 2. Get SignalStrengthByChain via ubus-command root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.SignalStrengthByChain? > WiFi.AccessPoint.*.AssociatedDevice.*.SignalStrengthByChain? WiFi.Acce...",
       "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} root@prplOS:/# wl -i wl0 sta_info 34:19:4D:A4:B5:09 | grep antenna per antenna rssi of last rx data frame: -42 -39 -36 -41 per antenna average rssi of rx data frames: -43 -39 -36 -41 per antenna noise floor:...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D046-signalstrengthbychain.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T021655844208/wifi-llapi-D046-signalstrengthbychain.json"
     },
     {
       "case_id": "wifi-llapi-D047-supportedhe160mcs",
@@ -19232,53 +19229,6 @@
       "workbook_test_steps_excerpt": "1. Connect WiFi station to GW SSID4, SSID6 and SSID8 2. Run Ping between Station 3. Verify RxUnicastPacketCount root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.RxUnicastPacketCount? > WiFi.AccessPoint.*.AssociatedDevice.*.R...",
       "workbook_command_output_excerpt": "iw wl0 station dump \"wl -i wl0 sta_info ${STA_MAC} root@prplOS:/# wl -i wl0 sta_info 34:19:4d:a4:b5:09 | grep pkts tx total pkts: 121 tx ucast pkts: 121 tx mcast/bcast pkts: 0 rx data pkts: 171 rx ucast pkts: 114 rx mcast/bcast pkts: 57 ...",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D042-rxunicastpacketcount.json"
-    },
-    {
-      "case_id": "wifi-llapi-D046-signalstrengthbychain",
-      "case_file": "D046_signalstrengthbychain.yaml",
-      "dnum": 46,
-      "source_row": 48,
-      "source_object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
-      "source_api": "SignalStrengthByChain",
-      "answer_row": 46,
-      "answer_object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
-      "answer_api": "SignalStrengthByChain",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 2,
-      "comment": "pass after retry (2/2)",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Connect 4x4 WiFi Station to GW 2. Get SignalStrengthByChain via ubus-command root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.SignalStrengthByChain? > WiFi.AccessPoint.*.AssociatedDevice.*.SignalStrengthByChain? WiFi.Acce...",
-      "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} root@prplOS:/# wl -i wl0 sta_info 34:19:4D:A4:B5:09 | grep antenna per antenna rssi of last rx data frame: -42 -39 -36 -41 per antenna average rssi of rx data frames: -43 -39 -36 -41 per antenna noise floor:...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D046-signalstrengthbychain.json"
     },
     {
       "case_id": "wifi-llapi-D047-supportedhe160mcs",

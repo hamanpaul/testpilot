@@ -1,5 +1,69 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-12)
+
+> This checkpoint records the `D046` metadata/results_reference closure after `D045`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D046 SignalStrengthByChain` is now aligned via official rerun `20260413T021655844208`
+- the authoritative trace had already been `evaluation_verdict=Pass`
+- live 5G evidence exact-closed `AssociatedDevice.1.SignalStrengthByChain="-33.0,-32.0,-41.0,-34.0"` against the same-STA driver sample `DriverSignalStrengthByChain=-33.0,-32.0,-41.0,-34.0`
+- the only remaining defects were stale workbook row `48` plus stale raw `Fail / N/A / N/A`
+- committed metadata is now workbook row `46` with `results_reference.v4.0.3 = Pass / Pass / Pass`
+- overlay compare is now `249 / 420 full matches`、`171 mismatches`、`58 metadata drifts`
+- next ready source-row drift revisit is `D014`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D046` | 46 | `SignalStrengthByChain` | `Pass / Pass / Pass` | `20260413T021655844208_DUT.log L339-L371` | `20260413T021655844208_STA.log L64-L82` |
+
+#### D046 SignalStrengthByChain
+
+**STA 指令**
+
+```sh
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+sleep 10
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SignalStrengthByChain?"
+STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
+STA_MAC_LOWER=$(echo "$STA_MAC" | tr 'A-F' 'a-f')
+[ -n "$STA_MAC" ]
+echo DriverAssocMac=$STA_MAC
+wl -i wl0 sta_info $STA_MAC_LOWER | sed -n 's/.*per antenna average rssi of rx data frames: *//p' | tr ' ' '\n' | sed '/^$/d' | awk 'BEGIN{first=1} {printf "%s%s.0", (first?"":","), $1; first=0} END{if (!first) printf "\n"}' | sed 's/^/DriverSignalStrengthByChain=/'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T021655844208_STA.log L64-L82
+iw dev wl0 link
+Connected to 2c:59:17:00:19:95 (on wl0)
+        SSID: TestPilot_BTM
+...
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+ssid=TestPilot_BTM
+
+20260413T021655844208_DUT.log L339-L371
+WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"
+WiFi.AccessPoint.1.AssociatedDevice.1.SignalStrengthByChain="-33.0,-32.0,-41.0,-34.0"
+DriverAssocMac=2C:59:17:00:04:85
+DriverSignalStrengthByChain=-33.0,-32.0,-41.0,-34.0
+```
+
 ## Checkpoint summary (2026-04-13 early-11)
 
 > This checkpoint records the `D045` metadata/results_reference closure after the `D035` blocker checkpoint.

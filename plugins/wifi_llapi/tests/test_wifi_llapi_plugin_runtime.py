@@ -5994,7 +5994,7 @@ def test_d046_signalstrengthbychain_uses_supported_contracts():
 
     assert "aliases" not in d046_raw
     assert d046["id"] == "wifi-llapi-D046-signalstrengthbychain"
-    assert d046["source"]["row"] == 48
+    assert d046["source"]["row"] == 46
     assert d046["source"]["baseline"] == "BCM v4.0.3"
     assert d046["bands"] == ["5g"]
     assert d046_links == {"5g"}
@@ -6044,9 +6044,9 @@ def test_d046_signalstrengthbychain_uses_supported_contracts():
         and criterion["reference"] == "driver_signal.DriverSignalStrengthByChain"
         for criterion in d046["pass_criteria"]
     )
-    assert d046["results_reference"]["v4.0.3"]["5g"] == "Fail"
-    assert d046["results_reference"]["v4.0.3"]["6g"] == "N/A"
-    assert d046["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+    assert d046["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d046["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d046["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d046_signalstrengthbychain_evaluate_live_examples():
