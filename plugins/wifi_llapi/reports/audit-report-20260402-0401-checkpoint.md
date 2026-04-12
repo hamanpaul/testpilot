@@ -1,5 +1,25 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-2)
+
+> This checkpoint records the `D079` runtime de-truncation fix. No new aligned case landed in this checkpoint.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `CommandResolver.sanitize_cli_fragment()` no longer strips the `WiFi....=...` setter tail from complex shell fragments that legitimately start with variable assignment / `$(` / pipe composition
+- official rerun `20260413T002418591720` proves `D079 MACFiltering.Mode` is no longer `step_command_failed`
+- both attempts executed the full AP1 / AP3 / AP5 setter/getter sequence and converged to the same live shape:
+  - `BaselineMode5g/6g/24g = Off`
+  - `BaselineMacaddrAcl5g/6g/24g = ABSENT`
+  - `BaselineAclState5g/6g/24g = absent`
+  - `SetOffStatus5g/6g/24g = invalid_value`
+  - post-set getter + ACL state remained unchanged on all three bands
+- current `D079` YAML still fails at `mode_baseline_5g.BaselineMode5g == BlackList` because live 5G baseline is now `Off`, so the case moves from `step_command_failed` to semantic `pass_criteria_not_satisfied` / workbook-authority review
+- next ready `step_command_failed` revisit is `D088`
+
+</details>
+
 ## Checkpoint summary (2026-04-13 early-1)
 
 > This checkpoint records the shared `D047` / `D050` `step_command_failed` closure on top of the authoritative full run and the prior D072 setter-capture fix.

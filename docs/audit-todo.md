@@ -90,6 +90,15 @@
   - both cases were pulled back from a drifted custom `TestPilot_BTM` / `WPA3-Personal` path to the authoritative generic `testpilot5G` / `WPA2-Personal` baseline seen in full run `20260412T113008433351`
   - live STA evidence exact-closed the generic WPA2 link (`SSID: testpilot5G`), and DUT evidence exact-closed the same AssociatedDevice entry against `error=4 / message=parameter not found` plus sibling Rx/Tx capability fields and `wl0 sta_info`
   - committed metadata is now workbook row `47` / `50`, with `results_reference.v4.0.3 = Not Supported / N/A / N/A` for both cases
+- Latest investigated non-aligned case:
+  - `D079 MACFiltering.Mode` official rerun `20260413T002418591720` no longer hits `step_command_failed`
+  - both attempts executed the full AP1 / AP3 / AP5 setter/getter sequence and converged to the same live shape:
+    - `BaselineMode5g/6g/24g = Off`
+    - `BaselineMacaddrAcl5g/6g/24g = ABSENT`
+    - `BaselineAclState5g/6g/24g = absent`
+    - `SetOffStatus5g/6g/24g = invalid_value`
+    - post-set getter + ACL state remain unchanged on all three bands
+  - current `D079` YAML still expects 5G `BlackList` / `deny`, so the case is now reclassified from `step_command_failed` to semantic `pass_criteria_not_satisfied` / workbook-authority review
 - Current authoritative full-run source remains `20260412T113008433351`
 - Latest recomputed overlay compare on top of authoritative full run `20260412T113008433351`
   plus D024 / D025 / D022 / D072 / D047 / D050 reruns:
@@ -99,10 +108,11 @@
 - actionable workbook-Pass gaps stay `152` because workbook rows `47` / `50` are non-pass (`Not Support`) semantics
 - Current focused step-command-failed workstream status:
   - closed in this loop: `D072`、`D047`、`D050`
-  - remaining open set: `D079`、`D088`、`D460`、`D494`
+  - reclassified after runtime fix: `D079 -> pass_criteria_not_satisfied`
+  - remaining open set: `D088`、`D460`、`D494`
   - env-only bucket remains `D328`、`D336`
   - blocked bucket remains `D053` (`needs deterministic AP-to-STA unicast payload`)
-- Next ready single-case revisit: `D079`
+- Next ready single-case revisit: `D088`
 
 ## Latest repo handoff snapshot（2026-04-11）
 

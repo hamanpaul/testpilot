@@ -15552,6 +15552,19 @@ def test_d050_supportedvhtmcs_verification_fragments_preserve_error_and_driver_c
     assert verification_commands[3] == step5_command
 
 
+def test_d079_macfiltering_setter_shell_fragment_is_preserved():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    d079 = load_case(cases_dir / "D079_mode_accesspoint_macfiltering.yaml")
+
+    step2_command = d079["steps"][1]["command"]
+
+    assert 'WiFi.AccessPoint.1.MACFiltering.Mode=Off' in step2_command
+    assert "invalid value" in step2_command
+    assert plugin._sanitize_cli_fragment(step2_command) == step2_command
+    assert plugin._extract_cli_fragments(step2_command) == [step2_command]
+
+
 def test_d054_txerrors_verification_fragments_preserve_snapshot_and_driver_checks():
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"

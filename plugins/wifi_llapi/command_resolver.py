@@ -134,6 +134,11 @@ class CommandResolver:
             return ""
 
         text = text.lstrip("`'\"; ")
+        is_complex_shell = (
+            "$(" in text
+            or re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", text) is not None
+            or any(op in text for op in ("&&", "||", ";", "|"))
+        )
 
         # Remove console prompt tails appended from captured transcript.
         prompt_match = re.search(r"\s+root@[^:]+:[^#\n]*#.*$", text)
@@ -148,7 +153,7 @@ class CommandResolver:
                 text = left.strip()
 
         # Some Excel-derived prose appends expected samples after a real readback query.
-        if text.count("WiFi.") > 1 or "?" in text or "|" in text:
+        if not is_complex_shell and (text.count("WiFi.") > 1 or "?" in text or "|" in text):
             text = re.sub(r"\s+WiFi\.[A-Za-z0-9_.{}-]+\s*=\s*.*$", "", text).strip()
 
         text = p._truncate_ubus_function_tail(text)
