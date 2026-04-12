@@ -18,7 +18,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T013545364055",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T020657288045",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T021655844208",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T022541033440"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T022541033440",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T023259417785"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -26,16 +27,16 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 250,
-  "mismatch_case_count": 170,
+  "full_match_count": 251,
+  "mismatch_case_count": 169,
   "band_summary": {
     "5g": {
       "matched": 258,
       "mismatched": 162
     },
     "6g": {
-      "matched": 259,
-      "mismatched": 161
+      "matched": 260,
+      "mismatched": 160
     },
     "2.4g": {
       "matched": 258,
@@ -1048,7 +1049,7 @@
       "case_id": "wifi-llapi-D028-maxbandwidthsupported",
       "case_file": "D028_maxbandwidthsupported.yaml",
       "dnum": 28,
-      "source_row": 25,
+      "source_row": 28,
       "source_object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
       "source_api": "MaxBandwidthSupported",
       "answer_row": 28,
@@ -1057,7 +1058,7 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Pass",
+      "final_status": "Fail",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
@@ -1069,8 +1070,8 @@
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
+          "actual_raw": "Fail",
+          "actual_norm": "Fail",
           "expected_raw": "Fail",
           "expected_norm": "Fail"
         },
@@ -1081,13 +1082,11 @@
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "6g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "##Connect WiFi Station and check Station MaxBandwidthSupported WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported=\"160MHz\" WiFi.AccessPoint.3.AssociatedDevice.1.MaxBandwidthSupported=\"Unknown\" WiFi.AccessPoint.5.AssociatedDevice...",
       "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} VHT SET : 0x1 1x1 2x1 3x1 4x1 5x1 6x1 7x1 8x1 9x1 : 0x2 1x2 2x2 3x2 4x2 5x2 6x2 7x2 8x2 9x2 HE SET : 20/40/80 MHz: NSS1 Tx: 0-11 Rx: 0-11 NSS2 Tx: 0-11 Rx: --- EHT SET : 20/40/80 MHz: VHT (Wi-Fi 5) → channel...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D028-maxbandwidthsupported.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T023259417785/wifi-llapi-D028-maxbandwidthsupported.json"
     },
     {
       "case_id": "wifi-llapi-D029-mode-accesspoint-associateddevice",
@@ -18900,51 +18899,6 @@
       "workbook_test_steps_excerpt": "1. Connect WiFi Station to GW. 2. Verify Associated Station FrequencyCapabilities: root@prplOS:~# ubus-cli WiFi.? | grep FrequencyCapabilities= WiFi.AccessPoint.1.AssociatedDevice.1.FrequencyCapabilities=\"2.4GHz,5GHz,6GHz\" WiFi.AccessPoi...",
       "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} Frequency Bands Supported: 2.4G 5G 6G",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D020-frequencycapabilities.json"
-    },
-    {
-      "case_id": "wifi-llapi-D028-maxbandwidthsupported",
-      "case_file": "D028_maxbandwidthsupported.yaml",
-      "dnum": 28,
-      "source_row": 25,
-      "source_object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
-      "source_api": "MaxBandwidthSupported",
-      "answer_row": 28,
-      "answer_object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
-      "answer_api": "MaxBandwidthSupported",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Pass",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Fail",
-          "expected_norm": "Fail"
-        },
-        "2.4g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "6g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "##Connect WiFi Station and check Station MaxBandwidthSupported WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported=\"160MHz\" WiFi.AccessPoint.3.AssociatedDevice.1.MaxBandwidthSupported=\"Unknown\" WiFi.AccessPoint.5.AssociatedDevice...",
-      "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} VHT SET : 0x1 1x1 2x1 3x1 4x1 5x1 6x1 7x1 8x1 9x1 : 0x2 1x2 2x2 3x2 4x2 5x2 6x2 7x2 8x2 9x2 HE SET : 20/40/80 MHz: NSS1 Tx: 0-11 Rx: 0-11 NSS2 Tx: 0-11 Rx: --- EHT SET : 20/40/80 MHz: VHT (Wi-Fi 5) → channel...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D028-maxbandwidthsupported.json"
     },
     {
       "case_id": "wifi-llapi-D030-mugroupid",

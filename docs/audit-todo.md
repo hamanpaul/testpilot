@@ -112,6 +112,7 @@
   - `D045` was another low-risk metadata closure: the authoritative trace already exact-closed 5G `AssociatedDevice.1.SignalStrength=-33` against the same-STA driver sample `DriverSignalStrength=-33`, so the only remaining defects were stale row `47` and stale raw `2.4g=Fail`; refreshing it to workbook row `45` / raw `Pass / Pass / Pass` cleanly removes the mismatch
   - `D046` followed the same low-risk closure pattern one step later: the authoritative trace already exact-closed 5G `AssociatedDevice.1.SignalStrengthByChain="-33.0,-32.0,-41.0,-34.0"` against the same-STA driver sample `DriverSignalStrengthByChain=-33.0,-32.0,-41.0,-34.0`, so the only remaining defects were stale row `48` and stale raw `Fail / N/A / N/A`; refreshing it to workbook row `46` / raw `Pass / Pass / Pass` cleanly removes the mismatch
   - `D061` followed the same low-risk closure family again: the authoritative trace already exact-closed the post-trigger `UplinkShortGuard=1` snapshot against the same-STA driver GI token `1.6us` and derived boolean `DriverUplinkShortGuard=1`, so the only remaining defects were stale row `63` and stale raw `Pass / N/A / N/A`; refreshing it to workbook row `61` / raw `Pass / Pass / Pass` cleanly removes the mismatch
+  - `D028` closes as a mixed-verdict workbook row rather than an all-pass case: the rerun still evaluates the executed bands as `Pass` (`160MHz` on 5G, `40MHz` on 2.4G), but workbook row `28` remains explicitly fail-shaped on 6G while the current lab keeps AP3/wl1 in the `BCME_NOTREADY` skip bucket; refreshing stale row `25` / raw `Pass / Pass / Pass` to workbook row `28` / raw `Pass / Fail / Pass` removes the mismatch cleanly
 - Latest investigated non-aligned case:
   - `D079 MACFiltering.Mode` official rerun `20260413T002418591720` no longer hits `step_command_failed`
   - both attempts executed the full AP1 / AP3 / AP5 setter/getter sequence and converged to the same live shape:
@@ -128,9 +129,9 @@
     - the local tri-band rewrite was reverted; blocker authority is now `plugins/wifi_llapi/reports/D035_block.md`
 - Current authoritative full-run source remains `20260412T113008433351`
 - Latest recomputed overlay compare on top of authoritative full run `20260412T113008433351`
-  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 reruns:
-  - `250 / 420 full matches`
-  - `170 mismatches`
+  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 / D028 reruns:
+  - `251 / 420 full matches`
+  - `169 mismatches`
   - `58 metadata drifts`
 - Current focused step-command-failed workstream status:
   - closed in this loop: `D072`、`D047`、`D050`、`D088`、`D460`、`D494`
@@ -138,7 +139,7 @@
   - remaining open set: `none`
   - env-only bucket remains `D328`、`D336`
   - blocked bucket is now `D053` (`needs deterministic AP-to-STA unicast payload`) plus `D035` (`tri-band rewrite blocked by shared 6G OCV / ATTACH recovery loop`)
-- Next ready mixed-verdict workbook revisit: `D028`
+- Next ready workbook-Pass revisit: `D065`
 
 ## Latest repo handoff snapshot（2026-04-11）
 

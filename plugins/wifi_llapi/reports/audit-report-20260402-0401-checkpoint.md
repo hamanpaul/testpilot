@@ -1,5 +1,68 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-14)
+
+> This checkpoint records the `D028` mixed-verdict workbook closure after `D061`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D028 MaxBandwidthSupported` is now aligned via official rerun `20260413T023259417785`
+- the rerun kept the executed 5G / 2.4G bands in `evaluation_verdict=Pass`
+- live evidence exact-closed 5G `MaxBandwidthSupported="160MHz"` and 2.4G `MaxBandwidthSupported="40MHz"`
+- workbook row `28` remains explicitly fail-shaped on 6G, while the current lab still skips AP3/wl1 because STA association is `BCME_NOTREADY`
+- committed metadata is now workbook row `28` with `results_reference.v4.0.3 = Pass / Fail / Pass`
+- overlay compare is now `251 / 420 full matches`、`169 mismatches`、`58 metadata drifts`
+- next ready workbook-Pass revisit is `D065`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D028` | 28 | `MaxBandwidthSupported` | `Pass / Fail / Pass` | `20260413T023259417785_DUT.log L191-L199, L263-L271` | `20260413T023259417785_STA.log L82-L99, L179-L196` |
+
+#### D028 MaxBandwidthSupported
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported?"
+wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MaxBandwidthSupported?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T023259417785_STA.log L82-L99
+iw dev wl0 link
+Connected to 2c:59:17:00:19:95 (on wl0)
+        SSID: testpilot5G
+
+20260413T023259417785_DUT.log L191-L199
+AssocMac5g=2c:59:17:00:04:85
+WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported="160MHz"
+
+20260413T023259417785_STA.log L179-L196
+iw dev wl2 link
+Connected to 2c:59:17:00:19:a7 (on wl2)
+        SSID: testpilot2G
+
+20260413T023259417785_DUT.log L263-L271
+AssocMac24g=2c:59:17:00:04:97
+WiFi.AccessPoint.5.AssociatedDevice.1.MaxBandwidthSupported="40MHz"
+```
+
 ## Checkpoint summary (2026-04-13 early-13)
 
 > This checkpoint records the `D061` metadata/results_reference closure after `D046`.

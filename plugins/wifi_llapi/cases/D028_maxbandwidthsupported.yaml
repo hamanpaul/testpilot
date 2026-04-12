@@ -4,7 +4,7 @@ version: '1.1'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 25
+  row: 28
   object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
   api: MaxBandwidthSupported
   baseline: BCM v4.0.3
@@ -106,11 +106,12 @@ verification_command:
 results_reference:
   v4.0.3:
     5g: Pass
-    6g: Pass
+    6g: Fail
     2.4g: Pass
     comment: |
       Live evidence (BCM v4.0.3):
       5G: WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported=160MHz
+      6G: workbook row 28 remains fail-shaped; the current lab still skips AP3/wl1 because STA association is BCME_NOTREADY in this environment.
       2.4G: WiFi.AccessPoint.5.AssociatedDevice.1.MaxBandwidthSupported=Unknown
           Root cause: 2.4G STA OMI=0x3203 forces 20MHz operation;
           wld_util_getMaxBwCap() returns BCME_NOTFOUND -> value reported as "Unknown".

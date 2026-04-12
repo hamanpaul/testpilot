@@ -4322,6 +4322,7 @@ def test_pending_inactive_and_bandwidth_cases_use_supported_contracts():
     d028 = load_case(cases_dir / "D028_maxbandwidthsupported.yaml")
     d028_commands = "\n".join(str(step.get("command", "")) for step in d028["steps"])
     d028_links = {link["band"] for link in d028["topology"]["links"]}
+    assert d028["source"]["row"] == 28
     assert d028_links == {"5g", "2.4g"}
     assert "wl -i wl0 assoclist" in d028_commands
     assert "wl -i wl2 assoclist" in d028_commands
@@ -4337,6 +4338,8 @@ def test_pending_inactive_and_bandwidth_cases_use_supported_contracts():
         and criterion["value"] == r"^(20MHz|40MHz|80MHz|160MHz|Unknown)$"
         for criterion in d028["pass_criteria"]
     )
+    assert d028["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d028["results_reference"]["v4.0.3"]["6g"] == "Fail"
     assert d028["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
