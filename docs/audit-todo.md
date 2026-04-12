@@ -79,30 +79,30 @@
   - do not create ad-hoc acceleration tools/scripts to skip the manual evidence loop
 - I will update YAML and regression tests directly in this repo after a case is proven live.
 
-## Latest repo handoff snapshot（2026-04-12）
+## Latest repo handoff snapshot（2026-04-13）
 
-- Shared runtime root cause closure:
-  - single-line executable setter steps with `capture` were being rewritten into synthesized readback queries before execution
-  - `plugins/wifi_llapi/command_resolver.py` now preserves the authored setter command for this shape instead of skipping the write
-- Latest aligned case:
-  - `D072 MobilityDomain` is now aligned via official reruns `20260412T231545173827` and `20260412T231709014359`
-  - first rerun proved the real setter path and closed as `pass after retry (2/2)`
-  - repeat rerun `20260412T231709014359` then passed on attempt 1
-  - live DUT evidence exact-closed AP1/AP3/AP5 with `IEEE80211r.Enabled=1`, northbound `MobilityDomain=27476`, hostapd `mobility_domain=546B`, and one `ft_over_ds=0` line per band
-  - committed metadata is now workbook row `72` with `results_reference.v4.0.3 = Pass / Pass / Pass`
+- Shared runtime root cause closure now has two landed pieces:
+  - single-line executable setter steps with `capture` are no longer rewritten into synthesized readback queries before execution
+  - `_env_command_succeeded()` no longer treats valid getter payload `error=4 / message=parameter not found` as a shell failure, while direct `AssociatedDevice.*.MACAddress?` probes still require a concrete MAC
+- Latest aligned cases:
+  - `D047 SupportedHe160MCS` is now aligned via official rerun `20260412T235952361188`
+  - `D050 SupportedVhtMCS` is now aligned via official rerun `20260413T000249620932`
+  - both cases were pulled back from a drifted custom `TestPilot_BTM` / `WPA3-Personal` path to the authoritative generic `testpilot5G` / `WPA2-Personal` baseline seen in full run `20260412T113008433351`
+  - live STA evidence exact-closed the generic WPA2 link (`SSID: testpilot5G`), and DUT evidence exact-closed the same AssociatedDevice entry against `error=4 / message=parameter not found` plus sibling Rx/Tx capability fields and `wl0 sta_info`
+  - committed metadata is now workbook row `47` / `50`, with `results_reference.v4.0.3 = Not Supported / N/A / N/A` for both cases
 - Current authoritative full-run source remains `20260412T113008433351`
 - Latest recomputed overlay compare on top of authoritative full run `20260412T113008433351`
-  plus D024 / D025 / D022 / D072 reruns:
+  plus D024 / D025 / D022 / D072 / D047 / D050 reruns:
   - `239 / 420 full matches`
   - `181 mismatches`
   - `62 metadata drifts`
-  - actionable workbook-Pass gaps are now `152`
+- actionable workbook-Pass gaps stay `152` because workbook rows `47` / `50` are non-pass (`Not Support`) semantics
 - Current focused step-command-failed workstream status:
-  - closed in this loop: `D072`
-  - remaining open set: `D047`、`D050`、`D079`、`D088`、`D460`、`D494`
+  - closed in this loop: `D072`、`D047`、`D050`
+  - remaining open set: `D079`、`D088`、`D460`、`D494`
   - env-only bucket remains `D328`、`D336`
   - blocked bucket remains `D053` (`needs deterministic AP-to-STA unicast payload`)
-- Next ready single-case revisit: tight-coupled `D047` / `D050`
+- Next ready single-case revisit: `D079`
 
 ## Latest repo handoff snapshot（2026-04-11）
 

@@ -1863,6 +1863,21 @@ def test_env_command_succeeded_allows_macaddress_shell_pipeline():
     assert plugin._env_command_succeeded(command, result) is True
 
 
+def test_env_command_succeeded_allows_parameter_not_found_getter_output():
+    plugin = _load_plugin()
+    command = 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHe160MCS?"'
+    result = {
+        "returncode": 1,
+        "stdout": (
+            "ERROR: get WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHe160MCS "
+            "failed (4 - parameter not found)\nerror=4\nmessage=parameter not found"
+        ),
+        "stderr": "",
+    }
+
+    assert plugin._env_command_succeeded(command, result) is True
+
+
 @pytest.mark.parametrize(
     ("command", "stdout"),
     [
@@ -6128,12 +6143,14 @@ def test_d047_supportedhe160mcs_uses_supported_contracts():
     d047_links = {link["band"] for link in d047["topology"]["links"]}
 
     assert "aliases" not in d047_raw
+    assert "sta_env_setup" not in d047_raw
     assert d047["id"] == "wifi-llapi-D047-supportedhe160mcs"
-    assert d047["source"]["row"] == 49
+    assert d047["source"]["row"] == 47
     assert d047["source"]["baseline"] == "BCM v4.0.3"
     assert d047["llapi_support"] == "Not Supported"
     assert d047["bands"] == ["5g"]
     assert d047_links == {"5g"}
+    assert "sta_env_setup" not in d047
     assert (
         d047["hlapi_command"]
         == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHe160MCS?"'
@@ -6485,12 +6502,14 @@ def test_d050_supportedvhtmcs_uses_supported_contracts():
     d050_links = {link["band"] for link in d050["topology"]["links"]}
 
     assert "aliases" not in d050_raw
+    assert "sta_env_setup" not in d050_raw
     assert d050["id"] == "wifi-llapi-D050-supportedvhtmcs"
-    assert d050["source"]["row"] == 52
+    assert d050["source"]["row"] == 50
     assert d050["source"]["baseline"] == "BCM v4.0.3"
     assert d050["llapi_support"] == "Not Supported"
     assert d050["bands"] == ["5g"]
     assert d050_links == {"5g"}
+    assert "sta_env_setup" not in d050
     assert (
         d050["hlapi_command"]
         == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedVhtMCS?"'
@@ -15231,9 +15250,7 @@ def test_sta_env_setup_parser_preserves_wpa_cli_quoted_value():
         "D043_securitymodeenabled.yaml",
         "D045_signalstrength_accesspoint_associateddevice.yaml",
         "D046_signalstrengthbychain.yaml",
-        "D047_supportedhe160mcs.yaml",
         "D048_supportedhemcs.yaml",
-        "D050_supportedvhtmcs.yaml",
         "D054_txerrors.yaml",
         "D055_txmulticastpacketcount.yaml",
         "D056_txpacketcount.yaml",

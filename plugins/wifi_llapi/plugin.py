@@ -1373,6 +1373,26 @@ class Plugin(PluginBase):
         normalized_command = cls._normalize_command_text(command)
         lowered_command = normalized_command.lower()
 
+        if (
+            "associateddevice" in lowered_command
+            and "macaddress?" in lowered_command
+            and "|" not in normalized_command
+            and "$(" not in normalized_command
+        ):
+            return bool(re.search(r"([0-9a-f]{2}:){5}[0-9a-f]{2}", output, re.IGNORECASE))
+
+        if "ubus-cli" in lowered_command and "?" in normalized_command:
+            if any(
+                marker in lowered_output
+                for marker in (
+                    "syntax error",
+                    "unknown command",
+                    "/bin/ash:",
+                )
+            ):
+                return False
+            return bool(output.strip())
+
         if any(
             marker in lowered_output
             for marker in (
@@ -1380,7 +1400,6 @@ class Plugin(PluginBase):
                 "syntax error",
                 "unknown command",
                 "/bin/ash:",
-                "not found",
                 "failed to open config file",
                 "failed to read or parse configuration",
                 "failed to connect to non-global ctrl_ifname",
@@ -1434,10 +1453,6 @@ class Plugin(PluginBase):
                 )
             )
         if "sta_info" in lowered_command:
-            return bool(output.strip())
-        if "associateddevice" in lowered_command and "macaddress?" in lowered_command:
-            return bool(re.search(r"([0-9a-f]{2}:){5}[0-9a-f]{2}", output, re.IGNORECASE))
-        if "ubus-cli" in lowered_command and "?" in normalized_command:
             return bool(output.strip())
 
         return int(result.get("returncode", 1)) == 0

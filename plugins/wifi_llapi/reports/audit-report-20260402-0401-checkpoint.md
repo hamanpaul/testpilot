@@ -1,5 +1,162 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-1)
+
+> This checkpoint records the shared `D047` / `D050` `step_command_failed` closure on top of the authoritative full run and the prior D072 setter-capture fix.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D047 SupportedHe160MCS` and `D050 SupportedVhtMCS` are now aligned via official reruns `20260412T235952361188` / `20260413T000249620932`
+- the shared root cause had two layers:
+  - both case YAMLs had drifted onto a custom 5G `TestPilot_BTM` / `WPA3-Personal` bring-up, while authoritative full run `20260412T113008433351` still used the generic `testpilot5G` / `WPA2-Personal` baseline
+  - `_env_command_succeeded()` previously used an over-broad `"not found"` failure matcher, so valid getter payload `error=4 / message=parameter not found` was being short-circuited into `step_command_failed` before case `pass_criteria` could evaluate it
+- both cases are now back on the generic 5G baseline and their metadata is refreshed to workbook rows `47` / `50`
+- live STA evidence exact-closed the same generic WPA2 link (`SSID: testpilot5G`), while live DUT evidence exact-closed the same AssociatedDevice entry against:
+  - LLAPI getter `error=4 / message=parameter not found`
+  - sibling Rx/Tx capability fields from `WiFi.AccessPoint.1.AssociatedDevice.1.?`
+  - matching `wl0 sta_info` capability markers for the same STA
+- overlay compare recomputed on top of authoritative full run `20260412T113008433351`
+  plus D024 / D025 / D022 / D072 / D047 / D050 reruns stays
+  `239 / 420 full matches`、`181 mismatches`、`62 metadata drifts`
+- actionable workbook-Pass gaps stay `152` because workbook rows `47` / `50` are non-pass (`Not Support`) semantics
+- next ready `step_command_failed` revisit is `D079`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D047` | 47 | `SupportedHe160MCS` | `Not Supported / N/A / N/A` | `20260412T235952361188_DUT.log L26-L133` | `20260412T235952361188_STA.log L39-L99` |
+| `D050` | 50 | `SupportedVhtMCS` | `Not Supported / N/A / N/A` | `20260413T000249620932_DUT.log L26-L133` | `20260413T000249620932_STA.log L39-L99` |
+
+#### D047 SupportedHe160MCS
+
+**STA 指令**
+
+```sh
+printf '%s\n' ctrl_interface=/var/run/wpa_supplicant > /tmp/wpa_wl0.conf
+printf '%s\n' update_config=1 >> /tmp/wpa_wl0.conf
+printf '%s\n' 'network={' >> /tmp/wpa_wl0.conf
+printf '%s\n' 'ssid="testpilot5G"' >> /tmp/wpa_wl0.conf
+printf '%s\n' key_mgmt=WPA-PSK >> /tmp/wpa_wl0.conf
+printf '%s\n' 'psk="00000000"' >> /tmp/wpa_wl0.conf
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.SSID.4.SSID?"
+ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
+OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHe160MCS?" 2>&1 || true)
+printf '%s\n' "$OUT"
+printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p'
+printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/SiblingAssocMac=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.RxSupportedHe160MCS="\([^"]*\)".*/DriverRxSupportedHe160MCS=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxSupportedHe160MCS="\([^"]*\)".*/DriverTxSupportedHe160MCS=\1/p'
+STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
+STA_MAC_LOWER=$(echo "$STA_MAC" | tr 'A-F' 'a-f')
+wl -i wl0 sta_info "$STA_MAC_LOWER"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260412T235952361188_STA.log L46-L59, L82-L99
+ssid="testpilot5G"
+key_mgmt=WPA-PSK
+psk="00000000"
+Successfully initialized wpa_supplicant
+iw dev wl0 link
+Connected to 2c:59:17:00:19:95 (on wl0)
+        SSID: testpilot5G
+        freq: 5180
+
+20260412T235952361188_DUT.log L26-L54, L62-L70, L84-L133
+WiFi.SSID.4.SSID="testpilot5G"
+WiFi.AccessPoint.1.Security.ModeEnabled="WPA2-Personal"
+WiFi.AccessPoint.1.Security.KeyPassPhrase="00000000"
+WiFi.AccessPoint.1.Security.MFPConfig="Disabled"
+WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"
+ERROR: get WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHe160MCS failed (4 - parameter not found)
+error=4
+message=parameter not found
+SiblingAssocMac=2C:59:17:00:04:85
+DriverRxSupportedHe160MCS=11,11,11,11
+DriverTxSupportedHe160MCS=11,11,11,11
+DriverAssocMac=2C:59:17:00:04:85
+DriverHeCapsPresent=1
+DriverMCSSetPresent=1
+DriverHeSetPresent=1
+```
+
+#### D050 SupportedVhtMCS
+
+**STA 指令**
+
+```sh
+printf '%s\n' ctrl_interface=/var/run/wpa_supplicant > /tmp/wpa_wl0.conf
+printf '%s\n' update_config=1 >> /tmp/wpa_wl0.conf
+printf '%s\n' 'network={' >> /tmp/wpa_wl0.conf
+printf '%s\n' 'ssid="testpilot5G"' >> /tmp/wpa_wl0.conf
+printf '%s\n' key_mgmt=WPA-PSK >> /tmp/wpa_wl0.conf
+printf '%s\n' 'psk="00000000"' >> /tmp/wpa_wl0.conf
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.SSID.4.SSID?"
+ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
+OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedVhtMCS?" 2>&1 || true)
+printf '%s\n' "$OUT"
+printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p'
+printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/SiblingAssocMac=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.RxSupportedVhtMCS="\([^"]*\)".*/DriverRxSupportedVhtMCS=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxSupportedVhtMCS="\([^"]*\)".*/DriverTxSupportedVhtMCS=\1/p'
+STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
+STA_MAC_LOWER=$(echo "$STA_MAC" | tr 'A-F' 'a-f')
+wl -i wl0 sta_info "$STA_MAC_LOWER"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T000249620932_STA.log L46-L59, L82-L99
+ssid="testpilot5G"
+key_mgmt=WPA-PSK
+psk="00000000"
+Successfully initialized wpa_supplicant
+iw dev wl0 link
+Connected to 2c:59:17:00:19:95 (on wl0)
+        SSID: testpilot5G
+        freq: 5180
+
+20260413T000249620932_DUT.log L26-L54, L62-L70, L84-L133
+WiFi.SSID.4.SSID="testpilot5G"
+WiFi.AccessPoint.1.Security.ModeEnabled="WPA2-Personal"
+WiFi.AccessPoint.1.Security.KeyPassPhrase="00000000"
+WiFi.AccessPoint.1.Security.MFPConfig="Disabled"
+WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"
+ERROR: get WiFi.AccessPoint.1.AssociatedDevice.1.SupportedVhtMCS failed (4 - parameter not found)
+error=4
+message=parameter not found
+SiblingAssocMac=2C:59:17:00:04:85
+DriverRxSupportedVhtMCS=9,9,9,9
+DriverTxSupportedVhtMCS=9,9,9,9
+DriverAssocMac=2C:59:17:00:04:85
+DriverVhtCapsPresent=1
+DriverMCSSetPresent=1
+DriverVhtSetPresent=1
+```
+
 ## Checkpoint summary (2026-04-12 late-5)
 
 > This checkpoint records the shared setter-capture runtime fix and the D072 alignment closure on top of the authoritative full run.

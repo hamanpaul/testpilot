@@ -7,6 +7,9 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T172957084134`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T174551843336`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T175538121906`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T231709014359`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T235952361188`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T000249620932`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -17,8 +20,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 238 |
-| mismatch cases | 182 |
+| full matches | 239 |
+| mismatch cases | 181 |
 | missing answer rows | 0 |
 | metadata drift rows | 62 |
 
@@ -26,9 +29,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 248 | 172 |
-| 6g | 249 | 171 |
-| 2.4g | 247 | 173 |
+| 5g | 249 | 171 |
+| 6g | 250 | 170 |
+| 2.4g | 248 | 172 |
 
 ## Mismatch table
 
@@ -46,8 +49,8 @@
 | `wifi-llapi-D042-rxunicastpacketcount` | 42 | exact | Pass / Pass / Pass | Not Supported / Not Supported / Not Supported | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
 | `wifi-llapi-D045-signalstrength-accesspoint-associateddevice` | 45 | exact | Pass / Pass / Fail | Pass / Pass / Pass | Pass / Pass / Fail | Pass / Pass / Pass | 2.4g |
 | `wifi-llapi-D046-signalstrengthbychain` | 46 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `wifi-llapi-D047-supportedhe160mcs` | 47 | exact | Fail / N/A / N/A | Pass / Pass / Not Supported | Fail / Fail / Fail | Pass / Pass / Fail | 5g, 6g |
-| `wifi-llapi-D050-supportedvhtmcs` | 50 | exact | Fail / N/A / N/A | Pass / Not Supported / Not Supported | Fail / Fail / Fail | Pass / Fail / Fail | 5g |
+| `wifi-llapi-D047-supportedhe160mcs` | 47 | exact | Not Supported / N/A / N/A | Pass / Pass / Not Supported | Fail / Fail / Fail | Pass / Pass / Fail | 5g, 6g |
+| `wifi-llapi-D050-supportedvhtmcs` | 50 | exact | Not Supported / N/A / N/A | Pass / Not Supported / Not Supported | Fail / Fail / Fail | Pass / Fail / Fail | 5g |
 | `d053-blocked-txbytes` | 53 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D057-txunicastpacketcount` | 57 | exact | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
 | `wifi-llapi-D059-uplinkbandwidth` | 59 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -58,7 +61,6 @@
 | `wifi-llapi-D065-bridgeinterface` | 65 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D070-enable-accesspoint` | 70 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D071-ftoverdsenable-accesspoint` | 71 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `wifi-llapi-D072-mobilitydomain-accesspoint` | 72 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D079-mode-accesspoint-macfiltering` | 79 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D080-maxassociateddevices` | 80 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D081-mboenable` | 81 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -457,18 +459,17 @@
 - mapping status: `exact`
 - source metadata: `WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` / `SupportedHe160MCS`
 - workbook metadata: `WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` / `SupportedHe160MCS`
-- final status: `Fail`
-- evaluation verdict: `Fail`
-- attempts used: `2`
-- runtime comment: step failed: step3 (failed after 2/2 attempts)
-- actual raw: `Fail` / `N/A` / `N/A`
+- final status: `Pass`
+- evaluation verdict: `Pass`
+- attempts used: `1`
+- actual raw: `Not Supported` / `N/A` / `N/A`
 - expected raw: `Pass` / `Pass` / `Not Supported`
 - actual normalized: `Fail` / `Fail` / `Fail`
 - expected normalized: `Pass` / `Pass` / `Fail`
 - mismatch bands: `5g, 6g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D047-supportedhe160mcs.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T235952361188/wifi-llapi-D047-supportedhe160mcs.json`
 
 ### wifi-llapi-D050-supportedvhtmcs
 
@@ -477,18 +478,17 @@
 - mapping status: `exact`
 - source metadata: `WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` / `SupportedVhtMCS`
 - workbook metadata: `WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` / `SupportedVhtMCS`
-- final status: `Fail`
-- evaluation verdict: `Fail`
-- attempts used: `2`
-- runtime comment: step failed: step3 (failed after 2/2 attempts)
-- actual raw: `Fail` / `N/A` / `N/A`
+- final status: `Pass`
+- evaluation verdict: `Pass`
+- attempts used: `1`
+- actual raw: `Not Supported` / `N/A` / `N/A`
 - expected raw: `Pass` / `Not Supported` / `Not Supported`
 - actual normalized: `Fail` / `Fail` / `Fail`
 - expected normalized: `Pass` / `Fail` / `Fail`
 - mismatch bands: `5g`
 - 0401 G excerpt: it is the same as RxSupportedVhtMCS and TxSupportedVhtMCS as shown below? root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep Supported VhtMCS WiFi.AccessPoint.1.AssociatedDevice.1.RxSupportedVhtMCS="9,9,9,9" WiFi.Acce...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 sta_info 34:19:4d:a4:b5:09 [VER 8] STA 34:19:4D:A4:B5:09: VHT caps 0xfb: LDPC SGI80 STBC-Tx STBC-Rx SU-BFR SU-BFE MU-BFR MCS SET : [ 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29...
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D050-supportedvhtmcs.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T000249620932/wifi-llapi-D050-supportedvhtmcs.json`
 
 ### d053-blocked-txbytes
 
@@ -686,26 +686,6 @@
 - 0401 G excerpt: 1. Set IEEE80211r.Enabled=1 ubus-cli WiFi.AccessPoint.*.IEEE80211r.Enabled=1 2. set FTOverDSEnable=1 root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep .IEEE80211r.FTOverDSEnable=1 WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable=1 WiFi.Acces...
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep ft_over_ds Beacon Packet should include: Mobility Domain Mobility Domain ID: xxxx FT Capability and Policy: 0x0? (bitmask) 0000 .... = FT-over-DS: 0 (not supported) .... 000. = FT-over-Air: 1 (supported) Key ...
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D071-ftoverdsenable-accesspoint.json`
-
-### wifi-llapi-D072-mobilitydomain-accesspoint
-
-- case file: `D072_mobilitydomain.yaml`
-- answer row: `72`
-- mapping status: `exact`
-- source metadata: `WiFi.AccessPoint.{i}.IEEE80211r.` / `MobilityDomain`
-- workbook metadata: `WiFi.AccessPoint.{i}.IEEE80211r.` / `MobilityDomain`
-- final status: `Fail`
-- evaluation verdict: `Fail`
-- attempts used: `2`
-- runtime comment: step failed: step13_state_set_mobilitydomain_6g (failed after 2/2 attempts)
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: \\Set MobilityDomain root@prplOS:/# ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=1 > WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=1 WiFi.AccessPoint.1.IEEE80211r. WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=1
-- 0401 H excerpt: 802.11r requires a non-zero Mobility Domain ID (MDID). If MDID = 0 → 802.11r will NOT activate, even if Enabled=1. must set .MobilityDomain to a 16-bit number (1–65535). Example: ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=4660
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D072-mobilitydomain-accesspoint.json`
 
 ### wifi-llapi-D079-mode-accesspoint-macfiltering
 

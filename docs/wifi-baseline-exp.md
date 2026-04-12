@@ -785,6 +785,45 @@ uv run pytest -q
   run 為 `run_id=20260409T213837737224`。開始通知已送出，Telegram 每小時
   progress notifier 已掛上
 
+## Step-command-failed closure checkpoint (2026-04-13)
+
+- shared root cause confirmed on `D047` / `D050`:
+  - authoritative full run `20260412T113008433351` still used the generic 5G baseline
+    `testpilot5G` / `WPA2-Personal`
+  - current case YAML had drifted to a custom `TestPilot_BTM` / `WPA3-Personal`
+    bring-up that now failed on COM0 before step execution
+  - after that case-side drift was removed, the remaining blocker was runtime-side:
+    `_env_command_succeeded()` used a broad `"not found"` matcher and
+    misclassified valid LLAPI getter payload
+    `ERROR: get ... failed (4 - parameter not found)` as `step_command_failed`
+- landed fix set:
+  - `D047_supportedhe160mcs.yaml`
+    - `source.row: 49 -> 47`
+    - remove case-local `sta_env_setup`
+    - return to generic 5G baseline `testpilot5G` / `00000000`
+  - `D050_supportedvhtmcs.yaml`
+    - `source.row: 52 -> 50`
+    - remove case-local `sta_env_setup`
+    - return to generic 5G baseline `testpilot5G` / `00000000`
+  - `plugins/wifi_llapi/plugin.py`
+    - direct `AssociatedDevice.*.MACAddress?` getter still requires a real MAC
+    - generic ubus getter output `error=4 / message=parameter not found` now
+      reaches pass-criteria evaluation instead of being rejected as a shell failure
+- validation:
+  - `D047` official rerun `20260412T235952361188`
+    - STA log shows `ssid="testpilot5G"` and `iw dev wl0 link -> SSID: testpilot5G`
+    - DUT log exact-closes `SupportedHe160MCS -> error=4 / message=parameter not found`
+      plus `RxSupportedHe160MCS` / `TxSupportedHe160MCS` and `wl0 sta_info`
+  - `D050` official rerun `20260413T000249620932`
+    - STA log shows the same generic WPA2 `testpilot5G` link
+    - DUT log exact-closes `SupportedVhtMCS -> error=4 / message=parameter not found`
+      plus `RxSupportedVhtMCS` / `TxSupportedVhtMCS` and `wl0 sta_info`
+- follow-up:
+  - overlay compare remains `239 / 420 full matches`, `181 mismatches`,
+    `62 metadata drifts` because workbook rows `47` / `50` are already non-pass
+    (`Not Support`) semantics
+  - remaining `step_command_failed` queue is now `D079`、`D088`、`D460`、`D494`
+
 ## Smoke checkpoint (2026-04-08)
 
 ### 5G
