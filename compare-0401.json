@@ -24,7 +24,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T025449283775",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T030202219754",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T030853360475",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T031458311484"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T031458311484",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T032521733067"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -32,16 +33,16 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 256,
-  "mismatch_case_count": 164,
+  "full_match_count": 257,
+  "mismatch_case_count": 163,
   "band_summary": {
     "5g": {
       "matched": 263,
       "mismatched": 157
     },
     "6g": {
-      "matched": 265,
-      "mismatched": 155
+      "matched": 266,
+      "mismatched": 154
     },
     "2.4g": {
       "matched": 263,
@@ -4080,7 +4081,7 @@
       "case_id": "wifi-llapi-D099-wmmcapability",
       "case_file": "D099_wmmcapability.yaml",
       "dnum": 99,
-      "source_row": 101,
+      "source_row": 99,
       "source_object": "WiFi.AccessPoint.{i}.",
       "source_api": "WMMCapability",
       "answer_row": 99,
@@ -4089,7 +4090,7 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
@@ -4101,8 +4102,8 @@
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
@@ -4113,13 +4114,11 @@
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "6g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Get GW WMMCapability root@prplOS:/# ubus-cli WiFi.AccessPoint.*.WMMCapability? > WiFi.AccessPoint.*.WMMCapability? WiFi.AccessPoint.1.WMMCapability=1 WiFi.AccessPoint.3.WMMCapability=1 WiFi.AccessPoint.5.WMMCapability=1 2. Capture Bea...",
       "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 cap ap sta wet led wme 802.11d 802.11h rm cac mbss8 ampdu ampdu_tx ampdu_rx amsdurx amsdutx rxchain_pwrsave wds dwds vht-prop-rates multi-user-beamformer single-user-beamformer multi-user-beamformee single-user-b...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D099-wmmcapability.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T032521733067/wifi-llapi-D099-wmmcapability.json"
     },
     {
       "case_id": "wifi-llapi-D100-wmmenable",
@@ -20147,51 +20146,6 @@
       "workbook_test_steps_excerpt": "\\\\Enable/Disable UPSD ubus-cli WiFi.AccessPoint.{i}.UAPSDEnable= 1=Enbale 0=Disable",
       "workbook_command_output_excerpt": "cat /tmp/wl0_hapd.conf |grep apsd",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D096-uapsdenable.json"
-    },
-    {
-      "case_id": "wifi-llapi-D099-wmmcapability",
-      "case_file": "D099_wmmcapability.yaml",
-      "dnum": 99,
-      "source_row": 101,
-      "source_object": "WiFi.AccessPoint.{i}.",
-      "source_api": "WMMCapability",
-      "answer_row": 99,
-      "answer_object": "WiFi.AccessPoint.{i}.",
-      "answer_api": "WMMCapability",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "6g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Get GW WMMCapability root@prplOS:/# ubus-cli WiFi.AccessPoint.*.WMMCapability? > WiFi.AccessPoint.*.WMMCapability? WiFi.AccessPoint.1.WMMCapability=1 WiFi.AccessPoint.3.WMMCapability=1 WiFi.AccessPoint.5.WMMCapability=1 2. Capture Bea...",
-      "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 cap ap sta wet led wme 802.11d 802.11h rm cac mbss8 ampdu ampdu_tx ampdu_rx amsdurx amsdutx rxchain_pwrsave wds dwds vht-prop-rates multi-user-beamformer single-user-beamformer multi-user-beamformee single-user-b...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D099-wmmcapability.json"
     },
     {
       "case_id": "wifi-llapi-D101-configmethodsenabled",

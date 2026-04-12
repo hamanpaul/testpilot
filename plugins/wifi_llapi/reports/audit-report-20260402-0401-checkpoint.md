@@ -1,5 +1,63 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-20)
+
+> This checkpoint records the `D099` metadata/results_reference closure after `D098`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D099 WMMCapability` is now aligned via official rerun `20260413T032521733067`
+- active 0403 source still routes `wifi_getApWMMCapability()` through `wldm_AccessPoint_WMMCapability()`
+- that getter probes driver iovar `wme` and returns `TRUE` on successful read
+- no 6G-specific divergence was found in the backing path
+- the authoritative full-run trace had already exact-closed tri-band `WMMCapability=1` and `hostapd wmm_enabled=1`
+- the rerun reproduced the same one-attempt Pass shape on AP1 / AP3 / AP5
+- the only remaining defects were stale workbook row `101`, stale raw `Pass / Fail / Pass`, and an internal COM transport note mismatch
+- committed metadata is now workbook row `99` with `results_reference.v4.0.3 = Pass / Pass / Pass`
+- case notes now keep the DUT transport wording consistent at COM1
+- overlay compare is now `257 / 420 full matches`、`163 mismatches`、`58 metadata drifts`
+- next ready workbook-Pass revisit is `D114`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D099` | 99 | `WMMCapability` | `Pass / Pass / Pass` | `20260413T032521733067_DUT.log L8-L18` | `20260413T032521733067_STA.log (no STA transport used)` |
+
+#### D099 WMMCapability
+
+**STA 指令**
+
+```sh
+# none; AP-only case
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.WMMCapability?"
+grep 'wmm_enabled=' /tmp/wl0_hapd.conf
+ubus-cli "WiFi.AccessPoint.3.WMMCapability?"
+grep 'wmm_enabled=' /tmp/wl1_hapd.conf
+ubus-cli "WiFi.AccessPoint.5.WMMCapability?"
+grep 'wmm_enabled=' /tmp/wl2_hapd.conf
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T032521733067_DUT.log L8-L18
+WMMCapability5g=1
+HapdWmm5g=1
+WMMCapability6g=1
+HapdWmm6g=1
+WMMCapability24g=1
+HapdWmm24g=1
+```
+
 ## Checkpoint summary (2026-04-13 early-19)
 
 > This checkpoint records the `D098` metadata/results_reference closure after `D095`.

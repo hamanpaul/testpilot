@@ -12502,12 +12502,13 @@ def test_d099_wmmcapability_contract():
     """D099 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D099_wmmcapability.yaml")
-    assert case["source"]["row"] == 101
+    assert case["source"]["row"] == 99
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 6
     assert case["bands"] == ["5g", "6g", "2.4g"]
     assert case["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert case["results_reference"]["v4.0.3"]["6g"] == "Pass"
 
 
 def test_d099_wmmcapability_setup_env(monkeypatch):

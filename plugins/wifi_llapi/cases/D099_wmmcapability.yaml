@@ -4,7 +4,7 @@ version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 101
+  row: 99
   object: WiFi.AccessPoint.{i}.
   api: WMMCapability
   baseline: 0310-BGW720-300
@@ -31,7 +31,7 @@ test_environment: 'Topology:
 
   Transport:
 
-  - DUT via serialwrap COM0
+  - DUT via serialwrap COM1
 
   Baseline:
 
@@ -102,6 +102,6 @@ verification_command:
 results_reference:
   v4.0.3:
     5g: Pass
-    6g: Fail
+    6g: Pass
     2.4g: Pass
     comment: 'All 3 bands: WMMCapability=1, hostapd wmm_enabled=1.'

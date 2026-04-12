@@ -118,6 +118,7 @@
   - `D094` returns to the low-risk metadata/results_reference family: the rerun exact-closes tri-band `Status="Enabled"` against direct driver `wl -i wl{0,1,2} bss = up`, so the only remaining defects were stale row `96`, stale raw `Fail / Fail / Fail`, and an internal COM transport note mismatch; refreshing it to workbook row `94`, raw `Pass / Pass / Pass`, and consistent COM1 transport removes the mismatch cleanly
   - `D095` also returns to the low-risk metadata/results_reference family: the rerun exact-closes tri-band read-only `UAPSDCapability=1`, while `HapdUapsd=0` and `DriverWmeApsd=0` simply show the feature is not currently active and do not contradict the capability getter. The only remaining defects were stale row `97`, stale raw `Fail / Fail / Fail`, and an internal COM transport note mismatch; refreshing it to workbook row `95`, raw `Pass / Pass / Pass`, and consistent COM1 transport removes the mismatch cleanly
   - `D098` also returns to the low-risk metadata/results_reference family: the rerun exact-closes tri-band setter round-trip `baseline=0 -> set=1 -> restore=0` against direct driver `dwds 0 -> 1 -> 0`, so the only remaining defects were stale row `100`, stale raw `Fail / Fail / Fail`, and an internal COM transport note mismatch; refreshing it to workbook row `98`, raw `Pass / Pass / Pass`, and consistent COM1 transport removes the mismatch cleanly
+  - `D099` also returns to the low-risk metadata/results_reference family after source review: active 0403 still routes `wifi_getApWMMCapability()` through `wldm_AccessPoint_WMMCapability()`, which probes driver iovar `wme` and returns `TRUE` on successful read, with no 6G-specific branch in the getter path. The rerun exact-closes tri-band `WMMCapability=1` and `hostapd wmm_enabled=1`, so the only remaining defects were stale row `101`, stale raw `Pass / Fail / Pass`, and an internal COM transport note mismatch; refreshing it to workbook row `99`, raw `Pass / Pass / Pass`, and consistent COM1 transport removes the mismatch cleanly
 - Latest investigated non-aligned case:
   - `D079 MACFiltering.Mode` official rerun `20260413T002418591720` no longer hits `step_command_failed`
   - both attempts executed the full AP1 / AP3 / AP5 setter/getter sequence and converged to the same live shape:
@@ -134,9 +135,9 @@
     - the local tri-band rewrite was reverted; blocker authority is now `plugins/wifi_llapi/reports/D035_block.md`
 - Current authoritative full-run source remains `20260412T113008433351`
 - Latest recomputed overlay compare on top of authoritative full run `20260412T113008433351`
-  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 / D028 / D065 / D081 / D094 / D095 / D098 reruns:
-  - `256 / 420 full matches`
-  - `164 mismatches`
+  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 / D028 / D065 / D081 / D094 / D095 / D098 / D099 reruns:
+  - `257 / 420 full matches`
+  - `163 mismatches`
   - `58 metadata drifts`
 - Current focused step-command-failed workstream status:
   - closed in this loop: `D072`、`D047`、`D050`、`D088`、`D460`、`D494`
@@ -144,7 +145,7 @@
   - remaining open set: `none`
   - env-only bucket remains `D328`、`D336`
   - blocked bucket is now `D053` (`needs deterministic AP-to-STA unicast payload`) plus `D035` (`tri-band rewrite blocked by shared 6G OCV / ATTACH recovery loop`)
-- Next ready workbook-Pass revisit: `D099`
+- Next ready workbook-Pass revisit: `D114`
 
 ## Latest repo handoff snapshot（2026-04-11）
 
