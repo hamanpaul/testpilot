@@ -5798,7 +5798,7 @@ def test_pending_security_and_signal_associateddevice_cases_use_supported_contra
 
     assert "aliases" not in d045_raw
     assert d045["id"] == "wifi-llapi-D045-signalstrength-accesspoint-associateddevice"
-    assert d045["source"]["row"] == 47
+    assert d045["source"]["row"] == 45
     assert d045["source"]["baseline"] == "BCM v4.0.3"
     assert d045["bands"] == ["5g"]
     assert d045_links == {"5g"}
@@ -5855,7 +5855,7 @@ def test_pending_security_and_signal_associateddevice_cases_use_supported_contra
     )
     assert d045["results_reference"]["v4.0.3"]["5g"] == "Pass"
     assert d045["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d045["results_reference"]["v4.0.3"]["2.4g"] == "Fail"
+    assert d045["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_pending_security_and_signal_associateddevice_cases_evaluate_live_examples():

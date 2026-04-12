@@ -18,6 +18,7 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T012358700786`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T013010016650`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T013545364055`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T020657288045`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -28,8 +29,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 247 |
-| mismatch cases | 173 |
+| full matches | 248 |
+| mismatch cases | 172 |
 | missing answer rows | 0 |
 | metadata drift rows | 58 |
 
@@ -39,7 +40,7 @@
 | --- | ---: | ---: |
 | 5g | 257 | 163 |
 | 6g | 257 | 163 |
-| 2.4g | 255 | 165 |
+| 2.4g | 256 | 164 |
 
 ## Mismatch table
 
@@ -55,7 +56,6 @@
 | `wifi-llapi-D034-noise-accesspoint-associateddevice` | 34 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d035-assocdev-operatingstandard` | 35 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D042-rxunicastpacketcount` | 42 | exact | Pass / Pass / Pass | Not Supported / Not Supported / Not Supported | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
-| `wifi-llapi-D045-signalstrength-accesspoint-associateddevice` | 45 | exact | Pass / Pass / Fail | Pass / Pass / Pass | Pass / Pass / Fail | Pass / Pass / Pass | 2.4g |
 | `wifi-llapi-D046-signalstrengthbychain` | 46 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D047-supportedhe160mcs` | 47 | exact | Not Supported / N/A / N/A | Pass / Pass / Not Supported | Fail / Fail / Fail | Pass / Pass / Fail | 5g, 6g |
 | `wifi-llapi-D050-supportedvhtmcs` | 50 | exact | Not Supported / N/A / N/A | Pass / Not Supported / Not Supported | Fail / Fail / Fail | Pass / Fail / Fail | 5g |
@@ -412,25 +412,6 @@
 - 0401 G excerpt: 1. Connect WiFi station to GW SSID4, SSID6 and SSID8 2. Run Ping between Station 3. Verify RxUnicastPacketCount root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.RxUnicastPacketCount? > WiFi.AccessPoint.*.AssociatedDevice.*.R...
 - 0401 H excerpt: iw wl0 station dump "wl -i wl0 sta_info ${STA_MAC} root@prplOS:/# wl -i wl0 sta_info 34:19:4d:a4:b5:09 | grep pkts tx total pkts: 121 tx ucast pkts: 121 tx mcast/bcast pkts: 0 rx data pkts: 171 rx ucast pkts: 114 rx mcast/bcast pkts: 57 ...
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D042-rxunicastpacketcount.json`
-
-### wifi-llapi-D045-signalstrength-accesspoint-associateddevice
-
-- case file: `D045_signalstrength_accesspoint_associateddevice.yaml`
-- answer row: `45`
-- mapping status: `exact`
-- source metadata: `WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` / `SignalStrength`
-- workbook metadata: `WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` / `SignalStrength`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Pass` / `Pass` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Pass` / `Pass` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `2.4g`
-- 0401 G excerpt: ##Connect WiFi Station and check Station SignalStrength WiFi.AccessPoint.1.AssociatedDevice.1.SignalStrength=-48 WiFi.AccessPoint.3.AssociatedDevice.1.SignalStrength=-57 WiFi.AccessPoint.5.AssociatedDevice.1.SignalStrength=-48
-- 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} per antenna rssi of last rx data frame: -38 0 0 0 per antenna average rssi of rx data frames: -39 0 0 0 smoothed rssi: -39
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D045-signalstrength-accesspoint-associateddevice.json`
 
 ### wifi-llapi-D046-signalstrengthbychain
 
