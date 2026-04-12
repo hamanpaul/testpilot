@@ -1,7 +1,8 @@
 id: d176-radio-beaconperiod
 name: D176 Radio BeaconPeriod
+hlapi_command: ubus-cli WiFi.Radio.1.BeaconPeriod=1000
 source:
-  row: 139
+  row: 176
   object: WiFi.Radio.{i}.
   api: BeaconPeriod
   baseline: 0310-BGW720-300
@@ -12,44 +13,322 @@ bands:
 llapi_support: Support
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: workbook pass intent is setter-backed 100 -> 1000 -> 100 with hostapd beacon_int readback
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM1
+  links: []
+sta_env_setup: |
+  DUT:
+    ubus-cli WiFi.Radio.1.BeaconPeriod=100
+    ubus-cli WiFi.Radio.2.BeaconPeriod=100
+    ubus-cli WiFi.Radio.3.BeaconPeriod=100
+    sleep 3
 steps:
-- id: step_5g_getter
-  target: dut
+- id: step1_beacon_baseline_getter_5g
+  target: DUT
   action: read
-  capture: getter_5g
+  capture: baseline_getter_5g
   command: ubus-cli "WiFi.Radio.1.BeaconPeriod?"
-  expected: BeaconPeriod 回傳有效值
-  description: Radio.1 (5g) 正整數 beacon period（ms）
-- id: step_6g_getter
-  target: dut
+  expected: 基線 BeaconPeriod 預設值應為 100
+  description: Radio.1 (5g) 先確認 getter 基線為 100。
+- id: step2_beacon_baseline_hostapd_5g
+  target: DUT
+  action: exec
+  capture: baseline_hostapd_5g
+  command: grep '^beacon_int=' /tmp/wl0_hapd.conf | sed -n '1s/^beacon_int=/BaselineHostapdBeaconPeriod5g=/p'
+  expected: hostapd beacon_int 基線值應為 100
+  depends_on: step1_beacon_baseline_getter_5g
+  description: Radio.1 (5g) hostapd config 基線應同步為 100。
+- id: step3_beacon_set_5g
+  target: DUT
+  action: exec
+  capture: set_5g
+  command:
+    - printf 'RequestedBeaconPeriod5g=1000\n'
+    - ubus-cli WiFi.Radio.1.BeaconPeriod=1000
+  expected: setter 應接受 1000
+  depends_on: step2_beacon_baseline_hostapd_5g
+  description: Radio.1 (5g) 將 BeaconPeriod 設為 1000。
+- id: step4_beacon_after_set_getter_5g
+  target: DUT
+  action: exec
+  capture: after_set_getter_5g
+  command: sleep 3; ubus-cli "WiFi.Radio.1.BeaconPeriod?"
+  expected: getter 應回到 1000
+  depends_on: step3_beacon_set_5g
+  description: Radio.1 (5g) setter 後 getter 應回 1000。
+- id: step5_beacon_after_set_hostapd_5g
+  target: DUT
+  action: exec
+  capture: after_set_hostapd_5g
+  command: grep '^beacon_int=' /tmp/wl0_hapd.conf | sed -n '1s/^beacon_int=/AfterSetHostapdBeaconPeriod5g=/p'
+  expected: hostapd beacon_int 應同步為 1000
+  depends_on: step4_beacon_after_set_getter_5g
+  description: Radio.1 (5g) hostapd config 應同步切到 1000。
+- id: step6_beacon_restore_5g
+  target: DUT
+  action: exec
+  capture: restore_5g
+  command:
+    - printf 'RestoreBeaconPeriod5g=100\n'
+    - ubus-cli WiFi.Radio.1.BeaconPeriod=100
+  expected: setter 應接受 restore 100
+  depends_on: step5_beacon_after_set_hostapd_5g
+  description: Radio.1 (5g) 將 BeaconPeriod restore 回 100。
+- id: step7_beacon_after_restore_getter_5g
+  target: DUT
+  action: exec
+  capture: after_restore_getter_5g
+  command: sleep 3; ubus-cli "WiFi.Radio.1.BeaconPeriod?"
+  expected: getter 應回到 100
+  depends_on: step6_beacon_restore_5g
+  description: Radio.1 (5g) restore 後 getter 應回 100。
+- id: step8_beacon_after_restore_hostapd_5g
+  target: DUT
+  action: exec
+  capture: after_restore_hostapd_5g
+  command: grep '^beacon_int=' /tmp/wl0_hapd.conf | sed -n '1s/^beacon_int=/AfterRestoreHostapdBeaconPeriod5g=/p'
+  expected: hostapd beacon_int 應同步回 100
+  depends_on: step7_beacon_after_restore_getter_5g
+  description: Radio.1 (5g) hostapd config 應同步回到 100。
+- id: step9_beacon_baseline_getter_6g
+  target: DUT
   action: read
-  capture: getter_6g
+  capture: baseline_getter_6g
   command: ubus-cli "WiFi.Radio.2.BeaconPeriod?"
-  expected: BeaconPeriod 回傳有效值
-  description: Radio.2 (6g) 正整數 beacon period（ms）
-- id: step_24g_getter
-  target: dut
+  expected: 基線 BeaconPeriod 預設值應為 100
+  description: Radio.2 (6g) 先確認 getter 基線為 100。
+- id: step10_beacon_baseline_hostapd_6g
+  target: DUT
+  action: exec
+  capture: baseline_hostapd_6g
+  command: grep '^beacon_int=' /tmp/wl1_hapd.conf | sed -n '1s/^beacon_int=/BaselineHostapdBeaconPeriod6g=/p'
+  expected: hostapd beacon_int 基線值應為 100
+  depends_on: step9_beacon_baseline_getter_6g
+  description: Radio.2 (6g) hostapd config 基線應同步為 100。
+- id: step11_beacon_set_6g
+  target: DUT
+  action: exec
+  capture: set_6g
+  command:
+    - printf 'RequestedBeaconPeriod6g=1000\n'
+    - ubus-cli WiFi.Radio.2.BeaconPeriod=1000
+  expected: setter 應接受 1000
+  depends_on: step10_beacon_baseline_hostapd_6g
+  description: Radio.2 (6g) 將 BeaconPeriod 設為 1000。
+- id: step12_beacon_after_set_getter_6g
+  target: DUT
+  action: exec
+  capture: after_set_getter_6g
+  command: sleep 3; ubus-cli "WiFi.Radio.2.BeaconPeriod?"
+  expected: getter 應回到 1000
+  depends_on: step11_beacon_set_6g
+  description: Radio.2 (6g) setter 後 getter 應回 1000。
+- id: step13_beacon_after_set_hostapd_6g
+  target: DUT
+  action: exec
+  capture: after_set_hostapd_6g
+  command: grep '^beacon_int=' /tmp/wl1_hapd.conf | sed -n '1s/^beacon_int=/AfterSetHostapdBeaconPeriod6g=/p'
+  expected: hostapd beacon_int 應同步為 1000
+  depends_on: step12_beacon_after_set_getter_6g
+  description: Radio.2 (6g) hostapd config 應同步切到 1000。
+- id: step14_beacon_restore_6g
+  target: DUT
+  action: exec
+  capture: restore_6g
+  command:
+    - printf 'RestoreBeaconPeriod6g=100\n'
+    - ubus-cli WiFi.Radio.2.BeaconPeriod=100
+  expected: setter 應接受 restore 100
+  depends_on: step13_beacon_after_set_hostapd_6g
+  description: Radio.2 (6g) 將 BeaconPeriod restore 回 100。
+- id: step15_beacon_after_restore_getter_6g
+  target: DUT
+  action: exec
+  capture: after_restore_getter_6g
+  command: sleep 3; ubus-cli "WiFi.Radio.2.BeaconPeriod?"
+  expected: getter 應回到 100
+  depends_on: step14_beacon_restore_6g
+  description: Radio.2 (6g) restore 後 getter 應回 100。
+- id: step16_beacon_after_restore_hostapd_6g
+  target: DUT
+  action: exec
+  capture: after_restore_hostapd_6g
+  command: grep '^beacon_int=' /tmp/wl1_hapd.conf | sed -n '1s/^beacon_int=/AfterRestoreHostapdBeaconPeriod6g=/p'
+  expected: hostapd beacon_int 應同步回 100
+  depends_on: step15_beacon_after_restore_getter_6g
+  description: Radio.2 (6g) hostapd config 應同步回到 100。
+- id: step17_beacon_baseline_getter_24g
+  target: DUT
   action: read
-  capture: getter_24g
+  capture: baseline_getter_24g
   command: ubus-cli "WiFi.Radio.3.BeaconPeriod?"
-  expected: BeaconPeriod 回傳有效值
-  description: Radio.3 (2.4g) 正整數 beacon period（ms）
+  expected: 基線 BeaconPeriod 預設值應為 100
+  description: Radio.3 (2.4g) 先確認 getter 基線為 100。
+- id: step18_beacon_baseline_hostapd_24g
+  target: DUT
+  action: exec
+  capture: baseline_hostapd_24g
+  command: grep '^beacon_int=' /tmp/wl2_hapd.conf | sed -n '1s/^beacon_int=/BaselineHostapdBeaconPeriod24g=/p'
+  expected: hostapd beacon_int 基線值應為 100
+  depends_on: step17_beacon_baseline_getter_24g
+  description: Radio.3 (2.4g) hostapd config 基線應同步為 100。
+- id: step19_beacon_set_24g
+  target: DUT
+  action: exec
+  capture: set_24g
+  command:
+    - printf 'RequestedBeaconPeriod24g=1000\n'
+    - ubus-cli WiFi.Radio.3.BeaconPeriod=1000
+  expected: setter 應接受 1000
+  depends_on: step18_beacon_baseline_hostapd_24g
+  description: Radio.3 (2.4g) 將 BeaconPeriod 設為 1000。
+- id: step20_beacon_after_set_getter_24g
+  target: DUT
+  action: exec
+  capture: after_set_getter_24g
+  command: sleep 3; ubus-cli "WiFi.Radio.3.BeaconPeriod?"
+  expected: getter 應回到 1000
+  depends_on: step19_beacon_set_24g
+  description: Radio.3 (2.4g) setter 後 getter 應回 1000。
+- id: step21_beacon_after_set_hostapd_24g
+  target: DUT
+  action: exec
+  capture: after_set_hostapd_24g
+  command: grep '^beacon_int=' /tmp/wl2_hapd.conf | sed -n '1s/^beacon_int=/AfterSetHostapdBeaconPeriod24g=/p'
+  expected: hostapd beacon_int 應同步為 1000
+  depends_on: step20_beacon_after_set_getter_24g
+  description: Radio.3 (2.4g) hostapd config 應同步切到 1000。
+- id: step22_beacon_restore_24g
+  target: DUT
+  action: exec
+  capture: restore_24g
+  command:
+    - printf 'RestoreBeaconPeriod24g=100\n'
+    - ubus-cli WiFi.Radio.3.BeaconPeriod=100
+  expected: setter 應接受 restore 100
+  depends_on: step21_beacon_after_set_hostapd_24g
+  description: Radio.3 (2.4g) 將 BeaconPeriod restore 回 100。
+- id: step23_beacon_after_restore_getter_24g
+  target: DUT
+  action: exec
+  capture: after_restore_getter_24g
+  command: sleep 3; ubus-cli "WiFi.Radio.3.BeaconPeriod?"
+  expected: getter 應回到 100
+  depends_on: step22_beacon_restore_24g
+  description: Radio.3 (2.4g) restore 後 getter 應回 100。
+- id: step24_beacon_after_restore_hostapd_24g
+  target: DUT
+  action: exec
+  capture: after_restore_hostapd_24g
+  command: grep '^beacon_int=' /tmp/wl2_hapd.conf | sed -n '1s/^beacon_int=/AfterRestoreHostapdBeaconPeriod24g=/p'
+  expected: hostapd beacon_int 應同步回 100
+  depends_on: step23_beacon_after_restore_getter_24g
+  description: Radio.3 (2.4g) hostapd config 應同步回到 100。
 pass_criteria:
-- field: getter_5g.BeaconPeriod
-  operator: regex
-  value: ^\d+$
-- field: getter_6g.BeaconPeriod
-  operator: regex
-  value: ^\d+$
-- field: getter_24g.BeaconPeriod
-  operator: regex
-  value: ^\d+$
+- field: baseline_getter_5g.BeaconPeriod
+  operator: equals
+  value: '100'
+- field: baseline_hostapd_5g.BaselineHostapdBeaconPeriod5g
+  operator: equals
+  value: '100'
+- field: baseline_hostapd_5g.BaselineHostapdBeaconPeriod5g
+  operator: equals
+  reference: baseline_getter_5g.BeaconPeriod
+- field: set_5g.RequestedBeaconPeriod5g
+  operator: equals
+  value: '1000'
+- field: after_set_getter_5g.BeaconPeriod
+  operator: equals
+  value: '1000'
+- field: after_set_hostapd_5g.AfterSetHostapdBeaconPeriod5g
+  operator: equals
+  value: '1000'
+- field: after_set_hostapd_5g.AfterSetHostapdBeaconPeriod5g
+  operator: equals
+  reference: after_set_getter_5g.BeaconPeriod
+- field: restore_5g.RestoreBeaconPeriod5g
+  operator: equals
+  value: '100'
+- field: after_restore_getter_5g.BeaconPeriod
+  operator: equals
+  value: '100'
+- field: after_restore_hostapd_5g.AfterRestoreHostapdBeaconPeriod5g
+  operator: equals
+  value: '100'
+- field: after_restore_hostapd_5g.AfterRestoreHostapdBeaconPeriod5g
+  operator: equals
+  reference: after_restore_getter_5g.BeaconPeriod
+- field: baseline_getter_6g.BeaconPeriod
+  operator: equals
+  value: '100'
+- field: baseline_hostapd_6g.BaselineHostapdBeaconPeriod6g
+  operator: equals
+  value: '100'
+- field: baseline_hostapd_6g.BaselineHostapdBeaconPeriod6g
+  operator: equals
+  reference: baseline_getter_6g.BeaconPeriod
+- field: set_6g.RequestedBeaconPeriod6g
+  operator: equals
+  value: '1000'
+- field: after_set_getter_6g.BeaconPeriod
+  operator: equals
+  value: '1000'
+- field: after_set_hostapd_6g.AfterSetHostapdBeaconPeriod6g
+  operator: equals
+  value: '1000'
+- field: after_set_hostapd_6g.AfterSetHostapdBeaconPeriod6g
+  operator: equals
+  reference: after_set_getter_6g.BeaconPeriod
+- field: restore_6g.RestoreBeaconPeriod6g
+  operator: equals
+  value: '100'
+- field: after_restore_getter_6g.BeaconPeriod
+  operator: equals
+  value: '100'
+- field: after_restore_hostapd_6g.AfterRestoreHostapdBeaconPeriod6g
+  operator: equals
+  value: '100'
+- field: after_restore_hostapd_6g.AfterRestoreHostapdBeaconPeriod6g
+  operator: equals
+  reference: after_restore_getter_6g.BeaconPeriod
+- field: baseline_getter_24g.BeaconPeriod
+  operator: equals
+  value: '100'
+- field: baseline_hostapd_24g.BaselineHostapdBeaconPeriod24g
+  operator: equals
+  value: '100'
+- field: baseline_hostapd_24g.BaselineHostapdBeaconPeriod24g
+  operator: equals
+  reference: baseline_getter_24g.BeaconPeriod
+- field: set_24g.RequestedBeaconPeriod24g
+  operator: equals
+  value: '1000'
+- field: after_set_getter_24g.BeaconPeriod
+  operator: equals
+  value: '1000'
+- field: after_set_hostapd_24g.AfterSetHostapdBeaconPeriod24g
+  operator: equals
+  value: '1000'
+- field: after_set_hostapd_24g.AfterSetHostapdBeaconPeriod24g
+  operator: equals
+  reference: after_set_getter_24g.BeaconPeriod
+- field: restore_24g.RestoreBeaconPeriod24g
+  operator: equals
+  value: '100'
+- field: after_restore_getter_24g.BeaconPeriod
+  operator: equals
+  value: '100'
+- field: after_restore_hostapd_24g.AfterRestoreHostapdBeaconPeriod24g
+  operator: equals
+  value: '100'
+- field: after_restore_hostapd_24g.AfterRestoreHostapdBeaconPeriod24g
+  operator: equals
+  reference: after_restore_getter_24g.BeaconPeriod

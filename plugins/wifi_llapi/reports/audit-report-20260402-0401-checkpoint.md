@@ -1,5 +1,117 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-24)
+
+> This checkpoint records the `D176` BeaconPeriod setter/readback closure after `D174`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D176 BeaconPeriod` is now aligned via official rerun `20260413T044907394777`
+- unlike `D174`, this was not a low-risk metadata-only closure: workbook row `176` explicitly expects baseline getter `100`, setter `1000`, and downstream hostapd `beacon_int=1000`
+- active 0403 still exposes `BeaconPeriod` as a writable radio property along the same AP-side stack (`wld_radio.odl` persistent default `100`, writable Device2 DM, HAL getter/setter, and hostapd `beacon_int` emission)
+- the committed rewrite now forces tri-band `BeaconPeriod=100` in setup, then exact-closes northbound getter and `/tmp/wl{0,1,2}_hapd.conf` `beacon_int` across `100 -> 1000 -> 100` on all three radios
+- official rerun `20260413T044907394777` passed in one attempt with no STA transport involvement
+- committed metadata is now workbook row `176` with `results_reference.v4.0.3 = Pass / Pass / Pass`
+- overlay compare is now `261 / 420 full matches`、`159 mismatches`、`58 metadata drifts`
+- next ready non-blocked stale radio setter/getter rewrite is `D188`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D176` | 176 | `BeaconPeriod` | `Pass / Pass / Pass` | `20260413T044907394777_DUT.log L25-L176` | `20260413T044907394777_STA.log (no STA transport used)` |
+
+#### D176 BeaconPeriod
+
+**STA 指令**
+
+```sh
+# none; DUT-only case
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.BeaconPeriod?"
+grep '^beacon_int=' /tmp/wl0_hapd.conf | sed -n '1s/^beacon_int=/BaselineHostapdBeaconPeriod5g=/p'
+ubus-cli WiFi.Radio.1.BeaconPeriod=1000
+sleep 3
+ubus-cli "WiFi.Radio.1.BeaconPeriod?"
+grep '^beacon_int=' /tmp/wl0_hapd.conf | sed -n '1s/^beacon_int=/AfterSetHostapdBeaconPeriod5g=/p'
+ubus-cli WiFi.Radio.1.BeaconPeriod=100
+sleep 3
+ubus-cli "WiFi.Radio.1.BeaconPeriod?"
+grep '^beacon_int=' /tmp/wl0_hapd.conf | sed -n '1s/^beacon_int=/AfterRestoreHostapdBeaconPeriod5g=/p'
+ubus-cli "WiFi.Radio.2.BeaconPeriod?"
+grep '^beacon_int=' /tmp/wl1_hapd.conf | sed -n '1s/^beacon_int=/BaselineHostapdBeaconPeriod6g=/p'
+ubus-cli WiFi.Radio.2.BeaconPeriod=1000
+sleep 3
+ubus-cli "WiFi.Radio.2.BeaconPeriod?"
+grep '^beacon_int=' /tmp/wl1_hapd.conf | sed -n '1s/^beacon_int=/AfterSetHostapdBeaconPeriod6g=/p'
+ubus-cli WiFi.Radio.2.BeaconPeriod=100
+sleep 3
+ubus-cli "WiFi.Radio.2.BeaconPeriod?"
+grep '^beacon_int=' /tmp/wl1_hapd.conf | sed -n '1s/^beacon_int=/AfterRestoreHostapdBeaconPeriod6g=/p'
+ubus-cli "WiFi.Radio.3.BeaconPeriod?"
+grep '^beacon_int=' /tmp/wl2_hapd.conf | sed -n '1s/^beacon_int=/BaselineHostapdBeaconPeriod24g=/p'
+ubus-cli WiFi.Radio.3.BeaconPeriod=1000
+sleep 3
+ubus-cli "WiFi.Radio.3.BeaconPeriod?"
+grep '^beacon_int=' /tmp/wl2_hapd.conf | sed -n '1s/^beacon_int=/AfterSetHostapdBeaconPeriod24g=/p'
+ubus-cli WiFi.Radio.3.BeaconPeriod=100
+sleep 3
+ubus-cli "WiFi.Radio.3.BeaconPeriod?"
+grep '^beacon_int=' /tmp/wl2_hapd.conf | sed -n '1s/^beacon_int=/AfterRestoreHostapdBeaconPeriod24g=/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T044907394777_DUT.log L25-L74
+WiFi.Radio.1.BeaconPeriod=100
+BaselineHostapdBeaconPeriod5g=100
+RequestedBeaconPeriod5g=1000
+WiFi.Radio.1.BeaconPeriod=1000
+AfterSetHostapdBeaconPeriod5g=1000
+RestoreBeaconPeriod5g=100
+WiFi.Radio.1.BeaconPeriod=100
+AfterRestoreHostapdBeaconPeriod5g=100
+
+20260413T044907394777_DUT.log L75-L125
+WiFi.Radio.2.BeaconPeriod=100
+BaselineHostapdBeaconPeriod6g=100
+RequestedBeaconPeriod6g=1000
+WiFi.Radio.2.BeaconPeriod=1000
+AfterSetHostapdBeaconPeriod6g=1000
+RestoreBeaconPeriod6g=100
+WiFi.Radio.2.BeaconPeriod=100
+AfterRestoreHostapdBeaconPeriod6g=100
+
+20260413T044907394777_DUT.log L126-L176
+WiFi.Radio.3.BeaconPeriod=100
+BaselineHostapdBeaconPeriod24g=100
+RequestedBeaconPeriod24g=1000
+WiFi.Radio.3.BeaconPeriod=1000
+AfterSetHostapdBeaconPeriod24g=1000
+RestoreBeaconPeriod24g=100
+WiFi.Radio.3.BeaconPeriod=100
+AfterRestoreHostapdBeaconPeriod24g=100
+
+plugins/wifi_llapi/reports/agent_trace/20260413T044907394777/d176-radio-beaconperiod.json L96-L146
+commands:
+  ubus-cli "WiFi.Radio.1.BeaconPeriod?"
+  ...
+  grep '^beacon_int=' /tmp/wl2_hapd.conf | sed -n '1s/^beacon_int=/AfterRestoreHostapdBeaconPeriod24g=/p'
+outputs:
+  WiFi.Radio.1.BeaconPeriod=100
+  BaselineHostapdBeaconPeriod5g=100
+  ...
+  AfterRestoreHostapdBeaconPeriod24g=100
+```
+
 ## Checkpoint summary (2026-04-13 early-23)
 
 > This checkpoint records the `D174` metadata/results_reference closure after `D115`.

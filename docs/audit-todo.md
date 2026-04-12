@@ -99,6 +99,7 @@
   - `D046 SignalStrengthByChain` is now aligned via official rerun `20260413T021655844208`
   - `D061 UplinkShortGuard` is now aligned via official rerun `20260413T022541033440`
   - `D174 ActiveAntennaCtrl` is now aligned via official rerun `20260413T042647797154`
+  - `D176 BeaconPeriod` is now aligned via official rerun `20260413T044907394777`
   - `D047` / `D050` were pulled back from a drifted custom `TestPilot_BTM` / `WPA3-Personal` path to the authoritative generic `testpilot5G` / `WPA2-Personal` baseline seen in full run `20260412T113008433351`
   - live STA evidence exact-closed the generic WPA2 link (`SSID: testpilot5G`), and DUT evidence exact-closed the same AssociatedDevice entry against `error=4 / message=parameter not found` plus sibling Rx/Tx capability fields and `wl0 sta_info`
   - committed metadata is now workbook row `47` / `50`, with `results_reference.v4.0.3 = Not Supported / N/A / N/A` for both cases
@@ -123,7 +124,9 @@
   - `D114` closes as a source-backed stale-scope rewrite: active 0403 `whm_brcm_ap_mlo_fillAssocDevInfo()` still fills `pAD->AvgSignalStrengthByChain = wld_ad_getAvgSignalStrengthByChain(pAD)`, and the ODL still exposes it as a volatile read-only int32 with no band-specific branch. The old case had been left as a 5G-only `Fail / N/A / N/A` artifact, so the committed rewrite restores tri-band sequential `getStationStats()` coverage and the rerun exact-closes `AvgSignalStrengthByChain=-33` (5G), `-85` (6G), and `-23` (2.4G). verify_env had to absorb transient 6G OCV/hostapd recovery noise, but the case itself still finished `Pass` in one attempt
   - `D115` closes as a source-backed stale-scope rewrite for a live counter: the ODL still exposes `ConnectionDuration` as a volatile read-only uint32, `wlgetStationInfo()` still parses driver `wl sta_info ... in network` into `connectTime`, and `local_wl_util.c` still copies `staInfo.connectTime` into the higher-level station structure with no band-specific branch. The old case had been left as a 5G-only `Fail / N/A / N/A` artifact, so the committed rewrite restores tri-band sequential `getStationStats()` coverage and proves the counter is live by reading it twice per band and cross-checking against driver age. Official rerun `20260413T035856845825` exact-closes `7 -> 10 <= 12` on 5G, `11 -> 14 <= 16` on 6G, and `9 -> 13 <= 15` on 2.4G; verify_env again had to absorb transient 6G OCV and wl0 supplicant recovery noise, but the case still finished `Pass` in one attempt
   - `D174` returns to the low-risk metadata/results_reference family, but with a source-backed explanation for workbook `-1`: active 0403 `wld_radio.odl` still declares `ActiveAntennaCtrl` as persistent int32 default `-1`, `wld.h` still keeps `actAntennaCtrl` / `txChainCtrl` / `rxChainCtrl`, and the vendor fallback path `whm_brcm_rad_antenna_map()` / `whm_brcm_rad_mod_chains()` still uses `actAntennaCtrl` when specific chain controls are unset. So the northbound getter staying at `-1` is the driver-default sentinel rather than a contradiction to downstream `wl txchain` / `wl rxchain` masks. The authoritative full-run trace had already exact-closed tri-band `ActiveAntennaCtrl=-1`, and official rerun `20260413T042647797154` reproduced the same one-attempt Pass shape; the only remaining defects were stale row `138` and stale raw `Fail / Fail / Fail`, so refreshing it to workbook row `174` / raw `Pass / Pass / Pass` removes the mismatch cleanly
+  - `D176` required a source-backed AP-only setter rewrite rather than a metadata-only refresh: workbook row `176` explicitly expects baseline getter `100`, setter `1000`, and hostapd `beacon_int=1000` convergence. The committed rewrite now forces tri-band `BeaconPeriod=100` in setup, then exact-closes northbound `ubus-cli ... BeaconPeriod?` and `/tmp/wl{0,1,2}_hapd.conf` `beacon_int` across `100 -> 1000 -> 100`; official rerun `20260413T044907394777` passed in one attempt, so refreshing stale row `139` / raw `Fail / Fail / Fail` to workbook row `176` / raw `Pass / Pass / Pass` removes the mismatch cleanly
 - Latest investigated non-aligned case:
+  - `D020 FrequencyCapabilities` remains the verified fail-shaped mismatch: workbook still expects `Pass`, but active 0403 runtime evidence remains `AP1/AP5 getter empty` plus `AP3 getter 6GHz`, while driver support still resolves as per-band single-frequency capability rather than workbook tri-band pass semantics
   - `D079 MACFiltering.Mode` official rerun `20260413T002418591720` no longer hits `step_command_failed`
   - both attempts executed the full AP1 / AP3 / AP5 setter/getter sequence and converged to the same live shape:
     - `BaselineMode5g/6g/24g = Off`
@@ -137,11 +140,12 @@
     - the same STA verify-env log nevertheless showed `SSID: testpilot5G` / `wpa_state=COMPLETED`, so this was not a clean metadata-only closure
     - reconnect trial rerun `20260413T015210910141` removed the immediate 5G join failure but then got trapped in repeated 6G `ocv=0` / `ATTACH` recovery (`6G restart attempt=1 unstable`, `env: retry command after recovery_action=ATTACH`, `6G ocv=0 verify failed — BSS loop may persist`)
     - the local tri-band rewrite was reverted; blocker authority is now `plugins/wifi_llapi/reports/D035_block.md`
+  - next ready non-blocked stale radio setter/getter rewrite is now `D188 DTIMPeriod`, which still carries stale workbook row `151` / raw `Fail / Fail / Fail` against workbook row `188` / raw `Pass / Pass / Pass`
 - Current authoritative full-run source remains `20260412T113008433351`
 - Latest recomputed overlay compare on top of authoritative full run `20260412T113008433351`
-  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 / D028 / D065 / D081 / D094 / D095 / D098 / D099 / D114 / D115 / D174 reruns:
-  - `260 / 420 full matches`
-  - `160 mismatches`
+  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 / D028 / D065 / D081 / D094 / D095 / D098 / D099 / D114 / D115 / D174 / D176 reruns:
+  - `261 / 420 full matches`
+  - `159 mismatches`
   - `58 metadata drifts`
 - Current focused step-command-failed workstream status:
   - closed in this loop: `D072`、`D047`、`D050`、`D088`、`D460`、`D494`
@@ -149,7 +153,7 @@
   - remaining open set: `none`
   - env-only bucket remains `D328`、`D336`
   - blocked bucket is now `D053` (`needs deterministic AP-to-STA unicast payload`) plus `D035` (`tri-band rewrite blocked by shared 6G OCV / ATTACH recovery loop`)
-- Next ready workbook-Pass revisit: `D176`
+- Next ready workbook-Pass revisit: `D188`
 
 ## Latest repo handoff snapshot（2026-04-11）
 

@@ -28,7 +28,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T032521733067",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T033856175894",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T035856845825",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T042647797154"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T042647797154",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T044907394777"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -36,20 +37,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 260,
-  "mismatch_case_count": 160,
+  "full_match_count": 261,
+  "mismatch_case_count": 159,
   "band_summary": {
     "5g": {
-      "matched": 266,
-      "mismatched": 154
+      "matched": 267,
+      "mismatched": 153
     },
     "6g": {
-      "matched": 269,
-      "mismatched": 151
+      "matched": 270,
+      "mismatched": 150
     },
     "2.4g": {
-      "matched": 266,
-      "mismatched": 154
+      "matched": 267,
+      "mismatched": 153
     }
   },
   "cases": [
@@ -6299,7 +6300,7 @@
       "case_id": "d176-radio-beaconperiod",
       "case_file": "D176_beaconperiod.yaml",
       "dnum": 176,
-      "source_row": 139,
+      "source_row": 176,
       "source_object": "WiFi.Radio.{i}.",
       "source_api": "BeaconPeriod",
       "answer_row": 176,
@@ -6308,39 +6309,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Get BeaconPeriod default value: root@prplOS:/# ubus-cli WiFi.Radio.*.BeaconPeriod? > WiFi.Radio.*.BeaconPeriod? WiFi.Radio.1.BeaconPeriod=100 WiFi.Radio.2.BeaconPeriod=100 WiFi.Radio.3.BeaconPeriod=100 2. Set BeaconPeriod to 1000: roo...",
       "workbook_command_output_excerpt": "root@prplOS:/# cat /tmp/wl0_hapd.conf |grep beacon_int beacon_int=1000 beacon_int=1000 root@prplOS:/# cat /tmp/wl1_hapd.conf |grep beacon_int beacon_int=1000 beacon_int=1000 root@prplOS:/# cat /tmp/wl2_hapd.conf |grep beacon_int beacon_i...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d176-radio-beaconperiod.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T044907394777/d176-radio-beaconperiod.json"
     },
     {
       "case_id": "d177-radio-channel",
@@ -20460,53 +20457,6 @@
       "workbook_test_steps_excerpt": "1. Connect WiFi Station to GW. 2. Verify connected Station state root@prplOS:/# ubus-cli \"WiFi.AccessPoint.*.getStationStats()\" | grep -E 'Activ e|MAC' Active = 1, MACAddress = \"e6:60:17:eb:a9:86\", Active = 1, MACAddress = \"38:06:e6:92:b...",
       "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 sta_info e6:60:17:eb:a9:86 | grep state state: AUTHENTICATED ASSOCIATED AUTHORIZED root@prplOS:/# wl -i wl1 sta_info 38:06:e6:92:b0:4a | grep state state: AUTHENTICATED ASSOCIATED AUTHORIZED root@prplOS:/# wl -i ...",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D110-getstationstats-active.json"
-    },
-    {
-      "case_id": "d176-radio-beaconperiod",
-      "case_file": "D176_beaconperiod.yaml",
-      "dnum": 176,
-      "source_row": 139,
-      "source_object": "WiFi.Radio.{i}.",
-      "source_api": "BeaconPeriod",
-      "answer_row": 176,
-      "answer_object": "WiFi.Radio.{i}.",
-      "answer_api": "BeaconPeriod",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Get BeaconPeriod default value: root@prplOS:/# ubus-cli WiFi.Radio.*.BeaconPeriod? > WiFi.Radio.*.BeaconPeriod? WiFi.Radio.1.BeaconPeriod=100 WiFi.Radio.2.BeaconPeriod=100 WiFi.Radio.3.BeaconPeriod=100 2. Set BeaconPeriod to 1000: roo...",
-      "workbook_command_output_excerpt": "root@prplOS:/# cat /tmp/wl0_hapd.conf |grep beacon_int beacon_int=1000 beacon_int=1000 root@prplOS:/# cat /tmp/wl1_hapd.conf |grep beacon_int beacon_int=1000 beacon_int=1000 root@prplOS:/# cat /tmp/wl2_hapd.conf |grep beacon_int beacon_i...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d176-radio-beaconperiod.json"
     },
     {
       "case_id": "d178-radio-channelload",

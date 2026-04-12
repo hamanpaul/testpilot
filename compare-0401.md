@@ -31,6 +31,7 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T033856175894`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T035856845825`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T042647797154`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T044907394777`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -41,8 +42,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 260 |
-| mismatch cases | 160 |
+| full matches | 261 |
+| mismatch cases | 159 |
 | missing answer rows | 0 |
 | metadata drift rows | 58 |
 
@@ -50,9 +51,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 266 | 154 |
-| 6g | 269 | 151 |
-| 2.4g | 266 | 154 |
+| 5g | 267 | 153 |
+| 6g | 270 | 150 |
+| 2.4g | 267 | 153 |
 
 ## Mismatch table
 
@@ -95,7 +96,6 @@
 | `wifi-llapi-D108-uuid` | 108 | exact | Pass / Pass / Pass | Pass / Not Supported / Pass | Pass / Pass / Pass | Pass / Fail / Pass | 6g |
 | `wifi-llapi-D109-getstationstats-accesspoint` | 109 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D110-getstationstats-active` | 110 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d176-radio-beaconperiod` | 176 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d178-radio-channelload` | 178 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d179-radio-ampdu` | 179 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d180-radio-amsdu` | 180 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -944,25 +944,6 @@
 - 0401 G excerpt: 1. Connect WiFi Station to GW. 2. Verify connected Station state root@prplOS:/# ubus-cli "WiFi.AccessPoint.*.getStationStats()" | grep -E 'Activ e|MAC' Active = 1, MACAddress = "e6:60:17:eb:a9:86", Active = 1, MACAddress = "38:06:e6:92:b...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 sta_info e6:60:17:eb:a9:86 | grep state state: AUTHENTICATED ASSOCIATED AUTHORIZED root@prplOS:/# wl -i wl1 sta_info 38:06:e6:92:b0:4a | grep state state: AUTHENTICATED ASSOCIATED AUTHORIZED root@prplOS:/# wl -i ...
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D110-getstationstats-active.json`
-
-### d176-radio-beaconperiod
-
-- case file: `D176_beaconperiod.yaml`
-- answer row: `176`
-- mapping status: `exact`
-- source metadata: `WiFi.Radio.{i}.` / `BeaconPeriod`
-- workbook metadata: `WiFi.Radio.{i}.` / `BeaconPeriod`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Get BeaconPeriod default value: root@prplOS:/# ubus-cli WiFi.Radio.*.BeaconPeriod? > WiFi.Radio.*.BeaconPeriod? WiFi.Radio.1.BeaconPeriod=100 WiFi.Radio.2.BeaconPeriod=100 WiFi.Radio.3.BeaconPeriod=100 2. Set BeaconPeriod to 1000: roo...
-- 0401 H excerpt: root@prplOS:/# cat /tmp/wl0_hapd.conf |grep beacon_int beacon_int=1000 beacon_int=1000 root@prplOS:/# cat /tmp/wl1_hapd.conf |grep beacon_int beacon_int=1000 beacon_int=1000 root@prplOS:/# cat /tmp/wl2_hapd.conf |grep beacon_int beacon_i...
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d176-radio-beaconperiod.json`
 
 ### d178-radio-channelload
 

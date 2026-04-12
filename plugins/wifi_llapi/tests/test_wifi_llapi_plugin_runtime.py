@@ -17915,14 +17915,174 @@ def test_verify_sta_band_connectivity_falls_back_to_driver_status(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# D174–D192  WiFi.Radio.{i}  batch — 3-band read-only getters + D183 fail
+# D176 BeaconPeriod — setter + hostapd convergence
+# ---------------------------------------------------------------------------
+
+
+def test_d176_beaconperiod_contract():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+
+    d176_raw = yaml.safe_load((cases_dir / "D176_beaconperiod.yaml").read_text(encoding="utf-8"))
+    d176 = load_case(cases_dir / "D176_beaconperiod.yaml")
+    d176_commands = "\n".join(str(step.get("command", "")) for step in d176["steps"])
+
+    assert "aliases" not in d176_raw
+    assert d176["id"] == "d176-radio-beaconperiod"
+    assert d176["source"]["row"] == 176
+    assert d176["source"]["baseline"] == "0310-BGW720-300"
+    assert d176["hlapi_command"] == "ubus-cli WiFi.Radio.1.BeaconPeriod=1000"
+    assert d176["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d176["topology"]["devices"]) == {"DUT"}
+    assert d176["topology"]["links"] == []
+    assert "ubus-cli WiFi.Radio.1.BeaconPeriod=100" in d176.get("sta_env_setup", "")
+    assert "RequestedBeaconPeriod24g=1000" in d176_commands
+    assert "grep '^beacon_int=' /tmp/wl1_hapd.conf" in d176_commands
+    assert len(d176["steps"]) == 24
+    assert len(d176["pass_criteria"]) == 33
+    assert any(
+        criterion["field"] == "after_set_hostapd_6g.AfterSetHostapdBeaconPeriod6g"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "after_set_getter_6g.BeaconPeriod"
+        for criterion in d176["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "after_restore_hostapd_24g.AfterRestoreHostapdBeaconPeriod24g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "100"
+        for criterion in d176["pass_criteria"]
+    )
+    assert d176["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d176["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d176["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+
+
+def test_d176_beaconperiod_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    d176 = load_case(cases_dir / "D176_beaconperiod.yaml")
+
+    assert plugin.setup_env(d176, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    executed_commands = recorder.transports[0].executed_commands
+    assert executed_commands.count("ubus-cli WiFi.Radio.1.BeaconPeriod=100") == 1
+    assert executed_commands.count("ubus-cli WiFi.Radio.2.BeaconPeriod=100") == 1
+    assert executed_commands.count("ubus-cli WiFi.Radio.3.BeaconPeriod=100") == 1
+    assert executed_commands.count("sleep 3") == 1
+    assert all("STA" not in command for command in executed_commands)
+    plugin.teardown(d176, topology)
+
+
+def test_d176_beaconperiod_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    d176 = load_case(cases_dir / "D176_beaconperiod.yaml")
+
+    def getter_output(radio: int, value: str) -> str:
+        return f"WiFi.Radio.{radio}.BeaconPeriod={value}"
+
+    def hostapd_output(field: str, value: str) -> str:
+        return f"{field}={value}"
+
+    def set_output(prefix: str) -> str:
+        return f"RequestedBeaconPeriod{prefix}=1000"
+
+    def restore_output(prefix: str) -> str:
+        return f"RestoreBeaconPeriod{prefix}=100"
+
+    steps = {}
+    for base_idx, prefix, radio in ((1, "5g", 1), (9, "6g", 2), (17, "24g", 3)):
+        steps[f"step{base_idx}_beacon_baseline_getter_{prefix}"] = {
+            "success": True,
+            "output": getter_output(radio, "100"),
+            "timing": 0.01,
+        }
+        steps[f"step{base_idx + 1}_beacon_baseline_hostapd_{prefix}"] = {
+            "success": True,
+            "output": hostapd_output(f"BaselineHostapdBeaconPeriod{prefix}", "100"),
+            "timing": 0.01,
+        }
+        steps[f"step{base_idx + 2}_beacon_set_{prefix}"] = {
+            "success": True,
+            "output": set_output(prefix),
+            "timing": 0.01,
+        }
+        steps[f"step{base_idx + 3}_beacon_after_set_getter_{prefix}"] = {
+            "success": True,
+            "output": getter_output(radio, "1000"),
+            "timing": 0.01,
+        }
+        steps[f"step{base_idx + 4}_beacon_after_set_hostapd_{prefix}"] = {
+            "success": True,
+            "output": hostapd_output(f"AfterSetHostapdBeaconPeriod{prefix}", "1000"),
+            "timing": 0.01,
+        }
+        steps[f"step{base_idx + 5}_beacon_restore_{prefix}"] = {
+            "success": True,
+            "output": restore_output(prefix),
+            "timing": 0.01,
+        }
+        steps[f"step{base_idx + 6}_beacon_after_restore_getter_{prefix}"] = {
+            "success": True,
+            "output": getter_output(radio, "100"),
+            "timing": 0.01,
+        }
+        steps[f"step{base_idx + 7}_beacon_after_restore_hostapd_{prefix}"] = {
+            "success": True,
+            "output": hostapd_output(f"AfterRestoreHostapdBeaconPeriod{prefix}", "100"),
+            "timing": 0.01,
+        }
+
+    d176_results = {"steps": steps}
+    assert plugin.evaluate(d176, d176_results) is True
+
+    d176_wrong_6g_hostapd_after_set = {
+        "steps": {
+            **d176_results["steps"],
+            "step13_beacon_after_set_hostapd_6g": {
+                "success": True,
+                "output": hostapd_output("AfterSetHostapdBeaconPeriod6g", "100"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d176, d176_wrong_6g_hostapd_after_set) is False
+
+    d176_wrong_5g_getter_after_set = {
+        "steps": {
+            **d176_results["steps"],
+            "step4_beacon_after_set_getter_5g": {
+                "success": True,
+                "output": getter_output(1, "100"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d176, d176_wrong_5g_getter_after_set) is False
+
+    d176_wrong_24g_hostapd_restore = {
+        "steps": {
+            **d176_results["steps"],
+            "step24_beacon_after_restore_hostapd_24g": {
+                "success": True,
+                "output": hostapd_output("AfterRestoreHostapdBeaconPeriod24g", "1000"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d176, d176_wrong_24g_hostapd_restore) is False
+
+
+# D174, D177–D192  WiFi.Radio.{i}  batch — 3-band read-only getters + D183 fail
 # ---------------------------------------------------------------------------
 
 # Parametrized table: (yaml_file, row, live_5g, live_6g, live_24g, llapi_path_template)
 # llapi_path_template uses {r} for radio number (1=5g, 2=6g, 3=2.4g)
 _RADIO_GETTER_CASES = [
     ("D174_activeantennactrl.yaml", 174, "-1", "-1", "-1", "WiFi.Radio.{r}.ActiveAntennaCtrl"),
-    ("D176_beaconperiod.yaml", 139, "100", "100", "100", "WiFi.Radio.{r}.BeaconPeriod"),
     ("D474_channel_radio_37.yaml", 179, "36", "1", "1", "WiFi.Radio.{r}.Channel"),
     ("D178_channelload.yaml", 141, "83", "61", "100", "WiFi.Radio.{r}.ChannelLoad"),
     ("D179_ampdu.yaml", 142, "-1", "-1", "-1", "WiFi.Radio.{r}.DriverConfig.Ampdu"),
