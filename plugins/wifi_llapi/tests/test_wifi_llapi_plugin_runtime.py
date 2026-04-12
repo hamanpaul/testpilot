@@ -9196,7 +9196,7 @@ def test_d071_ftoverdsenable_accesspoint_contract():
     assert "aliases" not in d071_raw
     assert d071["id"] == "wifi-llapi-D071-ftoverdsenable-accesspoint"
     assert d071["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d071["source"]["row"] == 73
+    assert d071["source"]["row"] == 71
     assert d071["source"]["baseline"] == "BCM v4.0.3"
     assert d071["llapi_support"] == "Support"
     assert d071["implemented_by"] == "pWHM"
@@ -9205,8 +9205,8 @@ def test_d071_ftoverdsenable_accesspoint_contract():
     assert d071["topology"]["links"] == []
     assert d071["hlapi_command"] == "ubus-cli WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable=1"
     assert "ubus-cli WiFi.AccessPoint.1.Enable=1" in d071.get("sta_env_setup", "")
-    assert "ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=1" in d071.get("sta_env_setup", "")
-    assert "ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=4660" in d071.get("sta_env_setup", "")
+    assert "ubus-cli WiFi.AccessPoint.3.Enable=1" in d071.get("sta_env_setup", "")
+    assert "ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=4660" not in d071.get("sta_env_setup", "")
     assert "MobilityDomainCfg6g=" in d071_commands
     assert "FtOverDs24gTotalCount=" in d071_commands
     assert any(
@@ -9221,9 +9221,9 @@ def test_d071_ftoverdsenable_accesspoint_contract():
         and criterion["value"] == "0"
         for criterion in d071["pass_criteria"]
     )
-    assert d071["results_reference"]["v4.0.3"]["5g"] == "To be tested"
-    assert d071["results_reference"]["v4.0.3"]["6g"] == "To be tested"
-    assert d071["results_reference"]["v4.0.3"]["2.4g"] == "To be tested"
+    assert d071["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d071["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d071["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d071_ftoverdsenable_accesspoint_setup_env_uses_only_dut_transport(monkeypatch):
@@ -9241,12 +9241,6 @@ def test_d071_ftoverdsenable_accesspoint_setup_env_uses_only_dut_transport(monke
     assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.Enable=1") == 1
     assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.Enable=1") == 1
     assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.Enable=1") == 1
-    assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=1") == 1
-    assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=1") == 1
-    assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.IEEE80211r.Enabled=1") == 1
-    assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=4660") == 1
-    assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=4660") == 1
-    assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=4660") == 1
     assert executed_commands.count("wl -i wl0 bss") == 1
     assert executed_commands.count("wl -i wl1 bss") == 1
     assert executed_commands.count("wl -i wl2 bss") == 1

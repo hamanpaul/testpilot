@@ -1,5 +1,138 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-32)
+
+> This checkpoint records the `D071` FTOverDSEnable row/setup/reference closure after `D070`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D071 FTOverDSEnable` is now aligned via official rerun `20260413T064002607672`
+- the case still carried stale workbook row `73`, pre-applied `IEEE80211r.Enabled` / `MobilityDomain` writes in `sta_env_setup`, and stale `results_reference.v4.0.3 = To be tested / To be tested / To be tested`
+- that stale setup order made `setup_env` sample `wl -i wl0/wl1 bss` during transient 11r hostapd restart/down (`wl0 bss = down`, then `wl1 bss = down`) instead of the workbook row `71` execution order
+- the committed rewrite refreshes stale row `73` back to workbook row `71`, keeps `sta_env_setup` limited to AP baseline bring-up, and marks `results_reference.v4.0.3 = Pass / Pass / Pass`
+- official rerun `20260413T064002607672` then exact-closed tri-band `Enabled=1`, `FTOverDSEnable=0 -> 1 -> 0`, `MobilityDomain=4660`, hostapd `mobility_domain=3412`, and `ft_over_ds` one-count / zero-count transitions on AP1 / AP3 / AP5
+- overlay compare is now `269 / 420 full matches`、`151 mismatches`、`58 metadata drifts`
+- next ready actionable open case is `D079`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D071` | 71 | `FTOverDSEnable` | `Pass / Pass / Pass` | `20260413T064002607672_DUT.log L32-L556` | `n/a (AP-only)` |
+
+#### D071 FTOverDSEnable
+
+**STA 指令**
+
+```sh
+# AP-only case; no STA transport
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=1
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=4660
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable=1
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable=0
+
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=1
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=4660
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable=1
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable=0
+
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.Enabled=1
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=4660
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable=1
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable=0
+
+grep -m1 '^mobility_domain=' /tmp/wl0_hapd.conf
+grep -m1 '^mobility_domain=' /tmp/wl1_hapd.conf
+grep -m1 '^mobility_domain=' /tmp/wl2_hapd.conf
+grep -c '^ft_over_ds=1$' /tmp/wl0_hapd.conf
+grep -c '^ft_over_ds=1$' /tmp/wl1_hapd.conf
+grep -c '^ft_over_ds=1$' /tmp/wl2_hapd.conf
+grep -c '^ft_over_ds=0$' /tmp/wl0_hapd.conf
+grep -c '^ft_over_ds=0$' /tmp/wl1_hapd.conf
+grep -c '^ft_over_ds=0$' /tmp/wl2_hapd.conf
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T064002607672_DUT.log L18-L26
+up
+up
+up
+
+20260413T064002607672_DUT.log L47-L81
+Enabled5g=1
+FtOverDs5g=0
+MobilityDomain5g=4660
+MobilityDomainCfg5g=3412
+FtOverDs5gOneCount=0
+FtOverDs5gZeroCount=1
+FtOverDs5gTotalCount=1
+
+20260413T064002607672_DUT.log L91-L171
+FtOverDs5g=1
+FtOverDs5gOneCount=1
+FtOverDs5gZeroCount=0
+FtOverDs5gTotalCount=1
+FtOverDs5g=0
+FtOverDs5gOneCount=0
+FtOverDs5gZeroCount=1
+FtOverDs5gTotalCount=1
+
+20260413T064002607672_DUT.log L231-L310
+Enabled6g=1
+FtOverDs6g=1
+MobilityDomain6g=4660
+MobilityDomainCfg6g=3412
+FtOverDs6gOneCount=1
+FtOverDs6gZeroCount=0
+FtOverDs6gTotalCount=1
+FtOverDs6g=0
+FtOverDs6gOneCount=0
+FtOverDs6gZeroCount=1
+FtOverDs6gTotalCount=1
+
+20260413T064002607672_DUT.log L371-L451
+Enabled24g=1
+FtOverDs24g=1
+MobilityDomain24g=4660
+MobilityDomainCfg24g=3412
+FtOverDs24gOneCount=1
+FtOverDs24gZeroCount=0
+FtOverDs24gTotalCount=1
+FtOverDs24g=0
+FtOverDs24gOneCount=0
+FtOverDs24gZeroCount=1
+FtOverDs24gTotalCount=1
+
+plugins/wifi_llapi/reports/agent_trace/20260413T064002607672/wifi-llapi-D071-ftoverdsenable-accesspoint.json L135-L170
+outputs:
+  Enabled5g=1
+  FtOverDs5g=1
+  FtOverDs5g=0
+  Enabled6g=1
+  FtOverDs6g=1
+  FtOverDs6g=0
+  Enabled24g=1
+  FtOverDs24g=1
+  FtOverDs24g=0
+```
+
 ## Checkpoint summary (2026-04-13 early-31)
 
 > This checkpoint records the `D070` Enable row/oracle closure after `D063`.
