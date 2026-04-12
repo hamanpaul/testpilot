@@ -3,19 +3,20 @@
 ## Inputs
 
 - trace dirs (overlay order; later directories override earlier case results):
-  - `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351`
-  - `plugins/wifi_llapi/reports/agent_trace/20260412T172957084134`
-  - `plugins/wifi_llapi/reports/agent_trace/20260412T174551843336`
-  - `plugins/wifi_llapi/reports/agent_trace/20260412T175538121906`
-  - `plugins/wifi_llapi/reports/agent_trace/20260412T231709014359`
-  - `plugins/wifi_llapi/reports/agent_trace/20260412T235952361188`
-  - `plugins/wifi_llapi/reports/agent_trace/20260413T000249620932`
-  - `plugins/wifi_llapi/reports/agent_trace/20260413T003340845889`
-  - `plugins/wifi_llapi/reports/agent_trace/20260413T005520941756`
-  - `plugins/wifi_llapi/reports/agent_trace/20260413T005633950804`
-  - `plugins/wifi_llapi/reports/agent_trace/20260413T010944709855`
-- answer sheet: `0401.xlsx`
-- cases dir: `plugins/wifi_llapi/cases`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T172957084134`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T174551843336`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T175538121906`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T231709014359`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T235952361188`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T000249620932`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T003340845889`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T005520941756`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T005633950804`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T010944709855`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T011655056430`
+- answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
+- cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
 - row mapping rule: use case `D###` number to match `0401.xlsx` worksheet row `###`.
 
@@ -24,18 +25,18 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 243 |
-| mismatch cases | 177 |
+| full matches | 244 |
+| mismatch cases | 176 |
 | missing answer rows | 0 |
-| metadata drift rows | 61 |
+| metadata drift rows | 60 |
 
 ## Per-band summary
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 253 | 167 |
-| 6g | 253 | 167 |
-| 2.4g | 251 | 169 |
+| 5g | 254 | 166 |
+| 6g | 254 | 166 |
+| 2.4g | 252 | 168 |
 
 ## Mismatch table
 
@@ -174,7 +175,6 @@
 | `d438-security-transitiondisable` | 438 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d454-getradiostats-failedretranscount` | 454 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d455-getradiostats-multipleretrycount` | 455 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d462-radio-bsscolor` | 462 | drift | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d463-radio-hesigaspatialreusevalue15allowed` | 463 | drift | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d465-radio-srginformationvalid` | 465 | drift | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d467-radio-rxbeamformingcapsenabled` | 467 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -238,7 +238,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: ##Connect WiFi Station and check Station ChargeableUserId WiFi.AccessPoint.1.AssociatedDevice.1.ChargeableUserId="" WiFi.AccessPoint.3.AssociatedDevice.1.ChargeableUserId="" WiFi.AccessPoint.5.AssociatedDevice.1.ChargeableUserId=""
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC}
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d014-assocdev-chargeableuserid.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d014-assocdev-chargeableuserid.json`
 
 ### wifi-llapi-D019-encryptionmode-accesspoint-associateddevice
 
@@ -257,7 +257,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi Station to GW. 2. Verify Associated Station EncryptionMode: WiFi.AccessPoint.1.AssociatedDevice.1.ProbeReqCaps.EncryptionMode="Default" WiFi.AccessPoint.3.AssociatedDevice.1.ProbeReqCaps.EncryptionMode="Default" WiFi.Acce...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} auth: WPA3-SAE-PSK crypto: AES_CCM
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D019-encryptionmode-accesspoint-associateddevice.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D019-encryptionmode-accesspoint-associateddevice.json`
 
 ### wifi-llapi-D020-frequencycapabilities
 
@@ -277,7 +277,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi Station to GW. 2. Verify Associated Station FrequencyCapabilities: root@prplOS:~# ubus-cli WiFi.? | grep FrequencyCapabilities= WiFi.AccessPoint.1.AssociatedDevice.1.FrequencyCapabilities="2.4GHz,5GHz,6GHz" WiFi.AccessPoi...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} Frequency Bands Supported: 2.4G 5G 6G
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D020-frequencycapabilities.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D020-frequencycapabilities.json`
 
 ### wifi-llapi-D028-maxbandwidthsupported
 
@@ -296,7 +296,7 @@
 - mismatch bands: `6g`
 - 0401 G excerpt: ##Connect WiFi Station and check Station MaxBandwidthSupported WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported="160MHz" WiFi.AccessPoint.3.AssociatedDevice.1.MaxBandwidthSupported="Unknown" WiFi.AccessPoint.5.AssociatedDevice...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} VHT SET : 0x1 1x1 2x1 3x1 4x1 5x1 6x1 7x1 8x1 9x1 : 0x2 1x2 2x2 3x2 4x2 5x2 6x2 7x2 8x2 9x2 HE SET : 20/40/80 MHz: NSS1 Tx: 0-11 Rx: 0-11 NSS2 Tx: 0-11 Rx: --- EHT SET : 20/40/80 MHz: VHT (Wi-Fi 5) → channel...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D028-maxbandwidthsupported.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D028-maxbandwidthsupported.json`
 
 ### wifi-llapi-D030-mugroupid
 
@@ -315,7 +315,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: \\Connect two WiFi Station to the Radio \\Check Capabilities to make sure it support root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep HeCapabil ities WiFi.AccessPoint.1.AssociatedDevice.1.HeCapabilities=""SU&MU-BFE"...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC}
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D030-mugroupid.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D030-mugroupid.json`
 
 ### wifi-llapi-D032-mumimotxpktspercentage
 
@@ -334,7 +334,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: Reference from Test case number 206 "ubus-cli WiFi.Radio.{i}.MultiUserMIMOEnabled=1" root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.MUMimoTxPktsPercen tage? WiFi.AccessPoint.1.AssociatedDevice.1.MUMimoTxPktsPercentage=0 Wi...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC}
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D032-mumimotxpktspercentage.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D032-mumimotxpktspercentage.json`
 
 ### wifi-llapi-D033-muuserpositionid
 
@@ -353,7 +353,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: \\Connect WiFi Station \\Run IPERF3 between Station's and GW at the same time \\Get station caps root@prplOS:/# wl -i wl0 sta_info 34:19:4d:a4:b5:09 | grep 'caps' HT caps 0x9ef: LDPC 40MHz SGI20 SGI40 STBC-Tx STBC-Rx VHT caps 0xff: LDPC ...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC}
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D033-muuserpositionid.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D033-muuserpositionid.json`
 
 ### wifi-llapi-D034-noise-accesspoint-associateddevice
 
@@ -373,7 +373,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi Station to GW 2. Get the Noise by ubus command and record the result for reference root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.Noise? > WiFi.AccessPoint.*.AssociatedDevice.*.Noise? WiFi.AccessPoint.1.Ass...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} root@prplOS:/# wl -i wl0 sta_info 34:19:4d:a4:b5:09 | grep noise per antenna noise floor: -85 -87 -86 -86 root@prplOS:/# wl -i wl1 sta_info 38:06:E6:92:B0:4A | grep noise per antenna noise floor: -87 -87 -87...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D034-noise-accesspoint-associateddevice.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D034-noise-accesspoint-associateddevice.json`
 
 ### d035-assocdev-operatingstandard
 
@@ -392,7 +392,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: ##Connect WiFi Station and check Station OperatingStandard ubus-cli WiFi.AccessPoint.? | grep \.OperatingStandard= WiFi.AccessPoint.1.AssociatedDevice.{i}.OperatingStandard="a" WiFi.AccessPoint.2.AssociatedDevice.{i}.OperatingStandard="U...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC}
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d035-assocdev-operatingstandard.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d035-assocdev-operatingstandard.json`
 
 ### wifi-llapi-D042-rxunicastpacketcount
 
@@ -411,7 +411,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi station to GW SSID4, SSID6 and SSID8 2. Run Ping between Station 3. Verify RxUnicastPacketCount root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.RxUnicastPacketCount? > WiFi.AccessPoint.*.AssociatedDevice.*.R...
 - 0401 H excerpt: iw wl0 station dump "wl -i wl0 sta_info ${STA_MAC} root@prplOS:/# wl -i wl0 sta_info 34:19:4d:a4:b5:09 | grep pkts tx total pkts: 121 tx ucast pkts: 121 tx mcast/bcast pkts: 0 rx data pkts: 171 rx ucast pkts: 114 rx mcast/bcast pkts: 57 ...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D042-rxunicastpacketcount.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D042-rxunicastpacketcount.json`
 
 ### wifi-llapi-D045-signalstrength-accesspoint-associateddevice
 
@@ -430,7 +430,7 @@
 - mismatch bands: `2.4g`
 - 0401 G excerpt: ##Connect WiFi Station and check Station SignalStrength WiFi.AccessPoint.1.AssociatedDevice.1.SignalStrength=-48 WiFi.AccessPoint.3.AssociatedDevice.1.SignalStrength=-57 WiFi.AccessPoint.5.AssociatedDevice.1.SignalStrength=-48
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} per antenna rssi of last rx data frame: -38 0 0 0 per antenna average rssi of rx data frames: -39 0 0 0 smoothed rssi: -39
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D045-signalstrength-accesspoint-associateddevice.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D045-signalstrength-accesspoint-associateddevice.json`
 
 ### wifi-llapi-D046-signalstrengthbychain
 
@@ -450,7 +450,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect 4x4 WiFi Station to GW 2. Get SignalStrengthByChain via ubus-command root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.SignalStrengthByChain? > WiFi.AccessPoint.*.AssociatedDevice.*.SignalStrengthByChain? WiFi.Acce...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} root@prplOS:/# wl -i wl0 sta_info 34:19:4D:A4:B5:09 | grep antenna per antenna rssi of last rx data frame: -42 -39 -36 -41 per antenna average rssi of rx data frames: -43 -39 -36 -41 per antenna noise floor:...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D046-signalstrengthbychain.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D046-signalstrengthbychain.json`
 
 ### wifi-llapi-D047-supportedhe160mcs
 
@@ -469,7 +469,7 @@
 - mismatch bands: `5g, 6g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T235952361188/wifi-llapi-D047-supportedhe160mcs.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T235952361188/wifi-llapi-D047-supportedhe160mcs.json`
 
 ### wifi-llapi-D050-supportedvhtmcs
 
@@ -488,7 +488,7 @@
 - mismatch bands: `5g`
 - 0401 G excerpt: it is the same as RxSupportedVhtMCS and TxSupportedVhtMCS as shown below? root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep Supported VhtMCS WiFi.AccessPoint.1.AssociatedDevice.1.RxSupportedVhtMCS="9,9,9,9" WiFi.Acce...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 sta_info 34:19:4d:a4:b5:09 [VER 8] STA 34:19:4D:A4:B5:09: VHT caps 0xfb: LDPC SGI80 STBC-Tx STBC-Rx SU-BFR SU-BFE MU-BFR MCS SET : [ 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260413T000249620932/wifi-llapi-D050-supportedvhtmcs.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T000249620932/wifi-llapi-D050-supportedvhtmcs.json`
 
 ### d053-blocked-txbytes
 
@@ -508,7 +508,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi station to GW SSID4, SSID6 and SSID8 2. Run IPERF between Stations 3. Verify TxBytes WiFi.AccessPoint.1.AssociatedDevice.1.TxBytes=640514 WiFi.AccessPoint.3.AssociatedDevice.1.TxBytes=11728 WiFi.AccessPoint.5.AssociatedDe...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} tx total bytes: 12792 tx ucast bytes: 12792 tx mcast/bcast bytes: 0
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d053-blocked-txbytes.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d053-blocked-txbytes.json`
 
 ### wifi-llapi-D057-txunicastpacketcount
 
@@ -527,7 +527,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: ##Connect WiFi Station and send traffic then check TxUnicastPacketCount WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.3.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.5.AssociatedDevice.1.TxUni...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} TxUnicastPacketCount tx ucast pkts 90
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D057-txunicastpacketcount.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D057-txunicastpacketcount.json`
 
 ### wifi-llapi-D059-uplinkbandwidth
 
@@ -547,7 +547,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: ##Connect WiFi Station and check Station UplinkBandwidth WiFi.AccessPoint.1.AssociatedDevice.1.UplinkBandwidth=20 WiFi.AccessPoint.3.AssociatedDevice.1.UplinkBandwidth=20 WiFi.AccessPoint.5.AssociatedDevice.1.UplinkBandwidth=20
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} link bandwidth = 20 MHZ tx nrate eht mcs 7 Nss 2 Tx Exp 2 bw20 ldpc 2xLTF GI 1.6us auto rx nrate eht mcs 4 Nss 1 Tx Exp 0 bw20 ldpc 2xLTF GI 0.8us auto tx nrate = last packet transmitted to the STA (downlink...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D059-uplinkbandwidth.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D059-uplinkbandwidth.json`
 
 ### wifi-llapi-D060-uplinkmcs
 
@@ -567,7 +567,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: ##Connect WiFi Station and check Station UplinkMCS WiFi.AccessPoint.1.AssociatedDevice.1.UplinkMCS=0 WiFi.AccessPoint.3.AssociatedDevice.1.UplinkMCS=0 WiFi.AccessPoint.5.AssociatedDevice.1.UplinkMCS=0
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} rx nrate eht mcs 4 Nss 1 Tx Exp 0 bw20 ldpc 2xLTF GI 0.8us auto rx nrate = last packet received from the STA (uplink) eht mcs 4 → UplinkMCS = 4 Nss 1 → 1 spatial stream used for uplink bw20 → uplink channel ...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D060-uplinkmcs.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D060-uplinkmcs.json`
 
 ### wifi-llapi-D061-uplinkshortguard
 
@@ -586,7 +586,7 @@
 - mismatch bands: `6g, 2.4g`
 - 0401 G excerpt: ##Connect WiFi Station and check Station UplinkShortGuard WiFi.AccessPoint.1.AssociatedDevice.1.UplinkShortGuard=0 WiFi.AccessPoint.3.AssociatedDevice.1.UplinkShortGuard=0 WiFi.AccessPoint.5.AssociatedDevice.1.UplinkShortGuard=0
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} rx nrate eht mcs 4 Nss 1 Tx Exp 0 bw20 ldpc 2xLTF GI 0.8us auto rx nrate = last packet received from the STA (uplink) GI 0.8us → short guard interval So UplinkShortGuard = true / yes
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D061-uplinkshortguard.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D061-uplinkshortguard.json`
 
 ### wifi-llapi-D062-vendoroui
 
@@ -606,7 +606,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: ##Connect WiFi Station and check Station and check VendorOUI WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI="00:90:4C,00:10:18,00:50:F2" WiFi.AccessPoint.3.AssociatedDevice.1.VendorOUI="00:10:18,00:50:F2" WiFi.AccessPoint.5.AssociatedDe...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} VENDOR OUI VALUE[0] 00:90:4C VENDOR OUI VALUE[1] 00:10:18 VENDOR OUI VALUE[2] 00:50:F2
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D062-vendoroui.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D062-vendoroui.json`
 
 ### wifi-llapi-D063-vhtcapabilities-accesspoint-associateddevice
 
@@ -626,7 +626,7 @@
 - mismatch bands: `5g`
 - 0401 G excerpt: root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep VhtCapabilities WiFi.AccessPoint.1.AssociatedDevice.1.VhtCapabilities="SGI80,SGI160,SU-BFR,SU-BFE,MU-BFR,MU-BFE"
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D063-vhtcapabilities-accesspoint-associateddevice.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D063-vhtcapabilities-accesspoint-associateddevice.json`
 
 ### wifi-llapi-D065-bridgeinterface
 
@@ -645,7 +645,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep BridgeInterface WiFi.AccessPoint.1.BridgeInterface="br-lan" WiFi.AccessPoint.3.BridgeInterface="br-lan" WiFi.AccessPoint.5.BridgeInterface="br-lan"
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep bridge root@prplOS:/# brctl show bridge name bridge id STP enabled interfaces br-lcm 8000.6c15db74c0b3 no br-lan 8000.6c15db74c0b1 no wl0.1 eth3 wl1 eth1 wl2.1 wl2 eth2 wl0 wl1.1 br-guest 8000.6c15db74c0b2 no
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D065-bridgeinterface.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D065-bridgeinterface.json`
 
 ### wifi-llapi-D070-enable-accesspoint
 
@@ -665,7 +665,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: WiFi.AccessPoint.1.Enable=1 WiFi.AccessPoint.3.Enable=1 WiFi.AccessPoint.5.Enable=1
 - 0401 H excerpt: root@prplOS:/# wl -e bss --- wl0 5G up --- wl0.1 5G up --- wl1 6G up --- wl1.1 6G up --- wl2 2G up --- wl2.1 2G up
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D070-enable-accesspoint.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D070-enable-accesspoint.json`
 
 ### wifi-llapi-D071-ftoverdsenable-accesspoint
 
@@ -685,7 +685,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Set IEEE80211r.Enabled=1 ubus-cli WiFi.AccessPoint.*.IEEE80211r.Enabled=1 2. set FTOverDSEnable=1 root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep .IEEE80211r.FTOverDSEnable=1 WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable=1 WiFi.Acces...
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep ft_over_ds Beacon Packet should include: Mobility Domain Mobility Domain ID: xxxx FT Capability and Policy: 0x0? (bitmask) 0000 .... = FT-over-DS: 0 (not supported) .... 000. = FT-over-Air: 1 (supported) Key ...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D071-ftoverdsenable-accesspoint.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D071-ftoverdsenable-accesspoint.json`
 
 ### wifi-llapi-D079-mode-accesspoint-macfiltering
 
@@ -705,7 +705,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep .MACFiltering.Mode= WiFi.AccessPoint.1.MACFiltering.Mode="WhiteList" WiFi.AccessPoint.2.MACFiltering.Mode="Off" WiFi.AccessPoint.3.MACFiltering.Mode="BlackList" WiFi.AccessPoint.4.MACFilt...
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf accept_mac_file=/tmp/hostap_wl0.acl or deny_mac_file=/tmp/hostap_wl0.acl root@prplOS:/# cat /tmp/wl0_hapd.conf | grep acl macaddr_acl=1 accept_mac_file=/tmp/hostap_wl0.acl root@prplOS:/# cat /tmp/wl2_hapd.conf | gr...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D079-mode-accesspoint-macfiltering.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D079-mode-accesspoint-macfiltering.json`
 
 ### wifi-llapi-D080-maxassociateddevices
 
@@ -725,7 +725,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Get the Maximum Association allowed in SSID root@prplOS:/# ubus-cli WiFi.AccessPoint.*.? | grep MaxAssociatedDevices WiFi.AccessPoint.1.MaxAssociatedDevices=32 WiFi.AccessPoint.3.MaxAssociatedDevices=32 WiFi.AccessPoint.5.MaxAssociate...
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep max_num_sta cat /tmp/wl1_hapd.conf |grep max_num_sta cat /tmp/wl2_hapd.conf |grep max_num_sta root@prplOS:/# cat /tmp/wl0_hapd.conf |grep max_num_sta root@prplOS:/# cat /tmp/wl1_hapd.conf |grep max_num_sta ro...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D080-maxassociateddevices.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D080-maxassociateddevices.json`
 
 ### wifi-llapi-D081-mboenable
 
@@ -745,7 +745,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: \\Enable MBO root@prplOS:~# ubus-cli WiFi.AccessPoint.*.MBOEnable=1 > WiFi.AccessPoint.*.MBOEnable=1 WiFi.AccessPoint.1.MBOEnable=1 WiFi.AccessPoint.2.MBOEnable=1 WiFi.AccessPoint.3.MBOEnable=1 WiFi.AccessPoint.4.MBOEnable=1 WiFi.AccessP...
 - 0401 H excerpt: MBO = 0"Disable" root@prplOS:/# wl -i wl0 mbo ap_enable MBO AP ENABLE : 0 root@prplOS:/# wl -i wl1 mbo ap_enable MBO AP ENABLE : 0 root@prplOS:/# wl -i wl2 mbo ap_enable MBO AP ENABLE : 0 MBO = 1"Enable" root@prplOS:/# wl -i wl0 mbo ap_e...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D081-mboenable.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D081-mboenable.json`
 
 ### wifi-llapi-D082-multiaptype
 
@@ -765,7 +765,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: \\Check Default settinh root@prplOS:~# ubus-cli WiFi.AccessPoint.*.MultiAPType? > WiFi.AccessPoint.*.MultiAPType? WiFi.AccessPoint.1.MultiAPType="FronthaulBSS,BackhaulBSS" WiFi.AccessPoint.2.MultiAPType="FronthaulBSS,BackhaulBSS" WiFi.Ac...
 - 0401 H excerpt: wl -i wl0 map cat /tmp/wl0_hapd.conf | grep multi_ap root@prplOS:~# cat /tmp/wl0_hapd.conf | grep multi_ap multi_ap=2 multi_ap=2 root@prplOS:~# cat /tmp/wl2_hapd.conf | grep multi_ap multi_ap=2 multi_ap=2 root@prplOS:~# cat /tmp/wl1_hapd...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D082-multiaptype.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D082-multiaptype.json`
 
 ### wifi-llapi-D084-encryptionmode-accesspoint-security
 
@@ -784,7 +784,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: \\Set security mode to WPA3 root@prplOS:/# ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled="WPA3-Personal" > WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal WiFi.AccessPoint.1.Security. WiFi.AccessPoint.1.Security.ModeEnabled="WPA...
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf root@prplOS:/# grep -Ei "ccmp|tkip|wep|sae" /tmp/wl0_hapd.conf wpa_key_mgmt=SAE FT-SAE wpa_pairwise=CCMP rsn_pairwise=CCMP sae_password=12345678 sae_require_mfp=1 sae_anti_clogging_threshold=5 sae_sync=5 sae_groups...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D084-encryptionmode-accesspoint-security.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D084-encryptionmode-accesspoint-security.json`
 
 ### wifi-llapi-D085-keypassphrase-accesspoint-security
 
@@ -804,7 +804,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep .Security.KeyPassPhrase WiFi.AccessPoint.1.Security.KeyPassPhrase="87654321" WiFi.AccessPoint.3.Security.KeyPassPhrase="87654321" WiFi.AccessPoint.5.Security.KeyPassPhrase="87654321"
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep wpa_pairwise cat /tmp/wl0_hapd.conf |grep wpa_passphrase root@prplOS:/# cat /tmp/wl0_hapd.conf |grep wpa_passphrase wpa_passphrase=87654321 root@prplOS:/# cat /tmp/wl1_hapd.conf |grep wpa_passphrase wpa_passp...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D085-keypassphrase-accesspoint-security.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D085-keypassphrase-accesspoint-security.json`
 
 ### wifi-llapi-D086-mfpconfig-accesspoint-security
 
@@ -823,7 +823,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep Security.MFPConfig WiFi.AccessPoint.1.Security.MFPConfig="Disabled" WiFi.AccessPoint.3.Security.MFPConfig="Disabled" WiFi.AccessPoint.5.Security.MFPConfig="Disabled"
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep ieee80211w root@prplOS:/# cat /tmp/wl0_hapd.conf |grep ieee80211w ieee80211w=2 root@prplOS:/# cat /tmp/wl1_hapd.conf |grep ieee80211w ieee80211w=2 root@prplOS:/# cat /tmp/wl2_hapd.conf |grep ieee80211w ieee80...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D086-mfpconfig-accesspoint-security.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D086-mfpconfig-accesspoint-security.json`
 
 ### wifi-llapi-D087-modeenabled-accesspoint-security
 
@@ -843,7 +843,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Set security mode to WPA3-Personal root@prplOS:/# ubus-cli WiFi.AccessPoint.*.Security.ModeEnabled=WPA3-Personal > WiFi.AccessPoint.*.Security.ModeEnabled=WPA3-Personal WiFi.AccessPoint.1.Security.ModeEnabled="WPA3-Personal" WiFi.Acce...
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf | grep wpa and other related parameters root@prplOS:/# cat /tmp/wl0_hapd.conf | grep wpa wpa=2 wpa_key_mgmt=SAE FT-SAE wpa_pairwise=CCMP wpa_group_rekey=0 wpa_ptk_rekey=0 wpa_passphrase=87654321 wpa_disable_eapol_k...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D087-modeenabled-accesspoint-security.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D087-modeenabled-accesspoint-security.json`
 
 ### wifi-llapi-D090-rekeyinginterval
 
@@ -863,7 +863,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: Test Procedure: 1.Set/Get RekeyingInterval Set Command: ubus-cli WiFi.AccessPoint.{i}.Security.RekeyingInterval= Get Command: ubus-cli WiFi.AccessPoint.{i}.Security.RekeyingInterval? 2.check hostapd config&webGUI cat /tmp/wlx_hapd.conf |...
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep wpa_group_rekey
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D090-rekeyinginterval.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D090-rekeyinginterval.json`
 
 ### wifi-llapi-D092-wepkey-accesspoint-security
 
@@ -883,7 +883,7 @@
 - mismatch bands: `5g, 2.4g`
 - 0401 G excerpt: Test Procedure: 1.set the security mode to WEP-128 2.Set/Get WEPKey Set Command: ubus-cli WiFi.AccessPoint.{i}.Security.WEPKey="" Get Command: ubus-cli WiFi.AccessPoint.{i}.Security.WEPKey? 3.check hostapd config &webGUI Command: cat /tm...
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep wep_key
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D092-wepkey-accesspoint-security.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D092-wepkey-accesspoint-security.json`
 
 ### wifi-llapi-D093-ssidadvertisementenabled
 
@@ -903,7 +903,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Get SSIDAdvertisementEnabled value root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep SSIDAdvertisementEnabled WiFi.AccessPoint.1.SSIDAdvertisementEnabled=1 WiFi.AccessPoint.3.SSIDAdvertisementEnabled=1 WiFi.AccessPoint.5.SSIDAdvertise...
 - 0401 H excerpt: root@prplOS:/# cat /tmp/wl0_hapd.conf | grep -E 'broadcast|ssid' bssid=6C:15:DB:74:C0:B5 ssid=5G_Primary-BE ignore_broadcast_ssid=2 ignore_broadcast_ssid=0 => "SSID not Hidden" ignore_broadcast_ssid=2 => "SSID Hidden"
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D093-ssidadvertisementenabled.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D093-ssidadvertisementenabled.json`
 
 ### wifi-llapi-D094-status-accesspoint
 
@@ -922,7 +922,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Set Access Point Enable=1, Disable=0 ubus-cli WiFi.AccessPoint.{i}.Enable=1 2. Get Access Point Status root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep .Status WiFi.AccessPoint.1.Status="Enabled" WiFi.AccessPoint.3.Status="Enabled" W...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 bss up root@prplOS:/# wl -i wl1 bss up root@prplOS:/# wl -i wl2 bss up
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D094-status-accesspoint.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D094-status-accesspoint.json`
 
 ### wifi-llapi-D095-uapsdcapability
 
@@ -941,7 +941,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Get GW UAPSDCapability root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep .UAPSDCapability WiFi.AccessPoint.1.UAPSDCapability=1 WiFi.AccessPoint.3.UAPSDCapability=1 WiFi.AccessPoint.5.UAPSDCapability=1 2. Check Beacon packet if it incl...
 - 0401 H excerpt: Note: U-APSD is part of WME root@prplOS:/# wl -i wl0 cap ap sta wet led wme 802.11d 802.11h rm cac mbss8 ampdu ampdu_tx ampdu_rx amsdurx amsdutx rxchain_pwrsave wds dwds vht-prop-rates multi-user-beamformer single-user-beamformer multi-u...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D095-uapsdcapability.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D095-uapsdcapability.json`
 
 ### wifi-llapi-D096-uapsdenable
 
@@ -960,7 +960,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: \\Enable/Disable UPSD ubus-cli WiFi.AccessPoint.{i}.UAPSDEnable= 1=Enbale 0=Disable
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep apsd
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D096-uapsdenable.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D096-uapsdenable.json`
 
 ### wifi-llapi-D098-wdsenable
 
@@ -979,7 +979,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Enable WDS root@prplOS:/# ubus-cli WiFi.AccessPoint.*.WDSEnable=1 > WiFi.AccessPoint.*.WDSEnable=1 WiFi.AccessPoint.1.WDSEnable=1 WiFi.AccessPoint.3.WDSEnable=1 WiFi.AccessPoint.5.WDSEnable=1 root@prplOS:/# ubus-cli WiFi.AccessPoint.?...
 - 0401 H excerpt: wl -i wl0 dwds root@prplOS:/# wl -i wl0 dwds 1 root@prplOS:/# wl -i wl1 dwds 1 root@prplOS:/# wl -i wl2 dwds 1
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D098-wdsenable.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D098-wdsenable.json`
 
 ### wifi-llapi-D099-wmmcapability
 
@@ -998,7 +998,7 @@
 - mismatch bands: `6g`
 - 0401 G excerpt: 1. Get GW WMMCapability root@prplOS:/# ubus-cli WiFi.AccessPoint.*.WMMCapability? > WiFi.AccessPoint.*.WMMCapability? WiFi.AccessPoint.1.WMMCapability=1 WiFi.AccessPoint.3.WMMCapability=1 WiFi.AccessPoint.5.WMMCapability=1 2. Capture Bea...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 cap ap sta wet led wme 802.11d 802.11h rm cac mbss8 ampdu ampdu_tx ampdu_rx amsdurx amsdutx rxchain_pwrsave wds dwds vht-prop-rates multi-user-beamformer single-user-beamformer multi-user-beamformee single-user-b...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D099-wmmcapability.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D099-wmmcapability.json`
 
 ### wifi-llapi-D101-configmethodsenabled
 
@@ -1018,7 +1018,7 @@
 - mismatch bands: `5g, 2.4g`
 - 0401 G excerpt: 1. Get WPS ConfigMethodsEnabled root@prplOS:/# ubus-cli WiFi.AccessPoint.? |grep .WPS.ConfigMethodsEnabled WiFi.AccessPoint.1.WPS.ConfigMethodsEnabled="PhysicalPushButton,VirtualPushButton" WiFi.AccessPoint.3.WPS.ConfigMethodsEnabled="Ph...
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep config_methods root@prplOS:/# cat /tmp/wl0_hapd.conf |grep config_methods config_methods=physical_push_button virtual_push_button root@prplOS:/# cat /tmp/wl1_hapd.conf |grep config_methods root@prplOS:/# cat ...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D101-configmethodsenabled.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D101-configmethodsenabled.json`
 
 ### wifi-llapi-D104-enable-accesspoint-wps
 
@@ -1038,7 +1038,7 @@
 - mismatch bands: `5g, 2.4g`
 - 0401 G excerpt: 1. Set GW WPS to Enable root@prplOS:/# ubus-cli WiFi.AccessPoint.1.WPS.Enable=1 > WiFi.AccessPoint.1.WPS.Enable=1 WiFi.AccessPoint.1.WPS. WiFi.AccessPoint.1.WPS.Enable=1 root@prplOS:/# ubus-cli WiFi.AccessPoint.3.WPS.Enable=1 > WiFi.Acce...
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep wps_state root@prplOS:/# cat /tmp/wl0_hapd.conf |grep wps_state wps_state=0 wps_state=2 root@prplOS:/# cat /tmp/wl2_hapd.conf |grep wps_state wps_state=0 wps_state=2 root@prplOS:/# cat /tmp/wl1_hapd.conf |gre...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D104-enable-accesspoint-wps.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D104-enable-accesspoint-wps.json`
 
 ### wifi-llapi-D105-pairinginprogress-accesspoint-wps
 
@@ -1057,7 +1057,7 @@
 - mismatch bands: `5g, 2.4g`
 - 0401 G excerpt: 1. Initiate WPS pairing between GW and Station root@prplOS:/# ubus-cli -a "WiFi.AccessPoint.1.WPS.InitiateWPSPBC()" > WiFi.AccessPoint.1.WPS.InitiateWPSPBC() WiFi.AccessPoint.1.WPS.InitiateWPSPBC() returned [ { Status = "Success" } ] 2. ...
 - 0401 H excerpt: root@prplOS:/# hostapd_cli -i wl0 wps_get_status PBC Status: Active Last WPS result: None
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D105-pairinginprogress-accesspoint-wps.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D105-pairinginprogress-accesspoint-wps.json`
 
 ### wifi-llapi-D106-relaycredentialsenable
 
@@ -1076,7 +1076,7 @@
 - mismatch bands: `5g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep wps_cred_processing
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D106-relaycredentialsenable.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D106-relaycredentialsenable.json`
 
 ### wifi-llapi-D108-uuid
 
@@ -1095,7 +1095,7 @@
 - mismatch bands: `6g`
 - 0401 G excerpt: 1. Get GW WPS UUID root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep .WPS.UUID WiFi.AccessPoint.1.WPS.UUID="4b58464a-5957-fc49-f845-57454b58464a" WiFi.AccessPoint.3.WPS.UUID="4b58464a-5957-fc49-f845-57454b58464a" WiFi.AccessPoint.5.WPS.U...
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep uuid root@prplOS:/# cat /tmp/wl0_hapd.conf |grep uuid uuid=4b58464a-5957-fc49-f845-57454b58464a root@prplOS:/# cat /tmp/wl1_hapd.conf |grep uuid root@prplOS:/# cat /tmp/wl2_hapd.conf |grep uuid uuid=4b58464a-...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D108-uuid.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D108-uuid.json`
 
 ### wifi-llapi-D109-getstationstats-accesspoint
 
@@ -1115,7 +1115,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi station to GW 2. Get Station Stats root@prplOS:/# ubus-cli "WiFi.AccessPoint.*.getStationStats()" > WiFi.AccessPoint.*.getStationStats() WiFi.AccessPoint.3.getStationStats() returned [ [ { Active = 1, ActiveNumberOfAffili...
 - 0401 H excerpt: root@prplOS:/# hostapd_cli -i wl0 STA 34:19:4D:A4:B5:09 34:19:4d:a4:b5:09 flags=[AUTH][ASSOC][AUTHORIZED][WMM][MFP][HT] aid=2 capability=0x0 listen_interval=0 supported_rates=8c 12 18 24 b0 48 60 6c timeout_next=NULLFUNC POLL dot11RSNASt...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D109-getstationstats-accesspoint.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D109-getstationstats-accesspoint.json`
 
 ### wifi-llapi-D110-getstationstats-active
 
@@ -1135,7 +1135,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi Station to GW. 2. Verify connected Station state root@prplOS:/# ubus-cli "WiFi.AccessPoint.*.getStationStats()" | grep -E 'Activ e|MAC' Active = 1, MACAddress = "e6:60:17:eb:a9:86", Active = 1, MACAddress = "38:06:e6:92:b...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 sta_info e6:60:17:eb:a9:86 | grep state state: AUTHENTICATED ASSOCIATED AUTHORIZED root@prplOS:/# wl -i wl1 sta_info 38:06:e6:92:b0:4a | grep state state: AUTHENTICATED ASSOCIATED AUTHORIZED root@prplOS:/# wl -i ...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D110-getstationstats-active.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D110-getstationstats-active.json`
 
 ### wifi-llapi-D114-getstationstats-avgsignalstrengthbychain
 
@@ -1154,7 +1154,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi Station to GW and make sure the Station is Active root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep -E 'Active|MAC' WiFi.AccessPoint.1.AssociatedDevice.1.Active=1 WiFi.AccessPoint.1.AssociatedDevice.1...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 sta_info E6:D7:D3:EA:CF:15 | grep average per antenna average rssi of rx data frames: -43 -53 -46 -49 root@prplOS:/# wl -i wl1 sta_info 38:06:E6:92:B0:4A | grep average per antenna average rssi of rx data frames:...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D114-getstationstats-avgsignalstrengthbychain.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D114-getstationstats-avgsignalstrengthbychain.json`
 
 ### wifi-llapi-D115-getstationstats-connectionduration
 
@@ -1173,7 +1173,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi station to GW 2. Verify Station ConnectionDuration root@prplOS:/# ubus-cli "WiFi.AccessPoint.*.getStationStats()" | grep -E 'ConnectionDuration|MACAddress' ConnectionDuration = 2833, MACAddress = "38:06:E6:92:B0:4A", Conn...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 sta_info 34:19:4D:A4:B5:09 | grep network in network 764 seconds root@prplOS:/# wl -i wl1 sta_info 38:06:E6:92:B0:4A | grep network in network 2843 seconds root@prplOS:/# wl -i wl2 sta_info 34:19:4D:A4:B4:33 | gr...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D115-getstationstats-connectionduration.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D115-getstationstats-connectionduration.json`
 
 ### d174-radio-activeantennactrl
 
@@ -1192,7 +1192,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check GW radio ActiveAntennaCtrl: root@prplOS:/# ubus-cli WiFi.Radio.*.ActiveAntennaCtrl? > WiFi.Radio.*.ActiveAntennaCtrl? WiFi.Radio.1.ActiveAntennaCtrl=-1 WiFi.Radio.2.ActiveAntennaCtrl=-1 WiFi.Radio.3.ActiveAntennaCtrl=-1
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 txchain 15 (0xf) root@prplOS:/# wl -i wl0 rxchain 15 (0xf) root@prplOS:/# wl -i wl1 txchain 15 (0xf) root@prplOS:/# wl -i wl1 rxchain 1 root@prplOS:/# wl -i wl2 txchain 15 (0xf) root@prplOS:/# wl -i wl2 rxchain 1
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d174-radio-activeantennactrl.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d174-radio-activeantennactrl.json`
 
 ### d176-radio-beaconperiod
 
@@ -1211,7 +1211,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Get BeaconPeriod default value: root@prplOS:/# ubus-cli WiFi.Radio.*.BeaconPeriod? > WiFi.Radio.*.BeaconPeriod? WiFi.Radio.1.BeaconPeriod=100 WiFi.Radio.2.BeaconPeriod=100 WiFi.Radio.3.BeaconPeriod=100 2. Set BeaconPeriod to 1000: roo...
 - 0401 H excerpt: root@prplOS:/# cat /tmp/wl0_hapd.conf |grep beacon_int beacon_int=1000 beacon_int=1000 root@prplOS:/# cat /tmp/wl1_hapd.conf |grep beacon_int beacon_int=1000 beacon_int=1000 root@prplOS:/# cat /tmp/wl2_hapd.conf |grep beacon_int beacon_i...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d176-radio-beaconperiod.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d176-radio-beaconperiod.json`
 
 ### d178-radio-channelload
 
@@ -1231,7 +1231,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check the ChannelLoad in the air: root@prplOS:/# ubus-cli WiFi.Radio.*.ChannelLoad? > WiFi.Radio.*.ChannelLoad? WiFi.Radio.1.ChannelLoad=0 WiFi.Radio.2.ChannelLoad=0 WiFi.Radio.3.ChannelLoad=0 2. Compare it with driver survey dump, ca...
 - 0401 H excerpt: root@prplOS:/# iw dev wl0 survey dump root@prplOS:/# iw dev wl1 survey dump root@prplOS:/# iw dev wl2 survey dump
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d178-radio-channelload.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d178-radio-channelload.json`
 
 ### d179-radio-ampdu
 
@@ -1250,7 +1250,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi Station to GW 2. Set GW AMPDU to 1 =enable root@prplOS:/# ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=1 > WiFi.Radio.1.DriverConfig.Ampdu=1 WiFi.Radio.1.DriverConfig. WiFi.Radio.1.DriverConfig.Ampdu=1 3. Run Iperf3 from stat...
 - 0401 H excerpt: AMPDU = Enable root@prplOS:/# wl -i wlx ampdu 1 AMPDU = Disable root@prplOS:/# wl -i wlx ampdu 0
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d179-radio-ampdu.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d179-radio-ampdu.json`
 
 ### d180-radio-amsdu
 
@@ -1269,7 +1269,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Get Amsdu default value: root@prplOS:/# ubus-cli WiFi.Radio.*.DriverConfig.Amsdu? > WiFi.Radio.*.DriverConfig.Amsdu? WiFi.Radio.1.DriverConfig.Amsdu=-1 WiFi.Radio.2.DriverConfig.Amsdu=-1 WiFi.Radio.3.DriverConfig.Amsdu=-1
 - 0401 H excerpt: wl -i wl0 amsdu wl -i wl1 amsdu wl -i wl2 amsdu root@prplOS:/# iw phy phy0 info | grep -i msdu Max AMSDU length: 3839 bytes root@prplOS:/# iw phy phy1 info | grep -i msdu root@prplOS:/# iw phy phy2 info | grep -i msdu Max AMSDU length: 3...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d180-radio-amsdu.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d180-radio-amsdu.json`
 
 ### d181-radio-fragmentationthreshold
 
@@ -1288,7 +1288,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Set Fragmentation Threshold to 1500 root@prplOS:/# ubus-cli WiFi.Radio.*.DriverConfig.FragmentationThreshold=1500 > WiFi.Radio.*.DriverConfig.FragmentationThreshold=1500 WiFi.Radio.1.DriverConfig. WiFi.Radio.1.DriverConfig.Fragmentati...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 fragthresh 1500 (0x5dc) root@prplOS:/# wl -i wl1 fragthresh 1500 (0x5dc) root@prplOS:/# wl -i wl2 fragthresh 1500 (0x5dc)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d181-radio-fragmentationthreshold.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d181-radio-fragmentationthreshold.json`
 
 ### d182-radio-rtsthreshold
 
@@ -1307,7 +1307,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Set RtsThreshold "ex. 1500 root@prplOS:/# ubus-cli WiFi.Radio.*.DriverConfig.RtsThreshold=1500 > WiFi.Radio.*.DriverConfig.RtsThreshold=1500 WiFi.Radio.1.DriverConfig. WiFi.Radio.1.DriverConfig.RtsThreshold=1500 WiFi.Radio.2.DriverCon...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 rtsthresh 1500 (0x5dc) root@prplOS:/# wl -i wl1 rtsthresh 1500 (0x5dc) root@prplOS:/# wl -i wl2 rtsthresh 1500 (0x5dc)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d182-radio-rtsthreshold.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d182-radio-rtsthreshold.json`
 
 ### d184-radio-nractiverxantenna
 
@@ -1326,7 +1326,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check GW Radio DriverStatus.NrActiveRxAntenna: root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrActiveRxAntenna? > WiFi.Radio.*.DriverStatus.NrActiveRxAntenna? WiFi.Radio.1.DriverStatus.NrActiveRxAntenna=-1 WiFi.Radio.2.DriverStatu...
 - 0401 H excerpt: wl -i wl0 rxchain root@prplOS:/# wl -i wl0 rxchain 15 (0xf) root@prplOS:/# wl -i wl1 rxchain 15 (0xf) root@prplOS:/# wl -i wl2 rxchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d184-radio-nractiverxantenna.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d184-radio-nractiverxantenna.json`
 
 ### d185-radio-nractivetxantenna
 
@@ -1345,7 +1345,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check GW Radio DriverStatus.NrActiveTxAntenna root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrActiveTxAntenna? > WiFi.Radio.*.DriverStatus.NrActiveTxAntenna? WiFi.Radio.1.DriverStatus.NrActiveTxAntenna=-1 WiFi.Radio.2.DriverStatus...
 - 0401 H excerpt: wl -i wl0 txchain root@prplOS:/# wl -i wl0 txchain 15 (0xf) root@prplOS:/# wl -i wl1 txchain 15 (0xf) root@prplOS:/# wl -i wl2 txchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d185-radio-nractivetxantenna.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d185-radio-nractivetxantenna.json`
 
 ### d186-radio-nrrxantenna
 
@@ -1364,7 +1364,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check GW Radio DriverStatus.NrRxAntenna root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrRxAntenna? > WiFi.Radio.*.DriverStatus.NrRxAntenna? WiFi.Radio.1.DriverStatus.NrRxAntenna=4 WiFi.Radio.2.DriverStatus.NrRxAntenna=4 WiFi.Radio...
 - 0401 H excerpt: wl -i wl0 rxchain root@prplOS:/# wl -i wl0 rxchain 15 (0xf) root@prplOS:/# wl -i wl1 rxchain 15 (0xf) root@prplOS:/# wl -i wl2 rxchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d186-radio-nrrxantenna.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d186-radio-nrrxantenna.json`
 
 ### d187-radio-nrtxantenna
 
@@ -1383,7 +1383,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check GW Radio DriverStatus.NrTxAntenna: root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrTxAntenna? > WiFi.Radio.*.DriverStatus.NrTxAntenna? WiFi.Radio.1.DriverStatus.NrTxAntenna=4 WiFi.Radio.2.DriverStatus.NrTxAntenna=4 WiFi.Radi...
 - 0401 H excerpt: wl -i wl0 txchain root@prplOS:/# wl -i wl0 txchain 15 (0xf) root@prplOS:/# wl -i wl1 txchain 15 (0xf) root@prplOS:/# wl -i wl2 txchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d187-radio-nrtxantenna.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d187-radio-nrtxantenna.json`
 
 ### d188-radio-dtimperiod
 
@@ -1402,7 +1402,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check default DTIMPeriod: root@prplOS:/# ubus-cli WiFi.Radio.*.DTIMPeriod? > WiFi.Radio.*.DTIMPeriod? WiFi.Radio.1.DTIMPeriod=3 WiFi.Radio.2.DTIMPeriod=3 WiFi.Radio.3.DTIMPeriod=3 2. Capture air beacons, check DTIM Period: 3 3. Modify...
 - 0401 H excerpt: cat /tmp/wl*_hapd.conf |grep dtim (Default) root@prplOS:/# cat /tmp/wl0_hapd.conf |grep dtim dtim_period=3 dtim_period=3 root@prplOS:/# cat /tmp/wl1_hapd.conf |grep dtim dtim_period=3 dtim_period=3 root@prplOS:/# cat /tmp/wl2_hapd.conf |...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d188-radio-dtimperiod.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d188-radio-dtimperiod.json`
 
 ### d190-radio-explicitbeamformingenabled
 
@@ -1421,7 +1421,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check API default value: root@prplOS:/# ubus-cli WiFi.Radio.*.ExplicitBeamFormingEnabled? > WiFi.Radio.*.ExplicitBeamFormingEnabled? WiFi.Radio.1.ExplicitBeamFormingEnabled=1 WiFi.Radio.2.ExplicitBeamFormingEnabled=1 WiFi.Radio.3.Expl...
 - 0401 H excerpt: (API=1) root@prplOS:/# wl -i wl0 txbf 1 root@prplOS:/# wl -i wl1 txbf 1 root@prplOS:/# wl -i wl2 txbf 1 (API=0) root@prplOS:/# wl -i wl0 txbf 0 root@prplOS:/# wl -i wl1 txbf 0 root@prplOS:/# wl -i wl2 txbf 0
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d190-radio-explicitbeamformingenabled.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d190-radio-explicitbeamformingenabled.json`
 
 ### d191-radio-explicitbeamformingsupported
 
@@ -1440,7 +1440,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Read-only API, defines whether each radio supported ExplicitBeamForming. Check API value and compare with driver return value: root@prplOS:/# ubus-cli WiFi.Radio.*.ExplicitBeamFormingSupported? > WiFi.Radio.*.ExplicitBeamFormingSuppor...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d191-radio-explicitbeamformingsupported.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d191-radio-explicitbeamformingsupported.json`
 
 ### d192-radio-guardinterval
 
@@ -1459,7 +1459,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: Setting value: ["400nsec'","800nsec","1xLTF_0.8us","1xLTF_1.6us","2xLTF_0.8us","2xLTF_1.6us","4xLTF_0.8us","4xLTF_1.6us","Auto"] 1. Get GI Default value root@prplOS:/# ubus-cli WiFi.Radio.*.GuardInterval? > WiFi.Radio.*.GuardInterval? Wi...
 - 0401 H excerpt: BRCM: CSP CS00012439197 -- root@prplOS:/# wl -i wl0 nrate eht mcs 13 Nss 4 Tx Exp 0 bw160 2xLTF GI 0.8us auto root@prplOS:/# wl -i wl0 sgi_tx -1
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d192-radio-guardinterval.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d192-radio-guardinterval.json`
 
 ### d193-radio-hecapsenabled
 
@@ -1478,7 +1478,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Try enabled all supporting HE capablitities for all readios: root@prplOS:/# ubus-cli 'WiFi.Radio.*.HeCapsEnabled="DL_OFDMA,UL_OFDMA,DL_MUMIMO,UL_MUMIMO"' 2. Check the settings: root@prplOS:/# ubus-cli WiFi.Radio.*.HeCapsEnabled? > WiF...
 - 0401 H excerpt: wl -i wl[x] he features root@prplOS:/# wl -i wl0 he features 63 (0x3f) root@prplOS:/# wl -i wl1 he features 63 (0x3f) root@prplOS:/# wl -i wl2 he features 63 (0x3f)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d193-radio-hecapsenabled.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d193-radio-hecapsenabled.json`
 
 ### d194-radio-hecapssupported
 
@@ -1497,7 +1497,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Read supported He Capability for all radios: root@prplOS:/# ubus-cli WiFi.Radio.*.HeCapsSupported? > WiFi.Radio.*.HeCapsSupported? WiFi.Radio.1.HeCapsSupported="DL_OFDMA,UL_OFDMA,DL_MUMIMO,UL_MUMIMO" WiFi.Radio.2.HeCapsSupported="DL_O...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d194-radio-hecapssupported.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d194-radio-hecapssupported.json`
 
 ### d195-radio-ieee80211_caps
 
@@ -1516,7 +1516,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Get Radio Default value of IEEE80211_Caps root@prplOS:/# ubus-cli WiFi.Radio.*.IEEE80211_Caps? > WiFi.Radio.*.IEEE80211_Caps? WiFi.Radio.1.IEEE80211_Caps="160MHz UAPSD WEP TKIP AES AES_CCM SAE EXPL_BF IMPL_BF MU_MIMO DFS_OFFLOAD OWE S...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 cap ap sta wet led wme 802.11d 802.11h rm cac mbss8 ampdu ampdu_tx ampdu_rx amsdurx amsdutx rxchain_pwrsave wds dwds vht-prop-rates multi-user-beamformer single-user-beamformer multi-user-beamformee single-user-b...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d195-radio-ieee80211_caps.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d195-radio-ieee80211_caps.json`
 
 ### d196-radio-ieee80211henabled
 
@@ -1535,7 +1535,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check API default value: root@prplOS:/# ubus-cli WiFi.Radio.*.IEEE80211hEnabled? > WiFi.Radio.*.IEEE80211hEnabled? WiFi.Radio.1.IEEE80211hEnabled=1 WiFi.Radio.2.IEEE80211hEnabled=0 WiFi.Radio.3.IEEE80211hEnabled=0 2. Compare with driv...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 spect Loose interpretation of 11h spec - may join non 11h AP. root@prplOS:/# wl -i wl1 spect Off root@prplOS:/# wl -i wl2 spect Off root@prplOS:/# wl -i wl0 radar 1 root@prplOS:/# wl -i wl1 radar 0 root@prplOS:/#...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d196-radio-ieee80211henabled.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d196-radio-ieee80211henabled.json`
 
 ### d197-radio-ieee80211hsupported
 
@@ -1554,7 +1554,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Read-only API, defines whether each radio supported 802.11h standard. Check the API value and compare them with driver capability and packets' tag from radio beacons: ubus-cli WiFi.Radio.*.IEEE80211hSupported? > WiFi.Radio.*.IEEE80211...
 - 0401 H excerpt: wl -i wl0 cap | grep 802.11h ap sta wet led wme 802.11d 802.11h rm cac mbss8 ampdu ampdu_tx ampdu_rx amsdurx amsdutx rxchain_pwrsave wds dwds vht-prop-rates multi-user-beamformer single-user-beamformer multi-user-beamformee single-user-b...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d197-radio-ieee80211hsupported.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d197-radio-ieee80211hsupported.json`
 
 ### d198-radio-ieee80211ksupported
 
@@ -1573,7 +1573,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Read-only API, defines whether each radio supported 802.11k standard. Check the API value and compare them with driver capability and packets' tag from radio beacons: root@prplOS:/# ubus-cli WiFi.Radio.*.IEEE80211kSupported? > WiFi.Ra...
 - 0401 H excerpt: (RM Enable Capabilities included in beacon packet, IE: 70)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d198-radio-ieee80211ksupported.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d198-radio-ieee80211ksupported.json`
 
 ### d199-radio-ieee80211rsupported
 
@@ -1592,7 +1592,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Read-only API, defines whether each radio supported 802.11r standard. Check the API value and compare them with driver capability and packets' tag from radio beacons: root@prplOS:/# ubus-cli WiFi.Radio.*.IEEE80211rSupported? > WiFi.Ra...
 - 0401 H excerpt: (Fast Transition / Mability Domain included in beacon packet, IE: 54)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d199-radio-ieee80211rsupported.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d199-radio-ieee80211rsupported.json`
 
 ### d200-radio-implicitbeamformingenabled
 
@@ -1611,7 +1611,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check API default value: root@prplOS:/# ubus-cli WiFi.Radio.*.ImplicitBeamFormingEnabled? > WiFi.Radio.*.ImplicitBeamFormingEnabled? WiFi.Radio.1.ImplicitBeamFormingEnabled=1 WiFi.Radio.2.ImplicitBeamFormingEnabled=1 WiFi.Radio.3.Impl...
 - 0401 H excerpt: (API=1) root@prplOS:/# wl -i wl0 txbf_imp 1 root@prplOS:/# wl -i wl1 txbf_imp 1 root@prplOS:/# wl -i wl2 txbf_imp 1 (API=0) root@prplOS:/# wl -i wl0 txbf_imp 0 root@prplOS:/# wl -i wl1 txbf_imp 0 root@prplOS:/# wl -i wl2 txbf_imp 0
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d200-radio-implicitbeamformingenabled.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d200-radio-implicitbeamformingenabled.json`
 
 ### d201-radio-implicitbeamformingsupported
 
@@ -1630,7 +1630,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Read-only API, defines whether each radio supported ImplicitBeamForming. Check API value and compare with driver return value: root@prplOS:/# ubus-cli WiFi.Radio.*.ImplicitBeamFormingSupported? > WiFi.Radio.*.ImplicitBeamFormingSuppor...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d201-radio-implicitbeamformingsupported.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d201-radio-implicitbeamformingsupported.json`
 
 ### d202-radio-interference
 
@@ -1649,7 +1649,7 @@
 - mismatch bands: `5g, 2.4g`
 - 0401 G excerpt: 1. Check API default value: root@prplOS:/# ubus-cli WiFi.Radio.*.Interference? > WiFi.Radio.*.Interference? WiFi.Radio.1.Interference=0 WiFi.Radio.2.Interference=0 WiFi.Radio.3.Interference=0
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d202-radio-interference.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d202-radio-interference.json`
 
 ### d203-radio-maxchannelbandwidth
 
@@ -1668,7 +1668,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: Usage: wl bw_cap <2g|5g|6g> [<cap>] 2g|5g|6g - Requested band cap: 0x1 - 20MHz 0x3 - 20/40MHz 0x7 - 20/40/80MHz 0xf - 20/40/80/160MHz 0x1f - 20/40/80/160/320MHz 0xff - Unrestricted root@prplOS:~# root@prplOS:~# wl -i wl0 bw_cap 5g 0xf ro...
 - 0401 H excerpt: wl -i wl0 bw_cap Usage: wl bw_cap <2g|5g|6g> [<cap>] 2g|5g|6g - Requested band cap: 0x1 - 20MHz 0x3 - 20/40MHz 0x7 - 20/40/80MHz 0xf - 20/40/80/160MHz 0x1f - 20/40/80/160/320MHz 0xff - Unrestricted root@prplOS:/# wl bw_cap 5g 0xf root@pr...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d203-radio-maxchannelbandwidth.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d203-radio-maxchannelbandwidth.json`
 
 ### d204-radio-multiusermimoenabled
 
@@ -1687,7 +1687,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check MIMO enabled or not root@prplOS:/# ubus-cli WiFi.Radio.*.MultiUserMIMOEnabled? > WiFi.Radio.*.MultiUserMIMOEnabled? WiFi.Radio.1.MultiUserMIMOEnabled=1 WiFi.Radio.2.MultiUserMIMOEnabled=1 WiFi.Radio.3.MultiUserMIMOEnabled=1 2. C...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 mu_features 1 root@prplOS:/# wl -i wl1 mu_features 1 root@prplOS:/# wl -i wl1 mu_features 1
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d204-radio-multiusermimoenabled.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d204-radio-multiusermimoenabled.json`
 
 ### d205-radio-multiusermimosupported
 
@@ -1706,7 +1706,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Read-only API, defines whether each radio supported MU-MIMO. Check API value and compare with driver return value: root@prplOS:/# ubus-cli WiFi.Radio.*.MultiUserMIMOSupported? > WiFi.Radio.*.MultiUserMIMOSupported? WiFi.Radio.1.MultiU...
 - 0401 H excerpt: wl -i wl0 he features
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d205-radio-multiusermimosupported.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d205-radio-multiusermimosupported.json`
 
 ### d207-radio-obsscoexistenceenable
 
@@ -1725,7 +1725,7 @@
 - mismatch bands: `2.4g`
 - 0401 G excerpt: 1.ubus-cli WiFi.Radio.3.ObssCoexistenceEnable=1 2.ubus-cli WiFi.Radio.3.OperatingChannelBandwidth="40MHz” 3.wl -i wl2 status shows 20MHz 4.ubus-cli WiFi.Radio.3.ObssCoexistenceEnable=0 5.wl -i wl2 status shows 40MHz
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 obss_coex 0 root@prplOS:/# wl -i wl1 obss_coex 0 root@prplOS:/# wl -i wl2 obss_coex 1
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d207-radio-obsscoexistenceenable.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d207-radio-obsscoexistenceenable.json`
 
 ### d208-radio-ofdmaenable
 
@@ -1744,7 +1744,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check OfdmaEnable root@prplOS:/tmp# ubus-cli WiFi.Radio.*.OfdmaEnable? > WiFi.Radio.*.OfdmaEnable? WiFi.Radio.1.OfdmaEnable=1 WiFi.Radio.2.OfdmaEnable=1 WiFi.Radio.3.OfdmaEnable=1 2. Capture Beacon and make sure the following bits map...
 - 0401 H excerpt: root@prplOS:~# wl -i wl0 he features 63 (0x3f) root@prplOS:~# wl -i wl1 he features 63 (0x3f) root@prplOS:~# wl -i wl2 he features 63 (0x3f) 63 (decimal) = 0x3f (hex) 0x3f in binary = 0011 1111 That means bits 0–5 are set, and higher bit...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d208-radio-ofdmaenable.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d208-radio-ofdmaenable.json`
 
 ### d209-radio-operatingchannelbandwidth
 
@@ -1763,7 +1763,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check MaxChannelBandwidth for each radio: root@prplOS:/# ubus-cli WiFi.Radio.*.MaxChannelBandwidth? > WiFi.Radio.*.MaxChannelBandwidth? WiFi.Radio.1.MaxChannelBandwidth="160MHz" WiFi.Radio.2.MaxChannelBandwidth="320MHz" WiFi.Radio.3.M...
 - 0401 H excerpt: wl -i wl[x] status wl -i wl0 status ... Chanspec: 5GHz channel [ch] 20MHz 40MHz 80MHz 160MHz wl -i wl1 status ... Chanspec: 6GHz channel [ch] 20MHz 40MHz 80MHz 160MHz 320MHz wl -i wl2 status ... Chanspec: 2.4GHz channel [ch] 20MHz 40MHz ...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d209-radio-operatingchannelbandwidth.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d209-radio-operatingchannelbandwidth.json`
 
 ### d211-radio-operatingstandards
 
@@ -1782,7 +1782,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Try change all radio to BE standard: ubus-cli WiFi.Radio.1.OperatingStandards=be ubus-cli WiFi.Radio.2.OperatingStandards=be ubus-cli WiFi.Radio.3.OperatingStandards=be 2. Check standard: root@prplOS:/# ubus-cli WiFi.Radio.*.Operating...
 - 0401 H excerpt: [BE] wl -i wl[i] status wl -i wl[i] nmode wl -i wl[i] vhtmode wl -i wl[i] he features wl -i wl[i] eht features root@prplOS:/# wl -i wl0 status SSID: "AAA_ATnT-wl0" Mode: Managed RSSI: 0 dBm SNR: 0 dB noise: -99 dBm Channel: 36 BSSID: 64:...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d211-radio-operatingstandards.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d211-radio-operatingstandards.json`
 
 ### d212-radio-possiblechannels
 
@@ -1801,7 +1801,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check the list of channels supported by each radio: root@prplOS:/# ubus-cli WiFi.Radio.*.PossibleChannels? > WiFi.Radio.*.PossibleChannels? WiFi.Radio.1.PossibleChannels="36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136...
 - 0401 H excerpt: wl -i wl0 chanspecs 36 (0xd024) 40 (0xd028) 44 (0xd02c) 48 (0xd030) 52 (0xd034) 56 (0xd038) 60 (0xd03c) 64 (0xd040) 100 (0xd064) 104 (0xd068) 108 (0xd06c) 112 (0xd070) 116 (0xd074) 120 (0xd078) 124 (0xd07c) 128 (0xd080) 132 (0xd084) 136 ...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d212-radio-possiblechannels.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d212-radio-possiblechannels.json`
 
 ### d214-radio-rifsenabled
 
@@ -1820,7 +1820,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check the API default value for all radio: root@prplOS:/# ubus-cli WiFi.Radio.*.RIFSEnabled? > WiFi.Radio.*.RIFSEnabled? WiFi.Radio.1.RIFSEnabled="Default" WiFi.Radio.2.RIFSEnabled="Default" WiFi.Radio.3.RIFSEnabled="Default" 2. Modif...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d214-radio-rifsenabled.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d214-radio-rifsenabled.json`
 
 ### d251-radio-vendor-regulatorydomainrev
 
@@ -1839,7 +1839,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Get API default value: root@prplOS:/# ubus-cli WiFi.Radio.*.Vendor.Brcm.RegulatoryDomainRev? > WiFi.Radio.*.Vendor.Brcm.RegulatoryDomainRev? WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0 WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev=0...
 - 0401 H excerpt: wl -i wl0 country wl -i wl1 country wl -i wl2 country root@prplOS:/# wl -i wl0 country #a (#a/0) <unknown> root@prplOS:/# wl -i wl1 country #a (#a/0) <unknown> root@prplOS:/# wl -i wl2 country #a (#a/0) <unknown>
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d251-radio-vendor-regulatorydomainrev.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d251-radio-vendor-regulatorydomainrev.json`
 
 ### d257-getradioairstats-load
 
@@ -1858,7 +1858,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d257-getradioairstats-load.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d257-getradioairstats-load.json`
 
 ### d261-getradioairstats-txtime
 
@@ -1877,7 +1877,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d261-getradioairstats-txtime.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d261-getradioairstats-txtime.json`
 
 ### d277-getscanresults-bandwidth
 
@@ -1897,7 +1897,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Setup another AP as a data collecting target, try collect the target's Wi-Fi air radio info. Compare the actual value and API returned value. [5GHz] ubus-cli "WiFi.Radio.*.getScanResults()" | grep -i 1C:F4:3F:73:C7 * -A 15 -B1 { BSSID...
 - 0401 H excerpt: [2.4GHz] root@prplOS:/# iw dev wl2 scan | grep 1c:f4:3f:73:c7:40 -A150 BSS 1c:f4:3f:73:c7:40(on wl2) TSF: 14499627031 usec (0d, 04:01:39) freq: 2472 beacon interval: 100 TUs capability: ESS Privacy ShortPreamble ShortSlotTime APSD RadioM...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d277-getscanresults-bandwidth.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d277-getscanresults-bandwidth.json`
 
 ### d289-getscanresults-radio
 
@@ -1916,7 +1916,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d289-getscanresults-radio.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d289-getscanresults-radio.json`
 
 ### d290-getscanresults-centrechannel
 
@@ -1936,7 +1936,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d290-getscanresults-centrechannel.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d290-getscanresults-centrechannel.json`
 
 ### d296-startacs
 
@@ -1956,7 +1956,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Try call API function: root@prplOS:/# ubus-cli "WiFi.Radio.1.startACS()" > WiFi.Radio.1.startACS() ERROR: call (null) failed with status 1 - unknown error WiFi.Radio.1.startACS() returned [ "" ] root@prplOS:/# ubus-cli "WiFi.Radio.2.s...
 - 0401 H excerpt: logread | grep ACS iw dev wl0 info iw dev wl1 info iw dev wl2 info
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d296-startacs.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d296-startacs.json`
 
 ### d297-startautochannelselection
 
@@ -1976,7 +1976,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Try call API function: root@prplOS:/# ubus-cli "WiFi.Radio.*.startAutoChannelSelection()" > WiFi.Radio.*.startAutoChannelSelectio() ERROR: call (null) failed with status 3 - function not found WiFi.Radio.1.startAutoChannelSelectio() r...
 - 0401 H excerpt: iw dev wl0 info iw dev wl1 info iw dev wl2 info
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d297-startautochannelselection.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d297-startautochannelselection.json`
 
 ### d302-getssidstats-bytesreceived
 
@@ -1995,7 +1995,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi Station to SSID4, SSID6 and SSID8 2. Run Ping between Station and check BytesReceived root@prplOS:/# ubus-cli "WiFi.SSID.?" | grep \.BytesReceived= WiFi.SSID.4.Stats.BytesReceived=1647695 WiFi.SSID.6.Stats.BytesReceived=2...
 - 0401 H excerpt: cat /proc/net/dev | grep wl0 root@prplOS:/# cat /proc/net/dev Inter-| Receive | Transmit face |bytes packets errs drop fifo frame compressed multicast|bytes packets errs drop fifo colls carrier compressed wl0: 1647695 6411 0 14 0 0 0 196...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d302-getssidstats-bytesreceived.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d302-getssidstats-bytesreceived.json`
 
 ### d308-getssidstats-failedretranscount
 
@@ -2014,7 +2014,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi Station to GW 2. Run Iperf overnight between station 3. Get stats ubus-cli "WiFi.SSID."? | grep FailedRetransCount
 - 0401 H excerpt: cat /proc/net/dev | grep wl0
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d308-getssidstats-failedretranscount.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d308-getssidstats-failedretranscount.json`
 
 ### d313-getssidstats-retranscount
 
@@ -2033,7 +2033,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi Station to GW SSID4, SSID6 and SSID8 2. Run Iperf overnight between station 3. Get stats RetransCount root@prplOS:/# ubus-cli "WiFi.SSID.8.getSSIDStats()" | grep \.RetransCount RetransCount = 0, root@prplOS:/# ubus-cli "W...
 - 0401 H excerpt: cat /proc/net/dev | grep wl0 /proc/net/dev does not have 802.11-specific retry counters
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d313-getssidstats-retranscount.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d313-getssidstats-retranscount.json`
 
 ### d316-getssidstats-unknownprotopacketsreceived
 
@@ -2052,7 +2052,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: cat /proc/net/dev | grep wl0
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d316-getssidstats-unknownprotopacketsreceived.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d316-getssidstats-unknownprotopacketsreceived.json`
 
 ### wifi-llapi-d327-errorsreceived
 
@@ -2071,7 +2071,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: cat /proc/net/dev | grep wl0
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-d327-errorsreceived.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-d327-errorsreceived.json`
 
 ### wifi-llapi-d328-errorssent
 
@@ -2091,7 +2091,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: cat /proc/net/dev | grep wl0
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-d328-errorssent.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-d328-errorssent.json`
 
 ### wifi-llapi-d329-failedretranscount
 
@@ -2110,7 +2110,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: cat /proc/net/dev | grep wl0
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-d329-failedretranscount.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-d329-failedretranscount.json`
 
 ### wifi-llapi-d334-retranscount
 
@@ -2129,7 +2129,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect one WiFi station to SSID4, SSID6 and SSID8 of the GW (DUT) 2. Run Iperf from Station to GW and between Station 3. Setup neighbour GW near the GW (DUT) 4. Place Neighbor GW nearby 5. Set same channel + bandwidth 6. Connect STA(...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-d334-retranscount.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-d334-retranscount.json`
 
 ### wifi-llapi-d336-unicastpacketssent
 
@@ -2149,7 +2149,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi Station to GW SSID4, SSID6 and SSID8 2. Run Ping between station's 3. Get stats Unicast packet sent root@prplOS:/# ubus-cli WiFi.SSID.*.Stats.UnicastPacketsSent? > WiFi.SSID.*.Stats.UnicastPacketsSent? WiFi.SSID.1.Stats.U...
 - 0401 H excerpt: cat /proc/net/dev | grep wl0 root@prplOS:/# cat /proc/net/dev Inter-| Receive | Transmit face |bytes packets errs drop fifo frame compressed multicast|bytes packets errs drop fifo colls carrier compressed wl0: 99866942 866493 0 20 0 0 0 ...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-d336-unicastpacketssent.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-d336-unicastpacketssent.json`
 
 ### wifi-llapi-d337-unknownprotopacketsreceived
 
@@ -2168,7 +2168,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: cat /proc/net/dev | grep wl0
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-d337-unknownprotopacketsreceived.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-d337-unknownprotopacketsreceived.json`
 
 ### d354-radio-enable
 
@@ -2187,7 +2187,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check API default value: root@prplOS:/# ubus-cli WiFi.Radio.*.Sensing.Enable? > WiFi.Radio.*.Sensing.Enable? WiFi.Radio.1.Sensing.Enable=1 WiFi.Radio.2.Sensing.Enable=1 WiFi.Radio.3.Sensing.Enable=1 2. Modify the value to 0: ubus-cli ...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d354-radio-enable.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d354-radio-enable.json`
 
 ### d355-skip-addclient
 
@@ -2207,7 +2207,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Try add a sensing client by API: (5G) ubus-cli "WiFi.Radio.1.Sensing.addClient(MACAddress='A0:29:42:60:23:BD', MonitorInterval=100)" ubus-cli "WiFi.Radio.1.Sensing.addClient(MACAddress='14:85:7F:20:18:44', MonitorInterval=10)" (6G) ub...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d355-skip-addclient.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d355-skip-addclient.json`
 
 ### d356-skip-delclient
 
@@ -2227,7 +2227,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Try delete an added client: root@prplOS:/# ubus-cli "WiFi.Radio.*.Sensing.delClient(MACAddress='a0:29:42:60:23:be')" > WiFi.Radio.*.Sensing.delClient(MACAddress='a0:29:42:60:23:be') WiFi.Radio.1.Sensing.delClient() returned [ "" ] WiF...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d356-skip-delclient.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d356-skip-delclient.json`
 
 ### d357-skip-csistats
 
@@ -2247,7 +2247,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Record the API counters in the beginning: root@prplOS:/# ubus-cli "WiFi.Radio.*.Sensing.csiStats()" > WiFi.Radio.*.Sensing.csiStats() WiFi.Radio.1.Sensing.csiStats() returned [ { M2MTransmitCounter = 0, NullFrameAckFailCounter = 0, Nu...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d357-skip-csistats.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d357-skip-csistats.json`
 
 ### d359-ap-isolationenable
 
@@ -2266,7 +2266,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect two WiFi station to the Radio 2. Run ping between Station - by default isolation = disable so ping is OK -Enable Isolation ubus-cli WiFi.AccessPoint.5.IsolationEnable=1 --Ping between station should failed after enable Isolati...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d359-ap-isolationenable.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d359-ap-isolationenable.json`
 
 ### d363-ieee80211ax-bsscolorpartial
 
@@ -2285,7 +2285,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d363-ieee80211ax-bsscolorpartial.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d363-ieee80211ax-bsscolorpartial.json`
 
 ### d364-ieee80211ax-nonsrgobsspdmaxoffset
 
@@ -2304,7 +2304,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: wl -i wl0 he nsrg_pdmax
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d364-ieee80211ax-nonsrgobsspdmaxoffset.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d364-ieee80211ax-nonsrgobsspdmaxoffset.json`
 
 ### d367-ieee80211ax-srgobsspdmaxoffset
 
@@ -2323,7 +2323,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: wl -i wl0 he srg_pdmax
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d367-ieee80211ax-srgobsspdmaxoffset.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d367-ieee80211ax-srgobsspdmaxoffset.json`
 
 ### d370-assocdev-active
 
@@ -2342,7 +2342,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi station to GW 2. Check Associated Device Status root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep -E 'Activ e|MAC' WiFi.AccessPoint.1.AssociatedDevice.11.Active=1 WiFi.AccessPoint.1.AssociatedDevice.1...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 assoclist assoclist 34:19:4D:A4:B5:09 assoclist 12:E3:C4:78:7B:6F assoclist 42:B7:35:6A:17:8E root@prplOS:/# wl -i wl1 assoclist assoclist 38:06:E6:92:B0:4A root@prplOS:/# wl -i wl2 assoclist assoclist E4:60:17:E...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d370-assocdev-active.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d370-assocdev-active.json`
 
 ### d371-assocdev-disassociationtime
 
@@ -2361,7 +2361,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi station to GW 2. Check Associated Device Status 3. Disconnect Wifi Station from GW 4. Check Associated Device DisassociationTime root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep -E 'Activ root@prplOS...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 assoclist root@prplOS:/# wl -i wl1 assoclist root@prplOS:/# wl -i wl2 assoclist
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d371-assocdev-disassociationtime.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d371-assocdev-disassociationtime.json`
 
 ### d377-radio-maxbitrate
 
@@ -2380,7 +2380,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Read-only API, defines max bitrate for each radio: ubus-cli WiFi.Radio.*.MaxBitRate? > WiFi.Radio.*.MaxBitRate? WiFi.Radio.1.MaxBitRate=0 WiFi.Radio.2.MaxBitRate=0 WiFi.Radio.3.MaxBitRate=0
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d377-radio-maxbitrate.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d377-radio-maxbitrate.json`
 
 ### d379-radio-mcs
 
@@ -2399,7 +2399,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Verify MCS of the Radio root@prplOS:/# ubus-cli WiFi.Radio.*.MCS? > WiFi.Radio.*.MCS? WiFi.Radio.1.MCS=0 WiFi.Radio.2.MCS=0 WiFi.Radio.3.MCS=0
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 status SSID: "5G-123" Mode: Managed RSSI: 0 dBm SNR: 0 dB noise: -92 dBm Channel: 48/160 BSSID: 64:75:DA:4E:51:75 Capability: ESS RRM Beacon Interval: 100 msecs Supported Rates: [ 6(b) 9 12 18 24(b) 36 48 54 ] Ex...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d379-radio-mcs.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d379-radio-mcs.json`
 
 ### d380-radio-multiaptypessupported
 
@@ -2418,7 +2418,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Get MultiAP type Supported mode root@prplOS:/# ubus-cli WiFi.Radio.*.MultiAPTypesSupported? > WiFi.Radio.*.MultiAPTypesSupported? WiFi.Radio.1.MultiAPTypesSupported="FronthaulBSS,BackhaulBSS,BackhaulSTA" WiFi.Radio.2.MultiAPTypesSuppo...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d380-radio-multiaptypessupported.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d380-radio-multiaptypessupported.json`
 
 ### d384-radio-radcapabilitieshtstr
 
@@ -2437,7 +2437,7 @@
 - mismatch bands: `6g`
 - 0401 G excerpt: 1. get RadCapabilitiesHTStr root@prplOS:/# ubus-cli WiFi.Radio.*.RadCapabilitiesHTStr? > WiFi.Radio.*.RadCapabilitiesHTStr? WiFi.Radio.1.RadCapabilitiesHTStr="CAP_40,SHORT_GI_20,SHORT_GI_40,MODE_40" WiFi.Radio.2.RadCapabilitiesHTStr="" W...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d384-radio-radcapabilitieshtstr.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d384-radio-radcapabilitieshtstr.json`
 
 ### d385-radio-radcapabilitiesvhtstr
 
@@ -2456,7 +2456,7 @@
 - mismatch bands: `6g, 2.4g`
 - 0401 G excerpt: 1. get RadCapabilitiesVHTStr root@prplOS:/# ubus-cli WiFi.Radio.*.RadCapabilitiesVHTStr? > WiFi.Radio.*.RadCapabilitiesVHTStr? WiFi.Radio.1.RadCapabilitiesVHTStr="RX_LDPC,SGI_80,SGI_160,SU_BFR,SU_BFE,LINK_ADAPT_CAP" WiFi.Radio.2.RadCapab...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d385-radio-radcapabilitiesvhtstr.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d385-radio-radcapabilitiesvhtstr.json`
 
 ### d396-getradiostats-errorsreceived
 
@@ -2475,7 +2475,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: cat /proc/net/dev |grep wl0
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d396-getradiostats-errorsreceived.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d396-getradiostats-errorsreceived.json`
 
 ### d397-getradiostats-errorssent
 
@@ -2494,7 +2494,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: cat /proc/net/dev |grep wl0
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d397-getradiostats-errorssent.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d397-getradiostats-errorssent.json`
 
 ### d414-assocdev-rrmoffchannelmaxduration
 
@@ -2513,7 +2513,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi Station to GW with one station 802.11k Enable and the other one 802.11k Disable. 2. Verify Station station 802.11k Enable Check whether RRM is ON or OFF using: wl sta_info <MAC> | grep -i rrm If 802.11k Enable then you wi...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d414-assocdev-rrmoffchannelmaxduration.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d414-assocdev-rrmoffchannelmaxduration.json`
 
 ### d415-assocdev-rrmonchannelmaxduration
 
@@ -2532,7 +2532,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi Station to GW with one station 802.11k Enable and the other one 802.11k Disable. 2. Verify Station station 802.11k Enable Check whether RRM is ON or OFF using: wl sta_info <MAC> | grep -i rrm If 802.11k Enable then you wi...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d415-assocdev-rrmonchannelmaxduration.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d415-assocdev-rrmonchannelmaxduration.json`
 
 ### d427-skip-neighbour-bssid
 
@@ -2552,7 +2552,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Reset GW to Default then check Neighbour entry root@prplOS:/# ubus-cli WiFi.AccessPoint.1.? | grep Neighbour root@prplOS:/# 2. Add Neighbour entry root@prplOS:/# ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID="AA:BB:CC:DD:EE :01",C...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d427-skip-neighbour-bssid.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d427-skip-neighbour-bssid.json`
 
 ### d429-skip-neighbour-colocatedap
 
@@ -2572,7 +2572,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d429-skip-neighbour-colocatedap.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d429-skip-neighbour-colocatedap.json`
 
 ### d430-skip-neighbour-information
 
@@ -2592,7 +2592,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d430-skip-neighbour-information.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d430-skip-neighbour-information.json`
 
 ### d431-skip-neighbour-nasidentifier
 
@@ -2612,7 +2612,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d431-skip-neighbour-nasidentifier.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d431-skip-neighbour-nasidentifier.json`
 
 ### d432-skip-neighbour-operatingclass
 
@@ -2632,7 +2632,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d432-skip-neighbour-operatingclass.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d432-skip-neighbour-operatingclass.json`
 
 ### d433-skip-neighbour-phytype
 
@@ -2652,7 +2652,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d433-skip-neighbour-phytype.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d433-skip-neighbour-phytype.json`
 
 ### d434-skip-neighbour-r0khkey
 
@@ -2672,7 +2672,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d434-skip-neighbour-r0khkey.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d434-skip-neighbour-r0khkey.json`
 
 ### d435-skip-neighbour-ssid
 
@@ -2692,7 +2692,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d435-skip-neighbour-ssid.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d435-skip-neighbour-ssid.json`
 
 ### d436-security-owetransitioninterface
 
@@ -2711,7 +2711,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Set OWETransitionInterface root@prplOS:~# ubus-cli WiFi.AccessPoint.1.Security.OWETransitionInterface=DEFAULT_W L1_1 > WiFi.AccessPoint.1.Security.OWETransitionInterface=DEFAULT_WL1_1 WiFi.AccessPoint.1.Security. WiFi.AccessPoint.1.Se...
 - 0401 H excerpt: root@prplOS:~# cat /tmp/wl0_hapd.conf |grep owe_transition_ifname root@prplOS:~# cat /tmp/wl1_hapd.conf |grep owe_transition_ifname root@prplOS:~# cat /tmp/wl2_hapd.conf |grep owe_transition_ifname
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d436-security-owetransitioninterface.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d436-security-owetransitioninterface.json`
 
 ### d437-security-saepassphrase
 
@@ -2730,7 +2730,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Set Security ModeEnabled=WPA3-Personal ubus-cli WiFi.AccessPoint.*.Security.ModeEnabled=WPA3-Personal 2. Set Security SAEPassphrase=1234567890 ubus-cli WiFi.AccessPoint.*.Security.SAEPassphrase=1234567890
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep sae_password root@prplOS:/# cat /tmp/wl0_hapd.conf |grep sae_password sae_password=1234567890 root@prplOS:/# cat /tmp/wl1_hapd.conf |grep sae_password sae_password=1234567890 root@prplOS:/# cat /tmp/wl2_hapd....
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d437-security-saepassphrase.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d437-security-saepassphrase.json`
 
 ### d438-security-transitiondisable
 
@@ -2749,7 +2749,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep transition_disable
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d438-security-transitiondisable.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d438-security-transitiondisable.json`
 
 ### d454-getradiostats-failedretranscount
 
@@ -2768,7 +2768,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Record counters at start: root@prplOS:/# ubus-cli "WiFi.Radio.*.getRadioStats()" | grep MultipleRetryCount MultipleRetryCount = 0, MultipleRetryCount = 0, MultipleRetryCount = 0, root@prplOS:/# ubus-cli "WiFi.Radio.*.getRadioStats()" ...
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d454-getradiostats-failedretranscount.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d454-getradiostats-failedretranscount.json`
 
 ### d455-getradiostats-multipleretrycount
 
@@ -2787,26 +2787,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d455-getradiostats-multipleretrycount.json`
-
-### d462-radio-bsscolor
-
-- case file: `D462_bsscolor.yaml`
-- answer row: `462`
-- mapping status: `drift`
-- source metadata: `WiFi.Radio.{i}.` / `BssColor`
-- workbook metadata: `WiFi.Radio.{i}.IEEE80211ax.` / `BssColor`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Set this value to 1: ubus-cli WiFi.Radio.*.IEEE80211ax.BssColor=1 2. Check the beacon from Wireshark, there should be an IE recording this: IEEE 802.11 Wireless Management |_Tagged Parameters |_Ext Tag: HW Operation |_BSS Color Inform...
-- 0401 H excerpt: wl -i wl0 he bsscolor
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d462-radio-bsscolor.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d455-getradiostats-multipleretrycount.json`
 
 ### d463-radio-hesigaspatialreusevalue15allowed
 
@@ -2825,7 +2806,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Set this value to 1: ubus-cli WiFi.Radio.*.IEEE80211ax.HESIGASpatialReuseValue15Allowed=1 2. Check the beacon from Wireshark, there should be an IE recording this : IEEE 802.11 Wireless Management |_Tagged Parameters |_Ext Tag: Spatia...
 - 0401 H excerpt: (HESIGASpatialReuseValue15Allowed=0) root@prplOS:/# wl -i wl0 he sr HE Spatial Reuse Parameter Set element: <DISABLED> root@prplOS:/# wl -i wl1 he sr HE Spatial Reuse Parameter Set element: <DISABLED> root@prplOS:/# wl -i wl2 he sr HE Sp...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d463-radio-hesigaspatialreusevalue15allowed.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d463-radio-hesigaspatialreusevalue15allowed.json`
 
 ### d465-radio-srginformationvalid
 
@@ -2844,7 +2825,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check API defualt value: root@prplOS:/# ubus-cli WiFi.Radio.*.IEEE80211ax.SRGInformationValid? > WiFi.Radio.*.IEEE80211ax.SRGInformationValid? WiFi.Radio.1.IEEE80211ax.SRGInformationValid=0 WiFi.Radio.2.IEEE80211ax.SRGInformationValid...
 - 0401 H excerpt: (SRGInformationValid=0) root@prplOS:/# wl -i wl0 sr_config options options 0 root@prplOS:/# wl -i wl1 sr_config options options 0 root@prplOS:/# wl -i wl2 sr_config options options 0 (SRGInformationValid=1) root@prplOS:/# wl -i wl0 sr_co...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d465-radio-srginformationvalid.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d465-radio-srginformationvalid.json`
 
 ### d467-radio-rxbeamformingcapsenabled
 
@@ -2863,7 +2844,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d467-radio-rxbeamformingcapsenabled.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d467-radio-rxbeamformingcapsenabled.json`
 
 ### d474-radio-channel
 
@@ -2882,7 +2863,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d474-radio-channel.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d474-radio-channel.json`
 
 ### d477-getradiostats-unknownprotopacketsreceived
 
@@ -2901,7 +2882,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d477-getradiostats-unknownprotopacketsreceived.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d477-getradiostats-unknownprotopacketsreceived.json`
 
 ### d478-getradiostats-wmm-bytesreceived-ac_be
 
@@ -2921,7 +2902,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF "iperf3 -c <server> -u -b 20M" 3. Verify Radio Stats.WmmBytesReceived.AC_BE root@prplOS:/# ubus-cli WiFi.Radio.*.? | grep WmmBytesReceived.AC_BE ...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 wme_counters AC_BE: tx frames: 23176 bytes: 6830889 failed frames: 0 failed bytes: 0 rx frames: 17703 bytes: 26181728 failed frames: 0 failed bytes: 0 root@prplOS:/# wl -i wl1 wme_counters AC_BE: tx frames: 26313...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d478-getradiostats-wmm-bytesreceived-ac_be.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d478-getradiostats-wmm-bytesreceived-ac_be.json`
 
 ### d479-getradiostats-wmm-bytesreceived-ac_bk
 
@@ -2941,7 +2922,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF "iperf3 -c <server> -u -b 20M --tos 0x20" 3. Verify Radio Stats.WmmBytesReceived.AC_BK root@prplOS:/# ubus-cli WiFi.Radio.*.? | grep WmmBytesRece...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 wme_counters AC_BE: tx frames: 23711 bytes: 7015133 failed frames: 0 failed bytes: 0 rx frames: 17734 bytes: 26185565 failed frames: 0 failed bytes: 0 root@prplOS:/# wl -i wl1 wme_counters AC_BE: tx frames: 27022...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d479-getradiostats-wmm-bytesreceived-ac_bk.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d479-getradiostats-wmm-bytesreceived-ac_bk.json`
 
 ### d480-getradiostats-wmm-bytesreceived-ac_vi
 
@@ -2961,7 +2942,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF "iperf3 -c <server> -u -b 20M --tos 0x88" 3. Verify Radio Stats.WmmBytesReceived.AC_VI root@prplOS:/# ubus-cli WiFi.Radio.*.? | grep WmmBytesRece...
 - 0401 H excerpt: wl -i wl0 wme_counters root@prplOS:/# wl -i wl0 wme_counters AC_VI: tx frames: 0 bytes: 0 failed frames: 0 failed bytes: 0 rx frames: 17205 bytes: 26495350 failed frames: 0 failed bytes: 0 root@prplOS:/# wl -i wl1 wme_counters AC_VI: tx ...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d480-getradiostats-wmm-bytesreceived-ac_vi.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d480-getradiostats-wmm-bytesreceived-ac_vi.json`
 
 ### d481-getradiostats-wmm-bytesreceived-ac_vo
 
@@ -2981,7 +2962,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF "iperf3 -c <server> -u -b 20M --tos 0xB8" 3. Verify Radio Stats.WmmBytesReceived.AC_VO root@prplOS:/# ubus-cli WiFi.Radio.*.? | grep WmmBytesRece...
 - 0401 H excerpt: wl -i wl0 wme_counters root@prplOS:/# wl -i wl0 wme_counters AC_VO: tx frames: 8 bytes: 3541 failed frames: 0 failed bytes: 0 rx frames: 17345 bytes: 26447627 failed frames: 0 failed bytes: 0 root@prplOS:/# wl -i wl1 wme_counters AC_VO: ...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d481-getradiostats-wmm-bytesreceived-ac_vo.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d481-getradiostats-wmm-bytesreceived-ac_vo.json`
 
 ### d482-getradiostats-wmm-bytessent-ac_be
 
@@ -3001,7 +2982,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect two WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF between Station "iperf3 -c 192.168.1.1 -u -b 20M " 3. Execute command ubus-cli "WiFi.Radio.*.getRadioStats()" 4. Verify Radio Stats.WmmBytesR...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 wme_counters AC_BE: tx frames: 36796 bytes: 39571906 failed frames: 341 failed bytes: 79808 root@prplOS:/# wl -i wl1 wme_counters AC_BE: tx frames: 33627 bytes: 14116150 failed frames: 0 failed bytes: 0 root@prpl...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d482-getradiostats-wmm-bytessent-ac_be.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d482-getradiostats-wmm-bytessent-ac_be.json`
 
 ### d483-getradiostats-wmm-bytessent-ac_bk
 
@@ -3021,7 +3002,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect two WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF iperf3 -c 192.168.1.1 -u -b 20M --tos 0x20 3. Execute command ubus-cli "WiFi.Radio.*.getRadioStats()" 4. Verify Radio Stats.WmmBytesSent.AC_B...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 wme_counters AC_BK: tx frames: 6824 bytes: 25882414 failed frames: 0 failed bytes: 0 root@prplOS:/# wl -i wl1 wme_counters AC_BK: tx frames: 6243 bytes: 22243076 failed frames: 0 failed bytes: 0 root@prplOS:/# wl...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d483-getradiostats-wmm-bytessent-ac_bk.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d483-getradiostats-wmm-bytessent-ac_bk.json`
 
 ### d484-getradiostats-wmm-bytessent-ac_vi
 
@@ -3041,7 +3022,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect two WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF "iperf3 -c <server> -u -b 20M --tos 0x88" 3. Execute command ubus-cli "WiFi.Radio.*.getRadioStats()" 4. Verify Radio Stats.WmmBytesSent.AC_VI...
 - 0401 H excerpt: wl -i wl0 wme_counters root@prplOS:/# wl -i wl0 wme_counters AC_VI: tx frames: 17265 bytes: 25861532 failed frames: 0 failed bytes: 0 root@prplOS:/# wl -i wl0 wme_counters AC_VI: tx frames: 4352 bytes: 6517858 failed frames: 0 failed byt...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d484-getradiostats-wmm-bytessent-ac_vi.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d484-getradiostats-wmm-bytessent-ac_vi.json`
 
 ### d485-getradiostats-wmm-bytessent-ac_vo
 
@@ -3061,7 +3042,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect two WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF "iperf3 -c <server> -u -b 20M --tos 0xB8" 3. Execute command ubus-cli "WiFi.Radio.*.getRadioStats()" 4. Verify Radio Stats.WmmBytesSent.AC_VO...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 wme_counters AC_VO: tx frames: 17268 bytes: 25862027 failed frames: 2 failed bytes: 104 root@prplOS:/# wl -i wl1 wme_counters AC_VO: tx frames: 6 bytes: 972 failed frames: 0 failed bytes: 0 root@prplOS:/# wl -i w...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d485-getradiostats-wmm-bytessent-ac_vo.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d485-getradiostats-wmm-bytessent-ac_vo.json`
 
 ### d486-getradiostats-wmm-failedbytesreceived-ac_be
 
@@ -3081,7 +3062,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: wl -i wl0 wme_counters | grep -A2 "AC_BE" | grep -E 'tx frames|rx frames' wl -i wl1 wme_counters | grep -A2 "AC_BE" | grep -E 'tx frames|rx frames' wl -i wl2 wme_counters | grep -A2 "AC_BE" | grep -E 'tx frames|rx frames'
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d486-getradiostats-wmm-failedbytesreceived-ac_be.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d486-getradiostats-wmm-failedbytesreceived-ac_be.json`
 
 ### d487-getradiostats-wmm-failedbytesreceived-ac_bk
 
@@ -3101,7 +3082,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: wl -i wl0 wme_counters | grep -A2 "AC_BK" | grep -E 'tx frames|rx frames' wl -i wl1 wme_counters | grep -A2 "AC_BK" | grep -E 'tx frames|rx frames' wl -i wl2 wme_counters | grep -A2 "AC_BK" | grep -E 'tx frames|rx frames'
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d487-getradiostats-wmm-failedbytesreceived-ac_bk.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d487-getradiostats-wmm-failedbytesreceived-ac_bk.json`
 
 ### d488-getradiostats-wmm-failedbytesreceived-ac_vi
 
@@ -3121,7 +3102,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: wl -i wl0 wme_counters | grep -A2 "AC_VI" | grep -E 'tx frames|rx frames' wl -i wl1 wme_counters | grep -A2 "AC_VI" | grep -E 'tx frames|rx frames' wl -i wl2 wme_counters | grep -A2 "AC_VI" | grep -E 'tx frames|rx frames'
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d488-getradiostats-wmm-failedbytesreceived-ac_vi.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d488-getradiostats-wmm-failedbytesreceived-ac_vi.json`
 
 ### d489-getradiostats-wmm-failedbytesreceived-ac_vo
 
@@ -3141,7 +3122,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: wl -i wl0 wme_counters | grep -A2 "AC_VO" | grep -E 'tx frames|rx frames' wl -i wl1 wme_counters | grep -A2 "AC_VO" | grep -E 'tx frames|rx frames' wl -i wl2 wme_counters | grep -A2 "AC_VO" | grep -E 'tx frames|rx frames'
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d489-getradiostats-wmm-failedbytesreceived-ac_vo.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d489-getradiostats-wmm-failedbytesreceived-ac_vo.json`
 
 ### d490-getradiostats-wmm-failedbytessent-ac_be
 
@@ -3161,7 +3142,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: wl -i wl0 wme_counters | grep -A2 "AC_BE" | grep -E 'tx frames|rx frames' wl -i wl1 wme_counters | grep -A2 "AC_BE" | grep -E 'tx frames|rx frames' wl -i wl2 wme_counters | grep -A2 "AC_BE" | grep -E 'tx frames|rx frames'
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d490-getradiostats-wmm-failedbytessent-ac_be.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d490-getradiostats-wmm-failedbytessent-ac_be.json`
 
 ### d491-getradiostats-wmm-failedbytessent-ac_bk
 
@@ -3181,7 +3162,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: wl -i wl0 wme_counters | grep -A2 "AC_BK" | grep -E 'tx frames|rx frames' wl -i wl1 wme_counters | grep -A2 "AC_BK" | grep -E 'tx frames|rx frames' wl -i wl2 wme_counters | grep -A2 "AC_BK" | grep -E 'tx frames|rx frames'
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d491-getradiostats-wmm-failedbytessent-ac_bk.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d491-getradiostats-wmm-failedbytessent-ac_bk.json`
 
 ### d492-getradiostats-wmm-failedbytessent-ac_vi
 
@@ -3201,7 +3182,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: wl -i wl0 wme_counters | grep -A2 "AC_VI" | grep -E 'tx frames|rx frames' wl -i wl1 wme_counters | grep -A2 "AC_VI" | grep -E 'tx frames|rx frames' wl -i wl2 wme_counters | grep -A2 "AC_VI" | grep -E 'tx frames|rx frames'
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d492-getradiostats-wmm-failedbytessent-ac_vi.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d492-getradiostats-wmm-failedbytessent-ac_vi.json`
 
 ### d493-getradiostats-wmm-failedbytessent-ac_vo
 
@@ -3221,7 +3202,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: wl -i wl0 wme_counters | grep -A2 "AC_VO" | grep -E 'tx frames|rx frames' wl -i wl1 wme_counters | grep -A2 "AC_VO" | grep -E 'tx frames|rx frames' wl -i wl2 wme_counters | grep -A2 "AC_VO" | grep -E 'tx frames|rx frames'
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d493-getradiostats-wmm-failedbytessent-ac_vo.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d493-getradiostats-wmm-failedbytessent-ac_vo.json`
 
 ### d496-ssid-wmm-ac_be_stats_wmmbytesreceived_ssid
 
@@ -3240,7 +3221,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect two WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF between Station "iperf3 -c 192.168.1.1 -u -b 20M " 3. Verify SSID Stats WmmBytesReceived.AC_BE root@prplOS:/# ubus-cli WiFi.SSID.6.? | grep R...
 - 0401 H excerpt: root@prplOS:/# ubus-cli "WiFi.Radio.*.getRadioStats()"? > WiFi.Radio.*.getRadioStats()? WiFi.Radio.1.getRadioStats() returned [ { WmmBytesReceived = { AC_BE = 31127479,
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d496-ssid-wmm-ac_be_stats_wmmbytesreceived_ssid.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d496-ssid-wmm-ac_be_stats_wmmbytesreceived_ssid.json`
 
 ### d499-ssid-wmm-ac_vo_stats_wmmbytesreceived_ssid
 
@@ -3259,7 +3240,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect two WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF "iperf3 -c <server> -u -b 20M --tos 0xB8" 3. Verify SSID stats WmmBytesReceived.AC_VO root@prplOS:/# ubus-cli WiFi.SSID.6.? | grep Received.A...
 - 0401 H excerpt: AC_VO: tx frames: 3 bytes: 495 failed frames: 0 failed bytes: 0 rx frames: 60 bytes: 3881 failed frames: 0 failed bytes: 0 foward frames: 0 bytes: 0 tx frames time expired: 0
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d499-ssid-wmm-ac_vo_stats_wmmbytesreceived_ssid.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d499-ssid-wmm-ac_vo_stats_wmmbytesreceived_ssid.json`
 
 ### d502-ssid-wmm-ac_vi_stats_wmmbytessent_ssid
 
@@ -3278,7 +3259,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF "iperf3 -c <server> -u -b 20M --tos 0x88" 3. Verify SSID stats WmmBytesSent.AC_VI=0 root@prplOS:/# ubus-cli WiFi.SSID.6.Stats.WmmBytesSent.AC_VI?...
 - 0401 H excerpt: AC_VI: tx frames: 17268 bytes: 25867464 failed frames: 0 failed bytes: 0 rx frames: 41129 bytes: 63338410 failed frames: 0 failed bytes: 0
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d502-ssid-wmm-ac_vi_stats_wmmbytessent_ssid.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d502-ssid-wmm-ac_vi_stats_wmmbytessent_ssid.json`
 
 ### d505-ssid-wmm-ac_bk_stats_wmmfailedbytesreceived_ssid
 
@@ -3297,7 +3278,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d505-ssid-wmm-ac_bk_stats_wmmfailedbytesreceived_ssid.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d505-ssid-wmm-ac_bk_stats_wmmfailedbytesreceived_ssid.json`
 
 ### d506-ssid-wmm-ac_vi_stats_wmmfailedbytesreceived_ssid
 
@@ -3316,7 +3297,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d506-ssid-wmm-ac_vi_stats_wmmfailedbytesreceived_ssid.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d506-ssid-wmm-ac_vi_stats_wmmfailedbytesreceived_ssid.json`
 
 ### d507-ssid-wmm-ac_vo_stats_wmmfailedbytesreceived_ssid
 
@@ -3335,7 +3316,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d507-ssid-wmm-ac_vo_stats_wmmfailedbytesreceived_ssid.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d507-ssid-wmm-ac_vo_stats_wmmfailedbytesreceived_ssid.json`
 
 ### d508-ssid-wmm-ac_be_stats_wmmfailedbytessent_ssid
 
@@ -3354,7 +3335,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d508-ssid-wmm-ac_be_stats_wmmfailedbytessent_ssid.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d508-ssid-wmm-ac_be_stats_wmmfailedbytessent_ssid.json`
 
 ### d510-ssid-wmm-ac_vi_stats_wmmfailedbytessent_ssid
 
@@ -3373,7 +3354,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d510-ssid-wmm-ac_vi_stats_wmmfailedbytessent_ssid.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d510-ssid-wmm-ac_vi_stats_wmmfailedbytessent_ssid.json`
 
 ### d512-ssid-wmm-ac_be_stats_wmmfailedreceived
 
@@ -3392,7 +3373,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d512-ssid-wmm-ac_be_stats_wmmfailedreceived.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d512-ssid-wmm-ac_be_stats_wmmfailedreceived.json`
 
 ### d513-ssid-wmm-ac_bk_stats_wmmfailedreceived
 
@@ -3411,7 +3392,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d513-ssid-wmm-ac_bk_stats_wmmfailedreceived.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d513-ssid-wmm-ac_bk_stats_wmmfailedreceived.json`
 
 ### d517-ssid-wmm-ac_bk_stats_wmmfailedsent
 
@@ -3430,7 +3411,7 @@
 - mismatch bands: `6g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d517-ssid-wmm-ac_bk_stats_wmmfailedsent.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d517-ssid-wmm-ac_bk_stats_wmmfailedsent.json`
 
 ### d518-ssid-wmm-ac_vi_stats_wmmfailedsent
 
@@ -3449,7 +3430,7 @@
 - mismatch bands: `6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d518-ssid-wmm-ac_vi_stats_wmmfailedsent.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d518-ssid-wmm-ac_vi_stats_wmmfailedsent.json`
 
 ### d519-ssid-wmm-ac_vo_stats_wmmfailedsent
 
@@ -3468,7 +3449,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d519-ssid-wmm-ac_vo_stats_wmmfailedsent.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d519-ssid-wmm-ac_vo_stats_wmmfailedsent.json`
 
 ### d520-ssid-wmm-ac_be_stats_wmmpacketsreceived
 
@@ -3487,7 +3468,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect two WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF between Station "iperf3 -c 192.168.1.1 -u -b 20M " 3. Verify SSID Stats WmmPacketsReceived root@prplOS:/# ubus-cli WiFi.SSID.*.Stats.WmmPacke...
 - 0401 H excerpt: === wl0 === AC_BE: tx frames: 45499 bytes: 36437621 failed frames: 0 failed bytes: 0 rx frames: 18129 bytes: 26231742 failed frames: 0 failed bytes: 0 === wl1 === AC_BE: tx frames: 50782 bytes: 37665998 failed frames: 0 failed bytes: 0 r...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d520-ssid-wmm-ac_be_stats_wmmpacketsreceived.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d520-ssid-wmm-ac_be_stats_wmmpacketsreceived.json`
 
 ### d521-ssid-wmm-ac_bk_stats_wmmpacketsreceived
 
@@ -3506,7 +3487,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect two WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF iperf3 -c 192.168.1.1 -u -b 20M --tos 0x20 3. Verify SSID stats WmmPacketsReceived.AC_BK root@prplOS:/# ubus-cli WiFi.SSID.*.Stats.WmmPackets...
 - 0401 H excerpt: === wl0 === AC_BK: tx frames: 19670 bytes: 51820236 failed frames: 0 failed bytes: 0 rx frames: 17259 bytes: 26199340 failed frames: 0 failed bytes: 0 === wl1 === AC_BK: tx frames: 39877 bytes: 103534322 failed frames: 0 failed bytes: 0 ...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d521-ssid-wmm-ac_bk_stats_wmmpacketsreceived.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d521-ssid-wmm-ac_bk_stats_wmmpacketsreceived.json`
 
 ### d522-ssid-wmm-ac_vi_stats_wmmpacketsreceived
 
@@ -3525,7 +3506,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF "iperf3 -c <server> -u -b 20M --tos 0x88" 3. Verify SSID stats WmmPacketsReceived.AC_VI=0 root@prplOS:/# ubus-cli WiFi.SSID.*.Stats.WmmPacketsRec...
 - 0401 H excerpt: === wl0 === AC_VI: tx frames: 34558 bytes: 51766446 failed frames: 0 failed bytes: 0 rx frames: 17205 bytes: 26495350 failed frames: 0 failed bytes: 0 === wl1 === AC_VI: tx frames: 34536 bytes: 51733490 failed frames: 0 failed bytes: 0 r...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d522-ssid-wmm-ac_vi_stats_wmmpacketsreceived.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d522-ssid-wmm-ac_vi_stats_wmmpacketsreceived.json`
 
 ### d523-ssid-wmm-ac_vo_stats_wmmpacketsreceived
 
@@ -3544,7 +3525,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect two WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF "iperf3 -c <server> -u -b 20M --tos 0xB8" 3. Verify SSID stats WmmPacketsReceived.AC_VO root@prplOS:/# ubus-cli WiFi.SSID.*.Stats.WmmPacketsR...
 - 0401 H excerpt: === wl0 === AC_VO: tx frames: 34553 bytes: 51750513 failed frames: 0 failed bytes: 0 rx frames: 17428 bytes: 26453929 failed frames: 0 failed bytes: 0 === wl1 === AC_VO: tx frames: 51806 bytes: 77598569 failed frames: 0 failed bytes: 0 r...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d523-ssid-wmm-ac_vo_stats_wmmpacketsreceived.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d523-ssid-wmm-ac_vo_stats_wmmpacketsreceived.json`
 
 ### d524-ssid-wmm-ac_be_stats_wmmpacketssent
 
@@ -3563,7 +3544,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect two WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF between Station "iperf3 -c 192.168.1.1 -u -b 20M " 3. Verify SSID Stats.WmmPacketsSent.AC_BE root@prplOS:/# ubus-cli WiFi.SSID.*.Stats.WmmPac...
 - 0401 H excerpt: === wl0 === AC_BE: tx frames: 45499 bytes: 36437621 failed frames: 0 failed bytes: 0 rx frames: 18129 bytes: 26231742 failed frames: 0 failed bytes: 0 === wl1 === AC_BE: tx frames: 50782 bytes: 37665998 failed frames: 0 failed bytes: 0 r...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d524-ssid-wmm-ac_be_stats_wmmpacketssent.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d524-ssid-wmm-ac_be_stats_wmmpacketssent.json`
 
 ### d525-ssid-wmm-ac_bk_stats_wmmpacketssent
 
@@ -3582,7 +3563,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect two WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF iperf3 -c 192.168.1.1 -u -b 20M --tos 0x20 3. Verify SSID stats WmmPacketsSent.AC_BK root@prplOS:/# ubus-cli WiFi.SSID.*.Stats.WmmPacketsSent...
 - 0401 H excerpt: === wl0 === AC_BK: tx frames: 19670 bytes: 51820236 failed frames: 0 failed bytes: 0 rx frames: 17259 bytes: 26199340 failed frames: 0 failed bytes: 0 === wl1 === AC_BK: tx frames: 39877 bytes: 103534322 failed frames: 0 failed bytes: 0 ...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d525-ssid-wmm-ac_bk_stats_wmmpacketssent.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d525-ssid-wmm-ac_bk_stats_wmmpacketssent.json`
 
 ### d526-ssid-wmm-ac_vi_stats_wmmpacketssent
 
@@ -3601,7 +3582,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Connect WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF "iperf3 -c <server> -u -b 20M --tos 0x88" 3. Verify SSID stats WmmPacketsSent.AC_VI=0 root@prplOS:/# ubus-cli WiFi.SSID.*.Stats.WmmPacketsSent.AC...
 - 0401 H excerpt: === wl0 === AC_VI: tx frames: 34558 bytes: 51766446 failed frames: 0 failed bytes: 0 rx frames: 17205 bytes: 26495350 failed frames: 0 failed bytes: 0 === wl1 === AC_VI: tx frames: 34536 bytes: 51733490 failed frames: 0 failed bytes: 0 r...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d526-ssid-wmm-ac_vi_stats_wmmpacketssent.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d526-ssid-wmm-ac_vi_stats_wmmpacketssent.json`
 
 ### d588-ssid-mldunit
 
@@ -3620,7 +3601,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Power ON the GW 2. Verify MLDUnit root@prplOS:/# ubus-cli WiFi.SSID.*.MLDUnit? > WiFi.SSID.*.MLDUnit? WiFi.SSID.1.MLDUnit=-1 WiFi.SSID.2.MLDUnit=-1 WiFi.SSID.3.MLDUnit=-1 WiFi.SSID.4.MLDUnit=0 WiFi.SSID.5.MLDUnit=-1 WiFi.SSID.6.MLDUni...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 mld_unit 0 root@prplOS:/# wl -i wl1 mld_unit 0 root@prplOS:/# wl -i wl2 mld_unit 0 root@prplOS:/# wl -i wl1 mlo scb_stats 02:10:5E:8B:5B:00 [VER 2] STA 02:10:5E:8B:5B:00 link_id : 0 1 2 Tx Stats: tx_pkts_acked : ...
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d588-ssid-mldunit.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d588-ssid-mldunit.json`
 
 ### d600-wifi7starole-nstrsupport
 
@@ -3639,4 +3620,4 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
-- trace: `plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d600-wifi7starole-nstrsupport.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d600-wifi7starole-nstrsupport.json`

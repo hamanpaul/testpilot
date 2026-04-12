@@ -17850,7 +17850,7 @@ _RADIO_GETTER_CASES = [
     ("D467_rxbeamformingcapsenabled.yaml", 343, "DEFAULT", "DEFAULT", "DEFAULT", "WiFi.Radio.{r}.RxBeamformingCapsEnabled"),
     # --- Batch 5b: IEEE80211ax property getters ---
     ("D365_psrdisallowed.yaml", 272, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.PSRDisallowed"),
-    ("D462_bsscolor.yaml", 339, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.BssColor"),
+    ("D462_bsscolor.yaml", 462, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.BssColor"),
     ("D463_hesigaspatialreusevalue15allowed.yaml", 340, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.HESIGASpatialReuseValue15Allowed"),
     ("D464_nonsrgoffsetvalid.yaml", 341, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.NonSRGOffsetValid"),
     ("D465_srginformationvalid.yaml", 342, "0", "1", "0", "WiFi.Radio.{r}.IEEE80211ax.SRGInformationValid"),

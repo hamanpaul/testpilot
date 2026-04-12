@@ -1,8 +1,8 @@
 id: d462-radio-bsscolor
 name: D462 Radio BssColor
 source:
-  row: 339
-  object: WiFi.Radio.{i}.
+  row: 462
+  object: WiFi.Radio.{i}.IEEE80211ax.
   api: BssColor
   baseline: 0310-BGW720-300
 bands:
@@ -12,9 +12,9 @@ bands:
 llapi_support: Support
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
 topology:
   devices:
     DUT:

@@ -1,5 +1,53 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-6)
+
+> This checkpoint records the `D462` mapping/results_reference closure after `D461`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D462 BssColor` is now aligned via official rerun `20260413T011655056430`
+- the authoritative full-run trace had already been `evaluation_verdict=Pass`; the remaining mismatch was stale metadata (`source.row=339`, object `WiFi.Radio.{i}.`, raw `Fail / Fail / Fail`)
+- committed metadata is now workbook row `462`, object `WiFi.Radio.{i}.IEEE80211ax.`, with `results_reference.v4.0.3 = Pass / Pass / Pass`
+- overlay compare recomputed on top of authoritative full run `20260412T113008433351`
+  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 reruns is now
+  `244 / 420 full matches`、`176 mismatches`、`60 metadata drifts`
+- next ready phase-2 mapping/results_reference revisit is `D463`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D462` | 462 | `BssColor` | `Pass / Pass / Pass` | `20260413T011655056430_DUT.log L5-L18` | `N/A (AP-only case)` |
+
+#### D462 BssColor
+
+**STA 指令**
+
+```sh
+# N/A (AP-only case; no STA transport used)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.IEEE80211ax.BssColor?"
+ubus-cli "WiFi.Radio.2.IEEE80211ax.BssColor?"
+ubus-cli "WiFi.Radio.3.IEEE80211ax.BssColor?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T011655056430_DUT.log L5-L18
+WiFi.Radio.1.IEEE80211ax.BssColor=0
+WiFi.Radio.2.IEEE80211ax.BssColor=0
+WiFi.Radio.3.IEEE80211ax.BssColor=0
+```
+
 ## Checkpoint summary (2026-04-13 early-5)
 
 > This checkpoint records the `D461` mapping/results_reference closure after the D460/D494 step-command bucket was cleared.
