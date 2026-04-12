@@ -1,5 +1,80 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-27)
+
+> This checkpoint records the `D059` UplinkBandwidth baseline/trigger/oracle closure after `D034`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D059 UplinkBandwidth` is now aligned via official rerun `20260413T055159421076`
+- this was not a metadata-only refresh: the case still carried stale workbook row `61`, a drifted custom `TestPilot_BTM` / `WPA3-Personal` baseline, and a weak driver reread path that sampled `rx nrate` before any deterministic STA uplink traffic
+- authoritative full run `20260412T113008433351` had already shown the real D059 pass path on the generic `testpilot5G` / `WPA2-Personal` baseline, so the committed rewrite restores that baseline, refreshes stale row `61` to workbook row `59`, adds an explicit STA uplink trigger, and re-reads the same post-trigger `AssociatedDevice.1` slot against `wl sta_info ... rx nrate`
+- official rerun `20260413T055159421076` then exact-closed `UplinkBandwidth=20`, `AssocMacAfterTrigger=2C:59:17:00:04:85`, `DriverAssocMac=2C:59:17:00:04:85`, and `DriverUplinkBandwidth=20`
+- committed metadata is now workbook row `59` with `results_reference.v4.0.3 = Pass / Pass / Pass`
+- overlay compare is now `264 / 420 full matches`、`156 mismatches`、`58 metadata drifts`
+- next ready workbook-Pass revisit is `D060`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D059` | 59 | `UplinkBandwidth` | `Pass / Pass / Pass` | `20260413T055159421076_DUT.log L361-L366` | `20260413T055159421076_STA.log L61-L103` |
+
+#### D059 UplinkBandwidth
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+ifconfig wl0 192.168.1.3 netmask 255.255.255.0 up && ip route get 192.168.1.1
+ping -I wl0 -c 8 -W 1 192.168.1.1
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?"); STA_MAC=$(printf '%s\n' "$OUT" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p' | head -n 1); STA_MAC_LOWER=$(echo "$STA_MAC" | tr 'A-F' 'a-f'); printf '%s\n' "$OUT" | sed -n 's/.*UplinkBandwidth=\([^[:space:]]*\).*/UplinkBandwidth=\1/p'; [ -n "$STA_MAC" ] && echo AssocMacAfterTrigger=$STA_MAC && echo DriverAssocMac=$STA_MAC && NRATE=$(wl -i wl0 sta_info $STA_MAC_LOWER | sed -n '/rx nrate/,+1p') && echo "$NRATE" && echo "$NRATE" | sed -n '2s/.*bw\([0-9][0-9]*\).*/DriverUplinkBandwidth=\1/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T055159421076_STA.log L61-L103
+Connected to 2c:59:17:00:19:95 (on wl0)
+SSID: testpilot5G
+ssid=testpilot5G
+wpa_state=COMPLETED
+8 packets transmitted, 8 received, 0% packet loss
+
+20260413T055159421076_DUT.log L361-L366
+UplinkBandwidth=20
+AssocMacAfterTrigger=2C:59:17:00:04:85
+DriverAssocMac=2C:59:17:00:04:85
+rx nrate
+he mcs 9 Nss 4 Tx Exp 0 bw20 ldpc 2xLTF GI 1.6us auto
+DriverUplinkBandwidth=20
+
+plugins/wifi_llapi/reports/agent_trace/20260413T055159421076/wifi-llapi-D059-uplinkbandwidth.json L96-L106
+commands:
+  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+  ifconfig wl0 192.168.1.3 netmask 255.255.255.0 up && ip route get 192.168.1.1
+  ping -I wl0 -c 8 -W 1 192.168.1.1
+  OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?"); ...
+outputs:
+  WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"
+  192.168.1.1 dev wl0 src 192.168.1.3 uid 0
+  8 packets transmitted, 8 received, 0% packet loss
+  UplinkBandwidth=20
+  AssocMacAfterTrigger=2C:59:17:00:04:85
+  DriverAssocMac=2C:59:17:00:04:85
+  DriverUplinkBandwidth=20
+```
+
 ## Checkpoint summary (2026-04-13 early-26)
 
 > This checkpoint records the `D034` Noise baseline/oracle closure after `D188`.

@@ -4,7 +4,7 @@ version: '1.1'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 61
+  row: 59
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: UplinkBandwidth
   baseline: BCM v4.0.3
@@ -28,8 +28,8 @@ topology:
       config:
       - iface: 5g
         mode: sta
-        ssid: TestPilot_BTM
-        key: testpilot6g
+        ssid: testpilot5G
+        key: "00000000"
   links:
   - from: STA
     to: DUT
@@ -41,25 +41,28 @@ test_environment: |
   Transport:
   - serialwrap attach COM0 / COM1
   Live band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4 / TestPilot_BTM
-  - 6G: DUT wl1 / AP3 / SSID.6 / TestPilot_BTM
-  - 2.4G: DUT wl2 / AP5 / SSID.8 / TestPilot_24G
+  - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G
+  - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G
+  - 2.4G: DUT wl2 / AP5 / SSID.8 / testpilot2G
   Preconditions:
   - keep only one associated station on AP1 so AssociatedDevice.1 stays deterministic
-  - use the validated 5G single-band WPA3 baseline for this case
+  - use the verified non-open 5G baseline for this case
 setup_steps: |
   1) DUT 5G baseline:
      - enable Radio.1 / SSID.4 / AP1
-     - configure AP1 as WPA3-Personal with MFP required
-     - keep the validated live SSID/credential pair as TestPilot_BTM / testpilot6g
+     - configure AP1 as WPA2-Personal with password 00000000 and MFP disabled
+     - keep the validated live 5G baseline as testpilot5G / 00000000
   2) STA 5G preparation:
      - disable local AP1/AP2 on COM1
      - move COM1 br-lan off 192.168.1.0/24 to avoid bridge self-hit side effects
      - reset wl0 and its wpa_supplicant control socket
-     - connect wl0 to TestPilot_BTM with SAE
+     - connect wl0 to testpilot5G with WPA-PSK
   3) Association evidence:
      - COM1: iw dev wl0 link ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status
      - COM0: wl -i wl0 assoclist
+  4) Uplink trigger:
+     - assign wl0 a temporary 192.168.1.x address
+     - ping DUT 192.168.1.1 through wl0 before the DUT reread so rx nrate reflects uplink data traffic
 sta_env_setup: |
   DUT 5G AP baseline:
     ubus-cli WiFi.Radio.1.Enable=1
@@ -85,12 +88,12 @@ sta_env_setup: |
     ubus-cli WiFi.Radio.1.LongRetryLimit=6
     ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
     ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID=TestPilot_BTM
+    ubus-cli WiFi.SSID.4.SSID=testpilot5G
     ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
     ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
-    ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=testpilot6g
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Required
+    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+    ubus-cli "WiFi.AccessPoint.1.Security.KeyPassPhrase=\"00000000\""
+    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
     ubus-cli WiFi.AccessPoint.1.Enable=1
   STA 5G preparation:
     ifconfig br-lan 192.168.88.1 netmask 255.255.255.0 up
@@ -105,7 +108,7 @@ sta_env_setup: |
     iw dev wl0 set type managed
     ifconfig wl0 up
     mkdir -p /var/run/wpa_supplicant
-    printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\nnetwork={\nssid="TestPilot_BTM"\nkey_mgmt=SAE\nsae_password="testpilot6g"\nieee80211w=2\nscan_ssid=1\n}\n' > /tmp/wpa_wl0.conf
+    printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nnetwork={\nssid="testpilot5G"\npsk="00000000"\nkey_mgmt=WPA-PSK\nscan_ssid=1\n}\n' > /tmp/wpa_wl0.conf
     wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
     sleep 3
   STA 5G connect verify:
@@ -117,9 +120,9 @@ sta_env_setup: |
     wl -i wl0 assoclist
 test_procedure: |
   1) Confirm the 5G STA is associated to AP1 and resolve its live MAC address.
-  2) Read WiFi.AccessPoint.1.AssociatedDevice.1.UplinkBandwidth on DUT.
-  3) Cross-check the same STA against wl0 sta_info `rx nrate` and parse the `bwNN` uplink bandwidth token.
-  4) Pass when UplinkBandwidth is a positive integer and matches the parsed driver uplink bandwidth for the same STA.
+  2) Move COM1 br-lan away from 192.168.1.0/24, assign wl0 a temporary 192.168.1.x address, and drive uplink traffic with ping so the DUT rx nrate reflects STA -> AP data traffic instead of control frames.
+  3) After the uplink trigger, capture a fresh AssociatedDevice.1 snapshot that includes both the post-trigger MAC slot and UplinkBandwidth, then cross-check the same STA against wl0 sta_info rx nrate.
+  4) Pass when the AP1 slot stays pinned to the same STA, UplinkBandwidth is a positive integer, and it matches the driver rx nrate bandwidth token for that same station.
 steps:
 - id: step1
   action: exec
@@ -128,51 +131,66 @@ steps:
   capture: assoc_entry
 - id: step2
   action: exec
-  target: DUT
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.UplinkBandwidth?"
+  target: STA
+  command: ifconfig wl0 192.168.1.3 netmask 255.255.255.0 up && ip route get 192.168.1.1
   depends_on: step1
-  capture: result
+  capture: sta_route
 - id: step3
+  action: exec
+  target: STA
+  command: ping -I wl0 -c 8 -W 1 192.168.1.1
+  depends_on: step2
+  capture: sta_probe
+- id: step4
   action: exec
   target: DUT
   command: >-
-    STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'); STA_MAC_LOWER=$(echo "$STA_MAC" | tr 'A-F' 'a-f'); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC_LOWER | sed -n '/rx nrate/,$p' | sed -n 's/.*bw\([0-9][0-9]*\).*/DriverUplinkBandwidth=\1/p' | head -n 1
-  depends_on: step2
-  capture: driver_counter
+    OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?"); STA_MAC=$(printf '%s\n' "$OUT" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p' | head -n 1); STA_MAC_LOWER=$(echo "$STA_MAC" | tr 'A-F' 'a-f'); printf '%s\n' "$OUT" | sed -n 's/.*UplinkBandwidth=\([^[:space:]]*\).*/UplinkBandwidth=\1/p'; [ -n "$STA_MAC" ] && echo AssocMacAfterTrigger=$STA_MAC && echo DriverAssocMac=$STA_MAC && NRATE=$(wl -i wl0 sta_info $STA_MAC_LOWER | sed -n '/rx nrate/,+1p') && echo "$NRATE" && echo "$NRATE" | sed -n '2s/.*bw\([0-9][0-9]*\).*/DriverUplinkBandwidth=\1/p'
+  depends_on: step3
+  capture: result
 pass_criteria:
 - field: assoc_entry.MACAddress
   operator: regex
   value: ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$
   description: AP1 AssociatedDevice.1 must first resolve to the live 5G STA MAC.
-- field: result.UplinkBandwidth
+- field: result.AssocMacAfterTrigger
   operator: regex
-  value: ^[0-9]+$
-  description: UplinkBandwidth should be a live non-negative integer.
-- field: result.UplinkBandwidth
-  operator: '>'
-  value: '0'
-  description: UplinkBandwidth should be positive for the associated 5G STA.
-- field: driver_counter.DriverAssocMac
+  value: ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$
+  description: The post-trigger AssociatedDevice.1 snapshot must still expose a concrete STA MAC.
+- field: result.AssocMacAfterTrigger
   operator: equals
   reference: assoc_entry.MACAddress
-  description: Driver uplink sampling must target the same AssociatedDevice MAC resolved in step1.
-- field: driver_counter.DriverUplinkBandwidth
+  description: The AP1 AssociatedDevice.1 slot must remain pinned to the same STA across the uplink trigger.
+- field: result.UplinkBandwidth
   operator: regex
   value: ^[0-9]+$
-  description: wl0 sta_info must emit a concrete uplink bandwidth value for the same STA.
-- field: driver_counter.DriverUplinkBandwidth
+  description: UplinkBandwidth should be a live non-negative integer after the STA uplink trigger.
+- field: result.UplinkBandwidth
   operator: '>'
   value: '0'
-  description: wl0 sta_info rx nrate must report a positive uplink bandwidth token for the same STA.
+  description: UplinkBandwidth should be positive for the associated 5G STA after the uplink trigger.
+- field: result.DriverAssocMac
+  operator: equals
+  reference: result.AssocMacAfterTrigger
+  description: Driver uplink sampling must target the same post-trigger AssociatedDevice MAC snapshot.
+- field: result.DriverUplinkBandwidth
+  operator: regex
+  value: ^[0-9]+$
+  description: wl0 sta_info rx nrate must emit a concrete uplink bandwidth value for the same STA after the ping trigger.
+- field: result.DriverUplinkBandwidth
+  operator: '>'
+  value: '0'
+  description: wl0 sta_info rx nrate must report a positive uplink bandwidth token for the same STA after the ping trigger.
 - field: result.UplinkBandwidth
   operator: equals
-  reference: driver_counter.DriverUplinkBandwidth
-  description: LLAPI UplinkBandwidth must match the driver uplink bandwidth parsed from wl0 sta_info rx nrate.
+  reference: result.DriverUplinkBandwidth
+  description: LLAPI UplinkBandwidth must match the driver uplink bandwidth parsed from wl0 sta_info rx nrate for the same station.
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.UplinkBandwidth?"'
-  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC" | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC_LOWER | sed -n ''/rx nrate/,$p'' | sed -n ''s/.*bw\([0-9][0-9]*\).*/DriverUplinkBandwidth=\1/p'' | head -n 1'
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?"'
+  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC" | tr ''A-F'' ''a-f''); NRATE=$(wl -i wl0 sta_info $STA_MAC_LOWER | sed -n ''/rx nrate/,+1p''); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && echo "$NRATE" && echo "$NRATE" | sed -n ''2s/.*bw\([0-9][0-9]*\).*/DriverUplinkBandwidth=\1/p'''
 results_reference:
   v4.0.3:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: Authoritative full-run evidence exact-closes the post-trigger AssociatedDevice.1 snapshot against the same-STA driver rx nrate bandwidth token; workbook row 59 is pass-shaped on all three bands.

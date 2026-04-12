@@ -31,7 +31,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T042647797154",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T044907394777",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T050318932313",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T052709875993"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T052709875993",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T055159421076"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -39,20 +40,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 263,
-  "mismatch_case_count": 157,
+  "full_match_count": 264,
+  "mismatch_case_count": 156,
   "band_summary": {
     "5g": {
-      "matched": 269,
-      "mismatched": 151
+      "matched": 270,
+      "mismatched": 150
     },
     "6g": {
-      "matched": 272,
-      "mismatched": 148
+      "matched": 273,
+      "mismatched": 147
     },
     "2.4g": {
-      "matched": 269,
-      "mismatched": 151
+      "matched": 270,
+      "mismatched": 150
     }
   },
   "cases": [
@@ -2427,7 +2428,7 @@
       "case_id": "wifi-llapi-D059-uplinkbandwidth",
       "case_file": "D059_uplinkbandwidth.yaml",
       "dnum": 59,
-      "source_row": 61,
+      "source_row": 59,
       "source_object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
       "source_api": "UplinkBandwidth",
       "answer_row": 59,
@@ -2436,39 +2437,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
+      "final_status": "Pass",
+      "evaluation_verdict": "Pass",
+      "attempts_used": 1,
+      "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "##Connect WiFi Station and check Station UplinkBandwidth WiFi.AccessPoint.1.AssociatedDevice.1.UplinkBandwidth=20 WiFi.AccessPoint.3.AssociatedDevice.1.UplinkBandwidth=20 WiFi.AccessPoint.5.AssociatedDevice.1.UplinkBandwidth=20",
       "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} link bandwidth = 20 MHZ tx nrate eht mcs 7 Nss 2 Tx Exp 2 bw20 ldpc 2xLTF GI 1.6us auto rx nrate eht mcs 4 Nss 1 Tx Exp 0 bw20 ldpc 2xLTF GI 0.8us auto tx nrate = last packet transmitted to the STA (downlink...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D059-uplinkbandwidth.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T055159421076/wifi-llapi-D059-uplinkbandwidth.json"
     },
     {
       "case_id": "wifi-llapi-D060-uplinkmcs",
@@ -19285,53 +19282,6 @@
       "workbook_test_steps_excerpt": "##Connect WiFi Station and send traffic then check TxUnicastPacketCount WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.3.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.5.AssociatedDevice.1.TxUni...",
       "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} TxUnicastPacketCount tx ucast pkts 90",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D057-txunicastpacketcount.json"
-    },
-    {
-      "case_id": "wifi-llapi-D059-uplinkbandwidth",
-      "case_file": "D059_uplinkbandwidth.yaml",
-      "dnum": 59,
-      "source_row": 61,
-      "source_object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
-      "source_api": "UplinkBandwidth",
-      "answer_row": 59,
-      "answer_object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
-      "answer_api": "UplinkBandwidth",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "##Connect WiFi Station and check Station UplinkBandwidth WiFi.AccessPoint.1.AssociatedDevice.1.UplinkBandwidth=20 WiFi.AccessPoint.3.AssociatedDevice.1.UplinkBandwidth=20 WiFi.AccessPoint.5.AssociatedDevice.1.UplinkBandwidth=20",
-      "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} link bandwidth = 20 MHZ tx nrate eht mcs 7 Nss 2 Tx Exp 2 bw20 ldpc 2xLTF GI 1.6us auto rx nrate eht mcs 4 Nss 1 Tx Exp 0 bw20 ldpc 2xLTF GI 0.8us auto tx nrate = last packet transmitted to the STA (downlink...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D059-uplinkbandwidth.json"
     },
     {
       "case_id": "wifi-llapi-D060-uplinkmcs",

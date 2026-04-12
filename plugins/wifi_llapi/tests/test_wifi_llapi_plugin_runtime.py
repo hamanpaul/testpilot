@@ -5176,7 +5176,6 @@ def test_pending_counter_pass_associateddevice_cases_use_supported_contracts():
         "wifi-llapi-D039-rxbytes",
         "wifi-llapi-D041-rxpacketcount",
         "wifi-llapi-D056-txpacketcount",
-        "wifi-llapi-D059-uplinkbandwidth",
     }.issubset(discoverable_ids)
 
     pass_cases = {
@@ -5201,13 +5200,6 @@ def test_pending_counter_pass_associateddevice_cases_use_supported_contracts():
             "driver_token": "DriverTxPacketCount=",
             "driver_field": "driver_counter.DriverTxPacketCount",
         },
-        "D059_uplinkbandwidth.yaml": {
-            "id": "wifi-llapi-D059-uplinkbandwidth",
-            "row": 61,
-            "api": "UplinkBandwidth",
-            "driver_token": "DriverUplinkBandwidth=",
-            "driver_field": "driver_counter.DriverUplinkBandwidth",
-        },
     }
 
     for filename, meta in pass_cases.items():
@@ -5226,9 +5218,6 @@ def test_pending_counter_pass_associateddevice_cases_use_supported_contracts():
         assert "MACAddress?" in commands
         assert "DriverAssocMac=" in commands
         assert meta["driver_token"] in commands
-        if filename == "D059_uplinkbandwidth.yaml":
-            assert "sed -n '/rx nrate/,$p'" in commands
-            assert "head -n 1" in commands
         assert any(
             criterion["field"] == f'result.{meta["api"]}'
             and criterion["operator"] == "regex"
@@ -5263,7 +5252,6 @@ def test_pending_counter_pass_associateddevice_cases_use_supported_contracts():
             "D039_rxbytes.yaml": ("Pass", "Pass", "Pass"),
             "D041_rxpacketcount.yaml": ("Pass", "Pass", "Pass"),
             "D056_txpacketcount.yaml": ("Pass", "Pass", "Pass"),
-            "D059_uplinkbandwidth.yaml": ("Pass", "Pass", "Pass"),
         }
         exp5, exp6, exp24 = _cpass_rr[filename]
         assert case_data["results_reference"]["v4.0.3"]["5g"] == exp5
@@ -5290,11 +5278,6 @@ def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
             "api": "TxPacketCount",
             "driver_output": "DriverTxPacketCount=12956",
             "driver_fail_output": "DriverTxPacketCount=0",
-        },
-        "D059_uplinkbandwidth.yaml": {
-            "api": "UplinkBandwidth",
-            "driver_output": "DriverUplinkBandwidth=20",
-            "driver_fail_output": "DriverUplinkBandwidth=0",
         },
     }
 
@@ -5356,6 +5339,147 @@ def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
             }
         }
         assert plugin.evaluate(case_data, mismatch_results) is False
+
+
+def test_d059_uplinkbandwidth_uses_positive_same_sta_contract():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    raw_case = yaml.safe_load((cases_dir / "D059_uplinkbandwidth.yaml").read_text(encoding="utf-8"))
+    case_data = load_case(cases_dir / "D059_uplinkbandwidth.yaml")
+    commands = "\n".join(str(step.get("command", "")) for step in case_data["steps"])
+    links = {link["band"] for link in case_data["topology"]["links"]}
+
+    assert "wifi-llapi-D059-uplinkbandwidth" in {case["id"] for case in plugin.discover_cases()}
+    assert "aliases" not in raw_case
+    assert case_data["id"] == "wifi-llapi-D059-uplinkbandwidth"
+    assert case_data["source"]["row"] == 59
+    assert case_data["source"]["baseline"] == "BCM v4.0.3"
+    assert case_data["bands"] == ["5g"]
+    assert links == {"5g"}
+    assert case_data["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.UplinkBandwidth?"'
+    assert len(case_data["steps"]) == 4
+    assert case_data["topology"]["devices"]["STA"]["config"][0]["ssid"] == "testpilot5G"
+    assert case_data["topology"]["devices"]["STA"]["config"][0]["key"] == "00000000"
+    assert "MACAddress?" in commands
+    assert "ping -I wl0 -c 8 -W 1 192.168.1.1" in commands
+    assert "AssocMacAfterTrigger=" in commands
+    assert "DriverAssocMac=" in commands
+    assert "DriverUplinkBandwidth=" in commands
+    assert "sed -n '/rx nrate/,+1p'" in commands
+    assert "sed -n '2s/.*bw\\([0-9][0-9]*\\).*/DriverUplinkBandwidth=\\1/p'" in commands
+    assert any(
+        criterion["field"] == "result.AssocMacAfterTrigger"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "assoc_entry.MACAddress"
+        for criterion in case_data["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.UplinkBandwidth"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == "^[0-9]+$"
+        for criterion in case_data["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.UplinkBandwidth"
+        and criterion["operator"] == ">"
+        and str(criterion["value"]) == "0"
+        for criterion in case_data["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.DriverAssocMac"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "result.AssocMacAfterTrigger"
+        for criterion in case_data["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.DriverUplinkBandwidth"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == "^[0-9]+$"
+        for criterion in case_data["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.DriverUplinkBandwidth"
+        and criterion["operator"] == ">"
+        and str(criterion["value"]) == "0"
+        for criterion in case_data["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "result.UplinkBandwidth"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "result.DriverUplinkBandwidth"
+        for criterion in case_data["pass_criteria"]
+    )
+    assert case_data["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert case_data["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert case_data["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+
+
+def test_d059_uplinkbandwidth_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    case_data = load_case(cases_dir / "D059_uplinkbandwidth.yaml")
+
+    pass_results = {
+        "steps": {
+            "step1": {
+                "success": True,
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
+                "timing": 0.01,
+            },
+            "step2": {
+                "success": True,
+                "output": "192.168.1.1 dev wl0 src 192.168.1.3 uid 0",
+                "timing": 0.01,
+            },
+            "step3": {
+                "success": True,
+                "output": "8 packets transmitted, 8 received, 0% packet loss",
+                "timing": 0.01,
+            },
+            "step4": {
+                "success": True,
+                "output": "UplinkBandwidth=20\nAssocMacAfterTrigger=2C:59:17:00:04:85\nDriverAssocMac=2C:59:17:00:04:85\nrx nrate\nhe mcs 10 Nss 4 Tx Exp 0 bw20 ldpc 2xLTF GI 1.6us auto\nDriverUplinkBandwidth=20",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case_data, pass_results) is True
+
+    driver_fail_results = {
+        "steps": {
+            **pass_results["steps"],
+            "step4": {
+                "success": True,
+                "output": "UplinkBandwidth=20\nAssocMacAfterTrigger=2C:59:17:00:04:85\nDriverAssocMac=2C:59:17:00:04:85\nrx nrate\nhe mcs 10 Nss 4 Tx Exp 0 bw20 ldpc 2xLTF GI 1.6us auto\nDriverUplinkBandwidth=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case_data, driver_fail_results) is False
+
+    zero_results = {
+        "steps": {
+            **pass_results["steps"],
+            "step4": {
+                "success": True,
+                "output": "UplinkBandwidth=0\nAssocMacAfterTrigger=2C:59:17:00:04:85\nDriverAssocMac=2C:59:17:00:04:85\nrx nrate\nhe mcs 10 Nss 4 Tx Exp 0 bw20 ldpc 2xLTF GI 1.6us auto\nDriverUplinkBandwidth=20",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case_data, zero_results) is False
+
+    mismatch_results = {
+        "steps": {
+            **pass_results["steps"],
+            "step4": {
+                "success": True,
+                "output": "UplinkBandwidth=20\nAssocMacAfterTrigger=AA:AA:AA:AA:AA:AA\nDriverAssocMac=AA:AA:AA:AA:AA:AA\nrx nrate\nhe mcs 10 Nss 4 Tx Exp 0 bw20 ldpc 2xLTF GI 1.6us auto\nDriverUplinkBandwidth=20",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case_data, mismatch_results) is False
 
 
 def test_d060_uplinkmcs_uses_zero_valid_same_sta_contract():
@@ -15542,7 +15666,6 @@ def test_sta_env_setup_parser_preserves_wpa_cli_quoted_value():
         "D055_txmulticastpacketcount.yaml",
         "D056_txpacketcount.yaml",
         "D057_txunicastpacketcount.yaml",
-        "D059_uplinkbandwidth.yaml",
         "D058_uniibandscapabilities.yaml",
     ],
 )
@@ -15566,10 +15689,11 @@ def test_sta_env_setup_parser_preserves_single_line_wpa_supplicant_template(file
     assert "network={" not in commands
 
 
-def test_sta_env_setup_parser_preserves_single_line_wpa_supplicant_psk_template():
+@pytest.mark.parametrize("filename", ["D059_uplinkbandwidth.yaml", "D060_uplinkmcs.yaml"])
+def test_sta_env_setup_parser_preserves_single_line_wpa_supplicant_psk_template(filename: str):
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case_data = load_case(cases_dir / "D060_uplinkmcs.yaml")
+    case_data = load_case(cases_dir / filename)
 
     parsed = plugin._iter_env_script_commands(case_data["sta_env_setup"])
     commands = [command for _, command in parsed]
@@ -15700,7 +15824,7 @@ def test_extract_cli_fragments_ignores_prose_after_ubus_keyword():
         ("D054_txerrors.yaml", 4, "DriverTxErrors="),
         ("D049_supportedmcs.yaml", 2, "DriverMCSSetPresent="),
         ("D056_txpacketcount.yaml", 2, "DriverTxPacketCount="),
-        ("D059_uplinkbandwidth.yaml", 2, "DriverUplinkBandwidth="),
+        ("D059_uplinkbandwidth.yaml", 3, "DriverUplinkBandwidth="),
         ("D060_uplinkmcs.yaml", 3, "DriverUplinkMCS="),
         ("D061_uplinkshortguard.yaml", 4, "DriverUplinkShortGuardGI="),
         ("D062_vendoroui.yaml", 4, "DriverVendorOUIList="),
