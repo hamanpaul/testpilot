@@ -7460,7 +7460,7 @@ def test_d057_txunicastpacketcount_evaluate_live_examples():
     assert plugin.evaluate(d057, d057_wrong_assoc_results) is False
 
 
-def test_d062_vendoroui_uses_same_sta_failure_contract():
+def test_d062_vendoroui_uses_same_sta_pass_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
@@ -7474,7 +7474,7 @@ def test_d062_vendoroui_uses_same_sta_failure_contract():
     assert "aliases" not in d062_raw
     assert d062["id"] == "wifi-llapi-D062-vendoroui"
     assert d062["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d062["source"]["row"] == 64
+    assert d062["source"]["row"] == 62
     assert d062["source"]["baseline"] == "BCM v4.0.3"
     assert d062["llapi_support"] == "Support"
     assert d062["bands"] == ["5g"]
@@ -7495,7 +7495,8 @@ def test_d062_vendoroui_uses_same_sta_failure_contract():
     )
     assert any(
         criterion["field"] == "result.VendorOUI"
-        and criterion["operator"] == "empty"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == "^([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2}(,([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2})*$"
         for criterion in d062["pass_criteria"]
     )
     assert any(
@@ -7512,13 +7513,13 @@ def test_d062_vendoroui_uses_same_sta_failure_contract():
     )
     assert any(
         criterion["field"] == "driver_capture.DriverVendorOUIList"
-        and criterion["operator"] == "not_equals"
+        and criterion["operator"] == "equals"
         and criterion.get("reference") == "result.VendorOUI"
         for criterion in d062["pass_criteria"]
     )
-    assert d062["results_reference"]["v4.0.3"]["5g"] == "Fail"
-    assert d062["results_reference"]["v4.0.3"]["6g"] == "N/A"
-    assert d062["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
+    assert d062["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d062["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d062["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d062_vendoroui_evaluate_live_examples():
@@ -7540,12 +7541,12 @@ def test_d062_vendoroui_evaluate_live_examples():
             },
             "step3": {
                 "success": True,
-                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI=""',
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI="00:90:4C,00:10:18,00:50:F2,50:6F:9A"',
                 "timing": 0.01,
             },
             "step4": {
                 "success": True,
-                "output": "AssocMAC=2c:59:17:00:04:85\nAssocVendorOUI=",
+                "output": "AssocMAC=2c:59:17:00:04:85\nAssocVendorOUI=00:90:4C,00:10:18,00:50:F2,50:6F:9A",
                 "timing": 0.01,
             },
             "step5": {
@@ -7568,7 +7569,7 @@ def test_d062_vendoroui_evaluate_live_examples():
             **d062_results["steps"],
             "step3": {
                 "success": True,
-                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI="00:50:F2"',
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI=""',
                 "timing": 0.01,
             },
         }
@@ -16189,7 +16190,7 @@ def test_d062_vendoroui_macaddress_fragment_normalizes_case():
     assert proc.stdout.strip() == "MACAddress=2c:59:17:00:04:85"
 
 
-def test_d062_vendoroui_snapshot_fragment_executes_with_empty_value():
+def test_d062_vendoroui_snapshot_fragment_executes_with_concrete_value():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d062 = load_case(cases_dir / "D062_vendoroui.yaml")
     step4_command = d062["steps"][3]["command"]
@@ -16197,7 +16198,7 @@ def test_d062_vendoroui_snapshot_fragment_executes_with_empty_value():
     sample_output = "\n".join(
         [
             'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
-            'WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI=""',
+            'WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI="00:90:4C,00:10:18,00:50:F2,50:6F:9A"',
         ]
     )
 
@@ -16215,7 +16216,7 @@ def test_d062_vendoroui_snapshot_fragment_executes_with_empty_value():
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.strip().splitlines() == [
         "AssocMAC=2c:59:17:00:04:85",
-        "AssocVendorOUI=",
+        "AssocVendorOUI=00:90:4C,00:10:18,00:50:F2,50:6F:9A",
     ]
 
 

@@ -4,7 +4,7 @@ version: '1.1'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 64
+  row: 62
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: VendorOUI
   baseline: BCM v4.0.3
@@ -119,7 +119,7 @@ test_procedure: |
   1) Resolve COM1 wl0's live STA MAC and require AP1 AssociatedDevice.1 to point to that same station.
   2) Read WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI directly on DUT, then cross-check a full AssociatedDevice snapshot for both MACAddress and VendorOUI.
   3) Parse wl0 sta_info for the same STA and collapse all `VENDOR OUI VALUE[N]` lines into a comma-separated driver-side OUI list.
-  4) The current 5G retest is fail-shaped: VendorOUI stays empty through both the direct getter and the same-entry snapshot while wl0 sta_info still exposes a non-empty vendor OUI list for that same STA.
+  4) Pass when the direct getter, the same-entry snapshot, and the same-STA driver capture all expose the same concrete non-empty comma-separated VendorOUI list.
 steps:
 - id: step1
   action: exec
@@ -167,8 +167,9 @@ pass_criteria:
   reference: sta_identity.StaMac
   description: AP1 AssociatedDevice.1 must correspond to the same COM1 wl0 station used for this manual checkpoint.
 - field: result.VendorOUI
-  operator: empty
-  description: The current 5G live retest still returns VendorOUI as an empty string through the direct getter.
+  operator: regex
+  value: ^([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2}(,([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2})*$
+  description: The direct getter must expose a concrete comma-separated VendorOUI list for the same STA.
 - field: assoc_snapshot.AssocMAC
   operator: equals
   reference: assoc_entry.MACAddress
@@ -190,9 +191,9 @@ pass_criteria:
   value: ^([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2}(,([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2})*$
   description: The driver-side vendor OUI evidence must stay a concrete comma-separated OUI list.
 - field: driver_capture.DriverVendorOUIList
-  operator: not_equals
+  operator: equals
   reference: result.VendorOUI
-  description: The non-empty driver-side vendor OUI list must not collapse to the empty LLAPI VendorOUI value.
+  description: The driver-side vendor OUI list must match the direct LLAPI VendorOUI value for the same STA.
 verification_command:
   - 'cat /sys/class/net/wl0/address | tr ''A-F'' ''a-f'' | sed ''s/^/StaMac=/'''
   - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI?"'
@@ -200,7 +201,7 @@ verification_command:
   - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'' | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ] && echo DriverAssocMac="$STA_MAC" && wl -i wl0 sta_info "$STA_MAC" | awk ''/^[[:space:]]*VENDOR OUI VALUE\[[0-9]+\]/ {oui[++n]=$NF} END {if (n) {print "DriverVendorOUICount=" n; list=""; for (i=1;i<=n;i++) list = list (i>1 ? "," : "") oui[i]; print "DriverVendorOUIList=" list}}'''
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: N/A
-    2.4g: N/A
-    comment: '5G serialwrap retest resolved the same COM1 wl0 STA MAC on AP1, returned VendorOUI="" through both the direct getter and the same-entry AssociatedDevice snapshot, while wl0 sta_info for that same STA still exposed DriverVendorOUIList=00:90:4C,00:10:18,00:50:F2,50:6F:9A. This is a fail-shaped mismatch on v4.0.3; non-executed bands remain N/A until separately calibrated.'
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: 'Authoritative same-STA retest resolved AP1 AssociatedDevice.1.VendorOUI as the concrete list 00:90:4C,00:10:18,00:50:F2,50:6F:9A; the same value exact-closed through the direct getter, the same-entry AssociatedDevice snapshot, and wl0 sta_info driver capture for the associated 5G STA.'

@@ -1,5 +1,77 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-29)
+
+> This checkpoint records the `D062` VendorOUI row/oracle closure after `D060`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D062 VendorOUI` is now aligned via official rerun `20260413T061743676049`
+- this was not a genuine fail-shaped source gap: authoritative full-run evidence had already exact-closed the direct getter, the same-entry `AssociatedDevice.1` snapshot, and the same-STA `wl sta_info` capture on the same concrete VendorOUI list
+- the committed case still carried stale workbook row `64` and an outdated fail-shaped contract that expected `VendorOUI=""`, even though live 0403 returned `00:90:4C,00:10:18,00:50:F2,50:6F:9A` consistently for the same associated STA
+- the committed rewrite refreshes stale row `64` back to workbook row `62` and restores the pass-shaped same-STA equality contract across the direct getter, the same-entry snapshot, and the driver capture
+- official rerun `20260413T061743676049` then exact-closed `VendorOUI=AssocVendorOUI=DriverVendorOUIList=00:90:4C,00:10:18,00:50:F2,50:6F:9A` with `DriverVendorOUICount=4`
+- committed metadata is now workbook row `62` with `results_reference.v4.0.3 = Pass / Pass / Pass`
+- overlay compare is now `266 / 420 full matches`、`154 mismatches`、`58 metadata drifts`
+- next ready workbook-Pass revisit is `D063`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D062` | 62 | `VendorOUI` | `Pass / Pass / Pass` | `20260413T061743676049_DUT.log L340-L384` | `20260413T061743676049_STA.log L66-L83` |
+
+#### D062 VendorOUI
+
+**STA 指令**
+
+```sh
+cat /sys/class/net/wl0/address | tr 'A-F' 'a-f' | sed 's/^/StaMac=/'
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f' | sed 's/^/MACAddress=/'
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= '/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.VendorOUI=/ {gsub(/"/, "", $2); print "AssocVendorOUI=" $2}'
+STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f'); [ -n "$STA_MAC" ] && echo DriverAssocMac="$STA_MAC" && wl -i wl0 sta_info "$STA_MAC" | awk '/^[[:space:]]*VENDOR OUI VALUE\[[0-9]+\]/ {oui[++n]=$NF} END {if (n) {print "DriverVendorOUICount=" n; list=""; for (i=1;i<=n;i++) list = list (i>1 ? "," : "") oui[i]; print "DriverVendorOUIList=" list}}'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T061743676049_STA.log L66-L83
+SSID: testpilot5G
+wpa_state=COMPLETED
+
+20260413T061743676049_DUT.log L340-L384
+MACAddress=2c:59:17:00:04:85
+WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI="00:90:4C,00:10:18,00:50:F2,50:6F:9A"
+AssocVendorOUI=00:90:4C,00:10:18,00:50:F2,50:6F:9A
+DriverAssocMac=2c:59:17:00:04:85
+DriverVendorOUICount=4
+DriverVendorOUIList=00:90:4C,00:10:18,00:50:F2,50:6F:9A
+
+plugins/wifi_llapi/reports/agent_trace/20260413T061743676049/wifi-llapi-D062-vendoroui.json L96-L108
+commands:
+  cat /sys/class/net/wl0/address | tr 'A-F' 'a-f' | sed 's/^/StaMac=/'
+  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI?"
+  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk ...
+  STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | ...)
+outputs:
+  StaMac=2c:59:17:00:04:85
+  WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI="00:90:4C,00:10:18,00:50:F2,50:6F:9A"
+  AssocVendorOUI=00:90:4C,00:10:18,00:50:F2,50:6F:9A
+  DriverVendorOUICount=4
+  DriverVendorOUIList=00:90:4C,00:10:18,00:50:F2,50:6F:9A
+```
+
 ## Checkpoint summary (2026-04-13 early-28)
 
 > This checkpoint records the `D060` UplinkMCS row/parser closure after `D059`.
