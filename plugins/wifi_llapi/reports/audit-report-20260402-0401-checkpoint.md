@@ -1,5 +1,53 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-8)
+
+> This checkpoint records the `D465` mapping/results_reference closure after `D463`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D465 SRGInformationValid` is now aligned via official rerun `20260413T013010016650`
+- the authoritative full-run trace had already been `evaluation_verdict=Pass`; the remaining mismatch was stale metadata (`source.row=342`, object `WiFi.Radio.{i}.`, raw `Fail / Fail / Fail`) plus a stale 6G live annotation (`live=1`)
+- committed metadata is now workbook row `465`, object `WiFi.Radio.{i}.IEEE80211ax.`, with `results_reference.v4.0.3 = Pass / Pass / Pass`; the 6G live annotation is corrected to `0`
+- overlay compare recomputed on top of authoritative full run `20260412T113008433351`
+  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 reruns is now
+  `246 / 420 full matches`、`174 mismatches`、`58 metadata drifts`
+- next ready phase-2 mapping/results_reference revisit is `D467`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D465` | 465 | `SRGInformationValid` | `Pass / Pass / Pass` | `20260413T013010016650_DUT.log L5-L18` | `N/A (AP-only case)` |
+
+#### D465 SRGInformationValid
+
+**STA 指令**
+
+```sh
+# N/A (AP-only case; no STA transport used)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.IEEE80211ax.SRGInformationValid?"
+ubus-cli "WiFi.Radio.2.IEEE80211ax.SRGInformationValid?"
+ubus-cli "WiFi.Radio.3.IEEE80211ax.SRGInformationValid?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T013010016650_DUT.log L5-L18
+WiFi.Radio.1.IEEE80211ax.SRGInformationValid=0
+WiFi.Radio.2.IEEE80211ax.SRGInformationValid=0
+WiFi.Radio.3.IEEE80211ax.SRGInformationValid=0
+```
+
 ## Checkpoint summary (2026-04-13 early-7)
 
 > This checkpoint records the `D463` mapping/results_reference closure after `D462`.

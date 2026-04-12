@@ -93,6 +93,7 @@
   - `D461 HTCapabilities` is now aligned via official rerun `20260413T010944709855`
   - `D462 BssColor` is now aligned via official rerun `20260413T011655056430`
   - `D463 HESIGASpatialReuseValue15Allowed` is now aligned via official rerun `20260413T012358700786`
+  - `D465 SRGInformationValid` is now aligned via official rerun `20260413T013010016650`
   - `D047` / `D050` were pulled back from a drifted custom `TestPilot_BTM` / `WPA3-Personal` path to the authoritative generic `testpilot5G` / `WPA2-Personal` baseline seen in full run `20260412T113008433351`
   - live STA evidence exact-closed the generic WPA2 link (`SSID: testpilot5G`), and DUT evidence exact-closed the same AssociatedDevice entry against `error=4 / message=parameter not found` plus sibling Rx/Tx capability fields and `wl0 sta_info`
   - committed metadata is now workbook row `47` / `50`, with `results_reference.v4.0.3 = Not Supported / N/A / N/A` for both cases
@@ -102,6 +103,7 @@
   - `D461` was already `evaluation_verdict=Pass` in the authoritative full run, so the only closure step here was refreshing stale metadata from row `338` / raw `Fail / Fail / Fail` to workbook row `461` / raw `Pass / Pass / Pass`
   - `D462` was also already `evaluation_verdict=Pass` in the authoritative full run; the closure step was refreshing stale metadata from row `339` / object `WiFi.Radio.{i}.` / raw `Fail / Fail / Fail` to workbook row `462` / object `WiFi.Radio.{i}.IEEE80211ax.` / raw `Pass / Pass / Pass`
   - `D463` followed the same shape again: stale row `340` / object `WiFi.Radio.{i}.` / raw `Fail / Fail / Fail` refreshed to workbook row `463` / object `WiFi.Radio.{i}.IEEE80211ax.` / raw `Pass / Pass / Pass`
+  - `D465` followed the same shape one step further: stale row `342` / object `WiFi.Radio.{i}.` / raw `Fail / Fail / Fail` refreshed to workbook row `465` / object `WiFi.Radio.{i}.IEEE80211ax.` / raw `Pass / Pass / Pass`, and the stale 6G live annotation was corrected from `1` back to the observed `0`
 - Latest investigated non-aligned case:
   - `D079 MACFiltering.Mode` official rerun `20260413T002418591720` no longer hits `step_command_failed`
   - both attempts executed the full AP1 / AP3 / AP5 setter/getter sequence and converged to the same live shape:
@@ -113,17 +115,17 @@
   - current `D079` YAML still expects 5G `BlackList` / `deny`, so the case is now reclassified from `step_command_failed` to semantic `pass_criteria_not_satisfied` / workbook-authority review
 - Current authoritative full-run source remains `20260412T113008433351`
 - Latest recomputed overlay compare on top of authoritative full run `20260412T113008433351`
-  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 reruns:
-  - `245 / 420 full matches`
-  - `175 mismatches`
-  - `59 metadata drifts`
+  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 reruns:
+  - `246 / 420 full matches`
+  - `174 mismatches`
+  - `58 metadata drifts`
 - Current focused step-command-failed workstream status:
   - closed in this loop: `D072`、`D047`、`D050`、`D088`、`D460`、`D494`
   - reclassified after runtime fix: `D079 -> pass_criteria_not_satisfied`
   - remaining open set: `none`
   - env-only bucket remains `D328`、`D336`
   - blocked bucket remains `D053` (`needs deterministic AP-to-STA unicast payload`)
-- Next ready phase-2 mapping/results_reference revisit: `D465`
+- Next ready phase-2 mapping/results_reference revisit: `D467`
 
 ## Latest repo handoff snapshot（2026-04-11）
 

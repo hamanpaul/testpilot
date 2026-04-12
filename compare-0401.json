@@ -13,28 +13,29 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T005633950804",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T010944709855",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T011655056430",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T012358700786"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T012358700786",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T013010016650"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
   "compared_case_count": 420,
   "missing_answer_count": 0,
   "missing_answer_rows": [],
-  "metadata_drift_count": 59,
-  "full_match_count": 245,
-  "mismatch_case_count": 175,
+  "metadata_drift_count": 58,
+  "full_match_count": 246,
+  "mismatch_case_count": 174,
   "band_summary": {
     "5g": {
-      "matched": 255,
-      "mismatched": 165
+      "matched": 256,
+      "mismatched": 164
     },
     "6g": {
-      "matched": 255,
-      "mismatched": 165
+      "matched": 256,
+      "mismatched": 164
     },
     "2.4g": {
-      "matched": 253,
-      "mismatched": 167
+      "matched": 254,
+      "mismatched": 166
     }
   },
   "cases": [
@@ -15341,48 +15342,44 @@
       "case_id": "d465-radio-srginformationvalid",
       "case_file": "D465_srginformationvalid.yaml",
       "dnum": 465,
-      "source_row": 342,
-      "source_object": "WiFi.Radio.{i}.",
+      "source_row": 465,
+      "source_object": "WiFi.Radio.{i}.IEEE80211ax.",
       "source_api": "SRGInformationValid",
       "answer_row": 465,
       "answer_object": "WiFi.Radio.{i}.IEEE80211ax.",
       "answer_api": "SRGInformationValid",
-      "mapping_status": "drift",
-      "mapping_object_match": false,
+      "mapping_status": "exact",
+      "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Check API defualt value: root@prplOS:/# ubus-cli WiFi.Radio.*.IEEE80211ax.SRGInformationValid? > WiFi.Radio.*.IEEE80211ax.SRGInformationValid? WiFi.Radio.1.IEEE80211ax.SRGInformationValid=0 WiFi.Radio.2.IEEE80211ax.SRGInformationValid...",
       "workbook_command_output_excerpt": "(SRGInformationValid=0) root@prplOS:/# wl -i wl0 sr_config options options 0 root@prplOS:/# wl -i wl1 sr_config options options 0 root@prplOS:/# wl -i wl2 sr_config options options 0 (SRGInformationValid=1) root@prplOS:/# wl -i wl0 sr_co...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d465-radio-srginformationvalid.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T013010016650/d465-radio-srginformationvalid.json"
     },
     {
       "case_id": "d467-radio-rxbeamformingcapsenabled",
@@ -24997,53 +24994,6 @@
       "workbook_test_steps_excerpt": "",
       "workbook_command_output_excerpt": "",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d455-getradiostats-multipleretrycount.json"
-    },
-    {
-      "case_id": "d465-radio-srginformationvalid",
-      "case_file": "D465_srginformationvalid.yaml",
-      "dnum": 465,
-      "source_row": 342,
-      "source_object": "WiFi.Radio.{i}.",
-      "source_api": "SRGInformationValid",
-      "answer_row": 465,
-      "answer_object": "WiFi.Radio.{i}.IEEE80211ax.",
-      "answer_api": "SRGInformationValid",
-      "mapping_status": "drift",
-      "mapping_object_match": false,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Check API defualt value: root@prplOS:/# ubus-cli WiFi.Radio.*.IEEE80211ax.SRGInformationValid? > WiFi.Radio.*.IEEE80211ax.SRGInformationValid? WiFi.Radio.1.IEEE80211ax.SRGInformationValid=0 WiFi.Radio.2.IEEE80211ax.SRGInformationValid...",
-      "workbook_command_output_excerpt": "(SRGInformationValid=0) root@prplOS:/# wl -i wl0 sr_config options options 0 root@prplOS:/# wl -i wl1 sr_config options options 0 root@prplOS:/# wl -i wl2 sr_config options options 0 (SRGInformationValid=1) root@prplOS:/# wl -i wl0 sr_co...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d465-radio-srginformationvalid.json"
     },
     {
       "case_id": "d467-radio-rxbeamformingcapsenabled",

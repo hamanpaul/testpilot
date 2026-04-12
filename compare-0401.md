@@ -16,6 +16,7 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T010944709855`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T011655056430`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T012358700786`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T013010016650`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -26,18 +27,18 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 245 |
-| mismatch cases | 175 |
+| full matches | 246 |
+| mismatch cases | 174 |
 | missing answer rows | 0 |
-| metadata drift rows | 59 |
+| metadata drift rows | 58 |
 
 ## Per-band summary
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 255 | 165 |
-| 6g | 255 | 165 |
-| 2.4g | 253 | 167 |
+| 5g | 256 | 164 |
+| 6g | 256 | 164 |
+| 2.4g | 254 | 166 |
 
 ## Mismatch table
 
@@ -176,7 +177,6 @@
 | `d438-security-transitiondisable` | 438 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d454-getradiostats-failedretranscount` | 454 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d455-getradiostats-multipleretrycount` | 455 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d465-radio-srginformationvalid` | 465 | drift | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d467-radio-rxbeamformingcapsenabled` | 467 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d474-radio-channel` | 474 | drift | Pass / Pass / Pass | Not Supported / Not Supported / Not Supported | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
 | `d477-getradiostats-unknownprotopacketsreceived` | 477 | drift | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -2788,25 +2788,6 @@
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d455-getradiostats-multipleretrycount.json`
-
-### d465-radio-srginformationvalid
-
-- case file: `D465_srginformationvalid.yaml`
-- answer row: `465`
-- mapping status: `drift`
-- source metadata: `WiFi.Radio.{i}.` / `SRGInformationValid`
-- workbook metadata: `WiFi.Radio.{i}.IEEE80211ax.` / `SRGInformationValid`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Check API defualt value: root@prplOS:/# ubus-cli WiFi.Radio.*.IEEE80211ax.SRGInformationValid? > WiFi.Radio.*.IEEE80211ax.SRGInformationValid? WiFi.Radio.1.IEEE80211ax.SRGInformationValid=0 WiFi.Radio.2.IEEE80211ax.SRGInformationValid...
-- 0401 H excerpt: (SRGInformationValid=0) root@prplOS:/# wl -i wl0 sr_config options options 0 root@prplOS:/# wl -i wl1 sr_config options options 0 root@prplOS:/# wl -i wl2 sr_config options options 0 (SRGInformationValid=1) root@prplOS:/# wl -i wl0 sr_co...
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d465-radio-srginformationvalid.json`
 
 ### d467-radio-rxbeamformingcapsenabled
 

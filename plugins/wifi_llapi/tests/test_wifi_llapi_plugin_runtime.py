@@ -17853,7 +17853,7 @@ _RADIO_GETTER_CASES = [
     ("D462_bsscolor.yaml", 462, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.BssColor"),
     ("D463_hesigaspatialreusevalue15allowed.yaml", 463, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.HESIGASpatialReuseValue15Allowed"),
     ("D464_nonsrgoffsetvalid.yaml", 341, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.NonSRGOffsetValid"),
-    ("D465_srginformationvalid.yaml", 342, "0", "1", "0", "WiFi.Radio.{r}.IEEE80211ax.SRGInformationValid"),
+    ("D465_srginformationvalid.yaml", 465, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.SRGInformationValid"),
     # --- Bulk calibration batch 6: additional Radio/IEEE80211ax getters ---
     ("D379_mcs.yaml", 381, "0", "0", "0", "WiFi.Radio.{r}.MCS"),
     ("D380_multiaptypessupported.yaml", 382, "FronthaulBSS,BackhaulBSS,BackhaulSTA", "FronthaulBSS,BackhaulBSS,BackhaulSTA", "FronthaulBSS,BackhaulBSS,BackhaulSTA", "WiFi.Radio.{r}.MultiAPTypesSupported"),
