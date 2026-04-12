@@ -1,15 +1,29 @@
-# D282 getScanResults() OperatingStandards blocker
+# D282 getScanResults() OperatingStandards resolution notes
 
 ## Status
 
 - case id: `d282-getscanresults-operatingstandards`
 - current YAML: `plugins/wifi_llapi/cases/D282_getscanresults_operatingstandards.yaml`
 - workbook authority: `0401.xlsx` `Wifi_LLAPI` row `282`
-- current YAML row metadata: `284`
-- disposition: **blocked / keep YAML unchanged**
-- blocker type: **active 0403 public `getScanResults().OperatingStandards` does have a same-source sibling in `WiFi.NeighboringWiFiDiagnostic()`, but that sibling launches fresh internal scans and still cannot produce an all-band durable replay (`ReportingRadios="wl0"`, `FailedRadios="wl1,wl2"` in the newest same-window probe)**
+- current YAML row metadata: `282`
+- latest resolving rerun: `20260412T080338867826`
+- disposition: **aligned / keep YAML committed**
+- resolution type: **named-arg `scanCombinedData().BSS` now provides the durable same-source sibling, and immediate same-target `getScanResults(minRssi=-127)` exact-closes `OperatingStandards` on all three bands**
 
-## Why this case is blocked
+## Resolution
+
+Official rerun `20260412T080338867826` closed the row with the same named-arg same-scan family used for D281:
+
+1. `ubus-cli "WiFi.Radio.{1,2,3}.scanCombinedData(channels=36/5/1,minRssi=-127,scanReason=Ssid)"` returns first-target `BSS` entries that already carry public `OperatingStandards`
+2. immediate same-target `ubus-cli "WiFi.Radio.{1,2,3}.getScanResults(minRssi=-127)"` exact-closes the same value on all three bands
+3. the resolving values are:
+   - 5G `2c:59:17:00:03:e5 / a,n,ac,ax,be`
+   - 6G `6e:15:db:9e:33:72 / ax,be`
+   - 2.4G `6a:d7:aa:02:d7:bf / b,g,n,ax`
+
+`WiFi.NeighboringWiFiDiagnostic()` remains useful historical source evidence, but it is no longer the committed verdict oracle for row `282`. The sections below are retained as historical blocker context.
+
+## Historical blocker context
 
 The old blocker explanation mixed the legacy Broadcom `_wldm_get_standards()` helper with the active public `ubus-cli "WiFi.Radio.{i}.getScanResults()"` path. New source tracing shows the current public path is different.
 

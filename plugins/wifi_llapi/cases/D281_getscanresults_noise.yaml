@@ -1,7 +1,7 @@
 id: d281-getscanresults-noise
 name: D281 getScanResults Noise
 source:
-  row: 283
+  row: 281
   object: WiFi.Radio.{i}.
   api: getScanResults()
   baseline: 0310-BGW720-300
@@ -22,34 +22,106 @@ topology:
       transport: serial
       selector: COM1
 steps:
+- id: step_5g_combined
+  target: dut
+  action: exec
+  capture: combined_5g
+  command: 'OUT=$(ubus-cli "WiFi.Radio.1.scanCombinedData(channels=36,minRssi=-127,scanReason=Ssid)"); BSSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); CHAN=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*Channel = \([0-9][0-9]*\).*/\1/p" | head -n1); NOISE=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*Noise = \(-\?[0-9][0-9]*\).*/\1/p" | head -n1); SPEC=$(printf "%s\n" "$OUT" | grep -A6 -m1 "channel = $CHAN"); SNOISE=$(printf "%s\n" "$SPEC" | sed -n "s/^[[:space:]]*noiselevel = \(-\?[0-9][0-9]*\).*/\1/p" | head -n1); [ -n "$BSSID" ] && printf "CombinedBssid5g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; printf "CombinedChannel5g=%s\nCombinedNoise5g=%s\nSpectrumNoise5g=%s\n" "$CHAN" "$NOISE" "$SNOISE"'
+  expected: 5G scanCombinedData 應回傳可解析的第一個 BSS target 與同 channel 的 spectrum noise
+  description: Radio.1 (5g) 先用 same-scan public family 取回 paired BSS + Spectrum noise
 - id: step_5g_scan
   target: dut
-  action: read
+  action: exec
   capture: scan_5g
-  command: ubus-cli "WiFi.Radio.1.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.1 (5g) getScanResults()
+  command: 'TARGET="{{combined_5g.CombinedBssid5g}}"; OUT=$(ubus-cli "WiFi.Radio.1.getScanResults(minRssi=-127)"); BLOCK=$(printf "%s\n" "$OUT" | grep -A20 -im1 "^[[:space:]]*BSSID = \"$TARGET\""); NOISE=$(printf "%s\n" "$BLOCK" | sed -n "s/^[[:space:]]*Noise = \(-\?[0-9][0-9]*\).*/\1/p" | head -n1); printf "LlapiNoise5g=%s\n" "$NOISE"'
+  expected: 5G getScanResults 應能回放同一個 same-scan target 的 Noise
+  description: Radio.1 (5g) 以相同 BSSID 驗證 getScanResults().Noise 與 paired same-scan cache 一致
+- id: step_6g_combined
+  target: dut
+  action: exec
+  capture: combined_6g
+  command: 'OUT=$(ubus-cli "WiFi.Radio.2.scanCombinedData(channels=5,minRssi=-127,scanReason=Ssid)"); BSSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); CHAN=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*Channel = \([0-9][0-9]*\).*/\1/p" | head -n1); NOISE=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*Noise = \(-\?[0-9][0-9]*\).*/\1/p" | head -n1); SPEC=$(printf "%s\n" "$OUT" | grep -A6 -m1 "channel = $CHAN"); SNOISE=$(printf "%s\n" "$SPEC" | sed -n "s/^[[:space:]]*noiselevel = \(-\?[0-9][0-9]*\).*/\1/p" | head -n1); [ -n "$BSSID" ] && printf "CombinedBssid6g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; printf "CombinedChannel6g=%s\nCombinedNoise6g=%s\nSpectrumNoise6g=%s\n" "$CHAN" "$NOISE" "$SNOISE"'
+  expected: 6G scanCombinedData 應回傳可解析的第一個 BSS target 與同 channel 的 spectrum noise
+  description: Radio.2 (6g) 先用 same-scan public family 取回 paired BSS + Spectrum noise
 - id: step_6g_scan
   target: dut
-  action: read
+  action: exec
   capture: scan_6g
-  command: ubus-cli "WiFi.Radio.2.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.2 (6g) getScanResults()
+  command: 'TARGET="{{combined_6g.CombinedBssid6g}}"; OUT=$(ubus-cli "WiFi.Radio.2.getScanResults(minRssi=-127)"); BLOCK=$(printf "%s\n" "$OUT" | grep -A20 -im1 "^[[:space:]]*BSSID = \"$TARGET\""); NOISE=$(printf "%s\n" "$BLOCK" | sed -n "s/^[[:space:]]*Noise = \(-\?[0-9][0-9]*\).*/\1/p" | head -n1); printf "LlapiNoise6g=%s\n" "$NOISE"'
+  expected: 6G getScanResults 應能回放同一個 same-scan target 的 Noise
+  description: Radio.2 (6g) 以相同 BSSID 驗證 getScanResults().Noise 與 paired same-scan cache 一致
+- id: step_24g_combined
+  target: dut
+  action: exec
+  capture: combined_24g
+  command: 'OUT=$(ubus-cli "WiFi.Radio.3.scanCombinedData(channels=1,minRssi=-127,scanReason=Ssid)"); BSSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); CHAN=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*Channel = \([0-9][0-9]*\).*/\1/p" | head -n1); NOISE=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*Noise = \(-\?[0-9][0-9]*\).*/\1/p" | head -n1); SPEC=$(printf "%s\n" "$OUT" | grep -A6 -m1 "channel = $CHAN"); SNOISE=$(printf "%s\n" "$SPEC" | sed -n "s/^[[:space:]]*noiselevel = \(-\?[0-9][0-9]*\).*/\1/p" | head -n1); [ -n "$BSSID" ] && printf "CombinedBssid24g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; printf "CombinedChannel24g=%s\nCombinedNoise24g=%s\nSpectrumNoise24g=%s\n" "$CHAN" "$NOISE" "$SNOISE"'
+  expected: 2.4G scanCombinedData 應回傳可解析的第一個 BSS target 與同 channel 的 spectrum noise
+  description: Radio.3 (2.4g) 先用 same-scan public family 取回 paired BSS + Spectrum noise
 - id: step_24g_scan
   target: dut
-  action: read
+  action: exec
   capture: scan_24g
-  command: ubus-cli "WiFi.Radio.3.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.3 (2.4g) getScanResults()
+  command: 'TARGET="{{combined_24g.CombinedBssid24g}}"; OUT=$(ubus-cli "WiFi.Radio.3.getScanResults(minRssi=-127)"); BLOCK=$(printf "%s\n" "$OUT" | grep -A20 -im1 "^[[:space:]]*BSSID = \"$TARGET\""); NOISE=$(printf "%s\n" "$BLOCK" | sed -n "s/^[[:space:]]*Noise = \(-\?[0-9][0-9]*\).*/\1/p" | head -n1); printf "LlapiNoise24g=%s\n" "$NOISE"'
+  expected: 2.4G getScanResults 應能回放同一個 same-scan target 的 Noise
+  description: Radio.3 (2.4g) 以相同 BSSID 驗證 getScanResults().Noise 與 paired same-scan cache 一致
 pass_criteria:
-- field: scan_5g.Noise
+- field: combined_5g.CombinedBssid5g
   operator: regex
-  value: '.+'
-- field: scan_6g.Noise
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  description: 5G 必須先鎖定 same-scan 第一個 target BSSID
+- field: combined_5g.CombinedNoise5g
   operator: regex
-  value: '.+'
-- field: scan_24g.Noise
+  value: ^-?[0-9][0-9]*$
+  description: 5G combined BSS Noise 必須成功擷取
+- field: combined_5g.SpectrumNoise5g
   operator: regex
-  value: '.+'
+  value: ^-?[0-9][0-9]*$
+  description: 5G paired Spectrum noise 必須成功擷取
+- field: scan_5g.LlapiNoise5g
+  operator: equals
+  reference: combined_5g.CombinedNoise5g
+  description: 5G getScanResults().Noise 必須與同次 combined scan 的 BSS Noise 相同
+- field: scan_5g.LlapiNoise5g
+  operator: equals
+  reference: combined_5g.SpectrumNoise5g
+  description: 5G getScanResults().Noise 必須與同 channel 的 same-scan Spectrum noise 相同
+- field: combined_6g.CombinedBssid6g
+  operator: regex
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  description: 6G 必須先鎖定 same-scan 第一個 target BSSID
+- field: combined_6g.CombinedNoise6g
+  operator: regex
+  value: ^-?[0-9][0-9]*$
+  description: 6G combined BSS Noise 必須成功擷取
+- field: combined_6g.SpectrumNoise6g
+  operator: regex
+  value: ^-?[0-9][0-9]*$
+  description: 6G paired Spectrum noise 必須成功擷取
+- field: scan_6g.LlapiNoise6g
+  operator: equals
+  reference: combined_6g.CombinedNoise6g
+  description: 6G getScanResults().Noise 必須與同次 combined scan 的 BSS Noise 相同
+- field: scan_6g.LlapiNoise6g
+  operator: equals
+  reference: combined_6g.SpectrumNoise6g
+  description: 6G getScanResults().Noise 必須與同 channel 的 same-scan Spectrum noise 相同
+- field: combined_24g.CombinedBssid24g
+  operator: regex
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  description: 2.4G 必須先鎖定 same-scan 第一個 target BSSID
+- field: combined_24g.CombinedNoise24g
+  operator: regex
+  value: ^-?[0-9][0-9]*$
+  description: 2.4G combined BSS Noise 必須成功擷取
+- field: combined_24g.SpectrumNoise24g
+  operator: regex
+  value: ^-?[0-9][0-9]*$
+  description: 2.4G paired Spectrum noise 必須成功擷取
+- field: scan_24g.LlapiNoise24g
+  operator: equals
+  reference: combined_24g.CombinedNoise24g
+  description: 2.4G getScanResults().Noise 必須與同次 combined scan 的 BSS Noise 相同
+- field: scan_24g.LlapiNoise24g
+  operator: equals
+  reference: combined_24g.SpectrumNoise24g
+  description: 2.4G getScanResults().Noise 必須與同 channel 的 same-scan Spectrum noise 相同

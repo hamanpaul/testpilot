@@ -17898,8 +17898,8 @@ _SCAN_RESULTS_CASES = [
     ("D278_getscanresults_bssid.yaml", 278, "BSSID"),
     ("D279_getscanresults_channel.yaml", 279, "Channel"),
     ("D280_getscanresults_encryptionmode.yaml", 280, "EncryptionMode"),
-    ("D281_getscanresults_noise.yaml", 283, "Noise"),
-    ("D282_getscanresults_operatingstandards.yaml", 284, "OperatingStandards"),
+    ("D281_getscanresults_noise.yaml", 281, "Noise"),
+    ("D282_getscanresults_operatingstandards.yaml", 282, "OperatingStandards"),
     ("D283_getscanresults_rssi.yaml", 283, "RSSI"),
     ("D284_getscanresults_securitymodeenabled.yaml", 284, "SecurityModeEnabled"),
     ("D285_getscanresults_signalnoiseratio.yaml", 285, "SignalNoiseRatio"),
@@ -17935,6 +17935,12 @@ def test_scan_results_contract(yaml_file, row, field):
     elif yaml_file == "D285_getscanresults_signalnoiseratio.yaml":
         assert len(case["steps"]) == 3
         assert len(case["pass_criteria"]) == 12
+    elif yaml_file == "D281_getscanresults_noise.yaml":
+        assert len(case["steps"]) == 6
+        assert len(case["pass_criteria"]) == 15
+    elif yaml_file == "D282_getscanresults_operatingstandards.yaml":
+        assert len(case["steps"]) == 6
+        assert len(case["pass_criteria"]) == 9
     elif yaml_file == "D287_getscanresults_ssid.yaml":
         assert len(case["steps"]) == 6
         assert len(case["pass_criteria"]) == 12
@@ -18092,6 +18098,104 @@ def test_scan_results_evaluate(yaml_file, row, field):
                 "step_24g_scan": {
                     "success": True,
                     "output": "LlapiBssid24g=aa:bb:cc:dd:ee:03\nLlapiRSSI24g=-46\nLlapiSignalStrength24g=-46\n",
+                    "timing": 0.01,
+                },
+            }
+        }
+        assert plugin.evaluate(case, results) is True
+        return
+    if yaml_file == "D281_getscanresults_noise.yaml":
+        results = {
+            "steps": {
+                "step_5g_combined": {
+                    "success": True,
+                    "output": (
+                        "CombinedBssid5g=aa:bb:cc:dd:ee:01\n"
+                        "CombinedChannel5g=36\n"
+                        "CombinedNoise5g=-100\n"
+                        "SpectrumNoise5g=-100\n"
+                    ),
+                    "timing": 0.01,
+                },
+                "step_5g_scan": {
+                    "success": True,
+                    "output": "LlapiNoise5g=-100\n",
+                    "timing": 0.01,
+                },
+                "step_6g_combined": {
+                    "success": True,
+                    "output": (
+                        "CombinedBssid6g=aa:bb:cc:dd:ee:02\n"
+                        "CombinedChannel6g=5\n"
+                        "CombinedNoise6g=-97\n"
+                        "SpectrumNoise6g=-97\n"
+                    ),
+                    "timing": 0.01,
+                },
+                "step_6g_scan": {
+                    "success": True,
+                    "output": "LlapiNoise6g=-97\n",
+                    "timing": 0.01,
+                },
+                "step_24g_combined": {
+                    "success": True,
+                    "output": (
+                        "CombinedBssid24g=aa:bb:cc:dd:ee:03\n"
+                        "CombinedChannel24g=1\n"
+                        "CombinedNoise24g=-81\n"
+                        "SpectrumNoise24g=-81\n"
+                    ),
+                    "timing": 0.01,
+                },
+                "step_24g_scan": {
+                    "success": True,
+                    "output": "LlapiNoise24g=-81\n",
+                    "timing": 0.01,
+                },
+            }
+        }
+        assert plugin.evaluate(case, results) is True
+        return
+    if yaml_file == "D282_getscanresults_operatingstandards.yaml":
+        results = {
+            "steps": {
+                "step_5g_combined": {
+                    "success": True,
+                    "output": (
+                        "CombinedBssid5g=aa:bb:cc:dd:ee:01\n"
+                        "CombinedOperatingStandards5g=a,n,ac,ax,be\n"
+                    ),
+                    "timing": 0.01,
+                },
+                "step_5g_scan": {
+                    "success": True,
+                    "output": "LlapiOperatingStandards5g=a,n,ac,ax,be\n",
+                    "timing": 0.01,
+                },
+                "step_6g_combined": {
+                    "success": True,
+                    "output": (
+                        "CombinedBssid6g=aa:bb:cc:dd:ee:02\n"
+                        "CombinedOperatingStandards6g=ax,be\n"
+                    ),
+                    "timing": 0.01,
+                },
+                "step_6g_scan": {
+                    "success": True,
+                    "output": "LlapiOperatingStandards6g=ax,be\n",
+                    "timing": 0.01,
+                },
+                "step_24g_combined": {
+                    "success": True,
+                    "output": (
+                        "CombinedBssid24g=aa:bb:cc:dd:ee:03\n"
+                        "CombinedOperatingStandards24g=b,g,n,ax,be\n"
+                    ),
+                    "timing": 0.01,
+                },
+                "step_24g_scan": {
+                    "success": True,
+                    "output": "LlapiOperatingStandards24g=b,g,n,ax,be\n",
                     "timing": 0.01,
                 },
             }

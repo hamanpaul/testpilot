@@ -1,15 +1,29 @@
-# D281 block report
+# D281 getScanResults() Noise resolution notes
 
 ## Status
 
 - case id: `d281-getscanresults-noise`
 - current YAML: `plugins/wifi_llapi/cases/D281_getscanresults_noise.yaml`
 - workbook authority: `0401.xlsx` `Wifi_LLAPI` row `281`
-- current YAML row metadata: `283`
-- disposition: **blocked / keep YAML unchanged**
-- blocker type: **active 0403 public `Noise` replay is structurally cross-generation (`getScanResults()` snapshot vs fresh `getSpectrumInfo()` survey), and the only plausible same-scan public family is not currently usable as a runner-stable oracle**
+- current YAML row metadata: `281`
+- latest resolving rerun: `20260412T080123446178`
+- disposition: **aligned / keep YAML committed**
+- resolution type: **named-arg `scanCombinedData()` now provides a live same-scan `BSS + Spectrum` oracle, and same-target `getScanResults(minRssi=-127)` exact-closes against that paired cache on all three bands**
 
-## Why this case is blocked
+## Resolution
+
+Official rerun `20260412T080123446178` closed the row with a true same-scan public replay:
+
+1. `ubus-cli "WiFi.Radio.{1,2,3}.scanCombinedData(channels=36/5/1,minRssi=-127,scanReason=Ssid)"` now works through named-arg syntax and returns paired `BSS + Spectrum`
+2. same-target `ubus-cli "WiFi.Radio.{1,2,3}.getScanResults(minRssi=-127)"` exact-closes against that same-scan cache
+3. the resolving values are:
+   - 5G `2c:59:17:00:03:e5 / -100 / -100 / -100`
+   - 6G `6e:15:db:9e:33:72 / -97 / -97 / -97`
+   - 2.4G `6a:d7:aa:02:d7:bf / -76 / -76 / -76`
+
+The sections below are retained as historical blocker context and explain why the earlier split-step replay was rejected before the named-arg same-scan path was proven live.
+
+## Historical blocker context
 
 The old blocker assumption was that public `getScanResults().Noise` should exact-close against the same-target `wl -i wlX escanresults` `noise:` token. New source tracing and new live reruns show that assumption is incomplete for the active 0403 public path.
 
