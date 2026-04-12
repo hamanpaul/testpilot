@@ -1,5 +1,124 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-33)
+
+> This checkpoint records the `D079` MACFiltering.Mode workbook row-79 closure after `D071`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D079 MACFiltering.Mode` is now aligned via official rerun `20260413T065809885285`
+- the case still carried stale workbook row `73`, stale `results_reference.v4.0.3 = Fail / Fail / Fail`, and an incorrect all-Off assumption even though workbook row `79` expects a deterministic baseline with AP1 `WhiteList` / `macaddr_acl=1` / `accept` and AP3/AP5 `BlackList` / `macaddr_acl=0` / `deny`
+- live source-backed probes first proved that true pass path, then confirmation rerun `20260413T065611644145` showed the only remaining blocker was a non-authoritative `wl -i wl{0,1,2} bss` setup gate that sampled transient `--wlX FSM DONE--` / `down` during hostapd restart
+- the committed rewrite refreshes metadata back to workbook row `79`, reconstructs the workbook baseline explicitly in setup, removes that `wl bss` gate, and marks `results_reference.v4.0.3 = Pass / Pass / Pass`
+- official rerun `20260413T065809885285` then exact-closed tri-band baseline/readback plus after-state invariance: 5G preserved `WhiteList / 1 / accept`, 6G preserved `BlackList / 0 / deny`, and 2.4G preserved `BlackList / 0 / deny`, while every `Mode=Off` setter returned `invalid value`
+- overlay compare is now `270 / 420 full matches`、`150 mismatches`、`58 metadata drifts`
+- next ready actionable open case is `D080`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D079` | 79 | `MACFiltering.Mode` | `Pass / Pass / Pass` | `20260413T065809885285_DUT.log L45-L381` | `n/a (AP-only)` |
+
+#### D079 MACFiltering.Mode
+
+**STA 指令**
+
+```sh
+# AP-only case; no STA transport
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+
+ubus-cli "WiFi.AccessPoint.1.MACFiltering.delEntry(mac=62:2F:B8:66:BB:82)" 2>/dev/null || true
+ubus-cli "WiFi.AccessPoint.3.MACFiltering.delEntry(mac=FA:DD:AC:24:5A:B4)" 2>/dev/null || true
+ubus-cli "WiFi.AccessPoint.5.MACFiltering.delEntry(mac=FA:A0:DF:91:47:7C)" 2>/dev/null || true
+
+ubus-cli "WiFi.AccessPoint.1.MACFiltering.addEntry(mac=62:2F:B8:66:BB:82)"
+ubus-cli WiFi.AccessPoint.1.MACFiltering.Mode=WhiteList
+ubus-cli "WiFi.AccessPoint.3.MACFiltering.addEntry(mac=FA:DD:AC:24:5A:B4)"
+ubus-cli WiFi.AccessPoint.3.MACFiltering.Mode=BlackList
+ubus-cli "WiFi.AccessPoint.5.MACFiltering.addEntry(mac=FA:A0:DF:91:47:7C)"
+ubus-cli WiFi.AccessPoint.5.MACFiltering.Mode=BlackList
+
+ubus-cli "WiFi.AccessPoint.1.MACFiltering.Mode?"
+grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl0_hapd.conf
+ubus-cli WiFi.AccessPoint.1.MACFiltering.Mode=Off
+ubus-cli "WiFi.AccessPoint.1.MACFiltering.Mode?"
+grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl0_hapd.conf
+
+ubus-cli "WiFi.AccessPoint.3.MACFiltering.Mode?"
+grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl1_hapd.conf
+ubus-cli WiFi.AccessPoint.3.MACFiltering.Mode=Off
+ubus-cli "WiFi.AccessPoint.3.MACFiltering.Mode?"
+grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl1_hapd.conf
+
+ubus-cli "WiFi.AccessPoint.5.MACFiltering.Mode?"
+grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl2_hapd.conf
+ubus-cli WiFi.AccessPoint.5.MACFiltering.Mode=Off
+ubus-cli "WiFi.AccessPoint.5.MACFiltering.Mode?"
+grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl2_hapd.conf
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T065809885285_DUT.log L45-L90
+WiFi.AccessPoint.1.MACFiltering.Mode="WhiteList"
+WiFi.AccessPoint.3.MACFiltering.Mode="BlackList"
+WiFi.AccessPoint.5.MACFiltering.Mode="BlackList"
+
+20260413T065809885285_DUT.log L137-L193
+BaselineMode5g=WhiteList
+BaselineMacaddrAcl5g=1
+BaselineAclState5g=accept
+ERROR: set WiFi.AccessPoint.1.MACFiltering.Mode failed (10 - invalid value)
+SetOffStatus5g=invalid_value
+AfterMode5g=WhiteList
+AfterMacaddrAcl5g=1
+AfterAclState5g=accept
+
+20260413T065809885285_DUT.log L231-L287
+BaselineMode6g=BlackList
+BaselineMacaddrAcl6g=0
+BaselineAclState6g=deny
+ERROR: set WiFi.AccessPoint.3.MACFiltering.Mode failed (10 - invalid value)
+SetOffStatus6g=invalid_value
+AfterMode6g=BlackList
+AfterMacaddrAcl6g=0
+AfterAclState6g=deny
+
+20260413T065809885285_DUT.log L325-L381
+BaselineMode24g=BlackList
+BaselineMacaddrAcl24g=0
+BaselineAclState24g=deny
+ERROR: set WiFi.AccessPoint.5.MACFiltering.Mode failed (10 - invalid value)
+SetOffStatus24g=invalid_value
+AfterMode24g=BlackList
+AfterMacaddrAcl24g=0
+AfterAclState24g=deny
+
+plugins/wifi_llapi/reports/agent_trace/20260413T065809885285/wifi-llapi-D079-mode-accesspoint-macfiltering.json L108-L116
+outputs:
+  BaselineMode5g=WhiteList
+  SetOffStatus5g=invalid_value
+  AfterMode5g=WhiteList
+  BaselineMode6g=BlackList
+  SetOffStatus6g=invalid_value
+  AfterMode6g=BlackList
+  BaselineMode24g=BlackList
+  SetOffStatus24g=invalid_value
+  AfterMode24g=BlackList
+```
+
 ## Checkpoint summary (2026-04-13 early-32)
 
 > This checkpoint records the `D071` FTOverDSEnable row/setup/reference closure after `D070`.

@@ -108,6 +108,9 @@
   - `D063 VhtCapabilities` is now aligned via official rerun `20260413T062615392940`
   - `D070 Enable` is now aligned via official rerun `20260413T063442091882`
   - `D071 FTOverDSEnable` is now aligned via official rerun `20260413T064002607672`
+  - `D079 MACFiltering.Mode` is now aligned via official rerun `20260413T065809885285`
+  - workbook row `79` expects deterministic AP-only MAC filter baseline reconstruction (`AP1=WhiteList`, `AP3/AP5=BlackList`) before verifying that `Mode=Off` is rejected with `invalid value` and does not change ACL state; the old all-Off fail shape was just stale row `73` / stale `results_reference`
+  - first confirmation rerun `20260413T065611644145` only failed because `setup_env` still gated on `wl -i wl{0,1,2} bss` during transient hostapd restart noise (`--wlX FSM DONE--` / `down`); removing that non-authoritative gate let the committed rerun exact-close tri-band baseline/readback invariance
   - `D047` / `D050` were pulled back from a drifted custom `TestPilot_BTM` / `WPA3-Personal` path to the authoritative generic `testpilot5G` / `WPA2-Personal` baseline seen in full run `20260412T113008433351`
   - live STA evidence exact-closed the generic WPA2 link (`SSID: testpilot5G`), and DUT evidence exact-closed the same AssociatedDevice entry against `error=4 / message=parameter not found` plus sibling Rx/Tx capability fields and `wl0 sta_info`
   - committed metadata is now workbook row `47` / `50`, with `results_reference.v4.0.3 = Not Supported / N/A / N/A` for both cases
@@ -147,35 +150,27 @@
   - `D063` closes as a row+oracle refresh with a source-backed subset nuance: the authoritative full-run trace had already shown a concrete same-STA direct getter and snapshot, but the case still carried stale row `65` and a fail-shaped contract that expected `VhtCapabilities=""`. The first confirmation rerun proved `wl sta_info` should stay a same-STA subset sanity oracle rather than an exact-close oracle, because live 0403 exposed `SGI80,SGI160,SU-BFR,SU-BFE,MU-BFE` through LLAPI/snapshot while the driver `VHT caps` line only surfaced `SGI80,SGI160,SU-BFR,SU-BFE`
   - `D070` closes as a workbook row/oracle reset: the case still carried stale row `72` and an over-authored AP toggle/readback path, even though workbook row `70` only expects tri-band `Enable=1` plus `wl -e bss` up on all three radios. Pulling the case back to AP-only baseline getter checks removed the mismatch cleanly, and official rerun `20260413T063442091882` exact-closed `Enable5g/6g/24g=1` with `DriverBss5g/6g/24g=up`
   - `D071` closes as a row+setup/reference refresh: the case still carried stale row `73`, pre-applied `IEEE80211r.Enabled` / `MobilityDomain` writes inside `sta_env_setup`, and stale `results_reference.v4.0.3 = To be tested / To be tested / To be tested`. That stale setup order made `setup_env` hit `wl -i wl0 bss = down`, then `wl -i wl1 bss = down`, because the AP baseline gate sampled hostapd during transient 11r restart/down instead of the workbook row `71` execution order. Refreshing it to workbook row `71`, limiting `sta_env_setup` to AP baseline bring-up, and marking `results_reference.v4.0.3 = Pass / Pass / Pass` removed the mismatch cleanly; official rerun `20260413T064002607672` exact-closed tri-band `FTOverDSEnable=0 -> 1 -> 0` together with `MobilityDomain=4660` and hostapd `mobility_domain=3412` / `ft_over_ds` transitions on AP1 / AP3 / AP5
-- Latest investigated non-aligned case:
+- Latest investigated remaining non-aligned cases:
   - `D020 FrequencyCapabilities` remains the verified fail-shaped mismatch: workbook still expects `Pass`, but active 0403 runtime evidence remains `AP1/AP5 getter empty` plus `AP3 getter 6GHz`, while driver support still resolves as per-band single-frequency capability rather than workbook tri-band pass semantics
-  - `D079 MACFiltering.Mode` official rerun `20260413T002418591720` no longer hits `step_command_failed`
-  - both attempts executed the full AP1 / AP3 / AP5 setter/getter sequence and converged to the same live shape:
-    - `BaselineMode5g/6g/24g = Off`
-    - `BaselineMacaddrAcl5g/6g/24g = ABSENT`
-    - `BaselineAclState5g/6g/24g = absent`
-    - `SetOffStatus5g/6g/24g = invalid_value`
-    - post-set getter + ACL state remain unchanged on all three bands
-  - current `D079` YAML still expects 5G `BlackList` / `deny`, so the case is now reclassified from `step_command_failed` to semantic `pass_criteria_not_satisfied` / workbook-authority review
   - `D035 AssociatedDevice OperatingStandard` was then trialed as the next workbook-Pass revisit, but the rewrite did not converge
     - official rerun `20260413T014428270219` still failed twice at `step1_5g_sta_join` with trace output `iw dev wl0 link -> Not connected.`
     - the same STA verify-env log nevertheless showed `SSID: testpilot5G` / `wpa_state=COMPLETED`, so this was not a clean metadata-only closure
     - reconnect trial rerun `20260413T015210910141` removed the immediate 5G join failure but then got trapped in repeated 6G `ocv=0` / `ATTACH` recovery (`6G restart attempt=1 unstable`, `env: retry command after recovery_action=ATTACH`, `6G ocv=0 verify failed — BSS loop may persist`)
     - the local tri-band rewrite was reverted; blocker authority is now `plugins/wifi_llapi/reports/D035_block.md`
-  - next ready actionable open case is now `D079 MACFiltering.Mode`; `D020` remains in the verified fail-shaped bucket, `D035` / `D053` remain blocked, and `D328` / `D336` remain env-only
+  - `D053 txBytes` remains blocked because it still needs deterministic AP-to-STA unicast payload generation before any source-backed YAML rewrite can be justified
+  - next ready actionable open case is now `D080 MaxAssociatedDevices`; `D020` remains in the verified fail-shaped bucket, `D035` / `D053` remain blocked, and `D328` / `D336` remain env-only
 - Current authoritative full-run source remains `20260412T113008433351`
 - Latest recomputed overlay compare on top of authoritative full run `20260412T113008433351`
-  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 / D028 / D065 / D081 / D094 / D095 / D098 / D099 / D114 / D115 / D174 / D176 / D188 / D034 / D059 / D060 / D062 / D063 / D070 / D071 reruns:
-  - `269 / 420 full matches`
-  - `151 mismatches`
+  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 / D028 / D065 / D081 / D094 / D095 / D098 / D099 / D114 / D115 / D174 / D176 / D188 / D034 / D059 / D060 / D062 / D063 / D070 / D071 / D079 reruns:
+  - `270 / 420 full matches`
+  - `150 mismatches`
   - `58 metadata drifts`
 - Current focused step-command-failed workstream status:
-  - closed in this loop: `D072`、`D047`、`D050`、`D088`、`D460`、`D494`
-  - reclassified after runtime fix: `D079 -> pass_criteria_not_satisfied`
+  - closed in this loop: `D072`、`D047`、`D050`、`D088`、`D460`、`D494`、`D079`
   - remaining open set: `none`
   - env-only bucket remains `D328`、`D336`
   - blocked bucket is now `D053` (`needs deterministic AP-to-STA unicast payload`) plus `D035` (`tri-band rewrite blocked by shared 6G OCV / ATTACH recovery loop`)
-- Next ready workbook-Pass revisit: `D063`
+- Next ready workbook-Pass revisit: `D080`
 
 ## Latest repo handoff snapshot（2026-04-11）
 

@@ -10312,7 +10312,7 @@ def test_d079_mode_accesspoint_macfiltering_contract():
     assert "aliases" not in d079_raw
     assert d079["id"] == "wifi-llapi-D079-mode-accesspoint-macfiltering"
     assert d079["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d079["source"]["row"] == 73
+    assert d079["source"]["row"] == 79
     assert d079["source"]["baseline"] == "BCM v4.0.3"
     assert d079["llapi_support"] == "Support"
     assert d079["implemented_by"] == "pWHM"
@@ -10321,6 +10321,9 @@ def test_d079_mode_accesspoint_macfiltering_contract():
     assert d079["topology"]["links"] == []
     assert d079["hlapi_command"] == "ubus-cli WiFi.AccessPoint.1.MACFiltering.Mode=Off"
     assert "killall wpa_supplicant" not in d079.get("sta_env_setup", "")
+    assert 'WiFi.AccessPoint.1.MACFiltering.Mode=WhiteList' in d079.get("sta_env_setup", "")
+    assert 'WiFi.AccessPoint.3.MACFiltering.Mode=BlackList' in d079.get("sta_env_setup", "")
+    assert 'WiFi.AccessPoint.5.MACFiltering.Mode=BlackList' in d079.get("sta_env_setup", "")
     assert "SetOffStatus24g=" in d079_commands
     assert any(
         criterion["field"] == "set_off_5g.SetOffStatus5g"
@@ -10331,12 +10334,12 @@ def test_d079_mode_accesspoint_macfiltering_contract():
     assert any(
         criterion["field"] == "mode_after_set_6g.AfterAclState6g"
         and criterion["operator"] == "equals"
-        and criterion["value"] == "absent"
+        and criterion["value"] == "deny"
         for criterion in d079["pass_criteria"]
     )
-    assert d079["results_reference"]["v4.0.3"]["5g"] == "Fail"
-    assert d079["results_reference"]["v4.0.3"]["6g"] == "Fail"
-    assert d079["results_reference"]["v4.0.3"]["2.4g"] == "Fail"
+    assert d079["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d079["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d079["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d079_mode_accesspoint_macfiltering_setup_env_uses_only_dut_transport(monkeypatch):
@@ -10354,9 +10357,32 @@ def test_d079_mode_accesspoint_macfiltering_setup_env_uses_only_dut_transport(mo
     assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.Enable=1") == 1
     assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.Enable=1") == 1
     assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.Enable=1") == 1
-    assert executed_commands.count("wl -i wl0 bss") == 1
-    assert executed_commands.count("wl -i wl1 bss") == 1
-    assert executed_commands.count("wl -i wl2 bss") == 1
+    assert (
+        executed_commands.count(
+            'ubus-cli "WiFi.AccessPoint.1.MACFiltering.delEntry(mac=62:2F:B8:66:BB:82)" 2>/dev/null || true'
+        )
+        == 1
+    )
+    assert (
+        executed_commands.count(
+            'ubus-cli "WiFi.AccessPoint.3.MACFiltering.delEntry(mac=FA:DD:AC:24:5A:B4)" 2>/dev/null || true'
+        )
+        == 1
+    )
+    assert (
+        executed_commands.count(
+            'ubus-cli "WiFi.AccessPoint.5.MACFiltering.delEntry(mac=FA:A0:DF:91:47:7C)" 2>/dev/null || true'
+        )
+        == 1
+    )
+    assert executed_commands.count('ubus-cli "WiFi.AccessPoint.1.MACFiltering.addEntry(mac=62:2F:B8:66:BB:82)"') == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.MACFiltering.Mode=WhiteList") == 1
+    assert executed_commands.count('ubus-cli "WiFi.AccessPoint.3.MACFiltering.addEntry(mac=FA:DD:AC:24:5A:B4)"') == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.MACFiltering.Mode=BlackList") == 1
+    assert executed_commands.count('ubus-cli "WiFi.AccessPoint.5.MACFiltering.addEntry(mac=FA:A0:DF:91:47:7C)"') == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.MACFiltering.Mode=BlackList") == 1
+    assert executed_commands.count("sleep 2") == 1
+    assert all(not command.startswith("wl -i wl") for command in executed_commands)
     assert all("STA" not in command for command in executed_commands)
     plugin.teardown(d079, topology)
 
@@ -10389,7 +10415,7 @@ def test_d079_mode_accesspoint_macfiltering_evaluate_live_examples():
         "steps": {
             "step1_mode_baseline_5g": {
                 "success": True,
-                "output": mode_output("5g", "BlackList", "0", "deny", "Baseline"),
+                "output": mode_output("5g", "WhiteList", "1", "accept", "Baseline"),
                 "timing": 0.01,
             },
             "step2_set_off_5g": {
@@ -10399,12 +10425,12 @@ def test_d079_mode_accesspoint_macfiltering_evaluate_live_examples():
             },
             "step3_mode_after_set_5g": {
                 "success": True,
-                "output": mode_output("5g", "BlackList", "0", "deny", "After"),
+                "output": mode_output("5g", "WhiteList", "1", "accept", "After"),
                 "timing": 0.01,
             },
             "step4_mode_baseline_6g": {
                 "success": True,
-                "output": mode_output("6g", "Off", "ABSENT", "absent", "Baseline"),
+                "output": mode_output("6g", "BlackList", "0", "deny", "Baseline"),
                 "timing": 0.01,
             },
             "step5_set_off_6g": {
@@ -10414,12 +10440,12 @@ def test_d079_mode_accesspoint_macfiltering_evaluate_live_examples():
             },
             "step6_mode_after_set_6g": {
                 "success": True,
-                "output": mode_output("6g", "Off", "ABSENT", "absent", "After"),
+                "output": mode_output("6g", "BlackList", "0", "deny", "After"),
                 "timing": 0.01,
             },
             "step7_mode_baseline_24g": {
                 "success": True,
-                "output": mode_output("24g", "Off", "ABSENT", "absent", "Baseline"),
+                "output": mode_output("24g", "BlackList", "0", "deny", "Baseline"),
                 "timing": 0.01,
             },
             "step8_set_off_24g": {
@@ -10429,7 +10455,7 @@ def test_d079_mode_accesspoint_macfiltering_evaluate_live_examples():
             },
             "step9_mode_after_set_24g": {
                 "success": True,
-                "output": mode_output("24g", "Off", "ABSENT", "absent", "After"),
+                "output": mode_output("24g", "BlackList", "0", "deny", "After"),
                 "timing": 0.01,
             },
         }
@@ -10465,7 +10491,7 @@ def test_d079_mode_accesspoint_macfiltering_evaluate_live_examples():
             **d079_results["steps"],
             "step9_mode_after_set_24g": {
                 "success": True,
-                "output": mode_output("24g", "Off", "0", "deny", "After"),
+                "output": mode_output("24g", "BlackList", "1", "accept", "After"),
                 "timing": 0.01,
             },
         }
