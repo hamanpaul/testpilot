@@ -1,5 +1,117 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-25)
+
+> This checkpoint records the `D188` DTIMPeriod setter/readback closure after `D176`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D188 DTIMPeriod` is now aligned via official rerun `20260413T050318932313`
+- like `D176`, this was not a low-risk metadata-only closure: workbook row `188` explicitly expects baseline getter `3`, writable `DTIMPeriod=7`, and downstream hostapd `dtim_period=7`, then a clean restore to `3`
+- active 0403 still exposes `DTIMPeriod` as a writable radio property on the same AP-side stack (`wld_radio.odl` persistent default `3`, live Device2 DM getter/setter path, HAL `wldm_Radio_DTIMPeriod()`, and hostapd `dtim_period` emission)
+- the committed rewrite now forces tri-band `DTIMPeriod=3` in setup, then exact-closes northbound getter and `/tmp/wl{0,1,2}_hapd.conf` `dtim_period` across `3 -> 7 -> 3` on all three radios
+- official rerun `20260413T050318932313` passed in one attempt with no STA transport involvement
+- committed metadata is now workbook row `188` with `results_reference.v4.0.3 = Pass / Pass / Pass`
+- overlay compare is now `262 / 420 full matches`、`158 mismatches`、`58 metadata drifts`
+- next ready workbook-Pass revisit is `D034`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D188` | 188 | `DTIMPeriod` | `Pass / Pass / Pass` | `20260413T050318932313_DUT.log L25-L176` | `20260413T050318932313_STA.log (no STA transport used)` |
+
+#### D188 DTIMPeriod
+
+**STA 指令**
+
+```sh
+# none; DUT-only case
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.DTIMPeriod?"
+grep '^dtim_period=' /tmp/wl0_hapd.conf | sed -n '1s/^dtim_period=/BaselineHostapdDtimPeriod5g=/p'
+ubus-cli WiFi.Radio.1.DTIMPeriod=7
+sleep 3
+ubus-cli "WiFi.Radio.1.DTIMPeriod?"
+grep '^dtim_period=' /tmp/wl0_hapd.conf | sed -n '1s/^dtim_period=/AfterSetHostapdDtimPeriod5g=/p'
+ubus-cli WiFi.Radio.1.DTIMPeriod=3
+sleep 3
+ubus-cli "WiFi.Radio.1.DTIMPeriod?"
+grep '^dtim_period=' /tmp/wl0_hapd.conf | sed -n '1s/^dtim_period=/AfterRestoreHostapdDtimPeriod5g=/p'
+ubus-cli "WiFi.Radio.2.DTIMPeriod?"
+grep '^dtim_period=' /tmp/wl1_hapd.conf | sed -n '1s/^dtim_period=/BaselineHostapdDtimPeriod6g=/p'
+ubus-cli WiFi.Radio.2.DTIMPeriod=7
+sleep 3
+ubus-cli "WiFi.Radio.2.DTIMPeriod?"
+grep '^dtim_period=' /tmp/wl1_hapd.conf | sed -n '1s/^dtim_period=/AfterSetHostapdDtimPeriod6g=/p'
+ubus-cli WiFi.Radio.2.DTIMPeriod=3
+sleep 3
+ubus-cli "WiFi.Radio.2.DTIMPeriod?"
+grep '^dtim_period=' /tmp/wl1_hapd.conf | sed -n '1s/^dtim_period=/AfterRestoreHostapdDtimPeriod6g=/p'
+ubus-cli "WiFi.Radio.3.DTIMPeriod?"
+grep '^dtim_period=' /tmp/wl2_hapd.conf | sed -n '1s/^dtim_period=/BaselineHostapdDtimPeriod24g=/p'
+ubus-cli WiFi.Radio.3.DTIMPeriod=7
+sleep 3
+ubus-cli "WiFi.Radio.3.DTIMPeriod?"
+grep '^dtim_period=' /tmp/wl2_hapd.conf | sed -n '1s/^dtim_period=/AfterSetHostapdDtimPeriod24g=/p'
+ubus-cli WiFi.Radio.3.DTIMPeriod=3
+sleep 3
+ubus-cli "WiFi.Radio.3.DTIMPeriod?"
+grep '^dtim_period=' /tmp/wl2_hapd.conf | sed -n '1s/^dtim_period=/AfterRestoreHostapdDtimPeriod24g=/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T050318932313_DUT.log L25-L74
+WiFi.Radio.1.DTIMPeriod=3
+BaselineHostapdDtimPeriod5g=3
+RequestedDtimPeriod5g=7
+WiFi.Radio.1.DTIMPeriod=7
+AfterSetHostapdDtimPeriod5g=7
+RestoreDtimPeriod5g=3
+WiFi.Radio.1.DTIMPeriod=3
+AfterRestoreHostapdDtimPeriod5g=3
+
+20260413T050318932313_DUT.log L75-L125
+WiFi.Radio.2.DTIMPeriod=3
+BaselineHostapdDtimPeriod6g=3
+RequestedDtimPeriod6g=7
+WiFi.Radio.2.DTIMPeriod=7
+AfterSetHostapdDtimPeriod6g=7
+RestoreDtimPeriod6g=3
+WiFi.Radio.2.DTIMPeriod=3
+AfterRestoreHostapdDtimPeriod6g=3
+
+20260413T050318932313_DUT.log L126-L176
+WiFi.Radio.3.DTIMPeriod=3
+BaselineHostapdDtimPeriod24g=3
+RequestedDtimPeriod24g=7
+WiFi.Radio.3.DTIMPeriod=7
+AfterSetHostapdDtimPeriod24g=7
+RestoreDtimPeriod24g=3
+WiFi.Radio.3.DTIMPeriod=3
+AfterRestoreHostapdDtimPeriod24g=3
+
+plugins/wifi_llapi/reports/agent_trace/20260413T050318932313/d188-radio-dtimperiod.json L96-L146
+commands:
+  ubus-cli "WiFi.Radio.1.DTIMPeriod?"
+  ...
+  grep '^dtim_period=' /tmp/wl2_hapd.conf | sed -n '1s/^dtim_period=/AfterRestoreHostapdDtimPeriod24g=/p'
+outputs:
+  WiFi.Radio.1.DTIMPeriod=3
+  BaselineHostapdDtimPeriod5g=3
+  ...
+  AfterRestoreHostapdDtimPeriod24g=3
+```
+
 ## Checkpoint summary (2026-04-13 early-24)
 
 > This checkpoint records the `D176` BeaconPeriod setter/readback closure after `D174`.

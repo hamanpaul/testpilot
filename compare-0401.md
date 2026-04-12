@@ -32,6 +32,7 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T035856845825`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T042647797154`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T044907394777`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T050318932313`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -42,8 +43,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 261 |
-| mismatch cases | 159 |
+| full matches | 262 |
+| mismatch cases | 158 |
 | missing answer rows | 0 |
 | metadata drift rows | 58 |
 
@@ -51,9 +52,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 267 | 153 |
-| 6g | 270 | 150 |
-| 2.4g | 267 | 153 |
+| 5g | 268 | 152 |
+| 6g | 271 | 149 |
+| 2.4g | 268 | 152 |
 
 ## Mismatch table
 
@@ -105,7 +106,6 @@
 | `d185-radio-nractivetxantenna` | 185 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d186-radio-nrrxantenna` | 186 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d187-radio-nrtxantenna` | 187 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d188-radio-dtimperiod` | 188 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d190-radio-explicitbeamformingenabled` | 190 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d191-radio-explicitbeamformingsupported` | 191 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d192-radio-guardinterval` | 192 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -1116,25 +1116,6 @@
 - 0401 G excerpt: 1. Check GW Radio DriverStatus.NrTxAntenna: root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrTxAntenna? > WiFi.Radio.*.DriverStatus.NrTxAntenna? WiFi.Radio.1.DriverStatus.NrTxAntenna=4 WiFi.Radio.2.DriverStatus.NrTxAntenna=4 WiFi.Radi...
 - 0401 H excerpt: wl -i wl0 txchain root@prplOS:/# wl -i wl0 txchain 15 (0xf) root@prplOS:/# wl -i wl1 txchain 15 (0xf) root@prplOS:/# wl -i wl2 txchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d187-radio-nrtxantenna.json`
-
-### d188-radio-dtimperiod
-
-- case file: `D188_dtimperiod.yaml`
-- answer row: `188`
-- mapping status: `exact`
-- source metadata: `WiFi.Radio.{i}.` / `DTIMPeriod`
-- workbook metadata: `WiFi.Radio.{i}.` / `DTIMPeriod`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Check default DTIMPeriod: root@prplOS:/# ubus-cli WiFi.Radio.*.DTIMPeriod? > WiFi.Radio.*.DTIMPeriod? WiFi.Radio.1.DTIMPeriod=3 WiFi.Radio.2.DTIMPeriod=3 WiFi.Radio.3.DTIMPeriod=3 2. Capture air beacons, check DTIM Period: 3 3. Modify...
-- 0401 H excerpt: cat /tmp/wl*_hapd.conf |grep dtim (Default) root@prplOS:/# cat /tmp/wl0_hapd.conf |grep dtim dtim_period=3 dtim_period=3 root@prplOS:/# cat /tmp/wl1_hapd.conf |grep dtim dtim_period=3 dtim_period=3 root@prplOS:/# cat /tmp/wl2_hapd.conf |...
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d188-radio-dtimperiod.json`
 
 ### d190-radio-explicitbeamformingenabled
 

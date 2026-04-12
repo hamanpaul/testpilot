@@ -18076,7 +18076,164 @@ def test_d176_beaconperiod_evaluate_live_examples():
     assert plugin.evaluate(d176, d176_wrong_24g_hostapd_restore) is False
 
 
-# D174, D177–D192  WiFi.Radio.{i}  batch — 3-band read-only getters + D183 fail
+def test_d188_dtimperiod_contract():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+
+    d188_raw = yaml.safe_load((cases_dir / "D188_dtimperiod.yaml").read_text(encoding="utf-8"))
+    d188 = load_case(cases_dir / "D188_dtimperiod.yaml")
+    d188_commands = "\n".join(str(step.get("command", "")) for step in d188["steps"])
+
+    assert "aliases" not in d188_raw
+    assert d188["id"] == "d188-radio-dtimperiod"
+    assert d188["source"]["row"] == 188
+    assert d188["source"]["baseline"] == "0310-BGW720-300"
+    assert d188["hlapi_command"] == "ubus-cli WiFi.Radio.1.DTIMPeriod=7"
+    assert d188["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d188["topology"]["devices"]) == {"DUT"}
+    assert d188["topology"]["links"] == []
+    assert "ubus-cli WiFi.Radio.1.DTIMPeriod=3" in d188.get("sta_env_setup", "")
+    assert "RequestedDtimPeriod24g=7" in d188_commands
+    assert "grep '^dtim_period=' /tmp/wl1_hapd.conf" in d188_commands
+    assert len(d188["steps"]) == 24
+    assert len(d188["pass_criteria"]) == 33
+    assert any(
+        criterion["field"] == "after_set_hostapd_6g.AfterSetHostapdDtimPeriod6g"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "after_set_getter_6g.DTIMPeriod"
+        for criterion in d188["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "after_restore_hostapd_24g.AfterRestoreHostapdDtimPeriod24g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "3"
+        for criterion in d188["pass_criteria"]
+    )
+    assert d188["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d188["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d188["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+
+
+def test_d188_dtimperiod_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    d188 = load_case(cases_dir / "D188_dtimperiod.yaml")
+
+    assert plugin.setup_env(d188, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    executed_commands = recorder.transports[0].executed_commands
+    assert executed_commands.count("ubus-cli WiFi.Radio.1.DTIMPeriod=3") == 1
+    assert executed_commands.count("ubus-cli WiFi.Radio.2.DTIMPeriod=3") == 1
+    assert executed_commands.count("ubus-cli WiFi.Radio.3.DTIMPeriod=3") == 1
+    assert executed_commands.count("sleep 3") == 1
+    assert all("STA" not in command for command in executed_commands)
+    plugin.teardown(d188, topology)
+
+
+def test_d188_dtimperiod_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    d188 = load_case(cases_dir / "D188_dtimperiod.yaml")
+
+    def getter_output(radio: int, value: str) -> str:
+        return f"WiFi.Radio.{radio}.DTIMPeriod={value}"
+
+    def hostapd_output(field: str, value: str) -> str:
+        return f"{field}={value}"
+
+    def set_output(prefix: str) -> str:
+        return f"RequestedDtimPeriod{prefix}=7"
+
+    def restore_output(prefix: str) -> str:
+        return f"RestoreDtimPeriod{prefix}=3"
+
+    steps = {}
+    for base_idx, prefix, radio in ((1, "5g", 1), (9, "6g", 2), (17, "24g", 3)):
+        steps[f"step{base_idx}_dtim_baseline_getter_{prefix}"] = {
+            "success": True,
+            "output": getter_output(radio, "3"),
+            "timing": 0.01,
+        }
+        steps[f"step{base_idx + 1}_dtim_baseline_hostapd_{prefix}"] = {
+            "success": True,
+            "output": hostapd_output(f"BaselineHostapdDtimPeriod{prefix}", "3"),
+            "timing": 0.01,
+        }
+        steps[f"step{base_idx + 2}_dtim_set_{prefix}"] = {
+            "success": True,
+            "output": set_output(prefix),
+            "timing": 0.01,
+        }
+        steps[f"step{base_idx + 3}_dtim_after_set_getter_{prefix}"] = {
+            "success": True,
+            "output": getter_output(radio, "7"),
+            "timing": 0.01,
+        }
+        steps[f"step{base_idx + 4}_dtim_after_set_hostapd_{prefix}"] = {
+            "success": True,
+            "output": hostapd_output(f"AfterSetHostapdDtimPeriod{prefix}", "7"),
+            "timing": 0.01,
+        }
+        steps[f"step{base_idx + 5}_dtim_restore_{prefix}"] = {
+            "success": True,
+            "output": restore_output(prefix),
+            "timing": 0.01,
+        }
+        steps[f"step{base_idx + 6}_dtim_after_restore_getter_{prefix}"] = {
+            "success": True,
+            "output": getter_output(radio, "3"),
+            "timing": 0.01,
+        }
+        steps[f"step{base_idx + 7}_dtim_after_restore_hostapd_{prefix}"] = {
+            "success": True,
+            "output": hostapd_output(f"AfterRestoreHostapdDtimPeriod{prefix}", "3"),
+            "timing": 0.01,
+        }
+
+    d188_results = {"steps": steps}
+    assert plugin.evaluate(d188, d188_results) is True
+
+    d188_wrong_6g_hostapd_after_set = {
+        "steps": {
+            **d188_results["steps"],
+            "step13_dtim_after_set_hostapd_6g": {
+                "success": True,
+                "output": hostapd_output("AfterSetHostapdDtimPeriod6g", "3"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d188, d188_wrong_6g_hostapd_after_set) is False
+
+    d188_wrong_5g_getter_after_set = {
+        "steps": {
+            **d188_results["steps"],
+            "step4_dtim_after_set_getter_5g": {
+                "success": True,
+                "output": getter_output(1, "3"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d188, d188_wrong_5g_getter_after_set) is False
+
+    d188_wrong_24g_hostapd_restore = {
+        "steps": {
+            **d188_results["steps"],
+            "step24_dtim_after_restore_hostapd_24g": {
+                "success": True,
+                "output": hostapd_output("AfterRestoreHostapdDtimPeriod24g", "7"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d188, d188_wrong_24g_hostapd_restore) is False
+
+
+# Remaining WiFi.Radio.{i} read-only getter batch
 # ---------------------------------------------------------------------------
 
 # Parametrized table: (yaml_file, row, live_5g, live_6g, live_24g, llapi_path_template)
@@ -18093,7 +18250,6 @@ _RADIO_GETTER_CASES = [
     ("D185_nractivetxantenna.yaml", 148, "4", "4", "4", "WiFi.Radio.{r}.DriverStatus.NrActiveTxAntenna"),
     ("D186_nrrxantenna.yaml", 149, "4", "4", "4", "WiFi.Radio.{r}.NrRxAntenna"),
     ("D187_nrtxantenna.yaml", 150, "4", "4", "4", "WiFi.Radio.{r}.NrTxAntenna"),
-    ("D188_dtimperiod.yaml", 151, "3", "3", "3", "WiFi.Radio.{r}.DTIMPeriod"),
     ("D354_enable_radio.yaml", 152, "1", "1", "1", "WiFi.Radio.{r}.Enable"),
     ("D190_explicitbeamformingenabled.yaml", 153, "1", "1", "1", "WiFi.Radio.{r}.ExplicitBeamFormingEnabled"),
     ("D191_explicitbeamformingsupported.yaml", 154, "1", "1", "1", "WiFi.Radio.{r}.ExplicitBeamFormingSupported"),

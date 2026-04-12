@@ -29,7 +29,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T033856175894",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T035856845825",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T042647797154",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T044907394777"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T044907394777",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T050318932313"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -37,20 +38,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 261,
-  "mismatch_case_count": 159,
+  "full_match_count": 262,
+  "mismatch_case_count": 158,
   "band_summary": {
     "5g": {
-      "matched": 267,
-      "mismatched": 153
+      "matched": 268,
+      "mismatched": 152
     },
     "6g": {
-      "matched": 270,
-      "mismatched": 150
+      "matched": 271,
+      "mismatched": 149
     },
     "2.4g": {
-      "matched": 267,
-      "mismatched": 153
+      "matched": 268,
+      "mismatched": 152
     }
   },
   "cases": [
@@ -6852,7 +6853,7 @@
       "case_id": "d188-radio-dtimperiod",
       "case_file": "D188_dtimperiod.yaml",
       "dnum": 188,
-      "source_row": 151,
+      "source_row": 188,
       "source_object": "WiFi.Radio.{i}.",
       "source_api": "DTIMPeriod",
       "answer_row": 188,
@@ -6861,39 +6862,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Check default DTIMPeriod: root@prplOS:/# ubus-cli WiFi.Radio.*.DTIMPeriod? > WiFi.Radio.*.DTIMPeriod? WiFi.Radio.1.DTIMPeriod=3 WiFi.Radio.2.DTIMPeriod=3 WiFi.Radio.3.DTIMPeriod=3 2. Capture air beacons, check DTIM Period: 3 3. Modify...",
       "workbook_command_output_excerpt": "cat /tmp/wl*_hapd.conf |grep dtim (Default) root@prplOS:/# cat /tmp/wl0_hapd.conf |grep dtim dtim_period=3 dtim_period=3 root@prplOS:/# cat /tmp/wl1_hapd.conf |grep dtim dtim_period=3 dtim_period=3 root@prplOS:/# cat /tmp/wl2_hapd.conf |...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d188-radio-dtimperiod.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T050318932313/d188-radio-dtimperiod.json"
     },
     {
       "case_id": "d189-radio-sensing-enable",
@@ -20880,53 +20877,6 @@
       "workbook_test_steps_excerpt": "1. Check GW Radio DriverStatus.NrTxAntenna: root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrTxAntenna? > WiFi.Radio.*.DriverStatus.NrTxAntenna? WiFi.Radio.1.DriverStatus.NrTxAntenna=4 WiFi.Radio.2.DriverStatus.NrTxAntenna=4 WiFi.Radi...",
       "workbook_command_output_excerpt": "wl -i wl0 txchain root@prplOS:/# wl -i wl0 txchain 15 (0xf) root@prplOS:/# wl -i wl1 txchain 15 (0xf) root@prplOS:/# wl -i wl2 txchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d187-radio-nrtxantenna.json"
-    },
-    {
-      "case_id": "d188-radio-dtimperiod",
-      "case_file": "D188_dtimperiod.yaml",
-      "dnum": 188,
-      "source_row": 151,
-      "source_object": "WiFi.Radio.{i}.",
-      "source_api": "DTIMPeriod",
-      "answer_row": 188,
-      "answer_object": "WiFi.Radio.{i}.",
-      "answer_api": "DTIMPeriod",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Check default DTIMPeriod: root@prplOS:/# ubus-cli WiFi.Radio.*.DTIMPeriod? > WiFi.Radio.*.DTIMPeriod? WiFi.Radio.1.DTIMPeriod=3 WiFi.Radio.2.DTIMPeriod=3 WiFi.Radio.3.DTIMPeriod=3 2. Capture air beacons, check DTIM Period: 3 3. Modify...",
-      "workbook_command_output_excerpt": "cat /tmp/wl*_hapd.conf |grep dtim (Default) root@prplOS:/# cat /tmp/wl0_hapd.conf |grep dtim dtim_period=3 dtim_period=3 root@prplOS:/# cat /tmp/wl1_hapd.conf |grep dtim dtim_period=3 dtim_period=3 root@prplOS:/# cat /tmp/wl2_hapd.conf |...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d188-radio-dtimperiod.json"
     },
     {
       "case_id": "d190-radio-explicitbeamformingenabled",
