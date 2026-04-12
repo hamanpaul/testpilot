@@ -9071,7 +9071,7 @@ def test_d070_enable_accesspoint_contract():
     assert "aliases" not in d070_raw
     assert d070["id"] == "wifi-llapi-D070-enable-accesspoint"
     assert d070["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d070["source"]["row"] == 72
+    assert d070["source"]["row"] == 70
     assert d070["source"]["baseline"] == "BCM v4.0.3"
     assert d070["llapi_support"] == "Support"
     assert d070["bands"] == ["5g", "6g", "2.4g"]
@@ -9081,18 +9081,20 @@ def test_d070_enable_accesspoint_contract():
     assert "ubus-cli WiFi.AccessPoint.1.Enable=1" in d070.get("sta_env_setup", "")
     assert "ubus-cli WiFi.AccessPoint.3.Enable=1" in d070.get("sta_env_setup", "")
     assert "ubus-cli WiFi.AccessPoint.5.Enable=1" in d070.get("sta_env_setup", "")
-    assert "DriverBssState6g=" in d070_commands
-    assert "StartDisabled24gTotalCount=" in d070_commands
+    assert len(d070["steps"]) == 3
+    assert "Enable5g=" in d070_commands
+    assert "DriverBss6g=" in d070_commands
+    assert "Enable24g=" in d070_commands
     assert any(
-        criterion["field"] == "cfg_disable_6g.StartDisabled6gOneCount"
+        criterion["field"] == "enable_6g.Enable6g"
         and criterion["operator"] == "equals"
         and criterion["value"] == "1"
         for criterion in d070["pass_criteria"]
     )
     assert any(
-        criterion["field"] == "cfg_enable_24g.StartDisabled24gTotalCount"
+        criterion["field"] == "enable_24g.DriverBss24g"
         and criterion["operator"] == "equals"
-        and criterion["value"] == "0"
+        and criterion["value"] == "up"
         for criterion in d070["pass_criteria"]
     )
     assert d070["results_reference"]["v4.0.3"]["5g"] == "Pass"
@@ -9128,103 +9130,19 @@ def test_d070_enable_accesspoint_evaluate_live_examples():
 
     d070_results = {
         "steps": {
-            "step1_default_5g": {"success": True, "output": "WiFi.AccessPoint.1.Enable=1", "timing": 0.01},
-            "step2_default_6g": {"success": True, "output": "WiFi.AccessPoint.3.Enable=1", "timing": 0.01},
-            "step3_default_24g": {"success": True, "output": "WiFi.AccessPoint.5.Enable=1", "timing": 0.01},
-            "step4_disable_5g": {
+            "step1_enable_5g": {
                 "success": True,
-                "output": "WiFi.AccessPoint.1.\nWiFi.AccessPoint.1.Enable=0",
+                "output": "Enable5g=1\nDriverBss5g=up",
                 "timing": 0.01,
             },
-            "step5_state_disable_5g": {
+            "step2_enable_6g": {
                 "success": True,
-                "output": 'Enable5g=0\nStatus5g="Disabled"',
+                "output": "Enable6g=1\nDriverBss6g=up",
                 "timing": 0.01,
             },
-            "step6_bss_disable_5g": {"success": True, "output": "DriverBssState5g=down", "timing": 0.01},
-            "step7_cfg_disable_5g": {
+            "step3_enable_24g": {
                 "success": True,
-                "output": "StartDisabled5g=1\nStartDisabled5gOneCount=1\nStartDisabled5gZeroCount=0\nStartDisabled5gTotalCount=1",
-                "timing": 0.01,
-            },
-            "step8_enable_5g": {
-                "success": True,
-                "output": "WiFi.AccessPoint.1.\nWiFi.AccessPoint.1.Enable=1",
-                "timing": 0.01,
-            },
-            "step9_state_enable_5g": {
-                "success": True,
-                "output": 'Enable5g=1\nStatus5g="Enabled"',
-                "timing": 0.01,
-            },
-            "step10_bss_enable_5g": {"success": True, "output": "DriverBssState5g=up", "timing": 0.01},
-            "step11_cfg_enable_5g": {
-                "success": True,
-                "output": "StartDisabled5gOneCount=0\nStartDisabled5gZeroCount=0\nStartDisabled5gTotalCount=0",
-                "timing": 0.01,
-            },
-            "step12_disable_6g": {
-                "success": True,
-                "output": "WiFi.AccessPoint.3.\nWiFi.AccessPoint.3.Enable=0",
-                "timing": 0.01,
-            },
-            "step13_state_disable_6g": {
-                "success": True,
-                "output": 'Enable6g=0\nStatus6g="Disabled"',
-                "timing": 0.01,
-            },
-            "step14_bss_disable_6g": {"success": True, "output": "DriverBssState6g=down", "timing": 0.01},
-            "step15_cfg_disable_6g": {
-                "success": True,
-                "output": "StartDisabled6g=1\nStartDisabled6gOneCount=1\nStartDisabled6gZeroCount=0\nStartDisabled6gTotalCount=1",
-                "timing": 0.01,
-            },
-            "step16_enable_6g": {
-                "success": True,
-                "output": "WiFi.AccessPoint.3.\nWiFi.AccessPoint.3.Enable=1",
-                "timing": 0.01,
-            },
-            "step17_state_enable_6g": {
-                "success": True,
-                "output": 'Enable6g=1\nStatus6g="Enabled"',
-                "timing": 0.01,
-            },
-            "step18_bss_enable_6g": {"success": True, "output": "DriverBssState6g=up", "timing": 0.01},
-            "step19_cfg_enable_6g": {
-                "success": True,
-                "output": "StartDisabled6gOneCount=0\nStartDisabled6gZeroCount=0\nStartDisabled6gTotalCount=0",
-                "timing": 0.01,
-            },
-            "step20_disable_24g": {
-                "success": True,
-                "output": "WiFi.AccessPoint.5.\nWiFi.AccessPoint.5.Enable=0",
-                "timing": 0.01,
-            },
-            "step21_state_disable_24g": {
-                "success": True,
-                "output": 'Enable24g=0\nStatus24g="Disabled"',
-                "timing": 0.01,
-            },
-            "step22_bss_disable_24g": {"success": True, "output": "DriverBssState24g=down", "timing": 0.01},
-            "step23_cfg_disable_24g": {
-                "success": True,
-                "output": "StartDisabled24g=1\nStartDisabled24gOneCount=1\nStartDisabled24gZeroCount=0\nStartDisabled24gTotalCount=1",
-                "timing": 0.01,
-            },
-            "step24_enable_24g": {
-                "success": True,
-                "output": "WiFi.AccessPoint.5.\nWiFi.AccessPoint.5.Enable=1",
-                "timing": 0.01,
-            },
-            "step25_state_enable_24g": {
-                "success": True,
-                "output": 'Enable24g=1\nStatus24g="Enabled"',
-                "timing": 0.01,
-            },
-            "step26_bss_enable_24g": {"success": True, "output": "DriverBssState24g=up", "timing": 0.01},
-            "step27_cfg_enable_24g": {
-                "success": True,
-                "output": "StartDisabled24gOneCount=0\nStartDisabled24gZeroCount=0\nStartDisabled24gTotalCount=0",
+                "output": "Enable24g=1\nDriverBss24g=up",
                 "timing": 0.01,
             },
         }
@@ -9234,38 +9152,38 @@ def test_d070_enable_accesspoint_evaluate_live_examples():
     d070_wrong_6g_bss_results = {
         "steps": {
             **d070_results["steps"],
-            "step14_bss_disable_6g": {
+            "step2_enable_6g": {
                 "success": True,
-                "output": "DriverBssState6g=up",
+                "output": "Enable6g=1\nDriverBss6g=down",
                 "timing": 0.01,
             },
         }
     }
     assert plugin.evaluate(d070, d070_wrong_6g_bss_results) is False
 
-    d070_wrong_24g_cfg_results = {
+    d070_wrong_24g_enable_results = {
         "steps": {
             **d070_results["steps"],
-            "step23_cfg_disable_24g": {
+            "step3_enable_24g": {
                 "success": True,
-                "output": "StartDisabled24gOneCount=0\nStartDisabled24gZeroCount=0\nStartDisabled24gTotalCount=0",
+                "output": "Enable24g=0\nDriverBss24g=up",
                 "timing": 0.01,
             },
         }
     }
-    assert plugin.evaluate(d070, d070_wrong_24g_cfg_results) is False
+    assert plugin.evaluate(d070, d070_wrong_24g_enable_results) is False
 
-    d070_wrong_5g_restore_results = {
+    d070_wrong_5g_bss_results = {
         "steps": {
             **d070_results["steps"],
-            "step9_state_enable_5g": {
+            "step1_enable_5g": {
                 "success": True,
-                "output": 'Enable5g=1\nStatus5g="Disabled"',
+                "output": "Enable5g=1\nDriverBss5g=down",
                 "timing": 0.01,
             },
         }
     }
-    assert plugin.evaluate(d070, d070_wrong_5g_restore_results) is False
+    assert plugin.evaluate(d070, d070_wrong_5g_bss_results) is False
 
 
 def test_d071_ftoverdsenable_accesspoint_contract():
@@ -16647,49 +16565,24 @@ def test_d070_enable_accesspoint_verification_fragments_preserve_sequence():
 
     verification_commands = plugin._extract_cli_fragments(d070["verification_command"])
     expected_commands = [
-        d070["steps"][0]["command"],
-        d070["steps"][1]["command"],
-        d070["steps"][2]["command"],
-        d070["steps"][3]["command"],
-        d070["steps"][4]["command"],
-        d070["steps"][5]["command"],
-        d070["steps"][6]["command"],
-        d070["steps"][7]["command"],
-        d070["steps"][8]["command"] + " | sed -n '1,20p'",
-        d070["steps"][9]["command"] + " | sed -n '1,20p'",
-        d070["steps"][10]["command"] + " | sed -n '1,20p'",
-        d070["steps"][11]["command"],
-        d070["steps"][12]["command"],
-        d070["steps"][13]["command"],
-        d070["steps"][14]["command"],
-        d070["steps"][15]["command"],
-        d070["steps"][16]["command"] + " | sed -n '1,20p'",
-        d070["steps"][17]["command"] + " | sed -n '1,20p'",
-        d070["steps"][18]["command"] + " | sed -n '1,20p'",
-        d070["steps"][19]["command"],
-        d070["steps"][20]["command"],
-        d070["steps"][21]["command"],
-        d070["steps"][22]["command"],
-        d070["steps"][23]["command"],
-        d070["steps"][24]["command"] + " | sed -n '1,20p'",
-        d070["steps"][25]["command"] + " | sed -n '1,20p'",
-        d070["steps"][26]["command"] + " | sed -n '1,20p'",
+        d070["steps"][0]["command"][0],
+        d070["steps"][0]["command"][1],
+        d070["steps"][1]["command"][0],
+        d070["steps"][1]["command"][1],
+        d070["steps"][2]["command"][0],
+        d070["steps"][2]["command"][1],
     ]
 
     assert verification_commands == expected_commands
 
 
-def test_d070_enable_accesspoint_state_snapshot_fragment_executes():
+def test_d070_enable_accesspoint_enable_fragment_parses_getter_value():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d070 = load_case(cases_dir / "D070_enable_accesspoint.yaml")
-    step5_command = d070["steps"][4]["command"]
-    pipeline = step5_command.split("|", 1)[1].strip()
-    sample_output = "\n".join(
-        [
-            "WiFi.AccessPoint.1.Enable=0",
-            'WiFi.AccessPoint.1.Status="Disabled"',
-        ]
-    )
+    step1_command = d070["steps"][0]["command"][0]
+    assert "WiFi.AccessPoint.1.Enable?" in step1_command
+    pipeline = "grep -o 'Enable=[0-9]*' | cut -d= -f2"
+    sample_output = "WiFi.AccessPoint.1.Enable=1"
 
     proc = subprocess.run(
         [
@@ -16703,67 +16596,18 @@ def test_d070_enable_accesspoint_state_snapshot_fragment_executes():
     )
 
     assert proc.returncode == 0, proc.stderr
-    assert proc.stdout.strip().splitlines() == [
-        "Enable5g=0",
-        'Status5g="Disabled"',
-    ]
+    assert proc.stdout.strip() == "1"
 
 
-def test_d070_enable_accesspoint_disable_config_fragment_executes():
+def test_d070_enable_accesspoint_driver_fragment_preserves_cli():
+    plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d070 = load_case(cases_dir / "D070_enable_accesspoint.yaml")
-    step7_command = d070["steps"][6]["command"]
+    step1_driver_command = d070["steps"][0]["command"][1]
 
-    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
-        handle.write("start_disabled=1\n")
-        temp_path = handle.name
-
-    try:
-        adapted_command = step7_command.replace("/tmp/wl0_hapd.conf", temp_path)
-        proc = subprocess.run(
-            ["sh", "-lc", adapted_command],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-    finally:
-        Path(temp_path).unlink(missing_ok=True)
-
-    assert proc.returncode == 0, proc.stderr
-    assert proc.stdout.strip().splitlines() == [
-        "StartDisabled5g=1",
-        "StartDisabled5gOneCount=1",
-        "StartDisabled5gZeroCount=0",
-        "StartDisabled5gTotalCount=1",
-    ]
-
-
-def test_d070_enable_accesspoint_enable_config_fragment_executes_without_start_disabled():
-    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    d070 = load_case(cases_dir / "D070_enable_accesspoint.yaml")
-    step11_command = d070["steps"][10]["command"]
-
-    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
-        handle.write("")
-        temp_path = handle.name
-
-    try:
-        adapted_command = step11_command.replace("/tmp/wl0_hapd.conf", temp_path)
-        proc = subprocess.run(
-            ["sh", "-lc", adapted_command],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-    finally:
-        Path(temp_path).unlink(missing_ok=True)
-
-    assert proc.returncode == 0, proc.stderr
-    assert proc.stdout.strip().splitlines() == [
-        "StartDisabled5gOneCount=0",
-        "StartDisabled5gZeroCount=0",
-        "StartDisabled5gTotalCount=0",
-    ]
+    assert step1_driver_command == 'echo "DriverBss5g=$(wl -i wl0 bss 2>/dev/null)"'
+    assert plugin._sanitize_cli_fragment(step1_driver_command) == step1_driver_command
+    assert plugin._extract_cli_fragments(step1_driver_command) == [step1_driver_command]
 
 
 def test_d071_ftoverdsenable_accesspoint_verification_fragments_preserve_sequence():

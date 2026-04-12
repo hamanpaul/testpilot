@@ -1,5 +1,78 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-31)
+
+> This checkpoint records the `D070` Enable row/oracle closure after `D063`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D070 Enable` is now aligned via official rerun `20260413T063442091882`
+- this was not a runtime bug: the committed case still carried stale workbook row `72` and an over-authored AP toggle/readback path, even though workbook row `70` only asks for tri-band `Enable=1` with `wl -e bss` up on all radios
+- the committed rewrite refreshes stale row `72` back to workbook row `70`, keeps the case AP-only, and reduces the oracle to the workbook-authoritative per-band `Enable` getter plus direct driver `wl -i wl{0,1,2} bss`
+- official rerun `20260413T063442091882` then exact-closed `Enable5g=1`, `Enable6g=1`, `Enable24g=1`, and `DriverBss5g/6g/24g=up`
+- committed metadata is now workbook row `70` with `results_reference.v4.0.3 = Pass / Pass / Pass`
+- overlay compare is now `268 / 420 full matches`、`152 mismatches`、`58 metadata drifts`
+- next ready actionable workbook-Pass revisit is `D071`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D070` | 70 | `Enable` | `Pass / Pass / Pass` | `20260413T063442091882_DUT.log L32-L52` | `n/a (AP-only)` |
+
+#### D070 Enable
+
+**STA 指令**
+
+```sh
+# AP-only case; no STA transport
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+echo "Enable5g=$(ubus-cli 'WiFi.AccessPoint.1.Enable?' 2>/dev/null | grep -o 'Enable=[0-9]*' | cut -d= -f2)"
+echo "DriverBss5g=$(wl -i wl0 bss 2>/dev/null)"
+echo "Enable6g=$(ubus-cli 'WiFi.AccessPoint.3.Enable?' 2>/dev/null | grep -o 'Enable=[0-9]*' | cut -d= -f2)"
+echo "DriverBss6g=$(wl -i wl1 bss 2>/dev/null)"
+echo "Enable24g=$(ubus-cli 'WiFi.AccessPoint.5.Enable?' 2>/dev/null | grep -o 'Enable=[0-9]*' | cut -d= -f2)"
+echo "DriverBss24g=$(wl -i wl2 bss 2>/dev/null)"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T063442091882_DUT.log L32-L52
+Enable5g=1
+DriverBss5g=up
+Enable6g=1
+DriverBss6g=up
+Enable24g=1
+DriverBss24g=up
+
+plugins/wifi_llapi/reports/agent_trace/20260413T063442091882/wifi-llapi-D070-enable-accesspoint.json L96-L104
+commands:
+  echo "Enable5g=$(ubus-cli 'WiFi.AccessPoint.1.Enable?' 2>/dev/null | grep -o 'Enable=[0-9]*' | cut -d= -f2)"
+  echo "DriverBss5g=$(wl -i wl0 bss 2>/dev/null)"
+  echo "Enable6g=$(ubus-cli 'WiFi.AccessPoint.3.Enable?' 2>/dev/null | grep -o 'Enable=[0-9]*' | cut -d= -f2)"
+  echo "DriverBss6g=$(wl -i wl1 bss 2>/dev/null)"
+  echo "Enable24g=$(ubus-cli 'WiFi.AccessPoint.5.Enable?' 2>/dev/null | grep -o 'Enable=[0-9]*' | cut -d= -f2)"
+  echo "DriverBss24g=$(wl -i wl2 bss 2>/dev/null)"
+outputs:
+  Enable5g=1
+  DriverBss5g=up
+  Enable6g=1
+  DriverBss6g=up
+  Enable24g=1
+  DriverBss24g=up
+```
+
 ## Checkpoint summary (2026-04-13 early-30)
 
 > This checkpoint records the `D063` VhtCapabilities row/oracle closure after `D062`.
