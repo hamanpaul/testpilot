@@ -23,6 +23,7 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T022541033440`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T023259417785`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T024240506323`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T025449283775`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -33,8 +34,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 252 |
-| mismatch cases | 168 |
+| full matches | 253 |
+| mismatch cases | 167 |
 | missing answer rows | 0 |
 | metadata drift rows | 58 |
 
@@ -42,9 +43,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 259 | 161 |
-| 6g | 261 | 159 |
-| 2.4g | 259 | 161 |
+| 5g | 260 | 160 |
+| 6g | 262 | 158 |
+| 2.4g | 260 | 160 |
 
 ## Mismatch table
 
@@ -71,7 +72,6 @@
 | `wifi-llapi-D071-ftoverdsenable-accesspoint` | 71 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D079-mode-accesspoint-macfiltering` | 79 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D080-maxassociateddevices` | 80 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `wifi-llapi-D081-mboenable` | 81 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D082-multiaptype` | 82 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D084-encryptionmode-accesspoint-security` | 84 | exact | Pass / Pass / Pass | Not Supported / Not Supported / Not Supported | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
 | `wifi-llapi-D085-keypassphrase-accesspoint-security` | 85 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -630,26 +630,6 @@
 - 0401 G excerpt: 1. Get the Maximum Association allowed in SSID root@prplOS:/# ubus-cli WiFi.AccessPoint.*.? | grep MaxAssociatedDevices WiFi.AccessPoint.1.MaxAssociatedDevices=32 WiFi.AccessPoint.3.MaxAssociatedDevices=32 WiFi.AccessPoint.5.MaxAssociate...
 - 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep max_num_sta cat /tmp/wl1_hapd.conf |grep max_num_sta cat /tmp/wl2_hapd.conf |grep max_num_sta root@prplOS:/# cat /tmp/wl0_hapd.conf |grep max_num_sta root@prplOS:/# cat /tmp/wl1_hapd.conf |grep max_num_sta ro...
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D080-maxassociateddevices.json`
-
-### wifi-llapi-D081-mboenable
-
-- case file: `D081_mboenable.yaml`
-- answer row: `81`
-- mapping status: `exact`
-- source metadata: `WiFi.AccessPoint.{i}.` / `MBOEnable`
-- workbook metadata: `WiFi.AccessPoint.{i}.` / `MBOEnable`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `2`
-- runtime comment: pass after retry (2/2)
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: \\Enable MBO root@prplOS:~# ubus-cli WiFi.AccessPoint.*.MBOEnable=1 > WiFi.AccessPoint.*.MBOEnable=1 WiFi.AccessPoint.1.MBOEnable=1 WiFi.AccessPoint.2.MBOEnable=1 WiFi.AccessPoint.3.MBOEnable=1 WiFi.AccessPoint.4.MBOEnable=1 WiFi.AccessP...
-- 0401 H excerpt: MBO = 0"Disable" root@prplOS:/# wl -i wl0 mbo ap_enable MBO AP ENABLE : 0 root@prplOS:/# wl -i wl1 mbo ap_enable MBO AP ENABLE : 0 root@prplOS:/# wl -i wl2 mbo ap_enable MBO AP ENABLE : 0 MBO = 1"Enable" root@prplOS:/# wl -i wl0 mbo ap_e...
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D081-mboenable.json`
 
 ### wifi-llapi-D082-multiaptype
 

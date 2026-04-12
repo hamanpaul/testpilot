@@ -20,7 +20,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T021655844208",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T022541033440",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T023259417785",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T024240506323"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T024240506323",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T025449283775"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -28,20 +29,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 252,
-  "mismatch_case_count": 168,
+  "full_match_count": 253,
+  "mismatch_case_count": 167,
   "band_summary": {
     "5g": {
-      "matched": 259,
-      "mismatched": 161
+      "matched": 260,
+      "mismatched": 160
     },
     "6g": {
-      "matched": 261,
-      "mismatched": 159
+      "matched": 262,
+      "mismatched": 158
     },
     "2.4g": {
-      "matched": 259,
-      "mismatched": 161
+      "matched": 260,
+      "mismatched": 160
     }
   },
   "cases": [
@@ -3267,7 +3268,7 @@
       "case_id": "wifi-llapi-D081-mboenable",
       "case_file": "D081_mboenable.yaml",
       "dnum": 81,
-      "source_row": 75,
+      "source_row": 81,
       "source_object": "WiFi.AccessPoint.{i}.",
       "source_api": "MBOEnable",
       "answer_row": 81,
@@ -3276,39 +3277,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
-      "attempts_used": 2,
-      "comment": "pass after retry (2/2)",
+      "attempts_used": 1,
+      "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "\\\\Enable MBO root@prplOS:~# ubus-cli WiFi.AccessPoint.*.MBOEnable=1 > WiFi.AccessPoint.*.MBOEnable=1 WiFi.AccessPoint.1.MBOEnable=1 WiFi.AccessPoint.2.MBOEnable=1 WiFi.AccessPoint.3.MBOEnable=1 WiFi.AccessPoint.4.MBOEnable=1 WiFi.AccessP...",
       "workbook_command_output_excerpt": "MBO = 0\"Disable\" root@prplOS:/# wl -i wl0 mbo ap_enable MBO AP ENABLE : 0 root@prplOS:/# wl -i wl1 mbo ap_enable MBO AP ENABLE : 0 root@prplOS:/# wl -i wl2 mbo ap_enable MBO AP ENABLE : 0 MBO = 1\"Enable\" root@prplOS:/# wl -i wl0 mbo ap_e...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D081-mboenable.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T025449283775/wifi-llapi-D081-mboenable.json"
     },
     {
       "case_id": "wifi-llapi-D082-multiaptype",
@@ -19737,53 +19734,6 @@
       "workbook_test_steps_excerpt": "1. Get the Maximum Association allowed in SSID root@prplOS:/# ubus-cli WiFi.AccessPoint.*.? | grep MaxAssociatedDevices WiFi.AccessPoint.1.MaxAssociatedDevices=32 WiFi.AccessPoint.3.MaxAssociatedDevices=32 WiFi.AccessPoint.5.MaxAssociate...",
       "workbook_command_output_excerpt": "cat /tmp/wl0_hapd.conf |grep max_num_sta cat /tmp/wl1_hapd.conf |grep max_num_sta cat /tmp/wl2_hapd.conf |grep max_num_sta root@prplOS:/# cat /tmp/wl0_hapd.conf |grep max_num_sta root@prplOS:/# cat /tmp/wl1_hapd.conf |grep max_num_sta ro...",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D080-maxassociateddevices.json"
-    },
-    {
-      "case_id": "wifi-llapi-D081-mboenable",
-      "case_file": "D081_mboenable.yaml",
-      "dnum": 81,
-      "source_row": 75,
-      "source_object": "WiFi.AccessPoint.{i}.",
-      "source_api": "MBOEnable",
-      "answer_row": 81,
-      "answer_object": "WiFi.AccessPoint.{i}.",
-      "answer_api": "MBOEnable",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 2,
-      "comment": "pass after retry (2/2)",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "\\\\Enable MBO root@prplOS:~# ubus-cli WiFi.AccessPoint.*.MBOEnable=1 > WiFi.AccessPoint.*.MBOEnable=1 WiFi.AccessPoint.1.MBOEnable=1 WiFi.AccessPoint.2.MBOEnable=1 WiFi.AccessPoint.3.MBOEnable=1 WiFi.AccessPoint.4.MBOEnable=1 WiFi.AccessP...",
-      "workbook_command_output_excerpt": "MBO = 0\"Disable\" root@prplOS:/# wl -i wl0 mbo ap_enable MBO AP ENABLE : 0 root@prplOS:/# wl -i wl1 mbo ap_enable MBO AP ENABLE : 0 root@prplOS:/# wl -i wl2 mbo ap_enable MBO AP ENABLE : 0 MBO = 1\"Enable\" root@prplOS:/# wl -i wl0 mbo ap_e...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D081-mboenable.json"
     },
     {
       "case_id": "wifi-llapi-D082-multiaptype",

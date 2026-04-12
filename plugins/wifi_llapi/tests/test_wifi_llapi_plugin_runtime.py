@@ -10524,7 +10524,7 @@ def test_d081_mboenable_contract():
     assert "aliases" not in d081_raw
     assert d081["id"] == "wifi-llapi-D081-mboenable"
     assert d081["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d081["source"]["row"] == 75
+    assert d081["source"]["row"] == 81
     assert d081["source"]["baseline"] == "BCM v4.0.3"
     assert d081["llapi_support"] == "Support"
     assert d081["implemented_by"] == "Vendor Module"
@@ -10533,23 +10533,24 @@ def test_d081_mboenable_contract():
     assert d081["topology"]["links"] == []
     assert d081["hlapi_command"] == "ubus-cli WiFi.AccessPoint.1.MBOEnable=0"
     assert "killall wpa_supplicant" not in d081.get("sta_env_setup", "")
-    assert "AfterEnableHostapdMbo24g=" in d081_commands
+    assert "AfterEnableDriverMbo24g=" in d081_commands
+    assert "wl -i wl0 mbo ap_enable" in d081_commands
     assert "sleep 5;" in d081_commands
     assert any(
-        criterion["field"] == "mbo_after_enable_5g.AfterEnableHostapdMbo5g"
-        and criterion["operator"] == "not_equals"
-        and criterion["reference"] == "mbo_after_enable_5g.AfterEnableGetterMbo5g"
+        criterion["field"] == "mbo_after_enable_5g.AfterEnableDriverMbo5g"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "mbo_after_enable_5g.AfterEnableGetterMbo5g"
         for criterion in d081["pass_criteria"]
     )
     assert any(
-        criterion["field"] == "mbo_after_restore_24g.AfterRestoreHostapdMboCount24g"
+        criterion["field"] == "mbo_after_restore_24g.AfterRestoreDriverMbo24g"
         and criterion["operator"] == "equals"
         and criterion["value"] == "0"
         for criterion in d081["pass_criteria"]
     )
-    assert d081["results_reference"]["v4.0.3"]["5g"] == "Fail"
-    assert d081["results_reference"]["v4.0.3"]["6g"] == "Fail"
-    assert d081["results_reference"]["v4.0.3"]["2.4g"] == "Fail"
+    assert d081["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d081["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d081["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d081_mboenable_setup_env_uses_only_dut_transport(monkeypatch):
@@ -10567,6 +10568,9 @@ def test_d081_mboenable_setup_env_uses_only_dut_transport(monkeypatch):
     assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.Enable=1") == 1
     assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.Enable=1") == 1
     assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.MBOEnable=0") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.MBOEnable=0") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.MBOEnable=0") == 1
     assert executed_commands.count("wl -i wl0 bss") == 1
     assert executed_commands.count("wl -i wl1 bss") == 1
     assert executed_commands.count("wl -i wl2 bss") == 1
@@ -10583,8 +10587,7 @@ def test_d081_mboenable_evaluate_live_examples():
         return "\n".join(
             [
                 f"BaselineGetterMbo{prefix}=0",
-                f"BaselineHostapdMbo{prefix}=ABSENT",
-                f"BaselineHostapdMboCount{prefix}=0",
+                f"BaselineDriverMbo{prefix}=0",
             ]
         )
 
@@ -10594,21 +10597,19 @@ def test_d081_mboenable_evaluate_live_examples():
     def restore_output(prefix: str) -> str:
         return f"RestoreMbo{prefix}=0"
 
-    def after_enable_output(prefix: str, getter: str, hostapd: str, count: str) -> str:
+    def after_enable_output(prefix: str, getter: str, driver: str) -> str:
         return "\n".join(
             [
                 f"AfterEnableGetterMbo{prefix}={getter}",
-                f"AfterEnableHostapdMbo{prefix}={hostapd}",
-                f"AfterEnableHostapdMboCount{prefix}={count}",
+                f"AfterEnableDriverMbo{prefix}={driver}",
             ]
         )
 
-    def after_restore_output(prefix: str, getter: str, hostapd: str, count: str) -> str:
+    def after_restore_output(prefix: str, getter: str, driver: str) -> str:
         return "\n".join(
             [
                 f"AfterRestoreGetterMbo{prefix}={getter}",
-                f"AfterRestoreHostapdMbo{prefix}={hostapd}",
-                f"AfterRestoreHostapdMboCount{prefix}={count}",
+                f"AfterRestoreDriverMbo{prefix}={driver}",
             ]
         )
 
@@ -10618,39 +10619,39 @@ def test_d081_mboenable_evaluate_live_examples():
             "step2_mbo_enable_5g": {"success": True, "output": enable_output("5g"), "timing": 0.01},
             "step3_mbo_after_enable_5g": {
                 "success": True,
-                "output": after_enable_output("5g", "1", "ABSENT", "0"),
+                "output": after_enable_output("5g", "1", "1"),
                 "timing": 0.01,
             },
             "step4_mbo_restore_5g": {"success": True, "output": restore_output("5g"), "timing": 0.01},
             "step5_mbo_after_restore_5g": {
                 "success": True,
-                "output": after_restore_output("5g", "0", "ABSENT", "0"),
+                "output": after_restore_output("5g", "0", "0"),
                 "timing": 0.01,
             },
             "step6_mbo_baseline_6g": {"success": True, "output": baseline_output("6g"), "timing": 0.01},
             "step7_mbo_enable_6g": {"success": True, "output": enable_output("6g"), "timing": 0.01},
             "step8_mbo_after_enable_6g": {
                 "success": True,
-                "output": after_enable_output("6g", "1", "ABSENT", "0"),
+                "output": after_enable_output("6g", "1", "1"),
                 "timing": 0.01,
             },
             "step9_mbo_restore_6g": {"success": True, "output": restore_output("6g"), "timing": 0.01},
             "step10_mbo_after_restore_6g": {
                 "success": True,
-                "output": after_restore_output("6g", "0", "ABSENT", "0"),
+                "output": after_restore_output("6g", "0", "0"),
                 "timing": 0.01,
             },
             "step11_mbo_baseline_24g": {"success": True, "output": baseline_output("24g"), "timing": 0.01},
             "step12_mbo_enable_24g": {"success": True, "output": enable_output("24g"), "timing": 0.01},
             "step13_mbo_after_enable_24g": {
                 "success": True,
-                "output": after_enable_output("24g", "1", "ABSENT", "0"),
+                "output": after_enable_output("24g", "1", "1"),
                 "timing": 0.01,
             },
             "step14_mbo_restore_24g": {"success": True, "output": restore_output("24g"), "timing": 0.01},
             "step15_mbo_after_restore_24g": {
                 "success": True,
-                "output": after_restore_output("24g", "0", "ABSENT", "0"),
+                "output": after_restore_output("24g", "0", "0"),
                 "timing": 0.01,
             },
         }
@@ -10662,31 +10663,31 @@ def test_d081_mboenable_evaluate_live_examples():
             **d081_results["steps"],
             "step8_mbo_after_enable_6g": {
                 "success": True,
-                "output": after_enable_output("6g", "0", "ABSENT", "0"),
+                "output": after_enable_output("6g", "0", "1"),
                 "timing": 0.01,
             },
         }
     }
     assert plugin.evaluate(d081, d081_wrong_6g_enable_getter) is False
 
-    d081_wrong_5g_hostapd_converged = {
+    d081_wrong_5g_driver_mismatch = {
         "steps": {
             **d081_results["steps"],
             "step3_mbo_after_enable_5g": {
                 "success": True,
-                "output": after_enable_output("5g", "1", "1", "1"),
+                "output": after_enable_output("5g", "1", "0"),
                 "timing": 0.01,
             },
         }
     }
-    assert plugin.evaluate(d081, d081_wrong_5g_hostapd_converged) is False
+    assert plugin.evaluate(d081, d081_wrong_5g_driver_mismatch) is False
 
     d081_wrong_24g_restore = {
         "steps": {
             **d081_results["steps"],
             "step15_mbo_after_restore_24g": {
                 "success": True,
-                "output": after_restore_output("24g", "1", "ABSENT", "0"),
+                "output": after_restore_output("24g", "1", "0"),
                 "timing": 0.01,
             },
         }

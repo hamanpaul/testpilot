@@ -1,5 +1,109 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-16)
+
+> This checkpoint records the `D081` source-backed workbook-Pass closure after `D065`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D081 MBOEnable` is now aligned via official rerun `20260413T025449283775`
+- this was not a metadata-only closure: active 0403 `wifi_ap.c` maps both `handle_set_ap_mbo_enable()` and `handle_get_ap_mbo_enable()` to `wl -i <if> mbo ap_enable`
+- the old hostapd `mbo=` fail-shaped oracle was therefore rejected and replaced by a source-backed `ubus getter <-> wl mbo ap_enable` oracle
+- the committed rewrite now forces `WiFi.AccessPoint.{1,3,5}.MBOEnable=0` in setup to remove prior-case pollution
+- the rerun exact-closed getter and direct driver readback `0 -> 1 -> 0` on AP1 / AP3 / AP5 in a single attempt
+- committed metadata is now workbook row `81` with `results_reference.v4.0.3 = Pass / Pass / Pass`
+- overlay compare is now `253 / 420 full matches`、`167 mismatches`、`58 metadata drifts`
+- next ready workbook-Pass revisit is `D094`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D081` | 81 | `MBOEnable` | `Pass / Pass / Pass` | `20260413T025449283775_DUT.log L18-L358` | `20260413T025449283775_STA.log (no STA transport used)` |
+
+#### D081 MBOEnable
+
+**STA 指令**
+
+```sh
+# none; AP-only case
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli WiFi.AccessPoint.1.MBOEnable=0
+ubus-cli WiFi.AccessPoint.3.MBOEnable=0
+ubus-cli WiFi.AccessPoint.5.MBOEnable=0
+ubus-cli "WiFi.AccessPoint.1.MBOEnable?"
+wl -i wl0 mbo ap_enable
+ubus-cli WiFi.AccessPoint.1.MBOEnable=1
+ubus-cli "WiFi.AccessPoint.1.MBOEnable?"
+wl -i wl0 mbo ap_enable
+ubus-cli WiFi.AccessPoint.1.MBOEnable=0
+ubus-cli "WiFi.AccessPoint.1.MBOEnable?"
+wl -i wl0 mbo ap_enable
+ubus-cli "WiFi.AccessPoint.3.MBOEnable?"
+wl -i wl1 mbo ap_enable
+ubus-cli WiFi.AccessPoint.3.MBOEnable=1
+ubus-cli "WiFi.AccessPoint.3.MBOEnable?"
+wl -i wl1 mbo ap_enable
+ubus-cli WiFi.AccessPoint.3.MBOEnable=0
+ubus-cli "WiFi.AccessPoint.3.MBOEnable?"
+wl -i wl1 mbo ap_enable
+ubus-cli "WiFi.AccessPoint.5.MBOEnable?"
+wl -i wl2 mbo ap_enable
+ubus-cli WiFi.AccessPoint.5.MBOEnable=1
+ubus-cli "WiFi.AccessPoint.5.MBOEnable?"
+wl -i wl2 mbo ap_enable
+ubus-cli WiFi.AccessPoint.5.MBOEnable=0
+ubus-cli "WiFi.AccessPoint.5.MBOEnable?"
+wl -i wl2 mbo ap_enable
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T025449283775_DUT.log L75-L76
+BaselineGetterMbo5g=0
+BaselineDriverMbo5g=0
+
+20260413T025449283775_DUT.log L112-L114
+AfterEnableGetterMbo5g=1
+AfterEnableDriverMbo5g=1
+
+20260413T025449283775_DUT.log L150-L152
+AfterRestoreGetterMbo5g=0
+AfterRestoreDriverMbo5g=0
+
+20260413T025449283775_DUT.log L178-L179
+BaselineGetterMbo6g=0
+BaselineDriverMbo6g=0
+
+20260413T025449283775_DUT.log L215-L217
+AfterEnableGetterMbo6g=1
+AfterEnableDriverMbo6g=1
+
+20260413T025449283775_DUT.log L253-L255
+AfterRestoreGetterMbo6g=0
+AfterRestoreDriverMbo6g=0
+
+20260413T025449283775_DUT.log L281-L282
+BaselineGetterMbo24g=0
+BaselineDriverMbo24g=0
+
+20260413T025449283775_DUT.log L318-L320
+AfterEnableGetterMbo24g=1
+AfterEnableDriverMbo24g=1
+
+20260413T025449283775_DUT.log L356-L358
+AfterRestoreGetterMbo24g=0
+AfterRestoreDriverMbo24g=0
+```
+
 ## Checkpoint summary (2026-04-13 early-15)
 
 > This checkpoint records the `D065` metadata/results_reference closure after `D028`.
