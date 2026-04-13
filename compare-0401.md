@@ -50,13 +50,14 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T085025879532`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T090437438519`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T092400687838`
-  - `plugins/wifi_llapi/reports/agent_trace/20260413T094515864676`
-  - `plugins/wifi_llapi/reports/agent_trace/20260413T095836613095`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T094515864676`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T095836613095`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T103130805176`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T105418577078`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T111530183752`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T112544193230`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T113456092168`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T115620062809`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -67,8 +68,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 285 |
-| mismatch cases | 135 |
+| full matches | 286 |
+| mismatch cases | 134 |
 | missing answer rows | 0 |
 | metadata drift rows | 58 |
 
@@ -76,9 +77,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 290 | 130 |
-| 6g | 288 | 132 |
-| 2.4g | 289 | 131 |
+| 5g | 291 | 129 |
+| 6g | 289 | 131 |
+| 2.4g | 290 | 130 |
 
 ## Mismatch table
 
@@ -96,7 +97,6 @@
 | `wifi-llapi-D050-supportedvhtmcs` | 50 | exact | Not Supported / N/A / N/A | Pass / Not Supported / Not Supported | Fail / Fail / Fail | Pass / Fail / Fail | 5g |
 | `d053-blocked-txbytes` | 53 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D057-txunicastpacketcount` | 57 | exact | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
-| `wifi-llapi-D109-getstationstats-accesspoint` | 109 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D110-getstationstats-active` | 110 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d178-radio-channelload` | 178 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d179-radio-ampdu` | 179 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -451,26 +451,6 @@
 - 0401 G excerpt: ##Connect WiFi Station and send traffic then check TxUnicastPacketCount WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.3.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.5.AssociatedDevice.1.TxUni...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} TxUnicastPacketCount tx ucast pkts 90
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D057-txunicastpacketcount.json`
-
-### wifi-llapi-D109-getstationstats-accesspoint
-
-- case file: `D109_getstationstats_accesspoint.yaml`
-- answer row: `109`
-- mapping status: `exact`
-- source metadata: `WiFi.AccessPoint.{i}.` / `getStationStats()`
-- workbook metadata: `WiFi.AccessPoint.{i}.` / `getStationStats()`
-- final status: `Fail`
-- evaluation verdict: `Fail`
-- attempts used: `2`
-- runtime comment: pass_criteria not satisfied (failed after 2/2 attempts)
-- actual raw: `Fail` / `N/A` / `N/A`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Connect WiFi station to GW 2. Get Station Stats root@prplOS:/# ubus-cli "WiFi.AccessPoint.*.getStationStats()" > WiFi.AccessPoint.*.getStationStats() WiFi.AccessPoint.3.getStationStats() returned [ [ { Active = 1, ActiveNumberOfAffili...
-- 0401 H excerpt: root@prplOS:/# hostapd_cli -i wl0 STA 34:19:4D:A4:B5:09 34:19:4d:a4:b5:09 flags=[AUTH][ASSOC][AUTHORIZED][WMM][MFP][HT] aid=2 capability=0x0 listen_interval=0 supported_rates=8c 12 18 24 b0 48 60 6c timeout_next=NULLFUNC POLL dot11RSNASt...
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D109-getstationstats-accesspoint.json`
 
 ### wifi-llapi-D110-getstationstats-active
 

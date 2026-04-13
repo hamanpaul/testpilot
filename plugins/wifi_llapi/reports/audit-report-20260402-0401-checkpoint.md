@@ -1,5 +1,102 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-50)
+
+> This checkpoint records the `D109` getStationStats() AccessPoint workbook row-109 closure after `D108`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D109 getStationStats() / AccessPoint` is now aligned via official rerun `20260413T115620062809`
+- workbook row `109` is the real `getStationStats()` AccessPoint row, not row `111` (`AssociationTime`); the stale authored case had drifted to the old row and parsed nested `AffiliatedSta[].Active=0` instead of top-level `Active=1`
+- workbook `H` uses `hostapd_cli sta`, but current 0403 official baseline exposes `/tmp/wl0_hapd.conf` without a matching `/var/run/hostapd/wl0` control socket, so `hostapd_cli` returns `wpa_ctrl_open: No such file or directory`
+- the calibrated closure therefore uses `wl assoclist` as the stable driver-side association oracle and exact-closes same-station evidence through `AssocMac`, `StationStatsMac`, `TopLevelActive=1`, and `StatsMatchesAssoc=1`
+- official rerun exact-closed `Pass / Pass / Pass` in one attempt
+- targeted D109 tests remain `4 passed`, command budget remains `1 passed`, and final full repo regression is now `1658 passed`
+- overlay compare is now `286 / 420 full matches`、`134 mismatches`、`58 metadata drifts`
+- next ready actionable open case is `D110 getStationStats.Active`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D109` | 109 | `getStationStats()` | `Pass / Pass / Pass` | `20260413T115620062809_DUT.log L63-L88` | `20260413T115620062809_STA.log L17-L99` |
+
+#### D109 getStationStats() / AccessPoint
+
+**STA 指令**
+
+```sh
+ubus-cli WiFi.AccessPoint.1.Enable=0
+ubus-cli WiFi.AccessPoint.2.Enable=0
+killall wpa_supplicant 2>/dev/null || true
+iw dev wl0.1 del 2>/dev/null || true
+iw dev wl0 disconnect 2>/dev/null || true
+ifconfig wl0 down
+wl -i wl0 down
+wl -i wl0 ap 0
+iw dev wl0 set type managed
+wl -i wl0 up
+ifconfig wl0 up
+rm -rf /var/run/wpa_supplicant
+mkdir -p /var/run/wpa_supplicant
+printf '%s\n' ctrl_interface=/var/run/wpa_supplicant > /tmp/wpa_wl0.conf
+printf '%s\n' update_config=1 >> /tmp/wpa_wl0.conf
+printf '%s\n' 'network={' >> /tmp/wpa_wl0.conf
+printf '%s\n' 'ssid="testpilot5G"' >> /tmp/wpa_wl0.conf
+printf '%s\n' key_mgmt=WPA-PSK >> /tmp/wpa_wl0.conf
+printf '%s\n' 'psk="00000000"' >> /tmp/wpa_wl0.conf
+printf '%s\n' scan_ssid=1 >> /tmp/wpa_wl0.conf
+printf '%s\n' '}' >> /tmp/wpa_wl0.conf
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+wpa_cli -p /var/run/wpa_supplicant -i wl0 ping
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"
+wl -i wl0 assoclist | awk 'NR==1 {print "AssocMac=" $2}'
+A="$(wl -i wl0 assoclist | awk 'NR==1 {print $2}')"
+S="$(ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>/dev/null)"
+M="$(printf '%s\n' "$S" | grep -m1 'MACAddress = ' | cut -d'"' -f2)"
+echo "StationStatsMac=$M"
+printf '%s\n' "$S" | grep -m1 'Active = ' | cut -d= -f2 | tr -d ' ,' | sed 's/^/TopLevelActive=/'
+[ -n "$A" ] && [ "$A" = "$M" ] && echo "StatsMatchesAssoc=1" || echo "StatsMatchesAssoc=0"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T115620062809_STA.log L17-L24
+killall wpa_supplicant 2>/dev/null || true
+iw dev wl0.1 del 2>/dev/null || true
+iw dev wl0 disconnect 2>/dev/null || true
+ifconfig wl0 down
+
+20260413T115620062809_STA.log L82-L89
+Connected to 2c:59:17:00:19:95 (on wl0)
+SSID: testpilot5G
+freq: 5180
+
+20260413T115620062809_DUT.log L67-L88
+AssocMac=2C:59:17:00:04:85
+StationStatsMac=2C:59:17:00:04:85
+TopLevelActive=1
+StatsMatchesAssoc=1
+
+plugins/wifi_llapi/reports/agent_trace/20260413T115620062809/wifi-llapi-D109-getstationstats-accesspoint.json L109-L114
+final:
+  status=Pass
+  evaluation_verdict=Pass
+  attempts_used=1
+```
+
 ## Checkpoint summary (2026-04-13 early-49)
 
 > This checkpoint records the `D108` UUID workbook row-108 closure after `D106`.

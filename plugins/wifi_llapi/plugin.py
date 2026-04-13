@@ -50,6 +50,7 @@ class Plugin(PluginBase):
         "wl",
         "iw",
         "ifconfig",
+        "hostapd_cli",
         "wpa_cli",
         "ping",
         "arping",

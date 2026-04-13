@@ -13271,10 +13271,10 @@ def test_d109_getstationstats_accesspoint_contract():
     """D109 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D109_getstationstats_accesspoint.yaml")
-    assert case["source"]["row"] == 111
+    assert case["source"]["row"] == 109
     assert case["llapi_support"] == "Support"
-    assert len(case["steps"]) == 3
-    assert len(case["pass_criteria"]) == 3
+    assert len(case["steps"]) == 2
+    assert len(case["pass_criteria"]) == 4
     assert case["bands"] == ["5g"]
 
 
@@ -13290,6 +13290,25 @@ def test_d109_getstationstats_accesspoint_setup_env(monkeypatch):
     plugin.teardown(d109, topo)
 
 
+def test_hostapd_cli_step_does_not_fallback_to_verification_command():
+    plugin = _load_plugin()
+    case = {
+        "id": "wifi-llapi-hostapd-cli-regression",
+        "verification_command": ['wl -i wl0 assoclist'],
+        "steps": [
+            {
+                "id": "step1_hostapd",
+                "command": "hostapd_cli -i wl0 all_sta 2>/dev/null | grep -m1 '^addr='",
+            }
+        ],
+    }
+
+    commands, reason = plugin._command_resolver.resolve(case, case["steps"][0], None)
+
+    assert reason == ""
+    assert commands == ["hostapd_cli -i wl0 all_sta 2>/dev/null | grep -m1 '^addr='"]
+
+
 def test_d109_getstationstats_accesspoint_evaluate():
     """D109 all-pass criteria met with live-shaped getStationStats output."""
     plugin = _load_plugin()
@@ -13299,17 +13318,12 @@ def test_d109_getstationstats_accesspoint_evaluate():
         "steps": {
             "step1_assoc_precheck": {
                 "success": True,
-                "output": "2C:59:17:00:04:85",
+                "output": "AssocMac=2C:59:17:00:04:85",
                 "timing": 0.01,
             },
             "step2_getstationstats": {
                 "success": True,
-                "output": 'MACAddress="2C:59:17:00:04:85"\nActive=1\nConnectionDuration=2985',
-                "timing": 0.01,
-            },
-            "step3_sta_mac": {
-                "success": True,
-                "output": "2c:59:17:00:04:85",
+                "output": "StationStatsMac=2C:59:17:00:04:85\nTopLevelActive=1\nStatsMatchesAssoc=1",
                 "timing": 0.01,
             },
         }

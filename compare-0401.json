@@ -48,13 +48,14 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T085025879532",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T090437438519",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T092400687838",
-    "plugins/wifi_llapi/reports/agent_trace/20260413T094515864676",
-    "plugins/wifi_llapi/reports/agent_trace/20260413T095836613095",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T094515864676",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T095836613095",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T103130805176",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T105418577078",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T111530183752",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T112544193230",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T113456092168"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T113456092168",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T115620062809"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -62,20 +63,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 285,
-  "mismatch_case_count": 135,
+  "full_match_count": 286,
+  "mismatch_case_count": 134,
   "band_summary": {
     "5g": {
-      "matched": 290,
-      "mismatched": 130
+      "matched": 291,
+      "mismatched": 129
     },
     "6g": {
-      "matched": 288,
-      "mismatched": 132
-    },
-    "2.4g": {
       "matched": 289,
       "mismatched": 131
+    },
+    "2.4g": {
+      "matched": 290,
+      "mismatched": 130
     }
   },
   "cases": [
@@ -3820,7 +3821,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Get SSIDAdvertisementEnabled value root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep SSIDAdvertisementEnabled WiFi.AccessPoint.1.SSIDAdvertisementEnabled=1 WiFi.AccessPoint.3.SSIDAdvertisementEnabled=1 WiFi.AccessPoint.5.SSIDAdvertise...",
       "workbook_command_output_excerpt": "root@prplOS:/# cat /tmp/wl0_hapd.conf | grep -E 'broadcast|ssid' bssid=6C:15:DB:74:C0:B5 ssid=5G_Primary-BE ignore_broadcast_ssid=2 ignore_broadcast_ssid=0 => \"SSID not Hidden\" ignore_broadcast_ssid=2 => \"SSID Hidden\"",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260413T094515864676/wifi-llapi-D093-ssidadvertisementenabled.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T094515864676/wifi-llapi-D093-ssidadvertisementenabled.json"
     },
     {
       "case_id": "wifi-llapi-D094-status-accesspoint",
@@ -3949,7 +3950,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "\\\\Enable/Disable UPSD ubus-cli WiFi.AccessPoint.{i}.UAPSDEnable= 1=Enbale 0=Disable",
       "workbook_command_output_excerpt": "cat /tmp/wl0_hapd.conf |grep apsd",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260413T095836613095/wifi-llapi-D096-uapsdenable.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T095836613095/wifi-llapi-D096-uapsdenable.json"
     },
     {
       "case_id": "wifi-llapi-D097-vendorie",
@@ -4471,7 +4472,7 @@
       "case_id": "wifi-llapi-D109-getstationstats-accesspoint",
       "case_file": "D109_getstationstats_accesspoint.yaml",
       "dnum": 109,
-      "source_row": 111,
+      "source_row": 109,
       "source_object": "WiFi.AccessPoint.{i}.",
       "source_api": "getStationStats()",
       "answer_row": 109,
@@ -4480,39 +4481,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
+      "final_status": "Pass",
+      "evaluation_verdict": "Pass",
+      "attempts_used": 1,
+      "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Connect WiFi station to GW 2. Get Station Stats root@prplOS:/# ubus-cli \"WiFi.AccessPoint.*.getStationStats()\" > WiFi.AccessPoint.*.getStationStats() WiFi.AccessPoint.3.getStationStats() returned [ [ { Active = 1, ActiveNumberOfAffili...",
       "workbook_command_output_excerpt": "root@prplOS:/# hostapd_cli -i wl0 STA 34:19:4D:A4:B5:09 34:19:4d:a4:b5:09 flags=[AUTH][ASSOC][AUTHORIZED][WMM][MFP][HT] aid=2 capability=0x0 listen_interval=0 supported_rates=8c 12 18 24 b0 48 60 6c timeout_next=NULLFUNC POLL dot11RSNASt...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D109-getstationstats-accesspoint.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T115620062809/wifi-llapi-D109-getstationstats-accesspoint.json"
     },
     {
       "case_id": "wifi-llapi-D110-getstationstats-active",
@@ -19229,53 +19226,6 @@
       "workbook_test_steps_excerpt": "##Connect WiFi Station and send traffic then check TxUnicastPacketCount WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.3.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.5.AssociatedDevice.1.TxUni...",
       "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} TxUnicastPacketCount tx ucast pkts 90",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D057-txunicastpacketcount.json"
-    },
-    {
-      "case_id": "wifi-llapi-D109-getstationstats-accesspoint",
-      "case_file": "D109_getstationstats_accesspoint.yaml",
-      "dnum": 109,
-      "source_row": 111,
-      "source_object": "WiFi.AccessPoint.{i}.",
-      "source_api": "getStationStats()",
-      "answer_row": 109,
-      "answer_object": "WiFi.AccessPoint.{i}.",
-      "answer_api": "getStationStats()",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Connect WiFi station to GW 2. Get Station Stats root@prplOS:/# ubus-cli \"WiFi.AccessPoint.*.getStationStats()\" > WiFi.AccessPoint.*.getStationStats() WiFi.AccessPoint.3.getStationStats() returned [ [ { Active = 1, ActiveNumberOfAffili...",
-      "workbook_command_output_excerpt": "root@prplOS:/# hostapd_cli -i wl0 STA 34:19:4D:A4:B5:09 34:19:4d:a4:b5:09 flags=[AUTH][ASSOC][AUTHORIZED][WMM][MFP][HT] aid=2 capability=0x0 listen_interval=0 supported_rates=8c 12 18 24 b0 48 60 6c timeout_next=NULLFUNC POLL dot11RSNASt...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D109-getstationstats-accesspoint.json"
     },
     {
       "case_id": "wifi-llapi-D110-getstationstats-active",
