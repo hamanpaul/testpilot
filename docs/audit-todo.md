@@ -205,12 +205,15 @@
   - `D106 RelayCredentialsEnable / AccessPoint.WPS` is now aligned via official rerun `20260413T112544193230`
   - workbook row `106` is RelayCredentialsEnable, not UUID; the stale authored case had drifted to old row `108` and kept a synthetic `Pass / Fail / Pass` results_reference even though the live getter already exact-closed `RelayCredentialsEnable=0` on all three bands
   - current 0403 source survey only finds `RelayCredentialsEnable` as a persistent default-false bool in `wld_accesspoint.odl`, with no active `wps_cred_processing` backing; the calibrated closure therefore keeps the tri-band getter evidence and aligns `results_reference` back to workbook `Not Supported / Not Supported / Not Supported`
-  - next ready actionable open case is now `D108 UUID`; `D020` remains in the verified fail-shaped bucket, `D035` / `D053` remain blocked, and `D328` / `D336` remain env-only
+  - `D108 UUID / AccessPoint.WPS` is now aligned via official rerun `20260413T113456092168`
+  - workbook row `108` is UUID, not SelfPIN; the stale authored case had drifted to old row `110` and widened the verdict to `Pass / Pass / Pass` even though workbook row 108 keeps 6G `Not Supported`
+  - current 0403 rerun exact-closes the workbook shape: AP1 / AP3 / AP5 all return the same valid UUID via getter, wl0 / wl2 project the same value via hostapd `uuid=`, and wl1 exact-closes `HostapdUuid6g=`; the calibrated closure therefore keeps `Pass / Not Supported / Pass`
+  - next ready actionable open case is now `D109 getStationStats.AccessPoint`; `D020` remains in the verified fail-shaped bucket, `D035` / `D053` remain blocked, and `D328` / `D336` remain env-only
 - Current authoritative full-run source remains `20260412T113008433351`
 - Latest recomputed overlay compare on top of authoritative full run `20260412T113008433351`
-  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 / D028 / D065 / D081 / D094 / D095 / D098 / D099 / D114 / D115 / D174 / D176 / D188 / D034 / D059 / D060 / D062 / D063 / D070 / D071 / D079 / D080 / D082 / D083 / D084 / D085 / D086 / D087 / D090 / D092 / D093 / D096 / D101 / D104 / D105 / D106 reruns:
-  - `284 / 420 full matches`
-  - `136 mismatches`
+  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 / D028 / D065 / D081 / D094 / D095 / D098 / D099 / D114 / D115 / D174 / D176 / D188 / D034 / D059 / D060 / D062 / D063 / D070 / D071 / D079 / D080 / D082 / D083 / D084 / D085 / D086 / D087 / D090 / D092 / D093 / D096 / D101 / D104 / D105 / D106 / D108 reruns:
+  - `285 / 420 full matches`
+  - `135 mismatches`
   - `58 metadata drifts`
 - Current focused step-command-failed workstream status:
   - closed in this loop: `D072`、`D047`、`D050`、`D088`、`D460`、`D494`、`D079`

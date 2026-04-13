@@ -13218,10 +13218,13 @@ def test_d108_uuid_contract():
     """D108 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D108_uuid.yaml")
-    assert case["source"]["row"] == 110
+    assert case["source"]["row"] == 108
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 3
-    assert len(case["pass_criteria"]) == 3
+    assert len(case["pass_criteria"]) == 6
+    assert case["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert case["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
+    assert case["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
     assert case["bands"] == ["5g", "6g", "2.4g"]
 
 
@@ -13246,17 +13249,17 @@ def test_d108_uuid_evaluate():
         "steps": {
             "step1_5g": {
                 "success": True,
-                "output": 'WiFi.AccessPoint.1.WPS.UUID="47584a4e-464c-f545-f64e-4e4547584a4e"',
+                "output": "UUID5g=47584a4e-464c-f545-f64e-4e4547584a4e\nHostapdUuid5g=47584a4e-464c-f545-f64e-4e4547584a4e",
                 "timing": 0.01,
             },
             "step2_6g": {
                 "success": True,
-                "output": 'WiFi.AccessPoint.3.WPS.UUID="47584a4e-464c-f545-f64e-4e4547584a4e"',
+                "output": "UUID6g=47584a4e-464c-f545-f64e-4e4547584a4e\nHostapdUuid6g=",
                 "timing": 0.01,
             },
             "step3_24g": {
                 "success": True,
-                "output": 'WiFi.AccessPoint.5.WPS.UUID="47584a4e-464c-f545-f64e-4e4547584a4e"',
+                "output": "UUID24g=47584a4e-464c-f545-f64e-4e4547584a4e\nHostapdUuid24g=47584a4e-464c-f545-f64e-4e4547584a4e",
                 "timing": 0.01,
             },
         }

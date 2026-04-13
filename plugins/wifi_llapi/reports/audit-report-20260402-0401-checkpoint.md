@@ -1,5 +1,69 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-49)
+
+> This checkpoint records the `D108` UUID workbook row-108 closure after `D106`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D108 UUID / AccessPoint.WPS` is now aligned via official rerun `20260413T113456092168`
+- workbook row `108` is UUID, not SelfPIN; the stale authored case had drifted to old row `110` and widened the verdict to `Pass / Pass / Pass` even though workbook row 108 keeps 6G `Not Supported`
+- current 0403 rerun exact-closes the workbook shape: AP1 / AP3 / AP5 all return the same valid UUID via getter, wl0 / wl2 project the same value via hostapd `uuid=`, and wl1 exact-closes `HostapdUuid6g=`
+- official rerun exact-closed `Pass / Not Supported / Pass` in one attempt
+- targeted D108 tests remain `3 passed`, command budget remains `1 passed`, and final full repo regression remains `1657 passed`
+- overlay compare is now `285 / 420 full matches`、`135 mismatches`、`58 metadata drifts`
+- next ready actionable open case is `D109 getStationStats.AccessPoint`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D108` | 108 | `UUID` | `Pass / Not Supported / Pass` | `20260413T113456092168_DUT.log L5-L28` | `n/a (AP-only)` |
+
+#### D108 UUID / AccessPoint.WPS
+
+**STA 指令**
+
+```sh
+# AP-only case; no STA transport
+```
+
+**DUT 指令**
+
+```sh
+echo "UUID5g=$(ubus-cli 'WiFi.AccessPoint.1.WPS.UUID?' 2>/dev/null | grep -oE '[0-9a-fA-F-]{36}' | head -1)"
+echo "HostapdUuid5g=$(grep '^uuid=' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+echo "UUID6g=$(ubus-cli 'WiFi.AccessPoint.3.WPS.UUID?' 2>/dev/null | grep -oE '[0-9a-fA-F-]{36}' | head -1)"
+echo "HostapdUuid6g=$(grep '^uuid=' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+echo "UUID24g=$(ubus-cli 'WiFi.AccessPoint.5.WPS.UUID?' 2>/dev/null | grep -oE '[0-9a-fA-F-]{36}' | head -1)"
+echo "HostapdUuid24g=$(grep '^uuid=' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T113456092168_DUT.log L5-L12
+UUID5g=47584a4e-464c-f545-f64e-4e4547584a4e
+HostapdUuid5g=47584a4e-464c-f545-f64e-4e4547584a4e
+
+20260413T113456092168_DUT.log L13-L20
+UUID6g=47584a4e-464c-f545-f64e-4e4547584a4e
+HostapdUuid6g=
+
+20260413T113456092168_DUT.log L21-L28
+UUID24g=47584a4e-464c-f545-f64e-4e4547584a4e
+HostapdUuid24g=47584a4e-464c-f545-f64e-4e4547584a4e
+
+plugins/wifi_llapi/reports/agent_trace/20260413T113456092168/wifi-llapi-D108-uuid.json L111-L116
+final:
+  status=Pass
+  evaluation_verdict=Pass
+  attempts_used=1
+```
+
 ## Checkpoint summary (2026-04-13 early-48)
 
 > This checkpoint records the `D106` RelayCredentialsEnable workbook row-106 closure after `D105`.

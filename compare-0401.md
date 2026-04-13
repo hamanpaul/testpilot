@@ -56,6 +56,7 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T105418577078`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T111530183752`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T112544193230`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T113456092168`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -66,8 +67,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 284 |
-| mismatch cases | 136 |
+| full matches | 285 |
+| mismatch cases | 135 |
 | missing answer rows | 0 |
 | metadata drift rows | 58 |
 
@@ -76,7 +77,7 @@
 | band | matched | mismatched |
 | --- | ---: | ---: |
 | 5g | 290 | 130 |
-| 6g | 287 | 133 |
+| 6g | 288 | 132 |
 | 2.4g | 289 | 131 |
 
 ## Mismatch table
@@ -95,7 +96,6 @@
 | `wifi-llapi-D050-supportedvhtmcs` | 50 | exact | Not Supported / N/A / N/A | Pass / Not Supported / Not Supported | Fail / Fail / Fail | Pass / Fail / Fail | 5g |
 | `d053-blocked-txbytes` | 53 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D057-txunicastpacketcount` | 57 | exact | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
-| `wifi-llapi-D108-uuid` | 108 | exact | Pass / Pass / Pass | Pass / Not Supported / Pass | Pass / Pass / Pass | Pass / Fail / Pass | 6g |
 | `wifi-llapi-D109-getstationstats-accesspoint` | 109 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D110-getstationstats-active` | 110 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d178-radio-channelload` | 178 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -451,25 +451,6 @@
 - 0401 G excerpt: ##Connect WiFi Station and send traffic then check TxUnicastPacketCount WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.3.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.5.AssociatedDevice.1.TxUni...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} TxUnicastPacketCount tx ucast pkts 90
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D057-txunicastpacketcount.json`
-
-### wifi-llapi-D108-uuid
-
-- case file: `D108_uuid.yaml`
-- answer row: `108`
-- mapping status: `exact`
-- source metadata: `WiFi.AccessPoint.{i}.WPS.` / `UUID`
-- workbook metadata: `WiFi.AccessPoint.{i}.WPS.` / `UUID`
-- final status: `Pass`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Pass` / `Pass` / `Pass`
-- expected raw: `Pass` / `Not Supported` / `Pass`
-- actual normalized: `Pass` / `Pass` / `Pass`
-- expected normalized: `Pass` / `Fail` / `Pass`
-- mismatch bands: `6g`
-- 0401 G excerpt: 1. Get GW WPS UUID root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep .WPS.UUID WiFi.AccessPoint.1.WPS.UUID="4b58464a-5957-fc49-f845-57454b58464a" WiFi.AccessPoint.3.WPS.UUID="4b58464a-5957-fc49-f845-57454b58464a" WiFi.AccessPoint.5.WPS.U...
-- 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep uuid root@prplOS:/# cat /tmp/wl0_hapd.conf |grep uuid uuid=4b58464a-5957-fc49-f845-57454b58464a root@prplOS:/# cat /tmp/wl1_hapd.conf |grep uuid root@prplOS:/# cat /tmp/wl2_hapd.conf |grep uuid uuid=4b58464a-...
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D108-uuid.json`
 
 ### wifi-llapi-D109-getstationstats-accesspoint
 
