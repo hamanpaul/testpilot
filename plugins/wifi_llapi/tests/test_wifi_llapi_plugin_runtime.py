@@ -13335,10 +13335,10 @@ def test_d110_getstationstats_active_contract():
     """D110 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D110_getstationstats_active.yaml")
-    assert case["source"]["row"] == 112
+    assert case["source"]["row"] == 110
     assert case["llapi_support"] == "Support"
-    assert len(case["steps"]) == 2
-    assert len(case["pass_criteria"]) == 2
+    assert len(case["steps"]) == 3
+    assert len(case["pass_criteria"]) == 5
     assert case["bands"] == ["5g"]
 
 
@@ -13363,12 +13363,17 @@ def test_d110_getstationstats_active_evaluate():
         "steps": {
             "step1_assoc_precheck": {
                 "success": True,
-                "output": "2C:59:17:00:04:85",
+                "output": "AssocMac=2C:59:17:00:04:85",
                 "timing": 0.01,
             },
             "step2_getstationstats": {
                 "success": True,
-                "output": "Active=1",
+                "output": "StationStatsMac=2C:59:17:00:04:85\nTopLevelActive=1\nStatsMatchesAssoc=1",
+                "timing": 0.01,
+            },
+            "step3_sta_info_state": {
+                "success": True,
+                "output": "DriverStateLine=state:_AUTHENTICATED_ASSOCIATED_AUTHORIZED\nDriverAuthorized=1",
                 "timing": 0.01,
             },
         }

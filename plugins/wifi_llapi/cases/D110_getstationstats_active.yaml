@@ -4,7 +4,7 @@ version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 112
+  row: 110
   object: WiFi.AccessPoint.{i}.
   api: getStationStats()
   baseline: 0310-BGW720-300
@@ -49,33 +49,68 @@ test_environment: |
   - COM1 iw dev wl0 link -> connected
   - DUT wl -i wl0 assoclist -> STA MAC
   Notes:
-  - Active = 1 for associated STA on AP1/5G
-  - Only 5G tested (COM1 associated to AP1)
+  - Workbook row 110 is Active, not AssociationTime.
+  - Top-level `Active` must be extracted explicitly because nested `AffiliatedSta[].Active` also appears in the payload.
+  - Workbook H uses `wl sta_info ${STA_MAC} | grep state`; current closure keeps the same driver-side authorized-state oracle and ties it to the same STA MAC returned by `getStationStats()`, while tolerating empty grep output so the case fails on evidence rather than on shell shape.
+  - Only 5G tested (COM1 associated to AP1).
 steps:
 - id: step1_assoc_precheck
   action: exec
   target: DUT
-  command: wl -i wl0 assoclist
+  command: 'wl -i wl0 assoclist | awk ''NR==1 {print "AssocMac=" $2}'''
   capture: assoc_check
 - id: step2_getstationstats
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.AccessPoint.1.getStationStats()"
+  command:
+    - 'A="$(wl -i wl0 assoclist | awk ''NR==1 {print $2}'')"'
+    - 'S="$(ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>/dev/null)"'
+    - 'M="$(printf ''%s\n'' "$S" | grep -m1 ''MACAddress = '' | cut -d''"'' -f2)"'
+    - 'echo "StationStatsMac=$M"'
+    - 'printf ''%s\n'' "$S" | grep -m1 ''Active = '' | cut -d= -f2 | tr -d '' ,'' | sed ''s/^/TopLevelActive=/'''
+    - '[ -n "$A" ] && [ "$A" = "$M" ] && echo "StatsMatchesAssoc=1" || echo "StatsMatchesAssoc=0"'
   capture: stats_output
   depends_on: step1_assoc_precheck
+- id: step3_sta_info_state
+  action: exec
+  target: DUT
+  command:
+    - 'A="$(wl -i wl0 assoclist | awk ''NR==1 {print $2}'')"'
+    - 'D="$(wl -i wl0 sta_info "$A" 2>/dev/null | grep -m1 AUTHORIZED || true)"'
+    - 'printf ''%s\n'' "$D" | tr '' '' ''_'' | sed ''s/^/DriverStateLine=/'''
+    - 'printf ''%s\n'' "$D" | grep -q AUTHORIZED && echo "DriverAuthorized=1" || echo "DriverAuthorized=0"'
+  capture: driver_state
+  depends_on: step2_getstationstats
 pass_criteria:
-- field: assoc_check
+- field: assoc_check.AssocMac
   operator: not_equals
   value: ''
   band: 5g
   description: AP1 should have at least one associated STA
-- field: stats_output.Active
+- field: stats_output.StationStatsMac
+  operator: not_equals
+  value: ''
+  band: 5g
+  description: getStationStats should return entry with MACAddress
+- field: stats_output.TopLevelActive
   operator: equals
   value: '1'
   band: 5g
-  description: Active should be 1 for associated STA
+  description: Top-level Active field should be 1 for associated STA
+- field: stats_output.StatsMatchesAssoc
+  operator: equals
+  value: '1'
+  band: 5g
+  description: getStationStats should resolve the same STA as wl assoclist
+- field: driver_state.DriverAuthorized
+  operator: equals
+  value: '1'
+  band: 5g
+  description: Driver sta_info state should include AUTHORIZED for the same STA
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep Active'
+  - 'wl -i wl0 assoclist'
+  - 'ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep -m1 ''Active = '''
+  - 'wl -i wl0 sta_info "$(wl -i wl0 assoclist | awk ''NR==1 {print $2}'')" 2>/dev/null | grep -m1 AUTHORIZED || true'
 results_reference:
   v4.0.3:
     5g: Pass

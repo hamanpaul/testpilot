@@ -1,5 +1,108 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-51)
+
+> This checkpoint records the `D110` getStationStats() Active workbook row-110 closure after `D109`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D110 getStationStats() Active / AccessPoint` is now aligned via official rerun `20260413T121358780961`
+- workbook row `110` is the real `getStationStats()` Active row, not row `112` (`AssociationTime`); the stale authored case still parsed nested `AffiliatedSta[].Active=0` instead of the top-level `Active=1`
+- the calibrated closure now keeps the same-station MAC proof from `wl assoclist` + `getStationStats()` and adds the workbook-H driver oracle through `wl sta_info ${STA_MAC}`
+- current 0403 rerun exact-closes `AssocMac=2C:59:17:00:04:85`, `StationStatsMac=2C:59:17:00:04:85`, `TopLevelActive=1`, `StatsMatchesAssoc=1`, and `DriverAuthorized=1`
+- an initial strict `grep '^state:'` replay only proved the shell shape was too brittle, so the landed version keeps the same driver oracle but tolerates empty grep output and fails on evidence instead of step-shape
+- official rerun exact-closed `Pass / Pass / Pass` in one attempt
+- targeted D110 tests remain `3 passed`, command budget remains `1 passed`, and final full repo regression remains `1658 passed`
+- overlay compare is now `287 / 420 full matches`、`133 mismatches`、`58 metadata drifts`
+- next ready actionable open case is `D111 getStationStats.AssociationTime`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D110` | 110 | `getStationStats()` | `Pass / Pass / Pass` | `20260413T121358780961_DUT.log L67-L100` | `20260413T121358780961_STA.log L63-L99` |
+
+#### D110 getStationStats() Active / AccessPoint
+
+**STA 指令**
+
+```sh
+ubus-cli WiFi.AccessPoint.1.Enable=0
+ubus-cli WiFi.AccessPoint.2.Enable=0
+killall wpa_supplicant 2>/dev/null || true
+iw dev wl0.1 del 2>/dev/null || true
+iw dev wl0 disconnect 2>/dev/null || true
+ifconfig wl0 down
+wl -i wl0 down
+wl -i wl0 ap 0
+iw dev wl0 set type managed
+wl -i wl0 up
+ifconfig wl0 up
+rm -rf /var/run/wpa_supplicant
+mkdir -p /var/run/wpa_supplicant
+printf '%s\n' ctrl_interface=/var/run/wpa_supplicant > /tmp/wpa_wl0.conf
+printf '%s\n' update_config=1 >> /tmp/wpa_wl0.conf
+printf '%s\n' 'network={' >> /tmp/wpa_wl0.conf
+printf '%s\n' 'ssid="testpilot5G"' >> /tmp/wpa_wl0.conf
+printf '%s\n' key_mgmt=WPA-PSK >> /tmp/wpa_wl0.conf
+printf '%s\n' 'psk="00000000"' >> /tmp/wpa_wl0.conf
+printf '%s\n' scan_ssid=1 >> /tmp/wpa_wl0.conf
+printf '%s\n' '}' >> /tmp/wpa_wl0.conf
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+wpa_cli -p /var/run/wpa_supplicant -i wl0 ping
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"
+wl -i wl0 assoclist | awk 'NR==1 {print "AssocMac=" $2}'
+A="$(wl -i wl0 assoclist | awk 'NR==1 {print $2}')"
+S="$(ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>/dev/null)"
+M="$(printf '%s\n' "$S" | grep -m1 'MACAddress = ' | cut -d'"' -f2)"
+echo "StationStatsMac=$M"
+printf '%s\n' "$S" | grep -m1 'Active = ' | cut -d= -f2 | tr -d ' ,' | sed 's/^/TopLevelActive=/'
+[ -n "$A" ] && [ "$A" = "$M" ] && echo "StatsMatchesAssoc=1" || echo "StatsMatchesAssoc=0"
+D="$(wl -i wl0 sta_info "$A" 2>/dev/null | grep -m1 AUTHORIZED || true)"
+printf '%s\n' "$D" | tr ' ' '_' | sed 's/^/DriverStateLine=/'
+printf '%s\n' "$D" | grep -q AUTHORIZED && echo "DriverAuthorized=1" || echo "DriverAuthorized=0"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T121358780961_STA.log L63-L99
+wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0
+OK
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+OK
+wpa_cli -p /var/run/wpa_supplicant -i wl0 ping
+PONG
+iw dev wl0 link
+Connected to 2c:59:17:00:19:95 (on wl0)
+SSID: testpilot5G
+
+20260413T121358780961_DUT.log L67-L100
+AssocMac=2C:59:17:00:04:85
+StationStatsMac=2C:59:17:00:04:85
+TopLevelActive=1
+StatsMatchesAssoc=1
+DriverStateLine=	_state:_AUTHENTICATED_ASSOCIATED_AUTHORIZED
+DriverAuthorized=1
+
+plugins/wifi_llapi/reports/agent_trace/20260413T121358780961/wifi-llapi-D110-getstationstats-active.json L111-L116
+final:
+  status=Pass
+  evaluation_verdict=Pass
+  attempts_used=1
+```
+
 ## Checkpoint summary (2026-04-13 early-50)
 
 > This checkpoint records the `D109` getStationStats() AccessPoint workbook row-109 closure after `D108`.
