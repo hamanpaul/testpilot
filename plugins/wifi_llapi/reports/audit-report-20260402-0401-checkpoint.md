@@ -1,5 +1,141 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-52)
+
+> This checkpoint records the `D111-D113` getStationStats() metadata-drift trio cleanup after `D110`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D111-D113 getStationStats() metadata drift trio` is now aligned via grouped official rerun `20260413T122417812289`
+- these three cases were already runtime-pass and compare-exact, but the authored files still carried stale `source.row` drift of `113/114/115` instead of workbook-authoritative `111/112/113`
+- the cleanup is metadata-only:
+  - `D111` closes workbook row `111` (`AssociationTime`)
+  - `D112` closes workbook row `112` (`AuthenticationState`)
+  - `D113` closes workbook row `113` (`AvgSignalStrength`)
+- current 0403 grouped rerun exact-closes `AssociationTime="2026-04-07T21:50:29Z"`, `AuthenticationState=1`, and `AvgSignalStrength=0`, all with `3/3 Pass`
+- overlay compare therefore remains `287 / 420 full matches`、`133 mismatches`、`58 metadata drifts`
+- targeted D111-D113 runtime tests remain `9 passed`, and final full repo regression remains `1658 passed`
+- next ready actionable compare-open case is `D057 TxUnicastPacketCount`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D111` | 111 | `getStationStats()` | `Pass / Pass / Pass` | `20260413T122417812289_DUT.log L67-L103` | `20260413T122417812289_STA.log L83-L95` |
+| `D112` | 112 | `getStationStats()` | `Pass / Pass / Pass` | `20260413T122417812289_DUT.log L256-L292` | `20260413T122417812289_STA.log L182-L194` |
+| `D113` | 113 | `getStationStats()` | `Pass / Pass / Pass` | `20260413T122417812289_DUT.log L445-L481` | `20260413T122417812289_STA.log L281-L293` |
+
+#### D111 getStationStats() AssociationTime
+
+**STA 指令**
+
+```sh
+wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.getStationStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T122417812289_STA.log L83-L95
+Connected to 2c:59:17:00:19:95 (on wl0)
+SSID: testpilot5G
+freq: 5180
+
+20260413T122417812289_DUT.log L67-L103
+assoclist 2C:59:17:00:04:85
+AssociationTime = "2026-04-07T21:50:29Z",
+
+plugins/wifi_llapi/reports/agent_trace/20260413T122417812289/wifi-llapi-D111-getstationstats-associationtime.json L109-L114
+final:
+  status=Pass
+  evaluation_verdict=Pass
+  attempts_used=1
+```
+
+#### D112 getStationStats() AuthenticationState
+
+**STA 指令**
+
+```sh
+wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.getStationStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T122417812289_STA.log L182-L194
+Connected to 2c:59:17:00:19:95 (on wl0)
+SSID: testpilot5G
+freq: 5180
+
+20260413T122417812289_DUT.log L256-L292
+assoclist 2C:59:17:00:04:85
+AuthenticationState = 1,
+
+plugins/wifi_llapi/reports/agent_trace/20260413T122417812289/wifi-llapi-D112-getstationstats-authenticationstate.json L109-L114
+final:
+  status=Pass
+  evaluation_verdict=Pass
+  attempts_used=1
+```
+
+#### D113 getStationStats() AvgSignalStrength
+
+**STA 指令**
+
+```sh
+wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.getStationStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T122417812289_STA.log L281-L293
+Connected to 2c:59:17:00:19:95 (on wl0)
+SSID: testpilot5G
+freq: 5180
+
+20260413T122417812289_DUT.log L445-L481
+assoclist 2C:59:17:00:04:85
+AvgSignalStrength = 0,
+
+plugins/wifi_llapi/reports/agent_trace/20260413T122417812289/wifi-llapi-D113-getstationstats-avgsignalstrength.json L109-L114
+final:
+  status=Pass
+  evaluation_verdict=Pass
+  attempts_used=1
+```
+
 ## Checkpoint summary (2026-04-13 early-51)
 
 > This checkpoint records the `D110` getStationStats() Active workbook row-110 closure after `D109`.

@@ -86,6 +86,7 @@
   - `_env_command_succeeded()` no longer treats valid getter payload `error=4 / message=parameter not found` as a shell failure, while direct `AssociatedDevice.*.MACAddress?` probes still require a concrete MAC
   - `hostapd_cli` is now treated as an executable token, so hostapd-based shell steps no longer silently fall back to `verification_command`
 - Latest aligned cases:
+  - `D111-D113 getStationStats metadata drift trio` is now aligned via grouped official rerun `20260413T122417812289`
   - `D110 getStationStats.Active` is now aligned via official rerun `20260413T121358780961`
   - `D109 getStationStats.AccessPoint` is now aligned via official rerun `20260413T115620062809`
   - `D047 SupportedHe160MCS` is now aligned via official rerun `20260412T235952361188`
@@ -211,6 +212,9 @@
   - `D108 UUID / AccessPoint.WPS` is now aligned via official rerun `20260413T113456092168`
   - workbook row `108` is UUID, not SelfPIN; the stale authored case had drifted to old row `110` and widened the verdict to `Pass / Pass / Pass` even though workbook row 108 keeps 6G `Not Supported`
   - current 0403 rerun exact-closes the workbook shape: AP1 / AP3 / AP5 all return the same valid UUID via getter, wl0 / wl2 project the same value via hostapd `uuid=`, and wl1 exact-closes `HostapdUuid6g=`; the calibrated closure therefore keeps `Pass / Not Supported / Pass`
+  - `D111-D113 getStationStats metadata drift trio` is now aligned via grouped official rerun `20260413T122417812289`
+  - these three cases were already runtime-pass and compare-exact, but the authored files still carried stale `source.row` drift `113/114/115 -> 111/112/113` for `AssociationTime`, `AuthenticationState`, and `AvgSignalStrength`
+  - current 0403 grouped rerun exact-closes `AssociationTime="2026-04-07T21:50:29Z"`, `AuthenticationState=1`, and `AvgSignalStrength=0`, all with `3/3 Pass`; this is a repo metadata cleanup rather than a compare-open mismatch closure, so overlay compare remains unchanged
   - `D110 getStationStats.Active` is now aligned via official rerun `20260413T121358780961`
   - workbook row `110` is the real `getStationStats()` Active row, not old row `112` (`AssociationTime`); the stale authored case still parsed nested `AffiliatedSta[].Active=0` instead of the top-level `Active=1`
   - the calibrated closure now keeps the same-station MAC proof from `wl assoclist` + `getStationStats()` and adds the workbook-H driver oracle through `wl sta_info ${STA_MAC}`: current 0403 rerun exact-closes `AssocMac=2C:59:17:00:04:85`, `StationStatsMac=2C:59:17:00:04:85`, `TopLevelActive=1`, `StatsMatchesAssoc=1`, and `DriverAuthorized=1`
@@ -218,10 +222,10 @@
   - `D109 getStationStats.AccessPoint` is now aligned via official rerun `20260413T115620062809`
   - workbook row `109` is the real `getStationStats()` AccessPoint row, not old row `111` (`AssociationTime`); the stale authored case both parsed nested `AffiliatedSta[].Active=0` instead of top-level `Active=1` and tried to replay workbook `H` with `hostapd_cli sta` even though current 0403 baseline has no `/var/run/hostapd/wl0` control socket
   - the calibrated closure now uses `wl assoclist` as the stable driver association oracle, exact-closes `AssocMac=2C:59:17:00:04:85`, `StationStatsMac=2C:59:17:00:04:85`, `TopLevelActive=1`, and `StatsMatchesAssoc=1`, and keeps the row mapped to workbook `Pass / Pass / Pass`
-  - next ready actionable open case is now `D111 getStationStats.AssociationTime`; `D020` remains in the verified fail-shaped bucket, `D035` / `D053` remain blocked, and `D328` / `D336` remain env-only
+  - next ready actionable compare-open case is now `D057 TxUnicastPacketCount`; `D020` remains in the verified fail-shaped bucket, `D035` / `D053` remain blocked, and `D328` / `D336` remain env-only
 - Current authoritative full-run source remains `20260412T113008433351`
 - Latest recomputed overlay compare on top of authoritative full run `20260412T113008433351`
-  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 / D028 / D065 / D081 / D094 / D095 / D098 / D099 / D114 / D115 / D174 / D176 / D188 / D034 / D059 / D060 / D062 / D063 / D070 / D071 / D079 / D080 / D082 / D083 / D084 / D085 / D086 / D087 / D090 / D092 / D093 / D096 / D101 / D104 / D105 / D106 / D108 / D109 / D110 reruns:
+  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 / D028 / D065 / D081 / D094 / D095 / D098 / D099 / D114 / D115 / D174 / D176 / D188 / D034 / D059 / D060 / D062 / D063 / D070 / D071 / D079 / D080 / D082 / D083 / D084 / D085 / D086 / D087 / D090 / D092 / D093 / D096 / D101 / D104 / D105 / D106 / D108 / D109 / D110 / D111-D113 reruns:
   - `287 / 420 full matches`
   - `133 mismatches`
   - `58 metadata drifts`

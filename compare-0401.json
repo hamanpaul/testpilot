@@ -56,7 +56,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T112544193230",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T113456092168",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T115620062809",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T121358780961"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T121358780961",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T122417812289"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -4559,7 +4560,7 @@
       "case_id": "wifi-llapi-D111-getstationstats-associationtime",
       "case_file": "D111_getstationstats_associationtime.yaml",
       "dnum": 111,
-      "source_row": 113,
+      "source_row": 111,
       "source_object": "WiFi.AccessPoint.{i}.",
       "source_api": "getStationStats()",
       "answer_row": 111,
@@ -4570,8 +4571,8 @@
       "mapping_api_match": true,
       "final_status": "Pass",
       "evaluation_verdict": "Pass",
-      "attempts_used": 2,
-      "comment": "pass after retry (2/2)",
+      "attempts_used": 1,
+      "comment": "",
       "bands": {
         "5g": {
           "actual_raw": "Pass",
@@ -4596,13 +4597,13 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Connect WiFi Station to GW. 2. Verify connected Station AssociationTime root@prplOS:/# ubus-cli \"WiFi.AccessPoint.*.getStationStats()\" | grep -E 'AssociationTime| AuthenticationState|MACAddress' AssociationTime = \"2025-12-26T09:28:04Z...",
       "workbook_command_output_excerpt": "root@prplOS:/# date Fri Dec 26 09:28:21 UTC 2025",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D111-getstationstats-associationtime.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T122417812289/wifi-llapi-D111-getstationstats-associationtime.json"
     },
     {
       "case_id": "wifi-llapi-D112-getstationstats-authenticationstate",
       "case_file": "D112_getstationstats_authenticationstate.yaml",
       "dnum": 112,
-      "source_row": 114,
+      "source_row": 112,
       "source_object": "WiFi.AccessPoint.{i}.",
       "source_api": "getStationStats()",
       "answer_row": 112,
@@ -4639,13 +4640,13 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Connect WiFi Station to GW. 2. Verify connected Station AuthenticationState root@prplOS:/# ubus-cli \"WiFi.AccessPoint.*.getStationStats()\" | grep -E 'Auth enticationState|MACAddress' AuthenticationState = 1, MACAddress = \"E6:60:17:EB:...",
       "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 sta_info e6:60:17:eb:a9:86 | grep state state: AUTHENTICATED ASSOCIATED AUTHORIZED root@prplOS:/# wl -i wl1 sta_info 38:06:e6:92:b0:4a | grep state state: AUTHENTICATED ASSOCIATED AUTHORIZED root@prplOS:/# wl -i ...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D112-getstationstats-authenticationstate.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T122417812289/wifi-llapi-D112-getstationstats-authenticationstate.json"
     },
     {
       "case_id": "wifi-llapi-D113-getstationstats-avgsignalstrength",
       "case_file": "D113_getstationstats_avgsignalstrength.yaml",
       "dnum": 113,
-      "source_row": 115,
+      "source_row": 113,
       "source_object": "WiFi.AccessPoint.{i}.",
       "source_api": "getStationStats()",
       "answer_row": 113,
@@ -4682,7 +4683,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Connect WiFi Station to GW. 2. Verify connected Station AvgSignalStrength root@prplOS:/# ubus-cli \"WiFi.AccessPoint.*.getStationStats()\" | grep AvgSignalStrength root@prplOS:/# ubus-cli \"WiFi.AccessPoint.*.getStationStats()\" | grep -E...",
       "workbook_command_output_excerpt": "root@prplOS:/# root@prplOS:/# wl -i wl0 sta_info e6:60:17:eb:a9:86 | grep smoothed smoothed rssi: -37 root@prplOS:/# wl -i wl1 sta_info 38:06:e6:92:b0:4a | grep smoothed smoothed rssi: -36 root@prplOS:/# wl -i wl2 sta_info 34:19:4d:a4:b4...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D113-getstationstats-avgsignalstrength.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T122417812289/wifi-llapi-D113-getstationstats-avgsignalstrength.json"
     },
     {
       "case_id": "wifi-llapi-D114-getstationstats-avgsignalstrengthbychain",

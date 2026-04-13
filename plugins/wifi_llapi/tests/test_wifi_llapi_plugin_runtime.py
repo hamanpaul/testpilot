@@ -13385,7 +13385,7 @@ def test_d111_getstationstats_associationtime_contract():
     """D111 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D111_getstationstats_associationtime.yaml")
-    assert case["source"]["row"] == 113
+    assert case["source"]["row"] == 111
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 2
     assert len(case["pass_criteria"]) == 2
@@ -13430,7 +13430,7 @@ def test_d112_getstationstats_authenticationstate_contract():
     """D112 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D112_getstationstats_authenticationstate.yaml")
-    assert case["source"]["row"] == 114
+    assert case["source"]["row"] == 112
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 2
     assert len(case["pass_criteria"]) == 2
@@ -13475,7 +13475,7 @@ def test_d113_getstationstats_avgsignalstrength_contract():
     """D113 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D113_getstationstats_avgsignalstrength.yaml")
-    assert case["source"]["row"] == 115
+    assert case["source"]["row"] == 113
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 2
     assert len(case["pass_criteria"]) == 2

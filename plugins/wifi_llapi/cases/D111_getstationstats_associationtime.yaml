@@ -4,7 +4,7 @@ version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 113
+  row: 111
   object: WiFi.AccessPoint.{i}.
   api: getStationStats()
   baseline: 0310-BGW720-300
@@ -49,6 +49,7 @@ test_environment: |
   - COM1 iw dev wl0 link -> connected
   - DUT wl -i wl0 assoclist -> STA MAC
   Notes:
+  - Workbook row 111 is AssociationTime.
   - Non-empty ISO 8601 timestamp when STA associated
   - Only 5G tested (COM1 associated to AP1)
 steps:
