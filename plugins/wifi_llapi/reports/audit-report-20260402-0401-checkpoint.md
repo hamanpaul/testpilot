@@ -1,5 +1,92 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-47)
+
+> This checkpoint records the `D105` PairingInProgress workbook row-105 closure after `D104`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D105 PairingInProgress / AccessPoint.WPS` is now aligned via official rerun `20260413T111530183752`
+- workbook row `105` is a method case around `InitiateWPSPBC()` plus `PairingInProgress`; the stale authored case had drifted to old row `107` and collapsed into a getter-only `PairingInProgress=0` replay
+- current 0403 source still exposes both `InitiateWPSPBC()` and `PairingInProgress`, so the calibrated closure now replays the real PBC flow: AP1 / AP5 exact-close `Status=Success`, `PairingInProgress=1`, `PbcStatus=Active`, while AP3 / 6G under WPA3 / SAE exact-closes `Status=Error_Other`, `PairingInProgress6g=0`, `PbcStatus6g=`
+- official rerun exact-closed `Pass / Not Supported / Pass` in one attempt
+- targeted D105 tests remain `2 passed`, and final full repo regression remains `1657 passed`
+- overlay compare is now `283 / 420 full matches`、`137 mismatches`、`58 metadata drifts`
+- next ready actionable open case is `D106 RelayCredentialsEnable`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D105` | 105 | `PairingInProgress` | `Pass / Not Supported / Pass` | `20260413T111530183752_DUT.log L13-L148` | `n/a (AP-only)` |
+
+#### D105 PairingInProgress / AccessPoint.WPS
+
+**STA 指令**
+
+```sh
+# AP-only case; no STA transport
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.WPS.Enable=1" 2>/dev/null
+sleep 2
+ubus-cli "WiFi.AccessPoint.1.WPS.InitiateWPSPBC()" 2>/dev/null
+sleep 2
+echo "PairingInProgress5g=$(ubus-cli 'WiFi.AccessPoint.1.WPS.PairingInProgress?' 2>/dev/null | grep -o 'PairingInProgress=[0-9]*' | cut -d= -f2)"
+echo "PbcStatus5g=$(hostapd_cli -i wl0 wps_get_status 2>/dev/null | sed -n '1s/PBC Status: //p')"
+ubus-cli "WiFi.AccessPoint.1.WPS.cancelWPSPairing()" 2>/dev/null || true
+ubus-cli "WiFi.AccessPoint.1.WPS.Enable=0" 2>/dev/null
+
+ubus-cli "WiFi.AccessPoint.3.WPS.Enable=1" 2>/dev/null
+sleep 2
+ubus-cli "WiFi.AccessPoint.3.WPS.InitiateWPSPBC()" 2>/dev/null
+sleep 2
+echo "PairingInProgress6g=$(ubus-cli 'WiFi.AccessPoint.3.WPS.PairingInProgress?' 2>/dev/null | grep -o 'PairingInProgress=[0-9]*' | cut -d= -f2)"
+echo "PbcStatus6g=$(hostapd_cli -i wl1 wps_get_status 2>/dev/null | sed -n '1s/PBC Status: //p')"
+ubus-cli "WiFi.AccessPoint.3.WPS.cancelWPSPairing()" 2>/dev/null || true
+ubus-cli "WiFi.AccessPoint.3.WPS.Enable=0" 2>/dev/null
+
+ubus-cli "WiFi.AccessPoint.5.WPS.Enable=1" 2>/dev/null
+sleep 2
+ubus-cli "WiFi.AccessPoint.5.WPS.InitiateWPSPBC()" 2>/dev/null
+sleep 2
+echo "PairingInProgress24g=$(ubus-cli 'WiFi.AccessPoint.5.WPS.PairingInProgress?' 2>/dev/null | grep -o 'PairingInProgress=[0-9]*' | cut -d= -f2)"
+echo "PbcStatus24g=$(hostapd_cli -i wl2 wps_get_status 2>/dev/null | sed -n '1s/PBC Status: //p')"
+ubus-cli "WiFi.AccessPoint.5.WPS.cancelWPSPairing()" 2>/dev/null || true
+ubus-cli "WiFi.AccessPoint.5.WPS.Enable=0" 2>/dev/null
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T111530183752_DUT.log L13-L52
+Status = "Success"
+PairingInProgress5g=1
+PbcStatus5g=Active
+
+20260413T111530183752_DUT.log L53-L103
+Status = "Error_Other"
+PairingInProgress6g=0
+PbcStatus6g=
+
+20260413T111530183752_DUT.log L104-L148
+Status = "Success"
+PairingInProgress24g=1
+PbcStatus24g=Active
+
+plugins/wifi_llapi/reports/agent_trace/20260413T111530183752/wifi-llapi-D105-pairinginprogress-accesspoint-wps.json L111-L116
+final:
+  status=Pass
+  evaluation_verdict=Pass
+  attempts_used=1
+```
+
 ## Checkpoint summary (2026-04-13 early-46)
 
 > This checkpoint records the `D104` Enable workbook row-104 closure after `D101`.

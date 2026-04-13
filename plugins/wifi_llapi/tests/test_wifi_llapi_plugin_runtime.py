@@ -13087,10 +13087,13 @@ def test_d105_pairinginprogress_contract():
     """D105 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D105_pairinginprogress_accesspoint_wps.yaml")
-    assert case["source"]["row"] == 107
+    assert case["source"]["row"] == 105
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 3
-    assert len(case["pass_criteria"]) == 3
+    assert len(case["pass_criteria"]) == 5
+    assert case["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert case["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
+    assert case["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d105_pairinginprogress_evaluate():
@@ -13100,19 +13103,19 @@ def test_d105_pairinginprogress_evaluate():
     d105 = load_case(cases_dir / "D105_pairinginprogress_accesspoint_wps.yaml")
     results = {
         "steps": {
-            "step_5g_getter": {
+            "step_5g_pbc": {
                 "success": True,
-                "output": "PairingInProgress5g=0",
+                "output": "PairingInProgress5g=1\nPbcStatus5g=Active",
                 "timing": 0.01,
             },
-            "step_6g_getter": {
+            "step_6g_pbc": {
                 "success": True,
                 "output": "PairingInProgress6g=0",
                 "timing": 0.01,
             },
-            "step_24g_getter": {
+            "step_24g_pbc": {
                 "success": True,
-                "output": "PairingInProgress24g=0",
+                "output": "PairingInProgress24g=1\nPbcStatus24g=Active",
                 "timing": 0.01,
             },
         }

@@ -51,7 +51,8 @@
     "plugins/wifi_llapi/reports/agent_trace/20260413T094515864676",
     "plugins/wifi_llapi/reports/agent_trace/20260413T095836613095",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T103130805176",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T105418577078"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T105418577078",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T111530183752"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -59,20 +60,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 282,
-  "mismatch_case_count": 138,
+  "full_match_count": 283,
+  "mismatch_case_count": 137,
   "band_summary": {
     "5g": {
-      "matched": 288,
-      "mismatched": 132
+      "matched": 289,
+      "mismatched": 131
     },
     "6g": {
       "matched": 287,
       "mismatched": 133
     },
     "2.4g": {
-      "matched": 287,
-      "mismatched": 133
+      "matched": 288,
+      "mismatched": 132
     }
   },
   "cases": [
@@ -4296,7 +4297,7 @@
       "case_id": "wifi-llapi-D105-pairinginprogress-accesspoint-wps",
       "case_file": "D105_pairinginprogress_accesspoint_wps.yaml",
       "dnum": 105,
-      "source_row": 107,
+      "source_row": 105,
       "source_object": "WiFi.AccessPoint.{i}.WPS.",
       "source_api": "PairingInProgress",
       "answer_row": 105,
@@ -4305,38 +4306,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
+          "actual_raw": "Not Supported",
           "actual_norm": "Fail",
           "expected_raw": "Not Supported",
           "expected_norm": "Fail"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Initiate WPS pairing between GW and Station root@prplOS:/# ubus-cli -a \"WiFi.AccessPoint.1.WPS.InitiateWPSPBC()\" > WiFi.AccessPoint.1.WPS.InitiateWPSPBC() WiFi.AccessPoint.1.WPS.InitiateWPSPBC() returned [ { Status = \"Success\" } ] 2. ...",
       "workbook_command_output_excerpt": "root@prplOS:/# hostapd_cli -i wl0 wps_get_status PBC Status: Active Last WPS result: None",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D105-pairinginprogress-accesspoint-wps.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T111530183752/wifi-llapi-D105-pairinginprogress-accesspoint-wps.json"
     },
     {
       "case_id": "wifi-llapi-D106-relaycredentialsenable",
@@ -19234,52 +19232,6 @@
       "workbook_test_steps_excerpt": "##Connect WiFi Station and send traffic then check TxUnicastPacketCount WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.3.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.5.AssociatedDevice.1.TxUni...",
       "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} TxUnicastPacketCount tx ucast pkts 90",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D057-txunicastpacketcount.json"
-    },
-    {
-      "case_id": "wifi-llapi-D105-pairinginprogress-accesspoint-wps",
-      "case_file": "D105_pairinginprogress_accesspoint_wps.yaml",
-      "dnum": 105,
-      "source_row": 107,
-      "source_object": "WiFi.AccessPoint.{i}.WPS.",
-      "source_api": "PairingInProgress",
-      "answer_row": 105,
-      "answer_object": "WiFi.AccessPoint.{i}.WPS.",
-      "answer_api": "PairingInProgress",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Not Supported",
-          "expected_norm": "Fail"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Initiate WPS pairing between GW and Station root@prplOS:/# ubus-cli -a \"WiFi.AccessPoint.1.WPS.InitiateWPSPBC()\" > WiFi.AccessPoint.1.WPS.InitiateWPSPBC() WiFi.AccessPoint.1.WPS.InitiateWPSPBC() returned [ { Status = \"Success\" } ] 2. ...",
-      "workbook_command_output_excerpt": "root@prplOS:/# hostapd_cli -i wl0 wps_get_status PBC Status: Active Last WPS result: None",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D105-pairinginprogress-accesspoint-wps.json"
     },
     {
       "case_id": "wifi-llapi-D106-relaycredentialsenable",
