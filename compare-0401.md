@@ -49,6 +49,7 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T083419287730`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T085025879532`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T090437438519`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T092400687838`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -59,8 +60,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 277 |
-| mismatch cases | 143 |
+| full matches | 278 |
+| mismatch cases | 142 |
 | missing answer rows | 0 |
 | metadata drift rows | 58 |
 
@@ -68,9 +69,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 283 | 137 |
+| 5g | 284 | 136 |
 | 6g | 285 | 135 |
-| 2.4g | 282 | 138 |
+| 2.4g | 283 | 137 |
 
 ## Mismatch table
 
@@ -88,7 +89,6 @@
 | `wifi-llapi-D050-supportedvhtmcs` | 50 | exact | Not Supported / N/A / N/A | Pass / Not Supported / Not Supported | Fail / Fail / Fail | Pass / Fail / Fail | 5g |
 | `d053-blocked-txbytes` | 53 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D057-txunicastpacketcount` | 57 | exact | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
-| `wifi-llapi-D092-wepkey-accesspoint-security` | 92 | exact | Fail / Fail / Fail | Pass / Not Supported / Pass | Fail / Fail / Fail | Pass / Fail / Pass | 5g, 2.4g |
 | `wifi-llapi-D093-ssidadvertisementenabled` | 93 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D096-uapsdenable` | 96 | exact | Pass / Pass / Pass | Not Supported / Not Supported / Not Supported | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
 | `wifi-llapi-D101-configmethodsenabled` | 101 | exact | Fail / Fail / Fail | Pass / Not Supported / Pass | Fail / Fail / Fail | Pass / Fail / Pass | 5g, 2.4g |
@@ -451,26 +451,6 @@
 - 0401 G excerpt: ##Connect WiFi Station and send traffic then check TxUnicastPacketCount WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.3.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.5.AssociatedDevice.1.TxUni...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} TxUnicastPacketCount tx ucast pkts 90
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D057-txunicastpacketcount.json`
-
-### wifi-llapi-D092-wepkey-accesspoint-security
-
-- case file: `D092_wepkey_accesspoint_security.yaml`
-- answer row: `92`
-- mapping status: `exact`
-- source metadata: `WiFi.AccessPoint.{i}.Security` / `WEPKey`
-- workbook metadata: `WiFi.AccessPoint.{i}.Security.` / `WEPKey`
-- final status: `Fail`
-- evaluation verdict: `Fail`
-- attempts used: `2`
-- runtime comment: pass_criteria not satisfied (failed after 2/2 attempts)
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Not Supported` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Fail` / `Pass`
-- mismatch bands: `5g, 2.4g`
-- 0401 G excerpt: Test Procedure: 1.set the security mode to WEP-128 2.Set/Get WEPKey Set Command: ubus-cli WiFi.AccessPoint.{i}.Security.WEPKey="" Get Command: ubus-cli WiFi.AccessPoint.{i}.Security.WEPKey? 3.check hostapd config &webGUI Command: cat /tm...
-- 0401 H excerpt: cat /tmp/wl0_hapd.conf |grep wep_key
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D092-wepkey-accesspoint-security.json`
 
 ### wifi-llapi-D093-ssidadvertisementenabled
 

@@ -12248,15 +12248,15 @@ def test_d091_sha256enable_evaluate_live_examples():
 # ---------------------------------------------------------------------------
 
 def test_d092_wepkey_contract():
-    """D092 YAML loads with 12 steps, 9 pass_criteria, row=94, all-band Fail."""
+    """D092 YAML loads with workbook row 92 and Pass/Not Supported/Pass semantics."""
     from testpilot.schema.case_schema import load_case
     c = load_case("plugins/wifi_llapi/cases/D092_wepkey_accesspoint_security.yaml")
     assert len(c["steps"]) == 12
-    assert len(c["pass_criteria"]) == 9
-    assert c["source"]["row"] == 94
+    assert len(c["pass_criteria"]) == 21
+    assert c["source"]["row"] == 92
     ref = c["results_reference"]["v4.0.3"]
     assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
+    assert ref["6g"] == "Not Supported"
     assert ref["2.4g"] == "Pass"
 
 
@@ -12275,38 +12275,69 @@ def test_d092_wepkey_setup_env_uses_only_dut_transport(monkeypatch):
     plugin.teardown(d092, topology)
 
 
+def test_d092_wepkey_setter_steps_keep_original_commands():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    d092 = load_case(cases_dir / "D092_wepkey_accesspoint_security.yaml")
+
+    commands, reason = plugin._command_resolver.resolve(d092, d092["steps"][1], None)
+    assert commands == [
+        "ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WEP-128",
+        "sleep 2",
+        "ubus-cli WiFi.AccessPoint.1.Security.WEPKey=AABBCCDDEEFF0",
+    ]
+    assert reason == ""
+
+    commands, reason = plugin._command_resolver.resolve(d092, d092["steps"][9], None)
+    assert commands == [
+        "ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WEP-128",
+        "sleep 2",
+        "ubus-cli WiFi.AccessPoint.5.Security.WEPKey=AABBCCDDEEFF0",
+    ]
+    assert reason == ""
+
+
 def test_d092_wepkey_evaluate_live_examples():
-    """D092 all-pass criteria met with live-shaped synthetic output."""
+    """D092 uses WEP-128 on 5G/2.4G and unsupported proof on 6G."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d092 = load_case(cases_dir / "D092_wepkey_accesspoint_security.yaml")
 
     d092_results = {
         "steps": {
-            "step1_baseline_5g": {"success": True, "output": "BaselineWEPKey5g=123456789ABCD\nHostapdWep5g=0", "timing": 0.01},
-            "step2_set_5g": {"success": True, "output": "", "timing": 0.01},
-            "step3_readback_5g": {"success": True, "output": "GetterWEPKey5g=AABBCCDDEEFF0\nHostapdWepAfter5g=0", "timing": 0.01},
-            "step4_restore_5g": {"success": True, "output": "RestoredWEPKey5g=123456789ABCD", "timing": 0.01},
-            "step5_baseline_6g": {"success": True, "output": "BaselineWEPKey6g=123456789ABCD\nHostapdWep6g=0", "timing": 0.01},
-            "step6_set_6g": {"success": True, "output": "", "timing": 0.01},
-            "step7_readback_6g": {"success": True, "output": "GetterWEPKey6g=AABBCCDDEEFF0\nHostapdWepAfter6g=0", "timing": 0.01},
-            "step8_restore_6g": {"success": True, "output": "RestoredWEPKey6g=123456789ABCD", "timing": 0.01},
-            "step9_baseline_24g": {"success": True, "output": "BaselineWEPKey24g=123456789ABCD\nHostapdWep24g=0", "timing": 0.01},
-            "step10_set_24g": {"success": True, "output": "", "timing": 0.01},
-            "step11_readback_24g": {"success": True, "output": "GetterWEPKey24g=AABBCCDDEEFF0\nHostapdWepAfter24g=0", "timing": 0.01},
-            "step12_restore_24g": {"success": True, "output": "RestoredWEPKey24g=123456789ABCD", "timing": 0.01},
+            "step1_baseline_5g": {"success": True, "output": "ModesSupported5g=None,WEP-64,WEP-128,WEP-128iv,WPA-Personal\nBaselineModeEnabled5g=WPA2-Personal\nHostapdWep5g=ABSENT", "timing": 0.01},
+            "step2_set_5g": {"success": True, "output": "WiFi.AccessPoint.1.Security.WEPKey=\"AABBCCDDEEFF0\"", "timing": 0.01},
+            "step3_readback_5g": {"success": True, "output": "GetterModeEnabled5g=WEP-128\nGetterWEPKey5g=AABBCCDDEEFF0\nHostapdWepAfter5g=wep_key0=AABBCCDDEEFF0", "timing": 0.01},
+            "step4_restore_5g": {"success": True, "output": "RestoredModeEnabled5g=WPA2-Personal\nRestoredHostapdWep5g=ABSENT", "timing": 0.01},
+            "step5_baseline_6g": {"success": True, "output": "ModesSupported6g=None,WPA3-Personal,OWE\nBaselineModeEnabled6g=WPA3-Personal\nHostapdWep6g=ABSENT", "timing": 0.01},
+            "step6_set_6g": {"success": True, "output": "SkippedSet6g=unsupported_by_modes_supported", "timing": 0.01},
+            "step7_readback_6g": {"success": True, "output": "ModesSupportedAfter6g=None,WPA3-Personal,OWE\nGetterModeEnabled6g=WPA3-Personal\nHostapdWepAfter6g=ABSENT", "timing": 0.01},
+            "step8_restore_6g": {"success": True, "output": "RestoredModeEnabled6g=WPA3-Personal\nRestoredHostapdWep6g=ABSENT", "timing": 0.01},
+            "step9_baseline_24g": {"success": True, "output": "ModesSupported24g=None,WEP-64,WEP-128,WEP-128iv,WPA-Personal\nBaselineModeEnabled24g=WPA2-Personal\nHostapdWep24g=ABSENT", "timing": 0.01},
+            "step10_set_24g": {"success": True, "output": "WiFi.AccessPoint.5.Security.WEPKey=\"AABBCCDDEEFF0\"", "timing": 0.01},
+            "step11_readback_24g": {"success": True, "output": "GetterModeEnabled24g=WEP-128\nGetterWEPKey24g=AABBCCDDEEFF0\nHostapdWepAfter24g=wep_key0=AABBCCDDEEFF0", "timing": 0.01},
+            "step12_restore_24g": {"success": True, "output": "RestoredModeEnabled24g=WPA2-Personal\nRestoredHostapdWep24g=ABSENT", "timing": 0.01},
         }
     }
     assert plugin.evaluate(d092, d092_results) is True
 
-    # Negative: if readback stays baseline on 5G, evaluation should fail
+    # Negative: if 5G never exposes wep_key after switching to WEP-128, evaluation should fail
     d092_bad = {
         "steps": {
             **d092_results["steps"],
-            "step3_readback_5g": {"success": True, "output": "GetterWEPKey5g=123456789ABCD\nHostapdWepAfter5g=0", "timing": 0.01},
+            "step3_readback_5g": {"success": True, "output": "GetterModeEnabled5g=WEP-128\nGetterWEPKey5g=AABBCCDDEEFF0\nHostapdWepAfter5g=ABSENT", "timing": 0.01},
         }
     }
     assert plugin.evaluate(d092, d092_bad) is False
+
+    # Negative: if 6G suddenly claims WEP-128 support, unsupported proof should fail
+    d092_bad_6g = {
+        "steps": {
+            **d092_results["steps"],
+            "step7_readback_6g": {"success": True, "output": "ModesSupportedAfter6g=None,WEP-128,WPA3-Personal,OWE\nGetterModeEnabled6g=WPA3-Personal\nHostapdWepAfter6g=ABSENT", "timing": 0.01},
+        }
+    }
+    assert plugin.evaluate(d092, d092_bad_6g) is False
 
 
 def test_d093_ssidadvertisementenabled_contract():

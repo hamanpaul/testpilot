@@ -1,5 +1,122 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-42)
+
+> This checkpoint records the `D092` WEPKey / AccessPoint.Security workbook row-92 closure after `D090`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D092 WEPKey / AccessPoint.Security` is now aligned via official rerun `20260413T092400687838`
+- workbook row `92` is a mixed-support case: AP1 / AP5 must switch `ModeEnabled=WEP-128`, then exact-close `WEPKey` with hostapd `wep_key`, while AP3 / 6G remains `Not Supported`
+- the stale authored case was still pinned to old workbook row `94` and only wrote `WEPKey` under the WPA2 / WPA3 baseline, so the old full-run trace could only produce a no-op `123456789ABCD` readback plus no hostapd `wep_key`
+- the first confirmation rerun `20260413T092109402810` re-proved the remaining issue was only a case-side hostapd extractor quoting bug; reshaping those captures to double-quote / `${line:-ABSENT}` form fixed the evidence path without changing the workbook semantics
+- active 0403 runtime plus aligned `D088` evidence keep AP3 / 6G on `ModesSupported=None,WPA3-Personal,OWE`, so the authoritative verdict is `Pass / Not Supported / Pass`
+- targeted D092 tests remain `4 passed`, and full repo regression is now `1655 passed`
+- overlay compare is now `278 / 420 full matches`、`142 mismatches`、`58 metadata drifts`
+- next ready actionable open case is `D093 SSIDAdvertisementEnabled`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D092` | 92 | `WEPKey` | `Pass / Not Supported / Pass` | `20260413T092400687838_DUT.log L13-L236` | `n/a (AP-only)` |
+
+#### D092 WEPKey / AccessPoint.Security
+
+**STA 指令**
+
+```sh
+# AP-only case; no STA transport
+```
+
+**DUT 指令**
+
+```sh
+echo "ModesSupported5g=$(ubus-cli WiFi.AccessPoint.1.Security.ModesSupported? 2>/dev/null | grep ModesSupported= | cut -d\" -f2)"
+echo "BaselineModeEnabled5g=$(ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | cut -d\" -f2)"
+line=$(grep -im1 "^wep_key" /tmp/wl0_hapd.conf 2>/dev/null); echo "HostapdWep5g=${line:-ABSENT}"
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WEP-128
+ubus-cli WiFi.AccessPoint.1.Security.WEPKey=AABBCCDDEEFF0
+echo "GetterModeEnabled5g=$(ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | cut -d\" -f2)"
+echo "GetterWEPKey5g=$(ubus-cli WiFi.AccessPoint.1.Security.WEPKey? 2>/dev/null | grep WEPKey= | cut -d\" -f2)"
+line=$(grep -im1 "^wep_key" /tmp/wl0_hapd.conf 2>/dev/null); echo "HostapdWepAfter5g=${line:-ABSENT}"
+ubus-cli WiFi.AccessPoint.1.Security.WEPKey=123456789ABCD
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+
+echo "ModesSupported6g=$(ubus-cli WiFi.AccessPoint.3.Security.ModesSupported? 2>/dev/null | grep ModesSupported= | cut -d\" -f2)"
+echo "BaselineModeEnabled6g=$(ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | cut -d\" -f2)"
+line=$(grep -im1 "^wep_key" /tmp/wl1_hapd.conf 2>/dev/null); echo "HostapdWep6g=${line:-ABSENT}"
+echo "SkippedSet6g=unsupported_by_modes_supported"
+echo "ModesSupportedAfter6g=$(ubus-cli WiFi.AccessPoint.3.Security.ModesSupported? 2>/dev/null | grep ModesSupported= | cut -d\" -f2)"
+echo "GetterModeEnabled6g=$(ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | cut -d\" -f2)"
+line=$(grep -im1 "^wep_key" /tmp/wl1_hapd.conf 2>/dev/null); echo "HostapdWepAfter6g=${line:-ABSENT}"
+
+echo "ModesSupported24g=$(ubus-cli WiFi.AccessPoint.5.Security.ModesSupported? 2>/dev/null | grep ModesSupported= | cut -d\" -f2)"
+echo "BaselineModeEnabled24g=$(ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | cut -d\" -f2)"
+line=$(grep -im1 "^wep_key" /tmp/wl2_hapd.conf 2>/dev/null); echo "HostapdWep24g=${line:-ABSENT}"
+ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WEP-128
+ubus-cli WiFi.AccessPoint.5.Security.WEPKey=AABBCCDDEEFF0
+echo "GetterModeEnabled24g=$(ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | cut -d\" -f2)"
+echo "GetterWEPKey24g=$(ubus-cli WiFi.AccessPoint.5.Security.WEPKey? 2>/dev/null | grep WEPKey= | cut -d\" -f2)"
+line=$(grep -im1 "^wep_key" /tmp/wl2_hapd.conf 2>/dev/null); echo "HostapdWepAfter24g=${line:-ABSENT}"
+ubus-cli WiFi.AccessPoint.5.Security.WEPKey=123456789ABCD
+ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T092400687838_DUT.log L13-L89
+ModesSupported5g=None,WEP-64,WEP-128,WEP-128iv,WPA-Personal,WPA2-Personal,...
+BaselineModeEnabled5g=WPA2-Personal
+HostapdWep5g=ABSENT
+WiFi.AccessPoint.1.Security.ModeEnabled="WEP-128"
+WiFi.AccessPoint.1.Security.WEPKey="AABBCCDDEEFF0"
+GetterModeEnabled5g=WEP-128
+GetterWEPKey5g=AABBCCDDEEFF0
+HostapdWepAfter5g=wep_key0=41414242434344444545464630
+RestoredModeEnabled5g=WPA2-Personal
+RestoredHostapdWep5g=ABSENT
+
+20260413T092400687838_DUT.log L99-L151
+ModesSupported6g=None,WPA3-Personal,OWE
+BaselineModeEnabled6g=WPA3-Personal
+HostapdWep6g=ABSENT
+SkippedSet6g=unsupported_by_modes_supported
+ModesSupportedAfter6g=None,WPA3-Personal,OWE
+GetterModeEnabled6g=WPA3-Personal
+HostapdWepAfter6g=ABSENT
+RestoredModeEnabled6g=WPA3-Personal
+RestoredHostapdWep6g=ABSENT
+
+20260413T092400687838_DUT.log L160-L236
+ModesSupported24g=None,WEP-64,WEP-128,WEP-128iv,WPA-Personal,WPA2-Personal,...
+BaselineModeEnabled24g=WPA2-Personal
+HostapdWep24g=ABSENT
+WiFi.AccessPoint.5.Security.ModeEnabled="WEP-128"
+WiFi.AccessPoint.5.Security.WEPKey="AABBCCDDEEFF0"
+GetterModeEnabled24g=WEP-128
+GetterWEPKey24g=AABBCCDDEEFF0
+HostapdWepAfter24g=wep_key0=41414242434344444545464630
+RestoredModeEnabled24g=WPA2-Personal
+RestoredHostapdWep24g=ABSENT
+
+plugins/wifi_llapi/reports/agent_trace/20260413T092400687838/wifi-llapi-D092-wepkey-accesspoint-security.json L93-L134
+commands:
+  WiFi.AccessPoint.1.Security.ModeEnabled=WEP-128
+  WiFi.AccessPoint.1.Security.WEPKey=AABBCCDDEEFF0
+  SkippedSet6g=unsupported_by_modes_supported
+  WiFi.AccessPoint.5.Security.ModeEnabled=WEP-128
+  WiFi.AccessPoint.5.Security.WEPKey=AABBCCDDEEFF0
+outputs:
+  GetterModeEnabled5g=WEP-128 / GetterWEPKey5g=AABBCCDDEEFF0 / HostapdWepAfter5g=wep_key0=41414242434344444545464630
+  ModesSupportedAfter6g=None,WPA3-Personal,OWE / GetterModeEnabled6g=WPA3-Personal / HostapdWepAfter6g=ABSENT
+  GetterModeEnabled24g=WEP-128 / GetterWEPKey24g=AABBCCDDEEFF0 / HostapdWepAfter24g=wep_key0=41414242434344444545464630
+```
+
 ## Checkpoint summary (2026-04-13 early-41)
 
 > This checkpoint records the `D090` RekeyingInterval / AccessPoint.Security workbook row-90 closure after `D087`.
