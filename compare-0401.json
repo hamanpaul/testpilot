@@ -61,7 +61,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T130448459477",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T132144592128",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T133308180539",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T135928729951"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T135928729951",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T141305083695"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -69,20 +70,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 291,
-  "mismatch_case_count": 129,
+  "full_match_count": 292,
+  "mismatch_case_count": 128,
   "band_summary": {
     "5g": {
-      "matched": 296,
-      "mismatched": 124
+      "matched": 297,
+      "mismatched": 123
     },
     "6g": {
-      "matched": 294,
-      "mismatched": 126
-    },
-    "2.4g": {
       "matched": 295,
       "mismatched": 125
+    },
+    "2.4g": {
+      "matched": 296,
+      "mismatched": 124
     }
   },
   "cases": [
@@ -1255,7 +1256,7 @@
       "case_id": "wifi-llapi-D032-mumimotxpktspercentage",
       "case_file": "D032_mumimotxpktspercentage.yaml",
       "dnum": 32,
-      "source_row": 34,
+      "source_row": 32,
       "source_object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
       "source_api": "MUMimoTxPktsPercentage",
       "answer_row": 32,
@@ -1270,33 +1271,29 @@
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
+          "actual_raw": "Not Supported",
+          "actual_norm": "Fail",
           "expected_raw": "Not Supported",
           "expected_norm": "Fail"
         },
         "6g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
+          "actual_raw": "Not Supported",
+          "actual_norm": "Fail",
           "expected_raw": "Not Supported",
           "expected_norm": "Fail"
         },
         "2.4g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
+          "actual_raw": "Not Supported",
+          "actual_norm": "Fail",
           "expected_raw": "Not Supported",
           "expected_norm": "Fail"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "Reference from Test case number 206 \"ubus-cli WiFi.Radio.{i}.MultiUserMIMOEnabled=1\" root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.MUMimoTxPktsPercen tage? WiFi.AccessPoint.1.AssociatedDevice.1.MUMimoTxPktsPercentage=0 Wi...",
       "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC}",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D032-mumimotxpktspercentage.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T141305083695/wifi-llapi-D032-mumimotxpktspercentage.json"
     },
     {
       "case_id": "wifi-llapi-D033-muuserpositionid",
@@ -18698,53 +18695,6 @@
       "workbook_test_steps_excerpt": "1. Connect WiFi Station to GW. 2. Verify Associated Station FrequencyCapabilities: root@prplOS:~# ubus-cli WiFi.? | grep FrequencyCapabilities= WiFi.AccessPoint.1.AssociatedDevice.1.FrequencyCapabilities=\"2.4GHz,5GHz,6GHz\" WiFi.AccessPoi...",
       "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} Frequency Bands Supported: 2.4G 5G 6G",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D020-frequencycapabilities.json"
-    },
-    {
-      "case_id": "wifi-llapi-D032-mumimotxpktspercentage",
-      "case_file": "D032_mumimotxpktspercentage.yaml",
-      "dnum": 32,
-      "source_row": 34,
-      "source_object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
-      "source_api": "MUMimoTxPktsPercentage",
-      "answer_row": 32,
-      "answer_object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
-      "answer_api": "MUMimoTxPktsPercentage",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Pass",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Not Supported",
-          "expected_norm": "Fail"
-        },
-        "6g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Not Supported",
-          "expected_norm": "Fail"
-        },
-        "2.4g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Not Supported",
-          "expected_norm": "Fail"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "Reference from Test case number 206 \"ubus-cli WiFi.Radio.{i}.MultiUserMIMOEnabled=1\" root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.MUMimoTxPktsPercen tage? WiFi.AccessPoint.1.AssociatedDevice.1.MUMimoTxPktsPercentage=0 Wi...",
-      "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC}",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D032-mumimotxpktspercentage.json"
     },
     {
       "case_id": "wifi-llapi-D033-muuserpositionid",

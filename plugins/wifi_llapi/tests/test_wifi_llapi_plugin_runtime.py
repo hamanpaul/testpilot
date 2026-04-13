@@ -4596,7 +4596,7 @@ def test_pending_mu_stub_cases_use_supported_contracts():
 
     mu_cases = {
         "D031_mumimotxpktscount.yaml": ("MUMimoTxPktsCount", "wifi-llapi-D031-mumimotxpktscount", 33),
-        "D032_mumimotxpktspercentage.yaml": ("MUMimoTxPktsPercentage", "wifi-llapi-D032-mumimotxpktspercentage", 34),
+        "D032_mumimotxpktspercentage.yaml": ("MUMimoTxPktsPercentage", "wifi-llapi-D032-mumimotxpktspercentage", 32),
         "D033_muuserpositionid.yaml": ("MUUserPositionId", "wifi-llapi-D033-muuserpositionid", 35),
     }
     for filename, (api_name, case_id, source_row) in mu_cases.items():
@@ -4613,7 +4613,7 @@ def test_pending_mu_stub_cases_use_supported_contracts():
         assert case_data["llapi_support"] == "Not Supported"
         _mu_rr = {
             "D031_mumimotxpktscount.yaml": ("Fail", "Fail", "Fail"),
-            "D032_mumimotxpktspercentage.yaml": ("Pass", "Pass", "Pass"),
+            "D032_mumimotxpktspercentage.yaml": ("Not Supported", "Not Supported", "Not Supported"),
             "D033_muuserpositionid.yaml": ("Pass", "Pass", "Pass"),
         }
         exp5, exp6, exp24 = _mu_rr[filename]
