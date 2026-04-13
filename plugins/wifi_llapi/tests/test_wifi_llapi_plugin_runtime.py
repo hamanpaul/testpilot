@@ -12080,16 +12080,16 @@ def test_d090_rekeyinginterval_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d090 = load_case(cases_dir / "D090_rekeyinginterval.yaml")
     assert d090["id"] == "wifi-llapi-D090-rekeyinginterval"
-    assert d090["source"]["row"] == 92
+    assert d090["source"]["row"] == 90
     assert d090["source"]["api"] == "RekeyingInterval"
     assert d090["bands"] == ["5g", "6g", "2.4g"]
     assert len(d090["steps"]) == 12
-    assert len(d090["pass_criteria"]) == 9
+    assert len(d090["pass_criteria"]) == 15
     assert all(s.get("target") == "DUT" for s in d090["steps"])
     assert "STA" not in d090["topology"]["devices"]
     ref = d090["results_reference"]["v4.0.3"]
     assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Fail"
+    assert ref["6g"] == "Pass"
     assert ref["2.4g"] == "Pass"
 
 
@@ -12107,6 +12107,25 @@ def test_d090_rekeyinginterval_setup_env_uses_only_dut_transport(monkeypatch):
     plugin.teardown(d090, topology)
 
 
+def test_d090_rekeyinginterval_setter_step_keeps_original_command():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    d090 = load_case(cases_dir / "D090_rekeyinginterval.yaml")
+
+    for index, expected in [
+        (1, "ubus-cli WiFi.AccessPoint.1.Security.RekeyingInterval=0"),
+        (5, "ubus-cli WiFi.AccessPoint.3.Security.RekeyingInterval=0"),
+        (9, "ubus-cli WiFi.AccessPoint.5.Security.RekeyingInterval=0"),
+    ]:
+        commands, reason = plugin._command_resolver.resolve(
+            d090,
+            d090["steps"][index],
+            _FakeTopology(),
+        )
+        assert commands == [expected]
+        assert reason == ""
+
+
 def test_d090_rekeyinginterval_evaluate_live_examples():
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
@@ -12115,35 +12134,35 @@ def test_d090_rekeyinginterval_evaluate_live_examples():
     d090_results = {
         "steps": {
             "step1_baseline_5g": {"success": True, "output": "BaselineRekeyingInterval5g=0\nBaselineHostapdRekey5g=0", "timing": 0.01},
-            "step2_set_5g": {"success": True, "output": "RekeyingInterval=3600", "timing": 0.01},
-            "step3_readback_5g": {"success": True, "output": "GetterRekeyingInterval5g=3600\nHostapdRekey5g=0", "timing": 0.01},
+            "step2_set_5g": {"success": True, "output": "WiFi.AccessPoint.1.Security.\nWiFi.AccessPoint.1.Security.RekeyingInterval=0", "timing": 0.01},
+            "step3_readback_5g": {"success": True, "output": "GetterRekeyingInterval5g=0\nHostapdRekey5g=0", "timing": 0.01},
             "step4_restore_5g": {"success": True, "output": "RestoredRekeyingInterval5g=0", "timing": 0.01},
             "step5_baseline_6g": {"success": True, "output": "BaselineRekeyingInterval6g=0\nBaselineHostapdRekey6g=0", "timing": 0.01},
-            "step6_set_6g": {"success": True, "output": "RekeyingInterval=3600", "timing": 0.01},
-            "step7_readback_6g": {"success": True, "output": "GetterRekeyingInterval6g=3600\nHostapdRekey6g=0", "timing": 0.01},
+            "step6_set_6g": {"success": True, "output": "WiFi.AccessPoint.3.Security.\nWiFi.AccessPoint.3.Security.RekeyingInterval=0", "timing": 0.01},
+            "step7_readback_6g": {"success": True, "output": "GetterRekeyingInterval6g=0\nHostapdRekey6g=0", "timing": 0.01},
             "step8_restore_6g": {"success": True, "output": "RestoredRekeyingInterval6g=0", "timing": 0.01},
             "step9_baseline_24g": {"success": True, "output": "BaselineRekeyingInterval24g=0\nBaselineHostapdRekey24g=0", "timing": 0.01},
-            "step10_set_24g": {"success": True, "output": "RekeyingInterval=3600", "timing": 0.01},
-            "step11_readback_24g": {"success": True, "output": "GetterRekeyingInterval24g=3600\nHostapdRekey24g=3600", "timing": 0.01},
+            "step10_set_24g": {"success": True, "output": "WiFi.AccessPoint.5.Security.\nWiFi.AccessPoint.5.Security.RekeyingInterval=0", "timing": 0.01},
+            "step11_readback_24g": {"success": True, "output": "GetterRekeyingInterval24g=0\nHostapdRekey24g=0", "timing": 0.01},
             "step12_restore_24g": {"success": True, "output": "RestoredRekeyingInterval24g=0", "timing": 0.01},
         }
     }
     assert plugin.evaluate(d090, d090_results) is True
 
-    # Baseline not 0
+    # Baseline hostapd drift means workbook cross-check fails
     d090_bad_baseline = {
         "steps": {
             **d090_results["steps"],
-            "step1_baseline_5g": {"success": True, "output": "BaselineRekeyingInterval5g=3600\nBaselineHostapdRekey5g=0", "timing": 0.01},
+            "step1_baseline_5g": {"success": True, "output": "BaselineRekeyingInterval5g=0\nBaselineHostapdRekey5g=3600", "timing": 0.01},
         }
     }
     assert plugin.evaluate(d090, d090_bad_baseline) is False
 
-    # Readback didn't match
+    # Readback didn't stay at row-90 zero shape
     d090_bad_readback = {
         "steps": {
             **d090_results["steps"],
-            "step7_readback_6g": {"success": True, "output": "GetterRekeyingInterval6g=0\nHostapdRekey6g=0", "timing": 0.01},
+            "step7_readback_6g": {"success": True, "output": "GetterRekeyingInterval6g=3600\nHostapdRekey6g=0", "timing": 0.01},
         }
     }
     assert plugin.evaluate(d090, d090_bad_readback) is False

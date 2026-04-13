@@ -4,13 +4,13 @@ version: '1.0'
 source:
   report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
   sheet: Wifi_LLAPI
-  row: 92
+  row: 90
   object: "WiFi.AccessPoint.{i}.Security"
   api: "RekeyingInterval"
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Security.RekeyingInterval=3600
+hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Security.RekeyingInterval=0
 llapi_support: Support
 implemented_by: pWHM
 bands:
@@ -36,14 +36,18 @@ test_environment: |
   Pre-check:
   - ubus-cli "WiFi.AccessPoint.1.Security.RekeyingInterval?"
   - grep wpa_group_rekey /tmp/wl0_hapd.conf
+  Workbook authority:
+  - workbook row 90 uses `RekeyingInterval=0` plus hostapd `wpa_group_rekey` cross-check
+  - live 0403 traces already show getter + hostapd `0` on all three bands
+  - active tagged TR-181 data-model maps `RekeyingInterval -> wpa_gtk_rekey` with default `0`, even though the public ODL still declares `3600`
 test_procedure: |
   Per band (5G=AP1/wl0, 6G=AP3/wl1, 2.4G=AP5/wl2):
   1) Capture baseline: LLAPI getter + hostapd wpa_group_rekey
-  2) Set RekeyingInterval=3600
-  3) Readback: LLAPI getter + hostapd cross-check (expect divergence)
-  4) Restore RekeyingInterval=0 and verify
-  Expected: all 3 bands accept setter and readback 3600, but hostapd
-  wpa_group_rekey does NOT consistently update → Fail-shaped mismatch.
+  2) Set RekeyingInterval=0 (workbook row 90 setter)
+  3) Readback: LLAPI getter + hostapd cross-check
+  4) Re-apply RekeyingInterval=0 as cleanup
+  Expected: all 3 bands stay aligned at RekeyingInterval=0 with
+  hostapd `wpa_group_rekey=0`.
 
 steps:
   - id: step1_baseline_5g
@@ -58,7 +62,7 @@ steps:
     action: exec
     target: DUT
     depends_on: step1_baseline_5g
-    command: 'ubus-cli WiFi.AccessPoint.1.Security.RekeyingInterval=3600'
+    command: 'ubus-cli WiFi.AccessPoint.1.Security.RekeyingInterval=0'
     capture: set_5g
 
   - id: step3_readback_5g
@@ -94,7 +98,7 @@ steps:
     action: exec
     target: DUT
     depends_on: step5_baseline_6g
-    command: 'ubus-cli WiFi.AccessPoint.3.Security.RekeyingInterval=3600'
+    command: 'ubus-cli WiFi.AccessPoint.3.Security.RekeyingInterval=0'
     capture: set_6g
 
   - id: step7_readback_6g
@@ -130,7 +134,7 @@ steps:
     action: exec
     target: DUT
     depends_on: step9_baseline_24g
-    command: 'ubus-cli WiFi.AccessPoint.5.Security.RekeyingInterval=3600'
+    command: 'ubus-cli WiFi.AccessPoint.5.Security.RekeyingInterval=0'
     capture: set_24g
 
   - id: step11_readback_24g
@@ -158,10 +162,18 @@ pass_criteria:
     operator: equals
     value: '0'
     description: '5G baseline RekeyingInterval should be 0'
+  - field: baseline_5g.BaselineHostapdRekey5g
+    operator: equals
+    value: '0'
+    description: '5G wl0 hostapd wpa_group_rekey should already be 0'
   - field: readback_5g.GetterRekeyingInterval5g
     operator: equals
-    value: '3600'
-    description: '5G getter reads back 3600 after setter'
+    value: '0'
+    description: '5G getter reads back 0 after the workbook row-90 setter'
+  - field: readback_5g.HostapdRekey5g
+    operator: equals
+    value: '0'
+    description: '5G wl0 hostapd wpa_group_rekey should stay 0 after setter'
   - field: restore_5g.RestoredRekeyingInterval5g
     operator: equals
     value: '0'
@@ -170,10 +182,18 @@ pass_criteria:
     operator: equals
     value: '0'
     description: '6G baseline RekeyingInterval should be 0'
+  - field: baseline_6g.BaselineHostapdRekey6g
+    operator: equals
+    value: '0'
+    description: '6G wl1 hostapd wpa_group_rekey should already be 0'
   - field: readback_6g.GetterRekeyingInterval6g
     operator: equals
-    value: '3600'
-    description: '6G getter reads back 3600 after setter'
+    value: '0'
+    description: '6G getter reads back 0 after the workbook row-90 setter'
+  - field: readback_6g.HostapdRekey6g
+    operator: equals
+    value: '0'
+    description: '6G wl1 hostapd wpa_group_rekey should stay 0 after setter'
   - field: restore_6g.RestoredRekeyingInterval6g
     operator: equals
     value: '0'
@@ -182,10 +202,18 @@ pass_criteria:
     operator: equals
     value: '0'
     description: '2.4G baseline RekeyingInterval should be 0'
+  - field: baseline_24g.BaselineHostapdRekey24g
+    operator: equals
+    value: '0'
+    description: '2.4G wl2 hostapd wpa_group_rekey should already be 0'
   - field: readback_24g.GetterRekeyingInterval24g
     operator: equals
-    value: '3600'
-    description: '2.4G getter reads back 3600 after setter'
+    value: '0'
+    description: '2.4G getter reads back 0 after the workbook row-90 setter'
+  - field: readback_24g.HostapdRekey24g
+    operator: equals
+    value: '0'
+    description: '2.4G wl2 hostapd wpa_group_rekey should stay 0 after setter'
   - field: restore_24g.RestoredRekeyingInterval24g
     operator: equals
     value: '0'
@@ -204,6 +232,6 @@ results_reference:
     comment: 'ARC: Cannot capture EAPOL packets on Wireshark'
   v4.0.3:
     5g: Pass
-    6g: Fail
+    6g: Pass
     2.4g: Pass
-    comment: 'LLAPI setter accepted and getter reads back 3600 on all 3 bands, but hostapd wpa_group_rekey does not consistently update — 5G/6G stay at 0, 2.4G only partially converges on first BSS. Fail-shaped mismatch on all bands.'
+    comment: 'workbook row 90 uses `RekeyingInterval=0`; active tagged TR-181 data-model maps `RekeyingInterval` to `wpa_gtk_rekey` with default `0`, and live 0403 traces show getter plus hostapd `wpa_group_rekey=0` staying aligned on AP1/AP3/AP5.'

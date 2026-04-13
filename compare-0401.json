@@ -45,7 +45,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T081301178883",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T082022613657",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T083419287730",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T085025879532"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T085025879532",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T090437438519"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -53,20 +54,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 276,
-  "mismatch_case_count": 144,
+  "full_match_count": 277,
+  "mismatch_case_count": 143,
   "band_summary": {
     "5g": {
-      "matched": 282,
-      "mismatched": 138
+      "matched": 283,
+      "mismatched": 137
     },
     "6g": {
-      "matched": 284,
-      "mismatched": 136
+      "matched": 285,
+      "mismatched": 135
     },
     "2.4g": {
-      "matched": 281,
-      "mismatched": 139
+      "matched": 282,
+      "mismatched": 138
     }
   },
   "cases": [
@@ -3645,7 +3646,7 @@
       "case_id": "wifi-llapi-D090-rekeyinginterval",
       "case_file": "D090_rekeyinginterval.yaml",
       "dnum": 90,
-      "source_row": 92,
+      "source_row": 90,
       "source_object": "WiFi.AccessPoint.{i}.Security",
       "source_api": "RekeyingInterval",
       "answer_row": 90,
@@ -3654,39 +3655,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
+      "final_status": "Pass",
+      "evaluation_verdict": "Pass",
+      "attempts_used": 1,
+      "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "Test Procedure: 1.Set/Get RekeyingInterval Set Command: ubus-cli WiFi.AccessPoint.{i}.Security.RekeyingInterval= Get Command: ubus-cli WiFi.AccessPoint.{i}.Security.RekeyingInterval? 2.check hostapd config&webGUI cat /tmp/wlx_hapd.conf |...",
       "workbook_command_output_excerpt": "cat /tmp/wl0_hapd.conf |grep wpa_group_rekey",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D090-rekeyinginterval.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T090437438519/wifi-llapi-D090-rekeyinginterval.json"
     },
     {
       "case_id": "wifi-llapi-D091-sha256enable",
@@ -19249,53 +19246,6 @@
       "workbook_test_steps_excerpt": "##Connect WiFi Station and send traffic then check TxUnicastPacketCount WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.3.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.5.AssociatedDevice.1.TxUni...",
       "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} TxUnicastPacketCount tx ucast pkts 90",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D057-txunicastpacketcount.json"
-    },
-    {
-      "case_id": "wifi-llapi-D090-rekeyinginterval",
-      "case_file": "D090_rekeyinginterval.yaml",
-      "dnum": 90,
-      "source_row": 92,
-      "source_object": "WiFi.AccessPoint.{i}.Security",
-      "source_api": "RekeyingInterval",
-      "answer_row": 90,
-      "answer_object": "WiFi.AccessPoint.{i}.Security.",
-      "answer_api": "RekeyingInterval",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "Test Procedure: 1.Set/Get RekeyingInterval Set Command: ubus-cli WiFi.AccessPoint.{i}.Security.RekeyingInterval= Get Command: ubus-cli WiFi.AccessPoint.{i}.Security.RekeyingInterval? 2.check hostapd config&webGUI cat /tmp/wlx_hapd.conf |...",
-      "workbook_command_output_excerpt": "cat /tmp/wl0_hapd.conf |grep wpa_group_rekey",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D090-rekeyinginterval.json"
     },
     {
       "case_id": "wifi-llapi-D092-wepkey-accesspoint-security",

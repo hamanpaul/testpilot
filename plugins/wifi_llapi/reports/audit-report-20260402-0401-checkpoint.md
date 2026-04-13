@@ -1,5 +1,96 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-41)
+
+> This checkpoint records the `D090` RekeyingInterval / AccessPoint.Security workbook row-90 closure after `D087`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D090 RekeyingInterval / AccessPoint.Security` is now aligned via official rerun `20260413T090437438519`
+- workbook row `90` is a tri-band `Pass / Pass / Pass` zero-shape case built around `RekeyingInterval=0` plus hostapd `wpa_group_rekey=0`, but the stale authored case was still pinned to old workbook row `92` and inverted into a fail-shaped `set 3600 / expect divergence` story
+- active tagged TR-181 data-model maps `RekeyingInterval` to `wpa_gtk_rekey` with default `0`; the public ODL still declaring `3600` is not what the live 0403 runtime is actually exposing here
+- refreshing `D090` to workbook row `90`, restoring the row-90 zero-shape, and keeping hostapd in the pass path let the rerun exact-close AP1 / AP3 / AP5 in one attempt
+- targeted D090 tests remain `4 passed`, and full repo regression is `1654 passed`
+- overlay compare is now `277 / 420 full matches`、`143 mismatches`、`58 metadata drifts`
+- next ready actionable open case is `D092 WEPKey / AccessPoint.Security`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D090` | 90 | `RekeyingInterval` | `Pass / Pass / Pass` | `20260413T090437438519_DUT.log L15-L175` | `n/a (AP-only)` |
+
+#### D090 RekeyingInterval / AccessPoint.Security
+
+**STA 指令**
+
+```sh
+# AP-only case; no STA transport
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.Security.RekeyingInterval?"
+grep '^wpa_group_rekey=' /tmp/wl0_hapd.conf
+ubus-cli WiFi.AccessPoint.1.Security.RekeyingInterval=0
+ubus-cli "WiFi.AccessPoint.1.Security.RekeyingInterval?"
+grep '^wpa_group_rekey=' /tmp/wl0_hapd.conf
+
+ubus-cli "WiFi.AccessPoint.3.Security.RekeyingInterval?"
+grep '^wpa_group_rekey=' /tmp/wl1_hapd.conf
+ubus-cli WiFi.AccessPoint.3.Security.RekeyingInterval=0
+ubus-cli "WiFi.AccessPoint.3.Security.RekeyingInterval?"
+grep '^wpa_group_rekey=' /tmp/wl1_hapd.conf
+
+ubus-cli "WiFi.AccessPoint.5.Security.RekeyingInterval?"
+grep '^wpa_group_rekey=' /tmp/wl2_hapd.conf
+ubus-cli WiFi.AccessPoint.5.Security.RekeyingInterval=0
+ubus-cli "WiFi.AccessPoint.5.Security.RekeyingInterval?"
+grep '^wpa_group_rekey=' /tmp/wl2_hapd.conf
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T090437438519_DUT.log L15-L61
+BaselineRekeyingInterval5g=0
+BaselineHostapdRekey5g=0
+WiFi.AccessPoint.1.Security.RekeyingInterval=0
+GetterRekeyingInterval5g=0
+HostapdRekey5g=0
+RestoredRekeyingInterval5g=0
+
+20260413T090437438519_DUT.log L72-L118
+BaselineRekeyingInterval6g=0
+BaselineHostapdRekey6g=0
+WiFi.AccessPoint.3.Security.RekeyingInterval=0
+GetterRekeyingInterval6g=0
+HostapdRekey6g=0
+RestoredRekeyingInterval6g=0
+
+20260413T090437438519_DUT.log L129-L175
+BaselineRekeyingInterval24g=0
+BaselineHostapdRekey24g=0
+WiFi.AccessPoint.5.Security.RekeyingInterval=0
+GetterRekeyingInterval24g=0
+HostapdRekey24g=0
+RestoredRekeyingInterval24g=0
+
+plugins/wifi_llapi/reports/agent_trace/20260413T090437438519/wifi-llapi-D090-rekeyinginterval.json L93-L134
+commands:
+  ubus-cli WiFi.AccessPoint.1.Security.RekeyingInterval=0
+  ubus-cli WiFi.AccessPoint.3.Security.RekeyingInterval=0
+  ubus-cli WiFi.AccessPoint.5.Security.RekeyingInterval=0
+outputs:
+  GetterRekeyingInterval5g=0 / HostapdRekey5g=0
+  GetterRekeyingInterval6g=0 / HostapdRekey6g=0
+  GetterRekeyingInterval24g=0 / HostapdRekey24g=0
+```
+
 ## Checkpoint summary (2026-04-13 early-40)
 
 > This checkpoint records the `D087` ModeEnabled / AccessPoint.Security workbook row-87 closure after `D086`.
