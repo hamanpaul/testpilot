@@ -4,7 +4,7 @@ version: '1.1'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 78
+  row: 84
   object: WiFi.AccessPoint.{i}.Security
   api: EncryptionMode
   baseline: BCM v4.0.3
@@ -33,7 +33,7 @@ test_environment: |
   - keep AP1, AP3, and AP5 enabled on the documented non-open baseline before reading `Security.EncryptionMode`
   - live 0320 probe showed AP1/AP3/AP5 all return `EncryptionMode="Default"` on the current firmware
   - the same probe showed live hostapd security is not `Default`: wl0/wl2 expose `wpa_key_mgmt=WPA-PSK` with `wpa_pairwise=CCMP`, while wl1 exposes `wpa_key_mgmt=SAE` with `wpa_pairwise=CCMP`
-  - workbook row 78 keeps BCM v4.0.3 at `Not Supported / Not Supported / Not Supported` with comment `hardcode in pwhm`
+  - workbook row 84 keeps BCM v4.0.3 at `Not Supported / Not Supported / Not Supported` with comment `hardcode in pwhm`
 setup_steps: |
   1) DUT baseline:
      - keep AP1 / AP3 / AP5 enabled on the documented non-open baseline
@@ -58,7 +58,7 @@ test_procedure: |
   2) Read `Security.EncryptionMode` on AP1 / AP3 / AP5.
   3) Inspect the matching `wpa_key_mgmt` / `wpa_pairwise` / `rsn_pairwise` lines in `/tmp/wl0_hapd.conf`, `/tmp/wl1_hapd.conf`, and `/tmp/wl2_hapd.conf`.
   4) Confirm the getter remains `Default` even though hostapd still exposes active non-default WPA/SAE + CCMP config.
-  Verdict: Not Supported. The current DUT returns a hardcoded `EncryptionMode="Default"` on every band while hostapd still exposes real `CCMP` security state, matching workbook row 78 comment `hardcode in pwhm`.
+  Verdict: Not Supported. The current DUT returns a hardcoded `EncryptionMode="Default"` on every band while hostapd still exposes real `CCMP` security state, matching workbook row 84 comment `hardcode in pwhm`.
 
 steps:
 - id: step1_security_mode_5g
@@ -223,7 +223,7 @@ results_reference:
     2.4g: Fail
     comment: 'ARC: API return "Default"'
   v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: '0320 serialwrap live probe showed AP1/AP3/AP5 all return `EncryptionMode="Default"` while hostapd still exposes live WPA/SAE + CCMP security lines; workbook row 78 keeps this getter as `hardcode in pwhm`.'
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: '0401 workbook row 84 keeps `EncryptionMode` at `Not Supported / Not Supported / Not Supported` with comment `hardcode in pwhm`; live probe still shows AP1/AP3/AP5 return `EncryptionMode="Default"` while hostapd exposes active WPA/SAE + CCMP lines.'

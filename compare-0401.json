@@ -41,7 +41,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T065809885285",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T071746618166",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T075200621380",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T080405422245"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T080405422245",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T081301178883"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -49,20 +50,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 272,
-  "mismatch_case_count": 148,
+  "full_match_count": 273,
+  "mismatch_case_count": 147,
   "band_summary": {
     "5g": {
-      "matched": 278,
-      "mismatched": 142
+      "matched": 279,
+      "mismatched": 141
     },
     "6g": {
-      "matched": 280,
-      "mismatched": 140
+      "matched": 281,
+      "mismatched": 139
     },
     "2.4g": {
-      "matched": 277,
-      "mismatched": 143
+      "matched": 278,
+      "mismatched": 142
     }
   },
   "cases": [
@@ -3383,7 +3384,7 @@
       "case_id": "wifi-llapi-D084-encryptionmode-accesspoint-security",
       "case_file": "D084_encryptionmode_accesspoint_security.yaml",
       "dnum": 84,
-      "source_row": 78,
+      "source_row": 84,
       "source_object": "WiFi.AccessPoint.{i}.Security",
       "source_api": "EncryptionMode",
       "answer_row": 84,
@@ -3398,33 +3399,29 @@
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
+          "actual_raw": "Not Supported",
+          "actual_norm": "Fail",
           "expected_raw": "Not Supported",
           "expected_norm": "Fail"
         },
         "6g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
+          "actual_raw": "Not Supported",
+          "actual_norm": "Fail",
           "expected_raw": "Not Supported",
           "expected_norm": "Fail"
         },
         "2.4g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
+          "actual_raw": "Not Supported",
+          "actual_norm": "Fail",
           "expected_raw": "Not Supported",
           "expected_norm": "Fail"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "\\\\Set security mode to WPA3 root@prplOS:/# ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=\"WPA3-Personal\" > WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal WiFi.AccessPoint.1.Security. WiFi.AccessPoint.1.Security.ModeEnabled=\"WPA...",
       "workbook_command_output_excerpt": "cat /tmp/wl0_hapd.conf root@prplOS:/# grep -Ei \"ccmp|tkip|wep|sae\" /tmp/wl0_hapd.conf wpa_key_mgmt=SAE FT-SAE wpa_pairwise=CCMP rsn_pairwise=CCMP sae_password=12345678 sae_require_mfp=1 sae_anti_clogging_threshold=5 sae_sync=5 sae_groups...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D084-encryptionmode-accesspoint-security.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T081301178883/wifi-llapi-D084-encryptionmode-accesspoint-security.json"
     },
     {
       "case_id": "wifi-llapi-D085-keypassphrase-accesspoint-security",
@@ -19261,53 +19258,6 @@
       "workbook_test_steps_excerpt": "##Connect WiFi Station and send traffic then check TxUnicastPacketCount WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.3.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.5.AssociatedDevice.1.TxUni...",
       "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} TxUnicastPacketCount tx ucast pkts 90",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D057-txunicastpacketcount.json"
-    },
-    {
-      "case_id": "wifi-llapi-D084-encryptionmode-accesspoint-security",
-      "case_file": "D084_encryptionmode_accesspoint_security.yaml",
-      "dnum": 84,
-      "source_row": 78,
-      "source_object": "WiFi.AccessPoint.{i}.Security",
-      "source_api": "EncryptionMode",
-      "answer_row": 84,
-      "answer_object": "WiFi.AccessPoint.{i}.Security.",
-      "answer_api": "EncryptionMode",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Pass",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Not Supported",
-          "expected_norm": "Fail"
-        },
-        "6g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Not Supported",
-          "expected_norm": "Fail"
-        },
-        "2.4g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Not Supported",
-          "expected_norm": "Fail"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "\\\\Set security mode to WPA3 root@prplOS:/# ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=\"WPA3-Personal\" > WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal WiFi.AccessPoint.1.Security. WiFi.AccessPoint.1.Security.ModeEnabled=\"WPA...",
-      "workbook_command_output_excerpt": "cat /tmp/wl0_hapd.conf root@prplOS:/# grep -Ei \"ccmp|tkip|wep|sae\" /tmp/wl0_hapd.conf wpa_key_mgmt=SAE FT-SAE wpa_pairwise=CCMP rsn_pairwise=CCMP sae_password=12345678 sae_require_mfp=1 sae_anti_clogging_threshold=5 sae_sync=5 sae_groups...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D084-encryptionmode-accesspoint-security.json"
     },
     {
       "case_id": "wifi-llapi-D085-keypassphrase-accesspoint-security",

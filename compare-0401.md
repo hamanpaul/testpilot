@@ -44,6 +44,7 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T071746618166`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T075200621380`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T080405422245`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T081301178883`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -54,8 +55,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 272 |
-| mismatch cases | 148 |
+| full matches | 273 |
+| mismatch cases | 147 |
 | missing answer rows | 0 |
 | metadata drift rows | 58 |
 
@@ -63,9 +64,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 278 | 142 |
-| 6g | 280 | 140 |
-| 2.4g | 277 | 143 |
+| 5g | 279 | 141 |
+| 6g | 281 | 139 |
+| 2.4g | 278 | 142 |
 
 ## Mismatch table
 
@@ -83,7 +84,6 @@
 | `wifi-llapi-D050-supportedvhtmcs` | 50 | exact | Not Supported / N/A / N/A | Pass / Not Supported / Not Supported | Fail / Fail / Fail | Pass / Fail / Fail | 5g |
 | `d053-blocked-txbytes` | 53 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D057-txunicastpacketcount` | 57 | exact | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
-| `wifi-llapi-D084-encryptionmode-accesspoint-security` | 84 | exact | Pass / Pass / Pass | Not Supported / Not Supported / Not Supported | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
 | `wifi-llapi-D085-keypassphrase-accesspoint-security` | 85 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D086-mfpconfig-accesspoint-security` | 86 | exact | Pass / Pass / Pass | Not Supported / Not Supported / Not Supported | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
 | `wifi-llapi-D087-modeenabled-accesspoint-security` | 87 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -451,25 +451,6 @@
 - 0401 G excerpt: ##Connect WiFi Station and send traffic then check TxUnicastPacketCount WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.3.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.5.AssociatedDevice.1.TxUni...
 - 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} TxUnicastPacketCount tx ucast pkts 90
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D057-txunicastpacketcount.json`
-
-### wifi-llapi-D084-encryptionmode-accesspoint-security
-
-- case file: `D084_encryptionmode_accesspoint_security.yaml`
-- answer row: `84`
-- mapping status: `exact`
-- source metadata: `WiFi.AccessPoint.{i}.Security` / `EncryptionMode`
-- workbook metadata: `WiFi.AccessPoint.{i}.Security.` / `EncryptionMode`
-- final status: `Pass`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Pass` / `Pass` / `Pass`
-- expected raw: `Not Supported` / `Not Supported` / `Not Supported`
-- actual normalized: `Pass` / `Pass` / `Pass`
-- expected normalized: `Fail` / `Fail` / `Fail`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: \\Set security mode to WPA3 root@prplOS:/# ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled="WPA3-Personal" > WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal WiFi.AccessPoint.1.Security. WiFi.AccessPoint.1.Security.ModeEnabled="WPA...
-- 0401 H excerpt: cat /tmp/wl0_hapd.conf root@prplOS:/# grep -Ei "ccmp|tkip|wep|sae" /tmp/wl0_hapd.conf wpa_key_mgmt=SAE FT-SAE wpa_pairwise=CCMP rsn_pairwise=CCMP sae_password=12345678 sae_require_mfp=1 sae_anti_clogging_threshold=5 sae_sync=5 sae_groups...
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D084-encryptionmode-accesspoint-security.json`
 
 ### wifi-llapi-D085-keypassphrase-accesspoint-security
 

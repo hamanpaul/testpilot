@@ -11325,7 +11325,7 @@ def test_d084_encryptionmode_accesspoint_security_contract():
     assert "aliases" not in d084_raw
     assert d084["id"] == "wifi-llapi-D084-encryptionmode-accesspoint-security"
     assert d084["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d084["source"]["row"] == 78
+    assert d084["source"]["row"] == 84
     assert d084["source"]["baseline"] == "BCM v4.0.3"
     assert d084["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.Security.EncryptionMode?"'
     assert d084["llapi_support"] == "Not Supported"
@@ -11348,9 +11348,9 @@ def test_d084_encryptionmode_accesspoint_security_contract():
         and criterion["value"] == "WPA-PSK"
         for criterion in d084["pass_criteria"]
     )
-    assert d084["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d084["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d084["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+    assert d084["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
+    assert d084["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
+    assert d084["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
 
 
 def test_d084_encryptionmode_accesspoint_security_setup_env_uses_only_dut_transport(monkeypatch):

@@ -1,5 +1,92 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-37)
+
+> This checkpoint records the `D084` EncryptionMode / AccessPoint.Security workbook row-84 closure after `D083`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D084 EncryptionMode / AccessPoint.Security` is now aligned via official rerun `20260413T081301178883`
+- reading workbook row `84` directly confirmed this is an explicit `Not Supported / Not Supported / Not Supported` case with comment `hardcode in pwhm`
+- active 0403 source still exposes `%persistent string EncryptionMode = "Default"` in the AP security object, and the live rerun re-proved the same stable not-supported shape on all three bands: getter stays `Default` while hostapd still exposes real `CCMP` ciphers (`WPA-PSK` on 5G / 2.4G, `SAE` on 6G)
+- the stale authored case had already captured the right runtime evidence, but it was pinned to old workbook row `78` and raw `Pass / Pass / Pass`
+- refreshing `D084` to workbook row `84` and raw `Not Supported / Not Supported / Not Supported` removed the mismatch without changing command or pass_criteria shape
+- overlay compare is now `273 / 420 full matches`、`147 mismatches`、`58 metadata drifts`
+- next ready actionable open case is `D085 KeyPassPhrase / AccessPoint.Security`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D084` | 84 | `EncryptionMode` | `Not Supported / Not Supported / Not Supported` | `20260413T081301178883_DUT.log L32-L152` | `n/a (AP-only)` |
+
+#### D084 EncryptionMode / AccessPoint.Security
+
+**STA 指令**
+
+```sh
+# AP-only case; no STA transport
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
+ubus-cli "WiFi.AccessPoint.1.Security.EncryptionMode?"
+grep -m1 '^wpa_key_mgmt=' /tmp/wl0_hapd.conf
+grep -m1 '^wpa_pairwise=' /tmp/wl0_hapd.conf
+grep -m1 '^rsn_pairwise=' /tmp/wl0_hapd.conf
+
+ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"
+ubus-cli "WiFi.AccessPoint.3.Security.EncryptionMode?"
+grep -m1 '^wpa_key_mgmt=' /tmp/wl1_hapd.conf
+grep -m1 '^wpa_pairwise=' /tmp/wl1_hapd.conf
+grep -m1 '^rsn_pairwise=' /tmp/wl1_hapd.conf
+
+ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"
+ubus-cli "WiFi.AccessPoint.5.Security.EncryptionMode?"
+grep -m1 '^wpa_key_mgmt=' /tmp/wl2_hapd.conf
+grep -m1 '^wpa_pairwise=' /tmp/wl2_hapd.conf
+grep -m1 '^rsn_pairwise=' /tmp/wl2_hapd.conf
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T081301178883_DUT.log L32-L71
+ModeEnabled5g=WPA2-Personal
+EncryptionMode5g=Default
+HostapdKeyMgmt5g=WPA-PSK
+HostapdPairwise5g=CCMP
+HostapdRsnPairwise5g=CCMP
+
+20260413T081301178883_DUT.log L72-L111
+ModeEnabled6g=WPA3-Personal
+EncryptionMode6g=Default
+HostapdKeyMgmt6g=SAE
+HostapdPairwise6g=CCMP
+HostapdRsnPairwise6g=CCMP
+
+20260413T081301178883_DUT.log L112-L152
+ModeEnabled24g=WPA2-Personal
+EncryptionMode24g=Default
+HostapdKeyMgmt24g=WPA-PSK
+HostapdPairwise24g=CCMP
+HostapdRsnPairwise24g=CCMP
+
+plugins/wifi_llapi/reports/agent_trace/20260413T081301178883/wifi-llapi-D084-encryptionmode-accesspoint-security.json L107-L116
+outputs:
+  EncryptionMode5g=Default
+  HostapdPairwise5g=CCMP
+  EncryptionMode6g=Default
+  HostapdPairwise6g=CCMP
+  EncryptionMode24g=Default
+  HostapdPairwise24g=CCMP
+```
+
 ## Checkpoint summary (2026-04-13 early-36)
 
 > This checkpoint records the `D083` Neighbour workbook row-83 metadata closure after `D082`.

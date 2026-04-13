@@ -168,19 +168,23 @@
     - reconnect trial rerun `20260413T015210910141` removed the immediate 5G join failure but then got trapped in repeated 6G `ocv=0` / `ATTACH` recovery (`6G restart attempt=1 unstable`, `env: retry command after recovery_action=ATTACH`, `6G ocv=0 verify failed — BSS loop may persist`)
     - the local tri-band rewrite was reverted; blocker authority is now `plugins/wifi_llapi/reports/D035_block.md`
   - `D053 txBytes` remains blocked because it still needs deterministic AP-to-STA unicast payload generation before any source-backed YAML rewrite can be justified
-  - next ready actionable open case is now `D084 EncryptionMode / AccessPoint.Security`; `D020` remains in the verified fail-shaped bucket, `D035` / `D053` remain blocked, and `D328` / `D336` remain env-only
+  - `D084 EncryptionMode / AccessPoint.Security` is now aligned via official rerun `20260413T081301178883`
+  - reading workbook row `84` directly confirmed this is not a workbook-Pass case: v4.0.3 is explicitly `Not Supported / Not Supported / Not Supported` with comment `hardcode in pwhm`
+  - active 0403 source still exposes `%persistent string EncryptionMode = "Default"` in the AP security object, and the live rerun re-proved the same stable not-supported shape on all three bands: northbound getter stays `Default` while hostapd still exposes real `CCMP` ciphers (`WPA-PSK` on 5G / 2.4G, `SAE` on 6G)
+  - refreshing `D084` from stale workbook row `78` / raw `Pass / Pass / Pass` to workbook row `84` / raw `Not Supported / Not Supported / Not Supported` cleanly removed the mismatch without changing command or criteria shape
+  - next ready actionable open case is now `D085 KeyPassPhrase / AccessPoint.Security`; `D020` remains in the verified fail-shaped bucket, `D035` / `D053` remain blocked, and `D328` / `D336` remain env-only
 - Current authoritative full-run source remains `20260412T113008433351`
 - Latest recomputed overlay compare on top of authoritative full run `20260412T113008433351`
-  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 / D028 / D065 / D081 / D094 / D095 / D098 / D099 / D114 / D115 / D174 / D176 / D188 / D034 / D059 / D060 / D062 / D063 / D070 / D071 / D079 / D080 / D082 / D083 reruns:
-  - `272 / 420 full matches`
-  - `148 mismatches`
+  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 / D028 / D065 / D081 / D094 / D095 / D098 / D099 / D114 / D115 / D174 / D176 / D188 / D034 / D059 / D060 / D062 / D063 / D070 / D071 / D079 / D080 / D082 / D083 / D084 reruns:
+  - `273 / 420 full matches`
+  - `147 mismatches`
   - `58 metadata drifts`
 - Current focused step-command-failed workstream status:
   - closed in this loop: `D072`、`D047`、`D050`、`D088`、`D460`、`D494`、`D079`
   - remaining open set: `none`
   - env-only bucket remains `D328`、`D336`
   - blocked bucket is now `D053` (`needs deterministic AP-to-STA unicast payload`) plus `D035` (`tri-band rewrite blocked by shared 6G OCV / ATTACH recovery loop`)
-- Next ready workbook-Pass / metadata revisit: `D084`
+- Next ready workbook-Pass / metadata revisit: `D085`
 
 ## Latest repo handoff snapshot（2026-04-11）
 
