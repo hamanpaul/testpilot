@@ -44,7 +44,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T080405422245",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T081301178883",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T082022613657",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T083419287730"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T083419287730",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T085025879532"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -52,20 +53,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 275,
-  "mismatch_case_count": 145,
+  "full_match_count": 276,
+  "mismatch_case_count": 144,
   "band_summary": {
     "5g": {
-      "matched": 281,
-      "mismatched": 139
+      "matched": 282,
+      "mismatched": 138
     },
     "6g": {
-      "matched": 283,
-      "mismatched": 137
+      "matched": 284,
+      "mismatched": 136
     },
     "2.4g": {
-      "matched": 280,
-      "mismatched": 140
+      "matched": 281,
+      "mismatched": 139
     }
   },
   "cases": [
@@ -3515,7 +3516,7 @@
       "case_id": "wifi-llapi-D087-modeenabled-accesspoint-security",
       "case_file": "D087_modeenabled_accesspoint_security.yaml",
       "dnum": 87,
-      "source_row": 81,
+      "source_row": 87,
       "source_object": "WiFi.AccessPoint.{i}.Security",
       "source_api": "ModeEnabled",
       "answer_row": 87,
@@ -3524,39 +3525,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
+      "final_status": "Pass",
+      "evaluation_verdict": "Pass",
+      "attempts_used": 1,
+      "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Set security mode to WPA3-Personal root@prplOS:/# ubus-cli WiFi.AccessPoint.*.Security.ModeEnabled=WPA3-Personal > WiFi.AccessPoint.*.Security.ModeEnabled=WPA3-Personal WiFi.AccessPoint.1.Security.ModeEnabled=\"WPA3-Personal\" WiFi.Acce...",
       "workbook_command_output_excerpt": "cat /tmp/wl0_hapd.conf | grep wpa and other related parameters root@prplOS:/# cat /tmp/wl0_hapd.conf | grep wpa wpa=2 wpa_key_mgmt=SAE FT-SAE wpa_pairwise=CCMP wpa_group_rekey=0 wpa_ptk_rekey=0 wpa_passphrase=87654321 wpa_disable_eapol_k...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D087-modeenabled-accesspoint-security.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T085025879532/wifi-llapi-D087-modeenabled-accesspoint-security.json"
     },
     {
       "case_id": "wifi-llapi-D088-modessupported",
@@ -19252,53 +19249,6 @@
       "workbook_test_steps_excerpt": "##Connect WiFi Station and send traffic then check TxUnicastPacketCount WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.3.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.5.AssociatedDevice.1.TxUni...",
       "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} TxUnicastPacketCount tx ucast pkts 90",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D057-txunicastpacketcount.json"
-    },
-    {
-      "case_id": "wifi-llapi-D087-modeenabled-accesspoint-security",
-      "case_file": "D087_modeenabled_accesspoint_security.yaml",
-      "dnum": 87,
-      "source_row": 81,
-      "source_object": "WiFi.AccessPoint.{i}.Security",
-      "source_api": "ModeEnabled",
-      "answer_row": 87,
-      "answer_object": "WiFi.AccessPoint.{i}.Security.",
-      "answer_api": "ModeEnabled",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Set security mode to WPA3-Personal root@prplOS:/# ubus-cli WiFi.AccessPoint.*.Security.ModeEnabled=WPA3-Personal > WiFi.AccessPoint.*.Security.ModeEnabled=WPA3-Personal WiFi.AccessPoint.1.Security.ModeEnabled=\"WPA3-Personal\" WiFi.Acce...",
-      "workbook_command_output_excerpt": "cat /tmp/wl0_hapd.conf | grep wpa and other related parameters root@prplOS:/# cat /tmp/wl0_hapd.conf | grep wpa wpa=2 wpa_key_mgmt=SAE FT-SAE wpa_pairwise=CCMP wpa_group_rekey=0 wpa_ptk_rekey=0 wpa_passphrase=87654321 wpa_disable_eapol_k...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D087-modeenabled-accesspoint-security.json"
     },
     {
       "case_id": "wifi-llapi-D090-rekeyinginterval",

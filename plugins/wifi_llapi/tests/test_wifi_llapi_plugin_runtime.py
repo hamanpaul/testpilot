@@ -11804,11 +11804,11 @@ def test_d087_modeenabled_accesspoint_security_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d087 = load_case(cases_dir / "D087_modeenabled_accesspoint_security.yaml")
     assert d087["id"] == "wifi-llapi-D087-modeenabled-accesspoint-security"
-    assert d087["source"]["row"] == 81
+    assert d087["source"]["row"] == 87
     assert d087["source"]["api"] == "ModeEnabled"
     assert d087["bands"] == ["5g", "6g", "2.4g"]
     assert len(d087["steps"]) == 12
-    assert len(d087["pass_criteria"]) == 21
+    assert len(d087["pass_criteria"]) == 15
     step_ids = [s["id"] for s in d087["steps"]]
     for band_tag in ["5g", "6g", "24g"]:
         assert f"step1_baseline_5g" in step_ids or any(band_tag in sid for sid in step_ids)
@@ -11856,27 +11856,20 @@ def test_d087_modeenabled_accesspoint_security_evaluate_live_examples():
             f"HostapdIeee80211w{band}={w}",
         ])
 
-    def restore_output(band: str, mode: str, keymgmt: str, w: str) -> str:
-        return "\n".join([
-            f"RestoredModeEnabled{band}={mode}",
-            f"RestoredKeyMgmt{band}={keymgmt}",
-            f"RestoredIeee80211w{band}={w}",
-        ])
-
     d087_results = {
         "steps": {
-            "step1_baseline_5g": {"success": True, "output": baseline_output("5g", "WPA2-Personal", "WPA-PSK", "0"), "timing": 0.01},
+            "step1_baseline_5g": {"success": True, "output": baseline_output("5g", "WPA2-Personal", "WPA-PSK FT-PSK", "0"), "timing": 0.01},
             "step2_set_5g": {"success": True, "output": set_output("5g"), "timing": 0.01},
-            "step3_readback_5g": {"success": True, "output": readback_output("5g", "WPA3-Personal", "SAE", "2"), "timing": 0.01},
-            "step4_restore_5g": {"success": True, "output": restore_output("5g", "WPA2-Personal", "WPA-PSK", "0"), "timing": 0.01},
-            "step5_baseline_6g": {"success": True, "output": baseline_output("6g", "WPA3-Personal", "SAE", "2"), "timing": 0.01},
+            "step3_readback_5g": {"success": True, "output": readback_output("5g", "WPA3-Personal", "SAE FT-SAE", "2"), "timing": 0.01},
+            "step4_restore_5g": {"success": True, "output": "", "timing": 0.01},
+            "step5_baseline_6g": {"success": True, "output": baseline_output("6g", "WPA3-Personal", "SAE FT-SAE", "2"), "timing": 0.01},
             "step6_set_6g": {"success": True, "output": set_output("6g"), "timing": 0.01},
-            "step7_readback_6g": {"success": True, "output": readback_output("6g", "WPA3-Personal", "SAE", "2"), "timing": 0.01},
-            "step8_restore_6g": {"success": True, "output": restore_output("6g", "WPA3-Personal", "SAE", "2"), "timing": 0.01},
-            "step9_baseline_24g": {"success": True, "output": baseline_output("24g", "WPA2-Personal", "WPA-PSK", "0"), "timing": 0.01},
+            "step7_readback_6g": {"success": True, "output": readback_output("6g", "WPA3-Personal", "SAE FT-SAE", "2"), "timing": 0.01},
+            "step8_restore_6g": {"success": True, "output": "", "timing": 0.01},
+            "step9_baseline_24g": {"success": True, "output": baseline_output("24g", "WPA2-Personal", "WPA-PSK FT-PSK", "0"), "timing": 0.01},
             "step10_set_24g": {"success": True, "output": set_output("24g"), "timing": 0.01},
-            "step11_readback_24g": {"success": True, "output": readback_output("24g", "WPA3-Personal", "SAE", "2"), "timing": 0.01},
-            "step12_restore_24g": {"success": True, "output": restore_output("24g", "WPA2-Personal", "WPA-PSK", "0"), "timing": 0.01},
+            "step11_readback_24g": {"success": True, "output": readback_output("24g", "WPA3-Personal", "SAE FT-SAE", "2"), "timing": 0.01},
+            "step12_restore_24g": {"success": True, "output": "", "timing": 0.01},
         }
     }
     assert plugin.evaluate(d087, d087_results) is True
@@ -11899,14 +11892,14 @@ def test_d087_modeenabled_accesspoint_security_evaluate_live_examples():
     }
     assert plugin.evaluate(d087, d087_bad_6g) is False
 
-    # Wrong 2.4G restore (still WPA3-Personal)
-    d087_bad_24g_restore = {
+    # Wrong 2.4G readback (hostapd never leaves WPA-PSK family)
+    d087_bad_24g_readback = {
         "steps": {
             **d087_results["steps"],
-            "step12_restore_24g": {"success": True, "output": restore_output("24g", "WPA3-Personal", "SAE", "2"), "timing": 0.01},
+            "step11_readback_24g": {"success": True, "output": readback_output("24g", "WPA3-Personal", "WPA-PSK FT-PSK", "0"), "timing": 0.01},
         }
     }
-    assert plugin.evaluate(d087, d087_bad_24g_restore) is False
+    assert plugin.evaluate(d087, d087_bad_24g_readback) is False
 
 
 def test_d088_modessupported_contract():

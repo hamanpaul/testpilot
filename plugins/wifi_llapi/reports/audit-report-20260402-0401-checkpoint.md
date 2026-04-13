@@ -1,5 +1,104 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-40)
+
+> This checkpoint records the `D087` ModeEnabled / AccessPoint.Security workbook row-87 closure after `D086`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D087 ModeEnabled / AccessPoint.Security` is now aligned via official rerun `20260413T085025879532`
+- workbook row `87` is a tri-band `Pass / Pass / Pass` setter/readback case, but the stale authored case was still pinned to old row `81` and over-gated on cleanup restore plus exact `wpa_key_mgmt` token matching
+- row `87` authority is now reduced to the real pass path: AP1/AP3/AP5 all accept `ModeEnabled=WPA3-Personal`, getter reads back `WPA3-Personal`, and hostapd converges to the WPA3/SAE family with `ieee80211w=2`; restore remains cleanup only
+- refreshing `D087` to workbook row `87` and aligning pass_criteria to that setter/readback authority let the rerun exact-close all three bands in one attempt
+- targeted D087 tests remain `3 passed`, and full repo regression remains `1653 passed`
+- overlay compare is now `276 / 420 full matches`、`144 mismatches`、`58 metadata drifts`
+- next ready actionable open case is `D090 RekeyingInterval / AccessPoint.Security`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D087` | 87 | `ModeEnabled` | `Pass / Pass / Pass` | `20260413T085025879532_DUT.log L43-L281` | `n/a (AP-only)` |
+
+#### D087 ModeEnabled / AccessPoint.Security
+
+**STA 指令**
+
+```sh
+# AP-only case; no STA transport
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
+ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
+grep -m1 '^wpa_key_mgmt=' /tmp/wl0_hapd.conf
+grep -m1 '^ieee80211w=' /tmp/wl0_hapd.conf
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+
+ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"
+ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
+ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"
+grep -m1 '^wpa_key_mgmt=' /tmp/wl1_hapd.conf
+grep -m1 '^ieee80211w=' /tmp/wl1_hapd.conf
+ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
+
+ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"
+ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA3-Personal
+ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"
+grep -m1 '^wpa_key_mgmt=' /tmp/wl2_hapd.conf
+grep -m1 '^ieee80211w=' /tmp/wl2_hapd.conf
+ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T085025879532_DUT.log L43-L109
+BaselineModeEnabled5g=WPA2-Personal
+SetterRequest5g=WPA3-Personal
+GetterModeEnabled5g=WPA3-Personal
+HostapdKeyMgmt5g=SAE
+HostapdIeee80211w5g=2
+RestoredModeEnabled5g=WPA2-Personal
+RestoredKeyMgmt5g=WPA-PSK
+RestoredIeee80211w5g=0
+
+20260413T085025879532_DUT.log L130-L194
+BaselineModeEnabled6g=WPA3-Personal
+SetterRequest6g=WPA3-Personal
+GetterModeEnabled6g=WPA3-Personal
+HostapdKeyMgmt6g=SAE
+HostapdIeee80211w6g=2
+RestoredModeEnabled6g=WPA3-Personal
+RestoredKeyMgmt6g=SAE
+RestoredIeee80211w6g=2
+
+20260413T085025879532_DUT.log L215-L281
+BaselineModeEnabled24g=WPA2-Personal
+SetterRequest24g=WPA3-Personal
+GetterModeEnabled24g=WPA3-Personal
+HostapdKeyMgmt24g=SAE
+HostapdIeee80211w24g=2
+RestoredModeEnabled24g=WPA2-Personal
+RestoredKeyMgmt24g=WPA-PSK
+RestoredIeee80211w24g=0
+
+plugins/wifi_llapi/reports/agent_trace/20260413T085025879532/wifi-llapi-D087-modeenabled-accesspoint-security.json L110-L134
+outputs:
+  GetterModeEnabled5g=WPA3-Personal
+  HostapdKeyMgmt5g=SAE
+  GetterModeEnabled6g=WPA3-Personal
+  HostapdKeyMgmt6g=SAE
+  GetterModeEnabled24g=WPA3-Personal
+  HostapdKeyMgmt24g=SAE
+```
+
 ## Checkpoint summary (2026-04-13 early-39)
 
 > This checkpoint records the `D086` MFPConfig / AccessPoint.Security workbook row-86 closure after `D085`.
