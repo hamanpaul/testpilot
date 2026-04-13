@@ -86,6 +86,10 @@
   - `_env_command_succeeded()` no longer treats valid getter payload `error=4 / message=parameter not found` as a shell failure, while direct `AssociatedDevice.*.MACAddress?` probes still require a concrete MAC
   - `hostapd_cli` is now treated as an executable token, so hostapd-based shell steps no longer silently fall back to `verification_command`
 - Latest aligned cases:
+  - `D033 MUUserPositionId` is now aligned via official rerun `20260413T142616419984`
+  - workbook authority is row `33`, not stale row `35` (`OperatingStandard`); current 0403 source survey only finds the read-only ODL declaration for `MUUserPositionId` and no active tr181-wifi implementation
+  - rerun exact-closes the supported-band stub evidence: 5G `AssocMac5g=2c:59:17:00:04:85` with `MUUserPositionId=0`, 2.4G `AssocMac24g=2c:59:17:00:04:97` with `MUUserPositionId=0`, and 6G stays skipped in the current lab
+  - the landed case now projects workbook-consistent `Not Supported / Not Supported / Not Supported`, overlay compare is `293 / 420 full matches` / `127 mismatches` / `58 metadata drifts`, `D020` remains the verified fail-shaped mismatch, and the next ready actionable compare-open case is `D035 OperatingStandard`
   - `D032 MUMimoTxPktsPercentage` is now aligned via official rerun `20260413T141305083695`
   - workbook authority is row `32`, not stale row `34` (`MUUserPositionId`); current 0403 source survey only finds the read-only ODL declaration for `MUMimoTxPktsPercentage` and no active tr181-wifi implementation
   - rerun exact-closes the supported-band stub evidence: 5G `AssocMac5g=2c:59:17:00:04:85` with `MUMimoTxPktsPercentage=0`, 2.4G `AssocMac24g=2c:59:17:00:04:97` with `MUMimoTxPktsPercentage=0`, and 6G stays skipped in the current lab
