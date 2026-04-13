@@ -59,7 +59,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T121358780961",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T122417812289",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T130448459477",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T132144592128"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T132144592128",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T133308180539"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -67,20 +68,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 289,
-  "mismatch_case_count": 131,
+  "full_match_count": 290,
+  "mismatch_case_count": 130,
   "band_summary": {
     "5g": {
-      "matched": 294,
-      "mismatched": 126
+      "matched": 295,
+      "mismatched": 125
     },
     "6g": {
-      "matched": 292,
-      "mismatched": 128
-    },
-    "2.4g": {
       "matched": 293,
       "mismatched": 127
+    },
+    "2.4g": {
+      "matched": 294,
+      "mismatched": 126
     }
   },
   "cases": [
@@ -690,7 +691,7 @@
       "case_id": "wifi-llapi-D019-encryptionmode-accesspoint-associateddevice",
       "case_file": "D019_encryptionmode_accesspoint_associateddevice.yaml",
       "dnum": 19,
-      "source_row": 16,
+      "source_row": 19,
       "source_object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
       "source_api": "EncryptionMode",
       "answer_row": 19,
@@ -699,39 +700,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Pass",
+      "final_status": "Fail",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
+          "actual_raw": "Fail",
+          "actual_norm": "Fail",
           "expected_raw": "Fail",
           "expected_norm": "Fail"
         },
         "6g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
+          "actual_raw": "Fail",
+          "actual_norm": "Fail",
           "expected_raw": "Fail",
           "expected_norm": "Fail"
         },
         "2.4g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
+          "actual_raw": "Fail",
+          "actual_norm": "Fail",
           "expected_raw": "Fail",
           "expected_norm": "Fail"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Connect WiFi Station to GW. 2. Verify Associated Station EncryptionMode: WiFi.AccessPoint.1.AssociatedDevice.1.ProbeReqCaps.EncryptionMode=\"Default\" WiFi.AccessPoint.3.AssociatedDevice.1.ProbeReqCaps.EncryptionMode=\"Default\" WiFi.Acce...",
       "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} auth: WPA3-SAE-PSK crypto: AES_CCM",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D019-encryptionmode-accesspoint-associateddevice.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T133308180539/wifi-llapi-D019-encryptionmode-accesspoint-associateddevice.json"
     },
     {
       "case_id": "wifi-llapi-D020-frequencycapabilities",
@@ -18658,53 +18655,6 @@
     }
   ],
   "mismatches": [
-    {
-      "case_id": "wifi-llapi-D019-encryptionmode-accesspoint-associateddevice",
-      "case_file": "D019_encryptionmode_accesspoint_associateddevice.yaml",
-      "dnum": 19,
-      "source_row": 16,
-      "source_object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
-      "source_api": "EncryptionMode",
-      "answer_row": 19,
-      "answer_object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
-      "answer_api": "EncryptionMode",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Pass",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Fail",
-          "expected_norm": "Fail"
-        },
-        "6g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Fail",
-          "expected_norm": "Fail"
-        },
-        "2.4g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Fail",
-          "expected_norm": "Fail"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Connect WiFi Station to GW. 2. Verify Associated Station EncryptionMode: WiFi.AccessPoint.1.AssociatedDevice.1.ProbeReqCaps.EncryptionMode=\"Default\" WiFi.AccessPoint.3.AssociatedDevice.1.ProbeReqCaps.EncryptionMode=\"Default\" WiFi.Acce...",
-      "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} auth: WPA3-SAE-PSK crypto: AES_CCM",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D019-encryptionmode-accesspoint-associateddevice.json"
-    },
     {
       "case_id": "wifi-llapi-D020-frequencycapabilities",
       "case_file": "D020_frequencycapabilities.yaml",

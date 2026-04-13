@@ -86,6 +86,12 @@
   - `_env_command_succeeded()` no longer treats valid getter payload `error=4 / message=parameter not found` as a shell failure, while direct `AssociatedDevice.*.MACAddress?` probes still require a concrete MAC
   - `hostapd_cli` is now treated as an executable token, so hostapd-based shell steps no longer silently fall back to `verification_command`
 - Latest aligned cases:
+  - `D019 EncryptionMode / AssociatedDevice` is now aligned via official rerun `20260413T133308180539`
+  - workbook authority is row `19`, not stale row `16` (`DownlinkBandwidth`), and the older `Pass / Pass / Pass` claim is now confirmed to have come from stale row-16 metadata rather than workbook authority
+  - rerun exact-closes the intended fail-shaped security context on 6G: STA `SSID=TestPilot_BTM`, `pairwise_cipher=CCMP`, `key_mgmt=SAE`; DUT `AssocMAC=2C:59:17:00:04:86`; getter `EncryptionMode="Default"`
+  - the landed case now projects workbook-consistent `Fail / Fail / Fail`, stale alias metadata is removed, final full repo regression remains `1659 passed`, overlay compare is `290 / 420 full matches` / `130 mismatches` / `58 metadata drifts`, `D020` remains the verified fail-shaped mismatch, and the next ready actionable compare-open case is `D030 MuGroupID`
+  - `D014 ChargeableUserId` is now aligned via official rerun `20260413T132144592128`
+  - `D057 TxUnicastPacketCount` is now aligned via official rerun `20260413T130448459477`
   - `D111-D113 getStationStats metadata drift trio` is now aligned via grouped official rerun `20260413T122417812289`
   - `D110 getStationStats.Active` is now aligned via official rerun `20260413T121358780961`
   - `D109 getStationStats.AccessPoint` is now aligned via official rerun `20260413T115620062809`
@@ -656,8 +662,8 @@ If any item above is not satisfied, the case stays open or moves to blocker trac
   - the third verified 5G subset is currently aligned only for `D021`, `D022`
   - offline survey confirms `0401.xlsx` row drift for `D024` / `D025` / `D026` (`24` / `25` / `26` in workbook vs `21` / `22` / `23` in current YAML metadata), so these three remain pending the next live rewrite instead of being counted as aligned
   - regression guards were added for these patterns in `tests/test_wifi_llapi_plugin_runtime.py`
-  - `D019` workbook `v4.0.3` expectation is confirmed as `Pass/Pass/Pass`; the older YAML `To be tested` reference was stale
-  - `D014` remains blocker-only because workbook `v4.0.3` is still `To be tested` and the current lab has no Radius-backed path to validate `ChargeableUserId`
+  - `D019` is now fully aligned as workbook row `19` fail-shaped closure; the older `Pass/Pass/Pass` claim came from stale row `16` metadata and stale `results_reference`
+  - `D014` is now fully aligned as workbook row `14` skip-shaped closure; the older blocker-only note was superseded once the RADIUS gating was reconciled against current source/runtime evidence
   - `D013` and `D020` now preserve explicit fail-shaped contracts after live + source cross-check; `D023` is now live-aligned as a row-23 three-band pass case
 
 ## Pause / resume handoff（2026-04-02）

@@ -62,6 +62,7 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T122417812289`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T130448459477`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T132144592128`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T133308180539`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -72,8 +73,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 289 |
-| mismatch cases | 131 |
+| full matches | 290 |
+| mismatch cases | 130 |
 | missing answer rows | 0 |
 | metadata drift rows | 58 |
 
@@ -81,15 +82,14 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 294 | 126 |
-| 6g | 292 | 128 |
-| 2.4g | 293 | 127 |
+| 5g | 295 | 125 |
+| 6g | 293 | 127 |
+| 2.4g | 294 | 126 |
 
 ## Mismatch table
 
 | case_id | D-row | mapping | actual raw (5/6/2.4) | expected raw (R/S/T) | actual norm | expected norm | mismatch bands |
 | --- | ---: | --- | --- | --- | --- | --- | --- |
-| `wifi-llapi-D019-encryptionmode-accesspoint-associateddevice` | 19 | exact | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
 | `wifi-llapi-D020-frequencycapabilities` | 20 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D030-mugroupid` | 30 | exact | Pass / Pass / Pass | Not Supported / Not Supported / Not Supported | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
 | `wifi-llapi-D032-mumimotxpktspercentage` | 32 | exact | Pass / Pass / Pass | Not Supported / Not Supported / Not Supported | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
@@ -222,25 +222,6 @@
 | `d600-wifi7starole-nstrsupport` | 600 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 
 ## Mismatch details
-
-### wifi-llapi-D019-encryptionmode-accesspoint-associateddevice
-
-- case file: `D019_encryptionmode_accesspoint_associateddevice.yaml`
-- answer row: `19`
-- mapping status: `exact`
-- source metadata: `WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` / `EncryptionMode`
-- workbook metadata: `WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` / `EncryptionMode`
-- final status: `Pass`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Pass` / `Pass` / `Pass`
-- expected raw: `Fail` / `Fail` / `Fail`
-- actual normalized: `Pass` / `Pass` / `Pass`
-- expected normalized: `Fail` / `Fail` / `Fail`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Connect WiFi Station to GW. 2. Verify Associated Station EncryptionMode: WiFi.AccessPoint.1.AssociatedDevice.1.ProbeReqCaps.EncryptionMode="Default" WiFi.AccessPoint.3.AssociatedDevice.1.ProbeReqCaps.EncryptionMode="Default" WiFi.Acce...
-- 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} auth: WPA3-SAE-PSK crypto: AES_CCM
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D019-encryptionmode-accesspoint-associateddevice.json`
 
 ### wifi-llapi-D020-frequencycapabilities
 

@@ -2749,10 +2749,12 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
             encoding="utf-8"
         )
     )
-    assert d019["source"]["row"] == 16
-    assert d019["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d019["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d019["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+    assert d019["source"]["row"] == 19
+    assert "aliases" not in d019
+    assert d019["results_reference"]["v4.0.3"]["5g"] == "Fail"
+    assert d019["results_reference"]["v4.0.3"]["6g"] == "Fail"
+    assert d019["results_reference"]["v4.0.3"]["2.4g"] == "Fail"
+    assert case_band_results(d019, True) == ("Fail", "Fail", "Fail")
     assert "EncryptionMode?" in d019["hlapi_command"]
     assert "EncryptionMode=AES" not in d019["hlapi_command"]
     assert any(

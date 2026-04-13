@@ -1,5 +1,59 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-55)
+
+> This checkpoint records the `D019 EncryptionMode / AssociatedDevice` workbook-authoritative fail-shaped closure after the `D014` skip-shaped closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D019 EncryptionMode / AssociatedDevice` is now aligned via official rerun `20260413T133308180539`
+- workbook authority is row `19`, not stale row `16` (`DownlinkBandwidth`), and stale `wifi-llapi-r016-*` alias metadata is now removed
+- the rerun exact-closes the intended 6G security context with STA `SSID=TestPilot_BTM`, `pairwise_cipher=CCMP`, `key_mgmt=SAE`, DUT `AssocMAC=2C:59:17:00:04:86`, and getter `EncryptionMode="Default"`
+- this is an authoritative fail-shaped closure: rerun `evaluation_verdict=Pass`, final raw `Fail / Fail / Fail`, and compare now exact-matches workbook row `19`
+- overlay compare is now `290 / 420 full matches`、`130 mismatches`、`58 metadata drifts`
+- targeted D019 contract guardrail is `1 passed`, final full repo regression remains `1659 passed`
+- `D020` remains the verified fail-shaped mismatch, and the next ready actionable compare-open case is `D030 MuGroupID`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D019` | 19 | `EncryptionMode` | `Fail / Fail / Fail` | `20260413T133308180539_DUT.log L339-L354` | `20260413T133308180539_STA.log L79-L102` |
+
+#### D019 EncryptionMode / AssociatedDevice
+
+**STA 指令**
+
+```sh
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl1 assoclist | sed -n 's/^assoclist \([0-9A-Fa-f:]*\).*/AssocMAC=\1/p'
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.EncryptionMode?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+STA (20260413T133308180539_STA.log L79-L102)
+Connected to 2c:59:17:00:19:96 (on wl1)
+	SSID: TestPilot_BTM
+pairwise_cipher=CCMP
+key_mgmt=SAE
+wpa_state=COMPLETED
+
+DUT (20260413T133308180539_DUT.log L339-L354)
+assoclist 2C:59:17:00:04:86
+WiFi.AccessPoint.3.AssociatedDevice.1.EncryptionMode="Default"
+```
+
 ## Checkpoint summary (2026-04-13 early-54)
 
 > This checkpoint records the `D014 ChargeableUserId` workbook-gated skip closure after the `D057` fail-shaped closure.
