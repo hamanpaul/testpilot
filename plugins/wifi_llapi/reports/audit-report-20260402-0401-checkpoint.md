@@ -1,5 +1,95 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-39)
+
+> This checkpoint records the `D086` MFPConfig / AccessPoint.Security workbook row-86 closure after `D085`.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D086 MFPConfig / AccessPoint.Security` is now aligned via official rerun `20260413T083419287730`
+- workbook row `86` itself is explicitly `Not Supported / Not Supported / Not Supported` with comment `hardcode in pwhm`; the stale authored case was still pinned to old row `80` and raw `Pass / Pass / Pass`
+- active 0403 ODL still declares `MFPConfig = "Disabled"` and scopes it to WPA2 applicability, while the live rerun re-proved the same stable default-biased getter shape on all three bands: northbound stays `Disabled`, but hostapd enforcement still follows live mode (`ieee80211w=0` on WPA2 5G / 2.4G, `ieee80211w=2` on WPA3 6G)
+- refreshing `D086` to workbook row `86` and raw `Not Supported / Not Supported / Not Supported` removed the mismatch without changing the runtime probe shape
+- targeted D086 tests remain `3 passed`, and full repo regression remains `1653 passed`
+- overlay compare is now `275 / 420 full matches`、`145 mismatches`、`58 metadata drifts`
+- next ready actionable open case is `D087 ModeEnabled / AccessPoint.Security`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D086` | 86 | `MFPConfig` | `Not Supported / Not Supported / Not Supported` | `20260413T083419287730_DUT.log L40-L200` | `n/a (AP-only)` |
+
+#### D086 MFPConfig / AccessPoint.Security
+
+**STA 指令**
+
+```sh
+# AP-only case; no STA transport
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
+ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+ubus-cli "WiFi.AccessPoint.1.Security.MFPConfig?"
+grep -m1 '^wpa_key_mgmt=' /tmp/wl0_hapd.conf
+grep -m1 '^ieee80211w=' /tmp/wl0_hapd.conf
+
+ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"
+ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Disabled
+ubus-cli "WiFi.AccessPoint.3.Security.MFPConfig?"
+grep -m1 '^wpa_key_mgmt=' /tmp/wl1_hapd.conf
+grep -m1 '^ieee80211w=' /tmp/wl1_hapd.conf
+
+ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"
+ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled
+ubus-cli "WiFi.AccessPoint.5.Security.MFPConfig?"
+grep -m1 '^wpa_key_mgmt=' /tmp/wl2_hapd.conf
+grep -m1 '^ieee80211w=' /tmp/wl2_hapd.conf
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260413T083419287730_DUT.log L40-L87
+ModeEnabled5g=WPA2-Personal
+RequestedMfpConfig5g=Disabled
+GetterMfpConfig5g=Disabled
+HostapdKeyMgmt5g=WPA-PSK
+HostapdMfpConfig5g=Disabled
+HostapdMfpRaw5g=0
+
+20260413T083419287730_DUT.log L96-L144
+ModeEnabled6g=WPA3-Personal
+RequestedMfpConfig6g=Disabled
+GetterMfpConfig6g=Disabled
+HostapdKeyMgmt6g=SAE
+HostapdMfpConfig6g=Required
+HostapdMfpRaw6g=2
+
+20260413T083419287730_DUT.log L153-L200
+ModeEnabled24g=WPA2-Personal
+RequestedMfpConfig24g=Disabled
+GetterMfpConfig24g=Disabled
+HostapdKeyMgmt24g=WPA-PSK
+HostapdMfpConfig24g=Disabled
+HostapdMfpRaw24g=0
+
+plugins/wifi_llapi/reports/agent_trace/20260413T083419287730/wifi-llapi-D086-mfpconfig-accesspoint-security.json L107-L128
+outputs:
+  GetterMfpConfig5g=Disabled
+  HostapdMfpConfig5g=Disabled
+  GetterMfpConfig6g=Disabled
+  HostapdMfpConfig6g=Required
+  GetterMfpConfig24g=Disabled
+  HostapdMfpConfig24g=Disabled
+```
+
 ## Checkpoint summary (2026-04-13 early-38)
 
 > This checkpoint records the `D085` KeyPassPhrase / AccessPoint.Security workbook row-85 closure after `D084`.

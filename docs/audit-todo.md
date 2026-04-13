@@ -175,19 +175,22 @@
   - `D085 KeyPassPhrase / AccessPoint.Security` is now aligned via official rerun `20260413T082022613657`
   - authoritative full-run evidence had already shown the quoted leading-zero setter/readback path itself was healthy; the real stale defect was the extra 6G `sae_password=` side-channel gate plus stale row `79`, neither of which belongs to workbook row `85`
   - refreshing `D085` to workbook row `85` and dropping the stale 6G SAE gate let the rerun exact-close tri-band `00000000 -> 0689388783 -> 00000000` with `getter == hostapd wpa_passphrase`
-  - next ready actionable open case is now `D086 MFPConfig / AccessPoint.Security`; `D020` remains in the verified fail-shaped bucket, `D035` / `D053` remain blocked, and `D328` / `D336` remain env-only
+  - `D086 MFPConfig / AccessPoint.Security` is now aligned via official rerun `20260413T083419287730`
+  - workbook row `86` itself is explicitly `Not Supported / Not Supported / Not Supported` with comment `hardcode in pwhm`; the stale defect was old row `80` plus raw `Pass / Pass / Pass`
+  - active 0403 ODL still keeps `MFPConfig = "Disabled"` and scopes it to WPA2 applicability, while the live probe continues to show a default-biased getter (`Disabled` on all bands) against hostapd enforcement that follows live mode (`ieee80211w=0/2/0`)
+  - next ready actionable open case is now `D087 ModeEnabled / AccessPoint.Security`; `D020` remains in the verified fail-shaped bucket, `D035` / `D053` remain blocked, and `D328` / `D336` remain env-only
 - Current authoritative full-run source remains `20260412T113008433351`
 - Latest recomputed overlay compare on top of authoritative full run `20260412T113008433351`
-  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 / D028 / D065 / D081 / D094 / D095 / D098 / D099 / D114 / D115 / D174 / D176 / D188 / D034 / D059 / D060 / D062 / D063 / D070 / D071 / D079 / D080 / D082 / D083 / D084 / D085 reruns:
-  - `274 / 420 full matches`
-  - `146 mismatches`
+  plus D024 / D025 / D022 / D072 / D047 / D050 / D088 / D460 / D494 / D461 / D462 / D463 / D465 / D467 / D045 / D046 / D061 / D028 / D065 / D081 / D094 / D095 / D098 / D099 / D114 / D115 / D174 / D176 / D188 / D034 / D059 / D060 / D062 / D063 / D070 / D071 / D079 / D080 / D082 / D083 / D084 / D085 / D086 reruns:
+  - `275 / 420 full matches`
+  - `145 mismatches`
   - `58 metadata drifts`
 - Current focused step-command-failed workstream status:
   - closed in this loop: `D072`、`D047`、`D050`、`D088`、`D460`、`D494`、`D079`
   - remaining open set: `none`
   - env-only bucket remains `D328`、`D336`
   - blocked bucket is now `D053` (`needs deterministic AP-to-STA unicast payload`) plus `D035` (`tri-band rewrite blocked by shared 6G OCV / ATTACH recovery loop`)
-- Next ready workbook-Pass / metadata revisit: `D085`
+- Next ready workbook-Pass / metadata revisit: `D087`
 
 ## Latest repo handoff snapshot（2026-04-11）
 

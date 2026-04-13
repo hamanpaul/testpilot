@@ -43,7 +43,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T075200621380",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T080405422245",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T081301178883",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T082022613657"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T082022613657",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T083419287730"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -51,20 +52,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 274,
-  "mismatch_case_count": 146,
+  "full_match_count": 275,
+  "mismatch_case_count": 145,
   "band_summary": {
     "5g": {
-      "matched": 280,
-      "mismatched": 140
+      "matched": 281,
+      "mismatched": 139
     },
     "6g": {
-      "matched": 282,
-      "mismatched": 138
+      "matched": 283,
+      "mismatched": 137
     },
     "2.4g": {
-      "matched": 279,
-      "mismatched": 141
+      "matched": 280,
+      "mismatched": 140
     }
   },
   "cases": [
@@ -3471,7 +3472,7 @@
       "case_id": "wifi-llapi-D086-mfpconfig-accesspoint-security",
       "case_file": "D086_mfpconfig_accesspoint_security.yaml",
       "dnum": 86,
-      "source_row": 80,
+      "source_row": 86,
       "source_object": "WiFi.AccessPoint.{i}.Security",
       "source_api": "MFPConfig",
       "answer_row": 86,
@@ -3486,33 +3487,29 @@
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
+          "actual_raw": "Not Supported",
+          "actual_norm": "Fail",
           "expected_raw": "Not Supported",
           "expected_norm": "Fail"
         },
         "6g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
+          "actual_raw": "Not Supported",
+          "actual_norm": "Fail",
           "expected_raw": "Not Supported",
           "expected_norm": "Fail"
         },
         "2.4g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
+          "actual_raw": "Not Supported",
+          "actual_norm": "Fail",
           "expected_raw": "Not Supported",
           "expected_norm": "Fail"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep Security.MFPConfig WiFi.AccessPoint.1.Security.MFPConfig=\"Disabled\" WiFi.AccessPoint.3.Security.MFPConfig=\"Disabled\" WiFi.AccessPoint.5.Security.MFPConfig=\"Disabled\"",
       "workbook_command_output_excerpt": "cat /tmp/wl0_hapd.conf |grep ieee80211w root@prplOS:/# cat /tmp/wl0_hapd.conf |grep ieee80211w ieee80211w=2 root@prplOS:/# cat /tmp/wl1_hapd.conf |grep ieee80211w ieee80211w=2 root@prplOS:/# cat /tmp/wl2_hapd.conf |grep ieee80211w ieee80...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D086-mfpconfig-accesspoint-security.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T083419287730/wifi-llapi-D086-mfpconfig-accesspoint-security.json"
     },
     {
       "case_id": "wifi-llapi-D087-modeenabled-accesspoint-security",
@@ -19255,53 +19252,6 @@
       "workbook_test_steps_excerpt": "##Connect WiFi Station and send traffic then check TxUnicastPacketCount WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.3.AssociatedDevice.1.TxUnicastPacketCount=0 WiFi.AccessPoint.5.AssociatedDevice.1.TxUni...",
       "workbook_command_output_excerpt": "wl -i wl0 sta_info ${STA_MAC} TxUnicastPacketCount tx ucast pkts 90",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D057-txunicastpacketcount.json"
-    },
-    {
-      "case_id": "wifi-llapi-D086-mfpconfig-accesspoint-security",
-      "case_file": "D086_mfpconfig_accesspoint_security.yaml",
-      "dnum": 86,
-      "source_row": 80,
-      "source_object": "WiFi.AccessPoint.{i}.Security",
-      "source_api": "MFPConfig",
-      "answer_row": 86,
-      "answer_object": "WiFi.AccessPoint.{i}.Security.",
-      "answer_api": "MFPConfig",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Pass",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Not Supported",
-          "expected_norm": "Fail"
-        },
-        "6g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Not Supported",
-          "expected_norm": "Fail"
-        },
-        "2.4g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Not Supported",
-          "expected_norm": "Fail"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "root@prplOS:/# ubus-cli WiFi.AccessPoint.? | grep Security.MFPConfig WiFi.AccessPoint.1.Security.MFPConfig=\"Disabled\" WiFi.AccessPoint.3.Security.MFPConfig=\"Disabled\" WiFi.AccessPoint.5.Security.MFPConfig=\"Disabled\"",
-      "workbook_command_output_excerpt": "cat /tmp/wl0_hapd.conf |grep ieee80211w root@prplOS:/# cat /tmp/wl0_hapd.conf |grep ieee80211w ieee80211w=2 root@prplOS:/# cat /tmp/wl1_hapd.conf |grep ieee80211w ieee80211w=2 root@prplOS:/# cat /tmp/wl2_hapd.conf |grep ieee80211w ieee80...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/wifi-llapi-D086-mfpconfig-accesspoint-security.json"
     },
     {
       "case_id": "wifi-llapi-D087-modeenabled-accesspoint-security",

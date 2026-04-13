@@ -11665,7 +11665,7 @@ def test_d086_mfpconfig_accesspoint_security_contract():
     assert "aliases" not in d086_raw
     assert d086["id"] == "wifi-llapi-D086-mfpconfig-accesspoint-security"
     assert d086["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d086["source"]["row"] == 80
+    assert d086["source"]["row"] == 86
     assert d086["source"]["baseline"] == "BCM v4.0.3"
     assert d086["hlapi_command"] == "ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled"
     assert d086["llapi_support"] == "Support"
@@ -11688,9 +11688,9 @@ def test_d086_mfpconfig_accesspoint_security_contract():
         and criterion["value"] == "0"
         for criterion in d086["pass_criteria"]
     )
-    assert d086["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d086["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d086["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+    assert d086["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
+    assert d086["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
+    assert d086["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
 
 
 def test_d086_mfpconfig_accesspoint_security_setup_env_uses_only_dut_transport(monkeypatch):
