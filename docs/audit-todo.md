@@ -85,6 +85,15 @@
   - single-line executable setter steps with `capture` are no longer rewritten into synthesized readback queries before execution
   - `_env_command_succeeded()` no longer treats valid getter payload `error=4 / message=parameter not found` as a shell failure, while direct `AssociatedDevice.*.MACAddress?` probes still require a concrete MAC
   - `hostapd_cli` is now treated as an executable token, so hostapd-based shell steps no longer silently fall back to `verification_command`
+- Active blockers:
+  - `D047 SupportedHe160MCS` is now blocked as a workbook/source authority conflict
+  - `compare-0401` reads answer columns `R/S/T`, so workbook row `47` currently expects `Pass / Pass / Not Supported`
+  - the same workbook row still carries legacy `I/J/K = Not Support / Not Support / Not Support` and note `V47` saying pWHM exposes only `RxSupportedHe160MCS` / `TxSupportedHe160MCS`
+  - current 0403 installed ODL matches the live runtime split: `WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` only exposes sibling `Rx/TxSupportedHe160MCS`, while standalone `SupportedHe160MCS` exists under the endpoint model
+  - official rerun `20260412T235952361188` exact-closes the conflict on the current generic 5G baseline: `SupportedHe160MCS? -> error=4 / parameter not found`, but sibling Rx/Tx fields and HE capability lines are present for the same STA
+  - blocker handoff: `plugins/wifi_llapi/reports/D047_block.md`
+  - current YAML remains source/runtime-correct and must not be rewritten to workbook-pass semantics until the workbook authority itself is resolved
+  - next ready actionable compare-open case: `D050 SupportedVhtMCS`
 - Latest aligned cases:
   - `D042 RxUnicastPacketCount` is now aligned via official rerun `20260413T145000666925`
   - workbook authority is row `42`, not stale row `44`; workbook v4.0.3 remains `Not Supported / Not Supported / Not Supported`
@@ -115,7 +124,6 @@
   - `D111-D113 getStationStats metadata drift trio` is now aligned via grouped official rerun `20260413T122417812289`
   - `D110 getStationStats.Active` is now aligned via official rerun `20260413T121358780961`
   - `D109 getStationStats.AccessPoint` is now aligned via official rerun `20260413T115620062809`
-  - `D047 SupportedHe160MCS` is now aligned via official rerun `20260412T235952361188`
   - `D050 SupportedVhtMCS` is now aligned via official rerun `20260413T000249620932`
   - `D088 ModesSupported` is now aligned via official rerun `20260413T003340845889`
   - `D460 HePhyCapabilities` is now aligned via official rerun `20260413T005520941756`

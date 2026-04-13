@@ -1,5 +1,41 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-61)
+
+> This checkpoint records the `D047 SupportedHe160MCS` workbook/source authority-conflict blocker after the `D042` closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D047 SupportedHe160MCS` 目前不能視為已關閉 row，而是 workbook/source authority conflict
+- `compare-0401` 讀的是 workbook answer columns `R/S/T`，所以 row `47` 目前確實期待 `Pass / Pass / Not Supported`
+- 但同一 row 的 legacy `I/J/K` 仍是 `Not Support / Not Support / Not Support`，note `V47` 也明寫 pWHM 只暴露 `RxSupportedHe160MCS` / `TxSupportedHe160MCS`
+- current 0403 installed ODL 與 live runtime 站在同一邊：`WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` 只有 sibling `Rx/TxSupportedHe160MCS`，standalone `SupportedHe160MCS` 則存在於 endpoint model
+- official rerun `20260412T235952361188` exact-close 同一個 generic 5G baseline conflict：`SupportedHe160MCS? -> error=4 / parameter not found`，但 sibling Rx/Tx values 與 HE capability lines 都存在
+- 因此 current YAML 維持 source/runtime-correct，不可硬改成 workbook-pass semantics；blocker handoff 已落在 `plugins/wifi_llapi/reports/D047_block.md`
+- overlay compare 目前仍是 `295 / 420 full matches`、`125 mismatches`、`58 metadata drifts`
+- `D020` 仍保留在 verified fail-shaped mismatch bucket，而 next ready actionable compare-open case 改為 `D050 SupportedVhtMCS`
+
+</details>
+
+**關鍵 evidence**
+
+```text
+Workbook row 47:
+- answer columns R/S/T = Pass / Pass / Not Supported
+- legacy columns I/J/K = Not Support / Not Support / Not Support
+- note V47 says pWHM only defines RxSupportedHe160MCS / TxSupportedHe160MCS
+
+Installed ODL split:
+- wld_accesspoint.odl L1605-L1616 => AssociatedDevice has RxSupportedHe160MCS / TxSupportedHe160MCS only
+- wld_endpoint.odl L371-L377 => standalone SupportedHe160MCS exists under endpoint model
+
+Official rerun 20260412T235952361188:
+- DUT log L84-L109 => SupportedHe160MCS? -> error=4 / parameter not found
+- DUT log L107-L109 => DriverRxSupportedHe160MCS=11,11,11,11 / DriverTxSupportedHe160MCS=11,11,11,11
+- STA log L84-L99 => STA remains connected to SSID testpilot5G
+```
+
 ## Checkpoint summary (2026-04-13 early-60)
 
 > This checkpoint records the `D042 RxUnicastPacketCount` workbook-authoritative not-supported closure after the `D035` pass closure.
