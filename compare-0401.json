@@ -122,28 +122,29 @@
     "plugins/wifi_llapi/reports/agent_trace/20260415T030842726735",
     "plugins/wifi_llapi/reports/agent_trace/20260415T031551881401",
     "plugins/wifi_llapi/reports/agent_trace/20260415T032303445635",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T033619882302"
+    "plugins/wifi_llapi/reports/agent_trace/20260415T033619882302",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T035709687496"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
   "compared_case_count": 420,
   "missing_answer_count": 0,
   "missing_answer_rows": [],
-  "metadata_drift_count": 54,
-  "full_match_count": 351,
-  "mismatch_case_count": 69,
+  "metadata_drift_count": 53,
+  "full_match_count": 352,
+  "mismatch_case_count": 68,
   "band_summary": {
     "5g": {
-      "matched": 353,
-      "mismatched": 67
+      "matched": 354,
+      "mismatched": 66
     },
     "6g": {
-      "matched": 351,
-      "mismatched": 69
+      "matched": 352,
+      "mismatched": 68
     },
     "2.4g": {
-      "matched": 353,
-      "mismatched": 67
+      "matched": 354,
+      "mismatched": 66
     }
   },
   "cases": [
@@ -13806,48 +13807,44 @@
       "case_id": "d429-skip-neighbour-colocatedap",
       "case_file": "D429_colocatedap.yaml",
       "dnum": 429,
-      "source_row": 431,
-      "source_object": "WiFi.AccessPoint.{i}.Neighbour.",
+      "source_row": 429,
+      "source_object": "WiFi.AccessPoint.{i}.Neighbour.{i}.",
       "source_api": "ColocatedAP",
       "answer_row": 429,
       "answer_object": "WiFi.AccessPoint.{i}.Neighbour.{i}.",
       "answer_api": "ColocatedAP",
-      "mapping_status": "drift",
-      "mapping_object_match": false,
+      "mapping_status": "exact",
+      "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
+      "final_status": "Pass",
+      "evaluation_verdict": "Pass",
+      "attempts_used": 1,
+      "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "",
       "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d429-skip-neighbour-colocatedap.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T035709687496/d429-skip-neighbour-colocatedap.json"
     },
     {
       "case_id": "d430-skip-neighbour-information",
@@ -19278,53 +19275,6 @@
       "workbook_test_steps_excerpt": "1. Connect WiFi Station to GW with one station 802.11k Enable and the other one 802.11k Disable. 2. Verify Station station 802.11k Enable Check whether RRM is ON or OFF using: wl sta_info <MAC> | grep -i rrm If 802.11k Enable then you wi...",
       "workbook_command_output_excerpt": "",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d415-assocdev-rrmonchannelmaxduration.json"
-    },
-    {
-      "case_id": "d429-skip-neighbour-colocatedap",
-      "case_file": "D429_colocatedap.yaml",
-      "dnum": 429,
-      "source_row": 431,
-      "source_object": "WiFi.AccessPoint.{i}.Neighbour.",
-      "source_api": "ColocatedAP",
-      "answer_row": 429,
-      "answer_object": "WiFi.AccessPoint.{i}.Neighbour.{i}.",
-      "answer_api": "ColocatedAP",
-      "mapping_status": "drift",
-      "mapping_object_match": false,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "",
-      "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d429-skip-neighbour-colocatedap.json"
     },
     {
       "case_id": "d430-skip-neighbour-information",
