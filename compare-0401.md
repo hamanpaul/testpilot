@@ -124,6 +124,7 @@
   - `plugins/wifi_llapi/reports/agent_trace/20260415T030842726735`
   - `plugins/wifi_llapi/reports/agent_trace/20260415T031551881401`
   - `plugins/wifi_llapi/reports/agent_trace/20260415T032303445635`
+  - `plugins/wifi_llapi/reports/agent_trace/20260415T033619882302`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -134,18 +135,18 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 350 |
-| mismatch cases | 70 |
+| full matches | 351 |
+| mismatch cases | 69 |
 | missing answer rows | 0 |
-| metadata drift rows | 55 |
+| metadata drift rows | 54 |
 
 ## Per-band summary
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 352 | 68 |
-| 6g | 350 | 70 |
-| 2.4g | 352 | 68 |
+| 5g | 353 | 67 |
+| 6g | 351 | 69 |
+| 2.4g | 353 | 67 |
 
 ## Mismatch table
 
@@ -168,7 +169,6 @@
 | `d371-assocdev-disassociationtime` | 371 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d414-assocdev-rrmoffchannelmaxduration` | 414 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d415-assocdev-rrmonchannelmaxduration` | 415 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d427-skip-neighbour-bssid` | 427 | drift | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d429-skip-neighbour-colocatedap` | 429 | drift | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d430-skip-neighbour-information` | 430 | drift | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d431-skip-neighbour-nasidentifier` | 431 | drift | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -552,26 +552,6 @@
 - 0401 G excerpt: 1. Connect WiFi Station to GW with one station 802.11k Enable and the other one 802.11k Disable. 2. Verify Station station 802.11k Enable Check whether RRM is ON or OFF using: wl sta_info <MAC> | grep -i rrm If 802.11k Enable then you wi...
 - 0401 H excerpt: (empty)
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d415-assocdev-rrmonchannelmaxduration.json`
-
-### d427-skip-neighbour-bssid
-
-- case file: `D427_bssid_accesspoint_neighbour.yaml`
-- answer row: `427`
-- mapping status: `drift`
-- source metadata: `WiFi.AccessPoint.{i}.Neighbour.` / `BSSID`
-- workbook metadata: `WiFi.AccessPoint.{i}.Neighbour.{i}.` / `BSSID`
-- final status: `Fail`
-- evaluation verdict: `Fail`
-- attempts used: `2`
-- runtime comment: pass_criteria not satisfied (failed after 2/2 attempts)
-- actual raw: `Fail` / `N/A` / `N/A`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Reset GW to Default then check Neighbour entry root@prplOS:/# ubus-cli WiFi.AccessPoint.1.? | grep Neighbour root@prplOS:/# 2. Add Neighbour entry root@prplOS:/# ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID="AA:BB:CC:DD:EE :01",C...
-- 0401 H excerpt: (empty)
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d427-skip-neighbour-bssid.json`
 
 ### d429-skip-neighbour-colocatedap
 

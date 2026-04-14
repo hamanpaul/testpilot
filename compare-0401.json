@@ -121,28 +121,29 @@
     "plugins/wifi_llapi/reports/agent_trace/20260415T030233578785",
     "plugins/wifi_llapi/reports/agent_trace/20260415T030842726735",
     "plugins/wifi_llapi/reports/agent_trace/20260415T031551881401",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T032303445635"
+    "plugins/wifi_llapi/reports/agent_trace/20260415T032303445635",
+    "plugins/wifi_llapi/reports/agent_trace/20260415T033619882302"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
   "compared_case_count": 420,
   "missing_answer_count": 0,
   "missing_answer_rows": [],
-  "metadata_drift_count": 55,
-  "full_match_count": 350,
-  "mismatch_case_count": 70,
+  "metadata_drift_count": 54,
+  "full_match_count": 351,
+  "mismatch_case_count": 69,
   "band_summary": {
     "5g": {
-      "matched": 352,
-      "mismatched": 68
+      "matched": 353,
+      "mismatched": 67
     },
     "6g": {
-      "matched": 350,
-      "mismatched": 70
+      "matched": 351,
+      "mismatched": 69
     },
     "2.4g": {
-      "matched": 352,
-      "mismatched": 68
+      "matched": 353,
+      "mismatched": 67
     }
   },
   "cases": [
@@ -13762,48 +13763,44 @@
       "case_id": "d427-skip-neighbour-bssid",
       "case_file": "D427_bssid_accesspoint_neighbour.yaml",
       "dnum": 427,
-      "source_row": 429,
-      "source_object": "WiFi.AccessPoint.{i}.Neighbour.",
+      "source_row": 427,
+      "source_object": "WiFi.AccessPoint.{i}.Neighbour.{i}.",
       "source_api": "BSSID",
       "answer_row": 427,
       "answer_object": "WiFi.AccessPoint.{i}.Neighbour.{i}.",
       "answer_api": "BSSID",
-      "mapping_status": "drift",
-      "mapping_object_match": false,
+      "mapping_status": "exact",
+      "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
+      "final_status": "Pass",
+      "evaluation_verdict": "Pass",
+      "attempts_used": 1,
+      "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Reset GW to Default then check Neighbour entry root@prplOS:/# ubus-cli WiFi.AccessPoint.1.? | grep Neighbour root@prplOS:/# 2. Add Neighbour entry root@prplOS:/# ubus-cli \"WiFi.AccessPoint.1.setNeighbourAP(BSSID=\"AA:BB:CC:DD:EE :01\",C...",
       "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d427-skip-neighbour-bssid.json"
+      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T033619882302/d427-skip-neighbour-bssid.json"
     },
     {
       "case_id": "d429-skip-neighbour-colocatedap",
@@ -19281,53 +19278,6 @@
       "workbook_test_steps_excerpt": "1. Connect WiFi Station to GW with one station 802.11k Enable and the other one 802.11k Disable. 2. Verify Station station 802.11k Enable Check whether RRM is ON or OFF using: wl sta_info <MAC> | grep -i rrm If 802.11k Enable then you wi...",
       "workbook_command_output_excerpt": "",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d415-assocdev-rrmonchannelmaxduration.json"
-    },
-    {
-      "case_id": "d427-skip-neighbour-bssid",
-      "case_file": "D427_bssid_accesspoint_neighbour.yaml",
-      "dnum": 427,
-      "source_row": 429,
-      "source_object": "WiFi.AccessPoint.{i}.Neighbour.",
-      "source_api": "BSSID",
-      "answer_row": 427,
-      "answer_object": "WiFi.AccessPoint.{i}.Neighbour.{i}.",
-      "answer_api": "BSSID",
-      "mapping_status": "drift",
-      "mapping_object_match": false,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Reset GW to Default then check Neighbour entry root@prplOS:/# ubus-cli WiFi.AccessPoint.1.? | grep Neighbour root@prplOS:/# 2. Add Neighbour entry root@prplOS:/# ubus-cli \"WiFi.AccessPoint.1.setNeighbourAP(BSSID=\"AA:BB:CC:DD:EE :01\",C...",
-      "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d427-skip-neighbour-bssid.json"
     },
     {
       "case_id": "d429-skip-neighbour-colocatedap",

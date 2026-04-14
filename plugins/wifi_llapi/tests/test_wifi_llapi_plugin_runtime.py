@@ -11733,6 +11733,46 @@ def test_d083_neighbour_evaluate_live_examples():
     assert plugin.evaluate(d083, d083_wrong_24g_delete) is False
 
 
+def test_d427_neighbour_bssid_contract():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+
+    d427_raw = yaml.safe_load((cases_dir / "D427_bssid_accesspoint_neighbour.yaml").read_text(encoding="utf-8"))
+    d427 = load_case(cases_dir / "D427_bssid_accesspoint_neighbour.yaml")
+    d427_commands = "\n".join(str(step.get("command", "")) for step in d427["steps"])
+
+    assert "aliases" not in d427_raw
+    assert d427["id"] == "d427-skip-neighbour-bssid"
+    assert d427["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d427["source"]["row"] == 427
+    assert d427["source"]["object"] == "WiFi.AccessPoint.{i}.Neighbour.{i}."
+    assert d427["source"]["api"] == "BSSID"
+    assert d427["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.Neighbour.1.BSSID?"'
+    assert d427["llapi_support"] == "Support"
+    assert d427["implemented_by"] == "pWHM"
+    assert d427["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d427["topology"]["devices"]) == {"DUT"}
+    assert d427["topology"]["links"] == []
+    assert "killall wpa_supplicant" not in d427.get("sta_env_setup", "")
+    assert 'setNeighbourAP(BSSID=11:22:33:44:55:77,Channel=1)' in d427_commands
+    assert 'delNeighbourAP(BSSID=11:22:33:44:55:88)' in d427_commands
+    assert "AfterDeleteBssid24g=ABSENT" in d427_commands
+    assert any(
+        criterion["field"] == "neighbour_after_add_6g.AfterAddBssid6g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "11:22:33:44:55:77"
+        for criterion in d427["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "neighbour_after_delete_5g.AfterDeleteBssidCount5g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "0"
+        for criterion in d427["pass_criteria"]
+    )
+    assert d427["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d427["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d427["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+
+
 def test_d084_encryptionmode_accesspoint_security_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
@@ -21090,7 +21130,6 @@ _SKIP_BLOCKED_CASES = [
     ("D355_addclient.yaml", 357, "Skip"),
     ("D356_delclient.yaml", 358, "Skip"),
     ("D357_csistats.yaml", 359, "Skip"),
-    ("D427_bssid_accesspoint_neighbour.yaml", 429, "Skip"),
     ("D429_colocatedap.yaml", 431, "Skip"),
     ("D430_information.yaml", 432, "Skip"),
     ("D431_nasidentifier.yaml", 433, "Skip"),

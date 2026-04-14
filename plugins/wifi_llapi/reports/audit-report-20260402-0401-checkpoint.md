@@ -1,5 +1,72 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-15 early-114)
+
+> This checkpoint records the `D427 AccessPoint.Neighbour.{i}.BSSID` workbook closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D427 AccessPoint.Neighbour.{i}.BSSID` 已完成 closure
+- workbook authority 已刷新為 row `427`
+- 舊 skip placeholder 已改寫回 workbook `WiFi.AccessPoint.{i}.Neighbour.{i}.` / `BSSID`
+- official rerun `20260415T033619882302` exact-close workbook `Pass / Pass / Pass`
+- live evidence 以 AP-only lifecycle exact-close tri-band `empty -> single entry -> empty`
+- current rerun 在 AP1/AP3/AP5 依序 exact-close `11:22:33:44:55:66 / 36`、`11:22:33:44:55:77 / 1`、`11:22:33:44:55:88 / 11`
+- `diagnostic_status=Pass`
+- targeted D427/runtime + neighbour guardrails passed
+- full repo regression=`1666 passed`
+- compare 更新為 `351 / 420 full matches`、`69 mismatches`、`54 metadata drifts`
+- `D371 AccessPoint.AssociatedDevice.DisassociationTime` 仍維持 localized blocker，rewrite 已回退
+- `D355-D357` 仍保留在需要 CSI client setup 的 placeholder bucket
+- `D359 AccessPoint.IsolationEnable` 因 two-station isolation ping 需求而暫停在 current single-STA lab shape
+- systemic active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- `D414/D415` 仍保留為 readiness-review cluster；workbook `G` 已明示需要 dual-STA 802.11k split
+- next ready actionable single-case closure=`D429 AccessPoint.Neighbour.{i}.ColocatedAP`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D427 | 427 | AccessPoint.Neighbour.BSSID | Pass / Pass / Pass | `20260415T033619882302_DUT.log L67-L176; L213-L322; L359-L468; bgw720-0403_wifi_llapi_20260415t033619882302.md L9-L11; L15-L124` | `N/A（AP-only case；20260415T033619882302_STA.log empty）` |
+
+### D427 AccessPoint.Neighbour.{i}.BSSID alignment evidence
+
+**STA 指令**
+
+```sh
+# N/A (AP-only case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
+ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
+ubus-cli "WiFi.AccessPoint.3.setNeighbourAP(BSSID=11:22:33:44:55:77,Channel=1)"
+ubus-cli "WiFi.AccessPoint.3.delNeighbourAP(BSSID=11:22:33:44:55:77)"
+ubus-cli "WiFi.AccessPoint.5.setNeighbourAP(BSSID=11:22:33:44:55:88,Channel=11)"
+ubus-cli "WiFi.AccessPoint.5.delNeighbourAP(BSSID=11:22:33:44:55:88)"
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260415T033619882302
+- bgw720-0403_wifi_llapi_20260415t033619882302.md L9-L11
+  result_5g/result_6g/result_24g = Pass / Pass / Pass with diagnostic_status=Pass
+- bgw720-0403_wifi_llapi_20260415t033619882302.md L15-L124
+  AP-only neighbour lifecycle exact-closes tri-band empty -> single entry -> empty for the workbook BSSID row
+- 20260415T033619882302_DUT.log L67-L176
+  5G AP1 exact-closes baseline empty tree, add/readback 11:22:33:44:55:66 / 36, then delete back to ABSENT
+- 20260415T033619882302_DUT.log L213-L322
+  6G AP3 exact-closes baseline empty tree, add/readback 11:22:33:44:55:77 / 1, then delete back to ABSENT
+- 20260415T033619882302_DUT.log L359-L468
+  2.4G AP5 exact-closes baseline empty tree, add/readback 11:22:33:44:55:88 / 11, then delete back to ABSENT
+```
+
 ## Checkpoint summary (2026-04-15 early-113)
 
 > This checkpoint records the `D397 getRadioStats().ErrorsSent` workbook closure.

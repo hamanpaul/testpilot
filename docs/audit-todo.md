@@ -81,13 +81,13 @@
 
 ## Latest repo handoff snapshot（2026-04-15）
 
-- `D397 getRadioStats().ErrorsSent` is now aligned via official rerun `20260415T032303445635`
-- workbook authority is row `397`, not stale row `292`; the landed closure also refreshes source metadata to workbook `WiFi.Radio.{i}.Stats.` / `ErrorsSent` while keeping tri-band `getRadioStats()` live evidence (`ErrorsSent=2/0/2` on the current rerun) with `diagnostic_status=Pass`
+- `D427 AccessPoint.Neighbour.{i}.BSSID` is now aligned via official rerun `20260415T033619882302`
+- workbook authority is row `427`; the old skip placeholder is now replaced by a workbook-faithful AP-only neighbour lifecycle on `WiFi.AccessPoint.{i}.Neighbour.{i}.`, and the rerun exact-closes `empty -> single entry -> empty` on AP1/AP3/AP5 with `11:22:33:44:55:66 / 36`、`11:22:33:44:55:77 / 1`、`11:22:33:44:55:88 / 11`, all with `diagnostic_status=Pass`
 - `D371 AccessPoint.AssociatedDevice.DisassociationTime` is now parked as a localized blocker after focused survey runs `20260415T014146461381` / `20260415T015629548681` / `20260415T020725267608`; the rewrite was rolled back after 24G `assoclist` residue plus later 5G residue / 6G `step11_6g_post_assoc` serialwrap timeout after driver-level detach
 - systemic active blockers remain `D047` authority conflict plus the shared 6G baseline manifestations in `D179` and `D181`; parked clarification items remain `D204` and `D211`
 - `D359 AccessPoint.IsolationEnable` remains parked: workbook requires two WiFi stations plus isolation ping, but the current lab/testbed flow only exposes the standard single-STA path
-- historical blocker context for the temporary D257 empty-array failure is retained in `plugins/wifi_llapi/reports/D257_block.md`; latest committed aligned case is now `D397 getRadioStats().ErrorsSent`
-- targeted D397/runtime + radio-stats guardrails passed; full repo regression is now `1667 passed`; compare is now `350 / 420 full matches` / `70 mismatches` / `55 metadata drifts`, `D355-D357` remain in the CSI-client placeholder bucket, and the next compare-open cluster now moves to `D414/D415` AssociatedDevice RRM cases, which need a readiness review against the current single-STA lab shape because workbook `G` requires one 802.11k-enabled STA and one disabled STA
+- historical blocker context for the temporary D257 empty-array failure is retained in `plugins/wifi_llapi/reports/D257_block.md`; latest committed aligned case is now `D427 AccessPoint.Neighbour.{i}.BSSID`
+- targeted D427/runtime + neighbour guardrails passed; full repo regression is now `1666 passed`; compare is now `351 / 420 full matches` / `69 mismatches` / `54 metadata drifts`, `D355-D357` remain in the CSI-client placeholder bucket, `D414/D415` stay in readiness review because workbook `G` requires a dual-STA 802.11k split, and the next ready actionable single-case closure now moves to `D429 AccessPoint.Neighbour.{i}.ColocatedAP`
 - `D214 Radio.RIFSEnabled` is now aligned via official rerun `20260414T175434503053`
 - workbook authority is row `214`, not stale row `175`; the rerun exact-closes the tri-band setter-backed `Default -> Auto -> Default` replay, so the landed case now refreshes stale row `175` / raw `Fail / Fail / Fail` to workbook row `214` / raw `Pass / Pass / Pass`
 - targeted radio/runtime guardrails are now `202 passed`; final full repo regression remains `1662 passed`; compare is now `324 / 420 full matches` / `96 mismatches` / `58 metadata drifts`, and the next ready non-blocked compare-open case moves to `D251 Radio.Vendor.RegulatoryDomainRev`
