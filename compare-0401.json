@@ -89,7 +89,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T164038591687",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T165000634858",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T165326740351",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T170152736726"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T170152736726",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T170500384375"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -97,20 +98,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 320,
-  "mismatch_case_count": 100,
+  "full_match_count": 321,
+  "mismatch_case_count": 99,
   "band_summary": {
     "5g": {
-      "matched": 324,
-      "mismatched": 96
+      "matched": 325,
+      "mismatched": 95
     },
     "6g": {
-      "matched": 320,
-      "mismatched": 100
+      "matched": 321,
+      "mismatched": 99
     },
     "2.4g": {
-      "matched": 323,
-      "mismatched": 97
+      "matched": 324,
+      "mismatched": 96
     }
   },
   "cases": [
@@ -7576,7 +7577,7 @@
       "case_id": "d208-radio-ofdmaenable",
       "case_file": "D208_ofdmaenable.yaml",
       "dnum": 208,
-      "source_row": 170,
+      "source_row": 208,
       "source_object": "WiFi.Radio.{i}.",
       "source_api": "OfdmaEnable",
       "answer_row": 208,
@@ -7591,33 +7592,29 @@
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Check OfdmaEnable root@prplOS:/tmp# ubus-cli WiFi.Radio.*.OfdmaEnable? > WiFi.Radio.*.OfdmaEnable? WiFi.Radio.1.OfdmaEnable=1 WiFi.Radio.2.OfdmaEnable=1 WiFi.Radio.3.OfdmaEnable=1 2. Capture Beacon and make sure the following bits map...",
       "workbook_command_output_excerpt": "root@prplOS:~# wl -i wl0 he features 63 (0x3f) root@prplOS:~# wl -i wl1 he features 63 (0x3f) root@prplOS:~# wl -i wl2 he features 63 (0x3f) 63 (decimal) = 0x3f (hex) 0x3f in binary = 0011 1111 That means bits 0–5 are set, and higher bit...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d208-radio-ofdmaenable.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T170500384375/d208-radio-ofdmaenable.json"
     },
     {
       "case_id": "d209-radio-operatingchannelbandwidth",
@@ -18802,53 +18799,6 @@
       "workbook_test_steps_excerpt": "1. Check MIMO enabled or not root@prplOS:/# ubus-cli WiFi.Radio.*.MultiUserMIMOEnabled? > WiFi.Radio.*.MultiUserMIMOEnabled? WiFi.Radio.1.MultiUserMIMOEnabled=1 WiFi.Radio.2.MultiUserMIMOEnabled=1 WiFi.Radio.3.MultiUserMIMOEnabled=1 2. C...",
       "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 mu_features 1 root@prplOS:/# wl -i wl1 mu_features 1 root@prplOS:/# wl -i wl1 mu_features 1",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T165000634858/d204-radio-multiusermimoenabled.json"
-    },
-    {
-      "case_id": "d208-radio-ofdmaenable",
-      "case_file": "D208_ofdmaenable.yaml",
-      "dnum": 208,
-      "source_row": 170,
-      "source_object": "WiFi.Radio.{i}.",
-      "source_api": "OfdmaEnable",
-      "answer_row": 208,
-      "answer_object": "WiFi.Radio.{i}.",
-      "answer_api": "OfdmaEnable",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Check OfdmaEnable root@prplOS:/tmp# ubus-cli WiFi.Radio.*.OfdmaEnable? > WiFi.Radio.*.OfdmaEnable? WiFi.Radio.1.OfdmaEnable=1 WiFi.Radio.2.OfdmaEnable=1 WiFi.Radio.3.OfdmaEnable=1 2. Capture Beacon and make sure the following bits map...",
-      "workbook_command_output_excerpt": "root@prplOS:~# wl -i wl0 he features 63 (0x3f) root@prplOS:~# wl -i wl1 he features 63 (0x3f) root@prplOS:~# wl -i wl2 he features 63 (0x3f) 63 (decimal) = 0x3f (hex) 0x3f in binary = 0011 1111 That means bits 0–5 are set, and higher bit...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d208-radio-ofdmaenable.json"
     },
     {
       "case_id": "d209-radio-operatingchannelbandwidth",

@@ -1,4 +1,4 @@
-**2026-04-14 superseding note：本檔下半部的大盤分析仍保留 2026-04-13 snapshot；最新 strict compare 已刷新為 `320 / 420 full matches`、`100` 筆 mismatch、`58` 筆 metadata drift。** 最新新增完成 `D207 Radio.ObssCoexistenceEnable` official rerun closure（`20260414T170152736726`）：workbook authority 刷新到 row `207`，live rerun exact-close tri-band getter `ObssCoexistenceEnable=0/0/1`，並把 stale raw `Fail / Fail / Fail` 收斂回 workbook-consistent mixed raw `Not Supported / Not Supported / Pass`；targeted getter/runtime guardrails 維持 `202 passed`，final full repo regression 維持 `1662 passed`。`D204 Radio.MultiUserMIMOEnabled` 則維持 parked authority clarification item（`plugins/wifi_llapi/reports/D204_block.md`）。active blockers 仍是 `D047` 與 shared 6G baseline blocker（manifested in `D179`、`D181`）；next ready non-blocked compare-open case 改為 `D208 Radio.OfdmaEnable`。
+**2026-04-14 superseding note：本檔下半部的大盤分析仍保留 2026-04-13 snapshot；最新 strict compare 已刷新為 `321 / 420 full matches`、`99` 筆 mismatch、`58` 筆 metadata drift。** 最新新增完成 `D208 Radio.OfdmaEnable` official rerun closure（`20260414T170500384375`）：workbook authority 刷新到 row `208`，live rerun exact-close tri-band getter `OfdmaEnable=1/1/1`，並把 stale raw `Fail / Fail / Fail` 收斂回 workbook-consistent `Pass / Pass / Pass`；targeted getter/runtime guardrails 維持 `202 passed`，final full repo regression 維持 `1662 passed`。`D204 Radio.MultiUserMIMOEnabled` 則維持 parked authority clarification item（`plugins/wifi_llapi/reports/D204_block.md`）。active blockers 仍是 `D047` 與 shared 6G baseline blocker（manifested in `D179`、`D181`）；next ready non-blocked compare-open case 改為 `D209 Radio.OperatingChannelBandwidth`。
 
 **先講結論：以目前 repo 內 `compare-0401` snapshot 為準，跟 workbook 的差距是 `122` 筆 mismatch、`58` 筆 metadata drift。** 如果只看 workbook `Pass` 目標，分兩種口徑：
 
@@ -241,6 +241,7 @@
 ### 8. 當前 continuation anchor
 
 - latest aligned cases:
+  - `D208 Radio.OfdmaEnable`
   - `D207 Radio.ObssCoexistenceEnable`
   - `D205 Radio.MultiUserMIMOSupported`
   - `D203 Radio.MaxChannelBandwidth`
@@ -271,8 +272,8 @@
   - `D179`
   - `D181`
 - strict compare snapshot：
-  - `320 / 420 full matches`
-  - `100 mismatches`
+  - `321 / 420 full matches`
+  - `99 mismatches`
   - `58 metadata drifts`
 - next ready non-blocked compare-open case：
-  - `D208 Radio.OfdmaEnable`
+  - `D209 Radio.OperatingChannelBandwidth`
