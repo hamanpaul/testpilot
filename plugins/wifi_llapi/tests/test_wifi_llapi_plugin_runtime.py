@@ -11934,6 +11934,46 @@ def test_d432_neighbour_operatingclass_contract():
     assert d432["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
+def test_d433_neighbour_phytype_contract():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+
+    d433_raw = yaml.safe_load((cases_dir / "D433_phytype.yaml").read_text(encoding="utf-8"))
+    d433 = load_case(cases_dir / "D433_phytype.yaml")
+    d433_commands = "\n".join(str(step.get("command", "")) for step in d433["steps"])
+
+    assert "aliases" not in d433_raw
+    assert d433["id"] == "d433-skip-neighbour-phytype"
+    assert d433["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d433["source"]["row"] == 433
+    assert d433["source"]["object"] == "WiFi.AccessPoint.{i}.Neighbour.{i}."
+    assert d433["source"]["api"] == "PhyType"
+    assert d433["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.Neighbour.1.PhyType?"'
+    assert d433["llapi_support"] == "Support"
+    assert d433["implemented_by"] == "pWHM"
+    assert d433["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d433["topology"]["devices"]) == {"DUT"}
+    assert d433["topology"]["links"] == []
+    assert "killall wpa_supplicant" not in d433.get("sta_env_setup", "")
+    assert "grep 'Neighbour.'" in d433_commands
+    assert "AfterAddPhyType5g=%s" in d433_commands
+    assert "AfterDeletePhyType24g=ABSENT" in d433_commands
+    assert any(
+        criterion["field"] == "neighbour_after_add_6g.AfterAddPhyType6g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "0"
+        for criterion in d433["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "neighbour_after_delete_5g.AfterDeletePhyType5g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "ABSENT"
+        for criterion in d433["pass_criteria"]
+    )
+    assert d433["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d433["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d433["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+
+
 def test_d084_encryptionmode_accesspoint_security_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
@@ -21291,7 +21331,6 @@ _SKIP_BLOCKED_CASES = [
     ("D355_addclient.yaml", 357, "Skip"),
     ("D356_delclient.yaml", 358, "Skip"),
     ("D357_csistats.yaml", 359, "Skip"),
-    ("D433_phytype.yaml", 435, "Skip"),
     ("D434_r0khkey.yaml", 436, "Skip"),
     ("D435_ssid_accesspoint_neighbour.yaml", 437, "Skip"),
     ("D575_macaddress_associateddevice_affiliatedsta.yaml", 578, "Skip"),
