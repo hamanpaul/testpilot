@@ -81,11 +81,12 @@
 
 ## Latest repo handoff snapshot（2026-04-14）
 
-- `D354 Radio.Sensing.Enable` is now aligned via official rerun `20260415T001339062028`
-- workbook authority is row `354`, not stale row `152`; the landed rewrite retires the old plain `Radio.Enable` getter and restores the real workbook target `WiFi.Radio.{i}.Sensing.Enable`, with tri-band `default -> set 0 -> readback 0 -> restore 1 -> readback 1` evidence
+- `D363 IEEE80211ax.BssColorPartial` is now aligned via official rerun `20260415T003139523643`
+- workbook authority is row `363`, not stale row `365`; the landed rewrite restores the workbook fail-shaped raw verdict while keeping the live getter evidence `BssColorPartial=0/0/0`
 - active blockers remain `D047` authority conflict plus the shared 6G baseline manifestations in `D179` and `D181`; parked clarification items remain `D204` and `D211`
-- historical blocker context for the temporary D257 empty-array failure is retained in `plugins/wifi_llapi/reports/D257_block.md`; latest committed aligned case is now `D354 Radio.Sensing.Enable`
-- targeted D354/runtime + getter-batch guardrails are now `195 passed`; full repo regression is now `1662 passed`; compare is now `339 / 420 full matches` / `81 mismatches` / `57 metadata drifts`, `D355-D357` remain in the CSI-client placeholder bucket, and the next ready non-blocked compare-open case moves to `D359 AccessPoint.IsolationEnable`
+- `D359 AccessPoint.IsolationEnable` is now parked: workbook requires two WiFi stations plus isolation ping, but the current lab/testbed flow only exposes the standard single-STA path
+- historical blocker context for the temporary D257 empty-array failure is retained in `plugins/wifi_llapi/reports/D257_block.md`; latest committed aligned case is now `D363 IEEE80211ax.BssColorPartial`
+- targeted D363/runtime + getter-batch guardrails are now `192 passed`; full repo regression is now `1662 passed`; compare is now `340 / 420 full matches` / `80 mismatches` / `57 metadata drifts`, `D355-D357` remain in the CSI-client placeholder bucket, and the next ready non-blocked compare-open case moves to `D364 IEEE80211ax.NonSRGOBSSPDMaxOffset`
 - `D214 Radio.RIFSEnabled` is now aligned via official rerun `20260414T175434503053`
 - workbook authority is row `214`, not stale row `175`; the rerun exact-closes the tri-band setter-backed `Default -> Auto -> Default` replay, so the landed case now refreshes stale row `175` / raw `Fail / Fail / Fail` to workbook row `214` / raw `Pass / Pass / Pass`
 - targeted radio/runtime guardrails are now `202 passed`; final full repo regression remains `1662 passed`; compare is now `324 / 420 full matches` / `96 mismatches` / `58 metadata drifts`, and the next ready non-blocked compare-open case moves to `D251 Radio.Vendor.RegulatoryDomainRev`

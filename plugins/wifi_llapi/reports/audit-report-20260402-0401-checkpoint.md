@@ -1,5 +1,64 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-15 early-103)
+
+> This checkpoint records the `D363 IEEE80211ax.BssColorPartial` workbook closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D363 IEEE80211ax.BssColorPartial` 已完成 closure
+- workbook authority 已刷新為 row `363`
+- stale row `365` 已由真實 workbook row `363` 取代
+- official rerun `20260415T003139523643` exact-close tri-band workbook `Fail / Fail / Fail`
+- live evidence 保留 tri-band getter `BssColorPartial=0/0/0`
+- `diagnostic_status=Pass`
+- targeted D363/runtime + getter-batch guardrails=`192 passed`
+- full repo regression=`1662 passed`
+- compare 更新為 `340 / 420 full matches`、`80 mismatches`、`57 metadata drifts`
+- `D355-D357` 仍保留在需要 CSI client setup 的 placeholder bucket
+- `D359 AccessPoint.IsolationEnable` 因 two-station isolation ping 需求而暫停在 current single-STA lab shape
+- active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- next ready non-blocked compare-open case=`D364 IEEE80211ax.NonSRGOBSSPDMaxOffset`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D363 | 363 | IEEE80211ax.BssColorPartial | Fail / Fail / Fail | `20260415T003139523643_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260415t003139523643.md L9-L11; L15-L37` | `N/A（DUT-only case；20260415T003139523643_STA.log empty）` |
+
+### D363 IEEE80211ax.BssColorPartial alignment evidence
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.IEEE80211ax.BssColorPartial?"
+ubus-cli "WiFi.Radio.2.IEEE80211ax.BssColorPartial?"
+ubus-cli "WiFi.Radio.3.IEEE80211ax.BssColorPartial?"
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260415T003139523643
+- bgw720-0403_wifi_llapi_20260415t003139523643.md L9-L11
+  result_5g/result_6g/result_24g = Fail / Fail / Fail with diagnostic_status=Pass
+- bgw720-0403_wifi_llapi_20260415t003139523643.md L15-L37
+  each band returns getter evidence BssColorPartial=0 while preserving workbook fail-shaped raw verdict
+- 20260415T003139523643_DUT.log L5-L18
+  tri-band getter exact-closes WiFi.Radio.{1,2,3}.IEEE80211ax.BssColorPartial=0
+- 20260415T003139523643_STA.log
+  empty as expected for DUT-only closure
+```
+
 ## Checkpoint summary (2026-04-15 early-102)
 
 > This checkpoint records the `D354 Radio.Sensing.Enable` workbook closure.
