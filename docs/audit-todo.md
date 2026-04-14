@@ -81,13 +81,13 @@
 
 ## Latest repo handoff snapshot（2026-04-15）
 
-- `D380 Radio.MultiAPTypesSupported` is now aligned via official rerun `20260415T025452242101`
-- workbook authority is row `380`, not stale row `382`; the landed closure keeps the live tri-band getter evidence `FronthaulBSS,BackhaulBSS,BackhaulSTA` while intentionally projecting workbook `Skip / Skip / Skip` with `diagnostic_status=Pass`
+- `D384 Radio.RadCapabilitiesHTStr` is now aligned via official rerun `20260415T030233578785`
+- workbook authority is row `384`, not stale row `287`; the landed closure keeps the live tri-band getter evidence `CAP_40,SHORT_GI_20,SHORT_GI_40,MODE_40 / "" / CAP_40,SHORT_GI_20,SHORT_GI_40,MODE_40` while intentionally projecting workbook `Pass / Not Supported / Pass` with `diagnostic_status=Pass`
 - `D371 AccessPoint.AssociatedDevice.DisassociationTime` is now parked as a localized blocker after focused survey runs `20260415T014146461381` / `20260415T015629548681` / `20260415T020725267608`; the rewrite was rolled back after 24G `assoclist` residue plus later 5G residue / 6G `step11_6g_post_assoc` serialwrap timeout after driver-level detach
 - systemic active blockers remain `D047` authority conflict plus the shared 6G baseline manifestations in `D179` and `D181`; parked clarification items remain `D204` and `D211`
 - `D359 AccessPoint.IsolationEnable` remains parked: workbook requires two WiFi stations plus isolation ping, but the current lab/testbed flow only exposes the standard single-STA path
-- historical blocker context for the temporary D257 empty-array failure is retained in `plugins/wifi_llapi/reports/D257_block.md`; latest committed aligned case is now `D380 Radio.MultiAPTypesSupported`
-- targeted D380/runtime + radio-getter guardrails passed; full repo regression is now `1663 passed`; compare is now `346 / 420 full matches` / `74 mismatches` / `57 metadata drifts`, `D355-D357` remain in the CSI-client placeholder bucket, and the next ready non-blocked compare-open case moves to `D384 Radio.RadCapabilitiesHTStr`
+- historical blocker context for the temporary D257 empty-array failure is retained in `plugins/wifi_llapi/reports/D257_block.md`; latest committed aligned case is now `D384 Radio.RadCapabilitiesHTStr`
+- targeted D384/runtime + radio-getter guardrails passed; full repo regression is now `1664 passed`; compare is now `347 / 420 full matches` / `73 mismatches` / `57 metadata drifts`, `D355-D357` remain in the CSI-client placeholder bucket, and the next ready non-blocked compare-open case moves to `D385 Radio.RadCapabilitiesVHTStr`
 - `D214 Radio.RIFSEnabled` is now aligned via official rerun `20260414T175434503053`
 - workbook authority is row `214`, not stale row `175`; the rerun exact-closes the tri-band setter-backed `Default -> Auto -> Default` replay, so the landed case now refreshes stale row `175` / raw `Fail / Fail / Fail` to workbook row `214` / raw `Pass / Pass / Pass`
 - targeted radio/runtime guardrails are now `202 passed`; final full repo regression remains `1662 passed`; compare is now `324 / 420 full matches` / `96 mismatches` / `58 metadata drifts`, and the next ready non-blocked compare-open case moves to `D251 Radio.Vendor.RegulatoryDomainRev`
