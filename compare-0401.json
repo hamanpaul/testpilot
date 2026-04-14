@@ -107,44 +107,45 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T215500799545",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T222507260531",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T231646005774",
-    "plugins/wifi_llapi/reports/agent_trace/20260414T234216396870",
-    "plugins/wifi_llapi/reports/agent_trace/20260414T235120551775",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T001339062028",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T003139523643",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T004006392874",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T004735420726",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T010122540134",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T011605260076",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T023436252245",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T024522159981",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T025452242101",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T030233578785",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T030842726735",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T031551881401",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T032303445635",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T033619882302",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T035709687496"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T234216396870",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T235120551775",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T001339062028",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T003139523643",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T004006392874",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T004735420726",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T010122540134",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T011605260076",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T023436252245",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T024522159981",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T025452242101",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T030233578785",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T030842726735",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T031551881401",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T032303445635",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T033619882302",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T035709687496",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T041252016188"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
   "compared_case_count": 420,
   "missing_answer_count": 0,
   "missing_answer_rows": [],
-  "metadata_drift_count": 53,
-  "full_match_count": 352,
-  "mismatch_case_count": 68,
+  "metadata_drift_count": 52,
+  "full_match_count": 353,
+  "mismatch_case_count": 67,
   "band_summary": {
     "5g": {
-      "matched": 354,
-      "mismatched": 66
+      "matched": 355,
+      "mismatched": 65
     },
     "6g": {
-      "matched": 352,
-      "mismatched": 68
+      "matched": 353,
+      "mismatched": 67
     },
     "2.4g": {
-      "matched": 354,
-      "mismatched": 66
+      "matched": 355,
+      "mismatched": 65
     }
   },
   "cases": [
@@ -9856,7 +9857,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Try call API function: root@prplOS:/# ubus-cli \"WiFi.Radio.1.startACS()\" > WiFi.Radio.1.startACS() ERROR: call (null) failed with status 1 - unknown error WiFi.Radio.1.startACS() returned [ \"\" ] root@prplOS:/# ubus-cli \"WiFi.Radio.2.s...",
       "workbook_command_output_excerpt": "logread | grep ACS iw dev wl0 info iw dev wl1 info iw dev wl2 info",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260414T234216396870/d296-startacs.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T234216396870/d296-startacs.json"
     },
     {
       "case_id": "d297-startautochannelselection",
@@ -9899,7 +9900,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Try call API function: root@prplOS:/# ubus-cli \"WiFi.Radio.*.startAutoChannelSelection()\" > WiFi.Radio.*.startAutoChannelSelectio() ERROR: call (null) failed with status 3 - function not found WiFi.Radio.1.startAutoChannelSelectio() r...",
       "workbook_command_output_excerpt": "iw dev wl0 info iw dev wl1 info iw dev wl2 info",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260414T235120551775/d297-startautochannelselection.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T235120551775/d297-startautochannelselection.json"
     },
     {
       "case_id": "d298-startscan",
@@ -11709,7 +11710,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Check API default value: root@prplOS:/# ubus-cli WiFi.Radio.*.Sensing.Enable? > WiFi.Radio.*.Sensing.Enable? WiFi.Radio.1.Sensing.Enable=1 WiFi.Radio.2.Sensing.Enable=1 WiFi.Radio.3.Sensing.Enable=1 2. Modify the value to 0: ubus-cli ...",
       "workbook_command_output_excerpt": "",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T001339062028/d354-radio-enable.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T001339062028/d354-radio-enable.json"
     },
     {
       "case_id": "d355-skip-addclient",
@@ -11983,7 +11984,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "",
       "workbook_command_output_excerpt": "",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T003139523643/d363-ieee80211ax-bsscolorpartial.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T003139523643/d363-ieee80211ax-bsscolorpartial.json"
     },
     {
       "case_id": "d364-ieee80211ax-nonsrgobsspdmaxoffset",
@@ -12026,7 +12027,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "",
       "workbook_command_output_excerpt": "wl -i wl0 he nsrg_pdmax",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T004006392874/d364-ieee80211ax-nonsrgobsspdmaxoffset.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T004006392874/d364-ieee80211ax-nonsrgobsspdmaxoffset.json"
     },
     {
       "case_id": "d365-radio-psrdisallowed",
@@ -12155,7 +12156,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "",
       "workbook_command_output_excerpt": "wl -i wl0 he srg_pdmax",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T004735420726/d367-ieee80211ax-srgobsspdmaxoffset.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T004735420726/d367-ieee80211ax-srgobsspdmaxoffset.json"
     },
     {
       "case_id": "d368-ieee80211ax-srgobsspdminoffset",
@@ -12284,7 +12285,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Connect WiFi station to GW 2. Check Associated Device Status root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep -E 'Activ e|MAC' WiFi.AccessPoint.1.AssociatedDevice.11.Active=1 WiFi.AccessPoint.1.AssociatedDevice.1...",
       "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 assoclist assoclist 34:19:4D:A4:B5:09 assoclist 12:E3:C4:78:7B:6F assoclist 42:B7:35:6A:17:8E root@prplOS:/# wl -i wl1 assoclist assoclist 38:06:E6:92:B0:4A root@prplOS:/# wl -i wl2 assoclist assoclist E4:60:17:E...",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T011605260076/d370-assocdev-active.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T011605260076/d370-assocdev-active.json"
     },
     {
       "case_id": "d371-assocdev-disassociationtime",
@@ -12417,7 +12418,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Read-only API, defines max bitrate for each radio: ubus-cli WiFi.Radio.*.MaxBitRate? > WiFi.Radio.*.MaxBitRate? WiFi.Radio.1.MaxBitRate=0 WiFi.Radio.2.MaxBitRate=0 WiFi.Radio.3.MaxBitRate=0",
       "workbook_command_output_excerpt": "",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T023436252245/d377-radio-maxbitrate.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T023436252245/d377-radio-maxbitrate.json"
     },
     {
       "case_id": "d378-radio-maxsupportedssids",
@@ -12503,7 +12504,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Verify MCS of the Radio root@prplOS:/# ubus-cli WiFi.Radio.*.MCS? > WiFi.Radio.*.MCS? WiFi.Radio.1.MCS=0 WiFi.Radio.2.MCS=0 WiFi.Radio.3.MCS=0",
       "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 status SSID: \"5G-123\" Mode: Managed RSSI: 0 dBm SNR: 0 dB noise: -92 dBm Channel: 48/160 BSSID: 64:75:DA:4E:51:75 Capability: ESS RRM Beacon Interval: 100 msecs Supported Rates: [ 6(b) 9 12 18 24(b) 36 48 54 ] Ex...",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T024522159981/d379-radio-mcs.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T024522159981/d379-radio-mcs.json"
     },
     {
       "case_id": "d380-radio-multiaptypessupported",
@@ -12546,7 +12547,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Get MultiAP type Supported mode root@prplOS:/# ubus-cli WiFi.Radio.*.MultiAPTypesSupported? > WiFi.Radio.*.MultiAPTypesSupported? WiFi.Radio.1.MultiAPTypesSupported=\"FronthaulBSS,BackhaulBSS,BackhaulSTA\" WiFi.Radio.2.MultiAPTypesSuppo...",
       "workbook_command_output_excerpt": "",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T025452242101/d380-radio-multiaptypessupported.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T025452242101/d380-radio-multiaptypessupported.json"
     },
     {
       "case_id": "d381-radio-noise",
@@ -12718,7 +12719,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. get RadCapabilitiesHTStr root@prplOS:/# ubus-cli WiFi.Radio.*.RadCapabilitiesHTStr? > WiFi.Radio.*.RadCapabilitiesHTStr? WiFi.Radio.1.RadCapabilitiesHTStr=\"CAP_40,SHORT_GI_20,SHORT_GI_40,MODE_40\" WiFi.Radio.2.RadCapabilitiesHTStr=\"\" W...",
       "workbook_command_output_excerpt": "",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T030233578785/d384-radio-radcapabilitieshtstr.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T030233578785/d384-radio-radcapabilitieshtstr.json"
     },
     {
       "case_id": "d385-radio-radcapabilitiesvhtstr",
@@ -12761,7 +12762,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. get RadCapabilitiesVHTStr root@prplOS:/# ubus-cli WiFi.Radio.*.RadCapabilitiesVHTStr? > WiFi.Radio.*.RadCapabilitiesVHTStr? WiFi.Radio.1.RadCapabilitiesVHTStr=\"RX_LDPC,SGI_80,SGI_160,SU_BFR,SU_BFE,LINK_ADAPT_CAP\" WiFi.Radio.2.RadCapab...",
       "workbook_command_output_excerpt": "",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T030842726735/d385-radio-radcapabilitiesvhtstr.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T030842726735/d385-radio-radcapabilitiesvhtstr.json"
     },
     {
       "case_id": "d394-getradiostats-bytesreceived",
@@ -12890,7 +12891,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "",
       "workbook_command_output_excerpt": "cat /proc/net/dev |grep wl0",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T031551881401/d396-getradiostats-errorsreceived.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T031551881401/d396-getradiostats-errorsreceived.json"
     },
     {
       "case_id": "d397-getradiostats-errorssent",
@@ -12933,7 +12934,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "",
       "workbook_command_output_excerpt": "cat /proc/net/dev |grep wl0",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T032303445635/d397-getradiostats-errorssent.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T032303445635/d397-getradiostats-errorssent.json"
     },
     {
       "case_id": "d398-radiostats-failedretranscount",
@@ -13801,7 +13802,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Reset GW to Default then check Neighbour entry root@prplOS:/# ubus-cli WiFi.AccessPoint.1.? | grep Neighbour root@prplOS:/# 2. Add Neighbour entry root@prplOS:/# ubus-cli \"WiFi.AccessPoint.1.setNeighbourAP(BSSID=\"AA:BB:CC:DD:EE :01\",C...",
       "workbook_command_output_excerpt": "",
-      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T033619882302/d427-skip-neighbour-bssid.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T033619882302/d427-skip-neighbour-bssid.json"
     },
     {
       "case_id": "d429-skip-neighbour-colocatedap",
@@ -13850,48 +13851,44 @@
       "case_id": "d430-skip-neighbour-information",
       "case_file": "D430_information.yaml",
       "dnum": 430,
-      "source_row": 432,
-      "source_object": "WiFi.AccessPoint.{i}.Neighbour.",
+      "source_row": 430,
+      "source_object": "WiFi.AccessPoint.{i}.Neighbour.{i}.",
       "source_api": "Information",
       "answer_row": 430,
       "answer_object": "WiFi.AccessPoint.{i}.Neighbour.{i}.",
       "answer_api": "Information",
-      "mapping_status": "drift",
-      "mapping_object_match": false,
+      "mapping_status": "exact",
+      "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
+      "final_status": "Pass",
+      "evaluation_verdict": "Pass",
+      "attempts_used": 1,
+      "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "",
       "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d430-skip-neighbour-information.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T041252016188/d430-skip-neighbour-information.json"
     },
     {
       "case_id": "d431-skip-neighbour-nasidentifier",
@@ -19275,53 +19272,6 @@
       "workbook_test_steps_excerpt": "1. Connect WiFi Station to GW with one station 802.11k Enable and the other one 802.11k Disable. 2. Verify Station station 802.11k Enable Check whether RRM is ON or OFF using: wl sta_info <MAC> | grep -i rrm If 802.11k Enable then you wi...",
       "workbook_command_output_excerpt": "",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d415-assocdev-rrmonchannelmaxduration.json"
-    },
-    {
-      "case_id": "d430-skip-neighbour-information",
-      "case_file": "D430_information.yaml",
-      "dnum": 430,
-      "source_row": 432,
-      "source_object": "WiFi.AccessPoint.{i}.Neighbour.",
-      "source_api": "Information",
-      "answer_row": 430,
-      "answer_object": "WiFi.AccessPoint.{i}.Neighbour.{i}.",
-      "answer_api": "Information",
-      "mapping_status": "drift",
-      "mapping_object_match": false,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "",
-      "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d430-skip-neighbour-information.json"
     },
     {
       "case_id": "d431-skip-neighbour-nasidentifier",
