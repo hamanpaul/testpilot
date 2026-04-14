@@ -86,7 +86,9 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T161411193999",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T162439231118",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T163235194291",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T164038591687"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T164038591687",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T165000634858",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T165326740351"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -94,20 +96,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 318,
-  "mismatch_case_count": 102,
+  "full_match_count": 319,
+  "mismatch_case_count": 101,
   "band_summary": {
     "5g": {
-      "matched": 323,
-      "mismatched": 97
+      "matched": 324,
+      "mismatched": 96
     },
     "6g": {
-      "matched": 319,
-      "mismatched": 101
+      "matched": 320,
+      "mismatched": 100
     },
     "2.4g": {
-      "matched": 321,
-      "mismatched": 99
+      "matched": 322,
+      "mismatched": 98
     }
   },
   "cases": [
@@ -7481,13 +7483,13 @@
       "matches_answer": false,
       "workbook_test_steps_excerpt": "1. Check MIMO enabled or not root@prplOS:/# ubus-cli WiFi.Radio.*.MultiUserMIMOEnabled? > WiFi.Radio.*.MultiUserMIMOEnabled? WiFi.Radio.1.MultiUserMIMOEnabled=1 WiFi.Radio.2.MultiUserMIMOEnabled=1 WiFi.Radio.3.MultiUserMIMOEnabled=1 2. C...",
       "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 mu_features 1 root@prplOS:/# wl -i wl1 mu_features 1 root@prplOS:/# wl -i wl1 mu_features 1",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d204-radio-multiusermimoenabled.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T165000634858/d204-radio-multiusermimoenabled.json"
     },
     {
       "case_id": "d205-radio-multiusermimosupported",
       "case_file": "D205_multiusermimosupported.yaml",
       "dnum": 205,
-      "source_row": 168,
+      "source_row": 205,
       "source_object": "WiFi.Radio.{i}.",
       "source_api": "MultiUserMIMOSupported",
       "answer_row": 205,
@@ -7502,33 +7504,29 @@
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Read-only API, defines whether each radio supported MU-MIMO. Check API value and compare with driver return value: root@prplOS:/# ubus-cli WiFi.Radio.*.MultiUserMIMOSupported? > WiFi.Radio.*.MultiUserMIMOSupported? WiFi.Radio.1.MultiU...",
       "workbook_command_output_excerpt": "wl -i wl0 he features",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d205-radio-multiusermimosupported.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T165326740351/d205-radio-multiusermimosupported.json"
     },
     {
       "case_id": "d207-radio-obsscoexistenceenable",
@@ -18804,54 +18802,7 @@
       "matches_answer": false,
       "workbook_test_steps_excerpt": "1. Check MIMO enabled or not root@prplOS:/# ubus-cli WiFi.Radio.*.MultiUserMIMOEnabled? > WiFi.Radio.*.MultiUserMIMOEnabled? WiFi.Radio.1.MultiUserMIMOEnabled=1 WiFi.Radio.2.MultiUserMIMOEnabled=1 WiFi.Radio.3.MultiUserMIMOEnabled=1 2. C...",
       "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 mu_features 1 root@prplOS:/# wl -i wl1 mu_features 1 root@prplOS:/# wl -i wl1 mu_features 1",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d204-radio-multiusermimoenabled.json"
-    },
-    {
-      "case_id": "d205-radio-multiusermimosupported",
-      "case_file": "D205_multiusermimosupported.yaml",
-      "dnum": 205,
-      "source_row": 168,
-      "source_object": "WiFi.Radio.{i}.",
-      "source_api": "MultiUserMIMOSupported",
-      "answer_row": 205,
-      "answer_object": "WiFi.Radio.{i}.",
-      "answer_api": "MultiUserMIMOSupported",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Read-only API, defines whether each radio supported MU-MIMO. Check API value and compare with driver return value: root@prplOS:/# ubus-cli WiFi.Radio.*.MultiUserMIMOSupported? > WiFi.Radio.*.MultiUserMIMOSupported? WiFi.Radio.1.MultiU...",
-      "workbook_command_output_excerpt": "wl -i wl0 he features",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d205-radio-multiusermimosupported.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T165000634858/d204-radio-multiusermimoenabled.json"
     },
     {
       "case_id": "d207-radio-obsscoexistenceenable",

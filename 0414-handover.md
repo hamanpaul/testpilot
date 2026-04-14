@@ -1,4 +1,4 @@
-**2026-04-14 superseding note：本檔下半部的大盤分析仍保留 2026-04-13 snapshot；最新 strict compare 仍是 `318 / 420 full matches`、`102` 筆 mismatch、`58` 筆 metadata drift。** 最新已 push closure 仍是 `D203 Radio.MaxChannelBandwidth`（`20260414T164038591687`）；其後 `D204 Radio.MultiUserMIMOEnabled` official rerun（`20260414T165000634858`）再次 exact-close repeated live shape `1/1/0`，但 workbook row `204` 的 `R/S/T = Pass / Pass / Pass` 又和 note `V204`「2.4GHz mu features are disable by default」互相衝突，因此本案先 park 為 authority clarification item，而不強行改寫成 workbook-pass semantics。active blockers 仍是 `D047` 與 shared 6G baseline blocker（manifested in `D179`、`D181`）；next ready non-blocked compare-open case 改為 `D205 Radio.MultiUserMIMOSupported`。
+**2026-04-14 superseding note：本檔下半部的大盤分析仍保留 2026-04-13 snapshot；最新 strict compare 已刷新為 `319 / 420 full matches`、`101` 筆 mismatch、`58` 筆 metadata drift。** 最新新增完成 `D205 Radio.MultiUserMIMOSupported` official rerun closure（`20260414T165326740351`）：workbook authority 刷新到 row `205`，live rerun exact-close tri-band getter `MultiUserMIMOSupported=1/1/1`，並把 stale raw `Fail / Fail / Fail` 收斂回 workbook-consistent `Pass / Pass / Pass`；targeted getter/runtime guardrails 維持 `202 passed`，final full repo regression 維持 `1662 passed`。`D204 Radio.MultiUserMIMOEnabled` 則維持 parked authority clarification item（`plugins/wifi_llapi/reports/D204_block.md`）。active blockers 仍是 `D047` 與 shared 6G baseline blocker（manifested in `D179`、`D181`）；next ready non-blocked compare-open case 改為 `D207 Radio.ObssCoexistenceEnable`。
 
 **先講結論：以目前 repo 內 `compare-0401` snapshot 為準，跟 workbook 的差距是 `122` 筆 mismatch、`58` 筆 metadata drift。** 如果只看 workbook `Pass` 目標，分兩種口徑：
 
@@ -241,6 +241,7 @@
 ### 8. 當前 continuation anchor
 
 - latest aligned cases:
+  - `D205 Radio.MultiUserMIMOSupported`
   - `D203 Radio.MaxChannelBandwidth`
   - `D202 Radio.Interference`
   - `D201 Radio.ImplicitBeamFormingSupported`
@@ -269,8 +270,8 @@
   - `D179`
   - `D181`
 - strict compare snapshot：
-  - `318 / 420 full matches`
-  - `102 mismatches`
+  - `319 / 420 full matches`
+  - `101 mismatches`
   - `58 metadata drifts`
 - next ready non-blocked compare-open case：
-  - `D205 Radio.MultiUserMIMOSupported`
+  - `D207 Radio.ObssCoexistenceEnable`

@@ -89,6 +89,8 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T162439231118`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T163235194291`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T164038591687`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T165000634858`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T165326740351`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -99,8 +101,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 318 |
-| mismatch cases | 102 |
+| full matches | 319 |
+| mismatch cases | 101 |
 | missing answer rows | 0 |
 | metadata drift rows | 58 |
 
@@ -108,9 +110,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 323 | 97 |
-| 6g | 319 | 101 |
-| 2.4g | 321 | 99 |
+| 5g | 324 | 96 |
+| 6g | 320 | 100 |
+| 2.4g | 322 | 98 |
 
 ## Mismatch table
 
@@ -121,7 +123,6 @@
 | `d181-radio-fragmentationthreshold` | 181 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d182-radio-rtsthreshold` | 182 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d204-radio-multiusermimoenabled` | 204 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d205-radio-multiusermimosupported` | 205 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d207-radio-obsscoexistenceenable` | 207 | exact | Fail / Fail / Fail | Not Supported / Not Supported / Pass | Fail / Fail / Fail | Fail / Fail / Pass | 2.4g |
 | `d208-radio-ofdmaenable` | 208 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d209-radio-operatingchannelbandwidth` | 209 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -315,26 +316,7 @@
 - mismatch bands: `5g, 6g, 2.4g`
 - 0401 G excerpt: 1. Check MIMO enabled or not root@prplOS:/# ubus-cli WiFi.Radio.*.MultiUserMIMOEnabled? > WiFi.Radio.*.MultiUserMIMOEnabled? WiFi.Radio.1.MultiUserMIMOEnabled=1 WiFi.Radio.2.MultiUserMIMOEnabled=1 WiFi.Radio.3.MultiUserMIMOEnabled=1 2. C...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 mu_features 1 root@prplOS:/# wl -i wl1 mu_features 1 root@prplOS:/# wl -i wl1 mu_features 1
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d204-radio-multiusermimoenabled.json`
-
-### d205-radio-multiusermimosupported
-
-- case file: `D205_multiusermimosupported.yaml`
-- answer row: `205`
-- mapping status: `exact`
-- source metadata: `WiFi.Radio.{i}.` / `MultiUserMIMOSupported`
-- workbook metadata: `WiFi.Radio.{i}.` / `MultiUserMIMOSupported`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Read-only API, defines whether each radio supported MU-MIMO. Check API value and compare with driver return value: root@prplOS:/# ubus-cli WiFi.Radio.*.MultiUserMIMOSupported? > WiFi.Radio.*.MultiUserMIMOSupported? WiFi.Radio.1.MultiU...
-- 0401 H excerpt: wl -i wl0 he features
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d205-radio-multiusermimosupported.json`
+- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T165000634858/d204-radio-multiusermimoenabled.json`
 
 ### d207-radio-obsscoexistenceenable
 
