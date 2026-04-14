@@ -110,7 +110,8 @@
     "plugins/wifi_llapi/reports/agent_trace/20260414T234216396870",
     "plugins/wifi_llapi/reports/agent_trace/20260414T235120551775",
     "plugins/wifi_llapi/reports/agent_trace/20260415T001339062028",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T003139523643"
+    "plugins/wifi_llapi/reports/agent_trace/20260415T003139523643",
+    "plugins/wifi_llapi/reports/agent_trace/20260415T004006392874"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -118,20 +119,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 57,
-  "full_match_count": 340,
-  "mismatch_case_count": 80,
+  "full_match_count": 341,
+  "mismatch_case_count": 79,
   "band_summary": {
     "5g": {
-      "matched": 344,
-      "mismatched": 76
+      "matched": 345,
+      "mismatched": 75
     },
     "6g": {
-      "matched": 340,
-      "mismatched": 80
+      "matched": 341,
+      "mismatched": 79
     },
     "2.4g": {
-      "matched": 343,
-      "mismatched": 77
+      "matched": 344,
+      "mismatched": 76
     }
   },
   "cases": [
@@ -11976,7 +11977,7 @@
       "case_id": "d364-ieee80211ax-nonsrgobsspdmaxoffset",
       "case_file": "D364_nonsrgobsspdmaxoffset.yaml",
       "dnum": 364,
-      "source_row": 366,
+      "source_row": 364,
       "source_object": "WiFi.Radio.{i}.IEEE80211ax.",
       "source_api": "NonSRGOBSSPDMaxOffset",
       "answer_row": 364,
@@ -11985,39 +11986,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "",
       "workbook_command_output_excerpt": "wl -i wl0 he nsrg_pdmax",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d364-ieee80211ax-nonsrgobsspdmaxoffset.json"
+      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T004006392874/d364-ieee80211ax-nonsrgobsspdmaxoffset.json"
     },
     {
       "case_id": "d365-radio-psrdisallowed",
@@ -19166,53 +19163,6 @@
       "workbook_test_steps_excerpt": "1. Connect two WiFi station to the Radio 2. Run ping between Station - by default isolation = disable so ping is OK -Enable Isolation ubus-cli WiFi.AccessPoint.5.IsolationEnable=1 --Ping between station should failed after enable Isolati...",
       "workbook_command_output_excerpt": "",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d359-ap-isolationenable.json"
-    },
-    {
-      "case_id": "d364-ieee80211ax-nonsrgobsspdmaxoffset",
-      "case_file": "D364_nonsrgobsspdmaxoffset.yaml",
-      "dnum": 364,
-      "source_row": 366,
-      "source_object": "WiFi.Radio.{i}.IEEE80211ax.",
-      "source_api": "NonSRGOBSSPDMaxOffset",
-      "answer_row": 364,
-      "answer_object": "WiFi.Radio.{i}.IEEE80211ax.",
-      "answer_api": "NonSRGOBSSPDMaxOffset",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "",
-      "workbook_command_output_excerpt": "wl -i wl0 he nsrg_pdmax",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d364-ieee80211ax-nonsrgobsspdmaxoffset.json"
     },
     {
       "case_id": "d367-ieee80211ax-srgobsspdmaxoffset",

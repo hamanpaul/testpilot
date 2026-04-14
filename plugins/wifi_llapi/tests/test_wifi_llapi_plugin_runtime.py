@@ -19382,7 +19382,7 @@ _RADIO_GETTER_CASES = [
     ("D380_multiaptypessupported.yaml", 382, "FronthaulBSS,BackhaulBSS,BackhaulSTA", "FronthaulBSS,BackhaulBSS,BackhaulSTA", "FronthaulBSS,BackhaulBSS,BackhaulSTA", "WiFi.Radio.{r}.MultiAPTypesSupported"),
     ("D177_channel_radio_36.yaml", 430, "36", "1", "1", "WiFi.Radio.{r}.Channel"),
     ("D363_bsscolorpartial.yaml", 363, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.BssColorPartial"),
-    ("D364_nonsrgobsspdmaxoffset.yaml", 366, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.NonSRGOBSSPDMaxOffset"),
+    ("D364_nonsrgobsspdmaxoffset.yaml", 364, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.NonSRGOBSSPDMaxOffset"),
     ("D367_srgobsspdmaxoffset.yaml", 369, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.SRGOBSSPDMaxOffset"),
     ("D368_srgobsspdminoffset.yaml", 370, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.SRGOBSSPDMinOffset"),
 ]

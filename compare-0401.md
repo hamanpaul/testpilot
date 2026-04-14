@@ -113,6 +113,7 @@
   - `plugins/wifi_llapi/reports/agent_trace/20260414T235120551775`
   - `plugins/wifi_llapi/reports/agent_trace/20260415T001339062028`
   - `plugins/wifi_llapi/reports/agent_trace/20260415T003139523643`
+  - `plugins/wifi_llapi/reports/agent_trace/20260415T004006392874`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -123,8 +124,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 340 |
-| mismatch cases | 80 |
+| full matches | 341 |
+| mismatch cases | 79 |
 | missing answer rows | 0 |
 | metadata drift rows | 57 |
 
@@ -132,9 +133,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 344 | 76 |
-| 6g | 340 | 80 |
-| 2.4g | 343 | 77 |
+| 5g | 345 | 75 |
+| 6g | 341 | 79 |
+| 2.4g | 344 | 76 |
 
 ## Mismatch table
 
@@ -154,7 +155,6 @@
 | `d356-skip-delclient` | 356 | exact | Skip / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d357-skip-csistats` | 357 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d359-ap-isolationenable` | 359 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d364-ieee80211ax-nonsrgobsspdmaxoffset` | 364 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d367-ieee80211ax-srgobsspdmaxoffset` | 367 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d370-assocdev-active` | 370 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d371-assocdev-disassociationtime` | 371 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -494,25 +494,6 @@
 - 0401 G excerpt: 1. Connect two WiFi station to the Radio 2. Run ping between Station - by default isolation = disable so ping is OK -Enable Isolation ubus-cli WiFi.AccessPoint.5.IsolationEnable=1 --Ping between station should failed after enable Isolati...
 - 0401 H excerpt: (empty)
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d359-ap-isolationenable.json`
-
-### d364-ieee80211ax-nonsrgobsspdmaxoffset
-
-- case file: `D364_nonsrgobsspdmaxoffset.yaml`
-- answer row: `364`
-- mapping status: `exact`
-- source metadata: `WiFi.Radio.{i}.IEEE80211ax.` / `NonSRGOBSSPDMaxOffset`
-- workbook metadata: `WiFi.Radio.{i}.IEEE80211ax.` / `NonSRGOBSSPDMaxOffset`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: (empty)
-- 0401 H excerpt: wl -i wl0 he nsrg_pdmax
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d364-ieee80211ax-nonsrgobsspdmaxoffset.json`
 
 ### d367-ieee80211ax-srgobsspdmaxoffset
 
