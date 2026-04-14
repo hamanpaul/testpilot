@@ -124,28 +124,29 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T032303445635",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T033619882302",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T035709687496",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T041252016188"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T041252016188",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T042845374104"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
   "compared_case_count": 420,
   "missing_answer_count": 0,
   "missing_answer_rows": [],
-  "metadata_drift_count": 52,
-  "full_match_count": 353,
-  "mismatch_case_count": 67,
+  "metadata_drift_count": 51,
+  "full_match_count": 354,
+  "mismatch_case_count": 66,
   "band_summary": {
     "5g": {
-      "matched": 355,
-      "mismatched": 65
+      "matched": 356,
+      "mismatched": 64
     },
     "6g": {
-      "matched": 353,
-      "mismatched": 67
+      "matched": 354,
+      "mismatched": 66
     },
     "2.4g": {
-      "matched": 355,
-      "mismatched": 65
+      "matched": 356,
+      "mismatched": 64
     }
   },
   "cases": [
@@ -13894,48 +13895,44 @@
       "case_id": "d431-skip-neighbour-nasidentifier",
       "case_file": "D431_nasidentifier.yaml",
       "dnum": 431,
-      "source_row": 433,
-      "source_object": "WiFi.AccessPoint.{i}.Neighbour.",
+      "source_row": 431,
+      "source_object": "WiFi.AccessPoint.{i}.Neighbour.{i}.",
       "source_api": "NASIdentifier",
       "answer_row": 431,
       "answer_object": "WiFi.AccessPoint.{i}.Neighbour.{i}.",
       "answer_api": "NASIdentifier",
-      "mapping_status": "drift",
-      "mapping_object_match": false,
+      "mapping_status": "exact",
+      "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
+      "final_status": "Pass",
+      "evaluation_verdict": "Pass",
       "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
+      "comment": "pass after retry (2/2)",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "",
       "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d431-skip-neighbour-nasidentifier.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T042845374104/d431-skip-neighbour-nasidentifier.json"
     },
     {
       "case_id": "d432-skip-neighbour-operatingclass",
@@ -19272,53 +19269,6 @@
       "workbook_test_steps_excerpt": "1. Connect WiFi Station to GW with one station 802.11k Enable and the other one 802.11k Disable. 2. Verify Station station 802.11k Enable Check whether RRM is ON or OFF using: wl sta_info <MAC> | grep -i rrm If 802.11k Enable then you wi...",
       "workbook_command_output_excerpt": "",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d415-assocdev-rrmonchannelmaxduration.json"
-    },
-    {
-      "case_id": "d431-skip-neighbour-nasidentifier",
-      "case_file": "D431_nasidentifier.yaml",
-      "dnum": 431,
-      "source_row": 433,
-      "source_object": "WiFi.AccessPoint.{i}.Neighbour.",
-      "source_api": "NASIdentifier",
-      "answer_row": 431,
-      "answer_object": "WiFi.AccessPoint.{i}.Neighbour.{i}.",
-      "answer_api": "NASIdentifier",
-      "mapping_status": "drift",
-      "mapping_object_match": false,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "N/A",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "",
-      "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d431-skip-neighbour-nasidentifier.json"
     },
     {
       "case_id": "d432-skip-neighbour-operatingclass",

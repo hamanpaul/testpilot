@@ -11853,6 +11853,46 @@ def test_d430_neighbour_information_contract():
     assert d430["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
+def test_d431_neighbour_nasidentifier_contract():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+
+    d431_raw = yaml.safe_load((cases_dir / "D431_nasidentifier.yaml").read_text(encoding="utf-8"))
+    d431 = load_case(cases_dir / "D431_nasidentifier.yaml")
+    d431_commands = "\n".join(str(step.get("command", "")) for step in d431["steps"])
+
+    assert "aliases" not in d431_raw
+    assert d431["id"] == "d431-skip-neighbour-nasidentifier"
+    assert d431["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d431["source"]["row"] == 431
+    assert d431["source"]["object"] == "WiFi.AccessPoint.{i}.Neighbour.{i}."
+    assert d431["source"]["api"] == "NASIdentifier"
+    assert d431["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.Neighbour.1.NASIdentifier?"'
+    assert d431["llapi_support"] == "Support"
+    assert d431["implemented_by"] == "pWHM"
+    assert d431["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d431["topology"]["devices"]) == {"DUT"}
+    assert d431["topology"]["links"] == []
+    assert "killall wpa_supplicant" not in d431.get("sta_env_setup", "")
+    assert "grep 'Neighbour.'" in d431_commands
+    assert 'AfterAddNASIdentifier5g="%s"' in d431_commands
+    assert "AfterDeleteNASIdentifier24g=ABSENT" in d431_commands
+    assert any(
+        criterion["field"] == "neighbour_after_add_6g.AfterAddNASIdentifier6g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == '""'
+        for criterion in d431["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "neighbour_after_delete_5g.AfterDeleteNASIdentifier5g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "ABSENT"
+        for criterion in d431["pass_criteria"]
+    )
+    assert d431["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d431["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d431["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+
+
 def test_d084_encryptionmode_accesspoint_security_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
@@ -21210,7 +21250,6 @@ _SKIP_BLOCKED_CASES = [
     ("D355_addclient.yaml", 357, "Skip"),
     ("D356_delclient.yaml", 358, "Skip"),
     ("D357_csistats.yaml", 359, "Skip"),
-    ("D431_nasidentifier.yaml", 433, "Skip"),
     ("D432_operatingclass.yaml", 434, "Skip"),
     ("D433_phytype.yaml", 435, "Skip"),
     ("D434_r0khkey.yaml", 436, "Skip"),
