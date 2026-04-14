@@ -1,5 +1,59 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-14 early-70)
+
+> This checkpoint records the `D193 Radio.HeCapsEnabled` low-risk radio getter closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D193 Radio.HeCapsEnabled` 已透過 official rerun `20260414T142054369177` 完成 closure
+- workbook authority 現在刷新到 row `193`，不再沿用 stale row `156`
+- current rerun exact-close tri-band getter `HeCapsEnabled="DEFAULT"`
+- landed case 現在把 stale raw `Fail / Fail / Fail` 刷新為 workbook-consistent `Pass / Pass / Pass`
+- targeted radio-getter/runtime guardrails 維持 `201 passed`
+- command-budget guardrail 維持 `1 passed`
+- final full repo regression 維持 `1662 passed`
+- compare refresh 已更新為 `308 / 420 full matches`、`112 mismatches`、`58 metadata drifts`
+- active blockers 維持 `D047 SupportedHe160MCS` authority conflict + shared 6G baseline blocker（manifested in `D179` / `D181`）
+- next ready non-blocked compare-open case 改為 `D194 Radio.HeCapsSupported`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D193` | 193 | `HeCapsEnabled` | `Pass / Pass / Pass` | `20260414T142054369177_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260414t142054369177.md L15-L31` | `20260414T142054369177_STA.log` empty file |
+
+#### D193 Radio.HeCapsEnabled
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only radio getter case; rerun emitted an empty STA log)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.HeCapsEnabled?"
+ubus-cli "WiFi.Radio.2.HeCapsEnabled?"
+ubus-cli "WiFi.Radio.3.HeCapsEnabled?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+DUT (20260414T142054369177_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260414t142054369177.md L15-L31)
+WiFi.Radio.1.HeCapsEnabled="DEFAULT"
+WiFi.Radio.2.HeCapsEnabled="DEFAULT"
+WiFi.Radio.3.HeCapsEnabled="DEFAULT"
+
+STA (20260414T142054369177_STA.log)
+empty file
+```
+
 ## Checkpoint summary (2026-04-14 early-69)
 
 > This checkpoint records the `D192 Radio.GuardInterval` low-risk radio getter closure.

@@ -19013,7 +19013,7 @@ _RADIO_GETTER_CASES = [
     ("D191_explicitbeamformingsupported.yaml", 191, "1", "1", "1", "WiFi.Radio.{r}.ExplicitBeamFormingSupported"),
     ("D192_guardinterval.yaml", 192, "Auto", "Auto", "Auto", "WiFi.Radio.{r}.GuardInterval"),
     # --- Batch 1: D193-D214 Radio config/capabilities ---
-    ("D193_hecapsenabled.yaml", 156, "DEFAULT", "DEFAULT", "DEFAULT", "WiFi.Radio.{r}.HeCapsEnabled"),
+    ("D193_hecapsenabled.yaml", 193, "DEFAULT", "DEFAULT", "DEFAULT", "WiFi.Radio.{r}.HeCapsEnabled"),
     ("D194_hecapssupported.yaml", 157, "DL_OFDMA,UL_OFDMA,DL_MUMIMO,UL_MUMIMO", "DL_OFDMA,UL_OFDMA,DL_MUMIMO,UL_MUMIMO", "DL_OFDMA,UL_OFDMA,DL_MUMIMO,UL_MUMIMO", "WiFi.Radio.{r}.HeCapsSupported"),
     ("D195_ieee80211_caps.yaml", 158, "160MHz UAPSD WEP TKIP AES AES_CCM SAE EXPL_BF IMPL_BF MU_MIMO DFS_OFFLOAD OWE SAE_PWE WME", "320MHz 160MHz UAPSD SAE EXPL_BF IMPL_BF MU_MIMO OWE SAE_PWE WME", "UAPSD WEP TKIP AES AES_CCM SAE EXPL_BF IMPL_BF MU_MIMO OWE SAE_PWE WME", "WiFi.Radio.{r}.IEEE80211_Caps"),
     ("D196_ieee80211henabled.yaml", 159, "1", "0", "0", "WiFi.Radio.{r}.IEEE80211hEnabled"),

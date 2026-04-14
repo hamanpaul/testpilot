@@ -75,7 +75,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111652454052",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T133109929684",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T134150940705",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T140146826061"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T140146826061",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T142054369177"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -83,20 +84,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 307,
-  "mismatch_case_count": 113,
+  "full_match_count": 308,
+  "mismatch_case_count": 112,
   "band_summary": {
     "5g": {
-      "matched": 312,
-      "mismatched": 108
+      "matched": 313,
+      "mismatched": 107
     },
     "6g": {
-      "matched": 309,
-      "mismatched": 111
-    },
-    "2.4g": {
       "matched": 310,
       "mismatched": 110
+    },
+    "2.4g": {
+      "matched": 311,
+      "mismatched": 109
     }
   },
   "cases": [
@@ -6956,7 +6957,7 @@
       "case_id": "d193-radio-hecapsenabled",
       "case_file": "D193_hecapsenabled.yaml",
       "dnum": 193,
-      "source_row": 156,
+      "source_row": 193,
       "source_object": "WiFi.Radio.{i}.",
       "source_api": "HeCapsEnabled",
       "answer_row": 193,
@@ -6971,33 +6972,29 @@
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Try enabled all supporting HE capablitities for all readios: root@prplOS:/# ubus-cli 'WiFi.Radio.*.HeCapsEnabled=\"DL_OFDMA,UL_OFDMA,DL_MUMIMO,UL_MUMIMO\"' 2. Check the settings: root@prplOS:/# ubus-cli WiFi.Radio.*.HeCapsEnabled? > WiF...",
       "workbook_command_output_excerpt": "wl -i wl[x] he features root@prplOS:/# wl -i wl0 he features 63 (0x3f) root@prplOS:/# wl -i wl1 he features 63 (0x3f) root@prplOS:/# wl -i wl2 he features 63 (0x3f)",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d193-radio-hecapsenabled.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T142054369177/d193-radio-hecapsenabled.json"
     },
     {
       "case_id": "d194-radio-hecapssupported",
@@ -18790,53 +18787,6 @@
       "workbook_test_steps_excerpt": "1. Set RtsThreshold \"ex. 1500 root@prplOS:/# ubus-cli WiFi.Radio.*.DriverConfig.RtsThreshold=1500 > WiFi.Radio.*.DriverConfig.RtsThreshold=1500 WiFi.Radio.1.DriverConfig. WiFi.Radio.1.DriverConfig.RtsThreshold=1500 WiFi.Radio.2.DriverCon...",
       "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 rtsthresh 1500 (0x5dc) root@prplOS:/# wl -i wl1 rtsthresh 1500 (0x5dc) root@prplOS:/# wl -i wl2 rtsthresh 1500 (0x5dc)",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d182-radio-rtsthreshold.json"
-    },
-    {
-      "case_id": "d193-radio-hecapsenabled",
-      "case_file": "D193_hecapsenabled.yaml",
-      "dnum": 193,
-      "source_row": 156,
-      "source_object": "WiFi.Radio.{i}.",
-      "source_api": "HeCapsEnabled",
-      "answer_row": 193,
-      "answer_object": "WiFi.Radio.{i}.",
-      "answer_api": "HeCapsEnabled",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Try enabled all supporting HE capablitities for all readios: root@prplOS:/# ubus-cli 'WiFi.Radio.*.HeCapsEnabled=\"DL_OFDMA,UL_OFDMA,DL_MUMIMO,UL_MUMIMO\"' 2. Check the settings: root@prplOS:/# ubus-cli WiFi.Radio.*.HeCapsEnabled? > WiF...",
-      "workbook_command_output_excerpt": "wl -i wl[x] he features root@prplOS:/# wl -i wl0 he features 63 (0x3f) root@prplOS:/# wl -i wl1 he features 63 (0x3f) root@prplOS:/# wl -i wl2 he features 63 (0x3f)",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d193-radio-hecapsenabled.json"
     },
     {
       "case_id": "d194-radio-hecapssupported",
