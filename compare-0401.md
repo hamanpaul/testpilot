@@ -119,6 +119,7 @@
   - `plugins/wifi_llapi/reports/agent_trace/20260415T011605260076`
   - `plugins/wifi_llapi/reports/agent_trace/20260415T023436252245`
   - `plugins/wifi_llapi/reports/agent_trace/20260415T024522159981`
+  - `plugins/wifi_llapi/reports/agent_trace/20260415T025452242101`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -129,8 +130,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 345 |
-| mismatch cases | 75 |
+| full matches | 346 |
+| mismatch cases | 74 |
 | missing answer rows | 0 |
 | metadata drift rows | 57 |
 
@@ -138,9 +139,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 349 | 71 |
-| 6g | 345 | 75 |
-| 2.4g | 348 | 72 |
+| 5g | 350 | 70 |
+| 6g | 346 | 74 |
+| 2.4g | 349 | 71 |
 
 ## Mismatch table
 
@@ -161,7 +162,6 @@
 | `d357-skip-csistats` | 357 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d359-ap-isolationenable` | 359 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d371-assocdev-disassociationtime` | 371 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d380-radio-multiaptypessupported` | 380 | exact | Pass / Pass / Pass | skip / skip / skip | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
 | `d384-radio-radcapabilitieshtstr` | 384 | exact | Pass / Pass / Pass | Pass / Not Supported / Pass | Pass / Pass / Pass | Pass / Fail / Pass | 6g |
 | `d385-radio-radcapabilitiesvhtstr` | 385 | exact | Pass / Pass / Pass | Pass / Not Supported / Not Supported | Pass / Pass / Pass | Pass / Fail / Fail | 6g, 2.4g |
 | `d396-getradiostats-errorsreceived` | 396 | drift | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -514,25 +514,6 @@
 - 0401 G excerpt: 1. Connect WiFi station to GW 2. Check Associated Device Status 3. Disconnect Wifi Station from GW 4. Check Associated Device DisassociationTime root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep -E 'Activ root@prplOS...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 assoclist root@prplOS:/# wl -i wl1 assoclist root@prplOS:/# wl -i wl2 assoclist
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d371-assocdev-disassociationtime.json`
-
-### d380-radio-multiaptypessupported
-
-- case file: `D380_multiaptypessupported.yaml`
-- answer row: `380`
-- mapping status: `exact`
-- source metadata: `WiFi.Radio.{i}.` / `MultiAPTypesSupported`
-- workbook metadata: `WiFi.Radio.{i}.` / `MultiAPTypesSupported`
-- final status: `Pass`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Pass` / `Pass` / `Pass`
-- expected raw: `skip` / `skip` / `skip`
-- actual normalized: `Pass` / `Pass` / `Pass`
-- expected normalized: `Fail` / `Fail` / `Fail`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Get MultiAP type Supported mode root@prplOS:/# ubus-cli WiFi.Radio.*.MultiAPTypesSupported? > WiFi.Radio.*.MultiAPTypesSupported? WiFi.Radio.1.MultiAPTypesSupported="FronthaulBSS,BackhaulBSS,BackhaulSTA" WiFi.Radio.2.MultiAPTypesSuppo...
-- 0401 H excerpt: (empty)
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d380-radio-multiaptypessupported.json`
 
 ### d384-radio-radcapabilitieshtstr
 

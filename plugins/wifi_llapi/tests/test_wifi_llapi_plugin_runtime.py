@@ -4204,6 +4204,19 @@ def test_d379_radio_mcs_contract():
     assert case_band_results(d379, True) == ("Skip", "Skip", "Skip")
 
 
+def test_d380_radio_multiaptypessupported_contract():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+
+    d380 = load_case(cases_dir / "D380_multiaptypessupported.yaml")
+    ref = d380["results_reference"]["v4.0.3"]
+
+    assert d380["source"]["row"] == 380
+    assert ref["5g"] == "Skip"
+    assert ref["6g"] == "Skip"
+    assert ref["2.4g"] == "Skip"
+    assert case_band_results(d380, True) == ("Skip", "Skip", "Skip")
+
+
 def test_pending_boolean_and_frequency_cases_evaluate_live_examples():
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
@@ -19452,7 +19465,7 @@ _RADIO_GETTER_CASES = [
     ("D465_srginformationvalid.yaml", 465, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.SRGInformationValid"),
     # --- Bulk calibration batch 6: additional Radio/IEEE80211ax getters ---
     ("D379_mcs.yaml", 379, "0", "0", "0", "WiFi.Radio.{r}.MCS"),
-    ("D380_multiaptypessupported.yaml", 382, "FronthaulBSS,BackhaulBSS,BackhaulSTA", "FronthaulBSS,BackhaulBSS,BackhaulSTA", "FronthaulBSS,BackhaulBSS,BackhaulSTA", "WiFi.Radio.{r}.MultiAPTypesSupported"),
+    ("D380_multiaptypessupported.yaml", 380, "FronthaulBSS,BackhaulBSS,BackhaulSTA", "FronthaulBSS,BackhaulBSS,BackhaulSTA", "FronthaulBSS,BackhaulBSS,BackhaulSTA", "WiFi.Radio.{r}.MultiAPTypesSupported"),
     ("D177_channel_radio_36.yaml", 430, "36", "1", "1", "WiFi.Radio.{r}.Channel"),
     ("D363_bsscolorpartial.yaml", 363, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.BssColorPartial"),
     ("D364_nonsrgobsspdmaxoffset.yaml", 364, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.NonSRGOBSSPDMaxOffset"),

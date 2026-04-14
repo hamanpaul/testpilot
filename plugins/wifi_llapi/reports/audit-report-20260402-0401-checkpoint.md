@@ -1,5 +1,63 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-15 early-109)
+
+> This checkpoint records the `D380 Radio.MultiAPTypesSupported` workbook closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D380 Radio.MultiAPTypesSupported` 已完成 closure
+- workbook authority 已刷新為 row `380`
+- stale row `382` 已由真實 workbook row `380` 取代
+- official rerun `20260415T025452242101` exact-close workbook `Skip / Skip / Skip`
+- live evidence 保留 tri-band getter `FronthaulBSS,BackhaulBSS,BackhaulSTA`
+- `diagnostic_status=Pass`
+- targeted D380/runtime + radio-getter guardrails passed
+- full repo regression=`1663 passed`
+- compare 更新為 `346 / 420 full matches`、`74 mismatches`、`57 metadata drifts`
+- `D371 AccessPoint.AssociatedDevice.DisassociationTime` 仍維持 localized blocker，rewrite 已回退
+- `D355-D357` 仍保留在需要 CSI client setup 的 placeholder bucket
+- `D359 AccessPoint.IsolationEnable` 因 two-station isolation ping 需求而暫停在 current single-STA lab shape
+- systemic active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- next ready non-blocked compare-open case=`D384 Radio.RadCapabilitiesHTStr`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D380 | 380 | Radio.MultiAPTypesSupported | Skip / Skip / Skip | `20260415T025452242101_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260415t025452242101.md L9-L11; L15-L30` | `N/A（DUT-only case；20260415T025452242101_STA.log empty）` |
+
+### D380 Radio.MultiAPTypesSupported alignment evidence
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.MultiAPTypesSupported?"
+ubus-cli "WiFi.Radio.2.MultiAPTypesSupported?"
+ubus-cli "WiFi.Radio.3.MultiAPTypesSupported?"
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260415T025452242101
+- bgw720-0403_wifi_llapi_20260415t025452242101.md L9-L11
+  result_5g/result_6g/result_24g = Skip / Skip / Skip with diagnostic_status=Pass
+- bgw720-0403_wifi_llapi_20260415t025452242101.md L15-L30
+  tri-band getter evidence exact-closes MultiAPTypesSupported=FronthaulBSS,BackhaulBSS,BackhaulSTA while workbook verdict remains Skip
+- 20260415T025452242101_DUT.log L5-L18
+  DUT getter readback is stable on all three radios: WiFi.Radio.1/2/3.MultiAPTypesSupported=FronthaulBSS,BackhaulBSS,BackhaulSTA
+```
+
 ## Checkpoint summary (2026-04-15 early-108)
 
 > This checkpoint records the `D379 Radio.MCS` workbook closure.
