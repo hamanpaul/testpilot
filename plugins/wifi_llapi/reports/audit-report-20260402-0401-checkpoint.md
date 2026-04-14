@@ -1,5 +1,81 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-15 early-124)
+
+> This checkpoint records the `D438 AccessPoint.Security.TransitionDisable` workbook closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D438 AccessPoint.Security.TransitionDisable` 已完成 closure
+- workbook authority 已刷新為 row `438`
+- 舊 row `440` generic getter shell 已改寫回 workbook `WiFi.AccessPoint.{i}.Security.` / `TransitionDisable`
+- official rerun `20260415T063258768736` exact-close workbook `Pass / Pass / Pass`
+- baseline 維持 `TransitionDisable=""` + hostapd `ABSENT`
+- tri-band getter 與 wl0/wl1/wl2 hostapd 依序 exact-close `WPA3-Personal -> 1`、`SAE-PK -> 2`、`EnhancedOpen -> 8`
+- restore 會穩定回到 `TransitionDisable=""` + hostapd `ABSENT`
+- final report 維持 `diagnostic_status=Pass`
+- targeted D438/runtime + budget guardrails passed
+- full repo regression=`1660 passed`
+- compare 更新為 `361 / 420 full matches`、`59 mismatches`、`47 metadata drifts`
+- `D371 AccessPoint.AssociatedDevice.DisassociationTime` 仍維持 localized blocker，rewrite 已回退
+- `D355-D357` 仍保留在需要 CSI client setup 的 placeholder bucket
+- `D359 AccessPoint.IsolationEnable` 因 two-station isolation ping 需求而暫停在 current single-STA lab shape
+- systemic active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- `D414/D415` 仍保留為 readiness-review cluster；workbook `G` 已明示需要 dual-STA 802.11k split
+- next ready actionable survey target=`D454 getRadioStats().FailedRetransCount`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D438 | 438 | AccessPoint.Security.TransitionDisable | Pass / Pass / Pass | `20260415T063258768736_DUT.log L185-L249; L292-L360; L402-L468; L511-L579; L621-L687; bgw720-0403_wifi_llapi_20260415t063258768736.md L9-L11; L15-L100` | `N/A（AP-only case；20260415T063258768736_STA.log empty）` |
+
+### D438 AccessPoint.Security.TransitionDisable alignment evidence
+
+**STA 指令**
+
+```sh
+# N/A (AP-only case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.Security.TransitionDisable?"
+ubus-cli "WiFi.AccessPoint.3.Security.TransitionDisable?"
+ubus-cli "WiFi.AccessPoint.5.Security.TransitionDisable?"
+grep -m1 '^transition_disable=' /tmp/wl0_hapd.conf || true
+grep -m1 '^transition_disable=' /tmp/wl1_hapd.conf || true
+grep -m1 '^transition_disable=' /tmp/wl2_hapd.conf || true
+ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable=WPA3-Personal"
+ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable=SAE-PK"
+ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable=EnhancedOpen"
+ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable="
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260415T063258768736
+- bgw720-0403_wifi_llapi_20260415t063258768736.md L9-L11
+  result_5g/result_6g/result_24g = Pass / Pass / Pass with diagnostic_status=Pass
+- bgw720-0403_wifi_llapi_20260415t063258768736.md L15-L100
+  workbook-faithful row-438 replay exact-closes tri-band getter + hostapd `transition_disable` mapping after each 6-second settle
+- 20260415T063258768736_DUT.log L185-L249
+  baseline exact-closes `TransitionDisable=""` and hostapd `ABSENT` on 5G / 6G / 2.4G
+- 20260415T063258768736_DUT.log L292-L360
+  wildcard `WPA3-Personal` exact-closes tri-band getter `"WPA3-Personal"` and hostapd `transition_disable=1`
+- 20260415T063258768736_DUT.log L402-L468
+  wildcard `SAE-PK` exact-closes tri-band getter `"SAE-PK"` and hostapd `transition_disable=2`
+- 20260415T063258768736_DUT.log L511-L579
+  wildcard `EnhancedOpen` exact-closes tri-band getter `"EnhancedOpen"` and hostapd `transition_disable=8`
+- 20260415T063258768736_DUT.log L621-L687
+  restore exact-closes `TransitionDisable=""` and hostapd `ABSENT` again on all three bands
+```
+
 ## Checkpoint summary (2026-04-15 early-123)
 
 > This checkpoint records the `D437 AccessPoint.Security.SAEPassphrase` workbook closure.

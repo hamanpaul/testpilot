@@ -1,5 +1,5 @@
 {
-  "trace_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T061648225671",
+  "trace_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T063258768736",
   "trace_dirs": [
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T172957084134",
@@ -131,7 +131,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T050448284344",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T051545233691",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T054920871826",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T061648225671"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T061648225671",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T063258768736"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -139,20 +140,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 47,
-  "full_match_count": 360,
-  "mismatch_case_count": 60,
+  "full_match_count": 361,
+  "mismatch_case_count": 59,
   "band_summary": {
     "5g": {
-      "matched": 362,
-      "mismatched": 58
+      "matched": 363,
+      "mismatched": 57
     },
     "6g": {
-      "matched": 360,
-      "mismatched": 60
+      "matched": 361,
+      "mismatched": 59
     },
     "2.4g": {
-      "matched": 362,
-      "mismatched": 58
+      "matched": 363,
+      "mismatched": 57
     }
   },
   "cases": [
@@ -14202,7 +14203,7 @@
       "case_id": "d438-security-transitiondisable",
       "case_file": "D438_transitiondisable.yaml",
       "dnum": 438,
-      "source_row": 440,
+      "source_row": 438,
       "source_object": "WiFi.AccessPoint.{i}.Security.",
       "source_api": "TransitionDisable",
       "answer_row": 438,
@@ -14211,39 +14212,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "",
       "workbook_command_output_excerpt": "cat /tmp/wl0_hapd.conf |grep transition_disable",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d438-security-transitiondisable.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T063258768736/d438-security-transitiondisable.json"
     },
     {
       "case_id": "d447-radioairstats-inttime",
@@ -19251,53 +19248,6 @@
       "workbook_test_steps_excerpt": "1. Connect WiFi Station to GW with one station 802.11k Enable and the other one 802.11k Disable. 2. Verify Station station 802.11k Enable Check whether RRM is ON or OFF using: wl sta_info <MAC> | grep -i rrm If 802.11k Enable then you wi...",
       "workbook_command_output_excerpt": "",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d415-assocdev-rrmonchannelmaxduration.json"
-    },
-    {
-      "case_id": "d438-security-transitiondisable",
-      "case_file": "D438_transitiondisable.yaml",
-      "dnum": 438,
-      "source_row": 440,
-      "source_object": "WiFi.AccessPoint.{i}.Security.",
-      "source_api": "TransitionDisable",
-      "answer_row": 438,
-      "answer_object": "WiFi.AccessPoint.{i}.Security.",
-      "answer_api": "TransitionDisable",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "",
-      "workbook_command_output_excerpt": "cat /tmp/wl0_hapd.conf |grep transition_disable",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d438-security-transitiondisable.json"
     },
     {
       "case_id": "d454-getradiostats-failedretranscount",

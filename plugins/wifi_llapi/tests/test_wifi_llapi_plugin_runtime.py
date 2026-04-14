@@ -12554,6 +12554,219 @@ def test_d437_saepassphrase_evaluate_live_examples():
     assert plugin.evaluate(d437, d437_wrong_24g_backend) is False
 
 
+def test_d438_transitiondisable_contract():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+
+    d438_raw = yaml.safe_load((cases_dir / "D438_transitiondisable.yaml").read_text(encoding="utf-8"))
+    d438 = load_case(cases_dir / "D438_transitiondisable.yaml")
+    d438_commands = "\n".join(str(step.get("command", "")) for step in d438["steps"])
+
+    assert "aliases" not in d438_raw
+    assert d438["id"] == "d438-security-transitiondisable"
+    assert d438["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d438["source"]["row"] == 438
+    assert d438["source"]["object"] == "WiFi.AccessPoint.{i}.Security."
+    assert d438["source"]["api"] == "TransitionDisable"
+    assert d438["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable=WPA3-Personal"'
+    assert d438["llapi_support"] == "Support"
+    assert d438["implemented_by"] == "pWHM"
+    assert d438["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d438["topology"]["devices"]) == {"DUT"}
+    assert d438["topology"]["links"] == []
+    assert "killall wpa_supplicant" not in d438.get("sta_env_setup", "")
+    assert "transition_disable=1" in d438.get("test_environment", "")
+    assert "grep -m1 '^transition_disable=' /tmp/wl1_hapd.conf" in d438_commands
+    assert 'AfterEnhancedOpenHostapdTransitionDisable24g=%s' in d438_commands
+    assert 'RestoreTransitionDisableAll=""' in d438_commands
+    assert any(
+        criterion["field"] == "transitiondisable_after_sae_pk_6g.AfterSaePkHostapdTransitionDisable6g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "2"
+        for criterion in d438["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "transitiondisable_after_restore_24g.AfterRestoreHostapdTransitionDisable24g"
+        and criterion["operator"] == "equals"
+        and criterion["reference"]
+        == "transitiondisable_baseline_24g.BaselineHostapdTransitionDisable24g"
+        for criterion in d438["pass_criteria"]
+    )
+    assert d438["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d438["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d438["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+
+
+def test_d438_transitiondisable_setup_env_uses_only_dut_transport(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    d438 = load_case(cases_dir / "D438_transitiondisable.yaml")
+
+    assert plugin.setup_env(d438, topology=topology) is True
+    assert len(recorder.calls) == 1
+    assert recorder.calls[0][0] == "serial"
+    executed_commands = recorder.transports[0].executed_commands
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.1.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.3.Enable=1") == 1
+    assert executed_commands.count("ubus-cli WiFi.AccessPoint.5.Enable=1") == 1
+    assert (
+        executed_commands.count(
+            "ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal"
+        )
+        == 1
+    )
+    assert (
+        executed_commands.count(
+            'ubus-cli \'WiFi.AccessPoint.3.Security.SAEPassphrase="00000000"\''
+        )
+        == 1
+    )
+    assert (
+        executed_commands.count(
+            'ubus-cli \'WiFi.AccessPoint.3.Security.KeyPassPhrase="00000000"\''
+        )
+        == 1
+    )
+    assert (
+        executed_commands.count('ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable="')
+        == 1
+    )
+    assert executed_commands.count("wl -i wl0 bss") == 1
+    assert executed_commands.count("wl -i wl1 bss") == 1
+    assert executed_commands.count("wl -i wl2 bss") == 1
+    assert all("STA" not in command for command in executed_commands)
+    plugin.teardown(d438, topology)
+
+
+def test_d438_transitiondisable_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    d438 = load_case(cases_dir / "D438_transitiondisable.yaml")
+
+    def output(prefix: str, suffix: str, getter: str, hostapd: str) -> str:
+        return "\n".join(
+            [
+                f'{prefix}GetterTransitionDisable{suffix}="{getter}"',
+                f"{prefix}HostapdTransitionDisable{suffix}={hostapd}",
+            ]
+        )
+
+    d438_results = {
+        "steps": {
+            "step1_transitiondisable_baseline_5g": {
+                "success": True,
+                "output": output("Baseline", "5g", "", "ABSENT"),
+                "timing": 0.01,
+            },
+            "step2_transitiondisable_baseline_6g": {
+                "success": True,
+                "output": output("Baseline", "6g", "", "ABSENT"),
+                "timing": 0.01,
+            },
+            "step3_transitiondisable_baseline_24g": {
+                "success": True,
+                "output": output("Baseline", "24g", "", "ABSENT"),
+                "timing": 0.01,
+            },
+            "step4_transitiondisable_set_wpa3_personal": {
+                "success": True,
+                "output": 'RequestedTransitionDisableAll="WPA3-Personal"',
+                "timing": 0.01,
+            },
+            "step5_transitiondisable_after_wpa3_personal_5g": {
+                "success": True,
+                "output": output("AfterWpa3Personal", "5g", "WPA3-Personal", "1"),
+                "timing": 0.01,
+            },
+            "step6_transitiondisable_after_wpa3_personal_6g": {
+                "success": True,
+                "output": output("AfterWpa3Personal", "6g", "WPA3-Personal", "1"),
+                "timing": 0.01,
+            },
+            "step7_transitiondisable_after_wpa3_personal_24g": {
+                "success": True,
+                "output": output("AfterWpa3Personal", "24g", "WPA3-Personal", "1"),
+                "timing": 0.01,
+            },
+            "step8_transitiondisable_set_sae_pk": {
+                "success": True,
+                "output": 'RequestedTransitionDisableAll="SAE-PK"',
+                "timing": 0.01,
+            },
+            "step9_transitiondisable_after_sae_pk_5g": {
+                "success": True,
+                "output": output("AfterSaePk", "5g", "SAE-PK", "2"),
+                "timing": 0.01,
+            },
+            "step10_transitiondisable_after_sae_pk_6g": {
+                "success": True,
+                "output": output("AfterSaePk", "6g", "SAE-PK", "2"),
+                "timing": 0.01,
+            },
+            "step11_transitiondisable_after_sae_pk_24g": {
+                "success": True,
+                "output": output("AfterSaePk", "24g", "SAE-PK", "2"),
+                "timing": 0.01,
+            },
+            "step12_transitiondisable_set_enhanced_open": {
+                "success": True,
+                "output": 'RequestedTransitionDisableAll="EnhancedOpen"',
+                "timing": 0.01,
+            },
+            "step13_transitiondisable_after_enhanced_open_5g": {
+                "success": True,
+                "output": output("AfterEnhancedOpen", "5g", "EnhancedOpen", "8"),
+                "timing": 0.01,
+            },
+            "step14_transitiondisable_after_enhanced_open_6g": {
+                "success": True,
+                "output": output("AfterEnhancedOpen", "6g", "EnhancedOpen", "8"),
+                "timing": 0.01,
+            },
+            "step15_transitiondisable_after_enhanced_open_24g": {
+                "success": True,
+                "output": output("AfterEnhancedOpen", "24g", "EnhancedOpen", "8"),
+                "timing": 0.01,
+            },
+            "step16_transitiondisable_restore_default": {
+                "success": True,
+                "output": 'RestoreTransitionDisableAll=""',
+                "timing": 0.01,
+            },
+            "step17_transitiondisable_after_restore_5g": {
+                "success": True,
+                "output": output("AfterRestore", "5g", "", "ABSENT"),
+                "timing": 0.01,
+            },
+            "step18_transitiondisable_after_restore_6g": {
+                "success": True,
+                "output": output("AfterRestore", "6g", "", "ABSENT"),
+                "timing": 0.01,
+            },
+            "step19_transitiondisable_after_restore_24g": {
+                "success": True,
+                "output": output("AfterRestore", "24g", "", "ABSENT"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d438, d438_results) is True
+
+    d438_wrong_6g_backend = {
+        "steps": {
+            **d438_results["steps"],
+            "step14_transitiondisable_after_enhanced_open_6g": {
+                "success": True,
+                "output": output("AfterEnhancedOpen", "6g", "EnhancedOpen", "1"),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d438, d438_wrong_6g_backend) is False
+
+
 def test_d084_encryptionmode_accesspoint_security_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
@@ -21829,14 +22042,13 @@ def test_assocdev_getter_evaluate(yaml_file, row, api_field):
 
 
 # ---------------------------------------------------------------------------
-# Batch 6 — AP/SSID/Security getters (D319,D320,D359,D438,D588): 3-band
+# Batch 6 — AP/SSID/Security getters (D319,D320,D359,D588): 3-band
 # ---------------------------------------------------------------------------
 _AP_SSID_SECURITY_CASES = [
     ("D359_isolationenable.yaml", 361, "IsolationEnable", "WiFi.AccessPoint.{i}."),
     ("D319_macaddress_ssid.yaml", 319, "MACAddress", "WiFi.SSID.{i}."),
     ("D320_ssid.yaml", 320, "SSID", "WiFi.SSID.{i}."),
     ("D588_mldunit.yaml", 591, "MLDUnit", "WiFi.SSID.{i}."),
-    ("D438_transitiondisable.yaml", 440, "TransitionDisable", "WiFi.AccessPoint.{i}.Security."),
 ]
 _AP_SSID_SECURITY_IDS = [t[0].split(".")[0] for t in _AP_SSID_SECURITY_CASES]
 
