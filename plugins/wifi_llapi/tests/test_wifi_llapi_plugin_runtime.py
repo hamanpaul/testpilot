@@ -4230,6 +4230,19 @@ def test_d384_radio_radcapabilitieshtstr_contract():
     assert case_band_results(d384, True) == ("Pass", "Not Supported", "Pass")
 
 
+def test_d385_radio_radcapabilitiesvhtstr_contract():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+
+    d385 = load_case(cases_dir / "D385_radcapabilitiesvhtstr.yaml")
+    ref = d385["results_reference"]["v4.0.3"]
+
+    assert d385["source"]["row"] == 385
+    assert ref["5g"] == "Pass"
+    assert ref["6g"] == "Not Supported"
+    assert ref["2.4g"] == "Not Supported"
+    assert case_band_results(d385, True) == ("Pass", "Not Supported", "Not Supported")
+
+
 def test_pending_boolean_and_frequency_cases_evaluate_live_examples():
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
@@ -19464,7 +19477,7 @@ _RADIO_GETTER_CASES = [
     ("D382_operatingfrequencyband.yaml", 285, "5GHz", "6GHz", "2.4GHz", "WiFi.Radio.{r}.OperatingFrequencyBand"),
     ("D383_radcapabilitieshephysstr.yaml", 286, "40_80MHZ_5GHZ,160MHZ_5GHZ,FULL_UL_MU_MIMO,SU_BEAMFORMER,MU_BEAMFORMER", "40_80MHZ_5GHZ,160MHZ_5GHZ,FULL_UL_MU_MIMO,SU_BEAMFORMER,MU_BEAMFORMER", "40MHZ_2_4GHZ,FULL_UL_MU_MIMO,SU_BEAMFORMER,MU_BEAMFORMER", "WiFi.Radio.{r}.RadCapabilitiesHePhysStr"),
     ("D384_radcapabilitieshtstr.yaml", 384, "CAP_40,SHORT_GI_20,SHORT_GI_40,MODE_40", "", "CAP_40,SHORT_GI_20,SHORT_GI_40,MODE_40", "WiFi.Radio.{r}.RadCapabilitiesHTStr"),
-    ("D385_radcapabilitiesvhtstr.yaml", 288, "RX_LDPC,SGI_80,SGI_160,SU_BFR,SU_BFE,LINK_ADAPT_CAP", "", "", "WiFi.Radio.{r}.RadCapabilitiesVHTStr"),
+    ("D385_radcapabilitiesvhtstr.yaml", 385, "RX_LDPC,SGI_80,SGI_160,SU_BFR,SU_BFE,LINK_ADAPT_CAP", "", "", "WiFi.Radio.{r}.RadCapabilitiesVHTStr"),
     ("D404_txbeamformingcapsavailable.yaml", 299, "VHT_SU_BF,HE_SU_BF,HE_MU_BF,EHT_SU_BF,EHT_MU_80_BF,EHT_MU_160_BF,EHT_MU_320_BF", "HE_SU_BF,HE_MU_BF,EHT_SU_BF,EHT_MU_80_BF,EHT_MU_160_BF,EHT_MU_320_BF", "HE_SU_BF,HE_MU_BF,EHT_SU_BF,EHT_MU_80_BF,EHT_MU_160_BF,EHT_MU_320_BF", "WiFi.Radio.{r}.TxBeamformingCapsAvailable"),
     ("D405_txbeamformingcapsenabled.yaml", 300, "DEFAULT", "DEFAULT", "DEFAULT", "WiFi.Radio.{r}.TxBeamformingCapsEnabled"),
     ("D460_hecapabilities_radio.yaml", 460, "TCBCwAIbFQAAjAA=", "TCBCwAIbFQAAjAA=", "IiBCwAIDFQAAjAA=", "WiFi.Radio.{r}.HePhyCapabilities"),

@@ -118,7 +118,8 @@
     "plugins/wifi_llapi/reports/agent_trace/20260415T023436252245",
     "plugins/wifi_llapi/reports/agent_trace/20260415T024522159981",
     "plugins/wifi_llapi/reports/agent_trace/20260415T025452242101",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T030233578785"
+    "plugins/wifi_llapi/reports/agent_trace/20260415T030233578785",
+    "plugins/wifi_llapi/reports/agent_trace/20260415T030842726735"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -126,20 +127,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 57,
-  "full_match_count": 347,
-  "mismatch_case_count": 73,
+  "full_match_count": 348,
+  "mismatch_case_count": 72,
   "band_summary": {
     "5g": {
       "matched": 350,
       "mismatched": 70
     },
     "6g": {
-      "matched": 347,
-      "mismatched": 73
+      "matched": 348,
+      "mismatched": 72
     },
     "2.4g": {
-      "matched": 349,
-      "mismatched": 71
+      "matched": 350,
+      "mismatched": 70
     }
   },
   "cases": [
@@ -12719,7 +12720,7 @@
       "case_id": "d385-radio-radcapabilitiesvhtstr",
       "case_file": "D385_radcapabilitiesvhtstr.yaml",
       "dnum": 385,
-      "source_row": 288,
+      "source_row": 385,
       "source_object": "WiFi.Radio.{i}.",
       "source_api": "RadCapabilitiesVHTStr",
       "answer_row": 385,
@@ -12740,26 +12741,23 @@
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
+          "actual_raw": "Not Supported",
+          "actual_norm": "Fail",
           "expected_raw": "Not Supported",
           "expected_norm": "Fail"
         },
         "2.4g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
+          "actual_raw": "Not Supported",
+          "actual_norm": "Fail",
           "expected_raw": "Not Supported",
           "expected_norm": "Fail"
         }
       },
-      "mismatch_bands": [
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. get RadCapabilitiesVHTStr root@prplOS:/# ubus-cli WiFi.Radio.*.RadCapabilitiesVHTStr? > WiFi.Radio.*.RadCapabilitiesVHTStr? WiFi.Radio.1.RadCapabilitiesVHTStr=\"RX_LDPC,SGI_80,SGI_160,SU_BFR,SU_BFE,LINK_ADAPT_CAP\" WiFi.Radio.2.RadCapab...",
       "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d385-radio-radcapabilitiesvhtstr.json"
+      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T030842726735/d385-radio-radcapabilitiesvhtstr.json"
     },
     {
       "case_id": "d394-getradiostats-bytesreceived",
@@ -19195,52 +19193,6 @@
       "workbook_test_steps_excerpt": "1. Connect WiFi station to GW 2. Check Associated Device Status 3. Disconnect Wifi Station from GW 4. Check Associated Device DisassociationTime root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep -E 'Activ root@prplOS...",
       "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 assoclist root@prplOS:/# wl -i wl1 assoclist root@prplOS:/# wl -i wl2 assoclist",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d371-assocdev-disassociationtime.json"
-    },
-    {
-      "case_id": "d385-radio-radcapabilitiesvhtstr",
-      "case_file": "D385_radcapabilitiesvhtstr.yaml",
-      "dnum": 385,
-      "source_row": 288,
-      "source_object": "WiFi.Radio.{i}.",
-      "source_api": "RadCapabilitiesVHTStr",
-      "answer_row": 385,
-      "answer_object": "WiFi.Radio.{i}.",
-      "answer_api": "RadCapabilitiesVHTStr",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Pass",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Not Supported",
-          "expected_norm": "Fail"
-        },
-        "2.4g": {
-          "actual_raw": "Pass",
-          "actual_norm": "Pass",
-          "expected_raw": "Not Supported",
-          "expected_norm": "Fail"
-        }
-      },
-      "mismatch_bands": [
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. get RadCapabilitiesVHTStr root@prplOS:/# ubus-cli WiFi.Radio.*.RadCapabilitiesVHTStr? > WiFi.Radio.*.RadCapabilitiesVHTStr? WiFi.Radio.1.RadCapabilitiesVHTStr=\"RX_LDPC,SGI_80,SGI_160,SU_BFR,SU_BFE,LINK_ADAPT_CAP\" WiFi.Radio.2.RadCapab...",
-      "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d385-radio-radcapabilitiesvhtstr.json"
     },
     {
       "case_id": "d396-getradiostats-errorsreceived",

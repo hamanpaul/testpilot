@@ -1,5 +1,63 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-15 early-111)
+
+> This checkpoint records the `D385 Radio.RadCapabilitiesVHTStr` workbook closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D385 Radio.RadCapabilitiesVHTStr` 已完成 closure
+- workbook authority 已刷新為 row `385`
+- stale row `288` 已由真實 workbook row `385` 取代
+- official rerun `20260415T030842726735` exact-close workbook `Pass / Not Supported / Not Supported`
+- live evidence 保留 tri-band getter `RX_LDPC,SGI_80,SGI_160,SU_BFR,SU_BFE,LINK_ADAPT_CAP / "" / ""`
+- `diagnostic_status=Pass`
+- targeted D385/runtime + radio-getter guardrails passed
+- full repo regression=`1665 passed`
+- compare 更新為 `348 / 420 full matches`、`72 mismatches`、`57 metadata drifts`
+- `D371 AccessPoint.AssociatedDevice.DisassociationTime` 仍維持 localized blocker，rewrite 已回退
+- `D355-D357` 仍保留在需要 CSI client setup 的 placeholder bucket
+- `D359 AccessPoint.IsolationEnable` 因 two-station isolation ping 需求而暫停在 current single-STA lab shape
+- systemic active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- next ready non-blocked compare-open case=`D396 getRadioStats().ErrorsReceived`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D385 | 385 | Radio.RadCapabilitiesVHTStr | Pass / Not Supported / Not Supported | `20260415T030842726735_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260415t030842726735.md L9-L11; L15-L30` | `N/A（DUT-only case；20260415T030842726735_STA.log empty）` |
+
+### D385 Radio.RadCapabilitiesVHTStr alignment evidence
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.RadCapabilitiesVHTStr?"
+ubus-cli "WiFi.Radio.2.RadCapabilitiesVHTStr?"
+ubus-cli "WiFi.Radio.3.RadCapabilitiesVHTStr?"
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260415T030842726735
+- bgw720-0403_wifi_llapi_20260415t030842726735.md L9-L11
+  result_5g/result_6g/result_24g = Pass / Not Supported / Not Supported with diagnostic_status=Pass
+- bgw720-0403_wifi_llapi_20260415t030842726735.md L15-L30
+  tri-band getter evidence exact-closes RadCapabilitiesVHTStr=RX_LDPC,SGI_80,SGI_160,SU_BFR,SU_BFE,LINK_ADAPT_CAP / "" / ""
+- 20260415T030842726735_DUT.log L5-L18
+  DUT getter readback is stable on all three radios, with 6G and 2.4G both returning the empty-string workbook non-pass shape
+```
+
 ## Checkpoint summary (2026-04-15 early-110)
 
 > This checkpoint records the `D384 Radio.RadCapabilitiesHTStr` workbook closure.

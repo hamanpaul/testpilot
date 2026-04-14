@@ -1,7 +1,7 @@
 id: d385-radio-radcapabilitiesvhtstr
 name: D385 Radio RadCapabilitiesVHTStr
 source:
-  row: 288
+  row: 385
   object: WiFi.Radio.{i}.
   api: RadCapabilitiesVHTStr
   baseline: 0310-BGW720-300
@@ -13,8 +13,8 @@ llapi_support: Support
 results_reference:
   v4.0.3:
     5g: Pass
-    6g: Pass
-    2.4g: Pass
+    6g: Not Supported
+    2.4g: Not Supported
 topology:
   devices:
     DUT:
