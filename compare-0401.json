@@ -81,7 +81,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T145819251839",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T150830713390",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T151631032947",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T152334632094"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T152334632094",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T160329947246"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -89,20 +90,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 313,
-  "mismatch_case_count": 107,
+  "full_match_count": 314,
+  "mismatch_case_count": 106,
   "band_summary": {
     "5g": {
-      "matched": 318,
-      "mismatched": 102
+      "matched": 319,
+      "mismatched": 101
     },
     "6g": {
-      "matched": 315,
-      "mismatched": 105
-    },
-    "2.4g": {
       "matched": 316,
       "mismatched": 104
+    },
+    "2.4g": {
+      "matched": 317,
+      "mismatched": 103
     }
   },
   "cases": [
@@ -7220,7 +7221,7 @@
       "case_id": "d199-radio-ieee80211rsupported",
       "case_file": "D199_ieee80211rsupported.yaml",
       "dnum": 199,
-      "source_row": 162,
+      "source_row": 199,
       "source_object": "WiFi.Radio.{i}.",
       "source_api": "IEEE80211rSupported",
       "answer_row": 199,
@@ -7235,33 +7236,29 @@
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Read-only API, defines whether each radio supported 802.11r standard. Check the API value and compare them with driver capability and packets' tag from radio beacons: root@prplOS:/# ubus-cli WiFi.Radio.*.IEEE80211rSupported? > WiFi.Ra...",
       "workbook_command_output_excerpt": "(Fast Transition / Mability Domain included in beacon packet, IE: 54)",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d199-radio-ieee80211rsupported.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T160329947246/d199-radio-ieee80211rsupported.json"
     },
     {
       "case_id": "d200-radio-implicitbeamformingenabled",
@@ -18772,53 +18769,6 @@
       "workbook_test_steps_excerpt": "1. Set RtsThreshold \"ex. 1500 root@prplOS:/# ubus-cli WiFi.Radio.*.DriverConfig.RtsThreshold=1500 > WiFi.Radio.*.DriverConfig.RtsThreshold=1500 WiFi.Radio.1.DriverConfig. WiFi.Radio.1.DriverConfig.RtsThreshold=1500 WiFi.Radio.2.DriverCon...",
       "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 rtsthresh 1500 (0x5dc) root@prplOS:/# wl -i wl1 rtsthresh 1500 (0x5dc) root@prplOS:/# wl -i wl2 rtsthresh 1500 (0x5dc)",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d182-radio-rtsthreshold.json"
-    },
-    {
-      "case_id": "d199-radio-ieee80211rsupported",
-      "case_file": "D199_ieee80211rsupported.yaml",
-      "dnum": 199,
-      "source_row": 162,
-      "source_object": "WiFi.Radio.{i}.",
-      "source_api": "IEEE80211rSupported",
-      "answer_row": 199,
-      "answer_object": "WiFi.Radio.{i}.",
-      "answer_api": "IEEE80211rSupported",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Read-only API, defines whether each radio supported 802.11r standard. Check the API value and compare them with driver capability and packets' tag from radio beacons: root@prplOS:/# ubus-cli WiFi.Radio.*.IEEE80211rSupported? > WiFi.Ra...",
-      "workbook_command_output_excerpt": "(Fast Transition / Mability Domain included in beacon packet, IE: 54)",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d199-radio-ieee80211rsupported.json"
     },
     {
       "case_id": "d200-radio-implicitbeamformingenabled",
