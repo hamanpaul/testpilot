@@ -3034,7 +3034,7 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         "D313_getssidstats_retranscount.yaml": {"row": 313, "api": "RetransCount", "expected": "Not Supported"},
         "D314_getssidstats_unicastpacketsreceived.yaml": {"row": 314, "api": "UnicastPacketsReceived", "expected": "Pass"},
         "D315_getssidstats_unicastpacketssent.yaml": {"row": 315, "api": "UnicastPacketsSent", "expected": "Pass"},
-        "D316_getssidstats_unknownprotopacketsreceived.yaml": {"row": 316, "api": "UnknownProtoPacketsReceived", "expected": "Pass"},
+        "D316_getssidstats_unknownprotopacketsreceived.yaml": {"row": 316, "api": "UnknownProtoPacketsReceived", "expected": "Not Supported"},
     }
 
     for filename, meta in multiband_getssid_cases.items():
@@ -20099,7 +20099,7 @@ _SSID_STATS_CASES = [
     ("D313_getssidstats_retranscount.yaml", 313, "RetransCount", "Not Supported"),
     ("D314_getssidstats_unicastpacketsreceived.yaml", 314, "UnicastPacketsReceived", "Pass"),
     ("D315_getssidstats_unicastpacketssent.yaml", 315, "UnicastPacketsSent", "Pass"),
-    ("D316_getssidstats_unknownprotopacketsreceived.yaml", 316, "UnknownProtoPacketsReceived", "Pass"),
+    ("D316_getssidstats_unknownprotopacketsreceived.yaml", 316, "UnknownProtoPacketsReceived", "Not Supported"),
 ]
 
 _SSID_STATS_IDS = [t[0].split(".")[0] for t in _SSID_STATS_CASES]
