@@ -83,7 +83,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T151631032947",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T152334632094",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T160329947246",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T161411193999"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T161411193999",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T162439231118"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -91,20 +92,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 315,
-  "mismatch_case_count": 105,
+  "full_match_count": 316,
+  "mismatch_case_count": 104,
   "band_summary": {
     "5g": {
-      "matched": 320,
-      "mismatched": 100
+      "matched": 321,
+      "mismatched": 99
     },
     "6g": {
-      "matched": 317,
-      "mismatched": 103
-    },
-    "2.4g": {
       "matched": 318,
       "mismatched": 102
+    },
+    "2.4g": {
+      "matched": 319,
+      "mismatched": 101
     }
   },
   "cases": [
@@ -7308,7 +7309,7 @@
       "case_id": "d201-radio-implicitbeamformingsupported",
       "case_file": "D201_implicitbeamformingsupported.yaml",
       "dnum": 201,
-      "source_row": 164,
+      "source_row": 201,
       "source_object": "WiFi.Radio.{i}.",
       "source_api": "ImplicitBeamFormingSupported",
       "answer_row": 201,
@@ -7323,33 +7324,29 @@
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Read-only API, defines whether each radio supported ImplicitBeamForming. Check API value and compare with driver return value: root@prplOS:/# ubus-cli WiFi.Radio.*.ImplicitBeamFormingSupported? > WiFi.Radio.*.ImplicitBeamFormingSuppor...",
       "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d201-radio-implicitbeamformingsupported.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T162439231118/d201-radio-implicitbeamformingsupported.json"
     },
     {
       "case_id": "d202-radio-interference",
@@ -18766,53 +18763,6 @@
       "workbook_test_steps_excerpt": "1. Set RtsThreshold \"ex. 1500 root@prplOS:/# ubus-cli WiFi.Radio.*.DriverConfig.RtsThreshold=1500 > WiFi.Radio.*.DriverConfig.RtsThreshold=1500 WiFi.Radio.1.DriverConfig. WiFi.Radio.1.DriverConfig.RtsThreshold=1500 WiFi.Radio.2.DriverCon...",
       "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 rtsthresh 1500 (0x5dc) root@prplOS:/# wl -i wl1 rtsthresh 1500 (0x5dc) root@prplOS:/# wl -i wl2 rtsthresh 1500 (0x5dc)",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d182-radio-rtsthreshold.json"
-    },
-    {
-      "case_id": "d201-radio-implicitbeamformingsupported",
-      "case_file": "D201_implicitbeamformingsupported.yaml",
-      "dnum": 201,
-      "source_row": 164,
-      "source_object": "WiFi.Radio.{i}.",
-      "source_api": "ImplicitBeamFormingSupported",
-      "answer_row": 201,
-      "answer_object": "WiFi.Radio.{i}.",
-      "answer_api": "ImplicitBeamFormingSupported",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Read-only API, defines whether each radio supported ImplicitBeamForming. Check API value and compare with driver return value: root@prplOS:/# ubus-cli WiFi.Radio.*.ImplicitBeamFormingSupported? > WiFi.Radio.*.ImplicitBeamFormingSuppor...",
-      "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d201-radio-implicitbeamformingsupported.json"
     },
     {
       "case_id": "d202-radio-interference",

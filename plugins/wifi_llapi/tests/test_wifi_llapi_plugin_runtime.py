@@ -19021,7 +19021,7 @@ _RADIO_GETTER_CASES = [
     ("D198_ieee80211ksupported.yaml", 198, "1", "1", "1", "WiFi.Radio.{r}.IEEE80211kSupported"),
     ("D199_ieee80211rsupported.yaml", 199, "1", "1", "1", "WiFi.Radio.{r}.IEEE80211rSupported"),
     ("D200_implicitbeamformingenabled.yaml", 200, "1", "1", "1", "WiFi.Radio.{r}.ImplicitBeamFormingEnabled"),
-    ("D201_implicitbeamformingsupported.yaml", 164, "1", "1", "1", "WiFi.Radio.{r}.ImplicitBeamFormingSupported"),
+    ("D201_implicitbeamformingsupported.yaml", 201, "1", "1", "1", "WiFi.Radio.{r}.ImplicitBeamFormingSupported"),
     ("D202_interference.yaml", 165, "0", "0", "0", "WiFi.Radio.{r}.Interference"),
     ("D203_maxchannelbandwidth.yaml", 166, "160MHz", "320MHz", "40MHz", "WiFi.Radio.{r}.MaxChannelBandwidth"),
     ("D204_multiusermimoenabled.yaml", 167, "1", "1", "0", "WiFi.Radio.{r}.MultiUserMIMOEnabled"),
