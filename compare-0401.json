@@ -136,14 +136,15 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T070258045824",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T071500138827",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T073336901222",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T074042045965"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T074042045965",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T074830179441"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
   "compared_case_count": 420,
   "missing_answer_count": 0,
   "missing_answer_rows": [],
-  "metadata_drift_count": 47,
+  "metadata_drift_count": 46,
   "full_match_count": 362,
   "mismatch_case_count": 58,
   "band_summary": {
@@ -14770,15 +14771,15 @@
       "case_id": "d459-radiostats-temperature",
       "case_file": "D459_getradiostats_temperature.yaml",
       "dnum": 459,
-      "source_row": 461,
-      "source_object": "WiFi.Radio.{i}.getRadioStats()",
-      "source_api": "Temperature",
+      "source_row": 459,
+      "source_object": "WiFi.Radio.{i}.",
+      "source_api": "getRadioStats()",
       "answer_row": 459,
       "answer_object": "WiFi.Radio.{i}.",
       "answer_api": "getRadioStats()",
-      "mapping_status": "drift",
-      "mapping_object_match": false,
-      "mapping_api_match": false,
+      "mapping_status": "exact",
+      "mapping_object_match": true,
+      "mapping_api_match": true,
       "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
@@ -14807,7 +14808,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Record counters at start: 2. Check Radio Temperature root@prplOS:/# ubus-cli \"WiFi.Radio.*.getRadioStats()\" | grep Temperature Temperature = 81, Temperature = 82, Temperature = 77, root@prplOS:/# ubus-cli \"WiFi.Radio.*.getRadioStats()...",
       "workbook_command_output_excerpt": "cat /sys/class/thermal/thermal_zone0/temp 77195 root@prplOS:/# for z in /sys/class/thermal/thermal_zone*; do > echo \"$z: $(cat $z/type 2>/dev/null) $(cat $z/temp 2>/dev/null)\" > done /sys/class/thermal/thermal_zone0: Broadcom_Thermal 764...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d459-radiostats-temperature.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T074830179441/d459-radiostats-temperature.json"
     },
     {
       "case_id": "d460-radio-hecapabilities",

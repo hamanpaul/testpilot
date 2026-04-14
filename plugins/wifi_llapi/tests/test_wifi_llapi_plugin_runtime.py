@@ -20796,7 +20796,7 @@ _METHOD_STATS_CASES = [
     ("D400_getradiostats_noise.yaml", 458, "getRadioStats", "Noise", "-100", "-97", "-79"),
     ("D401_getradiostats_retranscount.yaml", 459, "getRadioStats", "RetransCount", "26776", "0", "0"),
     ("D402_getradiostats_retrycount.yaml", 460, "getRadioStats", "RetryCount", "0", "0", "0"),
-    ("D459_getradiostats_temperature.yaml", 461, "getRadioStats", "Temperature", "76", "85", "80"),
+    ("D459_getradiostats_temperature.yaml", 459, "getRadioStats", "Temperature", "76", "85", "80"),
 ]
 
 _METHOD_IDS = [t[0].split(".")[0] for t in _METHOD_STATS_CASES]
