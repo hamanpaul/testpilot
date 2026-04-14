@@ -2960,7 +2960,7 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         "D334_retranscount_ssid_stats.yaml": {"row": 334, "api": "RetransCount", "driver": "DriverRetransCount", "awk_field": "txretrans", "expected": "Pass"},
         "D335_unicastpacketsreceived.yaml": {"row": 335, "api": "UnicastPacketsReceived", "driver": "DriverUnicastPacketsReceived", "awk_field": "rxframe", "expected": "Pass"},
         "D336_unicastpacketssent.yaml": {"row": 336, "api": "UnicastPacketsSent", "driver": "DriverUnicastPacketsSent", "awk_field": "d11_txfrag", "expected": "Pass"},
-        "D337_unknownprotopacketsreceived_ssid_stats.yaml": {"row": 337, "api": "UnknownProtoPacketsReceived", "driver": "DriverUnknownProtoPacketsReceived", "awk_field": "rxbadprotopkts", "expected": "Pass"},
+        "D337_unknownprotopacketsreceived_ssid_stats.yaml": {"row": 337, "api": "UnknownProtoPacketsReceived", "driver": "DriverUnknownProtoPacketsReceived", "awk_field": "rxbadprotopkts", "expected": "Skip"},
         "D406_multipleretrycount_ssid_stats.yaml": {"row": 406, "api": "MultipleRetryCount", "driver": "DriverMultipleRetryCount", "awk_field": "txretrie", "expected": "Pass"},
         "D407_retrycount_ssid_stats_basic.yaml": {"row": 407, "api": "RetryCount", "driver": "DriverRetryCount", "awk_field": "txretry", "expected": "Pass"},
         "D495_retrycount_ssid_stats_verified.yaml": {"row": 362, "api": "RetryCount", "expected": "Not Supported"},

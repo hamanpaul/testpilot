@@ -1,5 +1,74 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-14 early-95)
+
+> This checkpoint records the `D337 UnknownProtoPacketsReceived / SSID stats` workbook closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D337 UnknownProtoPacketsReceived / SSID stats` 已完成 closure
+- workbook authority 維持 row `337`
+- official rerun `20260414T212842198251` exact-close tri-band workbook `Skip / Skip / Skip`
+- live cross-check evidence 仍保留 direct/getSSIDStats()/driver `UnknownProtoPacketsReceived=0/0/0`
+- targeted D337/direct-stats runtime guardrails=`1 passed`
+- command-budget guardrail=`1 passed`
+- full repo regression=`1662 passed`
+- compare 更新為 `332 / 420 full matches`、`88 mismatches`、`58 metadata drifts`
+- active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- next ready non-blocked compare-open case=`D328 ErrorsSent / SSID stats`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D337 | 337 | UnknownProtoPacketsReceived | Skip / Skip / Skip | `20260414T212842198251_DUT.log L460-L479; L794-L813; bgw720-0403_wifi_llapi_20260414t212842198251.md L39-L54` | `20260414T212842198251_STA.log L84-L94; L195-L224; L311-L321` |
+
+### D337 UnknownProtoPacketsReceived / SSID stats alignment evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+iw dev wl1 link
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+ubus-cli "WiFi.SSID.4.Stats.UnknownProtoPacketsReceived?"
+ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n 's/^[[:space:]]*UnknownProtoPacketsReceived = \([0-9][0-9]*\).*/GetSSIDStatsUnknownProtoPacketsReceived5g=\1/p'
+wl -i wl0 if_counters | sed -n 's/.*rxbadprotopkts \([0-9][0-9]*\).*/DriverUnknownProtoPacketsReceived5g=\1/p'
+wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+ubus-cli "WiFi.SSID.6.Stats.UnknownProtoPacketsReceived?"
+ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n 's/^[[:space:]]*UnknownProtoPacketsReceived = \([0-9][0-9]*\).*/GetSSIDStatsUnknownProtoPacketsReceived6g=\1/p'
+wl -i wl1 if_counters | sed -n 's/.*rxbadprotopkts \([0-9][0-9]*\).*/DriverUnknownProtoPacketsReceived6g=\1/p'
+wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+ubus-cli "WiFi.SSID.8.Stats.UnknownProtoPacketsReceived?"
+ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n 's/^[[:space:]]*UnknownProtoPacketsReceived = \([0-9][0-9]*\).*/GetSSIDStatsUnknownProtoPacketsReceived24g=\1/p'
+wl -i wl2 if_counters | sed -n 's/.*rxbadprotopkts \([0-9][0-9]*\).*/DriverUnknownProtoPacketsReceived24g=\1/p'
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260414T212842198251
+- bgw720-0403_wifi_llapi_20260414t212842198251.md L9-L11
+  result_5g/result_6g/result_24g = Skip / Skip / Skip
+- bgw720-0403_wifi_llapi_20260414t212842198251.md L39-L54
+  direct Stats / getSSIDStats() / driver all exact-close to 0 on 5g / 6g / 2.4g
+- 20260414T212842198251_DUT.log L460-L479
+  5g UnknownProtoPacketsReceived / GetSSIDStatsUnknownProtoPacketsReceived / DriverUnknownProtoPacketsReceived = 0
+- 20260414T212842198251_DUT.log L794-L813
+  6g UnknownProtoPacketsReceived / GetSSIDStatsUnknownProtoPacketsReceived / DriverUnknownProtoPacketsReceived = 0
+- 20260414T212842198251_STA.log L84-L94; L195-L224; L311-L321
+  STA links stay associated to testpilot5G / testpilot6G / testpilot2G during the tri-band replay
+```
+
 ## Checkpoint summary (2026-04-14 early-94)
 
 > This checkpoint records the `D327 ErrorsReceived / SSID stats` workbook closure.
