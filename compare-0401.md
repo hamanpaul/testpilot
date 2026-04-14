@@ -111,6 +111,7 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T231646005774`
   - `plugins/wifi_llapi/reports/agent_trace/20260414T234216396870`
   - `plugins/wifi_llapi/reports/agent_trace/20260414T235120551775`
+  - `plugins/wifi_llapi/reports/agent_trace/20260415T001339062028`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -121,18 +122,18 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 338 |
-| mismatch cases | 82 |
+| full matches | 339 |
+| mismatch cases | 81 |
 | missing answer rows | 0 |
-| metadata drift rows | 58 |
+| metadata drift rows | 57 |
 
 ## Per-band summary
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 342 | 78 |
-| 6g | 338 | 82 |
-| 2.4g | 341 | 79 |
+| 5g | 343 | 77 |
+| 6g | 339 | 81 |
+| 2.4g | 342 | 78 |
 
 ## Mismatch table
 
@@ -148,7 +149,6 @@
 | `d289-getscanresults-radio` | 289 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d290-getscanresults-centrechannel` | 290 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d302-getssidstats-bytesreceived` | 302 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d354-radio-enable` | 354 | drift | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d355-skip-addclient` | 355 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d356-skip-delclient` | 356 | exact | Skip / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d357-skip-csistats` | 357 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -415,25 +415,6 @@
 - 0401 G excerpt: 1. Connect WiFi Station to SSID4, SSID6 and SSID8 2. Run Ping between Station and check BytesReceived root@prplOS:/# ubus-cli "WiFi.SSID.?" | grep \.BytesReceived= WiFi.SSID.4.Stats.BytesReceived=1647695 WiFi.SSID.6.Stats.BytesReceived=2...
 - 0401 H excerpt: cat /proc/net/dev | grep wl0 root@prplOS:/# cat /proc/net/dev Inter-| Receive | Transmit face |bytes packets errs drop fifo frame compressed multicast|bytes packets errs drop fifo colls carrier compressed wl0: 1647695 6411 0 14 0 0 0 196...
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d302-getssidstats-bytesreceived.json`
-
-### d354-radio-enable
-
-- case file: `D354_enable_radio.yaml`
-- answer row: `354`
-- mapping status: `drift`
-- source metadata: `WiFi.Radio.{i}.` / `Enable`
-- workbook metadata: `WiFi.Radio.{i}.Sensing.` / `Enable`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Check API default value: root@prplOS:/# ubus-cli WiFi.Radio.*.Sensing.Enable? > WiFi.Radio.*.Sensing.Enable? WiFi.Radio.1.Sensing.Enable=1 WiFi.Radio.2.Sensing.Enable=1 WiFi.Radio.3.Sensing.Enable=1 2. Modify the value to 0: ubus-cli ...
-- 0401 H excerpt: (empty)
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d354-radio-enable.json`
 
 ### d355-skip-addclient
 

@@ -108,28 +108,29 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T222507260531",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T231646005774",
     "plugins/wifi_llapi/reports/agent_trace/20260414T234216396870",
-    "plugins/wifi_llapi/reports/agent_trace/20260414T235120551775"
+    "plugins/wifi_llapi/reports/agent_trace/20260414T235120551775",
+    "plugins/wifi_llapi/reports/agent_trace/20260415T001339062028"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
   "compared_case_count": 420,
   "missing_answer_count": 0,
   "missing_answer_rows": [],
-  "metadata_drift_count": 58,
-  "full_match_count": 338,
-  "mismatch_case_count": 82,
+  "metadata_drift_count": 57,
+  "full_match_count": 339,
+  "mismatch_case_count": 81,
   "band_summary": {
     "5g": {
-      "matched": 342,
-      "mismatched": 78
+      "matched": 343,
+      "mismatched": 77
     },
     "6g": {
-      "matched": 338,
-      "mismatched": 82
+      "matched": 339,
+      "mismatched": 81
     },
     "2.4g": {
-      "matched": 341,
-      "mismatched": 79
+      "matched": 342,
+      "mismatched": 78
     }
   },
   "cases": [
@@ -11657,48 +11658,44 @@
       "case_id": "d354-radio-enable",
       "case_file": "D354_enable_radio.yaml",
       "dnum": 354,
-      "source_row": 152,
-      "source_object": "WiFi.Radio.{i}.",
+      "source_row": 354,
+      "source_object": "WiFi.Radio.{i}.Sensing.",
       "source_api": "Enable",
       "answer_row": 354,
       "answer_object": "WiFi.Radio.{i}.Sensing.",
       "answer_api": "Enable",
-      "mapping_status": "drift",
-      "mapping_object_match": false,
+      "mapping_status": "exact",
+      "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Check API default value: root@prplOS:/# ubus-cli WiFi.Radio.*.Sensing.Enable? > WiFi.Radio.*.Sensing.Enable? WiFi.Radio.1.Sensing.Enable=1 WiFi.Radio.2.Sensing.Enable=1 WiFi.Radio.3.Sensing.Enable=1 2. Modify the value to 0: ubus-cli ...",
       "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d354-radio-enable.json"
+      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T001339062028/d354-radio-enable.json"
     },
     {
       "case_id": "d355-skip-addclient",
@@ -18984,53 +18981,6 @@
       "workbook_test_steps_excerpt": "1. Connect WiFi Station to SSID4, SSID6 and SSID8 2. Run Ping between Station and check BytesReceived root@prplOS:/# ubus-cli \"WiFi.SSID.?\" | grep \\.BytesReceived= WiFi.SSID.4.Stats.BytesReceived=1647695 WiFi.SSID.6.Stats.BytesReceived=2...",
       "workbook_command_output_excerpt": "cat /proc/net/dev | grep wl0 root@prplOS:/# cat /proc/net/dev Inter-| Receive | Transmit face |bytes packets errs drop fifo frame compressed multicast|bytes packets errs drop fifo colls carrier compressed wl0: 1647695 6411 0 14 0 0 0 196...",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d302-getssidstats-bytesreceived.json"
-    },
-    {
-      "case_id": "d354-radio-enable",
-      "case_file": "D354_enable_radio.yaml",
-      "dnum": 354,
-      "source_row": 152,
-      "source_object": "WiFi.Radio.{i}.",
-      "source_api": "Enable",
-      "answer_row": 354,
-      "answer_object": "WiFi.Radio.{i}.Sensing.",
-      "answer_api": "Enable",
-      "mapping_status": "drift",
-      "mapping_object_match": false,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Check API default value: root@prplOS:/# ubus-cli WiFi.Radio.*.Sensing.Enable? > WiFi.Radio.*.Sensing.Enable? WiFi.Radio.1.Sensing.Enable=1 WiFi.Radio.2.Sensing.Enable=1 WiFi.Radio.3.Sensing.Enable=1 2. Modify the value to 0: ubus-cli ...",
-      "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d354-radio-enable.json"
     },
     {
       "case_id": "d355-skip-addclient",

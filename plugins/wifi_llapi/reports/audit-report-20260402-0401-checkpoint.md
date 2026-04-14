@@ -1,5 +1,79 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-15 early-102)
+
+> This checkpoint records the `D354 Radio.Sensing.Enable` workbook closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D354 Radio.Sensing.Enable` 已完成 closure
+- workbook authority 已刷新為 row `354`
+- stale row `152` 與 plain `WiFi.Radio.{i}.Enable` getter 已由真實 workbook 目標 `WiFi.Radio.{i}.Sensing.Enable` 取代
+- official rerun `20260415T001339062028` exact-close tri-band workbook `Pass / Pass / Pass`
+- live evidence 保留 tri-band `default -> set 0 -> readback 0 -> restore 1 -> readback 1`
+- `diagnostic_status=Pass`
+- targeted D354/runtime + getter-batch guardrails=`195 passed`
+- full repo regression=`1662 passed`
+- compare 更新為 `339 / 420 full matches`、`81 mismatches`、`57 metadata drifts`
+- `D355-D357` 仍保留在需要 CSI client setup 的 placeholder bucket
+- active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- next ready non-blocked compare-open case=`D359 AccessPoint.IsolationEnable`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D354 | 354 | Sensing.Enable | Pass / Pass / Pass | `20260415T001339062028_DUT.log L5-L30; L32-L57; L59-L85; bgw720-0403_wifi_llapi_20260415t001339062028.md L9-L11; L15-L68` | `N/A（DUT-only case；20260415T001339062028_STA.log empty）` |
+
+### D354 Radio.Sensing.Enable alignment evidence
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.Sensing.Enable?"
+ubus-cli WiFi.Radio.1.Sensing.Enable=0
+ubus-cli "WiFi.Radio.1.Sensing.Enable?"
+ubus-cli WiFi.Radio.1.Sensing.Enable=1
+ubus-cli "WiFi.Radio.1.Sensing.Enable?"
+ubus-cli "WiFi.Radio.2.Sensing.Enable?"
+ubus-cli WiFi.Radio.2.Sensing.Enable=0
+ubus-cli "WiFi.Radio.2.Sensing.Enable?"
+ubus-cli WiFi.Radio.2.Sensing.Enable=1
+ubus-cli "WiFi.Radio.2.Sensing.Enable?"
+ubus-cli "WiFi.Radio.3.Sensing.Enable?"
+ubus-cli WiFi.Radio.3.Sensing.Enable=0
+ubus-cli "WiFi.Radio.3.Sensing.Enable?"
+ubus-cli WiFi.Radio.3.Sensing.Enable=1
+ubus-cli "WiFi.Radio.3.Sensing.Enable?"
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260415T001339062028
+- bgw720-0403_wifi_llapi_20260415t001339062028.md L9-L11
+  result_5g/result_6g/result_24g = Pass / Pass / Pass with diagnostic_status=Pass
+- bgw720-0403_wifi_llapi_20260415t001339062028.md L15-L68
+  each band exact-closes Sensing.Enable default=1, set-to-0 readback, restore-to-1 readback
+- 20260415T001339062028_DUT.log L5-L30
+  5g exact-closes default Sensing.Enable=1, setter to 0, readback 0, restore 1, readback 1
+- 20260415T001339062028_DUT.log L32-L57
+  6g exact-closes default Sensing.Enable=1, setter to 0, readback 0, restore 1, readback 1
+- 20260415T001339062028_DUT.log L59-L85
+  2.4g exact-closes default Sensing.Enable=1, setter to 0, readback 0, restore 1, readback 1
+- 20260415T001339062028_STA.log
+  empty as expected for DUT-only closure
+```
+
 ## Checkpoint summary (2026-04-14 early-101)
 
 > This checkpoint records the `D297 StartAutoChannelSelection` workbook closure.

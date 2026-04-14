@@ -19096,6 +19096,141 @@ def test_d214_rifsenabled_evaluate_requires_tri_band_setter_readback() -> None:
     assert plugin.evaluate(d214, wrong_24g_after_set) is False
 
 
+def test_d354_sensing_enable_contract() -> None:
+    cases_dir = Path(__file__).resolve().parents[1] / "cases"
+    d354 = load_case(cases_dir / "D354_enable_radio.yaml")
+
+    assert d354["source"]["row"] == 354
+    assert d354["source"]["object"] == "WiFi.Radio.{i}.Sensing."
+    assert d354["source"]["api"] == "Enable"
+    assert d354["results_reference"]["v4.0.3"] == {
+        "5g": "Pass",
+        "6g": "Pass",
+        "2.4g": "Pass",
+        "comment": "workbook pass intent is tri-band Sensing.Enable 1 -> 0 -> 1 setter/readback replay on active 0403 lab state",
+    }
+    assert sorted(d354["topology"]["devices"]) == ["DUT"]
+    assert len(d354["steps"]) == 15
+    assert d354["steps"][0]["id"] == "step1_sensing_default_5g"
+    assert d354["steps"][-1]["id"] == "step15_sensing_after_restore_24g"
+
+    commands = "\n".join(str(step["command"]) for step in d354["steps"])
+    assert 'WiFi.Radio.1.Sensing.Enable?"' in commands
+    assert "WiFi.Radio.2.Sensing.Enable=0" in commands
+    assert "WiFi.Radio.3.Sensing.Enable=1" in commands
+
+
+def test_d354_sensing_enable_setup_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "cases"
+    d354 = load_case(cases_dir / "D354_enable_radio.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+
+    assert plugin.setup_env(d354, topology=topo) is True
+    plugin.teardown(d354, topo)
+
+
+def test_d354_sensing_enable_evaluate_requires_tri_band_setter_readback() -> None:
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "cases"
+    d354 = load_case(cases_dir / "D354_enable_radio.yaml")
+
+    good_results = {
+        "steps": {
+            "step1_sensing_default_5g": {
+                "success": True,
+                "output": "WiFi.Radio.1.Sensing.Enable=1",
+                "timing": 0.01,
+            },
+            "step2_sensing_set_disable_5g": {
+                "success": True,
+                "output": "WiFi.Radio.1.Sensing.\nWiFi.Radio.1.Sensing.Enable=0",
+                "timing": 0.01,
+            },
+            "step3_sensing_after_disable_5g": {
+                "success": True,
+                "output": "WiFi.Radio.1.Sensing.Enable=0",
+                "timing": 0.01,
+            },
+            "step4_sensing_restore_5g": {
+                "success": True,
+                "output": "WiFi.Radio.1.Sensing.\nWiFi.Radio.1.Sensing.Enable=1",
+                "timing": 0.01,
+            },
+            "step5_sensing_after_restore_5g": {
+                "success": True,
+                "output": "WiFi.Radio.1.Sensing.Enable=1",
+                "timing": 0.01,
+            },
+            "step6_sensing_default_6g": {
+                "success": True,
+                "output": "WiFi.Radio.2.Sensing.Enable=1",
+                "timing": 0.01,
+            },
+            "step7_sensing_set_disable_6g": {
+                "success": True,
+                "output": "WiFi.Radio.2.Sensing.\nWiFi.Radio.2.Sensing.Enable=0",
+                "timing": 0.01,
+            },
+            "step8_sensing_after_disable_6g": {
+                "success": True,
+                "output": "WiFi.Radio.2.Sensing.Enable=0",
+                "timing": 0.01,
+            },
+            "step9_sensing_restore_6g": {
+                "success": True,
+                "output": "WiFi.Radio.2.Sensing.\nWiFi.Radio.2.Sensing.Enable=1",
+                "timing": 0.01,
+            },
+            "step10_sensing_after_restore_6g": {
+                "success": True,
+                "output": "WiFi.Radio.2.Sensing.Enable=1",
+                "timing": 0.01,
+            },
+            "step11_sensing_default_24g": {
+                "success": True,
+                "output": "WiFi.Radio.3.Sensing.Enable=1",
+                "timing": 0.01,
+            },
+            "step12_sensing_set_disable_24g": {
+                "success": True,
+                "output": "WiFi.Radio.3.Sensing.\nWiFi.Radio.3.Sensing.Enable=0",
+                "timing": 0.01,
+            },
+            "step13_sensing_after_disable_24g": {
+                "success": True,
+                "output": "WiFi.Radio.3.Sensing.Enable=0",
+                "timing": 0.01,
+            },
+            "step14_sensing_restore_24g": {
+                "success": True,
+                "output": "WiFi.Radio.3.Sensing.\nWiFi.Radio.3.Sensing.Enable=1",
+                "timing": 0.01,
+            },
+            "step15_sensing_after_restore_24g": {
+                "success": True,
+                "output": "WiFi.Radio.3.Sensing.Enable=1",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d354, good_results) is True
+
+    wrong_24g_after_disable = {
+        "steps": {
+            **good_results["steps"],
+            "step13_sensing_after_disable_24g": {
+                "success": True,
+                "output": "WiFi.Radio.3.Sensing.Enable=1",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d354, wrong_24g_after_disable) is False
+
+
 def test_d251_regulatorydomainrev_contract() -> None:
     cases_dir = Path(__file__).resolve().parents[1] / "cases"
     d251 = load_case(cases_dir / "D251_regulatorydomain_radio_vendor.yaml")
@@ -19190,7 +19325,6 @@ _RADIO_GETTER_CASES = [
     ("D185_nractivetxantenna.yaml", 185, "4", "4", "4", "WiFi.Radio.{r}.DriverStatus.NrActiveTxAntenna"),
     ("D186_nrrxantenna.yaml", 186, "4", "4", "4", "WiFi.Radio.{r}.NrRxAntenna"),
     ("D187_nrtxantenna.yaml", 187, "4", "4", "4", "WiFi.Radio.{r}.NrTxAntenna"),
-    ("D354_enable_radio.yaml", 152, "1", "1", "1", "WiFi.Radio.{r}.Enable"),
     ("D190_explicitbeamformingenabled.yaml", 190, "1", "1", "1", "WiFi.Radio.{r}.ExplicitBeamFormingEnabled"),
     ("D191_explicitbeamformingsupported.yaml", 191, "1", "1", "1", "WiFi.Radio.{r}.ExplicitBeamFormingSupported"),
     ("D192_guardinterval.yaml", 192, "Auto", "Auto", "Auto", "WiFi.Radio.{r}.GuardInterval"),
