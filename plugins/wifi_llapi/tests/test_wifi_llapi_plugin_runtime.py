@@ -7469,6 +7469,243 @@ def test_d057_txunicastpacketcount_evaluate_live_examples():
     assert plugin.evaluate(d057, d057_wrong_assoc_results) is False
 
 
+def test_d053_txbytes_contract():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
+    assert "wifi-llapi-D053-txbytes" in discoverable_ids
+
+    d053_raw = yaml.safe_load((cases_dir / "D053_txbytes.yaml").read_text(encoding="utf-8"))
+    d053 = load_case(cases_dir / "D053_txbytes.yaml")
+    d053_commands = "\n".join(str(step.get("command", "")) for step in d053["steps"])
+    d053_links = {link["band"] for link in d053["topology"]["links"]}
+
+    assert "aliases" not in d053_raw
+    assert d053["id"] == "wifi-llapi-D053-txbytes"
+    assert d053["source"]["row"] == 53
+    assert d053["source"]["baseline"] == "BCM v4.0.3"
+    assert d053["llapi_support"] == "Support"
+    assert d053["bands"] == ["5g", "6g", "2.4g"]
+    assert d053_links == {"5g", "6g", "2.4g"}
+    assert d053["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxBytes?"'
+    assert len(d053["steps"]) == 15
+    assert len(d053["pass_criteria"]) == 36
+    assert "PingTx5g=" in d053_commands
+    assert "PingTx6g=" in d053_commands
+    assert "PingTx24g=" in d053_commands
+    assert "AssocTxBytes5g=" in d053_commands
+    assert "AssocTxBytes6g=" in d053_commands
+    assert "AssocTxBytes24g=" in d053_commands
+    assert "DriverTxBytes5g=" in d053_commands
+    assert "DriverTxBytes6g=" in d053_commands
+    assert "DriverTxBytes24g=" in d053_commands
+    assert any(
+        criterion["field"] == "assoc_entry_5g.AssocMac5g"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "sta_ready_5g.StaMac5g"
+        for criterion in d053["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "capture_6g.TxBytes6g"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "capture_6g.AssocTxBytes6g"
+        for criterion in d053["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "capture_24g.DriverTxBytes24g"
+        and criterion["operator"] == "equals"
+        and criterion.get("reference") == "capture_24g.TxBytes24g"
+        for criterion in d053["pass_criteria"]
+    )
+    assert d053["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d053["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d053["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+
+
+def test_d053_txbytes_evaluate_live_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    d053 = load_case(cases_dir / "D053_txbytes.yaml")
+
+    d053_results = {
+        "steps": {
+            "step1_5g_sta_ready": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "bssid=2c:59:17:00:19:95",
+                        "freq=5180",
+                        "ssid=testpilot5G",
+                        "key_mgmt=WPA2-PSK",
+                        "wpa_state=COMPLETED",
+                        "StaMac5g=2c:59:17:00:04:85",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+            "step2_5g_assoc_entry": {
+                "success": True,
+                "output": "AssocMac5g=2c:59:17:00:04:85",
+                "timing": 0.01,
+            },
+            "step3_5g_ip_prep": {
+                "success": True,
+                "output": "StaIp5g=192.168.1.3/24",
+                "timing": 0.01,
+            },
+            "step4_5g_ping_trigger": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "PingReturnCode5g=1",
+                        "PingTx5g=8",
+                        "PingRx5g=0",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+            "step5_5g_tight_capture": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "AssocMac5g=2c:59:17:00:04:85",
+                        "AssocTxBytes5g=12944",
+                        "AssocTxPacketCount5g=24",
+                        "TxBytes5g=12944",
+                        "DriverAssocMac5g=2c:59:17:00:04:85",
+                        "DriverTxBytes5g=12944",
+                        "DriverTxPacketCount5g=24",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+            "step6_6g_sta_ready": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "bssid=2c:59:17:00:19:96",
+                        "freq=5955",
+                        "ssid=testpilot6G",
+                        "key_mgmt=SAE",
+                        "wpa_state=COMPLETED",
+                        "StaMac6g=2c:59:17:00:04:86",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+            "step7_6g_assoc_entry": {
+                "success": True,
+                "output": "AssocMac6g=2c:59:17:00:04:86",
+                "timing": 0.01,
+            },
+            "step8_6g_ip_prep": {
+                "success": True,
+                "output": "StaIp6g=192.168.1.3/24",
+                "timing": 0.01,
+            },
+            "step9_6g_ping_trigger": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "PingReturnCode6g=1",
+                        "PingTx6g=8",
+                        "PingRx6g=0",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+            "step10_6g_tight_capture": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "AssocMac6g=2c:59:17:00:04:86",
+                        "AssocTxBytes6g=28270",
+                        "AssocTxPacketCount6g=49",
+                        "TxBytes6g=28270",
+                        "DriverAssocMac6g=2c:59:17:00:04:86",
+                        "DriverTxBytes6g=28270",
+                        "DriverTxPacketCount6g=49",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+            "step11_24g_sta_ready": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "bssid=2c:59:17:00:19:a7",
+                        "freq=2412",
+                        "ssid=testpilot2G",
+                        "key_mgmt=WPA2-PSK",
+                        "wpa_state=COMPLETED",
+                        "StaMac24g=2c:59:17:00:04:97",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+            "step12_24g_assoc_entry": {
+                "success": True,
+                "output": "AssocMac24g=2c:59:17:00:04:97",
+                "timing": 0.01,
+            },
+            "step13_24g_ip_prep": {
+                "success": True,
+                "output": "StaIp24g=192.168.1.3/24",
+                "timing": 0.01,
+            },
+            "step14_24g_ping_trigger": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "PingReturnCode24g=1",
+                        "PingTx24g=8",
+                        "PingRx24g=0",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+            "step15_24g_tight_capture": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "AssocMac24g=2c:59:17:00:04:97",
+                        "AssocTxBytes24g=90",
+                        "AssocTxPacketCount24g=10",
+                        "TxBytes24g=90",
+                        "DriverAssocMac24g=2c:59:17:00:04:97",
+                        "DriverTxBytes24g=90",
+                        "DriverTxPacketCount24g=10",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d053, d053_results) is True
+
+    d053_wrong_6g_driver_results = {
+        "steps": {
+            **d053_results["steps"],
+            "step10_6g_tight_capture": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "AssocMac6g=2c:59:17:00:04:86",
+                        "AssocTxBytes6g=28270",
+                        "AssocTxPacketCount6g=49",
+                        "TxBytes6g=28270",
+                        "DriverAssocMac6g=2c:59:17:00:04:86",
+                        "DriverTxBytes6g=11111",
+                        "DriverTxPacketCount6g=49",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d053, d053_wrong_6g_driver_results) is False
+
+
 def test_d062_vendoroui_uses_same_sta_pass_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
@@ -16264,6 +16501,45 @@ def test_d057_txunicastpacketcount_snapshot_fragment_executes():
     ]
 
 
+def test_d053_txbytes_verification_fragments_preserve_snapshot_and_driver_checks():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    d053 = load_case(cases_dir / "D053_txbytes.yaml")
+
+    step5_command = d053["steps"][4]["command"]
+    verification_commands = plugin._extract_cli_fragments(d053["verification_command"])
+
+    assert "TxBytes5g=" in step5_command
+    assert "AssocTxPacketCount5g=" in step5_command
+    assert "DriverTxBytes5g=" in step5_command
+    assert plugin._sanitize_cli_fragment(step5_command) == step5_command
+    assert plugin._extract_cli_fragments(step5_command) == [step5_command]
+    assert len(verification_commands) == 15
+    assert verification_commands[4] == step5_command
+
+
+def test_d053_txbytes_macaddress_fragment_normalizes_case():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    d053 = load_case(cases_dir / "D053_txbytes.yaml")
+    step2_command = d053["steps"][1]["command"]
+    pipeline = step2_command.split("|", 1)[1].strip()
+    sample_output = 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"'
+
+    proc = subprocess.run(
+        [
+            "sh",
+            "-lc",
+            f"cat <<'EOF' | {pipeline}\n{sample_output}\nEOF",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == "AssocMac5g=2c:59:17:00:04:85"
+
+
 def test_d062_vendoroui_verification_fragments_preserve_snapshot_and_driver_checks():
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
@@ -18501,6 +18777,222 @@ def test_d188_dtimperiod_evaluate_live_examples():
     assert plugin.evaluate(d188, d188_wrong_24g_hostapd_restore) is False
 
 
+def test_d178_channelload_contract() -> None:
+    cases_dir = Path(__file__).resolve().parents[1] / "cases"
+    d178 = load_case(cases_dir / "D178_channelload.yaml")
+
+    assert d178["source"]["row"] == 178
+    assert d178["results_reference"]["v4.0.3"] == {
+        "5g": "Pass",
+        "6g": "Pass",
+        "2.4g": "Pass",
+        "comment": "read-only getter；workbook pass intent 是 ChannelLoad 與 getRadioAirStats.Load / survey dump derived load 對齊",
+    }
+    assert [step["id"] for step in d178["steps"]] == [
+        "step_5g_tight_capture",
+        "step_6g_tight_capture",
+        "step_24g_tight_capture",
+    ]
+    assert len(d178["pass_criteria"]) == 9
+
+    commands = "\n".join(str(step["command"]) for step in d178["steps"])
+    assert "getRadioAirStats()" in commands
+    assert "ChannelLoad?" in commands
+    assert "survey dump" in commands
+    assert "int((busy * 100) / active)" in commands
+
+
+def test_d178_channelload_setup_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "cases"
+    d178 = load_case(cases_dir / "D178_channelload.yaml")
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+
+    assert plugin.setup_env(d178, topology=topology) is True
+
+    plugin.teardown(d178, topology)
+
+
+def test_d178_channelload_evaluate_requires_airload_and_floor_based_survey_match() -> None:
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "cases"
+    d178 = load_case(cases_dir / "D178_channelload.yaml")
+
+    good_results = {
+        "steps": {
+            "step_5g_tight_capture": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "AirLoad5g=84",
+                        "ChannelLoad5g=84",
+                        "SurveyActiveMs5g=57",
+                        "SurveyBusyMs5g=48",
+                        "SurveyChannelLoad5g=84",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+            "step_6g_tight_capture": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "AirLoad6g=62",
+                        "ChannelLoad6g=62",
+                        "SurveyActiveMs6g=50",
+                        "SurveyBusyMs6g=31",
+                        "SurveyChannelLoad6g=62",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+            "step_24g_tight_capture": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "AirLoad24g=98",
+                        "ChannelLoad24g=98",
+                        "SurveyActiveMs24g=70",
+                        "SurveyBusyMs24g=69",
+                        "SurveyChannelLoad24g=98",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d178, good_results) is True
+
+    wrong_flooring = {
+        "steps": {
+            **good_results["steps"],
+            "step_24g_tight_capture": {
+                "success": True,
+                "output": "\n".join(
+                    [
+                        "AirLoad24g=98",
+                        "ChannelLoad24g=98",
+                        "SurveyActiveMs24g=70",
+                        "SurveyBusyMs24g=69",
+                        "SurveyChannelLoad24g=99",
+                    ]
+                ),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d178, wrong_flooring) is False
+
+
+def test_d179_ampdu_contract() -> None:
+    cases_dir = Path(__file__).resolve().parents[1] / "cases"
+    d179 = load_case(cases_dir / "D179_ampdu.yaml")
+
+    assert d179["source"]["row"] == 179
+    assert d179["results_reference"]["v4.0.3"] == {
+        "5g": "Pass",
+        "6g": "Pass",
+        "2.4g": "Pass",
+        "comment": "workbook pass intent is setter-backed 1 -> 0 -> -1 replay under active STA baseline; 5g/2.4g use wl ampdu readback after reload settle, 6g uses BSS effect oracle under current 0403 reload path",
+    }
+    assert sorted(d179["topology"]["devices"]) == ["DUT", "STA"]
+    assert [link["band"] for link in d179["topology"]["links"]] == ["5g", "6g", "2.4g"]
+    assert len(d179["steps"]) == 18
+    assert d179["steps"][0]["id"] == "step1_ampdu_set_5g"
+    assert d179["steps"][-1]["id"] == "step18_ampdu_after_restore_24g"
+    assert len(d179["pass_criteria"]) == 15
+
+    commands = "\n".join(str(step["command"]) for step in d179["steps"])
+    assert "/etc/init.d/wld_gen start" in commands
+    assert "wl -i wl0 ampdu" in commands
+    assert "wl -i wl1 bss" in commands
+    assert "wl -i wl2 ampdu" in commands
+
+
+def test_d179_ampdu_setup_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "cases"
+    d179 = load_case(cases_dir / "D179_ampdu.yaml")
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+
+    assert plugin.setup_env(d179, topology=topology) is True
+
+    plugin.teardown(d179, topology)
+
+
+def test_d179_ampdu_evaluate_requires_tri_band_setter_effects() -> None:
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "cases"
+    d179 = load_case(cases_dir / "D179_ampdu.yaml")
+
+    good_results = {
+        "steps": {
+            "step2_ampdu_after_set_5g": {
+                "success": True,
+                "output": "AfterSetGetterAmpdu5g=1\nAfterSetDriverAmpdu5g=1",
+                "timing": 0.01,
+            },
+            "step4_ampdu_after_set0_5g": {
+                "success": True,
+                "output": "AfterSet0GetterAmpdu5g=0\nAfterSet0DriverAmpdu5g=0",
+                "timing": 0.01,
+            },
+            "step6_ampdu_after_restore_5g": {
+                "success": True,
+                "output": "AfterRestoreGetterAmpdu5g=-1",
+                "timing": 0.01,
+            },
+            "step8_ampdu_after_set_6g": {
+                "success": True,
+                "output": "AfterSetGetterAmpdu6g=1\nAfterSetBss6g=up",
+                "timing": 0.01,
+            },
+            "step10_ampdu_after_set0_6g": {
+                "success": True,
+                "output": "AfterSet0GetterAmpdu6g=0\nAfterSet0Bss6g=down",
+                "timing": 0.01,
+            },
+            "step12_ampdu_after_restore_6g": {
+                "success": True,
+                "output": "AfterRestoreGetterAmpdu6g=-1",
+                "timing": 0.01,
+            },
+            "step14_ampdu_after_set_24g": {
+                "success": True,
+                "output": "AfterSetGetterAmpdu24g=1\nAfterSetDriverAmpdu24g=1",
+                "timing": 0.01,
+            },
+            "step16_ampdu_after_set0_24g": {
+                "success": True,
+                "output": "AfterSet0GetterAmpdu24g=0\nAfterSet0DriverAmpdu24g=0",
+                "timing": 0.01,
+            },
+            "step18_ampdu_after_restore_24g": {
+                "success": True,
+                "output": "AfterRestoreGetterAmpdu24g=-1",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d179, good_results) is True
+
+    wrong_6g_disable = {
+        "steps": {
+            **good_results["steps"],
+            "step10_ampdu_after_set0_6g": {
+                "success": True,
+                "output": "AfterSet0GetterAmpdu6g=0\nAfterSet0Bss6g=up",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d179, wrong_6g_disable) is False
+
+
 # Remaining WiFi.Radio.{i} read-only getter batch
 # ---------------------------------------------------------------------------
 
@@ -18509,8 +19001,6 @@ def test_d188_dtimperiod_evaluate_live_examples():
 _RADIO_GETTER_CASES = [
     ("D174_activeantennactrl.yaml", 174, "-1", "-1", "-1", "WiFi.Radio.{r}.ActiveAntennaCtrl"),
     ("D474_channel_radio_37.yaml", 179, "36", "1", "1", "WiFi.Radio.{r}.Channel"),
-    ("D178_channelload.yaml", 141, "83", "61", "100", "WiFi.Radio.{r}.ChannelLoad"),
-    ("D179_ampdu.yaml", 142, "-1", "-1", "-1", "WiFi.Radio.{r}.DriverConfig.Ampdu"),
     ("D180_amsdu.yaml", 143, "-1", "-1", "-1", "WiFi.Radio.{r}.DriverConfig.Amsdu"),
     ("D181_fragmentationthreshold.yaml", 144, "-1", "-1", "-1", "WiFi.Radio.{r}.DriverConfig.FragmentationThreshold"),
     ("D182_rtsthreshold.yaml", 145, "-1", "-1", "-1", "WiFi.Radio.{r}.DriverConfig.RtsThreshold"),
@@ -20128,7 +20618,6 @@ _SKIP_BLOCKED_CASES = [
     ("D581_signalstrength_associateddevice_affiliatedsta.yaml", 584, "Skip"),
     ("D051_tx_retransmissions.yaml", 53, "Blocked"),
     ("D052_tx_retransmissionsfailed.yaml", 54, "Blocked"),
-    ("D053_txbytes.yaml", 55, "Blocked"),
 ]
 _SKIP_BLOCKED_IDS = [t[0].split(".")[0] for t in _SKIP_BLOCKED_CASES]
 

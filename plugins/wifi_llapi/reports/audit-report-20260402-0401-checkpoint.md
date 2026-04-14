@@ -1,5 +1,218 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-13 early-65)
+
+> This checkpoint records the `D179 Radio.Ampdu` blocker after the DUT-only replay was rejected and the clean-start `DUT + STA` retry exposed the current 6G baseline failure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D179 Radio.Ampdu` 目前不是 closure，而是 blocker
+- workbook authority 是 row `179`；`0401 G/H` 明確要求先 connect station，再切 `Ampdu=1/0/-1`，最後用 `wl -i wlx ampdu` 做 driver oracle
+- focused rerun `20260413T175446838229` 已直接否決舊 DUT-only 形狀：5G 出現 `AfterSet0GetterAmpdu5g=0`，但 driver 仍是 `AfterSet0DriverAmpdu5g=1`，而且該 rerun 沒有 per-case STA evidence
+- current trial YAML 已改成 explicit `DUT + STA` topology 與 tri-band links；targeted D179/runtime + command-budget guardrails=`4 passed`
+- clean-start rerun `20260413T182427454124` 在真正進入 D179 step 前就反覆卡在 6G `verify_env`：`6G ocv fix did not stabilize wl1 after retries`、`sta_baseline_bss[1] not ready after 60s cmd=wl -i wl1 bss`、`STA 6g link check failed (iface=wl1, rc=0): Not connected.`
+- 這表示 D179 現在真正的 blocker 是 shared `DUT + STA` 6G baseline bring-up，不是已收斂的 tri-band Ampdu step compare
+- final full repo regression 維持 `1662 passed`
+- overlay compare 仍是 `298 / 420 full matches`、`122 mismatches`、`58 metadata drifts`
+- active blockers 現在是 `D047 SupportedHe160MCS` authority conflict + `D179 Radio.Ampdu` 6G baseline blocker；next ready actionable compare-open case 改為 `D180 Radio.Amsdu`
+
+</details>
+
+### D179 Radio.Ampdu blocker evidence
+
+**STA 指令**
+
+```sh
+# 第一輪 focused rerun 仍是 DUT-only shape，沒有 per-case STA command / STA log evidence。
+# 第二輪 clean-start rerun 雖已宣告 DUT+STA topology，但在 verify_env 就因 6G baseline recovery loop 中止，尚未進入 D179 的 case-step STA command。
+```
+
+**DUT 指令**
+
+```sh
+printf 'RequestedAmpdu5g=0\n'
+ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=0
+/etc/init.d/wld_gen start
+sleep 10
+ubus-cli "WiFi.Radio.1.DriverConfig.Ampdu?" | sed -n 's/^WiFi\.Radio\.1\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterSet0GetterAmpdu5g=\1/p'
+wl -i wl0 ampdu | sed -n 's/^\([01]\)$/AfterSet0DriverAmpdu5g=\1/p'
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260413T175446838229
+- bgw720-0403_wifi_llapi_20260413t175446838229.md L95-L97, L170-L172
+  AfterSet0GetterAmpdu5g=0
+  AfterSet0DriverAmpdu5g=1
+  failure_snapshot field=after_set0_5g.AfterSet0DriverAmpdu5g expected=0 actual=1
+- 20260413T175446838229_DUT.log L35-L64
+  RequestedAmpdu5g=0
+  AfterSet0GetterAmpdu5g=0
+  AfterSet0DriverAmpdu5g=1
+- 20260413T175446838229_STA.log
+  empty file (no per-case STA evidence)
+
+Clean-start rerun 20260413T182427454124
+- shell transcript repeated:
+  6G ocv=0 fix applied, wl1 hostapd restarted
+  6G ocv fix did not stabilize wl1 after retries
+  sta_baseline_bss[1] not ready after 60s cmd=wl -i wl1 bss
+  STA 6g link check failed (iface=wl1, rc=0): Not connected.
+- emitted only partial xlsx artifact:
+  20260413_BGW720-0403_wifi_LLAPI_20260413T182427454124.xlsx
+  row 179 result cells remained blank
+```
+
+## Checkpoint summary (2026-04-13 early-64)
+
+> This checkpoint records the `D178 Radio.ChannelLoad` workbook-authoritative pass closure after the same-window radio-load rewrite.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D178 Radio.ChannelLoad` 已透過 official rerun `20260413T172222999250` 完成 closure
+- workbook authority 是 row `178`，workbook v4.0.3 維持 `Pass / Pass / Pass`
+- 舊 authored shape 的 stale row `141` + bare getters 已在歷史 full run 證明會讓 6G 落到空值 / cache drift；landed case 現在改成 per-band same-window tight-capture：同一步先 `getRadioAirStats()` refresh，再抓 `ChannelLoad?` 與 `iw dev wlX survey dump`
+- current rerun exact-close generic lab environment 上的 tri-band radio-load evidence：`5G AirLoad=ChannelLoad=SurveyChannelLoad=84`、`6G=62`、`2.4G=98`
+- 2.4G survey 對位刻意採 floor-based `int((busy * 100) / active)`；`69/70` 正確收斂成 `98`，不是 `99`
+- targeted D178/runtime + command-budget guardrails=`4 passed`
+- final full repo regression 已更新為 `1662 passed`
+- overlay compare 已提升到 `298 / 420 full matches`、`122 mismatches`、`58 metadata drifts`
+- `D020` 仍保留在 verified fail-shaped mismatch bucket，`D047` 仍維持 authority blocker；next ready actionable compare-open case 改為 `D179 Radio.Ampdu`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D178` | 178 | `ChannelLoad` | `Pass / Pass / Pass` | `20260413T172222999250_DUT.log L2383-L2453; bgw720-0403_wifi_llapi_20260413t172222999250.md L15-L48` | `20260413T172222999250_STA.log L1-L9 (DUT-only case)` |
+
+#### D178 Radio.ChannelLoad
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only radio getter case; official rerun did not open a per-case STA transport)
+```
+
+**DUT 指令**
+
+```sh
+AIR=$(ubus-cli "WiFi.Radio.1.getRadioAirStats()" 2>&1); printf '%s\n' "$AIR" | sed -n 's/^[[:space:]]*Load = \([0-9][0-9]*\).*/AirLoad5g=\1/p'; ubus-cli "WiFi.Radio.1.ChannelLoad?" | sed -n 's/^WiFi\.Radio\.1\.ChannelLoad=\([0-9][0-9]*\)$/ChannelLoad5g=\1/p'; iw dev wl0 survey dump | awk '/\[in use\]/{inuse=1; next} inuse && /channel active time:/ {line=$0; gsub(/[^0-9]/, "", line); active=line; next} inuse && /channel busy time:/ {line=$0; gsub(/[^0-9]/, "", line); busy=line; if ((active + 0) > 0) { printf "SurveyActiveMs5g=%s\nSurveyBusyMs5g=%s\nSurveyChannelLoad5g=%d\n", active, busy, int((busy * 100) / active); exit }}'
+AIR=$(ubus-cli "WiFi.Radio.2.getRadioAirStats()" 2>&1); printf '%s\n' "$AIR" | sed -n 's/^[[:space:]]*Load = \([0-9][0-9]*\).*/AirLoad6g=\1/p'; ubus-cli "WiFi.Radio.2.ChannelLoad?" | sed -n 's/^WiFi\.Radio\.2\.ChannelLoad=\([0-9][0-9]*\)$/ChannelLoad6g=\1/p'; iw dev wl1 survey dump | awk '/\[in use\]/{inuse=1; next} inuse && /channel active time:/ {line=$0; gsub(/[^0-9]/, "", line); active=line; next} inuse && /channel busy time:/ {line=$0; gsub(/[^0-9]/, "", line); busy=line; if ((active + 0) > 0) { printf "SurveyActiveMs6g=%s\nSurveyBusyMs6g=%s\nSurveyChannelLoad6g=%d\n", active, busy, int((busy * 100) / active); exit }}'
+AIR=$(ubus-cli "WiFi.Radio.3.getRadioAirStats()" 2>&1); printf '%s\n' "$AIR" | sed -n 's/^[[:space:]]*Load = \([0-9][0-9]*\).*/AirLoad24g=\1/p'; ubus-cli "WiFi.Radio.3.ChannelLoad?" | sed -n 's/^WiFi\.Radio\.3\.ChannelLoad=\([0-9][0-9]*\)$/ChannelLoad24g=\1/p'; iw dev wl2 survey dump | awk '/\[in use\]/{inuse=1; next} inuse && /channel active time:/ {line=$0; gsub(/[^0-9]/, "", line); active=line; next} inuse && /channel busy time:/ {line=$0; gsub(/[^0-9]/, "", line); busy=line; if ((active + 0) > 0) { printf "SurveyActiveMs24g=%s\nSurveyBusyMs24g=%s\nSurveyChannelLoad24g=%d\n", active, busy, int((busy * 100) / active); exit }}'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+STA (20260413T172222999250_STA.log L1-L9)
+echo __READY__73067f95
+__READY__73067f95
+echo __READY__607d09f4
+__READY__607d09f4
+echo __READY__e899bcd8
+__READY__e899bcd8
+
+DUT (20260413T172222999250_DUT.log L2383-L2453; bgw720-0403_wifi_llapi_20260413t172222999250.md L27-L43)
+AirLoad5g=84
+ChannelLoad5g=84
+SurveyActiveMs5g=57
+SurveyBusyMs5g=48
+SurveyChannelLoad5g=84
+AirLoad6g=62
+ChannelLoad6g=62
+SurveyActiveMs6g=50
+SurveyBusyMs6g=31
+SurveyChannelLoad6g=62
+AirLoad24g=98
+ChannelLoad24g=98
+SurveyActiveMs24g=70
+SurveyBusyMs24g=69
+SurveyChannelLoad24g=98
+```
+
+## Checkpoint summary (2026-04-13 early-63)
+
+> This checkpoint records the `D053 TxBytes` workbook-authoritative pass closure after the tight-capture rewrite.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D053 TxBytes` 已透過 official rerun `20260413T164447027184` 完成 closure
+- workbook authority 是 row `53`，workbook v4.0.3 維持 `Pass / Pass / Pass`
+- 舊 authored shape 把 getter / snapshot / driver 拆成多個 DUT steps，已在 earlier reruns 證明會造成 official-runner drift；landed case 現在改成 per-band same-window tight-capture
+- current rerun exact-close generic tri-band baseline 上的同站 counter evidence：`5G AssocTxBytes=TxBytes=DriverTxBytes=992`、`6G=25207`、`2.4G=25586`
+- 這是 authoritative pass closure：rerun `evaluation_verdict=Pass`、final raw=`Pass / Pass / Pass`，compare 現在已 exact-match workbook row `53`
+- overlay compare 已提升到 `297 / 420 full matches`、`123 mismatches`、`58 metadata drifts`
+- targeted D053/runtime + command-budget guardrails=`8 passed`
+- final full repo regression 已更新為 `1662 passed`
+- `D020` 仍保留在 verified fail-shaped mismatch bucket，`D047` 仍維持 authority blocker；next ready actionable compare-open case 改為 `D178 Radio.ChannelLoad`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D053` | 53 | `TxBytes` | `Pass / Pass / Pass` | `20260413T164447027184_DUT.log L475-L481; bgw720-0403_wifi_llapi_20260413t164447027184.md L100-L135` | `20260413T164447027184_STA.log L82-L85, L208-L211, L337-L340` |
+
+#### D053 TxBytes
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+ifconfig wl0 192.168.1.3 netmask 255.255.255.0 up
+ping -I wl0 -c 8 -W 1 192.168.1.1
+iw dev wl1 link
+ifconfig wl1 192.168.1.3 netmask 255.255.255.0 up
+ping -I wl1 -c 8 -W 1 192.168.1.1
+iw dev wl2 link
+ifconfig wl2 192.168.1.3 netmask 255.255.255.0 up
+ping -I wl2 -c 8 -W 1 192.168.1.1
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+SNAP=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" 2>&1); printf '%s\n' "$SNAP" | awk -F= '/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMac5g=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxBytes=/ {print "AssocTxBytes5g=" $2} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxPacketCount=/ {print "AssocTxPacketCount5g=" $2}'; STA_MAC=$(printf '%s\n' "$SNAP" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f'); ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxBytes?" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxBytes=\([0-9][0-9]*\)$/TxBytes5g=\1/p'; [ -n "$STA_MAC" ] && echo DriverAssocMac5g=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n 's/^[[:space:]]*tx total bytes: \([0-9][0-9]*\).*/DriverTxBytes5g=\1/p; s/^[[:space:]]*tx total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount5g=\1/p'
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"
+SNAP=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.?" 2>&1); printf '%s\n' "$SNAP" | awk -F= '/^WiFi\.AccessPoint\.3\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMac6g=" tolower($2)} /^WiFi\.AccessPoint\.3\.AssociatedDevice\.1\.TxBytes=/ {print "AssocTxBytes6g=" $2} /^WiFi\.AccessPoint\.3\.AssociatedDevice\.1\.TxPacketCount=/ {print "AssocTxPacketCount6g=" $2}'; STA_MAC=$(printf '%s\n' "$SNAP" | sed -n 's/^WiFi\.AccessPoint\.3\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f'); ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.TxBytes?" | sed -n 's/^WiFi\.AccessPoint\.3\.AssociatedDevice\.1\.TxBytes=\([0-9][0-9]*\)$/TxBytes6g=\1/p'; [ -n "$STA_MAC" ] && echo DriverAssocMac6g=$STA_MAC && wl -i wl1 sta_info $STA_MAC | sed -n 's/^[[:space:]]*tx total bytes: \([0-9][0-9]*\).*/DriverTxBytes6g=\1/p; s/^[[:space:]]*tx total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount6g=\1/p'
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"
+SNAP=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.?" 2>&1); printf '%s\n' "$SNAP" | awk -F= '/^WiFi\.AccessPoint\.5\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMac24g=" tolower($2)} /^WiFi\.AccessPoint\.5\.AssociatedDevice\.1\.TxBytes=/ {print "AssocTxBytes24g=" $2} /^WiFi\.AccessPoint\.5\.AssociatedDevice\.1\.TxPacketCount=/ {print "AssocTxPacketCount24g=" $2}'; STA_MAC=$(printf '%s\n' "$SNAP" | sed -n 's/^WiFi\.AccessPoint\.5\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f'); ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.TxBytes?" | sed -n 's/^WiFi\.AccessPoint\.5\.AssociatedDevice\.1\.TxBytes=\([0-9][0-9]*\)$/TxBytes24g=\1/p'; [ -n "$STA_MAC" ] && echo DriverAssocMac24g=$STA_MAC && wl -i wl2 sta_info $STA_MAC | sed -n 's/^[[:space:]]*tx total bytes: \([0-9][0-9]*\).*/DriverTxBytes24g=\1/p; s/^[[:space:]]*tx total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount24g=\1/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+STA (20260413T164447027184_STA.log L82-L85, L208-L211, L337-L340)
+Connected to 2c:59:17:00:19:95 (on wl0)
+SSID: testpilot5G
+Connected to 2c:59:17:00:19:96 (on wl1)
+SSID: testpilot6G
+Connected to 2c:59:17:00:19:a7 (on wl2)
+SSID: testpilot2G
+
+DUT (20260413T164447027184_DUT.log L475-L481; bgw720-0403_wifi_llapi_20260413t164447027184.md L100-L135)
+AssocMac5g=2c:59:17:00:04:85
+AssocTxBytes5g=992
+TxBytes5g=992
+DriverTxBytes5g=992
+AssocMac6g=2c:59:17:00:04:86
+AssocTxBytes6g=25207
+TxBytes6g=25207
+DriverTxBytes6g=25207
+AssocMac24g=2c:59:17:00:04:97
+AssocTxBytes24g=25586
+TxBytes24g=25586
+DriverTxBytes24g=25586
+```
+
 ## Checkpoint summary (2026-04-13 early-62)
 
 > This checkpoint records the `D050 SupportedVhtMCS` workbook-authoritative closure after the `D047` blocker triage.

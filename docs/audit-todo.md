@@ -81,20 +81,47 @@
 
 ## Latest repo handoff snapshot（2026-04-13）
 
+- `D179 Radio.Ampdu` is now blocked after two focused rerun phases instead of closing as a workbook-Pass row
+- workbook authority is still row `179`, and workbook `G/H` explicitly require an active station/throughput path before `wl -i wlx ampdu` is used as the driver oracle
+- focused rerun `20260413T175446838229` proved the older DUT-only replay is not workbook-faithful: 5G already read `AfterSet0GetterAmpdu5g=0`, but driver readback still stayed `AfterSet0DriverAmpdu5g=1`, and no per-case STA evidence was emitted
+- the current trial YAML now declares explicit `DUT + STA` topology plus tri-band links; targeted D179/runtime plus command-budget guardrails are `4 passed`
+- clean-start rerun `20260413T182427454124` then never reached D179 step execution because `verify_env` kept failing on 6G recovery: `6G ocv fix did not stabilize wl1 after retries`, `sta_baseline_bss[1] not ready after 60s cmd=wl -i wl1 bss`, and final `STA 6g link check failed (iface=wl1, rc=0): Not connected.`
+- final full repo regression remains `1662 passed`
+- overlay compare therefore remains `298 / 420 full matches` / `122 mismatches` / `58 metadata drifts`; `D020` remains the verified fail-shaped mismatch, and the active blockers are now `D047` authority conflict + `D179` 6G baseline blocker
+- `D178 Radio.ChannelLoad` is now aligned via official rerun `20260413T172222999250`
+- workbook authority is row `178`, workbook v4.0.3 remains `Pass / Pass / Pass`, and the old authored shape is now retired: stale row `141` plus bare getters left 6G exposed to cache drift, so the landed case now collapses each band into one same-window tight-capture step that explicitly refreshes `getRadioAirStats()`, rereads `ChannelLoad?`, and derives in-use survey load from `iw dev wlX survey dump`
+- current rerun exact-closes tri-band load evidence on the current lab environment: `5G AirLoad=ChannelLoad=SurveyChannelLoad=84`, `6G=62`, `2.4G=98`; the 2.4G survey path intentionally uses floor-based derivation so `69/70` closes to `98` rather than `99`
+- targeted D178/runtime plus command-budget guardrails are `4 passed`
+- final full repo regression is now `1662 passed`
+- overlay compare is now `298 / 420 full matches` / `122 mismatches` / `58 metadata drifts`; `D020` remains the verified fail-shaped mismatch, `D047` remains the active authority blocker, and the next ready actionable compare-open case is `D179 Radio.Ampdu`
 - Shared runtime root cause closure now has three landed pieces:
   - single-line executable setter steps with `capture` are no longer rewritten into synthesized readback queries before execution
   - `_env_command_succeeded()` no longer treats valid getter payload `error=4 / message=parameter not found` as a shell failure, while direct `AssociatedDevice.*.MACAddress?` probes still require a concrete MAC
   - `hostapd_cli` is now treated as an executable token, so hostapd-based shell steps no longer silently fall back to `verification_command`
 - Active blockers:
-  - `D047 SupportedHe160MCS` is now blocked as a workbook/source authority conflict
-  - `compare-0401` reads answer columns `R/S/T`, so workbook row `47` currently expects `Pass / Pass / Not Supported`
-  - the same workbook row still carries legacy `I/J/K = Not Support / Not Support / Not Support` and note `V47` saying pWHM exposes only `RxSupportedHe160MCS` / `TxSupportedHe160MCS`
-  - current 0403 installed ODL matches the live runtime split: `WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` only exposes sibling `Rx/TxSupportedHe160MCS`, while standalone `SupportedHe160MCS` exists under the endpoint model
-  - official rerun `20260412T235952361188` exact-closes the conflict on the current generic 5G baseline: `SupportedHe160MCS? -> error=4 / parameter not found`, but sibling Rx/Tx fields and HE capability lines are present for the same STA
-  - blocker handoff: `plugins/wifi_llapi/reports/D047_block.md`
-  - current YAML remains source/runtime-correct and must not be rewritten to workbook-pass semantics until the workbook authority itself is resolved
-  - next ready actionable compare-open case: `D053 TxBytes`
+- `D179 Radio.Ampdu` is blocked by the shared 6G DUT+STA baseline bring-up path, not by a settled row-179 semantic decision
+- workbook row `179` `G/H` explicitly require station-connected replay and `wl -i wlx ampdu` driver proof
+- official rerun `20260413T175446838229` failed both attempts at `after_set0_5g.AfterSet0DriverAmpdu5g expected=0 actual=1` while still using DUT-only replay
+- clean-start DUT+STA rerun `20260413T182427454124` never reached case steps because repeated 6G `verify_env` recovery still left `wl1 bss` down and STA 6G not connected
+- only a partial xlsx artifact was emitted (`plugins/wifi_llapi/reports/20260413_BGW720-0403_wifi_LLAPI_20260413T182427454124.xlsx`); row `179` result cells remained blank, so this run is not an authoritative closure
+- blocker handoff: `plugins/wifi_llapi/reports/D179_block.md`
+- `D047 SupportedHe160MCS` is now blocked as a workbook/source authority conflict
+- `compare-0401` reads answer columns `R/S/T`, so workbook row `47` currently expects `Pass / Pass / Not Supported`
+- the same workbook row still carries legacy `I/J/K = Not Support / Not Support / Not Support` and note `V47` saying pWHM exposes only `RxSupportedHe160MCS` / `TxSupportedHe160MCS`
+- current 0403 installed ODL matches the live runtime split: `WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` only exposes sibling `Rx/TxSupportedHe160MCS`, while standalone `SupportedHe160MCS` exists under the endpoint model
+- official rerun `20260412T235952361188` exact-closes the conflict on the current generic 5G baseline: `SupportedHe160MCS? -> error=4 / parameter not found`, but sibling Rx/Tx fields and HE capability lines are present for the same STA
+- blocker handoff: `plugins/wifi_llapi/reports/D047_block.md`
+- current YAML remains source/runtime-correct and must not be rewritten to workbook-pass semantics until the workbook authority itself is resolved
+- next ready actionable compare-open case: `D180 Radio.Amsdu`
 - Latest aligned cases:
+  - `D178 Radio.ChannelLoad` is now aligned via official rerun `20260413T172222999250`
+  - workbook authority is row `178`, not stale row `141`; workbook v4.0.3 remains `Pass / Pass / Pass`
+  - the landed case now uses one same-window tight-capture DUT step per band that explicitly refreshes `getRadioAirStats()`, rereads `ChannelLoad?`, and derives `SurveyChannelLoad` from `iw dev wlX survey dump`, so the rerun exact-closes `AirLoad=ChannelLoad=SurveyChannelLoad` on the current lab environment: `5G=84`, `6G=62`, `2.4G=98`
+  - targeted D178/runtime plus command-budget guardrails are `4 passed`, final full repo regression remains `1662 passed`, overlay compare is `298 / 420 full matches` / `122 mismatches` / `58 metadata drifts`, `D020` remains the verified fail-shaped mismatch, `D047` remains blocked, and the next ready actionable compare-open case is `D179 Radio.Ampdu`
+  - `D053 TxBytes` is now aligned via official rerun `20260413T164447027184`
+  - workbook authority is row `53`, not the older blocked placeholder semantics; workbook v4.0.3 remains `Pass / Pass / Pass`
+  - the landed case now uses one same-window tight-capture DUT step per band, so the rerun exact-closes `AssocTxBytes=TxBytes=DriverTxBytes` on the generic tri-band baseline: `5G=992`, `6G=25207`, `2.4G=25586`
+  - targeted D053/runtime plus command-budget guardrails are `8 passed`, final full repo regression is now `1662 passed`, overlay compare is `297 / 420 full matches` / `123 mismatches` / `58 metadata drifts`, `D020` remains the verified fail-shaped mismatch, `D047` remains blocked, and the next ready actionable compare-open case is `D178 Radio.ChannelLoad`
   - `D050 SupportedVhtMCS` is now aligned via official rerun `20260413T000249620932`
   - workbook authority remains row `50`; workbook v4.0.3 is `Pass / Not Supported / Not Supported`
   - workbook `G/H` already treat standalone `SupportedVhtMCS` as equivalent to the sibling `RxSupportedVhtMCS` / `TxSupportedVhtMCS` evidence on the same `AssociatedDevice` entry, while note `V50` keeps `6G/2.4G` on `Not Supported`

@@ -1,29 +1,419 @@
-id: d053-blocked-txbytes
-name: D053 TxBytes Blocked
+id: wifi-llapi-D053-txbytes
+name: "TxBytes — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+version: '1.1'
 source:
-  row: 55
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 53
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: TxBytes
-  baseline: 0310-BGW720-300
+  baseline: BCM v4.0.3
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxBytes?"'
+llapi_support: Support
+implemented_by: pWHM
 bands:
 - 5g
-llapi_support: Blocked
-results_reference:
-  v4.0.3:
-    5g: Blocked
+- 6g
+- 2.4g
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
+      selector: COM0
+    STA:
+      role: sta
+      transport: serial
       selector: COM1
+      config:
+      - iface: wl0
+        mode: sta
+        band: 5g
+        ssid: testpilot5G
+        security: WPA2-Personal
+        key: '00000000'
+      - iface: wl1
+        mode: sta
+        band: 6g
+        ssid: testpilot6G
+        security: WPA3-Personal
+        key_mgmt: SAE
+        key: '00000000'
+      - iface: wl2
+        mode: sta
+        band: 2.4g
+        ssid: testpilot2G
+        security: WPA2-Personal
+        key: '00000000'
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: STA
+    to: DUT
+    band: 6g
+  - from: STA
+    to: DUT
+    band: 2.4g
+test_environment: |
+  Topology:
+  - DUT: COM0 (AP role)
+  - STA: COM1 (STA role)
+  Transport:
+  - DUT/STA via serialwrap COM0 / COM1
+  Baseline:
+  - 5G = AP1 / wl0 / testpilot5G / WPA2-Personal
+  - 6G = AP3 / wl1 / testpilot6G / WPA3-Personal / SAE
+  - 2.4G = AP5 / wl2 / testpilot2G / WPA2-Personal
+  Preconditions:
+  - keep exactly one associated STA on the selected AP so AssociatedDevice.1 stays deterministic
+  - let the runner own the per-band baseline; 6G must reuse the built-in ocv=0 repair path before the probe window
+  - replay sequentially per band; do not rely on simultaneous multi-band STA association
+  Notes:
+  - workbook row 53 is TxBytes; stale row 55 belongs to TxRetransmissionsFailed
+  - current 0403 source exposes AssociatedDevice.TxBytes and backs it with wl sta_info `tx total bytes`
+  - the live oracle for this case is: same STA MAC -> direct TxBytes getter -> same AssociatedDevice snapshot -> same-station wl sta_info tx total bytes
+setup_steps: |
+  1) Let the runner apply the deterministic baseline for the selected band.
+  2) Verify the STA interface is associated and that the DUT-side AssociatedDevice.1 MAC resolves to the same live STA.
+  3) Assign 192.168.1.3/24 to the STA interface, trigger outbound traffic with `ping -I wlX -c 8 -W 1 192.168.1.1`, then read TxBytes directly.
+  4) Cross-check the same AssociatedDevice snapshot and wl sta_info `tx total bytes` for the identical station.
+test_procedure: |
+  1) On each band, confirm the STA remains associated (`wpa_state=COMPLETED`) and capture the live STA MAC.
+  2) Resolve the matching DUT-side `AssociatedDevice.1.MACAddress`.
+  3) Trigger outbound STA traffic with `ifconfig wlX 192.168.1.3/24` and `ping -I wlX -c 8 -W 1 192.168.1.1`.
+  4) Capture the same `AssociatedDevice.1` snapshot first, then immediately re-read direct `TxBytes?` and `wl sta_info <sta-mac>` inside one DUT-side shell window.
+  5) Compare the direct getter to the same-window snapshot and the same-station `wl sta_info` counters.
 steps:
-- id: step_5g_blocked
-  target: dut
-  action: skip
-  command: "echo blocked"
-  description: "TxBytes — needs deterministic AP-to-STA unicast payload"
+- id: step1_5g_sta_ready
+  action: exec
+  target: STA
+  band: 5g
+  command:
+  - iw dev wl0 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl0 status | sed -n 's/^wpa_state=/wpa_state=/p; s/^ssid=/ssid=/p; s/^key_mgmt=/key_mgmt=/p; s/^bssid=/bssid=/p; s/^freq=/freq=/p'
+  - cat /sys/class/net/wl0/address | tr 'A-F' 'a-f' | sed 's/^/StaMac5g=/'
+  capture: sta_ready_5g
+- id: step2_5g_assoc_entry
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f' | sed 's/^/AssocMac5g=/'
+  capture: assoc_entry_5g
+  depends_on: step1_5g_sta_ready
+- id: step3_5g_ip_prep
+  action: exec
+  target: STA
+  band: 5g
+  command:
+  - ifconfig wl0 192.168.1.3 netmask 255.255.255.0 up
+  - ip -4 addr show dev wl0 | awk '/inet / {print "StaIp5g=" $2}'
+  capture: traffic_prep_5g
+  depends_on: step2_5g_assoc_entry
+- id: step4_5g_ping_trigger
+  action: exec
+  target: STA
+  band: 5g
+  command: >-
+    OUT=$(ping -I wl0 -c 8 -W 1 192.168.1.1 2>&1); RC=$?; printf '%s\n' "$OUT"; printf 'PingReturnCode5g=%s\n' "$RC"; printf '%s\n' "$OUT" | sed -n 's/^\([0-9][0-9]*\) packets transmitted, \([0-9][0-9]*\) received.*/PingTx5g=\1\nPingRx5g=\2/p'
+  capture: ping_5g
+  depends_on: step3_5g_ip_prep
+- id: step5_5g_tight_capture
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    SNAP=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" 2>&1); printf '%s\n' "$SNAP" | awk -F= '/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMac5g=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxBytes=/ {print "AssocTxBytes5g=" $2} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxPacketCount=/ {print "AssocTxPacketCount5g=" $2}'; STA_MAC=$(printf '%s\n' "$SNAP" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f'); ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxBytes?" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxBytes=\([0-9][0-9]*\)$/TxBytes5g=\1/p'; [ -n "$STA_MAC" ] && echo DriverAssocMac5g=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n 's/^[[:space:]]*tx total bytes: \([0-9][0-9]*\).*/DriverTxBytes5g=\1/p; s/^[[:space:]]*tx total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount5g=\1/p'
+  capture: capture_5g
+  depends_on: step4_5g_ping_trigger
+- id: step6_6g_sta_ready
+  action: exec
+  target: STA
+  band: 6g
+  command:
+  - iw dev wl1 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl1 status | sed -n 's/^wpa_state=/wpa_state=/p; s/^ssid=/ssid=/p; s/^key_mgmt=/key_mgmt=/p; s/^bssid=/bssid=/p; s/^freq=/freq=/p'
+  - cat /sys/class/net/wl1/address | tr 'A-F' 'a-f' | sed 's/^/StaMac6g=/'
+  capture: sta_ready_6g
+- id: step7_6g_assoc_entry
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f' | sed 's/^/AssocMac6g=/'
+  capture: assoc_entry_6g
+  depends_on: step6_6g_sta_ready
+- id: step8_6g_ip_prep
+  action: exec
+  target: STA
+  band: 6g
+  command:
+  - ifconfig wl1 192.168.1.3 netmask 255.255.255.0 up
+  - ip -4 addr show dev wl1 | awk '/inet / {print "StaIp6g=" $2}'
+  capture: traffic_prep_6g
+  depends_on: step7_6g_assoc_entry
+- id: step9_6g_ping_trigger
+  action: exec
+  target: STA
+  band: 6g
+  command: >-
+    OUT=$(ping -I wl1 -c 8 -W 1 192.168.1.1 2>&1); RC=$?; printf '%s\n' "$OUT"; printf 'PingReturnCode6g=%s\n' "$RC"; printf '%s\n' "$OUT" | sed -n 's/^\([0-9][0-9]*\) packets transmitted, \([0-9][0-9]*\) received.*/PingTx6g=\1\nPingRx6g=\2/p'
+  capture: ping_6g
+  depends_on: step8_6g_ip_prep
+- id: step10_6g_tight_capture
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    SNAP=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.?" 2>&1); printf '%s\n' "$SNAP" | awk -F= '/^WiFi\.AccessPoint\.3\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMac6g=" tolower($2)} /^WiFi\.AccessPoint\.3\.AssociatedDevice\.1\.TxBytes=/ {print "AssocTxBytes6g=" $2} /^WiFi\.AccessPoint\.3\.AssociatedDevice\.1\.TxPacketCount=/ {print "AssocTxPacketCount6g=" $2}'; STA_MAC=$(printf '%s\n' "$SNAP" | sed -n 's/^WiFi\.AccessPoint\.3\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f'); ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.TxBytes?" | sed -n 's/^WiFi\.AccessPoint\.3\.AssociatedDevice\.1\.TxBytes=\([0-9][0-9]*\)$/TxBytes6g=\1/p'; [ -n "$STA_MAC" ] && echo DriverAssocMac6g=$STA_MAC && wl -i wl1 sta_info $STA_MAC | sed -n 's/^[[:space:]]*tx total bytes: \([0-9][0-9]*\).*/DriverTxBytes6g=\1/p; s/^[[:space:]]*tx total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount6g=\1/p'
+  capture: capture_6g
+  depends_on: step9_6g_ping_trigger
+- id: step11_24g_sta_ready
+  action: exec
+  target: STA
+  band: 2.4g
+  command:
+  - iw dev wl2 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl2 status | sed -n 's/^wpa_state=/wpa_state=/p; s/^ssid=/ssid=/p; s/^key_mgmt=/key_mgmt=/p; s/^bssid=/bssid=/p; s/^freq=/freq=/p'
+  - cat /sys/class/net/wl2/address | tr 'A-F' 'a-f' | sed 's/^/StaMac24g=/'
+  capture: sta_ready_24g
+- id: step12_24g_assoc_entry
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f' | sed 's/^/AssocMac24g=/'
+  capture: assoc_entry_24g
+  depends_on: step11_24g_sta_ready
+- id: step13_24g_ip_prep
+  action: exec
+  target: STA
+  band: 2.4g
+  command:
+  - ifconfig wl2 192.168.1.3 netmask 255.255.255.0 up
+  - ip -4 addr show dev wl2 | awk '/inet / {print "StaIp24g=" $2}'
+  capture: traffic_prep_24g
+  depends_on: step12_24g_assoc_entry
+- id: step14_24g_ping_trigger
+  action: exec
+  target: STA
+  band: 2.4g
+  command: >-
+    OUT=$(ping -I wl2 -c 8 -W 1 192.168.1.1 2>&1); RC=$?; printf '%s\n' "$OUT"; printf 'PingReturnCode24g=%s\n' "$RC"; printf '%s\n' "$OUT" | sed -n 's/^\([0-9][0-9]*\) packets transmitted, \([0-9][0-9]*\) received.*/PingTx24g=\1\nPingRx24g=\2/p'
+  capture: ping_24g
+  depends_on: step13_24g_ip_prep
+- id: step15_24g_tight_capture
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    SNAP=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.?" 2>&1); printf '%s\n' "$SNAP" | awk -F= '/^WiFi\.AccessPoint\.5\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMac24g=" tolower($2)} /^WiFi\.AccessPoint\.5\.AssociatedDevice\.1\.TxBytes=/ {print "AssocTxBytes24g=" $2} /^WiFi\.AccessPoint\.5\.AssociatedDevice\.1\.TxPacketCount=/ {print "AssocTxPacketCount24g=" $2}'; STA_MAC=$(printf '%s\n' "$SNAP" | sed -n 's/^WiFi\.AccessPoint\.5\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f'); ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.TxBytes?" | sed -n 's/^WiFi\.AccessPoint\.5\.AssociatedDevice\.1\.TxBytes=\([0-9][0-9]*\)$/TxBytes24g=\1/p'; [ -n "$STA_MAC" ] && echo DriverAssocMac24g=$STA_MAC && wl -i wl2 sta_info $STA_MAC | sed -n 's/^[[:space:]]*tx total bytes: \([0-9][0-9]*\).*/DriverTxBytes24g=\1/p; s/^[[:space:]]*tx total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount24g=\1/p'
+  capture: capture_24g
+  depends_on: step14_24g_ping_trigger
 pass_criteria:
-- field: skip
-  operator: skip
-  value: "TxBytes — needs deterministic AP-to-STA unicast payload"
+- field: sta_ready_5g.wpa_state
+  operator: equals
+  value: COMPLETED
+  band: 5g
+  description: 5G STA must remain associated before probing TxBytes.
+- field: sta_ready_5g.ssid
+  operator: equals
+  value: testpilot5G
+  band: 5g
+  description: 5G STA must stay on the documented testpilot5G baseline.
+- field: sta_ready_5g.StaMac5g
+  operator: regex
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  band: 5g
+  description: 5G STA MAC must resolve before DUT-side validation.
+- field: assoc_entry_5g.AssocMac5g
+  operator: equals
+  reference: sta_ready_5g.StaMac5g
+  band: 5g
+  description: 5G AssociatedDevice.1 must resolve to the same live STA MAC.
+- field: ping_5g.PingTx5g
+  operator: equals
+  value: '8'
+  band: 5g
+  description: 5G traffic trigger must attempt eight outbound packets from the STA interface.
+- field: capture_5g.AssocMac5g
+  operator: equals
+  reference: assoc_entry_5g.AssocMac5g
+  band: 5g
+  description: 5G tight capture must stay on the same AssociatedDevice entry.
+- field: capture_5g.AssocTxBytes5g
+  operator: '>'
+  value: '0'
+  band: 5g
+  description: 5G AssociatedDevice snapshot must expose a positive transmitted-byte counter.
+- field: capture_5g.TxBytes5g
+  operator: equals
+  reference: capture_5g.AssocTxBytes5g
+  band: 5g
+  description: 5G direct getter must match the same-window AssociatedDevice snapshot value.
+- field: capture_5g.AssocTxPacketCount5g
+  operator: '>'
+  value: '0'
+  band: 5g
+  description: 5G snapshot must show positive transmitted packets for the same AssociatedDevice entry.
+- field: capture_5g.DriverAssocMac5g
+  operator: equals
+  reference: assoc_entry_5g.AssocMac5g
+  band: 5g
+  description: 5G driver capture must target the same AssociatedDevice MAC.
+- field: capture_5g.DriverTxBytes5g
+  operator: equals
+  reference: capture_5g.TxBytes5g
+  band: 5g
+  description: 5G wl0 sta_info tx total bytes must exact-close the LLAPI getter.
+- field: capture_5g.DriverTxPacketCount5g
+  operator: '>'
+  value: '0'
+  band: 5g
+  description: 5G wl0 sta_info must report positive tx total packets for the same STA.
+- field: sta_ready_6g.wpa_state
+  operator: equals
+  value: COMPLETED
+  band: 6g
+  description: 6G STA must remain associated before probing TxBytes.
+- field: sta_ready_6g.ssid
+  operator: equals
+  value: testpilot6G
+  band: 6g
+  description: 6G STA must stay on the documented testpilot6G baseline.
+- field: sta_ready_6g.StaMac6g
+  operator: regex
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  band: 6g
+  description: 6G STA MAC must resolve before DUT-side validation.
+- field: assoc_entry_6g.AssocMac6g
+  operator: equals
+  reference: sta_ready_6g.StaMac6g
+  band: 6g
+  description: 6G AssociatedDevice.1 must resolve to the same live STA MAC.
+- field: ping_6g.PingTx6g
+  operator: equals
+  value: '8'
+  band: 6g
+  description: 6G traffic trigger must attempt eight outbound packets from the STA interface.
+- field: capture_6g.AssocMac6g
+  operator: equals
+  reference: assoc_entry_6g.AssocMac6g
+  band: 6g
+  description: 6G tight capture must stay on the same AssociatedDevice entry.
+- field: capture_6g.AssocTxBytes6g
+  operator: '>'
+  value: '0'
+  band: 6g
+  description: 6G AssociatedDevice snapshot must expose a positive transmitted-byte counter.
+- field: capture_6g.TxBytes6g
+  operator: equals
+  reference: capture_6g.AssocTxBytes6g
+  band: 6g
+  description: 6G direct getter must match the same-window AssociatedDevice snapshot value.
+- field: capture_6g.AssocTxPacketCount6g
+  operator: '>'
+  value: '0'
+  band: 6g
+  description: 6G snapshot must show positive transmitted packets for the same AssociatedDevice entry.
+- field: capture_6g.DriverAssocMac6g
+  operator: equals
+  reference: assoc_entry_6g.AssocMac6g
+  band: 6g
+  description: 6G driver capture must target the same AssociatedDevice MAC.
+- field: capture_6g.DriverTxBytes6g
+  operator: equals
+  reference: capture_6g.TxBytes6g
+  band: 6g
+  description: 6G wl1 sta_info tx total bytes must exact-close the LLAPI getter.
+- field: capture_6g.DriverTxPacketCount6g
+  operator: '>'
+  value: '0'
+  band: 6g
+  description: 6G wl1 sta_info must report positive tx total packets for the same STA.
+- field: sta_ready_24g.wpa_state
+  operator: equals
+  value: COMPLETED
+  band: 2.4g
+  description: 2.4G STA must remain associated before probing TxBytes.
+- field: sta_ready_24g.ssid
+  operator: equals
+  value: testpilot2G
+  band: 2.4g
+  description: 2.4G STA must stay on the documented testpilot2G baseline.
+- field: sta_ready_24g.StaMac24g
+  operator: regex
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  band: 2.4g
+  description: 2.4G STA MAC must resolve before DUT-side validation.
+- field: assoc_entry_24g.AssocMac24g
+  operator: equals
+  reference: sta_ready_24g.StaMac24g
+  band: 2.4g
+  description: 2.4G AssociatedDevice.1 must resolve to the same live STA MAC.
+- field: ping_24g.PingTx24g
+  operator: equals
+  value: '8'
+  band: 2.4g
+  description: 2.4G traffic trigger must attempt eight outbound packets from the STA interface.
+- field: capture_24g.AssocMac24g
+  operator: equals
+  reference: assoc_entry_24g.AssocMac24g
+  band: 2.4g
+  description: 2.4G tight capture must stay on the same AssociatedDevice entry.
+- field: capture_24g.AssocTxBytes24g
+  operator: '>'
+  value: '0'
+  band: 2.4g
+  description: 2.4G AssociatedDevice snapshot must expose a positive transmitted-byte counter.
+- field: capture_24g.TxBytes24g
+  operator: equals
+  reference: capture_24g.AssocTxBytes24g
+  band: 2.4g
+  description: 2.4G direct getter must match the same-window AssociatedDevice snapshot value.
+- field: capture_24g.AssocTxPacketCount24g
+  operator: '>'
+  value: '0'
+  band: 2.4g
+  description: 2.4G snapshot must show positive transmitted packets for the same AssociatedDevice entry.
+- field: capture_24g.DriverAssocMac24g
+  operator: equals
+  reference: assoc_entry_24g.AssocMac24g
+  band: 2.4g
+  description: 2.4G driver capture must target the same AssociatedDevice MAC.
+- field: capture_24g.DriverTxBytes24g
+  operator: equals
+  reference: capture_24g.TxBytes24g
+  band: 2.4g
+  description: 2.4G wl2 sta_info tx total bytes must exact-close the LLAPI getter.
+- field: capture_24g.DriverTxPacketCount24g
+  operator: '>'
+  value: '0'
+  band: 2.4g
+  description: 2.4G wl2 sta_info must report positive tx total packets for the same STA.
+verification_command:
+  - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  - cat /sys/class/net/wl0/address | tr 'A-F' 'a-f' | sed 's/^/StaMac5g=/'
+  - ifconfig wl0 192.168.1.3 netmask 255.255.255.0 up
+  - ping -I wl0 -c 8 -W 1 192.168.1.1
+  - 'SNAP=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" 2>&1); printf ''%s\n'' "$SNAP" | awk -F= ''/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMac5g=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxBytes=/ {print "AssocTxBytes5g=" $2} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxPacketCount=/ {print "AssocTxPacketCount5g=" $2}''; STA_MAC=$(printf ''%s\n'' "$SNAP" | sed -n ''s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/\1/p'' | tr ''A-F'' ''a-f''); ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxBytes?" | sed -n ''s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxBytes=\([0-9][0-9]*\)$/TxBytes5g=\1/p''; [ -n "$STA_MAC" ] && echo DriverAssocMac5g=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n ''s/^[[:space:]]*tx total bytes: \([0-9][0-9]*\).*/DriverTxBytes5g=\1/p; s/^[[:space:]]*tx total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount5g=\1/p'''
+  - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+  - cat /sys/class/net/wl1/address | tr 'A-F' 'a-f' | sed 's/^/StaMac6g=/'
+  - ifconfig wl1 192.168.1.3 netmask 255.255.255.0 up
+  - ping -I wl1 -c 8 -W 1 192.168.1.1
+  - 'SNAP=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.?" 2>&1); printf ''%s\n'' "$SNAP" | awk -F= ''/^WiFi\.AccessPoint\.3\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMac6g=" tolower($2)} /^WiFi\.AccessPoint\.3\.AssociatedDevice\.1\.TxBytes=/ {print "AssocTxBytes6g=" $2} /^WiFi\.AccessPoint\.3\.AssociatedDevice\.1\.TxPacketCount=/ {print "AssocTxPacketCount6g=" $2}''; STA_MAC=$(printf ''%s\n'' "$SNAP" | sed -n ''s/^WiFi\.AccessPoint\.3\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/\1/p'' | tr ''A-F'' ''a-f''); ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.TxBytes?" | sed -n ''s/^WiFi\.AccessPoint\.3\.AssociatedDevice\.1\.TxBytes=\([0-9][0-9]*\)$/TxBytes6g=\1/p''; [ -n "$STA_MAC" ] && echo DriverAssocMac6g=$STA_MAC && wl -i wl1 sta_info $STA_MAC | sed -n ''s/^[[:space:]]*tx total bytes: \([0-9][0-9]*\).*/DriverTxBytes6g=\1/p; s/^[[:space:]]*tx total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount6g=\1/p'''
+  - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  - cat /sys/class/net/wl2/address | tr 'A-F' 'a-f' | sed 's/^/StaMac24g=/'
+  - ifconfig wl2 192.168.1.3 netmask 255.255.255.0 up
+  - ping -I wl2 -c 8 -W 1 192.168.1.1
+  - 'SNAP=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.?" 2>&1); printf ''%s\n'' "$SNAP" | awk -F= ''/^WiFi\.AccessPoint\.5\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMac24g=" tolower($2)} /^WiFi\.AccessPoint\.5\.AssociatedDevice\.1\.TxBytes=/ {print "AssocTxBytes24g=" $2} /^WiFi\.AccessPoint\.5\.AssociatedDevice\.1\.TxPacketCount=/ {print "AssocTxPacketCount24g=" $2}''; STA_MAC=$(printf ''%s\n'' "$SNAP" | sed -n ''s/^WiFi\.AccessPoint\.5\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/\1/p'' | tr ''A-F'' ''a-f''); ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.TxBytes?" | sed -n ''s/^WiFi\.AccessPoint\.5\.AssociatedDevice\.1\.TxBytes=\([0-9][0-9]*\)$/TxBytes24g=\1/p''; [ -n "$STA_MAC" ] && echo DriverAssocMac24g=$STA_MAC && wl -i wl2 sta_info $STA_MAC | sed -n ''s/^[[:space:]]*tx total bytes: \([0-9][0-9]*\).*/DriverTxBytes24g=\1/p; s/^[[:space:]]*tx total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount24g=\1/p'''
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: current 0403 live retest exact-closes the same-station TxBytes getter against the matching AssociatedDevice snapshot and wl sta_info tx total bytes after the stable per-band baseline and STA-side uplink trigger (5G 12944, 6G 28270, 2.4G 90).

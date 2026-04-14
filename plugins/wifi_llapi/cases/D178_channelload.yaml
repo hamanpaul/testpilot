@@ -1,7 +1,7 @@
 id: d178-radio-channelload
 name: D178 Radio ChannelLoad
 source:
-  row: 141
+  row: 178
   object: WiFi.Radio.{i}.
   api: ChannelLoad
   baseline: 0310-BGW720-300
@@ -12,10 +12,10 @@ bands:
 llapi_support: Support
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
-    comment: read-only 百分比指標；setter 回 error 15 (is read only)
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: read-only getter；workbook pass intent 是 ChannelLoad 與 getRadioAirStats.Load / survey dump derived load 對齊
 topology:
   devices:
     DUT:
@@ -23,34 +23,52 @@ topology:
       transport: serial
       selector: COM1
 steps:
-- id: step_5g_getter
+- id: step_5g_tight_capture
   target: dut
-  action: read
-  capture: getter_5g
-  command: ubus-cli "WiFi.Radio.1.ChannelLoad?"
-  expected: ChannelLoad 回傳 0-100 的百分比整數
-  description: Radio.1 (5g) ChannelLoad getter（live=83）
-- id: step_6g_getter
+  action: exec
+  capture: capture_5g
+  command: AIR=$(ubus-cli "WiFi.Radio.1.getRadioAirStats()" 2>&1); printf '%s\n' "$AIR" | sed -n 's/^[[:space:]]*Load = \([0-9][0-9]*\).*/AirLoad5g=\1/p'; ubus-cli "WiFi.Radio.1.ChannelLoad?" | sed -n 's/^WiFi\.Radio\.1\.ChannelLoad=\([0-9][0-9]*\)$/ChannelLoad5g=\1/p'; iw dev wl0 survey dump | awk '/\[in use\]/{inuse=1; next} inuse && /channel active time:/ {line=$0; gsub(/[^0-9]/, "", line); active=line; next} inuse && /channel busy time:/ {line=$0; gsub(/[^0-9]/, "", line); busy=line; if ((active + 0) > 0) { printf "SurveyActiveMs5g=%s\nSurveyBusyMs5g=%s\nSurveyChannelLoad5g=%d\n", active, busy, int((busy * 100) / active); exit }}'
+  expected: ChannelLoad 應與 getRadioAirStats.Load 及 survey dump derived load 對齊
+  description: Radio.1 (5g) 先用 getRadioAirStats() refresh，再同窗抓 getter 與 survey dump。
+- id: step_6g_tight_capture
   target: dut
-  action: read
-  capture: getter_6g
-  command: ubus-cli "WiFi.Radio.2.ChannelLoad?"
-  expected: ChannelLoad 回傳 0-100 的百分比整數
-  description: Radio.2 (6g) ChannelLoad getter（live=61）
-- id: step_24g_getter
+  action: exec
+  capture: capture_6g
+  command: AIR=$(ubus-cli "WiFi.Radio.2.getRadioAirStats()" 2>&1); printf '%s\n' "$AIR" | sed -n 's/^[[:space:]]*Load = \([0-9][0-9]*\).*/AirLoad6g=\1/p'; ubus-cli "WiFi.Radio.2.ChannelLoad?" | sed -n 's/^WiFi\.Radio\.2\.ChannelLoad=\([0-9][0-9]*\)$/ChannelLoad6g=\1/p'; iw dev wl1 survey dump | awk '/\[in use\]/{inuse=1; next} inuse && /channel active time:/ {line=$0; gsub(/[^0-9]/, "", line); active=line; next} inuse && /channel busy time:/ {line=$0; gsub(/[^0-9]/, "", line); busy=line; if ((active + 0) > 0) { printf "SurveyActiveMs6g=%s\nSurveyBusyMs6g=%s\nSurveyChannelLoad6g=%d\n", active, busy, int((busy * 100) / active); exit }}'
+  expected: ChannelLoad 應與 getRadioAirStats.Load 及 survey dump derived load 對齊
+  description: Radio.2 (6g) 先用 getRadioAirStats() refresh，再同窗抓 getter 與 survey dump。
+- id: step_24g_tight_capture
   target: dut
-  action: read
-  capture: getter_24g
-  command: ubus-cli "WiFi.Radio.3.ChannelLoad?"
-  expected: ChannelLoad 回傳 0-100 的百分比整數
-  description: Radio.3 (2.4g) ChannelLoad getter（live=100）
+  action: exec
+  capture: capture_24g
+  command: AIR=$(ubus-cli "WiFi.Radio.3.getRadioAirStats()" 2>&1); printf '%s\n' "$AIR" | sed -n 's/^[[:space:]]*Load = \([0-9][0-9]*\).*/AirLoad24g=\1/p'; ubus-cli "WiFi.Radio.3.ChannelLoad?" | sed -n 's/^WiFi\.Radio\.3\.ChannelLoad=\([0-9][0-9]*\)$/ChannelLoad24g=\1/p'; iw dev wl2 survey dump | awk '/\[in use\]/{inuse=1; next} inuse && /channel active time:/ {line=$0; gsub(/[^0-9]/, "", line); active=line; next} inuse && /channel busy time:/ {line=$0; gsub(/[^0-9]/, "", line); busy=line; if ((active + 0) > 0) { printf "SurveyActiveMs24g=%s\nSurveyBusyMs24g=%s\nSurveyChannelLoad24g=%d\n", active, busy, int((busy * 100) / active); exit }}'
+  expected: ChannelLoad 應與 getRadioAirStats.Load 及 survey dump derived load 對齊
+  description: Radio.3 (2.4g) 先用 getRadioAirStats() refresh，再同窗抓 getter 與 survey dump。
 pass_criteria:
-- field: getter_5g.ChannelLoad
+- field: capture_5g.AirLoad5g
   operator: regex
   value: ^\d+$
-- field: getter_6g.ChannelLoad
+- field: capture_5g.ChannelLoad5g
+  operator: equals
+  reference: capture_5g.AirLoad5g
+- field: capture_5g.SurveyChannelLoad5g
+  operator: equals
+  reference: capture_5g.ChannelLoad5g
+- field: capture_6g.AirLoad6g
   operator: regex
   value: ^\d+$
-- field: getter_24g.ChannelLoad
+- field: capture_6g.ChannelLoad6g
+  operator: equals
+  reference: capture_6g.AirLoad6g
+- field: capture_6g.SurveyChannelLoad6g
+  operator: equals
+  reference: capture_6g.ChannelLoad6g
+- field: capture_24g.AirLoad24g
   operator: regex
   value: ^\d+$
+- field: capture_24g.ChannelLoad24g
+  operator: equals
+  reference: capture_24g.AirLoad24g
+- field: capture_24g.SurveyChannelLoad24g
+  operator: equals
+  reference: capture_24g.ChannelLoad24g

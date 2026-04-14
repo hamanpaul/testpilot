@@ -68,6 +68,8 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T142616419984`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T144105373183`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T145000666925`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T164447027184`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T172222999250`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -78,8 +80,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 296 |
-| mismatch cases | 124 |
+| full matches | 298 |
+| mismatch cases | 122 |
 | missing answer rows | 0 |
 | metadata drift rows | 58 |
 
@@ -87,9 +89,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 301 | 119 |
-| 6g | 298 | 122 |
-| 2.4g | 299 | 121 |
+| 5g | 303 | 117 |
+| 6g | 300 | 120 |
+| 2.4g | 301 | 119 |
 
 ## Mismatch table
 
@@ -97,8 +99,6 @@
 | --- | ---: | --- | --- | --- | --- | --- | --- |
 | `wifi-llapi-D020-frequencycapabilities` | 20 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D047-supportedhe160mcs` | 47 | exact | Not Supported / N/A / N/A | Pass / Pass / Not Supported | Fail / Fail / Fail | Pass / Pass / Fail | 5g, 6g |
-| `d053-blocked-txbytes` | 53 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d178-radio-channelload` | 178 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d179-radio-ampdu` | 179 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d180-radio-amsdu` | 180 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d181-radio-fragmentationthreshold` | 181 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -260,46 +260,6 @@
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T235952361188/wifi-llapi-D047-supportedhe160mcs.json`
-
-### d053-blocked-txbytes
-
-- case file: `D053_txbytes.yaml`
-- answer row: `53`
-- mapping status: `exact`
-- source metadata: `WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` / `TxBytes`
-- workbook metadata: `WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` / `TxBytes`
-- final status: `Fail`
-- evaluation verdict: `Fail`
-- attempts used: `2`
-- runtime comment: pass_criteria not satisfied (failed after 2/2 attempts)
-- actual raw: `Fail` / `N/A` / `N/A`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Connect WiFi station to GW SSID4, SSID6 and SSID8 2. Run IPERF between Stations 3. Verify TxBytes WiFi.AccessPoint.1.AssociatedDevice.1.TxBytes=640514 WiFi.AccessPoint.3.AssociatedDevice.1.TxBytes=11728 WiFi.AccessPoint.5.AssociatedDe...
-- 0401 H excerpt: wl -i wl0 sta_info ${STA_MAC} tx total bytes: 12792 tx ucast bytes: 12792 tx mcast/bcast bytes: 0
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d053-blocked-txbytes.json`
-
-### d178-radio-channelload
-
-- case file: `D178_channelload.yaml`
-- answer row: `178`
-- mapping status: `exact`
-- source metadata: `WiFi.Radio.{i}.` / `ChannelLoad`
-- workbook metadata: `WiFi.Radio.{i}.` / `ChannelLoad`
-- final status: `Fail`
-- evaluation verdict: `Fail`
-- attempts used: `2`
-- runtime comment: pass_criteria not satisfied (failed after 2/2 attempts)
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Check the ChannelLoad in the air: root@prplOS:/# ubus-cli WiFi.Radio.*.ChannelLoad? > WiFi.Radio.*.ChannelLoad? WiFi.Radio.1.ChannelLoad=0 WiFi.Radio.2.ChannelLoad=0 WiFi.Radio.3.ChannelLoad=0 2. Compare it with driver survey dump, ca...
-- 0401 H excerpt: root@prplOS:/# iw dev wl0 survey dump root@prplOS:/# iw dev wl1 survey dump root@prplOS:/# iw dev wl2 survey dump
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d178-radio-channelload.json`
 
 ### d179-radio-ampdu
 
