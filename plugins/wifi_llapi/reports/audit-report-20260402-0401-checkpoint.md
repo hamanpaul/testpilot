@@ -1,5 +1,74 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-14 early-96)
+
+> This checkpoint records the `D328 ErrorsSent / SSID stats` workbook closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D328 ErrorsSent / SSID stats` 已完成 closure
+- workbook authority 維持 row `328`
+- existing YAML / runtime metadata 無需修改
+- official rerun `20260414T214055064676` 在 retry `2/2` exact-close tri-band workbook `Pass / Pass / Pass`
+- live cross-check evidence 保留 direct/getSSIDStats()/driver `ErrorsSent=0/0/0`
+- attempt `1/2` 曾出現 6G transient `ErrorsSent=25`，retry `2/2` 已收斂
+- compare 更新為 `333 / 420 full matches`、`87 mismatches`、`58 metadata drifts`
+- full repo regression 沿用上一筆 code-bearing landing 的 `1662 passed`
+- active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- next ready non-blocked compare-open case=`D329 FailedRetransCount / SSID stats`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D328 | 328 | ErrorsSent | Pass / Pass / Pass | `20260414T214055064676_DUT.log L432-L441; bgw720-0403_wifi_llapi_20260414t214055064676.md L39-L57` | `20260414T214055064676_STA.log L84-L94; L195-L224; L311-L321` |
+
+### D328 ErrorsSent / SSID stats alignment evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+iw dev wl1 link
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+ubus-cli "WiFi.SSID.4.Stats.ErrorsSent?"
+ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n 's/.*ErrorsSent = \([0-9][0-9]*\).*/GetSSIDStatsErrorsSent5g=\1/p'
+wl -i wl0 if_counters | sed -n 's/.*txerror \([0-9][0-9]*\).*/DriverErrorsSent5g=\1/p'
+wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+ubus-cli "WiFi.SSID.6.Stats.ErrorsSent?"
+ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n 's/.*ErrorsSent = \([0-9][0-9]*\).*/GetSSIDStatsErrorsSent6g=\1/p'
+wl -i wl1 if_counters | sed -n 's/.*txerror \([0-9][0-9]*\).*/DriverErrorsSent6g=\1/p'
+wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+ubus-cli "WiFi.SSID.8.Stats.ErrorsSent?"
+ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n 's/.*ErrorsSent = \([0-9][0-9]*\).*/GetSSIDStatsErrorsSent24g=\1/p'
+wl -i wl2 if_counters | sed -n 's/.*txerror \([0-9][0-9]*\).*/DriverErrorsSent24g=\1/p'
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260414T214055064676
+- bgw720-0403_wifi_llapi_20260414t214055064676.md L9-L11
+  result_5g/result_6g/result_24g = Pass / Pass / Pass
+- bgw720-0403_wifi_llapi_20260414t214055064676.md L39-L57
+  retry 2/2 exact-closes direct Stats / getSSIDStats() / driver all to 0 on 5g / 6g / 2.4g
+- bgw720-0403_wifi_llapi_20260414t214055064676.md L62-L62
+  attempt 1/2 saw transient 6g direct_6g.ErrorsSent=25 before retry recovery
+- 20260414T214055064676_DUT.log L432-L441
+  5g ErrorsSent / GetSSIDStatsErrorsSent / DriverErrorsSent = 0
+- 20260414T214055064676_STA.log L84-L94; L195-L224; L311-L321
+  STA links stay associated to testpilot5G / testpilot6G / testpilot2G during the successful replay
+```
+
 ## Checkpoint summary (2026-04-14 early-95)
 
 > This checkpoint records the `D337 UnknownProtoPacketsReceived / SSID stats` workbook closure.
