@@ -100,6 +100,7 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T180934010938`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T200750384793`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T202052779232`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T203711056772`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -110,8 +111,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 327 |
-| mismatch cases | 93 |
+| full matches | 328 |
+| mismatch cases | 92 |
 | missing answer rows | 0 |
 | metadata drift rows | 58 |
 
@@ -119,9 +120,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 331 | 89 |
-| 6g | 327 | 93 |
-| 2.4g | 330 | 90 |
+| 5g | 332 | 88 |
+| 6g | 328 | 92 |
+| 2.4g | 331 | 89 |
 
 ## Mismatch table
 
@@ -139,7 +140,6 @@
 | `d296-startacs` | 296 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d297-startautochannelselection` | 297 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d302-getssidstats-bytesreceived` | 302 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d308-getssidstats-failedretranscount` | 308 | exact | Pass / Pass / Pass | Not Supported / Not Supported / Not Supported | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
 | `d313-getssidstats-retranscount` | 313 | exact | Pass / Pass / Pass | Not Supported / Not Supported / Not Supported | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
 | `d316-getssidstats-unknownprotopacketsreceived` | 316 | exact | Pass / Pass / Pass | Not Supported / Not Supported / Not Supported | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
 | `wifi-llapi-d327-errorsreceived` | 327 | exact | Pass / Pass / Pass | Skip / Skip / Skip | Pass / Pass / Pass | Fail / Fail / Fail | 5g, 6g, 2.4g |
@@ -455,25 +455,6 @@
 - 0401 G excerpt: 1. Connect WiFi Station to SSID4, SSID6 and SSID8 2. Run Ping between Station and check BytesReceived root@prplOS:/# ubus-cli "WiFi.SSID.?" | grep \.BytesReceived= WiFi.SSID.4.Stats.BytesReceived=1647695 WiFi.SSID.6.Stats.BytesReceived=2...
 - 0401 H excerpt: cat /proc/net/dev | grep wl0 root@prplOS:/# cat /proc/net/dev Inter-| Receive | Transmit face |bytes packets errs drop fifo frame compressed multicast|bytes packets errs drop fifo colls carrier compressed wl0: 1647695 6411 0 14 0 0 0 196...
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d302-getssidstats-bytesreceived.json`
-
-### d308-getssidstats-failedretranscount
-
-- case file: `D308_getssidstats_failedretranscount.yaml`
-- answer row: `308`
-- mapping status: `exact`
-- source metadata: `WiFi.SSID.{i}.` / `getSSIDStats()`
-- workbook metadata: `WiFi.SSID.{i}.` / `getSSIDStats()`
-- final status: `Pass`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Pass` / `Pass` / `Pass`
-- expected raw: `Not Supported` / `Not Supported` / `Not Supported`
-- actual normalized: `Pass` / `Pass` / `Pass`
-- expected normalized: `Fail` / `Fail` / `Fail`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Connect WiFi Station to GW 2. Run Iperf overnight between station 3. Get stats ubus-cli "WiFi.SSID."? | grep FailedRetransCount
-- 0401 H excerpt: cat /proc/net/dev | grep wl0
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d308-getssidstats-failedretranscount.json`
 
 ### d313-getssidstats-retranscount
 

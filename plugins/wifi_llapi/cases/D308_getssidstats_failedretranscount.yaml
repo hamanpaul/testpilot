@@ -12,9 +12,10 @@ bands:
 llapi_support: Support
 results_reference:
   v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: 'workbook v4.0.3 marks FailedRetransCount as Not Supported; current getSSIDStats() probe still returns 0 on 5g/6g/2.4g.'
 topology:
   devices:
     DUT:
@@ -45,11 +46,11 @@ steps:
   description: SSID.8 (2.4g) getSSIDStats()
 pass_criteria:
 - field: stats_5g.FailedRetransCount
-  operator: regex
-  value: ^\d+$
+  operator: equals
+  value: 0
 - field: stats_6g.FailedRetransCount
-  operator: regex
-  value: ^\d+$
+  operator: equals
+  value: 0
 - field: stats_24g.FailedRetransCount
-  operator: regex
-  value: ^\d+$
+  operator: equals
+  value: 0

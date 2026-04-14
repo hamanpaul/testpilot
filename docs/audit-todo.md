@@ -81,11 +81,11 @@
 
 ## Latest repo handoff snapshot（2026-04-14）
 
-- `D261 getRadioAirStats() TxTime` is now aligned via official rerun `20260414T202052779232`
-- workbook authority is row `261`, not stale row `263`; the rerun exact-closes the tri-band fail-shaped getter with `TxTime=0 / 0 / 1`, so the landed case now refreshes stale row `263` / raw `Pass / Pass / Pass` to workbook row `261` / raw `Fail / Fail / Fail`
-- the recovered `getRadioAirStats()` path now exact-closes both `D257` and `D261`; the remaining non-green lab signal is still 6G post-verify `dut_ocv_not_zero`, so active blockers remain `D047` authority conflict plus the shared 6G baseline manifestations in `D179` and `D181`
-- historical blocker context for the temporary D257 empty-array failure is retained in `plugins/wifi_llapi/reports/D257_block.md`; latest committed aligned case is now `D261 getRadioAirStats() TxTime`
-- targeted D261/method-stats runtime guardrails are now `132 passed`; command-budget guardrail remains `1 passed`; final full repo regression remains `1662 passed`; compare is now `327 / 420 full matches` / `93 mismatches` / `58 metadata drifts`, and the next ready non-blocked compare-open case moves to `D308 getSSIDStats() FailedRetransCount`
+- `D308 getSSIDStats() FailedRetransCount` is now aligned via official rerun `20260414T203711056772`
+- workbook authority remains row `308`; the rerun exact-closes the tri-band workbook `Not Supported / Not Supported / Not Supported` shape while preserving live getter evidence `FailedRetransCount=0 / 0 / 0`, so the landed case now retires stale all-pass results_reference / regex pass-criteria drift
+- active blockers remain `D047` authority conflict plus the shared 6G baseline manifestations in `D179` and `D181`; parked clarification items remain `D204` and `D211`
+- historical blocker context for the temporary D257 empty-array failure is retained in `plugins/wifi_llapi/reports/D257_block.md`; latest committed aligned case is now `D308 getSSIDStats() FailedRetransCount`
+- targeted D308/ssid-stats runtime guardrails are now `51 passed`; command-budget guardrail remains `1 passed`; final full repo regression remains `1662 passed`; compare is now `328 / 420 full matches` / `92 mismatches` / `58 metadata drifts`, and the next ready non-blocked compare-open case moves to `D313 getSSIDStats() RetransCount`
 - `D214 Radio.RIFSEnabled` is now aligned via official rerun `20260414T175434503053`
 - workbook authority is row `214`, not stale row `175`; the rerun exact-closes the tri-band setter-backed `Default -> Auto -> Default` replay, so the landed case now refreshes stale row `175` / raw `Fail / Fail / Fail` to workbook row `214` / raw `Pass / Pass / Pass`
 - targeted radio/runtime guardrails are now `202 passed`; final full repo regression remains `1662 passed`; compare is now `324 / 420 full matches` / `96 mismatches` / `58 metadata drifts`, and the next ready non-blocked compare-open case moves to `D251 Radio.Vendor.RegulatoryDomainRev`

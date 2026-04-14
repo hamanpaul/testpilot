@@ -1,5 +1,61 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-14 early-91)
+
+> This checkpoint records the `D308 getSSIDStats() FailedRetransCount` workbook closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D308 getSSIDStats() FailedRetransCount` 已完成 closure
+- workbook authority 維持 row `308`
+- official rerun `20260414T203711056772` exact-close tri-band workbook `Not Supported / Not Supported / Not Supported`
+- live getter evidence 仍保留 `FailedRetransCount=0/0/0`
+- targeted D308/ssid-stats runtime guardrails=`51 passed`
+- command-budget guardrail=`1 passed`
+- full repo regression=`1662 passed`
+- compare 更新為 `328 / 420 full matches`、`92 mismatches`、`58 metadata drifts`
+- active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- next ready non-blocked compare-open case=`D313 getSSIDStats() RetransCount`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D308 | 308 | getSSIDStats() FailedRetransCount | Not Supported / Not Supported / Not Supported | `20260414T203711056772_DUT.log L5-L231` | `20260414T203711056772_STA.log`（empty） |
+
+### D308 getSSIDStats() FailedRetransCount alignment evidence
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.SSID.4.getSSIDStats()"
+ubus-cli "WiFi.SSID.6.getSSIDStats()"
+ubus-cli "WiFi.SSID.8.getSSIDStats()"
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260414T203711056772
+- bgw720-0403_wifi_llapi_20260414t203711056772.md L9-L11
+  result_5g/result_6g/result_24g = Not Supported / Not Supported / Not Supported
+- bgw720-0403_wifi_llapi_20260414t203711056772.md L27-L243
+  FailedRetransCount = 0 / 0 / 0
+- 20260414T203711056772_DUT.log L5-L231
+  WiFi.SSID.4.getSSIDStats() -> FailedRetransCount = 0
+  WiFi.SSID.6.getSSIDStats() -> FailedRetransCount = 0
+  WiFi.SSID.8.getSSIDStats() -> FailedRetransCount = 0
+```
+
 ## Checkpoint summary (2026-04-14 early-90)
 
 > This checkpoint records the `D261 getRadioAirStats() TxTime` workbook closure on the recovered getter path.

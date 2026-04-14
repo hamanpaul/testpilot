@@ -3026,7 +3026,7 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         "D305_getssidstats_discardpacketssent.yaml": {"row": 305, "api": "DiscardPacketsSent", "expected": "Pass"},
         "D306_getssidstats_errorsreceived.yaml": {"row": 306, "api": "ErrorsReceived", "expected": "Pass"},
         "D307_getssidstats_errorssent.yaml": {"row": 307, "api": "ErrorsSent", "expected": "Pass"},
-        "D308_getssidstats_failedretranscount.yaml": {"row": 308, "api": "FailedRetransCount", "expected": "Pass"},
+        "D308_getssidstats_failedretranscount.yaml": {"row": 308, "api": "FailedRetransCount", "expected": "Not Supported"},
         "D309_getssidstats_multicastpacketsreceived.yaml": {"row": 309, "api": "MulticastPacketsReceived", "expected": "Pass"},
         "D310_getssidstats_multicastpacketssent.yaml": {"row": 310, "api": "MulticastPacketsSent", "expected": "Pass"},
         "D311_getssidstats_packetsreceived.yaml": {"row": 311, "api": "PacketsReceived", "expected": "Pass"},
@@ -3055,22 +3055,42 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         assert case_data["results_reference"]["v4.0.3"]["5g"] == meta["expected"]
         assert case_data["results_reference"]["v4.0.3"]["6g"] == meta["expected"]
         assert case_data["results_reference"]["v4.0.3"]["2.4g"] == meta["expected"]
-        assert any(
-            criterion["field"] == f"stats_5g.{meta['api']}"
-            and criterion["operator"] == "regex"
-            and criterion["value"] == r"^\d+$"
-            for criterion in case_data["pass_criteria"]
-        )
-        assert any(
-            criterion["field"] == f"stats_6g.{meta['api']}"
-            and criterion["operator"] == "regex"
-            for criterion in case_data["pass_criteria"]
-        )
-        assert any(
-            criterion["field"] == f"stats_24g.{meta['api']}"
-            and criterion["operator"] == "regex"
-            for criterion in case_data["pass_criteria"]
-        )
+        if meta["expected"] == "Not Supported":
+            assert any(
+                criterion["field"] == f"stats_5g.{meta['api']}"
+                and criterion["operator"] == "equals"
+                and str(criterion.get("value")) == "0"
+                for criterion in case_data["pass_criteria"]
+            )
+            assert any(
+                criterion["field"] == f"stats_6g.{meta['api']}"
+                and criterion["operator"] == "equals"
+                and str(criterion.get("value")) == "0"
+                for criterion in case_data["pass_criteria"]
+            )
+            assert any(
+                criterion["field"] == f"stats_24g.{meta['api']}"
+                and criterion["operator"] == "equals"
+                and str(criterion.get("value")) == "0"
+                for criterion in case_data["pass_criteria"]
+            )
+        else:
+            assert any(
+                criterion["field"] == f"stats_5g.{meta['api']}"
+                and criterion["operator"] == "regex"
+                and criterion["value"] == r"^\d+$"
+                for criterion in case_data["pass_criteria"]
+            )
+            assert any(
+                criterion["field"] == f"stats_6g.{meta['api']}"
+                and criterion["operator"] == "regex"
+                for criterion in case_data["pass_criteria"]
+            )
+            assert any(
+                criterion["field"] == f"stats_24g.{meta['api']}"
+                and criterion["operator"] == "regex"
+                for criterion in case_data["pass_criteria"]
+            )
 
     # Per-case expected results_reference after workbook alignment.
     # Cases not listed default to all-Pass.
@@ -20071,7 +20091,7 @@ _SSID_STATS_CASES = [
     ("D305_getssidstats_discardpacketssent.yaml", 305, "DiscardPacketsSent", "Pass"),
     ("D306_getssidstats_errorsreceived.yaml", 306, "ErrorsReceived", "Pass"),
     ("D307_getssidstats_errorssent.yaml", 307, "ErrorsSent", "Pass"),
-    ("D308_getssidstats_failedretranscount.yaml", 308, "FailedRetransCount", "Pass"),
+    ("D308_getssidstats_failedretranscount.yaml", 308, "FailedRetransCount", "Not Supported"),
     ("D309_getssidstats_multicastpacketsreceived.yaml", 309, "MulticastPacketsReceived", "Pass"),
     ("D310_getssidstats_multicastpacketssent.yaml", 310, "MulticastPacketsSent", "Pass"),
     ("D311_getssidstats_packetsreceived.yaml", 311, "PacketsReceived", "Pass"),
@@ -20120,10 +20140,11 @@ def test_ssid_stats_evaluate(yaml_file, row, field, verdict):
     case = load_case(cases_dir / yaml_file)
     results = {"steps": {}}
     for ssid, band in [("4", "5g"), ("6", "6g"), ("8", "24g")]:
+        value = 0 if verdict == "Not Supported" else 42
         output = (
             f"WiFi.SSID.{ssid}.getSSIDStats() returned\n"
             f"[\n    {{\n"
-            f"        {field} = 42,\n"
+            f"        {field} = {value},\n"
             f"    }}\n]"
         )
         results["steps"][f"step_{band}_stats"] = {
