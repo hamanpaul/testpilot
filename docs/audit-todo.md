@@ -81,6 +81,9 @@
 
 ## Latest repo handoff snapshot（2026-04-14）
 
+- `D257 getRadioAirStats() Load` is now parked after isolated rerun `20260414T183120002375`
+- historical authoritative full-run trace `20260412T113008433351` already showed numeric `Load=84/62/96`, so stale row `259` / fail-shaped YAML is wrong; but the current isolated rerun returns `[""]` on all three radios, the same-window probe `20260414T182753422531` only yielded `S5=89` / `S6=65` / `S24=96`, and safe env repair `wifi-llapi baseline-qualify --band 6g --repeat-count 1 --soak-minutes 0` fell back into the shared 6G baseline blocker (`6G ocv fix did not stabilize wl1 after retries`, `sta_baseline_bss[1] not ready after 60s cmd=wl -i wl1 bss`, `STA band baseline/connect failed`)
+- blocker-style handoff now lives at `plugins/wifi_llapi/reports/D257_block.md`; latest committed aligned case remains `D251 Radio.Vendor.RegulatoryDomainRev`; compare still holds at `325 / 420 full matches` / `95 mismatches` / `58 metadata drifts`, and the next retry after baseline recovery remains `D257 getRadioAirStats() Load`
 - `D251 Radio.Vendor.RegulatoryDomainRev` is now aligned via official rerun `20260414T180934010938`
 - workbook authority is row `251`, not stale row `183`; the rerun exact-closes the tri-band setter-backed `0 -> 8 -> 0` replay plus `RegulatoryDomainSupported` capture and workbook-note `wl country=#a (#a/0) <unknown>` invariant, so the landed case now refreshes stale row `183` / raw `Fail / Fail / Fail` to workbook row `251` / raw `Pass / Pass / Pass`
 - targeted D251/runtime guardrails are now `6 passed`; command-budget guardrail remains `1 passed`; final full repo regression remains `1662 passed`; compare is now `325 / 420 full matches` / `95 mismatches` / `58 metadata drifts`, and the next ready non-blocked compare-open case moves to `D257 getRadioAirStats() Load`

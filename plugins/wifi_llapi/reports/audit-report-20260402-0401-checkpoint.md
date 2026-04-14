@@ -1,5 +1,68 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-14 early-88)
+
+> This checkpoint records the `D257 getRadioAirStats() Load` blocker after the stale row / fail-shape was disproven but the current isolated lab state returned empty air-stats objects and the 6G baseline repair also failed.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D257 getRadioAirStats() Load` 目前不是 closure，而是 blocker
+- historical authoritative full-run `20260412T113008433351` 已證明舊 YAML 的 stale row `259` / `Fail / Fail / Fail` 是錯的：當時 `Load=84/62/96`
+- 但 current isolated rerun `20260414T183120002375` 在三個 band 都只回 `[""]`
+- same-window probe `20260414T182753422531` 也只拿到 survey-derived `S5=89`、`S6=65`、`S24=96`，`getRadioAirStats()` / `ChannelLoad?` 沒有 parseable values
+- safe env repair `wifi-llapi baseline-qualify --band 6g --repeat-count 1 --soak-minutes 0` 落回 shared 6G baseline blocker：`6G ocv fix did not stabilize wl1 after retries`、`sta_baseline_bss[1] not ready after 60s cmd=wl -i wl1 bss`、`STA band baseline/connect failed`
+- 這表示 D257 現在真正的 blocker 是 shared 6G baseline / radio-active state，不是 workbook authority
+- compare 仍維持 `325 / 420 full matches`、`95 mismatches`、`58 metadata drifts`
+- latest landed alignment remains `D251 Radio.Vendor.RegulatoryDomainRev`
+- `D257` blocker handoff 已落在 `plugins/wifi_llapi/reports/D257_block.md`
+
+</details>
+
+### D257 getRadioAirStats() Load blocker evidence
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only case; blocker is current radio-active / shared 6G baseline state)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.getRadioAirStats()"
+ubus-cli "WiFi.Radio.2.getRadioAirStats()"
+ubus-cli "WiFi.Radio.3.getRadioAirStats()"
+wifi-llapi baseline-qualify --band 6g --repeat-count 1 --soak-minutes 0
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Historical authoritative full-run 20260412T113008433351
+- plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d257-getradioairstats-load.json
+  Load = 84 / 62 / 96
+
+Isolated rerun 20260414T183120002375
+- 20260414T183120002375_DUT.log L5-L28; bgw720-0403_wifi_llapi_20260414t183120002375.md L15-L44
+  WiFi.Radio.1.getRadioAirStats() returned [""] 
+  WiFi.Radio.2.getRadioAirStats() returned [""] 
+  WiFi.Radio.3.getRadioAirStats() returned [""]
+
+Same-window probe 20260414T182753422531
+- bgw720-0403_wifi_llapi_20260414t182753422531.md L33-L45
+  S5=89
+  S6=65
+  S24=96
+  failure_snapshot field=capture_5g.Air5 expected=^\d+$ actual=
+
+Safe env repair
+- wifi-llapi baseline-qualify --band 6g --repeat-count 1 --soak-minutes 0
+  6G ocv fix did not stabilize wl1 after retries
+  sta_baseline_bss[1] not ready after 60s cmd=wl -i wl1 bss
+  STA band baseline/connect failed
+```
+
 ## Checkpoint summary (2026-04-14 early-87)
 
 > This checkpoint records the `D251 Radio.Vendor.RegulatoryDomainRev` setter-backed workbook closure.
