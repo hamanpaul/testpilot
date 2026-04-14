@@ -67,7 +67,12 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T144105373183",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T145000666925",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T164447027184",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T172222999250"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T172222999250",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111010511593",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111624033199",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111633789177",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111643078674",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111652454052"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -75,20 +80,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 298,
-  "mismatch_case_count": 122,
+  "full_match_count": 304,
+  "mismatch_case_count": 116,
   "band_summary": {
     "5g": {
-      "matched": 303,
-      "mismatched": 117
+      "matched": 309,
+      "mismatched": 111
     },
     "6g": {
-      "matched": 300,
-      "mismatched": 120
+      "matched": 306,
+      "mismatched": 114
     },
     "2.4g": {
-      "matched": 301,
-      "mismatched": 119
+      "matched": 307,
+      "mismatched": 113
     }
   },
   "cases": [
@@ -6338,7 +6343,7 @@
       "case_id": "d179-radio-ampdu",
       "case_file": "D179_ampdu.yaml",
       "dnum": 179,
-      "source_row": 142,
+      "source_row": 179,
       "source_object": "WiFi.Radio.{i}.DriverConfig.",
       "source_api": "Ampdu",
       "answer_row": 179,
@@ -6353,30 +6358,26 @@
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Connect WiFi Station to GW 2. Set GW AMPDU to 1 =enable root@prplOS:/# ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=1 > WiFi.Radio.1.DriverConfig.Ampdu=1 WiFi.Radio.1.DriverConfig. WiFi.Radio.1.DriverConfig.Ampdu=1 3. Run Iperf3 from stat...",
       "workbook_command_output_excerpt": "AMPDU = Enable root@prplOS:/# wl -i wlx ampdu 1 AMPDU = Disable root@prplOS:/# wl -i wlx ampdu 0",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d179-radio-ampdu.json"
@@ -6385,7 +6386,7 @@
       "case_id": "d180-radio-amsdu",
       "case_file": "D180_amsdu.yaml",
       "dnum": 180,
-      "source_row": 143,
+      "source_row": 180,
       "source_object": "WiFi.Radio.{i}.DriverConfig.",
       "source_api": "Amsdu",
       "answer_row": 180,
@@ -6394,39 +6395,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Get Amsdu default value: root@prplOS:/# ubus-cli WiFi.Radio.*.DriverConfig.Amsdu? > WiFi.Radio.*.DriverConfig.Amsdu? WiFi.Radio.1.DriverConfig.Amsdu=-1 WiFi.Radio.2.DriverConfig.Amsdu=-1 WiFi.Radio.3.DriverConfig.Amsdu=-1",
       "workbook_command_output_excerpt": "wl -i wl0 amsdu wl -i wl1 amsdu wl -i wl2 amsdu root@prplOS:/# iw phy phy0 info | grep -i msdu Max AMSDU length: 3839 bytes root@prplOS:/# iw phy phy1 info | grep -i msdu root@prplOS:/# iw phy phy2 info | grep -i msdu Max AMSDU length: 3...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d180-radio-amsdu.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111010511593/d180-radio-amsdu.json"
     },
     {
       "case_id": "d181-radio-fragmentationthreshold",
@@ -6569,7 +6566,7 @@
       "case_id": "d184-radio-nractiverxantenna",
       "case_file": "D184_nractiverxantenna.yaml",
       "dnum": 184,
-      "source_row": 147,
+      "source_row": 184,
       "source_object": "WiFi.Radio.{i}.DriverStatus.",
       "source_api": "NrActiveRxAntenna",
       "answer_row": 184,
@@ -6578,45 +6575,41 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Check GW Radio DriverStatus.NrActiveRxAntenna: root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrActiveRxAntenna? > WiFi.Radio.*.DriverStatus.NrActiveRxAntenna? WiFi.Radio.1.DriverStatus.NrActiveRxAntenna=-1 WiFi.Radio.2.DriverStatu...",
       "workbook_command_output_excerpt": "wl -i wl0 rxchain root@prplOS:/# wl -i wl0 rxchain 15 (0xf) root@prplOS:/# wl -i wl1 rxchain 15 (0xf) root@prplOS:/# wl -i wl2 rxchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d184-radio-nractiverxantenna.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111624033199/d184-radio-nractiverxantenna.json"
     },
     {
       "case_id": "d185-radio-nractivetxantenna",
       "case_file": "D185_nractivetxantenna.yaml",
       "dnum": 185,
-      "source_row": 148,
+      "source_row": 185,
       "source_object": "WiFi.Radio.{i}.DriverStatus.",
       "source_api": "NrActiveTxAntenna",
       "answer_row": 185,
@@ -6625,45 +6618,41 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Check GW Radio DriverStatus.NrActiveTxAntenna root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrActiveTxAntenna? > WiFi.Radio.*.DriverStatus.NrActiveTxAntenna? WiFi.Radio.1.DriverStatus.NrActiveTxAntenna=-1 WiFi.Radio.2.DriverStatus...",
       "workbook_command_output_excerpt": "wl -i wl0 txchain root@prplOS:/# wl -i wl0 txchain 15 (0xf) root@prplOS:/# wl -i wl1 txchain 15 (0xf) root@prplOS:/# wl -i wl2 txchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d185-radio-nractivetxantenna.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111633789177/d185-radio-nractivetxantenna.json"
     },
     {
       "case_id": "d186-radio-nrrxantenna",
       "case_file": "D186_nrrxantenna.yaml",
       "dnum": 186,
-      "source_row": 149,
+      "source_row": 186,
       "source_object": "WiFi.Radio.{i}.DriverStatus.",
       "source_api": "NrRxAntenna",
       "answer_row": 186,
@@ -6672,45 +6661,41 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Check GW Radio DriverStatus.NrRxAntenna root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrRxAntenna? > WiFi.Radio.*.DriverStatus.NrRxAntenna? WiFi.Radio.1.DriverStatus.NrRxAntenna=4 WiFi.Radio.2.DriverStatus.NrRxAntenna=4 WiFi.Radio...",
       "workbook_command_output_excerpt": "wl -i wl0 rxchain root@prplOS:/# wl -i wl0 rxchain 15 (0xf) root@prplOS:/# wl -i wl1 rxchain 15 (0xf) root@prplOS:/# wl -i wl2 rxchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d186-radio-nrrxantenna.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111643078674/d186-radio-nrrxantenna.json"
     },
     {
       "case_id": "d187-radio-nrtxantenna",
       "case_file": "D187_nrtxantenna.yaml",
       "dnum": 187,
-      "source_row": 150,
+      "source_row": 187,
       "source_object": "WiFi.Radio.{i}.DriverStatus.",
       "source_api": "NrTxAntenna",
       "answer_row": 187,
@@ -6719,39 +6704,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Check GW Radio DriverStatus.NrTxAntenna: root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrTxAntenna? > WiFi.Radio.*.DriverStatus.NrTxAntenna? WiFi.Radio.1.DriverStatus.NrTxAntenna=4 WiFi.Radio.2.DriverStatus.NrTxAntenna=4 WiFi.Radi...",
       "workbook_command_output_excerpt": "wl -i wl0 txchain root@prplOS:/# wl -i wl0 txchain 15 (0xf) root@prplOS:/# wl -i wl1 txchain 15 (0xf) root@prplOS:/# wl -i wl2 txchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d187-radio-nrtxantenna.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111652454052/d187-radio-nrtxantenna.json"
     },
     {
       "case_id": "d188-radio-dtimperiod",
@@ -18726,100 +18707,6 @@
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T235952361188/wifi-llapi-D047-supportedhe160mcs.json"
     },
     {
-      "case_id": "d179-radio-ampdu",
-      "case_file": "D179_ampdu.yaml",
-      "dnum": 179,
-      "source_row": 142,
-      "source_object": "WiFi.Radio.{i}.DriverConfig.",
-      "source_api": "Ampdu",
-      "answer_row": 179,
-      "answer_object": "WiFi.Radio.{i}.DriverConfig.",
-      "answer_api": "Ampdu",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Connect WiFi Station to GW 2. Set GW AMPDU to 1 =enable root@prplOS:/# ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=1 > WiFi.Radio.1.DriverConfig.Ampdu=1 WiFi.Radio.1.DriverConfig. WiFi.Radio.1.DriverConfig.Ampdu=1 3. Run Iperf3 from stat...",
-      "workbook_command_output_excerpt": "AMPDU = Enable root@prplOS:/# wl -i wlx ampdu 1 AMPDU = Disable root@prplOS:/# wl -i wlx ampdu 0",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d179-radio-ampdu.json"
-    },
-    {
-      "case_id": "d180-radio-amsdu",
-      "case_file": "D180_amsdu.yaml",
-      "dnum": 180,
-      "source_row": 143,
-      "source_object": "WiFi.Radio.{i}.DriverConfig.",
-      "source_api": "Amsdu",
-      "answer_row": 180,
-      "answer_object": "WiFi.Radio.{i}.DriverConfig.",
-      "answer_api": "Amsdu",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Get Amsdu default value: root@prplOS:/# ubus-cli WiFi.Radio.*.DriverConfig.Amsdu? > WiFi.Radio.*.DriverConfig.Amsdu? WiFi.Radio.1.DriverConfig.Amsdu=-1 WiFi.Radio.2.DriverConfig.Amsdu=-1 WiFi.Radio.3.DriverConfig.Amsdu=-1",
-      "workbook_command_output_excerpt": "wl -i wl0 amsdu wl -i wl1 amsdu wl -i wl2 amsdu root@prplOS:/# iw phy phy0 info | grep -i msdu Max AMSDU length: 3839 bytes root@prplOS:/# iw phy phy1 info | grep -i msdu root@prplOS:/# iw phy phy2 info | grep -i msdu Max AMSDU length: 3...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d180-radio-amsdu.json"
-    },
-    {
       "case_id": "d181-radio-fragmentationthreshold",
       "case_file": "D181_fragmentationthreshold.yaml",
       "dnum": 181,
@@ -18912,194 +18799,6 @@
       "workbook_test_steps_excerpt": "1. Set RtsThreshold \"ex. 1500 root@prplOS:/# ubus-cli WiFi.Radio.*.DriverConfig.RtsThreshold=1500 > WiFi.Radio.*.DriverConfig.RtsThreshold=1500 WiFi.Radio.1.DriverConfig. WiFi.Radio.1.DriverConfig.RtsThreshold=1500 WiFi.Radio.2.DriverCon...",
       "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 rtsthresh 1500 (0x5dc) root@prplOS:/# wl -i wl1 rtsthresh 1500 (0x5dc) root@prplOS:/# wl -i wl2 rtsthresh 1500 (0x5dc)",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d182-radio-rtsthreshold.json"
-    },
-    {
-      "case_id": "d184-radio-nractiverxantenna",
-      "case_file": "D184_nractiverxantenna.yaml",
-      "dnum": 184,
-      "source_row": 147,
-      "source_object": "WiFi.Radio.{i}.DriverStatus.",
-      "source_api": "NrActiveRxAntenna",
-      "answer_row": 184,
-      "answer_object": "WiFi.Radio.{i}.DriverStatus.",
-      "answer_api": "NrActiveRxAntenna",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Check GW Radio DriverStatus.NrActiveRxAntenna: root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrActiveRxAntenna? > WiFi.Radio.*.DriverStatus.NrActiveRxAntenna? WiFi.Radio.1.DriverStatus.NrActiveRxAntenna=-1 WiFi.Radio.2.DriverStatu...",
-      "workbook_command_output_excerpt": "wl -i wl0 rxchain root@prplOS:/# wl -i wl0 rxchain 15 (0xf) root@prplOS:/# wl -i wl1 rxchain 15 (0xf) root@prplOS:/# wl -i wl2 rxchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d184-radio-nractiverxantenna.json"
-    },
-    {
-      "case_id": "d185-radio-nractivetxantenna",
-      "case_file": "D185_nractivetxantenna.yaml",
-      "dnum": 185,
-      "source_row": 148,
-      "source_object": "WiFi.Radio.{i}.DriverStatus.",
-      "source_api": "NrActiveTxAntenna",
-      "answer_row": 185,
-      "answer_object": "WiFi.Radio.{i}.DriverStatus.",
-      "answer_api": "NrActiveTxAntenna",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Check GW Radio DriverStatus.NrActiveTxAntenna root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrActiveTxAntenna? > WiFi.Radio.*.DriverStatus.NrActiveTxAntenna? WiFi.Radio.1.DriverStatus.NrActiveTxAntenna=-1 WiFi.Radio.2.DriverStatus...",
-      "workbook_command_output_excerpt": "wl -i wl0 txchain root@prplOS:/# wl -i wl0 txchain 15 (0xf) root@prplOS:/# wl -i wl1 txchain 15 (0xf) root@prplOS:/# wl -i wl2 txchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d185-radio-nractivetxantenna.json"
-    },
-    {
-      "case_id": "d186-radio-nrrxantenna",
-      "case_file": "D186_nrrxantenna.yaml",
-      "dnum": 186,
-      "source_row": 149,
-      "source_object": "WiFi.Radio.{i}.DriverStatus.",
-      "source_api": "NrRxAntenna",
-      "answer_row": 186,
-      "answer_object": "WiFi.Radio.{i}.DriverStatus.",
-      "answer_api": "NrRxAntenna",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Check GW Radio DriverStatus.NrRxAntenna root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrRxAntenna? > WiFi.Radio.*.DriverStatus.NrRxAntenna? WiFi.Radio.1.DriverStatus.NrRxAntenna=4 WiFi.Radio.2.DriverStatus.NrRxAntenna=4 WiFi.Radio...",
-      "workbook_command_output_excerpt": "wl -i wl0 rxchain root@prplOS:/# wl -i wl0 rxchain 15 (0xf) root@prplOS:/# wl -i wl1 rxchain 15 (0xf) root@prplOS:/# wl -i wl2 rxchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d186-radio-nrrxantenna.json"
-    },
-    {
-      "case_id": "d187-radio-nrtxantenna",
-      "case_file": "D187_nrtxantenna.yaml",
-      "dnum": 187,
-      "source_row": 150,
-      "source_object": "WiFi.Radio.{i}.DriverStatus.",
-      "source_api": "NrTxAntenna",
-      "answer_row": 187,
-      "answer_object": "WiFi.Radio.{i}.DriverStatus.",
-      "answer_api": "NrTxAntenna",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Check GW Radio DriverStatus.NrTxAntenna: root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrTxAntenna? > WiFi.Radio.*.DriverStatus.NrTxAntenna? WiFi.Radio.1.DriverStatus.NrTxAntenna=4 WiFi.Radio.2.DriverStatus.NrTxAntenna=4 WiFi.Radi...",
-      "workbook_command_output_excerpt": "wl -i wl0 txchain root@prplOS:/# wl -i wl0 txchain 15 (0xf) root@prplOS:/# wl -i wl1 txchain 15 (0xf) root@prplOS:/# wl -i wl2 txchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d187-radio-nrtxantenna.json"
     },
     {
       "case_id": "d190-radio-explicitbeamformingenabled",

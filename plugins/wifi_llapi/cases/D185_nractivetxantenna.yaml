@@ -1,7 +1,7 @@
 id: d185-radio-nractivetxantenna
 name: D185 Radio NrActiveTxAntenna
 source:
-  row: 148
+  row: 185
   object: WiFi.Radio.{i}.DriverStatus.
   api: NrActiveTxAntenna
   baseline: 0310-BGW720-300
@@ -12,16 +12,16 @@ bands:
 llapi_support: Support
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
-    comment: read-only DriverStatus 欄位；setter 回 error 15 (is read only)
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: read-only DriverStatus field stays at the active 0403 tri-band value 4
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM1
+      selector: COM0
 steps:
 - id: step_5g_getter
   target: dut

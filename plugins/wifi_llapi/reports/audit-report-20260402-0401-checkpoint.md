@@ -1,5 +1,175 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-14 early-66)
+
+> This checkpoint records the low-risk radio getter closures for `D180` and `D184-D187`, plus the follow-up `D181` shared-baseline blocker note.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D180 Radio.Amsdu` 已透過 official rerun `20260414T111010511593` 完成 closure
+- `D184-D187` 已透過 official reruns `20260414T111624033199` / `20260414T111633789177` / `20260414T111643078674` / `20260414T111652454052` 完成 closure
+- 這五案都屬 low-risk radio getter family：official rerun 分別 exact-close tri-band `Amsdu=-1` 與 `NrActiveRxAntenna` / `NrActiveTxAntenna` / `NrRxAntenna` / `NrTxAntenna` = `4`
+- landed YAML 現在分別由 stale rows `143` / `147-150` 刷新為 workbook rows `180` / `184-187`，`results_reference.v4.0.3` 也回到 `Pass / Pass / Pass`
+- targeted radio-getter/runtime guardrails=`201 passed`
+- command-budget guardrail=`1 passed`
+- compare refresh 已更新為 `304 / 420 full matches`、`116 mismatches`、`58 metadata drifts`
+- 本輪沒有再跑 full repo regression
+- `D181 Radio.FragmentationThreshold` clean-start trial rerun `20260414T111023418516` 再次卡在 shared 6G `DUT + STA` baseline recovery，僅留下 partial xlsx；對應 blocker handoff 已落在 `plugins/wifi_llapi/reports/D181_block.md`
+- `D182 Radio.RtsThreshold` 因相同 shared baseline blocker 暫停，沒有宣告 closure
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D180` | 180 | `Amsdu` | `Pass / Pass / Pass` | `20260414T111010511593_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260414t111010511593.md L15-L37` | `20260414T111010511593_STA.log` empty file |
+| `D184` | 184 | `NrActiveRxAntenna` | `Pass / Pass / Pass` | `20260414T111624033199_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260414t111624033199.md L15-L37` | `20260414T111624033199_STA.log` empty file |
+| `D185` | 185 | `NrActiveTxAntenna` | `Pass / Pass / Pass` | `20260414T111633789177_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260414t111633789177.md L15-L37` | `20260414T111633789177_STA.log` empty file |
+| `D186` | 186 | `NrRxAntenna` | `Pass / Pass / Pass` | `20260414T111643078674_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260414t111643078674.md L15-L37` | `20260414T111643078674_STA.log` empty file |
+| `D187` | 187 | `NrTxAntenna` | `Pass / Pass / Pass` | `20260414T111652454052_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260414t111652454052.md L15-L37` | `20260414T111652454052_STA.log` empty file |
+
+#### D180 Radio.Amsdu
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only radio getter case; rerun emitted an empty STA log)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.DriverConfig.Amsdu?"
+ubus-cli "WiFi.Radio.2.DriverConfig.Amsdu?"
+ubus-cli "WiFi.Radio.3.DriverConfig.Amsdu?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+DUT (20260414T111010511593_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260414t111010511593.md L15-L37)
+WiFi.Radio.1.DriverConfig.Amsdu=-1
+WiFi.Radio.2.DriverConfig.Amsdu=-1
+WiFi.Radio.3.DriverConfig.Amsdu=-1
+
+STA (20260414T111010511593_STA.log)
+empty file
+```
+
+#### D184 Radio.NrActiveRxAntenna
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only radio getter case; rerun emitted an empty STA log)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.DriverStatus.NrActiveRxAntenna?"
+ubus-cli "WiFi.Radio.2.DriverStatus.NrActiveRxAntenna?"
+ubus-cli "WiFi.Radio.3.DriverStatus.NrActiveRxAntenna?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+DUT (20260414T111624033199_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260414t111624033199.md L15-L37)
+WiFi.Radio.1.DriverStatus.NrActiveRxAntenna=4
+WiFi.Radio.2.DriverStatus.NrActiveRxAntenna=4
+WiFi.Radio.3.DriverStatus.NrActiveRxAntenna=4
+
+STA (20260414T111624033199_STA.log)
+empty file
+```
+
+#### D185 Radio.NrActiveTxAntenna
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only radio getter case; rerun emitted an empty STA log)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.DriverStatus.NrActiveTxAntenna?"
+ubus-cli "WiFi.Radio.2.DriverStatus.NrActiveTxAntenna?"
+ubus-cli "WiFi.Radio.3.DriverStatus.NrActiveTxAntenna?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+DUT (20260414T111633789177_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260414t111633789177.md L15-L37)
+WiFi.Radio.1.DriverStatus.NrActiveTxAntenna=4
+WiFi.Radio.2.DriverStatus.NrActiveTxAntenna=4
+WiFi.Radio.3.DriverStatus.NrActiveTxAntenna=4
+
+STA (20260414T111633789177_STA.log)
+empty file
+```
+
+#### D186 Radio.NrRxAntenna
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only radio getter case; rerun emitted an empty STA log)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.DriverStatus.NrRxAntenna?"
+ubus-cli "WiFi.Radio.2.DriverStatus.NrRxAntenna?"
+ubus-cli "WiFi.Radio.3.DriverStatus.NrRxAntenna?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+DUT (20260414T111643078674_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260414t111643078674.md L15-L37)
+WiFi.Radio.1.DriverStatus.NrRxAntenna=4
+WiFi.Radio.2.DriverStatus.NrRxAntenna=4
+WiFi.Radio.3.DriverStatus.NrRxAntenna=4
+
+STA (20260414T111643078674_STA.log)
+empty file
+```
+
+#### D187 Radio.NrTxAntenna
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only radio getter case; rerun emitted an empty STA log)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.DriverStatus.NrTxAntenna?"
+ubus-cli "WiFi.Radio.2.DriverStatus.NrTxAntenna?"
+ubus-cli "WiFi.Radio.3.DriverStatus.NrTxAntenna?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+DUT (20260414T111652454052_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260414t111652454052.md L15-L37)
+WiFi.Radio.1.DriverStatus.NrTxAntenna=4
+WiFi.Radio.2.DriverStatus.NrTxAntenna=4
+WiFi.Radio.3.DriverStatus.NrTxAntenna=4
+
+STA (20260414T111652454052_STA.log)
+empty file
+```
+
 ## Checkpoint summary (2026-04-13 early-65)
 
 > This checkpoint records the `D179 Radio.Ampdu` blocker after the DUT-only replay was rejected and the clean-start `DUT + STA` retry exposed the current 6G baseline failure.

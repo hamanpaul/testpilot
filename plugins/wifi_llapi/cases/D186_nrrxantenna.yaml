@@ -1,7 +1,7 @@
 id: d186-radio-nrrxantenna
 name: D186 Radio NrRxAntenna
 source:
-  row: 149
+  row: 186
   object: WiFi.Radio.{i}.DriverStatus.
   api: NrRxAntenna
   baseline: 0310-BGW720-300
@@ -12,15 +12,16 @@ bands:
 llapi_support: Support
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: read-only getter stays at the active 0403 tri-band value 4
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM1
+      selector: COM0
 steps:
 - id: step_5g_getter
   target: dut

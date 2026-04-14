@@ -1,3 +1,5 @@
+**2026-04-14 superseding note：本檔下半部的大盤分析仍保留 2026-04-13 snapshot；最新 strict compare 已刷新為 `304 / 420 full matches`、`116` 筆 mismatch、`58` 筆 metadata drift。** 本輪已完成 `D180 Radio.Amsdu` 與 `D184-D187` official rerun closure（`20260414T111010511593`、`20260414T111624033199`、`20260414T111633789177`、`20260414T111643078674`、`20260414T111652454052`），而 `D181 Radio.FragmentationThreshold` clean-start trial rerun `20260414T111023418516` 又重現 shared 6G `DUT + STA` baseline blocker，故 trial `D181/D182` setter rewrite 已回退，`D182` 暫停。active blockers 現在是 `D047` 與 shared 6G baseline blocker（manifested in `D179`、`D181`）；next ready non-blocked compare-open case 是 `D190 Radio.ExplicitBeamFormingEnabled`。
+
 **先講結論：以目前 repo 內 `compare-0401` snapshot 為準，跟 workbook 的差距是 `122` 筆 mismatch、`58` 筆 metadata drift。** 如果只看 workbook `Pass` 目標，分兩種口徑：
 
 | 口徑 | 數量 | 說明 |
@@ -121,6 +123,7 @@
   - `plugins/wifi_llapi/reports/audit-report-20260402-0401-checkpoint.md`
   - `plugins/wifi_llapi/reports/D047_block.md`
   - `plugins/wifi_llapi/reports/D179_block.md`
+  - `plugins/wifi_llapi/reports/D181_block.md`
 
 ### 2. Source authority 與常用 src path
 
@@ -231,22 +234,27 @@
 1. 先讀本檔 `0414-handover.md`
 2. 再讀 `docs/audit-todo.md` 最新 snapshot
 3. 再讀 `plugins/wifi_llapi/reports/D179_block.md`
-4. 看 `compare-0401.md` 的 `D179` / `D180` 段
-5. 若不先重開 6G baseline bring-up，就直接從 `D180 Radio.Amsdu` 開始
+4. 再讀 `plugins/wifi_llapi/reports/D181_block.md`
+5. 看 `compare-0401.md` 的 `D179` / `D181` / `D190` 段
+6. 若不先重開 6G baseline bring-up，就直接從 `D190 Radio.ExplicitBeamFormingEnabled` 開始
 
 ### 8. 當前 continuation anchor
 
 - latest aligned cases:
-  - `D053 TxBytes`
-  - `D178 Radio.ChannelLoad`
+  - `D180 Radio.Amsdu`
+  - `D184 Radio.NrActiveRxAntenna`
+  - `D185 Radio.NrActiveTxAntenna`
+  - `D186 Radio.NrRxAntenna`
+  - `D187 Radio.NrTxAntenna`
 - latest blocker:
-  - `D179 Radio.Ampdu`
+  - `D181 Radio.FragmentationThreshold`
 - active blockers（repo handoff current view）：
   - `D047`
   - `D179`
+  - `D181`
 - strict compare snapshot：
-  - `298 / 420 full matches`
-  - `122 mismatches`
+  - `304 / 420 full matches`
+  - `116 mismatches`
   - `58 metadata drifts`
-- next ready actionable compare-open case：
-  - `D180 Radio.Amsdu`
+- next ready non-blocked compare-open case：
+  - `D190 Radio.ExplicitBeamFormingEnabled`

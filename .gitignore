@@ -20,6 +20,7 @@ build/
 plugins/wifi_llapi/reports/*
 !plugins/wifi_llapi/reports/templates/
 !plugins/wifi_llapi/reports/.gitkeep
+!plugins/wifi_llapi/reports/D181_block.md
 
 # OS
 .DS_Store

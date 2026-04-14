@@ -70,6 +70,11 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T145000666925`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T164447027184`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T172222999250`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111010511593`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111624033199`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111633789177`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111643078674`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T111652454052`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -80,8 +85,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 298 |
-| mismatch cases | 122 |
+| full matches | 304 |
+| mismatch cases | 116 |
 | missing answer rows | 0 |
 | metadata drift rows | 58 |
 
@@ -89,9 +94,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 303 | 117 |
-| 6g | 300 | 120 |
-| 2.4g | 301 | 119 |
+| 5g | 309 | 111 |
+| 6g | 306 | 114 |
+| 2.4g | 307 | 113 |
 
 ## Mismatch table
 
@@ -99,14 +104,8 @@
 | --- | ---: | --- | --- | --- | --- | --- | --- |
 | `wifi-llapi-D020-frequencycapabilities` | 20 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `wifi-llapi-D047-supportedhe160mcs` | 47 | exact | Not Supported / N/A / N/A | Pass / Pass / Not Supported | Fail / Fail / Fail | Pass / Pass / Fail | 5g, 6g |
-| `d179-radio-ampdu` | 179 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d180-radio-amsdu` | 180 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d181-radio-fragmentationthreshold` | 181 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d182-radio-rtsthreshold` | 182 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d184-radio-nractiverxantenna` | 184 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d185-radio-nractivetxantenna` | 185 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d186-radio-nrrxantenna` | 186 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d187-radio-nrtxantenna` | 187 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d190-radio-explicitbeamformingenabled` | 190 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d191-radio-explicitbeamformingsupported` | 191 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d192-radio-guardinterval` | 192 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -261,44 +260,6 @@
 - 0401 H excerpt: (empty)
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T235952361188/wifi-llapi-D047-supportedhe160mcs.json`
 
-### d179-radio-ampdu
-
-- case file: `D179_ampdu.yaml`
-- answer row: `179`
-- mapping status: `exact`
-- source metadata: `WiFi.Radio.{i}.DriverConfig.` / `Ampdu`
-- workbook metadata: `WiFi.Radio.{i}.DriverConfig.` / `Ampdu`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Connect WiFi Station to GW 2. Set GW AMPDU to 1 =enable root@prplOS:/# ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=1 > WiFi.Radio.1.DriverConfig.Ampdu=1 WiFi.Radio.1.DriverConfig. WiFi.Radio.1.DriverConfig.Ampdu=1 3. Run Iperf3 from stat...
-- 0401 H excerpt: AMPDU = Enable root@prplOS:/# wl -i wlx ampdu 1 AMPDU = Disable root@prplOS:/# wl -i wlx ampdu 0
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d179-radio-ampdu.json`
-
-### d180-radio-amsdu
-
-- case file: `D180_amsdu.yaml`
-- answer row: `180`
-- mapping status: `exact`
-- source metadata: `WiFi.Radio.{i}.DriverConfig.` / `Amsdu`
-- workbook metadata: `WiFi.Radio.{i}.DriverConfig.` / `Amsdu`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Get Amsdu default value: root@prplOS:/# ubus-cli WiFi.Radio.*.DriverConfig.Amsdu? > WiFi.Radio.*.DriverConfig.Amsdu? WiFi.Radio.1.DriverConfig.Amsdu=-1 WiFi.Radio.2.DriverConfig.Amsdu=-1 WiFi.Radio.3.DriverConfig.Amsdu=-1
-- 0401 H excerpt: wl -i wl0 amsdu wl -i wl1 amsdu wl -i wl2 amsdu root@prplOS:/# iw phy phy0 info | grep -i msdu Max AMSDU length: 3839 bytes root@prplOS:/# iw phy phy1 info | grep -i msdu root@prplOS:/# iw phy phy2 info | grep -i msdu Max AMSDU length: 3...
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d180-radio-amsdu.json`
-
 ### d181-radio-fragmentationthreshold
 
 - case file: `D181_fragmentationthreshold.yaml`
@@ -336,82 +297,6 @@
 - 0401 G excerpt: 1. Set RtsThreshold "ex. 1500 root@prplOS:/# ubus-cli WiFi.Radio.*.DriverConfig.RtsThreshold=1500 > WiFi.Radio.*.DriverConfig.RtsThreshold=1500 WiFi.Radio.1.DriverConfig. WiFi.Radio.1.DriverConfig.RtsThreshold=1500 WiFi.Radio.2.DriverCon...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 rtsthresh 1500 (0x5dc) root@prplOS:/# wl -i wl1 rtsthresh 1500 (0x5dc) root@prplOS:/# wl -i wl2 rtsthresh 1500 (0x5dc)
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d182-radio-rtsthreshold.json`
-
-### d184-radio-nractiverxantenna
-
-- case file: `D184_nractiverxantenna.yaml`
-- answer row: `184`
-- mapping status: `exact`
-- source metadata: `WiFi.Radio.{i}.DriverStatus.` / `NrActiveRxAntenna`
-- workbook metadata: `WiFi.Radio.{i}.DriverStatus.` / `NrActiveRxAntenna`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Check GW Radio DriverStatus.NrActiveRxAntenna: root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrActiveRxAntenna? > WiFi.Radio.*.DriverStatus.NrActiveRxAntenna? WiFi.Radio.1.DriverStatus.NrActiveRxAntenna=-1 WiFi.Radio.2.DriverStatu...
-- 0401 H excerpt: wl -i wl0 rxchain root@prplOS:/# wl -i wl0 rxchain 15 (0xf) root@prplOS:/# wl -i wl1 rxchain 15 (0xf) root@prplOS:/# wl -i wl2 rxchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d184-radio-nractiverxantenna.json`
-
-### d185-radio-nractivetxantenna
-
-- case file: `D185_nractivetxantenna.yaml`
-- answer row: `185`
-- mapping status: `exact`
-- source metadata: `WiFi.Radio.{i}.DriverStatus.` / `NrActiveTxAntenna`
-- workbook metadata: `WiFi.Radio.{i}.DriverStatus.` / `NrActiveTxAntenna`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Check GW Radio DriverStatus.NrActiveTxAntenna root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrActiveTxAntenna? > WiFi.Radio.*.DriverStatus.NrActiveTxAntenna? WiFi.Radio.1.DriverStatus.NrActiveTxAntenna=-1 WiFi.Radio.2.DriverStatus...
-- 0401 H excerpt: wl -i wl0 txchain root@prplOS:/# wl -i wl0 txchain 15 (0xf) root@prplOS:/# wl -i wl1 txchain 15 (0xf) root@prplOS:/# wl -i wl2 txchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d185-radio-nractivetxantenna.json`
-
-### d186-radio-nrrxantenna
-
-- case file: `D186_nrrxantenna.yaml`
-- answer row: `186`
-- mapping status: `exact`
-- source metadata: `WiFi.Radio.{i}.DriverStatus.` / `NrRxAntenna`
-- workbook metadata: `WiFi.Radio.{i}.DriverStatus.` / `NrRxAntenna`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Check GW Radio DriverStatus.NrRxAntenna root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrRxAntenna? > WiFi.Radio.*.DriverStatus.NrRxAntenna? WiFi.Radio.1.DriverStatus.NrRxAntenna=4 WiFi.Radio.2.DriverStatus.NrRxAntenna=4 WiFi.Radio...
-- 0401 H excerpt: wl -i wl0 rxchain root@prplOS:/# wl -i wl0 rxchain 15 (0xf) root@prplOS:/# wl -i wl1 rxchain 15 (0xf) root@prplOS:/# wl -i wl2 rxchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d186-radio-nrrxantenna.json`
-
-### d187-radio-nrtxantenna
-
-- case file: `D187_nrtxantenna.yaml`
-- answer row: `187`
-- mapping status: `exact`
-- source metadata: `WiFi.Radio.{i}.DriverStatus.` / `NrTxAntenna`
-- workbook metadata: `WiFi.Radio.{i}.DriverStatus.` / `NrTxAntenna`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Check GW Radio DriverStatus.NrTxAntenna: root@prplOS:/# ubus-cli WiFi.Radio.*.DriverStatus.NrTxAntenna? > WiFi.Radio.*.DriverStatus.NrTxAntenna? WiFi.Radio.1.DriverStatus.NrTxAntenna=4 WiFi.Radio.2.DriverStatus.NrTxAntenna=4 WiFi.Radi...
-- 0401 H excerpt: wl -i wl0 txchain root@prplOS:/# wl -i wl0 txchain 15 (0xf) root@prplOS:/# wl -i wl1 txchain 15 (0xf) root@prplOS:/# wl -i wl2 txchain 15 (0xf) Value Hex Meaning 1 0x1 1×1 (chain 0 only) 3 0x3 2×2 (chains 0–1) 7 0x7 3×3 (chains 0–2) 15 0...
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d187-radio-nrtxantenna.json`
 
 ### d190-radio-explicitbeamformingenabled
 
