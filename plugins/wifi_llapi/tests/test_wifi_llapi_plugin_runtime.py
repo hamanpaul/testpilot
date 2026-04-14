@@ -11893,6 +11893,47 @@ def test_d431_neighbour_nasidentifier_contract():
     assert d431["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
+def test_d432_neighbour_operatingclass_contract():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+
+    d432_raw = yaml.safe_load((cases_dir / "D432_operatingclass.yaml").read_text(encoding="utf-8"))
+    d432 = load_case(cases_dir / "D432_operatingclass.yaml")
+    d432_commands = "\n".join(str(step.get("command", "")) for step in d432["steps"])
+
+    assert "aliases" not in d432_raw
+    assert d432["id"] == "d432-skip-neighbour-operatingclass"
+    assert d432["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d432["source"]["row"] == 432
+    assert d432["source"]["object"] == "WiFi.AccessPoint.{i}.Neighbour.{i}."
+    assert d432["source"]["api"] == "OperatingClass"
+    assert d432["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.Neighbour.1.OperatingClass?"'
+    assert d432["llapi_support"] == "Support"
+    assert d432["implemented_by"] == "pWHM"
+    assert d432["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d432["topology"]["devices"]) == {"DUT"}
+    assert d432["topology"]["links"] == []
+    assert "killall wpa_supplicant" not in d432.get("sta_env_setup", "")
+    assert "grep 'Neighbour.'" in d432_commands
+    assert "HotSpot2.OperatingClass" in d432.get("test_environment", "")
+    assert "AfterAddOperatingClass5g=%s" in d432_commands
+    assert "AfterDeleteOperatingClass24g=ABSENT" in d432_commands
+    assert any(
+        criterion["field"] == "neighbour_after_add_6g.AfterAddOperatingClass6g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "0"
+        for criterion in d432["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "neighbour_after_delete_5g.AfterDeleteOperatingClass5g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "ABSENT"
+        for criterion in d432["pass_criteria"]
+    )
+    assert d432["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d432["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d432["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+
+
 def test_d084_encryptionmode_accesspoint_security_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
@@ -21250,7 +21291,6 @@ _SKIP_BLOCKED_CASES = [
     ("D355_addclient.yaml", 357, "Skip"),
     ("D356_delclient.yaml", 358, "Skip"),
     ("D357_csistats.yaml", 359, "Skip"),
-    ("D432_operatingclass.yaml", 434, "Skip"),
     ("D433_phytype.yaml", 435, "Skip"),
     ("D434_r0khkey.yaml", 436, "Skip"),
     ("D435_ssid_accesspoint_neighbour.yaml", 437, "Skip"),
