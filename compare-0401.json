@@ -94,7 +94,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T171246046906",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T172459100474",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T173905381380",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T175434503053"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T175434503053",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T180934010938"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -102,20 +103,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 324,
-  "mismatch_case_count": 96,
+  "full_match_count": 325,
+  "mismatch_case_count": 95,
   "band_summary": {
     "5g": {
-      "matched": 328,
-      "mismatched": 92
+      "matched": 329,
+      "mismatched": 91
     },
     "6g": {
-      "matched": 324,
-      "mismatched": 96
+      "matched": 325,
+      "mismatched": 95
     },
     "2.4g": {
-      "matched": 327,
-      "mismatched": 93
+      "matched": 328,
+      "mismatched": 92
     }
   },
   "cases": [
@@ -8144,7 +8145,7 @@
       "case_id": "d251-radio-vendor-regulatorydomainrev",
       "case_file": "D251_regulatorydomain_radio_vendor.yaml",
       "dnum": 251,
-      "source_row": 183,
+      "source_row": 251,
       "source_object": "WiFi.Radio.{i}.Vendor.",
       "source_api": "RegulatoryDomain",
       "answer_row": 251,
@@ -8153,39 +8154,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Get API default value: root@prplOS:/# ubus-cli WiFi.Radio.*.Vendor.Brcm.RegulatoryDomainRev? > WiFi.Radio.*.Vendor.Brcm.RegulatoryDomainRev? WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0 WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev=0...",
       "workbook_command_output_excerpt": "wl -i wl0 country wl -i wl1 country wl -i wl2 country root@prplOS:/# wl -i wl0 country #a (#a/0) <unknown> root@prplOS:/# wl -i wl1 country #a (#a/0) <unknown> root@prplOS:/# wl -i wl2 country #a (#a/0) <unknown>",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d251-radio-vendor-regulatorydomainrev.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T180934010938/d251-radio-vendor-regulatorydomainrev.json"
     },
     {
       "case_id": "d256-getradioairstats-freetime",
@@ -18838,53 +18835,6 @@
       "workbook_test_steps_excerpt": "1. Try change all radio to BE standard: ubus-cli WiFi.Radio.1.OperatingStandards=be ubus-cli WiFi.Radio.2.OperatingStandards=be ubus-cli WiFi.Radio.3.OperatingStandards=be 2. Check standard: root@prplOS:/# ubus-cli WiFi.Radio.*.Operating...",
       "workbook_command_output_excerpt": "[BE] wl -i wl[i] status wl -i wl[i] nmode wl -i wl[i] vhtmode wl -i wl[i] he features wl -i wl[i] eht features root@prplOS:/# wl -i wl0 status SSID: \"AAA_ATnT-wl0\" Mode: Managed RSSI: 0 dBm SNR: 0 dB noise: -99 dBm Channel: 36 BSSID: 64:...",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d211-radio-operatingstandards.json"
-    },
-    {
-      "case_id": "d251-radio-vendor-regulatorydomainrev",
-      "case_file": "D251_regulatorydomain_radio_vendor.yaml",
-      "dnum": 251,
-      "source_row": 183,
-      "source_object": "WiFi.Radio.{i}.Vendor.",
-      "source_api": "RegulatoryDomain",
-      "answer_row": 251,
-      "answer_object": "WiFi.Radio.{i}.Vendor.",
-      "answer_api": "RegulatoryDomain",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Get API default value: root@prplOS:/# ubus-cli WiFi.Radio.*.Vendor.Brcm.RegulatoryDomainRev? > WiFi.Radio.*.Vendor.Brcm.RegulatoryDomainRev? WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0 WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev=0...",
-      "workbook_command_output_excerpt": "wl -i wl0 country wl -i wl1 country wl -i wl2 country root@prplOS:/# wl -i wl0 country #a (#a/0) <unknown> root@prplOS:/# wl -i wl1 country #a (#a/0) <unknown> root@prplOS:/# wl -i wl2 country #a (#a/0) <unknown>",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d251-radio-vendor-regulatorydomainrev.json"
     },
     {
       "case_id": "d257-getradioairstats-load",

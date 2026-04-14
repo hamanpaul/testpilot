@@ -1,4 +1,4 @@
-**2026-04-14 superseding note：本檔下半部的大盤分析仍保留 2026-04-13 snapshot；最新 strict compare 已刷新為 `324 / 420 full matches`、`96` 筆 mismatch、`58` 筆 metadata drift。** 最新新增完成 `D214 Radio.RIFSEnabled` official rerun closure（`20260414T175434503053`）：workbook authority 刷新到 row `214`，live rerun exact-close tri-band setter-backed `Default -> Auto -> Default` replay，並把 stale raw `Fail / Fail / Fail` 收斂回 workbook-consistent `Pass / Pass / Pass`；targeted radio/runtime guardrails 維持 `202 passed`，final full repo regression 維持 `1662 passed`。`D211 Radio.OperatingStandards` 與 `D204 Radio.MultiUserMIMOEnabled` 則分別維持 parked notes（`plugins/wifi_llapi/reports/D211_block.md` / `D204_block.md`）。active blockers 仍是 `D047` 與 shared 6G baseline blocker（manifested in `D179`、`D181`）；next ready non-blocked compare-open case 改為 `D251 Radio.Vendor.RegulatoryDomainRev`。
+**2026-04-14 superseding note：本檔下半部的大盤分析仍保留 2026-04-13 snapshot；最新 strict compare 已刷新為 `325 / 420 full matches`、`95` 筆 mismatch、`58` 筆 metadata drift。** 最新新增完成 `D251 Radio.Vendor.RegulatoryDomainRev` official rerun closure（`20260414T180934010938`）：workbook authority 刷新到 row `251`，landed case 不再沿用 stale row `183` / `COM1` / getter-only `Fail / Fail / Fail` 形狀，而是以 tri-band setter-backed `0 -> 8 -> 0` replay 加上 `RegulatoryDomainSupported` capture 與 workbook note 要求的 `wl country=#a (#a/0) <unknown>` invariant exact-close `Pass / Pass / Pass`。targeted D251/runtime guardrails 維持 `6 passed`，command-budget guardrail 維持 `1 passed`，final full repo regression 維持 `1662 passed`。`D211 Radio.OperatingStandards` 與 `D204 Radio.MultiUserMIMOEnabled` 則分別維持 parked notes（`plugins/wifi_llapi/reports/D211_block.md` / `D204_block.md`）。active blockers 仍是 `D047` 與 shared 6G baseline blocker（manifested in `D179`、`D181`）；next ready non-blocked compare-open case 改為 `D257 getRadioAirStats() Load`。
 
 **先講結論：以目前 repo 內 `compare-0401` snapshot 為準，跟 workbook 的差距是 `122` 筆 mismatch、`58` 筆 metadata drift。** 如果只看 workbook `Pass` 目標，分兩種口徑：
 
@@ -241,6 +241,7 @@
 ### 8. 當前 continuation anchor
 
 - latest aligned cases:
+  - `D251 Radio.Vendor.RegulatoryDomainRev`
   - `D214 Radio.RIFSEnabled`
   - `D212 Radio.PossibleChannels`
   - `D209 Radio.OperatingChannelBandwidth`
@@ -276,8 +277,8 @@
   - `D179`
   - `D181`
 - strict compare snapshot：
-  - `324 / 420 full matches`
-  - `96 mismatches`
+  - `325 / 420 full matches`
+  - `95 mismatches`
   - `58 metadata drifts`
 - next ready non-blocked compare-open case：
-  - `D251 Radio.Vendor.RegulatoryDomainRev`
+  - `D257 getRadioAirStats() Load`

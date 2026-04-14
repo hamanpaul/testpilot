@@ -19066,6 +19066,85 @@ def test_d214_rifsenabled_evaluate_requires_tri_band_setter_readback() -> None:
     assert plugin.evaluate(d214, wrong_24g_after_set) is False
 
 
+def test_d251_regulatorydomainrev_contract() -> None:
+    cases_dir = Path(__file__).resolve().parents[1] / "cases"
+    d251 = load_case(cases_dir / "D251_regulatorydomain_radio_vendor.yaml")
+
+    assert d251["source"]["row"] == 251
+    assert d251["results_reference"]["v4.0.3"] == {
+        "5g": "Pass",
+        "6g": "Pass",
+        "2.4g": "Pass",
+        "comment": "workbook pass intent is setter-backed 0 -> 8 -> 0 replay with supported-list capture, while wl country remains #a (#a/0) <unknown> per row-note RD override",
+    }
+    assert sorted(d251["topology"]["devices"]) == ["DUT"]
+    assert len(d251["steps"]) == 21
+    assert d251["steps"][0]["id"] == "step1_regrev_default_5g"
+    assert d251["steps"][-1]["id"] == "step21_regrev_after_restore_24g"
+
+    commands = "\n".join(str(step["command"]) for step in d251["steps"])
+    assert "RegulatoryDomainRev=8" in commands
+    assert "RegDomSupported5g" in commands
+    assert "wl -i wl0 country" in commands
+
+
+def test_d251_regulatorydomainrev_setup_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "cases"
+    d251 = load_case(cases_dir / "D251_regulatorydomain_radio_vendor.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+
+    assert plugin.setup_env(d251, topology=topo) is True
+    plugin.teardown(d251, topo)
+
+
+def test_d251_regulatorydomainrev_evaluate_requires_rd_override_shape() -> None:
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[1] / "cases"
+    d251 = load_case(cases_dir / "D251_regulatorydomain_radio_vendor.yaml")
+
+    good_results = {
+        "steps": {
+            "step1_regrev_default_5g": {"success": True, "output": "DefRegRev5g=0", "timing": 0.01},
+            "step2_regrev_set_5g": {"success": True, "output": "ReqRegRev5g=8", "timing": 0.01},
+            "step3_regrev_after_set_5g": {"success": True, "output": "AfterSetRegRev5g=8", "timing": 0.01},
+            "step4_regdom_supported_5g": {"success": True, "output": "RegDomSupported5g=#a,CA/169", "timing": 0.01},
+            "step5_country_5g": {"success": True, "output": "Country5g=#a (#a/0) <unknown>", "timing": 0.01},
+            "step6_regrev_restore_5g": {"success": True, "output": "RestoreRegRev5g=0", "timing": 0.01},
+            "step7_regrev_after_restore_5g": {"success": True, "output": "AfterRestoreRegRev5g=0", "timing": 0.01},
+            "step8_regrev_default_6g": {"success": True, "output": "DefRegRev6g=0", "timing": 0.01},
+            "step9_regrev_set_6g": {"success": True, "output": "ReqRegRev6g=8", "timing": 0.01},
+            "step10_regrev_after_set_6g": {"success": True, "output": "AfterSetRegRev6g=8", "timing": 0.01},
+            "step11_regdom_supported_6g": {"success": True, "output": "RegDomSupported6g=#a,CA/169", "timing": 0.01},
+            "step12_country_6g": {"success": True, "output": "Country6g=#a (#a/0) <unknown>", "timing": 0.01},
+            "step13_regrev_restore_6g": {"success": True, "output": "RestoreRegRev6g=0", "timing": 0.01},
+            "step14_regrev_after_restore_6g": {"success": True, "output": "AfterRestoreRegRev6g=0", "timing": 0.01},
+            "step15_regrev_default_24g": {"success": True, "output": "DefRegRev24g=0", "timing": 0.01},
+            "step16_regrev_set_24g": {"success": True, "output": "ReqRegRev24g=8", "timing": 0.01},
+            "step17_regrev_after_set_24g": {"success": True, "output": "AfterSetRegRev24g=8", "timing": 0.01},
+            "step18_regdom_supported_24g": {"success": True, "output": "RegDomSupported24g=#a,CA/169", "timing": 0.01},
+            "step19_country_24g": {"success": True, "output": "Country24g=#a (#a/0) <unknown>", "timing": 0.01},
+            "step20_regrev_restore_24g": {"success": True, "output": "RestoreRegRev24g=0", "timing": 0.01},
+            "step21_regrev_after_restore_24g": {"success": True, "output": "AfterRestoreRegRev24g=0", "timing": 0.01},
+        }
+    }
+    assert plugin.evaluate(d251, good_results) is True
+
+    wrong_country = {
+        "steps": {
+            **good_results["steps"],
+            "step12_country_6g": {
+                "success": True,
+                "output": "Country6g=JP (JP/89) <unknown>",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d251, wrong_country) is False
+
+
 # Remaining WiFi.Radio.{i} read-only getter batch
 # ---------------------------------------------------------------------------
 
@@ -19113,7 +19192,6 @@ _RADIO_GETTER_CASES = [
     ("D248_transmitpower.yaml", 180, "-1", "-1", "-1", "WiFi.Radio.{r}.TransmitPower"),
     ("D249_transmitpowersupported.yaml", 181, "1,2,3,100,-1", "1,2,3,100,-1", "1,2,3,100,-1", "WiFi.Radio.{r}.TransmitPowerSupported"),
     ("D250_txchainctrl.yaml", 182, "-1", "-1", "-1", "WiFi.Radio.{r}.TxChainCtrl"),
-    ("D251_regulatorydomain_radio_vendor.yaml", 183, "0", "0", "0", "WiFi.Radio.{r}.Vendor.Brcm.RegulatoryDomainRev"),
     # --- Batch 5a: Radio property getters ---
     ("D189_enable_radio_sensing.yaml", 264, "1", "1", "1", "WiFi.Radio.{r}.Sensing.Enable"),
     ("D376_longretrylimit.yaml", 279, "6", "6", "6", "WiFi.Radio.{r}.LongRetryLimit"),

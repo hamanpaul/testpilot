@@ -81,6 +81,9 @@
 
 ## Latest repo handoff snapshot（2026-04-14）
 
+- `D251 Radio.Vendor.RegulatoryDomainRev` is now aligned via official rerun `20260414T180934010938`
+- workbook authority is row `251`, not stale row `183`; the rerun exact-closes the tri-band setter-backed `0 -> 8 -> 0` replay plus `RegulatoryDomainSupported` capture and workbook-note `wl country=#a (#a/0) <unknown>` invariant, so the landed case now refreshes stale row `183` / raw `Fail / Fail / Fail` to workbook row `251` / raw `Pass / Pass / Pass`
+- targeted D251/runtime guardrails are now `6 passed`; command-budget guardrail remains `1 passed`; final full repo regression remains `1662 passed`; compare is now `325 / 420 full matches` / `95 mismatches` / `58 metadata drifts`, and the next ready non-blocked compare-open case moves to `D257 getRadioAirStats() Load`
 - `D214 Radio.RIFSEnabled` is now aligned via official rerun `20260414T175434503053`
 - workbook authority is row `214`, not stale row `175`; the rerun exact-closes the tri-band setter-backed `Default -> Auto -> Default` replay, so the landed case now refreshes stale row `175` / raw `Fail / Fail / Fail` to workbook row `214` / raw `Pass / Pass / Pass`
 - targeted radio/runtime guardrails are now `202 passed`; final full repo regression remains `1662 passed`; compare is now `324 / 420 full matches` / `96 mismatches` / `58 metadata drifts`, and the next ready non-blocked compare-open case moves to `D251 Radio.Vendor.RegulatoryDomainRev`

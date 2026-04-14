@@ -1,5 +1,104 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-14 early-87)
+
+> This checkpoint records the `D251 Radio.Vendor.RegulatoryDomainRev` setter-backed workbook closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D251 Radio.Vendor.RegulatoryDomainRev` 已透過 official rerun `20260414T180934010938` 完成 closure
+- workbook authority 現在刷新到 row `251`，不再沿用 stale row `183`
+- current rerun exact-close tri-band setter-backed `0 -> 8 -> 0` replay，並補齊 `RegulatoryDomainSupported` capture 與 workbook note 要求的 `wl country=#a (#a/0) <unknown>` invariant
+- landed case 現在把 stale raw `Fail / Fail / Fail` 刷新為 workbook-consistent `Pass / Pass / Pass`
+- targeted D251/runtime guardrails 維持 `6 passed`
+- command-budget guardrail 維持 `1 passed`
+- final full repo regression 維持 `1662 passed`
+- compare refresh 已更新為 `325 / 420 full matches`、`95 mismatches`、`58 metadata drifts`
+- `D211 Radio.OperatingStandards` 仍維持 parked beacon-validation gap（`plugins/wifi_llapi/reports/D211_block.md`）
+- next ready non-blocked compare-open case 改為 `D257 getRadioAirStats() Load`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D251` | 251 | `RegulatoryDomain` | `Pass / Pass / Pass` | `20260414T180934010938_DUT.log L5-L132; bgw720-0403_wifi_llapi_20260414t180934010938.md L15-L109` | `20260414T180934010938_STA.log` empty file |
+
+#### D251 Radio.Vendor.RegulatoryDomainRev
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only setter/readback case; rerun emitted an empty STA log)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/DefRegRev5g=\1/p'
+printf 'ReqRegRev5g=8\n'
+ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=8
+sleep 5
+ubus-cli "WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/AfterSetRegRev5g=\1/p'
+ubus-cli "WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainSupported?" | sed -n 's/.*="\([^"]*\)".*/RegDomSupported5g=\1/p'
+wl -i wl0 country | sed -n '1s/^/Country5g=/p'
+printf 'RestoreRegRev5g=0\n'
+ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
+sleep 5
+ubus-cli "WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/AfterRestoreRegRev5g=\1/p'
+ubus-cli "WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/DefRegRev6g=\1/p'
+printf 'ReqRegRev6g=8\n'
+ubus-cli WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev=8
+sleep 5
+ubus-cli "WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/AfterSetRegRev6g=\1/p'
+ubus-cli "WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainSupported?" | sed -n 's/.*="\([^"]*\)".*/RegDomSupported6g=\1/p'
+wl -i wl1 country | sed -n '1s/^/Country6g=/p'
+printf 'RestoreRegRev6g=0\n'
+ubus-cli WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev=0
+sleep 5
+ubus-cli "WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/AfterRestoreRegRev6g=\1/p'
+ubus-cli "WiFi.Radio.3.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/DefRegRev24g=\1/p'
+printf 'ReqRegRev24g=8\n'
+ubus-cli WiFi.Radio.3.Vendor.Brcm.RegulatoryDomainRev=8
+sleep 5
+ubus-cli "WiFi.Radio.3.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/AfterSetRegRev24g=\1/p'
+ubus-cli "WiFi.Radio.3.Vendor.Brcm.RegulatoryDomainSupported?" | sed -n 's/.*="\([^"]*\)".*/RegDomSupported24g=\1/p'
+wl -i wl2 country | sed -n '1s/^/Country24g=/p'
+printf 'RestoreRegRev24g=0\n'
+ubus-cli WiFi.Radio.3.Vendor.Brcm.RegulatoryDomainRev=0
+sleep 5
+ubus-cli "WiFi.Radio.3.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/AfterRestoreRegRev24g=\1/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+DUT (20260414T180934010938_DUT.log L5-L132; bgw720-0403_wifi_llapi_20260414t180934010938.md L15-L109)
+DefRegRev5g=0
+ReqRegRev5g=8
+AfterSetRegRev5g=8
+RegDomSupported5g=#a,US,
+Country5g=#a (#a/0) <unknown>
+AfterRestoreRegRev5g=0
+DefRegRev6g=0
+ReqRegRev6g=8
+AfterSetRegRev6g=8
+RegDomSupported6g=#a,US,
+Country6g=#a (#a/0) <unknown>
+AfterRestoreRegRev6g=0
+DefRegRev24g=0
+ReqRegRev24g=8
+AfterSetRegRev24g=8
+RegDomSupported24g=#a,US,
+Country24g=#a (#a/0) <unknown>
+AfterRestoreRegRev24g=0
+
+STA (20260414T180934010938_STA.log)
+empty file
+```
+
 ## Checkpoint summary (2026-04-14 early-86)
 
 > This checkpoint records the `D214 Radio.RIFSEnabled` setter-backed workbook closure.
