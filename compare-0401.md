@@ -83,6 +83,7 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T145819251839`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T150830713390`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T151631032947`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T152334632094`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -93,8 +94,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 312 |
-| mismatch cases | 108 |
+| full matches | 313 |
+| mismatch cases | 107 |
 | missing answer rows | 0 |
 | metadata drift rows | 58 |
 
@@ -102,9 +103,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 317 | 103 |
-| 6g | 314 | 106 |
-| 2.4g | 315 | 105 |
+| 5g | 318 | 102 |
+| 6g | 315 | 105 |
+| 2.4g | 316 | 104 |
 
 ## Mismatch table
 
@@ -114,7 +115,6 @@
 | `wifi-llapi-D047-supportedhe160mcs` | 47 | exact | Not Supported / N/A / N/A | Pass / Pass / Not Supported | Fail / Fail / Fail | Pass / Pass / Fail | 5g, 6g |
 | `d181-radio-fragmentationthreshold` | 181 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d182-radio-rtsthreshold` | 182 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d198-radio-ieee80211ksupported` | 198 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d199-radio-ieee80211rsupported` | 199 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d200-radio-implicitbeamformingenabled` | 200 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d201-radio-implicitbeamformingsupported` | 201 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -297,25 +297,6 @@
 - 0401 G excerpt: 1. Set RtsThreshold "ex. 1500 root@prplOS:/# ubus-cli WiFi.Radio.*.DriverConfig.RtsThreshold=1500 > WiFi.Radio.*.DriverConfig.RtsThreshold=1500 WiFi.Radio.1.DriverConfig. WiFi.Radio.1.DriverConfig.RtsThreshold=1500 WiFi.Radio.2.DriverCon...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 rtsthresh 1500 (0x5dc) root@prplOS:/# wl -i wl1 rtsthresh 1500 (0x5dc) root@prplOS:/# wl -i wl2 rtsthresh 1500 (0x5dc)
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d182-radio-rtsthreshold.json`
-
-### d198-radio-ieee80211ksupported
-
-- case file: `D198_ieee80211ksupported.yaml`
-- answer row: `198`
-- mapping status: `exact`
-- source metadata: `WiFi.Radio.{i}.` / `IEEE80211kSupported`
-- workbook metadata: `WiFi.Radio.{i}.` / `IEEE80211kSupported`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Read-only API, defines whether each radio supported 802.11k standard. Check the API value and compare them with driver capability and packets' tag from radio beacons: root@prplOS:/# ubus-cli WiFi.Radio.*.IEEE80211kSupported? > WiFi.Ra...
-- 0401 H excerpt: (RM Enable Capabilities included in beacon packet, IE: 70)
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d198-radio-ieee80211ksupported.json`
 
 ### d199-radio-ieee80211rsupported
 

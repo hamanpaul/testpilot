@@ -1,7 +1,7 @@
 id: d198-radio-ieee80211ksupported
 name: D198 Radio IEEE80211kSupported
 source:
-  row: 161
+  row: 198
   object: WiFi.Radio.{i}.
   api: IEEE80211kSupported
   baseline: 0310-BGW720-300
@@ -12,15 +12,16 @@ bands:
 llapi_support: Support
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: read-only getter exact-closes the active 0403 tri-band IEEE80211kSupported values
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM1
+      selector: COM0
 steps:
 - id: step_5g_getter
   target: dut

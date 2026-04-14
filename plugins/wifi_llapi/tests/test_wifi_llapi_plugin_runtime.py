@@ -19018,7 +19018,7 @@ _RADIO_GETTER_CASES = [
     ("D195_ieee80211_caps.yaml", 195, "160MHz UAPSD WEP TKIP AES AES_CCM SAE EXPL_BF IMPL_BF MU_MIMO DFS_OFFLOAD OWE SAE_PWE WME", "320MHz 160MHz UAPSD SAE EXPL_BF IMPL_BF MU_MIMO OWE SAE_PWE WME", "UAPSD WEP TKIP AES AES_CCM SAE EXPL_BF IMPL_BF MU_MIMO OWE SAE_PWE WME", "WiFi.Radio.{r}.IEEE80211_Caps"),
     ("D196_ieee80211henabled.yaml", 196, "1", "0", "0", "WiFi.Radio.{r}.IEEE80211hEnabled"),
     ("D197_ieee80211hsupported.yaml", 197, "1", "0", "0", "WiFi.Radio.{r}.IEEE80211hSupported"),
-    ("D198_ieee80211ksupported.yaml", 161, "1", "1", "1", "WiFi.Radio.{r}.IEEE80211kSupported"),
+    ("D198_ieee80211ksupported.yaml", 198, "1", "1", "1", "WiFi.Radio.{r}.IEEE80211kSupported"),
     ("D199_ieee80211rsupported.yaml", 162, "1", "1", "1", "WiFi.Radio.{r}.IEEE80211rSupported"),
     ("D200_implicitbeamformingenabled.yaml", 163, "1", "1", "1", "WiFi.Radio.{r}.ImplicitBeamFormingEnabled"),
     ("D201_implicitbeamformingsupported.yaml", 164, "1", "1", "1", "WiFi.Radio.{r}.ImplicitBeamFormingSupported"),
