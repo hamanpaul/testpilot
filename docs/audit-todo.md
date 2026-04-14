@@ -81,6 +81,9 @@
 
 ## Latest repo handoff snapshot（2026-04-14）
 
+- `D211 Radio.OperatingStandards` is now parked after getter rerun `20260414T172208746324`
+- the rerun exact-closes only the current getter readback `be/be/be`; it does **not** close workbook row `211`, because workbook `G211` explicitly requires `be -> ax` switching plus beacon validation that EHT IE appears in the `be` phase and disappears while HE IE remains in the `ax` phase
+- blocker-style handoff now lives at `plugins/wifi_llapi/reports/D211_block.md`; compare remains `322 / 420 full matches` / `98 mismatches` / `58 metadata drifts`, and the next ready non-blocked compare-open case moves to `D212 Radio.PossibleChannels`
 - `D209 Radio.OperatingChannelBandwidth` is now aligned via official rerun `20260414T171246046906`
 - workbook authority is row `209`, not stale row `171`; the rerun exact-closes tri-band getter `OperatingChannelBandwidth=20MHz/20MHz/20MHz`, so the landed case now refreshes stale row `171` / raw `Fail / Fail / Fail` to workbook row `209` / raw `Pass / Pass / Pass`
 - `D208 Radio.OfdmaEnable` is now aligned via official rerun `20260414T170500384375`
@@ -92,7 +95,7 @@
 - `D204 Radio.MultiUserMIMOEnabled` is now parked for workbook/source authority clarification after official rerun `20260414T165000634858`
 - the rerun exact-closes the same repeated live getter shape already present in historical authoritative traces: `5g=1`, `6g=1`, `2.4g=0`
 - workbook row `204` still says `Pass / Pass / Pass`, but note `V204` simultaneously says `2.4GHz mu features are disable by default`; workbook `H204` also repeats `wl -i wl1 mu_features` instead of clearly showing the 2.4G driver check
-- blocker-style handoff now lives at `plugins/wifi_llapi/reports/D204_block.md`; compare is now `322 / 420 full matches` / `98 mismatches` / `58 metadata drifts`, and the next ready non-blocked compare-open case moves to `D211 Radio.OperatingStandards`
+- blocker-style handoff now lives at `plugins/wifi_llapi/reports/D204_block.md`; compare is now `322 / 420 full matches` / `98 mismatches` / `58 metadata drifts`, and the next ready non-blocked compare-open case moves to `D212 Radio.PossibleChannels`
 - `D203 Radio.MaxChannelBandwidth` is now aligned via official rerun `20260414T164038591687`
 - workbook authority is row `203`, not stale row `166`; the rerun exact-closes tri-band getter `MaxChannelBandwidth=160MHz/320MHz/40MHz`, so the landed case now refreshes stale row `166` / raw `Fail / Fail / Fail` to workbook row `203` / raw `Pass / Pass / Pass`
 - `D202 Radio.Interference` is now aligned via official rerun `20260414T163235194291`
@@ -133,7 +136,7 @@
 - the provisional workbook-faithful `D181/D182` setter rewrites were rolled back to respect the YAML writeback gate; `D182 Radio.RtsThreshold` remains parked until the shared 6G baseline path is stabilized
 - active blockers are now `D047` authority conflict plus the shared 6G baseline blocker manifested in `D179` and `D181`
 - blocker handoff: `plugins/wifi_llapi/reports/D047_block.md`, `plugins/wifi_llapi/reports/D179_block.md`, `plugins/wifi_llapi/reports/D181_block.md`
-- next ready non-blocked compare-open case: `D211 Radio.OperatingStandards`
+- next ready non-blocked compare-open case: `D212 Radio.PossibleChannels`
 
 - `D179 Radio.Ampdu` is now blocked after two focused rerun phases instead of closing as a workbook-Pass row
 - workbook authority is still row `179`, and workbook `G/H` explicitly require an active station/throughput path before `wl -i wlx ampdu` is used as the driver oracle

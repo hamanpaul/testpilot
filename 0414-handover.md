@@ -1,4 +1,4 @@
-**2026-04-14 superseding note：本檔下半部的大盤分析仍保留 2026-04-13 snapshot；最新 strict compare 已刷新為 `322 / 420 full matches`、`98` 筆 mismatch、`58` 筆 metadata drift。** 最新新增完成 `D209 Radio.OperatingChannelBandwidth` official rerun closure（`20260414T171246046906`）：workbook authority 刷新到 row `209`，live rerun exact-close tri-band getter `OperatingChannelBandwidth=20MHz/20MHz/20MHz`，並把 stale raw `Fail / Fail / Fail` 收斂回 workbook-consistent `Pass / Pass / Pass`；targeted getter/runtime guardrails 維持 `202 passed`，final full repo regression 維持 `1662 passed`。`D204 Radio.MultiUserMIMOEnabled` 則維持 parked authority clarification item（`plugins/wifi_llapi/reports/D204_block.md`）。active blockers 仍是 `D047` 與 shared 6G baseline blocker（manifested in `D179`、`D181`）；next ready non-blocked compare-open case 改為 `D211 Radio.OperatingStandards`。
+**2026-04-14 superseding note：本檔下半部的大盤分析仍保留 2026-04-13 snapshot；最新 strict compare 維持 `322 / 420 full matches`、`98` 筆 mismatch、`58` 筆 metadata drift。** 最新已 push closure 仍是 `D209 Radio.OperatingChannelBandwidth`（`20260414T171246046906`）；其後 `D211 Radio.OperatingStandards` getter rerun（`20260414T172208746324`）只再次 exact-close `be/be/be`，但 workbook row `211` 明確要求 `be -> ax` 切換後再驗 beacon `EHT/HE` 形狀，而 repo handoff 既有 blocker 仍是「getter 可切，但 runtime beacon / EHT 還沒關乾淨」。因此本案先 park 到 `plugins/wifi_llapi/reports/D211_block.md`，不把 getter-only rerun 當成 workbook closure。`D204 Radio.MultiUserMIMOEnabled` 也仍是 parked authority clarification item（`plugins/wifi_llapi/reports/D204_block.md`）。active blockers 仍是 `D047` 與 shared 6G baseline blocker（manifested in `D179`、`D181`）；next ready non-blocked compare-open case 改為 `D212 Radio.PossibleChannels`。
 
 **先講結論：以目前 repo 內 `compare-0401` snapshot 為準，跟 workbook 的差距是 `122` 筆 mismatch、`58` 筆 metadata drift。** 如果只看 workbook `Pass` 目標，分兩種口徑：
 
@@ -267,6 +267,7 @@
 - latest blocker:
   - `D181 Radio.FragmentationThreshold`
 - latest parked clarification item:
+  - `D211 Radio.OperatingStandards`
   - `D204 Radio.MultiUserMIMOEnabled`
 - active blockers（repo handoff current view）：
   - `D047`
@@ -277,4 +278,4 @@
   - `98 mismatches`
   - `58 metadata drifts`
 - next ready non-blocked compare-open case：
-  - `D211 Radio.OperatingStandards`
+  - `D212 Radio.PossibleChannels`
