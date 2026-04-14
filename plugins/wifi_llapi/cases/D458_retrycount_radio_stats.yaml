@@ -1,7 +1,7 @@
 id: d458-getradiostats-retrycount
 name: D458 getRadioStats RetryCount
 source:
-  row: 297
+  row: 458
   object: WiFi.Radio.{i}.
   api: getRadioStats()
   baseline: 0310-BGW720-300

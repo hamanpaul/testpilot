@@ -1,5 +1,68 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-15 early-128)
+
+> This checkpoint records the `D458 getRadioStats().RetryCount` workbook row refresh.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D458 getRadioStats().RetryCount` 已完成 closure
+- workbook authority 已刷新為 row `458`
+- 舊 row `297` 誤指到 `WiFi.Radio.{i}.startAutoChannelSelection()` 的 metadata 已改回 workbook `WiFi.Radio.{i}.` / `getRadioStats()`
+- official rerun `20260415T074042045965` exact-close workbook `Pass / Pass / Pass`
+- tri-band `getRadioStats().RetryCount` 於 rerun 全部回 `0 / 0 / 0`
+- final report 維持 `diagnostic_status=Pass`
+- targeted D458/runtime tests passed
+- compare 維持 `362 / 420 full matches`、`58 mismatches`、`47 metadata drifts`
+- `D454 getRadioStats().FailedRetransCount` 在 focused workbook-faithful rerun `20260415T064937785938` 仍呈 localized blocker：5G/2.4G 可 exact-close `100/946` 對 `wl0/wl2 counters txfail=100/946`，但 6G 仍漂移成 `FailedRetransCount=0` vs `wl1 counters txfail=740`，因此 exploratory rewrite 已回退
+- `D371 AccessPoint.AssociatedDevice.DisassociationTime` 仍維持 localized blocker，rewrite 已回退
+- `D355-D357` 仍保留在需要 CSI client setup 的 placeholder bucket
+- `D359 AccessPoint.IsolationEnable` 因 two-station isolation ping 需求而暫停在 current single-STA lab shape
+- systemic active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- `D414/D415` 仍保留為 readiness-review cluster；workbook `G` 已明示需要 dual-STA 802.11k split
+- next ready actionable survey target=`D459 getRadioStats().Temperature`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D458 | 458 | getRadioStats().RetryCount | Pass / Pass / Pass | `bgw720-b0-403_wifi_llapi_20260415t074042045965.md L9-L11; L17-L23; 20260415T074042045965_DUT.log L5-L82; L83-L160; L161-L239` | `N/A（DUT-only case；20260415T074042045965_STA.log empty）` |
+
+### D458 getRadioStats().RetryCount alignment evidence
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.getRadioStats()"
+ubus-cli "WiFi.Radio.2.getRadioStats()"
+ubus-cli "WiFi.Radio.3.getRadioStats()"
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260415T074042045965
+- bgw720-b0-403_wifi_llapi_20260415t074042045965.md L9-L11
+  result_5g/result_6g/result_24g = Pass / Pass / Pass with diagnostic_status=Pass
+- bgw720-b0-403_wifi_llapi_20260415t074042045965.md L17-L23
+  workbook-faithful row-458 replay uses tri-band getRadioStats() reads only
+- 20260415T074042045965_DUT.log L5-L82
+  5G exact-closes `RetryCount=0`
+- 20260415T074042045965_DUT.log L83-L160
+  6G exact-closes `RetryCount=0`
+- 20260415T074042045965_DUT.log L161-L239
+  2.4G exact-closes `RetryCount=0`
+```
+
 ## Checkpoint summary (2026-04-15 early-127)
 
 > This checkpoint records the `D457 getRadioStats().RetransCount` workbook row refresh.

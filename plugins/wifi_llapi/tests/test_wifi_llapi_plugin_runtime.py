@@ -20780,7 +20780,7 @@ _METHOD_STATS_CASES = [
     ("D454_failedretranscount_radio_stats.yaml", 293, "getRadioStats", "FailedRetransCount", "48", "0", "0"),
     ("D456_noise_radio_stats.yaml", 456, "getRadioStats", "Noise", "-100", "-97", "-79"),
     ("D457_retranscount_radio_stats.yaml", 457, "getRadioStats", "RetransCount", "17234", "0", "0"),
-    ("D458_retrycount_radio_stats.yaml", 297, "getRadioStats", "RetryCount", "0", "0", "0"),
+    ("D458_retrycount_radio_stats.yaml", 458, "getRadioStats", "RetryCount", "0", "0", "0"),
     ("D403_temperature.yaml", 298, "getRadioStats", "Temperature", "82", "85", "80"),
     ("D477_unknownprotopacketsreceived_radio_stats.yaml", 344, "getRadioStats", "UnknownProtoPacketsReceived", "0", "0", "0"),
     # --- Bulk calibration batch 6: additional getRadioAirStats/getRadioStats fields ---

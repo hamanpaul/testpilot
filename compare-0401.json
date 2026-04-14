@@ -135,7 +135,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T063258768736",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T070258045824",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T071500138827",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T073336901222"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T073336901222",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T074042045965"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -14726,7 +14727,7 @@
       "case_id": "d458-getradiostats-retrycount",
       "case_file": "D458_retrycount_radio_stats.yaml",
       "dnum": 458,
-      "source_row": 297,
+      "source_row": 458,
       "source_object": "WiFi.Radio.{i}.",
       "source_api": "getRadioStats()",
       "answer_row": 458,
@@ -14763,7 +14764,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "",
       "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d458-getradiostats-retrycount.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T074042045965/d458-getradiostats-retrycount.json"
     },
     {
       "case_id": "d459-radiostats-temperature",
