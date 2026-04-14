@@ -12015,6 +12015,49 @@ def test_d434_neighbour_r0khkey_contract():
     assert d434["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
+def test_d435_neighbour_ssid_contract():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+
+    d435_raw = yaml.safe_load(
+        (cases_dir / "D435_ssid_accesspoint_neighbour.yaml").read_text(encoding="utf-8")
+    )
+    d435 = load_case(cases_dir / "D435_ssid_accesspoint_neighbour.yaml")
+    d435_commands = "\n".join(str(step.get("command", "")) for step in d435["steps"])
+
+    assert "aliases" not in d435_raw
+    assert d435["id"] == "d435-skip-neighbour-ssid"
+    assert d435["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
+    assert d435["source"]["row"] == 435
+    assert d435["source"]["object"] == "WiFi.AccessPoint.{i}.Neighbour.{i}."
+    assert d435["source"]["api"] == "SSID"
+    assert d435["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.Neighbour.1.SSID?"'
+    assert d435["llapi_support"] == "Support"
+    assert d435["implemented_by"] == "pWHM"
+    assert d435["bands"] == ["5g", "6g", "2.4g"]
+    assert set(d435["topology"]["devices"]) == {"DUT"}
+    assert d435["topology"]["links"] == []
+    assert "killall wpa_supplicant" not in d435.get("sta_env_setup", "")
+    assert "grep 'Neighbour.'" in d435_commands
+    assert "SSIDAdvertisementEnabled" in d435.get("test_environment", "")
+    assert 'AfterAddSSID5g="%s"' in d435_commands
+    assert "AfterDeleteSSID24g=ABSENT" in d435_commands
+    assert any(
+        criterion["field"] == "neighbour_after_add_6g.AfterAddSSID6g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == '""'
+        for criterion in d435["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "neighbour_after_delete_5g.AfterDeleteSSID5g"
+        and criterion["operator"] == "equals"
+        and criterion["value"] == "ABSENT"
+        for criterion in d435["pass_criteria"]
+    )
+    assert d435["results_reference"]["v4.0.3"]["5g"] == "Pass"
+    assert d435["results_reference"]["v4.0.3"]["6g"] == "Pass"
+    assert d435["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
+
+
 def test_d084_encryptionmode_accesspoint_security_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
@@ -21372,7 +21415,6 @@ _SKIP_BLOCKED_CASES = [
     ("D355_addclient.yaml", 357, "Skip"),
     ("D356_delclient.yaml", 358, "Skip"),
     ("D357_csistats.yaml", 359, "Skip"),
-    ("D435_ssid_accesspoint_neighbour.yaml", 437, "Skip"),
     ("D575_macaddress_associateddevice_affiliatedsta.yaml", 578, "Skip"),
     ("D576_bytessent_associateddevice_affiliatedsta.yaml", 579, "Skip"),
     ("D577_bytesreceived_associateddevice_affiliatedsta.yaml", 580, "Skip"),
