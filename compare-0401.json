@@ -134,7 +134,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T061648225671",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T063258768736",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T070258045824",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T071500138827"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T071500138827",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T073336901222"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -14682,7 +14683,7 @@
       "case_id": "d457-getradiostats-retranscount",
       "case_file": "D457_retranscount_radio_stats.yaml",
       "dnum": 457,
-      "source_row": 296,
+      "source_row": 457,
       "source_object": "WiFi.Radio.{i}.",
       "source_api": "getRadioStats()",
       "answer_row": 457,
@@ -14719,7 +14720,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Record counters at start: root@prplOS:/# ubus-cli \"WiFi.Radio.*.getRadioStats()\" | grep RetransCount RetransCount = 0, RetransCount = 0, RetransCount = 0, root@prplOS:/# ubus-cli \"WiFi.Radio.*.getRadioStats()\" | grep RetryCount RetryC...",
       "workbook_command_output_excerpt": "",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d457-getradiostats-retranscount.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T073336901222/d457-getradiostats-retranscount.json"
     },
     {
       "case_id": "d458-getradiostats-retrycount",
