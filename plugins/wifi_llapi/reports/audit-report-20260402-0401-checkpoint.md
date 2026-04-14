@@ -1,5 +1,75 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-14 early-100)
+
+> This checkpoint records the `D296 StartACS` workbook closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D296 StartACS` 已完成 closure
+- workbook authority 已刷新為 row `296`
+- stale row `221` 與 bare `startACS()` replay 已由 workbook note V 前置條件取代
+- official rerun `20260414T234216396870` exact-close tri-band workbook `Pass / Pass / Pass`
+- live evidence 保留 `AutoChannelEnable=1`、`startAutoChannelSelection()/startACS() returned` 與 readable `iw dev wl0/wl1/wl2 info`
+- `diagnostic_status=Pass`
+- targeted action-method runtime guardrails + command-budget=`16 passed`
+- full repo regression=`1662 passed`
+- compare 更新為 `337 / 420 full matches`、`83 mismatches`、`58 metadata drifts`
+- active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- next ready non-blocked compare-open case=`D297 StartAutoChannelSelection`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D296 | 296 | startACS() | Pass / Pass / Pass | `20260414T234216396870_DUT.log L5-L36; L37-L68; L69-L100; bgw720-0403_wifi_llapi_20260414t234216396870.md L9-L11; L36-L90` | `N/A（DUT-only case；20260414T234216396870_STA.log empty）` |
+
+### D296 StartACS alignment evidence
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli WiFi.Radio.1.AutoChannelEnable=1
+ubus-cli "WiFi.Radio.1.startAutoChannelSelection()"
+ubus-cli "WiFi.Radio.1.startACS()"
+iw dev wl0 info
+ubus-cli WiFi.Radio.2.AutoChannelEnable=1
+ubus-cli "WiFi.Radio.2.startAutoChannelSelection()"
+ubus-cli "WiFi.Radio.2.startACS()"
+iw dev wl1 info
+ubus-cli WiFi.Radio.3.AutoChannelEnable=1
+ubus-cli "WiFi.Radio.3.startAutoChannelSelection()"
+ubus-cli "WiFi.Radio.3.startACS()"
+iw dev wl2 info
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260414T234216396870
+- bgw720-0403_wifi_llapi_20260414t234216396870.md L9-L11
+  result_5g/result_6g/result_24g = Pass / Pass / Pass with diagnostic_status=Pass
+- bgw720-0403_wifi_llapi_20260414t234216396870.md L36-L90
+  each band exact-closes the workbook note-V precondition path: AutoChannelEnable=1, startAutoChannelSelection() returned, startACS() returned, and iw dev wlX info stayed readable
+- 20260414T234216396870_DUT.log L5-L36
+  5g exact-closes AutoChannelEnable=1 + startAutoChannelSelection()/startACS() returned + Interface wl0
+- 20260414T234216396870_DUT.log L37-L68
+  6g exact-closes AutoChannelEnable=1 + startAutoChannelSelection()/startACS() returned + Interface wl1
+- 20260414T234216396870_DUT.log L69-L100
+  2.4g exact-closes AutoChannelEnable=1 + startAutoChannelSelection()/startACS() returned + Interface wl2
+- 20260414T234216396870_STA.log
+  empty as expected for DUT-only closure
+```
+
 ## Checkpoint summary (2026-04-14 early-99)
 
 > This checkpoint records the `D336 UnicastPacketsSent / SSID stats` workbook closure.

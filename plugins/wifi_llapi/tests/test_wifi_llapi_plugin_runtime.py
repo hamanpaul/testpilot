@@ -20023,33 +20023,39 @@ def test_d294_getnastationstats_evaluate():
 # --- Batch 4b: Action method cases (D295-D299) ---
 
 _ACTION_METHOD_CASES = [
-    # (yaml_file, row, method, verdict)
-    ("D295_scan.yaml", 295, "scan", "Pass"),
-    ("D296_startacs.yaml", 221, "startACS", "Fail"),
-    ("D297_startautochannelselection.yaml", 222, "startAutoChannelSelection", "Fail"),
-    ("D298_startscan.yaml", 298, "startScan", "Pass"),
-    ("D299_stopscan.yaml", 299, "stopScan", "Pass"),
+    # (yaml_file, row, method, verdict, pass_criteria_count)
+    ("D295_scan.yaml", 295, "scan", "Pass", 3),
+    ("D296_startacs.yaml", 296, "startACS", "Pass", 15),
+    ("D297_startautochannelselection.yaml", 222, "startAutoChannelSelection", "Fail", 3),
+    ("D298_startscan.yaml", 298, "startScan", "Pass", 3),
+    ("D299_stopscan.yaml", 299, "stopScan", "Pass", 3),
 ]
 
 _ACTION_IDS = [t[0].split(".")[0] for t in _ACTION_METHOD_CASES]
 
 
-@pytest.mark.parametrize("yaml_file,row,method,verdict", _ACTION_METHOD_CASES, ids=_ACTION_IDS)
-def test_action_method_contract(yaml_file, row, method, verdict):
+@pytest.mark.parametrize(
+    "yaml_file,row,method,verdict,pass_criteria_count", _ACTION_METHOD_CASES, ids=_ACTION_IDS
+)
+def test_action_method_contract(yaml_file, row, method, verdict, pass_criteria_count):
     """Action method YAML loads with correct 3-band structure."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / yaml_file)
     assert case["source"]["row"] == row
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 3
-    assert len(case["pass_criteria"]) == 3
+    assert len(case["pass_criteria"]) == pass_criteria_count
     assert case["bands"] == ["5g", "6g", "2.4g"]
     ref = case["results_reference"]["v4.0.3"]
     assert ref["5g"] == verdict
 
 
-@pytest.mark.parametrize("yaml_file,row,method,verdict", _ACTION_METHOD_CASES, ids=_ACTION_IDS)
-def test_action_method_setup_env(yaml_file, row, method, verdict, monkeypatch):
+@pytest.mark.parametrize(
+    "yaml_file,row,method,verdict,pass_criteria_count", _ACTION_METHOD_CASES, ids=_ACTION_IDS
+)
+def test_action_method_setup_env(
+    yaml_file, row, method, verdict, pass_criteria_count, monkeypatch
+):
     """Action method setup_env succeeds with the authored topology."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
@@ -20061,8 +20067,10 @@ def test_action_method_setup_env(yaml_file, row, method, verdict, monkeypatch):
     plugin.teardown(case, topo)
 
 
-@pytest.mark.parametrize("yaml_file,row,method,verdict", _ACTION_METHOD_CASES, ids=_ACTION_IDS)
-def test_action_method_evaluate(yaml_file, row, method, verdict):
+@pytest.mark.parametrize(
+    "yaml_file,row,method,verdict,pass_criteria_count", _ACTION_METHOD_CASES, ids=_ACTION_IDS
+)
+def test_action_method_evaluate(yaml_file, row, method, verdict, pass_criteria_count):
     """Action method evaluate passes when authored outputs satisfy criteria."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
@@ -20077,6 +20085,19 @@ def test_action_method_evaluate(yaml_file, row, method, verdict):
                     f"ScanCheck{suffix}=ok\n"
                     f"ScanBSSID{suffix}=aa:bb:cc:dd:ee:{r}{r}\n"
                     f"DriverMatch{suffix}=aa:bb:cc:dd:ee:{r}{r}\n"
+                ),
+                "timing": 0.5,
+            }
+            continue
+        if yaml_file == "D296_startacs.yaml":
+            iface = {"5g": "wl0", "6g": "wl1", "24g": "wl2"}[band]
+            results["steps"][f"step_{band}"] = {
+                "success": True,
+                "output": (
+                    f"WiFi.Radio.{r}.AutoChannelEnable=1\n"
+                    f"WiFi.Radio.{r}.startAutoChannelSelection() returned\n"
+                    f"WiFi.Radio.{r}.startACS() returned\n"
+                    f"Interface {iface}\n"
                 ),
                 "timing": 0.5,
             }

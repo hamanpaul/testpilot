@@ -106,7 +106,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T214055064676",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T215500799545",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T222507260531",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T231646005774"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260414T231646005774",
+    "plugins/wifi_llapi/reports/agent_trace/20260414T234216396870"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -114,20 +115,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 58,
-  "full_match_count": 336,
-  "mismatch_case_count": 84,
+  "full_match_count": 337,
+  "mismatch_case_count": 83,
   "band_summary": {
     "5g": {
-      "matched": 340,
-      "mismatched": 80
+      "matched": 341,
+      "mismatched": 79
     },
     "6g": {
-      "matched": 336,
-      "mismatched": 84
+      "matched": 337,
+      "mismatched": 83
     },
     "2.4g": {
-      "matched": 339,
-      "mismatched": 81
+      "matched": 340,
+      "mismatched": 80
     }
   },
   "cases": [
@@ -9802,7 +9803,7 @@
       "case_id": "d296-startacs",
       "case_file": "D296_startacs.yaml",
       "dnum": 296,
-      "source_row": 221,
+      "source_row": 296,
       "source_object": "WiFi.Radio.{i}.",
       "source_api": "startACS()",
       "answer_row": 296,
@@ -9811,39 +9812,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
+      "final_status": "Pass",
+      "evaluation_verdict": "Pass",
+      "attempts_used": 1,
+      "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Try call API function: root@prplOS:/# ubus-cli \"WiFi.Radio.1.startACS()\" > WiFi.Radio.1.startACS() ERROR: call (null) failed with status 1 - unknown error WiFi.Radio.1.startACS() returned [ \"\" ] root@prplOS:/# ubus-cli \"WiFi.Radio.2.s...",
       "workbook_command_output_excerpt": "logread | grep ACS iw dev wl0 info iw dev wl1 info iw dev wl2 info",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d296-startacs.json"
+      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260414T234216396870/d296-startacs.json"
     },
     {
       "case_id": "d297-startautochannelselection",
@@ -18943,53 +18940,6 @@
       "workbook_test_steps_excerpt": "",
       "workbook_command_output_excerpt": "",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d290-getscanresults-centrechannel.json"
-    },
-    {
-      "case_id": "d296-startacs",
-      "case_file": "D296_startacs.yaml",
-      "dnum": 296,
-      "source_row": 221,
-      "source_object": "WiFi.Radio.{i}.",
-      "source_api": "startACS()",
-      "answer_row": 296,
-      "answer_object": "WiFi.Radio.{i}.",
-      "answer_api": "startACS()",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Try call API function: root@prplOS:/# ubus-cli \"WiFi.Radio.1.startACS()\" > WiFi.Radio.1.startACS() ERROR: call (null) failed with status 1 - unknown error WiFi.Radio.1.startACS() returned [ \"\" ] root@prplOS:/# ubus-cli \"WiFi.Radio.2.s...",
-      "workbook_command_output_excerpt": "logread | grep ACS iw dev wl0 info iw dev wl1 info iw dev wl2 info",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d296-startacs.json"
     },
     {
       "case_id": "d297-startautochannelselection",
