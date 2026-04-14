@@ -1,5 +1,59 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-14 early-74)
+
+> This checkpoint records the `D197 Radio.IEEE80211hSupported` low-risk radio getter closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D197 Radio.IEEE80211hSupported` 已透過 official rerun `20260414T151631032947` 完成 closure
+- workbook authority 現在刷新到 row `197`，不再沿用 stale row `160`
+- current rerun exact-close tri-band getter `IEEE80211hSupported=1/0/0`
+- landed case 現在把 stale raw `Fail / Fail / Fail` 刷新為 workbook-consistent `Pass / Pass / Pass`
+- targeted radio-getter/runtime guardrails 維持 `201 passed`
+- command-budget guardrail 維持 `1 passed`
+- final full repo regression 維持 `1662 passed`
+- compare refresh 已更新為 `312 / 420 full matches`、`108 mismatches`、`58 metadata drifts`
+- active blockers 維持 `D047 SupportedHe160MCS` authority conflict + shared 6G baseline blocker（manifested in `D179` / `D181`）
+- next ready non-blocked compare-open case 改為 `D198 Radio.IEEE80211kSupported`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| `D197` | 197 | `IEEE80211hSupported` | `Pass / Pass / Pass` | `20260414T151631032947_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260414t151631032947.md L15-L35` | `20260414T151631032947_STA.log` empty file |
+
+#### D197 Radio.IEEE80211hSupported
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only radio getter case; rerun emitted an empty STA log)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.IEEE80211hSupported?"
+ubus-cli "WiFi.Radio.2.IEEE80211hSupported?"
+ubus-cli "WiFi.Radio.3.IEEE80211hSupported?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+DUT (20260414T151631032947_DUT.log L5-L18; bgw720-0403_wifi_llapi_20260414t151631032947.md L15-L35)
+WiFi.Radio.1.IEEE80211hSupported=1
+WiFi.Radio.2.IEEE80211hSupported=0
+WiFi.Radio.3.IEEE80211hSupported=0
+
+STA (20260414T151631032947_STA.log)
+empty file
+```
+
 ## Checkpoint summary (2026-04-14 early-73)
 
 > This checkpoint records the `D196 Radio.IEEE80211hEnabled` low-risk radio getter closure.
