@@ -1,9 +1,9 @@
 id: d396-getradiostats-errorsreceived
 name: D396 getRadioStats ErrorsReceived
 source:
-  row: 291
-  object: WiFi.Radio.{i}.
-  api: getRadioStats()
+  row: 396
+  object: WiFi.Radio.{i}.Stats.
+  api: ErrorsReceived
   baseline: 0310-BGW720-300
 bands:
 - 5g
@@ -12,9 +12,9 @@ bands:
 llapi_support: Support
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
 topology:
   devices:
     DUT:

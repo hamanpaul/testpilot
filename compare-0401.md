@@ -122,6 +122,7 @@
   - `plugins/wifi_llapi/reports/agent_trace/20260415T025452242101`
   - `plugins/wifi_llapi/reports/agent_trace/20260415T030233578785`
   - `plugins/wifi_llapi/reports/agent_trace/20260415T030842726735`
+  - `plugins/wifi_llapi/reports/agent_trace/20260415T031551881401`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -132,18 +133,18 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 348 |
-| mismatch cases | 72 |
+| full matches | 349 |
+| mismatch cases | 71 |
 | missing answer rows | 0 |
-| metadata drift rows | 57 |
+| metadata drift rows | 56 |
 
 ## Per-band summary
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 350 | 70 |
-| 6g | 348 | 72 |
-| 2.4g | 350 | 70 |
+| 5g | 351 | 69 |
+| 6g | 349 | 71 |
+| 2.4g | 351 | 69 |
 
 ## Mismatch table
 
@@ -164,7 +165,6 @@
 | `d357-skip-csistats` | 357 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d359-ap-isolationenable` | 359 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d371-assocdev-disassociationtime` | 371 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d396-getradiostats-errorsreceived` | 396 | drift | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d397-getradiostats-errorssent` | 397 | drift | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d414-assocdev-rrmoffchannelmaxduration` | 414 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d415-assocdev-rrmonchannelmaxduration` | 415 | exact | Fail / N/A / N/A | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -514,25 +514,6 @@
 - 0401 G excerpt: 1. Connect WiFi station to GW 2. Check Associated Device Status 3. Disconnect Wifi Station from GW 4. Check Associated Device DisassociationTime root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep -E 'Activ root@prplOS...
 - 0401 H excerpt: root@prplOS:/# wl -i wl0 assoclist root@prplOS:/# wl -i wl1 assoclist root@prplOS:/# wl -i wl2 assoclist
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d371-assocdev-disassociationtime.json`
-
-### d396-getradiostats-errorsreceived
-
-- case file: `D396_errorsreceived_radio_stats.yaml`
-- answer row: `396`
-- mapping status: `drift`
-- source metadata: `WiFi.Radio.{i}.` / `getRadioStats()`
-- workbook metadata: `WiFi.Radio.{i}.Stats.` / `ErrorsReceived`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: (empty)
-- 0401 H excerpt: cat /proc/net/dev |grep wl0
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d396-getradiostats-errorsreceived.json`
 
 ### d397-getradiostats-errorssent
 

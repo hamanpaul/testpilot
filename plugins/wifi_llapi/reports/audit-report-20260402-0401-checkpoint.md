@@ -1,5 +1,64 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-15 early-112)
+
+> This checkpoint records the `D396 getRadioStats().ErrorsReceived` workbook closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D396 getRadioStats().ErrorsReceived` 已完成 closure
+- workbook authority 已刷新為 row `396`
+- stale row `291` 已由真實 workbook row `396` 取代
+- source metadata 已同步對齊 workbook `WiFi.Radio.{i}.Stats.` / `ErrorsReceived`
+- official rerun `20260415T031551881401` exact-close workbook `Pass / Pass / Pass`
+- live evidence 保留 tri-band `getRadioStats()` readback，其中本輪 `ErrorsReceived=8/0/8`
+- `diagnostic_status=Pass`
+- targeted D396/runtime + radio-stats guardrails passed
+- full repo regression=`1666 passed`
+- compare 更新為 `349 / 420 full matches`、`71 mismatches`、`56 metadata drifts`
+- `D371 AccessPoint.AssociatedDevice.DisassociationTime` 仍維持 localized blocker，rewrite 已回退
+- `D355-D357` 仍保留在需要 CSI client setup 的 placeholder bucket
+- `D359 AccessPoint.IsolationEnable` 因 two-station isolation ping 需求而暫停在 current single-STA lab shape
+- systemic active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- next ready non-blocked compare-open case=`D397 getRadioStats().ErrorsSent`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D396 | 396 | Radio.Stats.ErrorsReceived | Pass / Pass / Pass | `20260415T031551881401_DUT.log L5-L79; bgw720-0403_wifi_llapi_20260415t031551881401.md L9-L11; L15-L44` | `N/A（DUT-only case；20260415T031551881401_STA.log empty）` |
+
+### D396 getRadioStats().ErrorsReceived alignment evidence
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.getRadioStats()"
+ubus-cli "WiFi.Radio.2.getRadioStats()"
+ubus-cli "WiFi.Radio.3.getRadioStats()"
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260415T031551881401
+- bgw720-0403_wifi_llapi_20260415t031551881401.md L9-L11
+  result_5g/result_6g/result_24g = Pass / Pass / Pass with diagnostic_status=Pass
+- bgw720-0403_wifi_llapi_20260415t031551881401.md L15-L44
+  tri-band getRadioStats() evidence exposes the current ErrorsReceived values used for workbook closure
+- 20260415T031551881401_DUT.log L5-L79
+  DUT getRadioStats() payload on all three radios includes ErrorsReceived, closing the workbook pass row after the metadata refresh
+```
+
 ## Checkpoint summary (2026-04-15 early-111)
 
 > This checkpoint records the `D385 Radio.RadCapabilitiesVHTStr` workbook closure.

@@ -119,28 +119,29 @@
     "plugins/wifi_llapi/reports/agent_trace/20260415T024522159981",
     "plugins/wifi_llapi/reports/agent_trace/20260415T025452242101",
     "plugins/wifi_llapi/reports/agent_trace/20260415T030233578785",
-    "plugins/wifi_llapi/reports/agent_trace/20260415T030842726735"
+    "plugins/wifi_llapi/reports/agent_trace/20260415T030842726735",
+    "plugins/wifi_llapi/reports/agent_trace/20260415T031551881401"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
   "compared_case_count": 420,
   "missing_answer_count": 0,
   "missing_answer_rows": [],
-  "metadata_drift_count": 57,
-  "full_match_count": 348,
-  "mismatch_case_count": 72,
+  "metadata_drift_count": 56,
+  "full_match_count": 349,
+  "mismatch_case_count": 71,
   "band_summary": {
     "5g": {
-      "matched": 350,
-      "mismatched": 70
+      "matched": 351,
+      "mismatched": 69
     },
     "6g": {
-      "matched": 348,
-      "mismatched": 72
+      "matched": 349,
+      "mismatched": 71
     },
     "2.4g": {
-      "matched": 350,
-      "mismatched": 70
+      "matched": 351,
+      "mismatched": 69
     }
   },
   "cases": [
@@ -12849,48 +12850,44 @@
       "case_id": "d396-getradiostats-errorsreceived",
       "case_file": "D396_errorsreceived_radio_stats.yaml",
       "dnum": 396,
-      "source_row": 291,
-      "source_object": "WiFi.Radio.{i}.",
-      "source_api": "getRadioStats()",
+      "source_row": 396,
+      "source_object": "WiFi.Radio.{i}.Stats.",
+      "source_api": "ErrorsReceived",
       "answer_row": 396,
       "answer_object": "WiFi.Radio.{i}.Stats.",
       "answer_api": "ErrorsReceived",
-      "mapping_status": "drift",
-      "mapping_object_match": false,
-      "mapping_api_match": false,
-      "final_status": "Fail",
+      "mapping_status": "exact",
+      "mapping_object_match": true,
+      "mapping_api_match": true,
+      "final_status": "Pass",
       "evaluation_verdict": "Pass",
       "attempts_used": 1,
       "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "",
       "workbook_command_output_excerpt": "cat /proc/net/dev |grep wl0",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d396-getradiostats-errorsreceived.json"
+      "trace_path": "plugins/wifi_llapi/reports/agent_trace/20260415T031551881401/d396-getradiostats-errorsreceived.json"
     },
     {
       "case_id": "d397-getradiostats-errorssent",
@@ -19193,53 +19190,6 @@
       "workbook_test_steps_excerpt": "1. Connect WiFi station to GW 2. Check Associated Device Status 3. Disconnect Wifi Station from GW 4. Check Associated Device DisassociationTime root@prplOS:/# ubus-cli WiFi.AccessPoint.*.AssociatedDevice.*.? | grep -E 'Activ root@prplOS...",
       "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 assoclist root@prplOS:/# wl -i wl1 assoclist root@prplOS:/# wl -i wl2 assoclist",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d371-assocdev-disassociationtime.json"
-    },
-    {
-      "case_id": "d396-getradiostats-errorsreceived",
-      "case_file": "D396_errorsreceived_radio_stats.yaml",
-      "dnum": 396,
-      "source_row": 291,
-      "source_object": "WiFi.Radio.{i}.",
-      "source_api": "getRadioStats()",
-      "answer_row": 396,
-      "answer_object": "WiFi.Radio.{i}.Stats.",
-      "answer_api": "ErrorsReceived",
-      "mapping_status": "drift",
-      "mapping_object_match": false,
-      "mapping_api_match": false,
-      "final_status": "Fail",
-      "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "",
-      "workbook_command_output_excerpt": "cat /proc/net/dev |grep wl0",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d396-getradiostats-errorsreceived.json"
     },
     {
       "case_id": "d397-getradiostats-errorssent",
