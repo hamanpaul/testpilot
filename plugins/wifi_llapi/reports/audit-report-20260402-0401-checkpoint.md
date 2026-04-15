@@ -1,5 +1,72 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-15 early-134)
+
+> This checkpoint records the `D479 Radio Stats WmmBytesReceived AC_BK` workbook alignment.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D479 Radio Stats WmmBytesReceived AC_BK` 已完成 closure
+- workbook authority 已刷新為 row `479`
+- 舊 source row `346` 與 `getRadioStats() | grep AC_BK_Stats` replay 已退休
+- landed case 已改回 workbook `WiFi.Radio.{i}.Stats.WmmBytesReceived.` / `AC_BK`
+- official rerun `20260415T091144122493` exact-close workbook `Pass / Pass / Pass`
+- tri-band direct getter / driver cross-check 都穩定回 `0 / 0 / 0`
+- final report 維持 `diagnostic_status=Pass`
+- targeted D479/runtime tests、command-budget guardrail 與 full repo regression（`1660 passed`）已通過
+- compare 已更新為 `366 / 420 full matches`、`54 mismatches`，metadata drifts 維持 `43`
+- `D454 getRadioStats().FailedRetransCount` 在 focused workbook-faithful rerun `20260415T064937785938` 仍呈 localized blocker：5G/2.4G 可 exact-close `100/946` 對 `wl0/wl2 counters txfail=100/946`，但 6G 仍漂移成 `FailedRetransCount=0` vs `wl1 counters txfail=740`，因此 exploratory rewrite 已回退
+- `D371 AccessPoint.AssociatedDevice.DisassociationTime` 仍維持 localized blocker，rewrite 已回退
+- `D355-D357` 仍保留在需要 CSI client setup 的 placeholder bucket
+- `D359 AccessPoint.IsolationEnable` 因 two-station isolation ping 需求而暫停在 current single-STA lab shape
+- systemic active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- `D414/D415` 仍保留為 readiness-review cluster；workbook `G` 已明示需要 dual-STA 802.11k split
+- next ready actionable survey target=`D480 Radio Stats WmmBytesReceived AC_VI`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D479 | 479 | Stats.WmmBytesReceived.AC_BK | Pass / Pass / Pass | `bgw720-0403_wifi_llapi_20260415t091144122493.md L9-L11; L17-L25; 20260415T091144122493_DUT.log L5-L13; L14-L22; L23-L31` | `N/A（DUT-only case；20260415T091144122493_STA.log empty）` |
+
+### D479 Radio Stats WmmBytesReceived AC_BK alignment evidence
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.Stats.WmmBytesReceived.AC_BK?"
+wl -i wl0 wme_counters | grep -A2 '^AC_BK:' | awk '/rx frames:/ {print "DriverWmmBytesReceived5g="$5}'
+ubus-cli "WiFi.Radio.2.Stats.WmmBytesReceived.AC_BK?"
+wl -i wl1 wme_counters | grep -A2 '^AC_BK:' | awk '/rx frames:/ {print "DriverWmmBytesReceived6g="$5}'
+ubus-cli "WiFi.Radio.3.Stats.WmmBytesReceived.AC_BK?"
+wl -i wl2 wme_counters | grep -A2 '^AC_BK:' | awk '/rx frames:/ {print "DriverWmmBytesReceived24g="$5}'
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260415T091144122493
+- bgw720-0403_wifi_llapi_20260415t091144122493.md L9-L11
+  result_5g/result_6g/result_24g = Pass / Pass / Pass with diagnostic_status=Pass
+- bgw720-0403_wifi_llapi_20260415t091144122493.md L17-L25
+  workbook-faithful row-479 replay uses tri-band direct Stats.WmmBytesReceived.AC_BK getters plus wl wme_counters AC_BK rx-byte cross-checks
+- 20260415T091144122493_DUT.log L5-L13
+  5G exact-closes `WiFi.Radio.1.Stats.WmmBytesReceived.AC_BK=0` against `DriverWmmBytesReceived5g=0`
+- 20260415T091144122493_DUT.log L14-L22
+  6G exact-closes `WiFi.Radio.2.Stats.WmmBytesReceived.AC_BK=0` against `DriverWmmBytesReceived6g=0`
+- 20260415T091144122493_DUT.log L23-L31
+  2.4G exact-closes `WiFi.Radio.3.Stats.WmmBytesReceived.AC_BK=0` against `DriverWmmBytesReceived24g=0`
+```
+
 ## Checkpoint summary (2026-04-15 early-133)
 
 > This checkpoint records the `D478 Radio Stats WmmBytesReceived AC_BE` workbook alignment.

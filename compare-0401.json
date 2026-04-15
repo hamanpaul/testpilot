@@ -142,7 +142,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T080003753294",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T081114606106",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T082800519654",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T084649232463"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T084649232463",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T091144122493"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -150,20 +151,20 @@
   "missing_answer_count": 0,
   "missing_answer_rows": [],
   "metadata_drift_count": 43,
-  "full_match_count": 365,
-  "mismatch_case_count": 55,
+  "full_match_count": 366,
+  "mismatch_case_count": 54,
   "band_summary": {
     "5g": {
-      "matched": 367,
-      "mismatched": 53
+      "matched": 368,
+      "mismatched": 52
     },
     "6g": {
-      "matched": 365,
-      "mismatched": 55
+      "matched": 366,
+      "mismatched": 54
     },
     "2.4g": {
-      "matched": 367,
-      "mismatched": 53
+      "matched": 368,
+      "mismatched": 52
     }
   },
   "cases": [
@@ -15246,10 +15247,10 @@
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T084649232463/d478-radio-stats-wmmbytesreceived-ac_be.json"
     },
     {
-      "case_id": "d479-getradiostats-wmm-bytesreceived-ac_bk",
+      "case_id": "d479-radio-stats-wmmbytesreceived-ac_bk",
       "case_file": "D479_ac_bk_stats_wmmbytesreceived_radio.yaml",
       "dnum": 479,
-      "source_row": 346,
+      "source_row": 479,
       "source_object": "WiFi.Radio.{i}.Stats.WmmBytesReceived.",
       "source_api": "AC_BK",
       "answer_row": 479,
@@ -15258,39 +15259,35 @@
       "mapping_status": "exact",
       "mapping_object_match": true,
       "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
+      "final_status": "Pass",
+      "evaluation_verdict": "Pass",
+      "attempts_used": 1,
+      "comment": "",
       "bands": {
         "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         },
         "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
+          "actual_raw": "Pass",
+          "actual_norm": "Pass",
           "expected_raw": "Pass",
           "expected_norm": "Pass"
         }
       },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
+      "mismatch_bands": [],
+      "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Connect WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF \"iperf3 -c <server> -u -b 20M --tos 0x20\" 3. Verify Radio Stats.WmmBytesReceived.AC_BK root@prplOS:/# ubus-cli WiFi.Radio.*.? | grep WmmBytesRece...",
       "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 wme_counters AC_BE: tx frames: 23711 bytes: 7015133 failed frames: 0 failed bytes: 0 rx frames: 17734 bytes: 26185565 failed frames: 0 failed bytes: 0 root@prplOS:/# wl -i wl1 wme_counters AC_BE: tx frames: 27022...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d479-getradiostats-wmm-bytesreceived-ac_bk.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T091144122493/d479-radio-stats-wmmbytesreceived-ac_bk.json"
     },
     {
       "case_id": "d480-getradiostats-wmm-bytesreceived-ac_vi",
@@ -19289,53 +19286,6 @@
       "workbook_test_steps_excerpt": "1. Record counters at start: root@prplOS:/# ubus-cli \"WiFi.Radio.*.getRadioStats()\" | grep MultipleRetryCount MultipleRetryCount = 0, MultipleRetryCount = 0, MultipleRetryCount = 0, root@prplOS:/# ubus-cli \"WiFi.Radio.*.getRadioStats()\" ...",
       "workbook_command_output_excerpt": "",
       "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d454-getradiostats-failedretranscount.json"
-    },
-    {
-      "case_id": "d479-getradiostats-wmm-bytesreceived-ac_bk",
-      "case_file": "D479_ac_bk_stats_wmmbytesreceived_radio.yaml",
-      "dnum": 479,
-      "source_row": 346,
-      "source_object": "WiFi.Radio.{i}.Stats.WmmBytesReceived.",
-      "source_api": "AC_BK",
-      "answer_row": 479,
-      "answer_object": "WiFi.Radio.{i}.Stats.WmmBytesReceived.",
-      "answer_api": "AC_BK",
-      "mapping_status": "exact",
-      "mapping_object_match": true,
-      "mapping_api_match": true,
-      "final_status": "Fail",
-      "evaluation_verdict": "Fail",
-      "attempts_used": 2,
-      "comment": "pass_criteria not satisfied (failed after 2/2 attempts)",
-      "bands": {
-        "5g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "6g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        },
-        "2.4g": {
-          "actual_raw": "Fail",
-          "actual_norm": "Fail",
-          "expected_raw": "Pass",
-          "expected_norm": "Pass"
-        }
-      },
-      "mismatch_bands": [
-        "5g",
-        "6g",
-        "2.4g"
-      ],
-      "matches_answer": false,
-      "workbook_test_steps_excerpt": "1. Connect WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF \"iperf3 -c <server> -u -b 20M --tos 0x20\" 3. Verify Radio Stats.WmmBytesReceived.AC_BK root@prplOS:/# ubus-cli WiFi.Radio.*.? | grep WmmBytesRece...",
-      "workbook_command_output_excerpt": "root@prplOS:/# wl -i wl0 wme_counters AC_BE: tx frames: 23711 bytes: 7015133 failed frames: 0 failed bytes: 0 rx frames: 17734 bytes: 26185565 failed frames: 0 failed bytes: 0 root@prplOS:/# wl -i wl1 wme_counters AC_BE: tx frames: 27022...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d479-getradiostats-wmm-bytesreceived-ac_bk.json"
     },
     {
       "case_id": "d480-getradiostats-wmm-bytesreceived-ac_vi",
