@@ -3143,7 +3143,6 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
     # Per-case expected results_reference after workbook alignment.
     # Cases not listed default to all-Pass.
     _wmm_expected = {
-        496: ("Fail", "Fail", "Fail"),
         499: ("Fail", "Fail", "Fail"),
         502: ("Fail", "Fail", "Fail"),
         505: ("Fail", "Fail", "Fail"),
@@ -3165,6 +3164,8 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         526: ("Fail", "Fail", "Fail"),
     }
     for case_num in range(496, 528):
+        if case_num == 496:
+            continue
         filename = next(cases_dir.glob(f"D{case_num}_*.yaml"))
         case_data = yaml.safe_load(filename.read_text(encoding="utf-8"))
         commands = "\n".join(str(step.get("command", "")) for step in case_data["steps"])
@@ -22679,7 +22680,6 @@ def test_d183_tpcmode_evaluate():
 # Batch 6 — SSID WMM Stats (D496-D527): 3-band SSID-level WMM counters
 # ---------------------------------------------------------------------------
 _SSID_WMM_STATS_CASES = [
-    ("D496_ac_be_stats_wmmbytesreceived_ssid.yaml", 363, "AC_BE", "WmmBytesReceived"),
     ("D497_ac_bk_stats_wmmbytesreceived_ssid.yaml", 364, "AC_BK", "WmmBytesReceived"),
     ("D498_ac_vi_stats_wmmbytesreceived_ssid.yaml", 365, "AC_VI", "WmmBytesReceived"),
     ("D499_ac_vo_stats_wmmbytesreceived_ssid.yaml", 366, "AC_VO", "WmmBytesReceived"),
@@ -22713,6 +22713,91 @@ _SSID_WMM_STATS_CASES = [
     ("D527_ac_vo_stats_wmmpacketssent.yaml", 394, "AC_VO", "WmmPacketsSent"),
 ]
 _SSID_WMM_IDS = [t[0].split(".")[0] for t in _SSID_WMM_STATS_CASES]
+
+
+def test_d496_ssid_stats_wmmbytesreceived_ac_be_load():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D496_ac_be_stats_wmmbytesreceived_ssid.yaml")
+    assert case["id"] == "d496-ssid-wmm-ac_be_stats_wmmbytesreceived_ssid"
+    assert case["source"]["row"] == 496
+    assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmBytesReceived."
+    assert case["source"]["api"] == "AC_BE"
+    assert case["llapi_support"] == "Support"
+    ref = case["results_reference"]["v4.0.3"]
+    assert ref["5g"] == "Pass"
+    assert ref["6g"] == "Pass"
+    assert ref["2.4g"] == "Pass"
+    assert len(case["steps"]) == 9
+    assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
+    assert 'WiFi.SSID.4.Stats.WmmBytesReceived.AC_BE?' in case["steps"][1]["command"]
+    assert 'wme_counters' in case["steps"][2]["command"]
+    assert case["pass_criteria"][0]["field"] == "direct_5g.AC_BE"
+    assert case["pass_criteria"][0]["reference"] == "refresh_5g.GetSSIDStatsWmmBytesReceived5g"
+    assert case["pass_criteria"][1]["reference"] == "driver_5g.DriverWmmBytesReceived5g"
+
+
+def test_d496_ssid_stats_wmmbytesreceived_ac_be_discover():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D496_ac_be_stats_wmmbytesreceived_ssid.yaml")
+    plugin = _load_plugin()
+    discoverable = {c["id"] for c in plugin.discover_cases()}
+    assert case["id"] in discoverable, f"{case['id']} not discoverable"
+
+
+def test_d496_ssid_stats_wmmbytesreceived_ac_be_evaluate():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D496_ac_be_stats_wmmbytesreceived_ssid.yaml")
+    results = {
+        "steps": {
+            "step_5g_refresh": {
+                "success": True,
+                "output": "GetSSIDStatsWmmBytesReceived5g=97351163",
+                "timing": 0.01,
+            },
+            "step_5g_direct": {
+                "success": True,
+                "output": "WiFi.SSID.4.Stats.WmmBytesReceived.AC_BE=97351163",
+                "timing": 0.01,
+            },
+            "step_5g_driver": {
+                "success": True,
+                "output": "DriverWmmBytesReceived5g=97351163",
+                "timing": 0.01,
+            },
+            "step_6g_refresh": {
+                "success": True,
+                "output": "GetSSIDStatsWmmBytesReceived6g=14117865",
+                "timing": 0.01,
+            },
+            "step_6g_direct": {
+                "success": True,
+                "output": "WiFi.SSID.6.Stats.WmmBytesReceived.AC_BE=14117865",
+                "timing": 0.01,
+            },
+            "step_6g_driver": {
+                "success": True,
+                "output": "DriverWmmBytesReceived6g=14117865",
+                "timing": 0.01,
+            },
+            "step_24g_refresh": {
+                "success": True,
+                "output": "GetSSIDStatsWmmBytesReceived24g=13359133",
+                "timing": 0.01,
+            },
+            "step_24g_direct": {
+                "success": True,
+                "output": "WiFi.SSID.8.Stats.WmmBytesReceived.AC_BE=13359133",
+                "timing": 0.01,
+            },
+            "step_24g_driver": {
+                "success": True,
+                "output": "DriverWmmBytesReceived24g=13359133",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
 
 
 @pytest.mark.parametrize(

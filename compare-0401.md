@@ -151,8 +151,9 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T105002687631`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T111152637870`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T112139068980`
-  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T005633950804`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T112956993038`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260413T005633950804`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T114636190262`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -163,8 +164,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 376 |
-| mismatch cases | 44 |
+| full matches | 377 |
+| mismatch cases | 43 |
 | missing answer rows | 0 |
 | metadata drift rows | 43 |
 
@@ -172,9 +173,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 378 | 42 |
-| 6g | 376 | 44 |
-| 2.4g | 378 | 42 |
+| 5g | 379 | 41 |
+| 6g | 377 | 43 |
+| 2.4g | 379 | 41 |
 
 ## Mismatch table
 
@@ -202,7 +203,6 @@
 | `d482-getradiostats-wmm-bytessent-ac_be` | 482 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d485-getradiostats-wmm-bytessent-ac_vo` | 485 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d490-getradiostats-wmm-failedbytessent-ac_be` | 490 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d496-ssid-wmm-ac_be_stats_wmmbytesreceived_ssid` | 496 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d499-ssid-wmm-ac_vo_stats_wmmbytesreceived_ssid` | 499 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d502-ssid-wmm-ac_vi_stats_wmmbytessent_ssid` | 502 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d505-ssid-wmm-ac_bk_stats_wmmfailedbytesreceived_ssid` | 505 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -654,25 +654,6 @@
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: wl -i wl0 wme_counters | grep -A2 "AC_BE" | grep -E 'tx frames|rx frames' wl -i wl1 wme_counters | grep -A2 "AC_BE" | grep -E 'tx frames|rx frames' wl -i wl2 wme_counters | grep -A2 "AC_BE" | grep -E 'tx frames|rx frames'
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d490-getradiostats-wmm-failedbytessent-ac_be.json`
-
-### d496-ssid-wmm-ac_be_stats_wmmbytesreceived_ssid
-
-- case file: `D496_ac_be_stats_wmmbytesreceived_ssid.yaml`
-- answer row: `496`
-- mapping status: `exact`
-- source metadata: `WiFi.SSID.{i}.Stats.WmmBytesReceived.` / `AC_BE`
-- workbook metadata: `WiFi.SSID.{i}.Stats.WmmBytesReceived.` / `AC_BE`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Connect two WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF between Station "iperf3 -c 192.168.1.1 -u -b 20M " 3. Verify SSID Stats WmmBytesReceived.AC_BE root@prplOS:/# ubus-cli WiFi.SSID.6.? | grep R...
-- 0401 H excerpt: root@prplOS:/# ubus-cli "WiFi.Radio.*.getRadioStats()"? > WiFi.Radio.*.getRadioStats()? WiFi.Radio.1.getRadioStats() returned [ { WmmBytesReceived = { AC_BE = 31127479,
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d496-ssid-wmm-ac_be_stats_wmmbytesreceived_ssid.json`
 
 ### d499-ssid-wmm-ac_vo_stats_wmmbytesreceived_ssid
 
