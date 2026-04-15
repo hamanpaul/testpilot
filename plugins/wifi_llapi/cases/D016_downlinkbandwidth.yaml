@@ -1,18 +1,17 @@
 id: wifi-llapi-D016-downlinkbandwidth
-aliases:
-- wifi-llapi-r013-downlinkbandwidth
-name: "DownlinkBandwidth \u2014 WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
-version: '1.0'
+name: "DownlinkBandwidth — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+version: "1.1"
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
   sheet: Wifi_LLAPI
-  row: 13
-  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
-  api: DownlinkBandwidth
+  row: 16
+  object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+  api: "DownlinkBandwidth"
+  baseline: "BCM v4.0.3"
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DownlinkBandwidth?"
+hlapi_command: 'ubus-cli "WiFi.AccessPoint.{i}.AssociatedDevice.1.DownlinkBandwidth?"'
 llapi_support: Support
 implemented_by: pWHM
 topology:
@@ -20,149 +19,232 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
-      config:
-      - iface: 6g
-        mode: sta
-        ssid: TestPilot_BTM
-        key: testpilot6g
+      selector: COM0
   links:
-  - from: STA
-    to: DUT
-    band: 6g
+    - from: STA
+      to: DUT
+      band: 5g
+    - from: STA
+      to: DUT
+      band: 6g
+    - from: STA
+      to: DUT
+      band: 2.4g
+
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role)
-  - STA: COM1 (station role for this case; do not rely on the old A0/B0 heuristic)
+  - DUT: COM1 (BGW720-300, AP role)
+  - STA: COM0 (BCM board, STA role)
   Transport:
   - serialwrap attach COM0 / COM1
-  Live band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4 / TestPilot_BTM
-  - 6G: DUT wl1 / AP3 / SSID.6 / TestPilot_BTM
-  - 2.4G: DUT wl2 / AP5 / SSID.8 / TestPilot_24G
+  Band mapping (live baseline 2026-04-02):
+  - 5G:   DUT AP.1 / wl0 / SSID=testpilot5G    ↔ STA wl0 / WPA2-Personal
+  - 6G:   DUT AP.3 / wl1 / SSID=testpilot6G    ↔ STA wl1 / WPA3-Personal + SAE
+  - 2.4G: DUT AP.5 / wl2 / SSID=testpilot2G    ↔ STA wl2 / WPA2-Personal
   Preconditions:
-  - keep only one associated station on AP3 so AssociatedDevice.1 stays deterministic
-  - use the validated 6G single-band baseline for this case
+  - keep exactly one associated STA on each target AP so AssociatedDevice.1 remains deterministic
+  - reuse the validated deterministic single-band baseline from verify_env; do not keep all three bands associated simultaneously
+  - for each band, DownlinkBandwidth must match the same STA's `wl sta_info` `link bandwidth = XX MHZ` sample
+
 setup_steps: |
-  1) DUT 6G baseline:
-     - enable Radio.2 / SSID.6 / AP3
-     - configure AP3 as WPA3-Personal with MFP required
-     - keep the validated live SSID/credential pair as TestPilot_BTM / testpilot6g
-  2) STA 6G preparation:
-     - disable local AP3/AP4 on COM1
-     - move COM1 br-lan off 192.168.1.0/24 so later traffic checks do not self-hit the local bridge
-     - reset wl1 and its wpa_supplicant control socket
-     - connect wl1 to TestPilot_BTM with SAE
-  3) Association evidence:
-     - COM1: iw dev wl1 link ; wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-     - COM0: wl -i wl1 assoclist
-sta_env_setup: |
-  DUT 6G AP baseline:
-    ubus-cli WiFi.Radio.2.Enable=1
-    ubus-cli WiFi.Radio.2.BeaconPeriod=100
-    ubus-cli WiFi.Radio.2.DTIMPeriod=3
-    ubus-cli WiFi.Radio.2.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.2.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.2.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.2.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.2.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.2.OfdmaEnable=1
-    ubus-cli WiFi.Radio.2.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.2.OperatingStandards=ax
-    ubus-cli WiFi.Radio.2.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.2.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.2.Sensing.Enable=1
-    ubus-cli WiFi.Radio.2.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.2.LongRetryLimit=6
-    ubus-cli WiFi.Radio.2.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.2.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.6.SSID=TestPilot_BTM
-    ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.4.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
-    ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase=testpilot6g
-    ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Required
-    ubus-cli WiFi.AccessPoint.3.MultiAPType=FronthaulBSS
-    ubus-cli WiFi.AccessPoint.3.Enable=1
-  STA 6G preparation:
-    ifconfig br-lan 192.168.88.1 netmask 255.255.255.0 up
-    ubus-cli WiFi.AccessPoint.3.Enable=0
-    ubus-cli WiFi.AccessPoint.4.Enable=0
-    wpa_cli terminate 2>/dev/null || true
-    sleep 1
-    rm -f /var/run/wpa_supplicant/wl1 2>/dev/null || true
-    iw dev wl1.1 del 2>/dev/null || true
-    iw dev wl1 disconnect 2>/dev/null || true
-    iw dev wl1 set type managed
-    ifconfig wl1 up
-    mkdir -p /var/run/wpa_supplicant
-    printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\nnetwork={\nssid="TestPilot_BTM"\nkey_mgmt=SAE\nsae_password="testpilot6g"\nieee80211w=2\nscan_ssid=1\n}\n' > /tmp/wpa_wl1.conf
-    wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant
-    sleep 3
-  STA 6G connect verify:
-    wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect
-    sleep 8
-    iw dev wl1 link
-    wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-  DUT association evidence:
-    wl -i wl1 assoclist
+  Sequential per-band (5G → 6G → 2.4G); no simultaneous multi-band connections.
+  [5G]
+  1) STA wl0 verify DUT AP.1 association on the deterministic WPA2-Personal baseline:
+     iw dev wl0 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  2) DUT AP.1 verify the associated STA and compare DownlinkBandwidth with wl0 sta_info:
+     ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+     ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkBandwidth?"
+     wl -i wl0 sta_info <STA_MAC> | grep "link bandwidth"
+  [6G]
+  1) STA wl1 verify DUT AP.3 association on the validated WPA3/SAE baseline:
+     iw dev wl1 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+     wl -i wl1 status
+  2) DUT AP.3 verify the associated STA and compare DownlinkBandwidth with wl1 sta_info:
+     ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"
+     ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DownlinkBandwidth?"
+     wl -i wl1 sta_info <STA_MAC> | grep "link bandwidth"
+  [2.4G]
+  1) STA wl2 verify DUT AP.5 association on the deterministic WPA2-Personal baseline:
+     iw dev wl2 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  2) DUT AP.5 verify the associated STA and compare DownlinkBandwidth with wl2 sta_info:
+     ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"
+     ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkBandwidth?"
+     wl -i wl2 sta_info <STA_MAC> | grep "link bandwidth"
+
 test_procedure: |
-  1) Confirm AP3 currently has one associated 6G station on wl1.
-  2) Extract the live driver-reported link bandwidth for that STA from wl1 sta_info and normalize it into DriverBandwidth=<MHz>.
-  3) Read WiFi.AccessPoint.3.AssociatedDevice.1.DownlinkBandwidth on DUT and compare it with the normalized driver bandwidth instead of checking for a canned 0 value.
+  For each active band (5G, 6G, then 2.4G):
+  1) STA verifies target AP association on the deterministic baseline prepared by verify_env
+     (5G=testpilot5G WPA2-Personal, 6G=testpilot6G WPA3/SAE, 2.4G=testpilot2G WPA2-Personal).
+  2) Record the live AssociatedDevice.1 MAC from DUT and confirm it is a valid station MAC.
+  3) Read `DownlinkBandwidth` from DUT.
+  4) Cross-check the same STA with `wl sta_info` and normalize `link bandwidth = XX MHZ` into an integer MHz value.
+  Pass:
+  - DUT exposes one live STA MAC for the target band.
+  - `DownlinkBandwidth` is a legal bandwidth integer (`20|40|80|160|320`).
+  - Driver `link bandwidth` is a legal bandwidth integer for the same STA.
+  - LLAPI `DownlinkBandwidth` equals the driver bandwidth for the same band.
+
 steps:
-- id: step1
-  action: exec
-  target: DUT
-  command: wl -i wl1 assoclist | sed -n 's/^assoclist \([0-9A-Fa-f:]*\).*/AssocMAC=\1/p'
-  capture: assoc_driver
-- id: step2
-  action: exec
-  target: DUT
-  command: STA_MAC=$(wl -i wl1 assoclist | awk 'NR==1{print $2}'); [ -n "$STA_MAC" ] && wl -i wl1 sta_info $STA_MAC | sed -n 's/.*link bandwidth = *\([0-9][0-9]*\) MHZ.*/DriverBandwidth=\1/p'
-  depends_on: step1
-  capture: driver_bandwidth
-- id: step3
-  action: exec
-  target: DUT
-  command: ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DownlinkBandwidth?"
-  depends_on: step2
-  capture: result
+  - id: step1_5g_sta_join
+    action: exec
+    target: STA
+    band: 5g
+    command:
+      - iw dev wl0 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  - id: step2_5g_assoc
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
+    depends_on: step1_5g_sta_join
+    capture: assoc_5g
+  - id: step3_5g_get
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkBandwidth?"'
+    depends_on: step2_5g_assoc
+    capture: result_5g
+  - id: step4_5g_driver_bw
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*link bandwidth = *\([0-9][0-9]*\) MHZ.*/DriverDownlinkBandwidth5g=\1/p'''
+    depends_on: step3_5g_get
+    capture: driver_bw_5g
+  - id: step5_6g_sta_join
+    action: exec
+    target: STA
+    band: 6g
+    command:
+      - iw dev wl1 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+      - wl -i wl1 status
+  - id: step6_6g_assoc
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
+    depends_on: step5_6g_sta_join
+    capture: assoc_6g
+  - id: step7_6g_get
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DownlinkBandwidth?"'
+    depends_on: step6_6g_assoc
+    capture: result_6g
+  - id: step8_6g_driver_bw
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl1 sta_info $STA_MAC | sed -n ''s/.*link bandwidth = *\([0-9][0-9]*\) MHZ.*/DriverDownlinkBandwidth6g=\1/p'''
+    depends_on: step7_6g_get
+    capture: driver_bw_6g
+  - id: step9_24g_sta_join
+    action: exec
+    target: STA
+    band: 2.4g
+    command:
+      - iw dev wl2 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  - id: step10_24g_assoc
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
+    depends_on: step9_24g_sta_join
+    capture: assoc_24g
+  - id: step11_24g_get
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkBandwidth?"'
+    depends_on: step10_24g_assoc
+    capture: result_24g
+  - id: step12_24g_driver_bw
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl2 sta_info $STA_MAC | sed -n ''s/.*link bandwidth = *\([0-9][0-9]*\) MHZ.*/DriverDownlinkBandwidth24g=\1/p'''
+    depends_on: step11_24g_get
+    capture: driver_bw_24g
+
 pass_criteria:
-- field: assoc_driver.AssocMAC
-  operator: regex
-  value: ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$
-  description: AP3 should first expose a single live 6G STA MAC from wl1 assoclist.
-- field: driver_bandwidth.DriverBandwidth
-  operator: regex
-  value: ^(20|40|80|160|320)$
-  description: wl1 sta_info link bandwidth should normalize to a legal channel width.
-- field: result.DownlinkBandwidth
-  operator: equals
-  reference: driver_bandwidth.DriverBandwidth
-  description: DownlinkBandwidth should match the wl1 sta_info link bandwidth for the same station.
-verification_command: |
-  wl -i wl1 assoclist
-  STA_MAC=$(wl -i wl1 assoclist | awk 'NR==1{print $2}')
-  ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DownlinkBandwidth?"
-  wl -i wl1 sta_info $STA_MAC | grep "link bandwidth ="
+  - field: assoc_5g.MACAddress
+    operator: regex
+    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+    description: "5G: AP1 AssociatedDevice.1 must resolve to a live station MAC."
+  - field: result_5g.DownlinkBandwidth
+    operator: regex
+    value: '^(20|40|80|160|320)$'
+    description: "5G: DownlinkBandwidth must normalize to a legal channel width."
+  - field: driver_bw_5g.DriverDownlinkBandwidth5g
+    operator: regex
+    value: '^(20|40|80|160|320)$'
+    description: "5G: wl0 sta_info must emit a legal link bandwidth for the same STA."
+  - field: result_5g.DownlinkBandwidth
+    operator: equals
+    reference: driver_bw_5g.DriverDownlinkBandwidth5g
+    description: "5G: LLAPI DownlinkBandwidth must match wl0 sta_info link bandwidth."
+  - field: assoc_6g.MACAddress
+    operator: regex
+    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+    description: "6G: AP3 AssociatedDevice.1 must resolve to a live station MAC."
+  - field: result_6g.DownlinkBandwidth
+    operator: regex
+    value: '^(20|40|80|160|320)$'
+    description: "6G: DownlinkBandwidth must normalize to a legal channel width."
+  - field: driver_bw_6g.DriverDownlinkBandwidth6g
+    operator: regex
+    value: '^(20|40|80|160|320)$'
+    description: "6G: wl1 sta_info must emit a legal link bandwidth for the same STA."
+  - field: result_6g.DownlinkBandwidth
+    operator: equals
+    reference: driver_bw_6g.DriverDownlinkBandwidth6g
+    description: "6G: LLAPI DownlinkBandwidth must match wl1 sta_info link bandwidth."
+  - field: assoc_24g.MACAddress
+    operator: regex
+    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+    description: "2.4G: AP5 AssociatedDevice.1 must resolve to a live station MAC."
+  - field: result_24g.DownlinkBandwidth
+    operator: regex
+    value: '^(20|40|80|160|320)$'
+    description: "2.4G: DownlinkBandwidth must normalize to a legal channel width."
+  - field: driver_bw_24g.DriverDownlinkBandwidth24g
+    operator: regex
+    value: '^(20|40|80|160|320)$'
+    description: "2.4G: wl2 sta_info must emit a legal link bandwidth for the same STA."
+  - field: result_24g.DownlinkBandwidth
+    operator: equals
+    reference: driver_bw_24g.DriverDownlinkBandwidth24g
+    description: "2.4G: LLAPI DownlinkBandwidth must match wl2 sta_info link bandwidth."
+
+verification_command:
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkBandwidth?"'
+  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+  - 'wl -i wl0 sta_info $STA_MAC | grep "link bandwidth ="'
+  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
+  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DownlinkBandwidth?"'
+  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+  - 'wl -i wl1 sta_info $STA_MAC | grep "link bandwidth ="'
+  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
+  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkBandwidth?"'
+  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+  - 'wl -i wl2 sta_info $STA_MAC | grep "link bandwidth ="'
+
 results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ''
   v4.0.3:
     5g: Pass
     6g: Pass
     2.4g: Pass
-    comment: Serialwrap 6G retest returned DownlinkBandwidth=20 and matched wl1 sta_info link bandwidth = 20 MHZ.
+    comment: "0401 row 16 expects Pass on all three bands; live verification must match each band's wl sta_info link bandwidth sample."

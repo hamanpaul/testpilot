@@ -1,9 +1,9 @@
 id: d397-getradiostats-errorssent
 name: D397 getRadioStats ErrorsSent
 source:
-  row: 292
-  object: WiFi.Radio.{i}.
-  api: getRadioStats()
+  row: 397
+  object: WiFi.Radio.{i}.Stats.
+  api: ErrorsSent
   baseline: 0310-BGW720-300
 bands:
 - 5g
@@ -20,7 +20,7 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_stats
   target: dut

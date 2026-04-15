@@ -1,7 +1,7 @@
 id: d195-radio-ieee80211_caps
 name: D195 Radio IEEE80211_Caps
 source:
-  row: 158
+  row: 195
   object: WiFi.Radio.{i}.
   api: IEEE80211_Caps
   baseline: 0310-BGW720-300
@@ -15,6 +15,7 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: read-only getter stays at the active 0403 tri-band IEEE80211_Caps strings
 topology:
   devices:
     DUT:

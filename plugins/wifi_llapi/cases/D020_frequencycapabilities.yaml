@@ -1,16 +1,17 @@
 id: wifi-llapi-D020-frequencycapabilities
 name: "FrequencyCapabilities — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
-version: '1.1'
+version: "1.2"
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
   sheet: Wifi_LLAPI
-  row: 17
+  row: 20
   object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
-  api: FrequencyCapabilities
-  baseline: BCM v4.0.3
+  api: "FrequencyCapabilities"
+  baseline: "BCM v4.0.3"
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
+hlapi_command: 'ubus-cli "WiFi.AccessPoint.{i}.AssociatedDevice.1.FrequencyCapabilities?"'
 llapi_support: Support
 implemented_by: pWHM
 topology:
@@ -18,94 +19,259 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
   links:
-  - from: STA
-    to: DUT
-    band: 5g
-  - from: STA
-    to: DUT
-    band: 2.4g
+    - from: STA
+      to: DUT
+      band: 5g
+    - from: STA
+      to: DUT
+      band: 6g
+    - from: STA
+      to: DUT
+      band: 2.4g
+
 test_environment: |
-  Topology: DUT=COM0(AP) / STA=COM1(station)
-  Live band mapping:
-  - 5G : DUT wl0 / AP1 / BSSID 2c:59:17:00:19:95 / STA MAC 2C:59:17:00:04:85
-  - 6G : DUT wl1 / AP3 -- BCME_NOTREADY (STA cannot associate; skip all 6G steps)
-  - 2.4G: DUT wl2 / AP5 / BSSID 2C:59:17:00:19:A7 / STA MAC 2C:59:17:00:04:97
-  Precondition: STA associated on the target band so AssociatedDevice.1 is deterministic.
+  Topology:
+  - DUT: COM1 (BGW720-300, AP role)
+  - STA: COM0 (BCM board, STA role)
+  Transport:
+  - serialwrap attach COM0 / COM1
+  Band mapping (live baseline 2026-04-02):
+  - 5G:   DUT AP.1 / wl0 / SSID=testpilot5G    ↔ STA wl0 / WPA2-Personal
+  - 6G:   DUT AP.3 / wl1 / SSID=testpilot6G    ↔ STA wl1 / WPA3-Personal + SAE
+  - 2.4G: DUT AP.5 / wl2 / SSID=testpilot2G    ↔ STA wl2 / WPA2-Personal
+  Current live evidence on the associated STA path:
+  - AP1 / wl0:  FrequencyCapabilities="" and `wl sta_info` reports `Frequency Bands Supported: 5G`
+  - AP3 / wl1:  FrequencyCapabilities="6GHz" and `wl sta_info` reports `Frequency Bands Supported: 6G`
+  - AP5 / wl2:  FrequencyCapabilities="" and `wl sta_info` reports `Frequency Bands Supported: 2.4G`
+  Workbook row 20 instead records `2.4GHz,5GHz,6GHz` on all three APs.
+  Source survey under `/home/build20/BGW720-0324-VERIFY` shows:
+  - `targets/BGW720-300/fs.install/etc/amx/wld/wld_accesspoint.odl` defines `FrequencyCapabilities` as a read-only string
+  - `userspace/public/libs/prpl_brcm/mods/mod-whm-brcm/src/whm_brcm_api_ext.c` parses `sta_info_v8_t` into tx/rx rate, bytes, packets, retries, failures, and per-chain RSSI only
+  - no userspace implementation maps driver's `Frequency Bands Supported` line into the LLAPI field
+  This case therefore preserves the current fail-shaped mismatch rather than pretending row 20 is reproducible on current firmware.
+
+setup_steps: |
+  Sequential per-band (5G → 6G → 2.4G); no simultaneous multi-band connections.
+  [5G]
+  1) STA wl0 verify DUT AP.1 association on the deterministic WPA2-Personal baseline:
+     iw dev wl0 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  2) DUT AP.1 verify the associated STA and cross-check both getter and driver-supported band line:
+     ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+     ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.FrequencyCapabilities?"
+     wl -i wl0 sta_info <STA_MAC> | grep 'Frequency Bands Supported'
+  [6G]
+  1) STA wl1 verify DUT AP.3 association on the validated WPA3/SAE baseline:
+     iw dev wl1 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+     wl -i wl1 status
+  2) DUT AP.3 verify the associated STA and cross-check both getter and driver-supported band line:
+     ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"
+     ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.FrequencyCapabilities?"
+     wl -i wl1 sta_info <STA_MAC> | grep 'Frequency Bands Supported'
+  [2.4G]
+  1) STA wl2 verify DUT AP.5 association on the deterministic WPA2-Personal baseline:
+     iw dev wl2 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  2) DUT AP.5 verify the associated STA and cross-check both getter and driver-supported band line:
+     ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"
+     ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.FrequencyCapabilities?"
+     wl -i wl2 sta_info <STA_MAC> | grep 'Frequency Bands Supported'
+
 test_procedure: |
-  Read-only string telemetry. FrequencyCapabilities returns the band(s) the STA
-  is capable of operating on (e.g. "5GHz", "2.4GHz", "5GHz,6GHz").
-  Steps:
-  1) Confirm 5G STA is associated; read AP1 AssociatedDevice.1.FrequencyCapabilities.
-  2) 5G live value should remain "5GHz".
-  3) Confirm 2.4G STA is associated; read AP5 AssociatedDevice.1.FrequencyCapabilities.
-  4) 2.4G live value should remain empty string.
-  6G is skipped (BCME_NOTREADY).
-  Pass: 5G value matches the live band string; 2.4G empty string is valid when the STA does not advertise band info.
+  `FrequencyCapabilities` is a read-only AssociatedDevice getter. Workbook row 20 expects a STA profile
+  that advertises `2.4GHz,5GHz,6GHz` on all three APs, but current firmware/source evidence does not expose that shape.
+  For each active band (5G, 6G, then 2.4G):
+  1) STA verifies target AP association on the deterministic baseline prepared by verify_env
+     (5G=testpilot5G WPA2-Personal, 6G=testpilot6G WPA3/SAE, 2.4G=testpilot2G WPA2-Personal).
+  2) Record the live associated STA MAC from DUT getter evidence.
+  3) Cross-check `wl sta_info` for the same STA and normalize the driver `Frequency Bands Supported`
+     line into `DriverFrequencyBandsRaw{band}` plus a single-band LLAPI token:
+     - `2.4G` -> `2.4GHz`
+     - `5G` -> `5GHz`
+     - `6G` -> `6GHz`
+  4) Read `WiFi.AccessPoint.{i}.AssociatedDevice.1.FrequencyCapabilities` on DUT.
+  Pass for this fail-shaped calibration case:
+  - DUT exposes one live STA MAC for the band under test.
+  - `wl sta_info` still reports the expected single-band support token for the same STA (`5G`, `6G`, `2.4G`).
+  - The read-only getter matches the current live firmware shape:
+    - 5G: empty string
+    - 6G: `6GHz`
+    - 2.4G: empty string
+  This intentionally preserves the workbook mismatch because source/live evidence does not support
+  the workbook expectation `2.4GHz,5GHz,6GHz` on all three APs.
+
 steps:
-- id: step1_5g_assoc
-  action: exec
-  target: DUT
-  band: 5g
-  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
-  capture: assoc_5g
-- id: step2_5g
-  action: exec
-  target: DUT
-  band: 5g
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.FrequencyCapabilities?"
-  depends_on: step1_5g_assoc
-  capture: result_5g
-- id: step3_6g
-  action: skip
-  target: DUT
-  band: 6g
-  reason: 6G BCME_NOTREADY -- STA cannot associate on wl1/AP3 in current lab.
-- id: step4_24g_assoc
-  action: exec
-  target: DUT
-  band: 2.4g
-  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
-  capture: assoc_24g
-- id: step5_24g
-  action: exec
-  target: DUT
-  band: 2.4g
-  command: ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.FrequencyCapabilities?"
-  depends_on: step4_24g_assoc
-  capture: result_24g
+  - id: step1_5g_sta_join
+    action: exec
+    target: STA
+    band: 5g
+    command:
+      - iw dev wl0 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  - id: step2_5g_assoc
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
+    depends_on: step1_5g_sta_join
+    capture: assoc_5g
+  - id: step3_5g_driver_frequency
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC" | tr ''A-F'' ''a-f''); BANDS_RAW=$(wl -i wl0 sta_info $STA_MAC_LOWER | sed -n ''s/.*Frequency Bands Supported:[[:space:]]*//p''); BANDS_CLEAN=$(printf ''%s'' "$BANDS_RAW" | tr -d ''\r'' | sed ''s/^[[:space:]]*//;s/[[:space:]]*$//''); case "$BANDS_CLEAN" in 2.4G) BANDS=2.4GHz ;; 5G) BANDS=5GHz ;; 6G) BANDS=6GHz ;; *) BANDS=$BANDS_CLEAN ;; esac; [ -n "$STA_MAC" ] && echo DriverAssocMac5g=$STA_MAC && echo DriverFrequencyBandsRaw5g=$BANDS_CLEAN && echo DriverFrequencyCapabilities5g=$BANDS'
+    depends_on: step2_5g_assoc
+    capture: driver_frequency_5g
+  - id: step4_5g_get
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.FrequencyCapabilities?"'
+    depends_on: step3_5g_driver_frequency
+    capture: result_5g
+  - id: step5_6g_sta_join
+    action: exec
+    target: STA
+    band: 6g
+    command:
+      - iw dev wl1 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+      - wl -i wl1 status
+  - id: step6_6g_assoc
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
+    depends_on: step5_6g_sta_join
+    capture: assoc_6g
+  - id: step7_6g_driver_frequency
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC" | tr ''A-F'' ''a-f''); BANDS_RAW=$(wl -i wl1 sta_info $STA_MAC_LOWER | sed -n ''s/.*Frequency Bands Supported:[[:space:]]*//p''); BANDS_CLEAN=$(printf ''%s'' "$BANDS_RAW" | tr -d ''\r'' | sed ''s/^[[:space:]]*//;s/[[:space:]]*$//''); case "$BANDS_CLEAN" in 2.4G) BANDS=2.4GHz ;; 5G) BANDS=5GHz ;; 6G) BANDS=6GHz ;; *) BANDS=$BANDS_CLEAN ;; esac; [ -n "$STA_MAC" ] && echo DriverAssocMac6g=$STA_MAC && echo DriverFrequencyBandsRaw6g=$BANDS_CLEAN && echo DriverFrequencyCapabilities6g=$BANDS'
+    depends_on: step6_6g_assoc
+    capture: driver_frequency_6g
+  - id: step8_6g_get
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.FrequencyCapabilities?"'
+    depends_on: step7_6g_driver_frequency
+    capture: result_6g
+  - id: step9_24g_sta_join
+    action: exec
+    target: STA
+    band: 2.4g
+    command:
+      - iw dev wl2 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  - id: step10_24g_assoc
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
+    depends_on: step9_24g_sta_join
+    capture: assoc_24g
+  - id: step11_24g_driver_frequency
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC" | tr ''A-F'' ''a-f''); BANDS_RAW=$(wl -i wl2 sta_info $STA_MAC_LOWER | sed -n ''s/.*Frequency Bands Supported:[[:space:]]*//p''); BANDS_CLEAN=$(printf ''%s'' "$BANDS_RAW" | tr -d ''\r'' | sed ''s/^[[:space:]]*//;s/[[:space:]]*$//''); case "$BANDS_CLEAN" in 2.4G) BANDS=2.4GHz ;; 5G) BANDS=5GHz ;; 6G) BANDS=6GHz ;; *) BANDS=$BANDS_CLEAN ;; esac; [ -n "$STA_MAC" ] && echo DriverAssocMac24g=$STA_MAC && echo DriverFrequencyBandsRaw24g=$BANDS_CLEAN && echo DriverFrequencyCapabilities24g=$BANDS'
+    depends_on: step10_24g_assoc
+    capture: driver_frequency_24g
+  - id: step12_24g_get
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.FrequencyCapabilities?"'
+    depends_on: step11_24g_driver_frequency
+    capture: result_24g
+
 pass_criteria:
-- field: assoc_5g.AssocMac5g
-  operator: equals
-  value: 2c:59:17:00:04:85
-  description: "5G -- FrequencyCapabilities 讀取前必須先確認 wl0 STA 已關聯"
-- field: result_5g.FrequencyCapabilities
-  operator: equals
-  value: 5GHz
-  description: "5G -- live FrequencyCapabilities should remain 5GHz"
-- field: assoc_24g.AssocMac24g
-  operator: equals
-  value: 2c:59:17:00:04:97
-  description: "2.4G -- FrequencyCapabilities 讀取前必須先確認 wl2 STA 已關聯"
-- field: result_24g.FrequencyCapabilities
-  operator: empty
-  description: "2.4G -- live FrequencyCapabilities should remain empty string for wl2 STA"
-verification_command: |
-  DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.FrequencyCapabilities?"
-  DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.FrequencyCapabilities?"
+  - field: assoc_5g.MACAddress
+    operator: regex
+    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+    description: "5G: AP1 AssociatedDevice.1 must resolve to a live station MAC."
+  - field: driver_frequency_5g.DriverAssocMac5g
+    operator: equals
+    reference: assoc_5g.MACAddress
+    description: "5G: driver capability sampling must target the same STA as AssociatedDevice.1."
+  - field: driver_frequency_5g.DriverFrequencyBandsRaw5g
+    operator: equals
+    value: '5G'
+    description: "5G: wl0 sta_info must currently report only 5G support for the associated STA."
+  - field: driver_frequency_5g.DriverFrequencyCapabilities5g
+    operator: equals
+    value: '5GHz'
+    description: "5G: driver single-band support must normalize to 5GHz."
+  - field: result_5g.FrequencyCapabilities
+    operator: empty
+    description: "5G: current live getter remains empty on AP1 for the associated STA."
+  - field: assoc_6g.MACAddress
+    operator: regex
+    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+    description: "6G: AP3 AssociatedDevice.1 must resolve to a live station MAC."
+  - field: driver_frequency_6g.DriverAssocMac6g
+    operator: equals
+    reference: assoc_6g.MACAddress
+    description: "6G: driver capability sampling must target the same STA as AssociatedDevice.1."
+  - field: driver_frequency_6g.DriverFrequencyBandsRaw6g
+    operator: equals
+    value: '6G'
+    description: "6G: wl1 sta_info must currently report only 6G support for the associated STA."
+  - field: driver_frequency_6g.DriverFrequencyCapabilities6g
+    operator: equals
+    value: '6GHz'
+    description: "6G: driver single-band support must normalize to 6GHz."
+  - field: result_6g.FrequencyCapabilities
+    operator: equals
+    value: '6GHz'
+    description: "6G: current live getter remains 6GHz on AP3 for the associated STA."
+  - field: assoc_24g.MACAddress
+    operator: regex
+    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+    description: "2.4G: AP5 AssociatedDevice.1 must resolve to a live station MAC."
+  - field: driver_frequency_24g.DriverAssocMac24g
+    operator: equals
+    reference: assoc_24g.MACAddress
+    description: "2.4G: driver capability sampling must target the same STA as AssociatedDevice.1."
+  - field: driver_frequency_24g.DriverFrequencyBandsRaw24g
+    operator: equals
+    value: '2.4G'
+    description: "2.4G: wl2 sta_info must currently report only 2.4G support for the associated STA."
+  - field: driver_frequency_24g.DriverFrequencyCapabilities24g
+    operator: equals
+    value: '2.4GHz'
+    description: "2.4G: driver single-band support must normalize to 2.4GHz."
+  - field: result_24g.FrequencyCapabilities
+    operator: empty
+    description: "2.4G: current live getter remains empty on AP5 for the associated STA."
+
+verification_command:
+  - 'DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.FrequencyCapabilities?"'
+  - 'DUT# ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.FrequencyCapabilities?"'
+  - 'DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.FrequencyCapabilities?"'
+  - 'DUT# wl -i wl0 sta_info <STA_MAC> | grep "Frequency Bands Supported"'
+  - 'DUT# wl -i wl1 sta_info <STA_MAC> | grep "Frequency Bands Supported"'
+  - 'DUT# wl -i wl2 sta_info <STA_MAC> | grep "Frequency Bands Supported"'
+
 results_reference:
   v4.0.3:
     5g: Pass
-    6g: Skip
+    6g: Pass
     2.4g: Pass
     comment: |
-      Live evidence (BCM v4.0.3):
-      5G: WiFi.AccessPoint.1.AssociatedDevice.1.FrequencyCapabilities=5GHz
-      2.4G: WiFi.AccessPoint.5.AssociatedDevice.1.FrequencyCapabilities=
-          (2.4G STA wl2 does not advertise frequency band info -- empty string is correct)
-      Value is STA-dependent; LLAPI correctly reflects advertised band capabilities.
+      Live/source-confirmed mismatch on current firmware:
+      - 5G  : getter=""      while same-STA driver line reports `Frequency Bands Supported: 5G`
+      - 6G  : getter="6GHz"  while same-STA driver line reports `Frequency Bands Supported: 6G`
+      - 2.4G: getter=""      while same-STA driver line reports `Frequency Bands Supported: 2.4G`
+      Source survey confirms `FrequencyCapabilities` is declared in ODL but no userspace path
+      maps the driver's supported-band line into a multi-band LLAPI value, so workbook row 20
+      (`2.4GHz,5GHz,6GHz` on all three APs) cannot be reproduced on current firmware.

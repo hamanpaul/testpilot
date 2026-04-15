@@ -1,9 +1,9 @@
 id: d396-getradiostats-errorsreceived
 name: D396 getRadioStats ErrorsReceived
 source:
-  row: 291
-  object: WiFi.Radio.{i}.
-  api: getRadioStats()
+  row: 396
+  object: WiFi.Radio.{i}.Stats.
+  api: ErrorsReceived
   baseline: 0310-BGW720-300
 bands:
 - 5g
@@ -20,7 +20,7 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_stats
   target: dut

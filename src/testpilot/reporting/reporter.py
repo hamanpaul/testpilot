@@ -32,11 +32,15 @@ def _verdict(value: str) -> str:
 def _summarise(case_results: Sequence[Mapping[str, Any]]) -> dict[str, int]:
     """Aggregate pass / fail / not_supported / error counts across bands."""
     counter: Counter[str] = Counter()
+    diagnostic_counter: Counter[str] = Counter()
     for case in case_results:
         for key in _BAND_KEYS:
             v = _verdict(str(case.get(key, "")))
             if v:
                 counter[v] += 1
+        diagnostic = str(case.get("diagnostic_status", "")).strip()
+        if diagnostic:
+            diagnostic_counter[diagnostic] += 1
     return {
         "total_cases": len(case_results),
         "pass": counter.get("pass", 0),
@@ -44,6 +48,7 @@ def _summarise(case_results: Sequence[Mapping[str, Any]]) -> dict[str, int]:
         "not_supported": counter.get("not_supported", 0)
         + counter.get("not supported", 0),
         "error": counter.get("error", 0),
+        "diagnostic_status": dict(diagnostic_counter),
     }
 
 
@@ -106,8 +111,8 @@ class MarkdownReporter:
     ) -> None:
         lines.append("## Summary")
         lines.append("")
-        header = "| case_id | source_row | result_5g | result_6g | result_24g | comment |"
-        sep = "|---------|------------|-----------|-----------|------------|---------|"
+        header = "| case_id | source_row | result_5g | result_6g | result_24g | diagnostic_status | comment |"
+        sep = "|---------|------------|-----------|-----------|------------|-------------------|---------|"
         lines.append(header)
         lines.append(sep)
         for case in case_results:
@@ -116,8 +121,9 @@ class MarkdownReporter:
             r5 = case.get("result_5g", "")
             r6 = case.get("result_6g", "")
             r24 = case.get("result_24g", "")
+            diagnostic = case.get("diagnostic_status", "")
             comment = case.get("comment", "")
-            lines.append(f"| {cid} | {row} | {r5} | {r6} | {r24} | {comment} |")
+            lines.append(f"| {cid} | {row} | {r5} | {r6} | {r24} | {diagnostic} | {comment} |")
         lines.append("")
 
     @staticmethod

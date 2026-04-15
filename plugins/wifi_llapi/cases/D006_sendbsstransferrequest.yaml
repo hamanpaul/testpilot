@@ -4,7 +4,7 @@ version: '1.1'
 source:
   report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
   sheet: Wifi_LLAPI
-  row: 4
+  row: 6
   object: "WiFi.AccessPoint.{i}."
   api: "sendBssTransferRequest()"
 platform:
@@ -19,54 +19,61 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
   links:
   - from: STA
     to: DUT
     band: 5g
   - from: STA
     to: DUT
+    band: 6g
+  - from: STA
+    to: DUT
     band: 2.4g
 test_environment: |
   Topology:
-  - DUT: COM0 (BGW720-300, AP role)
-  - STA: COM1 (BCM board, STA role)
+  - DUT: COM1 (BGW720-300, AP role)
+  - STA: COM0 (BCM board, STA role)
   Transport:
   - serialwrap attach COM0 / COM1
-  Band mapping (live-verified 2026-03-16):
-  - 5G:   DUT wl0 / AP.1  / SSID.4  "TestPilot_5G"   BSSID 2c:59:17:00:19:95
-  - 6G:   DUT wl1 / AP.3  / SSID.6  BCME_NOTREADY blocker (STA cannot associate)
-  - 2.4G: DUT wl2 / AP.5  / SSID.8  "TestPilot_24G"  BSSID 2c:59:17:00:19:a7
-  STA MACs:
-  - wl0 (5G)  → 2C:59:17:00:04:85  associated to AP.1
-  - wl2 (2.4G)→ 2C:59:17:00:04:97  associated to AP.5
+  Band mapping (live-verified 2026-04-02):
+  - 5G:   DUT AP.1 / wl0 / SSID=testpilot5G / target BSSID 2c:59:17:00:04:85
+          STA associated MAC on DUT wl0 assoclist = 2c:59:17:00:19:95
+  - 6G:   DUT AP.3 / wl1 / SSID=testpilot6G / target BSSID 2c:59:17:00:04:86
+          STA associated MAC on DUT wl1 assoclist = 2c:59:17:00:19:96
+  - 2.4G: DUT AP.5 / wl2 / SSID=testpilot2G / target BSSID 2c:59:17:00:04:97
+          STA associated MAC on DUT wl2 assoclist = 2c:59:17:00:19:a7
   Pre-requisites:
   - ubus-cli "WiFi.AccessPoint.1.MBOEnable=1"
   - ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=25"
+  - ubus-cli "WiFi.AccessPoint.3.MBOEnable=1"
+  - ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=25"
   - ubus-cli "WiFi.AccessPoint.5.MBOEnable=1"
   - ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=25"
 
 test_procedure: |
   Each band tests AP.{i}.sendBssTransferRequest() independently.
-  6G is skipped due to BCME_NOTREADY blocker (STA cannot associate to wl1).
 
   [5G — AP.1 / wl0]
-  Pre-condition: STA 2C:59:17:00:04:85 associated to AP.1 (wl0)
+  Pre-condition: STA associated to AP.1 on the deterministic testpilot5G WPA2 baseline.
   DUT:
-    ubus-cli "WiFi.AccessPoint.1.sendBssTransferRequest(mac=2C:59:17:00:04:85,target=2c:59:17:00:19:a7,class=1,channel=36,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"
+    ubus-cli "WiFi.AccessPoint.1.sendBssTransferRequest(mac={{assoc_5g.AssocMac5g}},target=2c:59:17:00:04:97,class=1,channel=1,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"
   Expected: returns [-1]  (BTM frame sent; STA did not ACK/roam — acceptable per JIRA BCAWLAN-285329)
 
-  [6G — AP.3 / wl1 — SKIP]
-  Reason: wl1 join fails with WLC_SET_SSID BCME_NOTREADY (-17, cmd=23); STA cannot associate to AP.3.
+  [6G — AP.3 / wl1]
+  Pre-condition: STA associated to AP.3 on the validated testpilot6G WPA3/SAE baseline.
+  DUT:
+    ubus-cli "WiFi.AccessPoint.3.sendBssTransferRequest(mac={{assoc_6g.AssocMac6g}},target=2c:59:17:00:04:85,class=1,channel=36,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"
+  Expected: returns [-1]  (BTM frame sent; STA did not ACK/roam — acceptable per workbook v4.0.3 Pass baseline)
 
   [2.4G — AP.5 / wl2]
-  Pre-condition: STA 2C:59:17:00:04:97 associated to AP.5 (wl2)
+  Pre-condition: STA associated to AP.5 on the deterministic testpilot2G WPA2 baseline.
   DUT:
-    ubus-cli "WiFi.AccessPoint.5.sendBssTransferRequest(mac=2C:59:17:00:04:97,target=2c:59:17:00:19:95,class=1,channel=36,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"
+    ubus-cli "WiFi.AccessPoint.5.sendBssTransferRequest(mac={{assoc_24g.AssocMac24g}},target=2c:59:17:00:04:85,class=1,channel=36,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"
   Expected: returns [-1]  (same as 5G)
 
 steps:
@@ -74,17 +81,16 @@ steps:
   band: 5g
   action: exec
   target: DUT
-  command: |
-    ubus-cli "WiFi.AccessPoint.1.MBOEnable=1"
-    ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=25"
+  command:
+    - ubus-cli "WiFi.AccessPoint.1.MBOEnable=1"
+    - ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=25"
 - id: step2_5g_sta_join
   band: 5g
   action: exec
   target: STA
-  command: |
-    wl -i wl0 down; sleep 1; wl -i wl0 up; sleep 1
-    wl -i wl0 join TestPilot_5G imode bss; sleep 3
-    wl -i wl0 status
+  command:
+    - iw dev wl0 link
+    - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
 - id: step3_5g_assoc
   band: 5g
   action: exec
@@ -96,49 +102,71 @@ steps:
   band: 5g
   action: exec
   target: DUT
-  command: 'ubus-cli "WiFi.AccessPoint.1.sendBssTransferRequest(mac=2C:59:17:00:04:85,target=2c:59:17:00:19:a7,class=1,channel=36,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"'
+  command: 'ubus-cli "WiFi.AccessPoint.1.sendBssTransferRequest(mac={{assoc_5g.AssocMac5g}},target=2c:59:17:00:04:97,class=1,channel=1,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"'
   depends_on: step3_5g_assoc
   capture: result_5g
-- id: step5_6g
+- id: step5_6g_prep
   band: 6g
-  action: skip
+  action: exec
   target: DUT
-  reason: "BCME_NOTREADY: STA cannot associate to AP.3 (wl1); blocker confirmed 2026-03-16"
-  result: Blocker
-- id: step6_24g_prep
+  command:
+    - ubus-cli "WiFi.AccessPoint.3.MBOEnable=1"
+    - ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=25"
+- id: step6_6g_sta_join
+  band: 6g
+  action: exec
+  target: STA
+  command:
+    - iw dev wl1 link
+    - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+    - wl -i wl1 status
+- id: step7_6g_assoc
+  band: 6g
+  action: exec
+  target: DUT
+  command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+  depends_on: step6_6g_sta_join
+  capture: assoc_6g
+- id: step8_6g
+  band: 6g
+  action: exec
+  target: DUT
+  command: 'ubus-cli "WiFi.AccessPoint.3.sendBssTransferRequest(mac={{assoc_6g.AssocMac6g}},target=2c:59:17:00:04:85,class=1,channel=36,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"'
+  depends_on: step7_6g_assoc
+  capture: result_6g
+- id: step9_24g_prep
   band: 2.4g
   action: exec
   target: DUT
-  command: |
-    ubus-cli "WiFi.AccessPoint.5.MBOEnable=1"
-    ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=25"
-- id: step7_24g_sta_join
+  command:
+    - ubus-cli "WiFi.AccessPoint.5.MBOEnable=1"
+    - ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=25"
+- id: step10_24g_sta_join
   band: 2.4g
   action: exec
   target: STA
-  command: |
-    wl -i wl2 down; sleep 1; wl -i wl2 up; sleep 1
-    wl -i wl2 join TestPilot_24G imode bss; sleep 3
-    wl -i wl2 status
-- id: step8_24g_assoc
+  command:
+    - iw dev wl2 link
+    - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+- id: step11_24g_assoc
   band: 2.4g
   action: exec
   target: DUT
   command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
-  depends_on: step7_24g_sta_join
+  depends_on: step10_24g_sta_join
   capture: assoc_24g
-- id: step9_24g
+- id: step12_24g
   band: 2.4g
   action: exec
   target: DUT
-  command: 'ubus-cli "WiFi.AccessPoint.5.sendBssTransferRequest(mac=2C:59:17:00:04:97,target=2c:59:17:00:19:95,class=1,channel=36,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"'
-  depends_on: step8_24g_assoc
+  command: 'ubus-cli "WiFi.AccessPoint.5.sendBssTransferRequest(mac={{assoc_24g.AssocMac24g}},target=2c:59:17:00:04:85,class=1,channel=36,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"'
+  depends_on: step11_24g_assoc
   capture: result_24g
 
 pass_criteria:
 - field: assoc_5g.AssocMac5g
-  operator: equals
-  value: 2c:59:17:00:04:85
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: 5G must first resolve the expected STA association on wl0.
 - field: result_5g
   operator: not_contains
@@ -152,9 +180,25 @@ pass_criteria:
   operator: contains
   value: '[-1]'
   description: 5G sendBssTransferRequest() 應回傳 [-1]，表示 BTM frame 已送出。
+- field: assoc_6g.AssocMac6g
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  description: 6G must first resolve the expected STA association on wl1.
+- field: result_6g
+  operator: not_contains
+  value: ERROR
+  description: 6G sendBssTransferRequest() 不應回傳 LLAPI ERROR
+- field: result_6g
+  operator: not_contains
+  value: syntax error
+  description: 6G sendBssTransferRequest() 不應因 shell syntax error 失敗
+- field: result_6g
+  operator: contains
+  value: '[-1]'
+  description: 6G sendBssTransferRequest() 應回傳 [-1]，表示 BTM frame 已送出。
 - field: assoc_24g.AssocMac24g
-  operator: equals
-  value: 2c:59:17:00:04:97
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: 2.4G must first resolve the expected STA association on wl2.
 - field: result_24g
   operator: not_contains
@@ -169,14 +213,16 @@ pass_criteria:
   value: '[-1]'
   description: 2.4G sendBssTransferRequest() 應回傳 [-1]，表示 BTM frame 已送出。
 
-verification_command: |
-  # 5G pre-check
-  wl -i wl0 assoclist
-  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities?"
-  # 2.4G pre-check
-  wl -i wl2 assoclist
-  ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Capabilities?"
-
+verification_command:
+  - '# 5G pre-check'
+  - wl -i wl0 assoclist
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities?"'
+  - '# 6G pre-check'
+  - wl -i wl1 assoclist
+  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.Capabilities?"'
+  - '# 2.4G pre-check'
+  - wl -i wl2 assoclist
+  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Capabilities?"'
 results_reference:
   v4.0.1:
     5g: Fail
@@ -185,6 +231,8 @@ results_reference:
     comment: 'ARC: Command return error'
   v4.0.3:
     5g: Pass
-    6g: Blocker
+    6g: Pass
     2.4g: Pass
-    comment: '[-1] returned (BTM frame sent, STA did not ACK); 6G blocked by BCME_NOTREADY on wl1 join'
+    comment: >-
+      Live-verified target shape is [-1] on all three bands.
+      6G now uses the validated testpilot6G WPA3/SAE baseline instead of the old BCME_NOTREADY blocker path.

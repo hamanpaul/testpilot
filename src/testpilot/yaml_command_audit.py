@@ -373,12 +373,19 @@ def _rewrite_yaml_commands_in_text(text: str, rewritable_matches: list[dict[str,
             prefix, sep, suffix = original.partition(raw_line)
             if not sep:
                 continue
-            if suffix.strip():
+            stripped_suffix = suffix.strip()
+            if stripped_suffix and stripped_suffix not in {"'", '"'}:
                 continue
-            if not prefix.rstrip().endswith(":"):
+            stripped_prefix = prefix.rstrip()
+            header_prefix = stripped_prefix
+            if stripped_suffix in {"'", '"'}:
+                if not stripped_prefix.endswith(f": {stripped_suffix}"):
+                    continue
+                header_prefix = stripped_prefix[: -len(stripped_suffix)].rstrip()
+            elif not stripped_prefix.endswith(":"):
                 continue
             commands = pending.pop(0)
-            rewritten.append(f"{prefix.rstrip()} |")
+            rewritten.append(f"{header_prefix} |")
             indent = _literal_block_indent(original)
             rewritten.extend(f"{indent}{command}" for command in commands)
             applied += 1
@@ -406,6 +413,65 @@ def _rewrite_yaml_commands_in_text(text: str, rewritable_matches: list[dict[str,
     return new_text, applied, unresolved
 
 
+def _normalize_folded_command_blocks(text: str, target_fields: tuple[str, ...]) -> tuple[str, int]:
+    lines = text.splitlines()
+    fields = set(target_fields)
+    normalized: list[str] = []
+    changed = 0
+    index = 0
+
+    while index < len(lines):
+        original = lines[index]
+        stripped = original.strip()
+        matched_field = next(
+            (field for field in fields if stripped.startswith(f"{field}: ")),
+            None,
+        )
+        if matched_field is None:
+            normalized.append(original)
+            index += 1
+            continue
+
+        prefix = original[: len(original) - len(original.lstrip(" "))]
+        marker = stripped[len(f"{matched_field}: ") :].strip()
+        if marker not in {">", ">-", "|", "|-"}:
+            normalized.append(original)
+            index += 1
+            continue
+
+        block_lines: list[str] = []
+        probe = index + 1
+        while probe < len(lines):
+            candidate = lines[probe]
+            if not candidate.strip():
+                block_lines.append(candidate)
+                probe += 1
+                continue
+            candidate_indent = len(candidate) - len(candidate.lstrip(" "))
+            if candidate_indent <= len(prefix):
+                break
+            block_lines.append(candidate)
+            probe += 1
+
+        nonempty_lines = [line for line in block_lines if line.strip()]
+        if marker.startswith(">") and len(nonempty_lines) > 1:
+            literal_marker = "|-" if marker.endswith("-") else "|"
+            normalized.append(f"{prefix}{matched_field}: {literal_marker}")
+            normalized.extend(block_lines)
+            changed += 1
+            index = probe
+            continue
+
+        normalized.append(original)
+        normalized.extend(block_lines)
+        index = probe
+
+    new_text = "\n".join(normalized)
+    if text.endswith("\n"):
+        new_text += "\n"
+    return new_text, changed
+
+
 def rewrite_yaml_chained_commands(
     cases_dir: Path | str,
     *,
@@ -425,11 +491,22 @@ def rewrite_yaml_chained_commands(
     rewritten_files: list[dict[str, Any]] = []
     unresolved_files: list[dict[str, Any]] = []
     total_applied = 0
+    cases_root = Path(cases_dir)
 
-    for file_path, matches in sorted(rewritable_by_file.items()):
-        path = Path(file_path)
+    for path in sorted(cases_root.glob("*.yaml")):
+        matches = rewritable_by_file.get(str(path), [])
         original_text = path.read_text(encoding="utf-8")
-        rewritten_text, applied, unresolved = _rewrite_yaml_commands_in_text(original_text, matches)
+        rewritten_text = original_text
+        applied = 0
+        unresolved: list[dict[str, Any]] = []
+        if matches:
+            rewritten_text, applied, unresolved = _rewrite_yaml_commands_in_text(original_text, matches)
+        normalized_text, normalized_blocks = _normalize_folded_command_blocks(
+            rewritten_text,
+            target_fields=target_fields,
+        )
+        rewritten_text = normalized_text
+        applied += normalized_blocks
         total_applied += applied
         file_payload = {
             "file": str(path),

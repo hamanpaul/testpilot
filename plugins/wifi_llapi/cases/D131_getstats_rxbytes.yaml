@@ -23,11 +23,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
   links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (B0, AP role)
+  - DUT: COM1 (B0, AP role)
   Transport:
   - DUT via serialwrap COM0
   Baseline:
@@ -49,10 +49,10 @@ pass_criteria:
   operator: contains
   value: function not found
   description: getStats() should return function not found error
-verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.getStats()" 2>&1
-  ubus-cli "WiFi.AccessPoint.3.getStats()" 2>&1
-  ubus-cli "WiFi.AccessPoint.5.getStats()" 2>&1
+verification_command:
+  - ubus-cli "WiFi.AccessPoint.1.getStats()" 2>&1
+  - ubus-cli "WiFi.AccessPoint.3.getStats()" 2>&1
+  - ubus-cli "WiFi.AccessPoint.5.getStats()" 2>&1
 results_reference:
   v4.0.3:
     5g: Not Supported

@@ -1,7 +1,7 @@
 id: d525-ssid-wmm-ac_bk_stats_wmmpacketssent
 name: D525 WmmPacketsSent.AC_BK
 source:
-  row: 392
+  row: 525
   object: WiFi.SSID.{i}.Stats.WmmPacketsSent.
   api: AC_BK
   baseline: 0310-BGW720-300
@@ -20,36 +20,103 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
-- id: step_5g_getter
+- id: step_5g_refresh
   target: dut
-  action: read
-  capture: getter_5g
-  command: ubus-cli "WiFi.SSID.4.Stats.WmmPacketsSent.AC_BK?"
-  expected: AC_BK 回傳有效值
-  description: SSID.4 (5g) WmmPacketsSent.AC_BK getter
-- id: step_6g_getter
+  action: exec
+  capture: refresh_5g
+  command: ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n '/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_BK = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent5g=\1/p'
+  expected: getSSIDStats() 匯出 WmmPacketsSent.AC_BK
+  description: SSID.4 (5g) getSSIDStats() WmmPacketsSent.AC_BK refresh
+- id: step_5g_direct
   target: dut
-  action: read
-  capture: getter_6g
-  command: ubus-cli "WiFi.SSID.6.Stats.WmmPacketsSent.AC_BK?"
-  expected: AC_BK 回傳有效值
-  description: SSID.6 (6g) WmmPacketsSent.AC_BK getter
-- id: step_24g_getter
+  action: exec
+  capture: direct_5g
+  command: 'ubus-cli "WiFi.SSID.4.Stats.WmmPacketsSent.AC_BK?"'
+  expected: Stats.WmmPacketsSent.AC_BK getter 回傳有效值
+  description: SSID.4 (5g) direct Stats.WmmPacketsSent.AC_BK
+- id: step_5g_driver
   target: dut
-  action: read
-  capture: getter_24g
-  command: ubus-cli "WiFi.SSID.8.Stats.WmmPacketsSent.AC_BK?"
-  expected: AC_BK 回傳有效值
-  description: SSID.8 (2.4g) WmmPacketsSent.AC_BK getter
+  action: exec
+  capture: driver_5g
+  command: wl -i wl0 wme_counters | grep '^AC_BK:' | awk '{print "DriverWmmPacketsSent5g="$4}'
+  expected: wl0 wme_counters 匯出 AC_BK tx frames
+  description: SSID.4 (5g) driver AC_BK tx frames
+- id: step_6g_refresh
+  target: dut
+  action: exec
+  capture: refresh_6g
+  command: ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n '/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_BK = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent6g=\1/p'
+  expected: getSSIDStats() 匯出 WmmPacketsSent.AC_BK
+  description: SSID.6 (6g) getSSIDStats() WmmPacketsSent.AC_BK refresh
+- id: step_6g_direct
+  target: dut
+  action: exec
+  capture: direct_6g
+  command: 'ubus-cli "WiFi.SSID.6.Stats.WmmPacketsSent.AC_BK?"'
+  expected: Stats.WmmPacketsSent.AC_BK getter 回傳有效值
+  description: SSID.6 (6g) direct Stats.WmmPacketsSent.AC_BK
+- id: step_6g_driver
+  target: dut
+  action: exec
+  capture: driver_6g
+  command: wl -i wl1 wme_counters | grep '^AC_BK:' | awk '{print "DriverWmmPacketsSent6g="$4}'
+  expected: wl1 wme_counters 匯出 AC_BK tx frames
+  description: SSID.6 (6g) driver AC_BK tx frames
+- id: step_24g_refresh
+  target: dut
+  action: exec
+  capture: refresh_24g
+  command: ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n '/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_BK = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent24g=\1/p'
+  expected: getSSIDStats() 匯出 WmmPacketsSent.AC_BK
+  description: SSID.8 (2.4g) getSSIDStats() WmmPacketsSent.AC_BK refresh
+- id: step_24g_direct
+  target: dut
+  action: exec
+  capture: direct_24g
+  command: 'ubus-cli "WiFi.SSID.8.Stats.WmmPacketsSent.AC_BK?"'
+  expected: Stats.WmmPacketsSent.AC_BK getter 回傳有效值
+  description: SSID.8 (2.4g) direct Stats.WmmPacketsSent.AC_BK
+- id: step_24g_driver
+  target: dut
+  action: exec
+  capture: driver_24g
+  command: wl -i wl2 wme_counters | grep '^AC_BK:' | awk '{print "DriverWmmPacketsSent24g="$4}'
+  expected: wl2 wme_counters 匯出 AC_BK tx frames
+  description: SSID.8 (2.4g) driver AC_BK tx frames
 pass_criteria:
-- field: getter_5g.AC_BK
-  operator: regex
-  value: ^\d+$
-- field: getter_6g.AC_BK
-  operator: regex
-  value: ^\d+$
-- field: getter_24g.AC_BK
-  operator: regex
-  value: ^\d+$
+- field: direct_5g.AC_BK
+  operator: equals
+  reference: refresh_5g.GetSSIDStatsWmmPacketsSent5g
+  description: 5g direct Stats.WmmPacketsSent.AC_BK must match getSSIDStats().WmmPacketsSent.AC_BK after refresh.
+- field: direct_5g.AC_BK
+  operator: equals
+  reference: driver_5g.DriverWmmPacketsSent5g
+  description: 5g direct Stats.WmmPacketsSent.AC_BK must match wl0 wme_counters AC_BK tx frames.
+- field: direct_6g.AC_BK
+  operator: equals
+  reference: refresh_6g.GetSSIDStatsWmmPacketsSent6g
+  description: 6g direct Stats.WmmPacketsSent.AC_BK must match getSSIDStats().WmmPacketsSent.AC_BK after refresh.
+- field: direct_6g.AC_BK
+  operator: equals
+  reference: driver_6g.DriverWmmPacketsSent6g
+  description: 6g direct Stats.WmmPacketsSent.AC_BK must match wl1 wme_counters AC_BK tx frames.
+- field: direct_24g.AC_BK
+  operator: equals
+  reference: refresh_24g.GetSSIDStatsWmmPacketsSent24g
+  description: 2.4g direct Stats.WmmPacketsSent.AC_BK must match getSSIDStats().WmmPacketsSent.AC_BK after refresh.
+- field: direct_24g.AC_BK
+  operator: equals
+  reference: driver_24g.DriverWmmPacketsSent24g
+  description: 2.4g direct Stats.WmmPacketsSent.AC_BK must match wl2 wme_counters AC_BK tx frames.
+verification_command:
+  - 'ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n ''/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_BK = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent5g=\1/p'''
+  - 'ubus-cli "WiFi.SSID.4.Stats.WmmPacketsSent.AC_BK?"'
+  - 'wl -i wl0 wme_counters | grep ''^AC_BK:'' | awk ''{print "DriverWmmPacketsSent5g="$4}'''
+  - 'ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n ''/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_BK = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent6g=\1/p'''
+  - 'ubus-cli "WiFi.SSID.6.Stats.WmmPacketsSent.AC_BK?"'
+  - 'wl -i wl1 wme_counters | grep ''^AC_BK:'' | awk ''{print "DriverWmmPacketsSent6g="$4}'''
+  - 'ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n ''/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_BK = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent24g=\1/p'''
+  - 'ubus-cli "WiFi.SSID.8.Stats.WmmPacketsSent.AC_BK?"'
+  - 'wl -i wl2 wme_counters | grep ''^AC_BK:'' | awk ''{print "DriverWmmPacketsSent24g="$4}'''

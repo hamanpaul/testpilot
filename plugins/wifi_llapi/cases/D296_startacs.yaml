@@ -1,7 +1,7 @@
 id: d296-startacs
 name: D296 startACS
 source:
-  row: 221
+  row: 296
   object: WiFi.Radio.{i}.
   api: startACS()
   baseline: 0310-BGW720-300
@@ -15,35 +15,99 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: 'official rerun 20260414T234216396870 exact-closed after refreshing stale row 221 to workbook row 296 and honoring workbook note V: set AutoChannelEnable=1, call startAutoChannelSelection() before startACS(), then confirm iw dev wl0/wl1/wl2 info stays readable.'
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
+test_environment: |
+  Topology:
+  - DUT: COM1 (AP role)
+  Mapping:
+  - 5G = wl0 / Radio.1
+  - 6G = wl1 / Radio.2
+  - 2.4G = wl2 / Radio.3
+  Rules:
+  - enable AutoChannelEnable before invoking ACS-related methods
+  - call startAutoChannelSelection() before startACS()
+  - confirm the radio still reports same-band iw info after startACS()
+test_procedure: |
+  1) Validate 5G, then 6G, then 2.4G on the DUT.
+  2) For each band, set AutoChannelEnable=1, call startAutoChannelSelection(), then call startACS().
+  3) Pass when both ACS-related methods return without error and the same-band `iw dev wlX info` remains readable.
 steps:
 - id: step_5g
   target: dut
   action: exec
   capture: result_5g
-  command: ubus-cli "WiFi.Radio.1.startACS()"
-  expected: 無 error 回傳
-  description: Radio.1 (5g) startACS()
+  command:
+  - ubus-cli WiFi.Radio.1.AutoChannelEnable=1
+  - ubus-cli "WiFi.Radio.1.startAutoChannelSelection()"
+  - ubus-cli "WiFi.Radio.1.startACS()"
+  - iw dev wl0 info
+  expected: AutoChannelEnable=1 後，startAutoChannelSelection()/startACS() 無 error，且 wl0 info 可讀
+  description: Radio.1 (5g) enable ACS + startAutoChannelSelection() + startACS() + iw info
 - id: step_6g
   target: dut
   action: exec
   capture: result_6g
-  command: ubus-cli "WiFi.Radio.2.startACS()"
-  expected: 無 error 回傳
-  description: Radio.2 (6g) startACS()
+  command:
+  - ubus-cli WiFi.Radio.2.AutoChannelEnable=1
+  - ubus-cli "WiFi.Radio.2.startAutoChannelSelection()"
+  - ubus-cli "WiFi.Radio.2.startACS()"
+  - iw dev wl1 info
+  expected: AutoChannelEnable=1 後，startAutoChannelSelection()/startACS() 無 error，且 wl1 info 可讀
+  description: Radio.2 (6g) enable ACS + startAutoChannelSelection() + startACS() + iw info
 - id: step_24g
   target: dut
   action: exec
   capture: result_24g
-  command: ubus-cli "WiFi.Radio.3.startACS()"
-  expected: 無 error 回傳
-  description: Radio.3 (2.4g) startACS()
+  command:
+  - ubus-cli WiFi.Radio.3.AutoChannelEnable=1
+  - ubus-cli "WiFi.Radio.3.startAutoChannelSelection()"
+  - ubus-cli "WiFi.Radio.3.startACS()"
+  - iw dev wl2 info
+  expected: AutoChannelEnable=1 後，startAutoChannelSelection()/startACS() 無 error，且 wl2 info 可讀
+  description: Radio.3 (2.4g) enable ACS + startAutoChannelSelection() + startACS() + iw info
 pass_criteria:
+- field: result_5g
+  operator: contains
+  value: AutoChannelEnable=1
+- field: result_6g
+  operator: contains
+  value: AutoChannelEnable=1
+- field: result_24g
+  operator: contains
+  value: AutoChannelEnable=1
+- field: result_5g
+  operator: contains
+  value: startAutoChannelSelection() returned
+- field: result_6g
+  operator: contains
+  value: startAutoChannelSelection() returned
+- field: result_24g
+  operator: contains
+  value: startAutoChannelSelection() returned
+- field: result_5g
+  operator: contains
+  value: startACS() returned
+- field: result_6g
+  operator: contains
+  value: startACS() returned
+- field: result_24g
+  operator: contains
+  value: startACS() returned
+- field: result_5g
+  operator: contains
+  value: Interface wl0
+- field: result_6g
+  operator: contains
+  value: Interface wl1
+- field: result_24g
+  operator: contains
+  value: Interface wl2
 - field: result_5g
   operator: not_contains
   value: error

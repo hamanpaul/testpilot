@@ -1,7 +1,7 @@
 id: d208-radio-ofdmaenable
 name: D208 Radio OfdmaEnable
 source:
-  row: 170
+  row: 208
   object: WiFi.Radio.{i}.
   api: OfdmaEnable
   baseline: 0310-BGW720-300
@@ -15,6 +15,7 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: read-only getter exact-closes the active 0403 tri-band OfdmaEnable values
 topology:
   devices:
     DUT:

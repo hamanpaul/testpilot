@@ -4,7 +4,7 @@ version: '1.1'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 44
+  row: 42
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: RxUnicastPacketCount
   baseline: BCM v4.0.3
@@ -20,11 +20,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
       config:
       - iface: 5g
         mode: sta
@@ -36,8 +36,8 @@ topology:
     band: 5g
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role)
-  - STA: COM1 (station role for this case; do not rely on the old A0/B0 heuristic)
+  - DUT: COM1 (AP role)
+  - STA: COM0 (station role for this case; do not rely on the old A0/B0 heuristic)
   Transport:
   - serialwrap attach COM0 / COM1
   Live band mapping:
@@ -144,7 +144,7 @@ steps:
 - id: step3
   action: exec
   target: DUT
-  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*rx ucast pkts: *\([0-9][0-9]*\).*/DriverRxUnicastPacketCount=\1/p'''
+  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC; [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*rx ucast pkts: *\([0-9][0-9]*\).*/DriverRxUnicastPacketCount=\1/p'''
   depends_on: step2
   capture: driver_counter
 pass_criteria:
@@ -164,12 +164,17 @@ pass_criteria:
   operator: ">"
   value: '0'
   description: Driver counters must still show real RX unicast packets for the same STA.
-verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RxUnicastPacketCount?"
-  STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n 's/.*rx ucast pkts: *\([0-9][0-9]*\).*/DriverRxUnicastPacketCount=\1/p'
+verification_command:
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RxUnicastPacketCount?"'
+  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+  - '[ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC'
+  - '[ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*rx ucast pkts: *\([0-9][0-9]*\).*/DriverRxUnicastPacketCount=\1/p'''
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: N/A
-    2.4g: N/A
-    comment: '5G serialwrap retest only: RxUnicastPacketCount stayed 0 while wl0 sta_info showed rx ucast pkts > 0. Non-executed bands remain N/A until separately calibrated.'
+    5g: Not Supported
+    6g: Not Supported
+    2.4g: Not Supported
+    comment: |
+      RxUnicastPacketCount — workbook row 42 remains Not Supported.
+      Current 0403 source still exposes the read-only getter, but the live LLAPI readback stays 0
+      while the driver counter for the same STA still reports non-zero `rx ucast pkts`.

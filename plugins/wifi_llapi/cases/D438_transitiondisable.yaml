@@ -1,55 +1,372 @@
 id: d438-security-transitiondisable
-name: D438 Security TransitionDisable
+name: "D438 Security TransitionDisable"
+version: '1.1'
 source:
-  row: 440
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 438
   object: WiFi.AccessPoint.{i}.Security.
   api: TransitionDisable
-  baseline: 0310-BGW720-300
-bands:
-- 5g
-- 6g
-- 2.4g
+  baseline: BCM v4.0.3
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: 'ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable=WPA3-Personal"'
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
+implemented_by: pWHM
+bands: ["5g", "6g", "2.4g"]
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
+  links: []
+test_environment: |
+  Topology:
+  - DUT: COM1 (AP role; TransitionDisable is calibrated as an AP-only Security setter/getter + hostapd case with no STA transport)
+  Live band mapping:
+  - 5G: DUT wl0 / AP1 primary + AP2 peer / SSID.4 + SSID.5 / testpilot5G WPA2 baseline with default `TransitionDisable=""`
+  - 6G: DUT wl1 / AP3 primary + AP4 peer / SSID.6 + SSID.7 / testpilot6G WPA3 baseline with quoted `SAEPassphrase="00000000"` and default `TransitionDisable=""`
+  - 2.4G: DUT wl2 / AP5 primary + AP6 peer / SSID.8 + SSID.9 / testpilot2G WPA2 baseline with default `TransitionDisable=""`
+  Preconditions:
+  - keep AP1, AP3, and AP5 enabled on the documented non-open baseline before probing `Security.TransitionDisable`
+  - workbook row 438 validates hostapd `transition_disable=` bit mapping after wildcard setters; current 0403 live probe exact-closed the same mapping after a 6-second settle window
+  - supported options on the current DUT are `WPA3-Personal` -> `transition_disable=1`, `SAE-PK` -> `transition_disable=2`, `EnhancedOpen` -> `transition_disable=8`, and empty string -> `ABSENT`
+setup_steps: |
+  1) DUT baseline:
+     - keep AP1 / AP3 / AP5 enabled on the documented baseline
+     - restore AP1 / AP2 / AP5 / AP6 to `ModeEnabled=WPA2-Personal` with `SAEPassphrase=password`
+     - restore AP3 / AP4 to `ModeEnabled=WPA3-Personal` with quoted `SAEPassphrase="00000000"`
+     - clear wildcard `TransitionDisable=""`
+     - capture getter + hostapd `transition_disable=` baseline on wl0 / wl1 / wl2
+  2) Workbook replay:
+     - set wildcard `TransitionDisable=WPA3-Personal`, wait 6 seconds, then verify AP1 / AP3 / AP5 getter and wl0 / wl1 / wl2 hostapd `transition_disable=1`
+     - set wildcard `TransitionDisable=SAE-PK`, wait 6 seconds, then verify getter and hostapd `transition_disable=2`
+     - set wildcard `TransitionDisable=EnhancedOpen`, wait 6 seconds, then verify getter and hostapd `transition_disable=8`
+  3) Restore path:
+     - clear wildcard `TransitionDisable=""`
+     - wait 6 seconds, then verify getter returns empty string and hostapd removes `transition_disable=` on wl0 / wl1 / wl2
+  4) Verdict model:
+     - this is a workbook-preserving `Pass` checkpoint
+     - the case passes only when getter + hostapd exact-close `"" -> WPA3-Personal/1 -> SAE-PK/2 -> EnhancedOpen/8 -> ""/ABSENT` on all three bands
+sta_env_setup: |
+  DUT:
+    ubus-cli WiFi.AccessPoint.1.Enable=1
+    ubus-cli WiFi.AccessPoint.3.Enable=1
+    ubus-cli WiFi.AccessPoint.5.Enable=1
+    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+    ubus-cli WiFi.AccessPoint.2.Security.ModeEnabled=WPA2-Personal
+    ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
+    ubus-cli WiFi.AccessPoint.4.Security.ModeEnabled=WPA3-Personal
+    ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal
+    ubus-cli WiFi.AccessPoint.6.Security.ModeEnabled=WPA2-Personal
+    ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=password
+    ubus-cli WiFi.AccessPoint.2.Security.SAEPassphrase=password
+    ubus-cli 'WiFi.AccessPoint.3.Security.SAEPassphrase="00000000"'
+    ubus-cli 'WiFi.AccessPoint.4.Security.SAEPassphrase="00000000"'
+    ubus-cli WiFi.AccessPoint.5.Security.SAEPassphrase=password
+    ubus-cli WiFi.AccessPoint.6.Security.SAEPassphrase=password
+    ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable="
+    wl -i wl0 bss
+    wl -i wl1 bss
+    wl -i wl2 bss
+test_procedure: |
+  1) Capture baseline getter + hostapd `transition_disable=` on AP1 / AP3 / AP5.
+  2) Set wildcard `TransitionDisable=WPA3-Personal`, wait 6 seconds, and re-read getter / hostapd state.
+  3) Set wildcard `TransitionDisable=SAE-PK`, wait 6 seconds, and re-read getter / hostapd state.
+  4) Set wildcard `TransitionDisable=EnhancedOpen`, wait 6 seconds, and re-read getter / hostapd state.
+  5) Clear wildcard `TransitionDisable=""`, wait 6 seconds, and re-read getter / hostapd baseline again.
+  Verdict: Pass. The current DUT exactly closes workbook row 438 when all three bands follow the same getter + hostapd bit mapping `"" -> WPA3-Personal/1 -> SAE-PK/2 -> EnhancedOpen/8 -> ""/ABSENT`.
+
 steps:
-- id: step_5g_getter
-  target: dut
-  action: read
-  capture: getter_5g
-  command: ubus-cli "WiFi.AccessPoint.1.Security.TransitionDisable?"
-  expected: TransitionDisable 回傳有效值
-  description: AccessPoint.1 (5g) Security.TransitionDisable getter
-- id: step_6g_getter
-  target: dut
-  action: read
-  capture: getter_6g
-  command: ubus-cli "WiFi.AccessPoint.3.Security.TransitionDisable?"
-  expected: TransitionDisable 回傳有效值
-  description: AccessPoint.3 (6g) Security.TransitionDisable getter
-- id: step_24g_getter
-  target: dut
-  action: read
-  capture: getter_24g
-  command: ubus-cli "WiFi.AccessPoint.5.Security.TransitionDisable?"
-  expected: TransitionDisable 回傳有效值
-  description: AccessPoint.5 (2.4g) Security.TransitionDisable getter
+- id: step1_transitiondisable_baseline_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.1.Security.TransitionDisable?" 2>&1); C=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.Security\.TransitionDisable='); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.TransitionDisable="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^transition_disable=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ "$C" -gt 0 ]; then printf 'BaselineGetterTransitionDisable5g="%s"\n' "$VALUE"; else echo 'BaselineGetterTransitionDisable5g=ABSENT'; fi; if [ -n "$HAPD" ]; then printf 'BaselineHostapdTransitionDisable5g=%s\n' "$HAPD"; else echo 'BaselineHostapdTransitionDisable5g=ABSENT'; fi
+  capture: transitiondisable_baseline_5g
+- id: step2_transitiondisable_baseline_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.TransitionDisable?" 2>&1); C=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.Security\.TransitionDisable='); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.TransitionDisable="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^transition_disable=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ "$C" -gt 0 ]; then printf 'BaselineGetterTransitionDisable6g="%s"\n' "$VALUE"; else echo 'BaselineGetterTransitionDisable6g=ABSENT'; fi; if [ -n "$HAPD" ]; then printf 'BaselineHostapdTransitionDisable6g=%s\n' "$HAPD"; else echo 'BaselineHostapdTransitionDisable6g=ABSENT'; fi
+  capture: transitiondisable_baseline_6g
+- id: step3_transitiondisable_baseline_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.TransitionDisable?" 2>&1); C=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.Security\.TransitionDisable='); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.TransitionDisable="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^transition_disable=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ "$C" -gt 0 ]; then printf 'BaselineGetterTransitionDisable24g="%s"\n' "$VALUE"; else echo 'BaselineGetterTransitionDisable24g=ABSENT'; fi; if [ -n "$HAPD" ]; then printf 'BaselineHostapdTransitionDisable24g=%s\n' "$HAPD"; else echo 'BaselineHostapdTransitionDisable24g=ABSENT'; fi
+  capture: transitiondisable_baseline_24g
+- id: step4_transitiondisable_set_wpa3_personal
+  action: exec
+  target: DUT
+  band: 5g
+  command:
+    - printf 'RequestedTransitionDisableAll="WPA3-Personal"\n'
+    - ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable=WPA3-Personal" >/dev/null 2>&1
+  depends_on: step3_transitiondisable_baseline_24g
+  capture: transitiondisable_set_wpa3_personal
+- id: step5_transitiondisable_after_wpa3_personal_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    sleep 6; OUT=$(ubus-cli "WiFi.AccessPoint.1.Security.TransitionDisable?" 2>&1); C=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.Security\.TransitionDisable='); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.TransitionDisable="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^transition_disable=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ "$C" -gt 0 ]; then printf 'AfterWpa3PersonalGetterTransitionDisable5g="%s"\n' "$VALUE"; else echo 'AfterWpa3PersonalGetterTransitionDisable5g=ABSENT'; fi; if [ -n "$HAPD" ]; then printf 'AfterWpa3PersonalHostapdTransitionDisable5g=%s\n' "$HAPD"; else echo 'AfterWpa3PersonalHostapdTransitionDisable5g=ABSENT'; fi
+  depends_on: step4_transitiondisable_set_wpa3_personal
+  capture: transitiondisable_after_wpa3_personal_5g
+- id: step6_transitiondisable_after_wpa3_personal_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.TransitionDisable?" 2>&1); C=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.Security\.TransitionDisable='); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.TransitionDisable="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^transition_disable=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ "$C" -gt 0 ]; then printf 'AfterWpa3PersonalGetterTransitionDisable6g="%s"\n' "$VALUE"; else echo 'AfterWpa3PersonalGetterTransitionDisable6g=ABSENT'; fi; if [ -n "$HAPD" ]; then printf 'AfterWpa3PersonalHostapdTransitionDisable6g=%s\n' "$HAPD"; else echo 'AfterWpa3PersonalHostapdTransitionDisable6g=ABSENT'; fi
+  depends_on: step5_transitiondisable_after_wpa3_personal_5g
+  capture: transitiondisable_after_wpa3_personal_6g
+- id: step7_transitiondisable_after_wpa3_personal_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.TransitionDisable?" 2>&1); C=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.Security\.TransitionDisable='); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.TransitionDisable="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^transition_disable=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ "$C" -gt 0 ]; then printf 'AfterWpa3PersonalGetterTransitionDisable24g="%s"\n' "$VALUE"; else echo 'AfterWpa3PersonalGetterTransitionDisable24g=ABSENT'; fi; if [ -n "$HAPD" ]; then printf 'AfterWpa3PersonalHostapdTransitionDisable24g=%s\n' "$HAPD"; else echo 'AfterWpa3PersonalHostapdTransitionDisable24g=ABSENT'; fi
+  depends_on: step6_transitiondisable_after_wpa3_personal_6g
+  capture: transitiondisable_after_wpa3_personal_24g
+- id: step8_transitiondisable_set_sae_pk
+  action: exec
+  target: DUT
+  band: 5g
+  command:
+    - printf 'RequestedTransitionDisableAll="SAE-PK"\n'
+    - ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable=SAE-PK" >/dev/null 2>&1
+  depends_on: step7_transitiondisable_after_wpa3_personal_24g
+  capture: transitiondisable_set_sae_pk
+- id: step9_transitiondisable_after_sae_pk_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    sleep 6; OUT=$(ubus-cli "WiFi.AccessPoint.1.Security.TransitionDisable?" 2>&1); C=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.Security\.TransitionDisable='); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.TransitionDisable="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^transition_disable=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ "$C" -gt 0 ]; then printf 'AfterSaePkGetterTransitionDisable5g="%s"\n' "$VALUE"; else echo 'AfterSaePkGetterTransitionDisable5g=ABSENT'; fi; if [ -n "$HAPD" ]; then printf 'AfterSaePkHostapdTransitionDisable5g=%s\n' "$HAPD"; else echo 'AfterSaePkHostapdTransitionDisable5g=ABSENT'; fi
+  depends_on: step8_transitiondisable_set_sae_pk
+  capture: transitiondisable_after_sae_pk_5g
+- id: step10_transitiondisable_after_sae_pk_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.TransitionDisable?" 2>&1); C=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.Security\.TransitionDisable='); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.TransitionDisable="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^transition_disable=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ "$C" -gt 0 ]; then printf 'AfterSaePkGetterTransitionDisable6g="%s"\n' "$VALUE"; else echo 'AfterSaePkGetterTransitionDisable6g=ABSENT'; fi; if [ -n "$HAPD" ]; then printf 'AfterSaePkHostapdTransitionDisable6g=%s\n' "$HAPD"; else echo 'AfterSaePkHostapdTransitionDisable6g=ABSENT'; fi
+  depends_on: step9_transitiondisable_after_sae_pk_5g
+  capture: transitiondisable_after_sae_pk_6g
+- id: step11_transitiondisable_after_sae_pk_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.TransitionDisable?" 2>&1); C=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.Security\.TransitionDisable='); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.TransitionDisable="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^transition_disable=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ "$C" -gt 0 ]; then printf 'AfterSaePkGetterTransitionDisable24g="%s"\n' "$VALUE"; else echo 'AfterSaePkGetterTransitionDisable24g=ABSENT'; fi; if [ -n "$HAPD" ]; then printf 'AfterSaePkHostapdTransitionDisable24g=%s\n' "$HAPD"; else echo 'AfterSaePkHostapdTransitionDisable24g=ABSENT'; fi
+  depends_on: step10_transitiondisable_after_sae_pk_6g
+  capture: transitiondisable_after_sae_pk_24g
+- id: step12_transitiondisable_set_enhanced_open
+  action: exec
+  target: DUT
+  band: 5g
+  command:
+    - printf 'RequestedTransitionDisableAll="EnhancedOpen"\n'
+    - ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable=EnhancedOpen" >/dev/null 2>&1
+  depends_on: step11_transitiondisable_after_sae_pk_24g
+  capture: transitiondisable_set_enhanced_open
+- id: step13_transitiondisable_after_enhanced_open_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    sleep 6; OUT=$(ubus-cli "WiFi.AccessPoint.1.Security.TransitionDisable?" 2>&1); C=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.Security\.TransitionDisable='); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.TransitionDisable="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^transition_disable=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ "$C" -gt 0 ]; then printf 'AfterEnhancedOpenGetterTransitionDisable5g="%s"\n' "$VALUE"; else echo 'AfterEnhancedOpenGetterTransitionDisable5g=ABSENT'; fi; if [ -n "$HAPD" ]; then printf 'AfterEnhancedOpenHostapdTransitionDisable5g=%s\n' "$HAPD"; else echo 'AfterEnhancedOpenHostapdTransitionDisable5g=ABSENT'; fi
+  depends_on: step12_transitiondisable_set_enhanced_open
+  capture: transitiondisable_after_enhanced_open_5g
+- id: step14_transitiondisable_after_enhanced_open_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.TransitionDisable?" 2>&1); C=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.Security\.TransitionDisable='); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.TransitionDisable="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^transition_disable=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ "$C" -gt 0 ]; then printf 'AfterEnhancedOpenGetterTransitionDisable6g="%s"\n' "$VALUE"; else echo 'AfterEnhancedOpenGetterTransitionDisable6g=ABSENT'; fi; if [ -n "$HAPD" ]; then printf 'AfterEnhancedOpenHostapdTransitionDisable6g=%s\n' "$HAPD"; else echo 'AfterEnhancedOpenHostapdTransitionDisable6g=ABSENT'; fi
+  depends_on: step13_transitiondisable_after_enhanced_open_5g
+  capture: transitiondisable_after_enhanced_open_6g
+- id: step15_transitiondisable_after_enhanced_open_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.TransitionDisable?" 2>&1); C=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.Security\.TransitionDisable='); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.TransitionDisable="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^transition_disable=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ "$C" -gt 0 ]; then printf 'AfterEnhancedOpenGetterTransitionDisable24g="%s"\n' "$VALUE"; else echo 'AfterEnhancedOpenGetterTransitionDisable24g=ABSENT'; fi; if [ -n "$HAPD" ]; then printf 'AfterEnhancedOpenHostapdTransitionDisable24g=%s\n' "$HAPD"; else echo 'AfterEnhancedOpenHostapdTransitionDisable24g=ABSENT'; fi
+  depends_on: step14_transitiondisable_after_enhanced_open_6g
+  capture: transitiondisable_after_enhanced_open_24g
+- id: step16_transitiondisable_restore_default
+  action: exec
+  target: DUT
+  band: 5g
+  command:
+    - printf 'RestoreTransitionDisableAll=""\n'
+    - ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable=" >/dev/null 2>&1
+  depends_on: step15_transitiondisable_after_enhanced_open_24g
+  capture: transitiondisable_restore_default
+- id: step17_transitiondisable_after_restore_5g
+  action: exec
+  target: DUT
+  band: 5g
+  command: >-
+    sleep 6; OUT=$(ubus-cli "WiFi.AccessPoint.1.Security.TransitionDisable?" 2>&1); C=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.Security\.TransitionDisable='); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.TransitionDisable="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^transition_disable=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ "$C" -gt 0 ]; then printf 'AfterRestoreGetterTransitionDisable5g="%s"\n' "$VALUE"; else echo 'AfterRestoreGetterTransitionDisable5g=ABSENT'; fi; if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdTransitionDisable5g=%s\n' "$HAPD"; else echo 'AfterRestoreHostapdTransitionDisable5g=ABSENT'; fi
+  depends_on: step16_transitiondisable_restore_default
+  capture: transitiondisable_after_restore_5g
+- id: step18_transitiondisable_after_restore_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.TransitionDisable?" 2>&1); C=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.Security\.TransitionDisable='); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.TransitionDisable="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^transition_disable=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ "$C" -gt 0 ]; then printf 'AfterRestoreGetterTransitionDisable6g="%s"\n' "$VALUE"; else echo 'AfterRestoreGetterTransitionDisable6g=ABSENT'; fi; if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdTransitionDisable6g=%s\n' "$HAPD"; else echo 'AfterRestoreHostapdTransitionDisable6g=ABSENT'; fi
+  depends_on: step17_transitiondisable_after_restore_5g
+  capture: transitiondisable_after_restore_6g
+- id: step19_transitiondisable_after_restore_24g
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: >-
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.TransitionDisable?" 2>&1); C=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.Security\.TransitionDisable='); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.TransitionDisable="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^transition_disable=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ "$C" -gt 0 ]; then printf 'AfterRestoreGetterTransitionDisable24g="%s"\n' "$VALUE"; else echo 'AfterRestoreGetterTransitionDisable24g=ABSENT'; fi; if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdTransitionDisable24g=%s\n' "$HAPD"; else echo 'AfterRestoreHostapdTransitionDisable24g=ABSENT'; fi
+  depends_on: step18_transitiondisable_after_restore_6g
+  capture: transitiondisable_after_restore_24g
+
 pass_criteria:
-- field: getter_5g.TransitionDisable
-  operator: regex
-  value: ^.*$
-- field: getter_6g.TransitionDisable
-  operator: regex
-  value: ^.*$
-- field: getter_24g.TransitionDisable
-  operator: regex
-  value: ^.*$
+- field: transitiondisable_baseline_5g.BaselineGetterTransitionDisable5g
+  operator: equals
+  value: '""'
+  description: 5G AP1 / wl0 getter should start from the default empty TransitionDisable value.
+- field: transitiondisable_baseline_5g.BaselineHostapdTransitionDisable5g
+  operator: equals
+  value: ABSENT
+  description: 5G AP1 / wl0 hostapd should expose no `transition_disable=` at baseline.
+- field: transitiondisable_baseline_6g.BaselineGetterTransitionDisable6g
+  operator: equals
+  value: '""'
+  description: 6G AP3 / wl1 getter should start from the default empty TransitionDisable value.
+- field: transitiondisable_baseline_6g.BaselineHostapdTransitionDisable6g
+  operator: equals
+  value: ABSENT
+  description: 6G AP3 / wl1 hostapd should expose no `transition_disable=` at baseline.
+- field: transitiondisable_baseline_24g.BaselineGetterTransitionDisable24g
+  operator: equals
+  value: '""'
+  description: 2.4G AP5 / wl2 getter should start from the default empty TransitionDisable value.
+- field: transitiondisable_baseline_24g.BaselineHostapdTransitionDisable24g
+  operator: equals
+  value: ABSENT
+  description: 2.4G AP5 / wl2 hostapd should expose no `transition_disable=` at baseline.
+- field: transitiondisable_after_wpa3_personal_5g.AfterWpa3PersonalGetterTransitionDisable5g
+  operator: equals
+  value: '"WPA3-Personal"'
+  description: 5G AP1 / wl0 getter should read back WPA3-Personal after the workbook setter.
+- field: transitiondisable_after_wpa3_personal_5g.AfterWpa3PersonalHostapdTransitionDisable5g
+  operator: equals
+  value: '1'
+  description: 5G AP1 / wl0 hostapd should map WPA3-Personal to bit 1.
+- field: transitiondisable_after_wpa3_personal_6g.AfterWpa3PersonalGetterTransitionDisable6g
+  operator: equals
+  value: '"WPA3-Personal"'
+  description: 6G AP3 / wl1 getter should read back WPA3-Personal after the workbook setter.
+- field: transitiondisable_after_wpa3_personal_6g.AfterWpa3PersonalHostapdTransitionDisable6g
+  operator: equals
+  value: '1'
+  description: 6G AP3 / wl1 hostapd should map WPA3-Personal to bit 1.
+- field: transitiondisable_after_wpa3_personal_24g.AfterWpa3PersonalGetterTransitionDisable24g
+  operator: equals
+  value: '"WPA3-Personal"'
+  description: 2.4G AP5 / wl2 getter should read back WPA3-Personal after the workbook setter.
+- field: transitiondisable_after_wpa3_personal_24g.AfterWpa3PersonalHostapdTransitionDisable24g
+  operator: equals
+  value: '1'
+  description: 2.4G AP5 / wl2 hostapd should map WPA3-Personal to bit 1.
+- field: transitiondisable_after_sae_pk_5g.AfterSaePkGetterTransitionDisable5g
+  operator: equals
+  value: '"SAE-PK"'
+  description: 5G AP1 / wl0 getter should read back SAE-PK after the workbook setter.
+- field: transitiondisable_after_sae_pk_5g.AfterSaePkHostapdTransitionDisable5g
+  operator: equals
+  value: '2'
+  description: 5G AP1 / wl0 hostapd should map SAE-PK to bit 2.
+- field: transitiondisable_after_sae_pk_6g.AfterSaePkGetterTransitionDisable6g
+  operator: equals
+  value: '"SAE-PK"'
+  description: 6G AP3 / wl1 getter should read back SAE-PK after the workbook setter.
+- field: transitiondisable_after_sae_pk_6g.AfterSaePkHostapdTransitionDisable6g
+  operator: equals
+  value: '2'
+  description: 6G AP3 / wl1 hostapd should map SAE-PK to bit 2.
+- field: transitiondisable_after_sae_pk_24g.AfterSaePkGetterTransitionDisable24g
+  operator: equals
+  value: '"SAE-PK"'
+  description: 2.4G AP5 / wl2 getter should read back SAE-PK after the workbook setter.
+- field: transitiondisable_after_sae_pk_24g.AfterSaePkHostapdTransitionDisable24g
+  operator: equals
+  value: '2'
+  description: 2.4G AP5 / wl2 hostapd should map SAE-PK to bit 2.
+- field: transitiondisable_after_enhanced_open_5g.AfterEnhancedOpenGetterTransitionDisable5g
+  operator: equals
+  value: '"EnhancedOpen"'
+  description: 5G AP1 / wl0 getter should read back EnhancedOpen after the workbook setter.
+- field: transitiondisable_after_enhanced_open_5g.AfterEnhancedOpenHostapdTransitionDisable5g
+  operator: equals
+  value: '8'
+  description: 5G AP1 / wl0 hostapd should map EnhancedOpen to bit 8.
+- field: transitiondisable_after_enhanced_open_6g.AfterEnhancedOpenGetterTransitionDisable6g
+  operator: equals
+  value: '"EnhancedOpen"'
+  description: 6G AP3 / wl1 getter should read back EnhancedOpen after the workbook setter.
+- field: transitiondisable_after_enhanced_open_6g.AfterEnhancedOpenHostapdTransitionDisable6g
+  operator: equals
+  value: '8'
+  description: 6G AP3 / wl1 hostapd should map EnhancedOpen to bit 8.
+- field: transitiondisable_after_enhanced_open_24g.AfterEnhancedOpenGetterTransitionDisable24g
+  operator: equals
+  value: '"EnhancedOpen"'
+  description: 2.4G AP5 / wl2 getter should read back EnhancedOpen after the workbook setter.
+- field: transitiondisable_after_enhanced_open_24g.AfterEnhancedOpenHostapdTransitionDisable24g
+  operator: equals
+  value: '8'
+  description: 2.4G AP5 / wl2 hostapd should map EnhancedOpen to bit 8.
+- field: transitiondisable_after_restore_5g.AfterRestoreGetterTransitionDisable5g
+  operator: equals
+  reference: transitiondisable_baseline_5g.BaselineGetterTransitionDisable5g
+  description: 5G AP1 / wl0 getter should restore to the default empty value.
+- field: transitiondisable_after_restore_5g.AfterRestoreHostapdTransitionDisable5g
+  operator: equals
+  reference: transitiondisable_baseline_5g.BaselineHostapdTransitionDisable5g
+  description: 5G AP1 / wl0 hostapd should restore to the absence of `transition_disable=`.
+- field: transitiondisable_after_restore_6g.AfterRestoreGetterTransitionDisable6g
+  operator: equals
+  reference: transitiondisable_baseline_6g.BaselineGetterTransitionDisable6g
+  description: 6G AP3 / wl1 getter should restore to the default empty value.
+- field: transitiondisable_after_restore_6g.AfterRestoreHostapdTransitionDisable6g
+  operator: equals
+  reference: transitiondisable_baseline_6g.BaselineHostapdTransitionDisable6g
+  description: 6G AP3 / wl1 hostapd should restore to the absence of `transition_disable=`.
+- field: transitiondisable_after_restore_24g.AfterRestoreGetterTransitionDisable24g
+  operator: equals
+  reference: transitiondisable_baseline_24g.BaselineGetterTransitionDisable24g
+  description: 2.4G AP5 / wl2 getter should restore to the default empty value.
+- field: transitiondisable_after_restore_24g.AfterRestoreHostapdTransitionDisable24g
+  operator: equals
+  reference: transitiondisable_baseline_24g.BaselineHostapdTransitionDisable24g
+  description: 2.4G AP5 / wl2 hostapd should restore to the absence of `transition_disable=`.
+
+verification_command:
+  - 'ubus-cli "WiFi.AccessPoint.1.Security.TransitionDisable?"'
+  - 'grep -m1 ''^transition_disable='' /tmp/wl0_hapd.conf || true'
+  - 'ubus-cli "WiFi.AccessPoint.3.Security.TransitionDisable?"'
+  - 'grep -m1 ''^transition_disable='' /tmp/wl1_hapd.conf || true'
+  - 'ubus-cli "WiFi.AccessPoint.5.Security.TransitionDisable?"'
+  - 'grep -m1 ''^transition_disable='' /tmp/wl2_hapd.conf || true'
+
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: '2026-04-15 live probe showed wildcard `TransitionDisable` exact-closes getter + hostapd bit mapping on all three bands after a 6-second settle window: `WPA3-Personal -> 1`, `SAE-PK -> 2`, `EnhancedOpen -> 8`, and empty string removes `transition_disable=` again.'

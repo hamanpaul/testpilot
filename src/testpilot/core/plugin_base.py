@@ -6,6 +6,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
+from testpilot.core.case_utils import stringify_step_command
+
 
 class PluginBase(ABC):
     """每個測試類型（wifi_llapi, qos_llapi, sigma_qt ...）繼承此類別。
@@ -76,6 +78,58 @@ class PluginBase(ABC):
     def teardown(self, case: dict[str, Any], topology: Any) -> None:
         """清理測試環境。預設為 no-op；子類別可覆寫。"""
 
+    # -- optional live remediation hooks --------------------------------------
+
+    def request_remediation_decision(
+        self,
+        case: dict[str, Any],
+        failure_snapshot: Any,
+        topology: Any,
+        *,
+        runner: dict[str, Any] | None = None,
+        remediation_policy: dict[str, Any] | None = None,
+    ) -> Any:
+        """Optional agent-backed remediation proposal hook.
+
+        Default implementation is disabled. Plugins may override to return a
+        structured remediation decision dict. Deterministic validation still
+        happens in the core coordinator.
+        """
+        del case, failure_snapshot, topology, runner, remediation_policy
+        return None
+
+    def build_remediation_decision(
+        self,
+        case: dict[str, Any],
+        failure_snapshot: Any,
+        topology: Any,
+        *,
+        runner: dict[str, Any] | None = None,
+        remediation_policy: dict[str, Any] | None = None,
+    ) -> Any:
+        """Optional builtin fallback for safe remediation decisions."""
+        del case, failure_snapshot, topology, runner, remediation_policy
+        return None
+
+    def execute_remediation(
+        self,
+        case: dict[str, Any],
+        decision: Any,
+        topology: Any,
+    ) -> dict[str, Any]:
+        """Execute a previously approved remediation decision.
+
+        Default implementation is a safe no-op. Plugins should override if they
+        support live environment repair between retry attempts.
+        """
+        del case, decision, topology
+        return {
+            "success": False,
+            "verify_after": None,
+            "comment": "live remediation not supported",
+            "actions": [],
+        }
+
     # -- optional overridable reporter -----------------------------------------
 
     def create_reporter(self) -> Any:
@@ -123,7 +177,7 @@ class PluginBase(ABC):
             for step in steps:
                 step_data = dict(step) if isinstance(step, dict) else {"id": "step", "command": str(step)}
                 step_id = str(step_data.get("id", "step"))
-                cmd = str(step_data.get("command", "")).strip()
+                cmd = stringify_step_command(step_data.get("command"))
                 if cmd:
                     commands.append(cmd)
                 result = self.execute_step(case, step_data, topology)

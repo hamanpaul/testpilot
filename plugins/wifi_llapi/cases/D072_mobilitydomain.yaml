@@ -4,7 +4,7 @@ version: '1.1'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 74
+  row: 72
   object: WiFi.AccessPoint.{i}.IEEE80211r.
   api: MobilityDomain
   baseline: BCM v4.0.3
@@ -20,11 +20,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
   links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role; MobilityDomain is validated as an AP-only case with no STA transport)
+  - DUT: COM1 (AP role; MobilityDomain is validated as an AP-only case with no STA transport)
   Live band mapping:
   - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
   - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
@@ -60,7 +60,10 @@ test_procedure: |
   4) Cross-check hostapd after the setter: `mobility_domain=546B` must be present and `ft_over_ds=0` must still be exposed exactly once.
   5) Restore MobilityDomain=0 and confirm the northbound getter returns to `0` while IEEE80211r.Enabled remains `1`.
   6) Restore IEEE80211r.Enabled=0 before moving to the next band.
-  7) Verdict: To be tested. The current DUT converges cleanly on 5G, 6G, and 2.4G for this AP-only MobilityDomain path, but the workbook baseline for all three bands remains `To be tested`.
+  7) Verdict: Pass / Pass / Pass. Official reruns `20260412T231545173827`
+     and `20260412T231709014359` exact-closed the AP-only MobilityDomain
+     path on 5G, 6G, and 2.4G with northbound readback plus hostapd
+     `mobility_domain=546B` / `ft_over_ds=0` evidence.
 steps:
 - id: step1_enable_5g
   action: exec
@@ -72,8 +75,9 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: >-
-    ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p'
+  command:
+    - ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled5g=/p"
+    - ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain5g=/p"
   depends_on: step1_enable_5g
   capture: state_enabled_5g
 - id: step3_set_mobilitydomain_5g
@@ -87,16 +91,19 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: >-
-    ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p'
+  command:
+    - ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled5g=/p"
+    - ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain5g=/p"
   depends_on: step3_set_mobilitydomain_5g
   capture: state_set_mobilitydomain_5g
 - id: step5_cfg_set_mobilitydomain_5g
   action: exec
   target: DUT
   band: 5g
-  command: >-
-    grep -m1 '^mobility_domain=' /tmp/wl0_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg5g=/'; grep -c '^ft_over_ds=0$' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gTotalCount=/'
+  command:
+    - grep -m1 '^mobility_domain=' /tmp/wl0_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg5g=/'
+    - grep -c '^ft_over_ds=0$' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gZeroCount=/'
+    - grep -c '^ft_over_ds=' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gTotalCount=/'
   depends_on: step4_state_set_mobilitydomain_5g
   capture: cfg_set_mobilitydomain_5g
 - id: step6_restore_mobilitydomain_5g
@@ -110,8 +117,9 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: >-
-    ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p'
+  command:
+    - ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled5g=/p"
+    - ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain5g=/p"
   depends_on: step6_restore_mobilitydomain_5g
   capture: state_restore_mobilitydomain_5g
 - id: step8_cleanup_5g
@@ -125,8 +133,9 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: >-
-    ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p'
+  command:
+    - ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled5g=/p"
+    - ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain5g=/p"
   depends_on: step8_cleanup_5g
   capture: state_cleanup_5g
 - id: step10_enable_6g
@@ -140,8 +149,9 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: >-
-    ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p'
+  command:
+    - ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled6g=/p"
+    - ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain6g=/p"
   depends_on: step10_enable_6g
   capture: state_enabled_6g
 - id: step12_set_mobilitydomain_6g
@@ -155,16 +165,19 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: >-
-    ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p'
+  command:
+    - ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled6g=/p"
+    - ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain6g=/p"
   depends_on: step12_set_mobilitydomain_6g
   capture: state_set_mobilitydomain_6g
 - id: step14_cfg_set_mobilitydomain_6g
   action: exec
   target: DUT
   band: 6g
-  command: >-
-    grep -m1 '^mobility_domain=' /tmp/wl1_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg6g=/'; grep -c '^ft_over_ds=0$' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gTotalCount=/'
+  command:
+    - grep -m1 '^mobility_domain=' /tmp/wl1_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg6g=/'
+    - grep -c '^ft_over_ds=0$' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gZeroCount=/'
+    - grep -c '^ft_over_ds=' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gTotalCount=/'
   depends_on: step13_state_set_mobilitydomain_6g
   capture: cfg_set_mobilitydomain_6g
 - id: step15_restore_mobilitydomain_6g
@@ -178,8 +191,9 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: >-
-    ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p'
+  command:
+    - ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled6g=/p"
+    - ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain6g=/p"
   depends_on: step15_restore_mobilitydomain_6g
   capture: state_restore_mobilitydomain_6g
 - id: step17_cleanup_6g
@@ -193,8 +207,9 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: >-
-    ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p'
+  command:
+    - ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled6g=/p"
+    - ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain6g=/p"
   depends_on: step17_cleanup_6g
   capture: state_cleanup_6g
 - id: step19_enable_24g
@@ -208,8 +223,9 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: >-
-    ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p'
+  command:
+    - ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled24g=/p"
+    - ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain24g=/p"
   depends_on: step19_enable_24g
   capture: state_enabled_24g
 - id: step21_set_mobilitydomain_24g
@@ -223,16 +239,19 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: >-
-    ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p'
+  command:
+    - ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled24g=/p"
+    - ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain24g=/p"
   depends_on: step21_set_mobilitydomain_24g
   capture: state_set_mobilitydomain_24g
 - id: step23_cfg_set_mobilitydomain_24g
   action: exec
   target: DUT
   band: 2.4g
-  command: >-
-    grep -m1 '^mobility_domain=' /tmp/wl2_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg24g=/'; grep -c '^ft_over_ds=0$' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gTotalCount=/'
+  command:
+    - grep -m1 '^mobility_domain=' /tmp/wl2_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg24g=/'
+    - grep -c '^ft_over_ds=0$' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gZeroCount=/'
+    - grep -c '^ft_over_ds=' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gTotalCount=/'
   depends_on: step22_state_set_mobilitydomain_24g
   capture: cfg_set_mobilitydomain_24g
 - id: step24_restore_mobilitydomain_24g
@@ -246,8 +265,9 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: >-
-    ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p'
+  command:
+    - ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled24g=/p"
+    - ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain24g=/p"
   depends_on: step24_restore_mobilitydomain_24g
   capture: state_restore_mobilitydomain_24g
 - id: step26_cleanup_24g
@@ -261,8 +281,9 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: >-
-    ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p'
+  command:
+    - ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled24g=/p"
+    - ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain24g=/p"
   depends_on: step26_cleanup_24g
   capture: state_cleanup_24g
 pass_criteria:
@@ -422,37 +443,55 @@ pass_criteria:
   operator: equals
   value: '0'
   description: 2.4G AP5 should keep MobilityDomain=0 after cleanup.
-verification_command: |
-  ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=1
-  ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p'
-  ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=27476
-  ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p' | sed -n '1,20p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p' | sed -n '1,20p'
-  grep -m1 '^mobility_domain=' /tmp/wl0_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg5g=/'; grep -c '^ft_over_ds=0$' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl0_hapd.conf | sed 's/^/FtOverDs5gTotalCount=/'
-  ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=0
-  ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p' | sed -n '1,21p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p' | sed -n '1,21p'
-  ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=0
-  ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.Enabled=/Enabled5g=/p' | sed -n '1,22p'; ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211r\.MobilityDomain=/MobilityDomain5g=/p' | sed -n '1,22p'
-  ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=1
-  ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p'
-  ubus-cli WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=27476
-  ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p' | sed -n '1,20p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p' | sed -n '1,20p'
-  grep -m1 '^mobility_domain=' /tmp/wl1_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg6g=/'; grep -c '^ft_over_ds=0$' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl1_hapd.conf | sed 's/^/FtOverDs6gTotalCount=/'
-  ubus-cli WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=0
-  ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p' | sed -n '1,21p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p' | sed -n '1,21p'
-  ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=0
-  ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.Enabled=/Enabled6g=/p' | sed -n '1,22p'; ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211r\.MobilityDomain=/MobilityDomain6g=/p' | sed -n '1,22p'
-  ubus-cli WiFi.AccessPoint.5.IEEE80211r.Enabled=1
-  ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p'
-  ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=27476
-  ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p' | sed -n '1,20p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p' | sed -n '1,20p'
-  grep -m1 '^mobility_domain=' /tmp/wl2_hapd.conf | sed 's/^mobility_domain=/MobilityDomainCfg24g=/'; grep -c '^ft_over_ds=0$' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gZeroCount=/'; grep -c '^ft_over_ds=' /tmp/wl2_hapd.conf | sed 's/^/FtOverDs24gTotalCount=/'
-  ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=0
-  ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p' | sed -n '1,21p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p' | sed -n '1,21p'
-  ubus-cli WiFi.AccessPoint.5.IEEE80211r.Enabled=0
-  ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.Enabled=/Enabled24g=/p' | sed -n '1,22p'; ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211r\.MobilityDomain=/MobilityDomain24g=/p' | sed -n '1,22p'
+verification_command:
+  - ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=1
+  - 'ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled5g=/p"'
+  - 'ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain5g=/p"'
+  - ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=27476
+  - 'ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled5g=/p" | sed -n ''1,20p'''
+  - 'ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain5g=/p" | sed -n ''1,20p'''
+  - 'grep -m1 ''^mobility_domain='' /tmp/wl0_hapd.conf | sed ''s/^mobility_domain=/MobilityDomainCfg5g=/'''
+  - 'grep -c ''^ft_over_ds=0$'' /tmp/wl0_hapd.conf | sed ''s/^/FtOverDs5gZeroCount=/'''
+  - 'grep -c ''^ft_over_ds='' /tmp/wl0_hapd.conf | sed ''s/^/FtOverDs5gTotalCount=/'''
+  - ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=0
+  - 'ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled5g=/p" | sed -n ''1,21p'''
+  - 'ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain5g=/p" | sed -n ''1,21p'''
+  - ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=0
+  - 'ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled5g=/p" | sed -n ''1,22p'''
+  - 'ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain5g=/p" | sed -n ''1,22p'''
+  - ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=1
+  - 'ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled6g=/p"'
+  - 'ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain6g=/p"'
+  - ubus-cli WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=27476
+  - 'ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled6g=/p" | sed -n ''1,20p'''
+  - 'ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain6g=/p" | sed -n ''1,20p'''
+  - 'grep -m1 ''^mobility_domain='' /tmp/wl1_hapd.conf | sed ''s/^mobility_domain=/MobilityDomainCfg6g=/'''
+  - 'grep -c ''^ft_over_ds=0$'' /tmp/wl1_hapd.conf | sed ''s/^/FtOverDs6gZeroCount=/'''
+  - 'grep -c ''^ft_over_ds='' /tmp/wl1_hapd.conf | sed ''s/^/FtOverDs6gTotalCount=/'''
+  - ubus-cli WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=0
+  - 'ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled6g=/p" | sed -n ''1,21p'''
+  - 'ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain6g=/p" | sed -n ''1,21p'''
+  - ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=0
+  - 'ubus-cli "WiFi.AccessPoint.3.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled6g=/p" | sed -n ''1,22p'''
+  - 'ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain6g=/p" | sed -n ''1,22p'''
+  - ubus-cli WiFi.AccessPoint.5.IEEE80211r.Enabled=1
+  - 'ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled24g=/p"'
+  - 'ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain24g=/p"'
+  - ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=27476
+  - 'ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled24g=/p" | sed -n ''1,20p'''
+  - 'ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain24g=/p" | sed -n ''1,20p'''
+  - 'grep -m1 ''^mobility_domain='' /tmp/wl2_hapd.conf | sed ''s/^mobility_domain=/MobilityDomainCfg24g=/'''
+  - 'grep -c ''^ft_over_ds=0$'' /tmp/wl2_hapd.conf | sed ''s/^/FtOverDs24gZeroCount=/'''
+  - 'grep -c ''^ft_over_ds='' /tmp/wl2_hapd.conf | sed ''s/^/FtOverDs24gTotalCount=/'''
+  - ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=0
+  - 'ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled24g=/p" | sed -n ''1,21p'''
+  - 'ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain24g=/p" | sed -n ''1,21p'''
+  - ubus-cli WiFi.AccessPoint.5.IEEE80211r.Enabled=0
+  - 'ubus-cli "WiFi.AccessPoint.5.IEEE80211r.Enabled?" | sed -n "/Enabled=/s/.*=/Enabled24g=/p" | sed -n ''1,22p'''
+  - 'ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?" | sed -n "/MobilityDomain=/s/.*=/MobilityDomain24g=/p" | sed -n ''1,22p'''
 results_reference:
   v4.0.3:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: ''
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: Official reruns 20260412T231545173827 and 20260412T231709014359 exact-closed Enabled=1, MobilityDomain=27476, hostapd mobility_domain=546B, and one ft_over_ds=0 line on AP1/AP3/AP5.

@@ -1,8 +1,8 @@
 # TestPilot 系統規格書
 
 > 版本：v0.1.0-draft（第三次重構規劃基線）
-> 更新日期：2026-03-11
-> 深度參考：`docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`
+> 更新日期：2026-03-31
+> 深度參考已收斂回本文件；詳細研究筆記改為 local-only，不再納入 repo。
 
 ---
 
@@ -13,7 +13,7 @@ TestPilot 是一套 plugin-based 嵌入式裝置測試自動化框架，面向 p
 1. **Deterministic verdict kernel**：負責正式測試執行、證據蒐集、pass/fail 判定與報表投影。
 2. **Copilot SDK control plane**：負責 session、resume、hooks、custom agents、skills、selective MCP，以及操作員導向的自然語言 UX。
 
-`wifi_llapi` 仍是目前最完整的落地路徑；第三次重構的重點不是把 YAML 變成 prompt，也不是把最終 verdict 交給 agent，而是把既有 deterministic hot path 保留下來，再讓 Copilot SDK 吃掉 agent orchestration 的複雜度。
+`wifi_llapi` 仍是目前最完整的落地路徑；第三次重構的重點不是把 YAML 變成 prompt，也不是把最終 verdict 交給 agent，而是把既有 deterministic hot path 保留下來，再讓 Copilot SDK 吃掉 agent orchestration 的複雜度。自 2026-03-31 起，`wifi_llapi` 已接上 hook-governed live remediation loop，但範圍只限 safe environment repair，不允許 agent 改 testcase semantics、step 指令或 pass criteria。
 
 ### 核心設計原則
 
@@ -100,15 +100,13 @@ sequenceDiagram
     Orch->>Evidence: write selection trace + attempts + canonical result
     Orch->>CLI: xlsx Pass/Fail + trace path
 
-    opt advisory / remediation path
-        CLI->>CP: create or resume session
-        CP->>Evidence: read canonical result + trace
-        CP-->>CLI: md summary / root cause / suggestion / remediation plan JSON
-        opt approved remediation
-            CLI->>Orch: whitelist remediation + deterministic rerun
-            Orch->>Evidence: write rerun result
-            CP->>Evidence: summarize final outcome
-        end
+    opt in-run advisory / remediation path
+        Orch->>CP: on_failure snapshot / trace context
+        CP-->>Orch: structured remediation decision JSON
+        Orch->>Plugin: whitelist remediation executor
+        Plugin->>Transport: safe env repair only
+        Orch->>Plugin: retry same case
+        Orch->>Evidence: remediation history + retry trace
     end
 ```
 
@@ -122,6 +120,11 @@ sequenceDiagram
 4. `evaluate()`
 5. `teardown()`
 6. canonical result + report projection
+
+補充：
+
+- remediation 只允許發生在 **attempt 與 attempt 之間** 的 `on_retry` 期間。
+- whitelist executor 只允許 safe environment actions；若 agent unavailable / invalid / out-of-policy，必須 fallback 到 deterministic builtin classifier，或直接不套 remediation。
 
 ### Timeout / Retry 原則
 
@@ -176,6 +179,7 @@ sequenceDiagram
 - `operator`：操作員對話與 run/case 狀態說明
 - `case-auditor`：讀 trace / evidence，輸出 root cause 與 suggestion
 - `remediation-planner`：只輸出 structured remediation plan JSON
+- `remediation-planner` / builtin fallback：只輸出 safe environment remediation decision，不直接執行任意 shell
 - `run-summarizer`：彙整 run 級 md/json summary
 
 ### 4.5 Skills
@@ -229,6 +233,8 @@ MCP 只作為 **selective extension**，優先順序低於 in-process custom too
   "suggestions": ["preflight check STA profile before case start"],
   "selection_trace": {},
   "attempts": [],
+  "failure_snapshot": {},
+  "remediation_history": [],
   "evidence_refs": []
 }
 ```
@@ -238,7 +244,7 @@ MCP 只作為 **selective extension**，優先順序低於 in-process custom too
 | 輸出 | 內容 |
 |---|---|
 | `xlsx` | `Pass` / `Fail` only |
-| `md/json` | `PassAfterRemediation` / `FailEnv` / `FailConfig` / `FailTest` / `Inconclusive` + root cause + suggestion + remediation history |
+| `md/json` | `Pass` / `PassAfterRemediation` / `FailEnv` / `FailConfig` / `FailTest` / `Inconclusive` + root cause + suggestion + remediation history |
 
 ### 5.4 不可退讓的 kernel 邊界
 
@@ -249,6 +255,7 @@ MCP 只作為 **selective extension**，優先順序低於 in-process custom too
 - transport command execution
 - pass criteria comparison
 - xlsx final verdict projection
+- 非 whitelist 的修復動作（例如修改 YAML、skip case、改 pass criteria）
 
 ---
 
@@ -275,7 +282,7 @@ testpilot/
 │   ├── plan.md
 │   ├── spec.md
 │   ├── todos.md
-│   └── copilot-sdk-hooks-skills-session-resume-persistenc.md
+│   └── （local-only research notes; not versioned）
 ├── src/testpilot/
 │   ├── core/
 │   ├── reporting/
@@ -340,6 +347,6 @@ testpilot/
 
 1. `docs/plan.md`：主計畫與 phase 邊界
 2. `docs/todos.md`：唯一待辦看板
-3. `docs/copilot-sdk-hooks-skills-session-resume-persistenc.md`：第三次重構深度研究
+3. 本文件與 `docs/plan.md`：第三次重構的 repo 內收斂基線
 4. `README.md`：對外說明與當前/目標方向摘要
 5. `AGENTS.md`：專案級 agent/model/policy 規則

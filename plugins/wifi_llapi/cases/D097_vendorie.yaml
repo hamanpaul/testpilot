@@ -23,11 +23,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
   links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (B0, AP role)
+  - DUT: COM1 (B0, AP role)
   Transport:
   - DUT via serialwrap COM0
   Baseline:
@@ -42,10 +42,10 @@ steps:
   - id: step1_5g_vendorie
     action: exec
     target: DUT
-    command: |
-      echo "Enable5g=$(ubus-cli 'WiFi.AccessPoint.1.VendorIEs.Enable?' 2>/dev/null | grep -o 'Enable=[0-9]*' | cut -d= -f2)"
-      CREATE5G=$(ubus-cli 'WiFi.AccessPoint.1.VendorIEs.createVendorIE()' 2>&1)
-      echo "CreateResult5g=$CREATE5G"
+    command:
+      - echo "Enable5g=$(ubus-cli 'WiFi.AccessPoint.1.VendorIEs.Enable?' 2>/dev/null | grep -o 'Enable=[0-9]*' | cut -d= -f2)"
+      - CREATE5G=$(ubus-cli 'WiFi.AccessPoint.1.VendorIEs.createVendorIE()' 2>&1)
+      - echo "CreateResult5g=$CREATE5G"
     capture: vie_5g
 
   # ---------- 6G ----------
@@ -53,10 +53,10 @@ steps:
     action: exec
     target: DUT
     depends_on: step1_5g_vendorie
-    command: |
-      echo "Enable6g=$(ubus-cli 'WiFi.AccessPoint.3.VendorIEs.Enable?' 2>/dev/null | grep -o 'Enable=[0-9]*' | cut -d= -f2)"
-      CREATE6G=$(ubus-cli 'WiFi.AccessPoint.3.VendorIEs.createVendorIE()' 2>&1)
-      echo "CreateResult6g=$CREATE6G"
+    command:
+      - echo "Enable6g=$(ubus-cli 'WiFi.AccessPoint.3.VendorIEs.Enable?' 2>/dev/null | grep -o 'Enable=[0-9]*' | cut -d= -f2)"
+      - CREATE6G=$(ubus-cli 'WiFi.AccessPoint.3.VendorIEs.createVendorIE()' 2>&1)
+      - echo "CreateResult6g=$CREATE6G"
     capture: vie_6g
 
   # ---------- 2.4G ----------
@@ -64,10 +64,10 @@ steps:
     action: exec
     target: DUT
     depends_on: step2_6g_vendorie
-    command: |
-      echo "Enable24g=$(ubus-cli 'WiFi.AccessPoint.5.VendorIEs.Enable?' 2>/dev/null | grep -o 'Enable=[0-9]*' | cut -d= -f2)"
-      CREATE24G=$(ubus-cli 'WiFi.AccessPoint.5.VendorIEs.createVendorIE()' 2>&1)
-      echo "CreateResult24g=$CREATE24G"
+    command:
+      - echo "Enable24g=$(ubus-cli 'WiFi.AccessPoint.5.VendorIEs.Enable?' 2>/dev/null | grep -o 'Enable=[0-9]*' | cut -d= -f2)"
+      - CREATE24G=$(ubus-cli 'WiFi.AccessPoint.5.VendorIEs.createVendorIE()' 2>&1)
+      - echo "CreateResult24g=$CREATE24G"
     capture: vie_24g
 
 pass_criteria:
@@ -96,16 +96,13 @@ pass_criteria:
     value: 'ERROR'
     description: '2.4G createVendorIE() should return ERROR'
 
-verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.VendorIEs.?"
-  ubus-cli "WiFi.AccessPoint.3.VendorIEs.?"
-  ubus-cli "WiFi.AccessPoint.5.VendorIEs.?"
+verification_command:
+  - 'ubus-cli "WiFi.AccessPoint.1.VendorIEs.?"'
+  - 'ubus-cli "WiFi.AccessPoint.3.VendorIEs.?"'
+  - 'ubus-cli "WiFi.AccessPoint.5.VendorIEs.?"'
 
 results_reference:
   v4.0.3:
-    5g: Not Supported
-    6g: Not Supported
-    2.4g: Not Supported
-    comment: >-
-      VendorIEs.Enable=0 exists on all bands but createVendorIE() fails with
-      status 1 unknown error on all 3 bands. Template correctly marks as Not Support.
+    5g: Pass
+    6g: Pass
+    2.4g: Pass

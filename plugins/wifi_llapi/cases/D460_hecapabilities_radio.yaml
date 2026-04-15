@@ -1,49 +1,55 @@
 id: d460-radio-hecapabilities
-name: D460 Radio HECapabilities
+name: D460 Radio HePhyCapabilities
 source:
-  row: 462
+  row: 460
   object: WiFi.Radio.{i}.
-  api: HECapabilities
+  api: HePhyCapabilities
   baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
-llapi_support: "Not Supported"
+llapi_support: Support
 results_reference:
   v4.0.3:
-    5g: "Not Supported"
-    6g: "Not Supported"
-    2.4g: "Not Supported"
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_getter
   target: dut
   action: read
   capture: getter_5g
-  command: ubus-cli "WiFi.Radio.1.HECapabilities?"
-  expected: error 4 / parameter not found
-  description: "Radio.1 (5g) HECapabilities getter \u2014 Not Supported"
+  command: ubus-cli "WiFi.Radio.1.HePhyCapabilities?"
+  expected: base64 value
+  description: "Radio.1 (5g) HePhyCapabilities getter - live=TCBCwAIbFQAAjAA="
 - id: step_6g_getter
   target: dut
   action: read
   capture: getter_6g
-  command: ubus-cli "WiFi.Radio.2.HECapabilities?"
-  expected: error 4 / parameter not found
-  description: "Radio.2 (6g) HECapabilities getter \u2014 Not Supported"
+  command: ubus-cli "WiFi.Radio.2.HePhyCapabilities?"
+  expected: base64 value
+  description: "Radio.2 (6g) HePhyCapabilities getter - live=TCBCwAIbFQAAjAA="
 - id: step_24g_getter
   target: dut
   action: read
   capture: getter_24g
-  command: ubus-cli "WiFi.Radio.3.HECapabilities?"
-  expected: error 4 / parameter not found
-  description: "Radio.3 (2.4g) HECapabilities getter \u2014 Not Supported"
+  command: ubus-cli "WiFi.Radio.3.HePhyCapabilities?"
+  expected: base64 value
+  description: "Radio.3 (2.4g) HePhyCapabilities getter - live=IiBCwAIDFQAAjAA="
 pass_criteria:
-- field: getter_5g.HECapabilities
-  operator: skip
-  value: "Not Supported \u2014 error 4 parameter not found on all radios"
+- field: getter_5g.HePhyCapabilities
+  operator: regex
+  value: .+
+- field: getter_6g.HePhyCapabilities
+  operator: regex
+  value: .+
+- field: getter_24g.HePhyCapabilities
+  operator: regex
+  value: .+

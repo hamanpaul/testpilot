@@ -16,6 +16,25 @@ execution:
     per_step_seconds: 45
     retry_multiplier: 1.25
     max_seconds: 900
+hooks:
+  enabled_hooks:
+    - pre_case
+    - post_case
+    - pre_step
+    - post_step
+    - on_failure
+    - on_retry
+  fail_open: true
+remediation:
+  enabled: true
+  mode: safe_env_only
+  max_actions_per_attempt: 3
+  allowed_actions:
+    - serial_session_recover
+    - sta_band_reconnect
+    - sta_band_rebaseline
+    - dut_band_rebaseline
+    - case_env_reverify
 runners:
   - priority: 1
     cli_agent: copilot

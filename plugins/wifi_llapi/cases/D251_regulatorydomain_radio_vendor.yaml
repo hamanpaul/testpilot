@@ -1,7 +1,7 @@
 id: d251-radio-vendor-regulatorydomainrev
 name: D251 Radio Vendor RegulatoryDomainRev
 source:
-  row: 183
+  row: 251
   object: WiFi.Radio.{i}.Vendor.
   api: RegulatoryDomain
   baseline: 0310-BGW720-300
@@ -15,6 +15,7 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: 'workbook pass intent is setter-backed 0 -> 8 -> 0 replay with supported-list capture, while wl country remains #a (#a/0) <unknown> per row-note RD override'
 topology:
   devices:
     DUT:
@@ -22,34 +23,313 @@ topology:
       transport: serial
       selector: COM0
 steps:
-- id: step_5g_getter
-  target: dut
-  action: read
-  capture: getter_5g
-  command: ubus-cli "WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev?"
-  expected: RegulatoryDomainRev 回傳有效值
-  description: Radio.1 (5g) Vendor.Brcm.RegulatoryDomainRev getter
-- id: step_6g_getter
-  target: dut
-  action: read
-  capture: getter_6g
-  command: ubus-cli "WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev?"
-  expected: RegulatoryDomainRev 回傳有效值
-  description: Radio.2 (6g) Vendor.Brcm.RegulatoryDomainRev getter
-- id: step_24g_getter
-  target: dut
-  action: read
-  capture: getter_24g
-  command: ubus-cli "WiFi.Radio.3.Vendor.Brcm.RegulatoryDomainRev?"
-  expected: RegulatoryDomainRev 回傳有效值
-  description: Radio.3 (2.4g) Vendor.Brcm.RegulatoryDomainRev getter
+- id: step1_regrev_default_5g
+  target: DUT
+  action: exec
+  band: 5g
+  capture: default_5g
+  command: >-
+    ubus-cli "WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/DefRegRev5g=\1/p'
+  expected: 5g 預設 RegulatoryDomainRev 應為 0
+  description: Radio.1 (5g) 先確認 Vendor.Brcm.RegulatoryDomainRev 初值為 0。
+- id: step2_regrev_set_5g
+  target: DUT
+  action: exec
+  band: 5g
+  capture: set_5g
+  command:
+  - printf 'ReqRegRev5g=8\n'
+  - ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=8
+  expected: 5g setter 應接受 8
+  depends_on: step1_regrev_default_5g
+  description: Radio.1 (5g) 將 RegulatoryDomainRev 設為 8。
+- id: step3_regrev_after_set_5g
+  target: DUT
+  action: exec
+  band: 5g
+  capture: after_set_5g
+  command:
+  - sleep 5
+  - >-
+    ubus-cli "WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/AfterSetRegRev5g=\1/p'
+  expected: 5g setter=8 後 getter 應回報 8
+  depends_on: step2_regrev_set_5g
+  description: Radio.1 (5g) setter=8 後驗證 getter readback。
+- id: step4_regdom_supported_5g
+  target: DUT
+  action: exec
+  band: 5g
+  capture: supported_5g
+  command: >-
+    ubus-cli "WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainSupported?" | sed -n 's/.*="\([^"]*\)".*/RegDomSupported5g=\1/p'
+  expected: 5g supported list 應維持有效且包含 #a
+  depends_on: step3_regrev_after_set_5g
+  description: Radio.1 (5g) 捕捉 RegulatoryDomainSupported 清單。
+- id: step5_country_5g
+  target: DUT
+  action: exec
+  band: 5g
+  capture: country_5g
+  command: >-
+    wl -i wl0 country | sed -n '1s/^/Country5g=/p'
+  expected: 5g wl country 應維持 #a (#a/0) <unknown>
+  depends_on: step4_regdom_supported_5g
+  description: Radio.1 (5g) 驗證 wl country 維持 workbook note 記載的 #a invariant。
+- id: step6_regrev_restore_5g
+  target: DUT
+  action: exec
+  band: 5g
+  capture: restore_5g
+  command:
+  - printf 'RestoreRegRev5g=0\n'
+  - ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
+  expected: 5g restore 應接受 0
+  depends_on: step5_country_5g
+  description: Radio.1 (5g) restore 回 0。
+- id: step7_regrev_after_restore_5g
+  target: DUT
+  action: exec
+  band: 5g
+  capture: after_restore_5g
+  command:
+  - sleep 5
+  - >-
+    ubus-cli "WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/AfterRestoreRegRev5g=\1/p'
+  expected: 5g restore 後 getter 應回報 0
+  depends_on: step6_regrev_restore_5g
+  description: Radio.1 (5g) restore 後再次確認 getter。
+- id: step8_regrev_default_6g
+  target: DUT
+  action: exec
+  band: 6g
+  capture: default_6g
+  command: >-
+    ubus-cli "WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/DefRegRev6g=\1/p'
+  expected: 6g 預設 RegulatoryDomainRev 應為 0
+  description: Radio.2 (6g) 先確認 Vendor.Brcm.RegulatoryDomainRev 初值為 0。
+- id: step9_regrev_set_6g
+  target: DUT
+  action: exec
+  band: 6g
+  capture: set_6g
+  command:
+  - printf 'ReqRegRev6g=8\n'
+  - ubus-cli WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev=8
+  expected: 6g setter 應接受 8
+  depends_on: step8_regrev_default_6g
+  description: Radio.2 (6g) 將 RegulatoryDomainRev 設為 8。
+- id: step10_regrev_after_set_6g
+  target: DUT
+  action: exec
+  band: 6g
+  capture: after_set_6g
+  command:
+  - sleep 5
+  - >-
+    ubus-cli "WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/AfterSetRegRev6g=\1/p'
+  expected: 6g setter=8 後 getter 應回報 8
+  depends_on: step9_regrev_set_6g
+  description: Radio.2 (6g) setter=8 後驗證 getter readback。
+- id: step11_regdom_supported_6g
+  target: DUT
+  action: exec
+  band: 6g
+  capture: supported_6g
+  command: >-
+    ubus-cli "WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainSupported?" | sed -n 's/.*="\([^"]*\)".*/RegDomSupported6g=\1/p'
+  expected: 6g supported list 應維持有效且包含 #a
+  depends_on: step10_regrev_after_set_6g
+  description: Radio.2 (6g) 捕捉 RegulatoryDomainSupported 清單。
+- id: step12_country_6g
+  target: DUT
+  action: exec
+  band: 6g
+  capture: country_6g
+  command: >-
+    wl -i wl1 country | sed -n '1s/^/Country6g=/p'
+  expected: 6g wl country 應維持 #a (#a/0) <unknown>
+  depends_on: step11_regdom_supported_6g
+  description: Radio.2 (6g) 驗證 wl country 維持 workbook note 記載的 #a invariant。
+- id: step13_regrev_restore_6g
+  target: DUT
+  action: exec
+  band: 6g
+  capture: restore_6g
+  command:
+  - printf 'RestoreRegRev6g=0\n'
+  - ubus-cli WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev=0
+  expected: 6g restore 應接受 0
+  depends_on: step12_country_6g
+  description: Radio.2 (6g) restore 回 0。
+- id: step14_regrev_after_restore_6g
+  target: DUT
+  action: exec
+  band: 6g
+  capture: after_restore_6g
+  command:
+  - sleep 5
+  - >-
+    ubus-cli "WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/AfterRestoreRegRev6g=\1/p'
+  expected: 6g restore 後 getter 應回報 0
+  depends_on: step13_regrev_restore_6g
+  description: Radio.2 (6g) restore 後再次確認 getter。
+- id: step15_regrev_default_24g
+  target: DUT
+  action: exec
+  band: 2.4g
+  capture: default_24g
+  command: >-
+    ubus-cli "WiFi.Radio.3.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/DefRegRev24g=\1/p'
+  expected: 2.4g 預設 RegulatoryDomainRev 應為 0
+  description: Radio.3 (2.4g) 先確認 Vendor.Brcm.RegulatoryDomainRev 初值為 0。
+- id: step16_regrev_set_24g
+  target: DUT
+  action: exec
+  band: 2.4g
+  capture: set_24g
+  command:
+  - printf 'ReqRegRev24g=8\n'
+  - ubus-cli WiFi.Radio.3.Vendor.Brcm.RegulatoryDomainRev=8
+  expected: 2.4g setter 應接受 8
+  depends_on: step15_regrev_default_24g
+  description: Radio.3 (2.4g) 將 RegulatoryDomainRev 設為 8。
+- id: step17_regrev_after_set_24g
+  target: DUT
+  action: exec
+  band: 2.4g
+  capture: after_set_24g
+  command:
+  - sleep 5
+  - >-
+    ubus-cli "WiFi.Radio.3.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/AfterSetRegRev24g=\1/p'
+  expected: 2.4g setter=8 後 getter 應回報 8
+  depends_on: step16_regrev_set_24g
+  description: Radio.3 (2.4g) setter=8 後驗證 getter readback。
+- id: step18_regdom_supported_24g
+  target: DUT
+  action: exec
+  band: 2.4g
+  capture: supported_24g
+  command: >-
+    ubus-cli "WiFi.Radio.3.Vendor.Brcm.RegulatoryDomainSupported?" | sed -n 's/.*="\([^"]*\)".*/RegDomSupported24g=\1/p'
+  expected: 2.4g supported list 應維持有效且包含 #a
+  depends_on: step17_regrev_after_set_24g
+  description: Radio.3 (2.4g) 捕捉 RegulatoryDomainSupported 清單。
+- id: step19_country_24g
+  target: DUT
+  action: exec
+  band: 2.4g
+  capture: country_24g
+  command: >-
+    wl -i wl2 country | sed -n '1s/^/Country24g=/p'
+  expected: 2.4g wl country 應維持 #a (#a/0) <unknown>
+  depends_on: step18_regdom_supported_24g
+  description: Radio.3 (2.4g) 驗證 wl country 維持 workbook note 記載的 #a invariant。
+- id: step20_regrev_restore_24g
+  target: DUT
+  action: exec
+  band: 2.4g
+  capture: restore_24g
+  command:
+  - printf 'RestoreRegRev24g=0\n'
+  - ubus-cli WiFi.Radio.3.Vendor.Brcm.RegulatoryDomainRev=0
+  expected: 2.4g restore 應接受 0
+  depends_on: step19_country_24g
+  description: Radio.3 (2.4g) restore 回 0。
+- id: step21_regrev_after_restore_24g
+  target: DUT
+  action: exec
+  band: 2.4g
+  capture: after_restore_24g
+  command:
+  - sleep 5
+  - >-
+    ubus-cli "WiFi.Radio.3.Vendor.Brcm.RegulatoryDomainRev?" | sed -n 's/.*=\([0-9][0-9]*\).*/AfterRestoreRegRev24g=\1/p'
+  expected: 2.4g restore 後 getter 應回報 0
+  depends_on: step20_regrev_restore_24g
+  description: Radio.3 (2.4g) restore 後再次確認 getter。
 pass_criteria:
-- field: getter_5g.RegulatoryDomainRev
+- field: default_5g.DefRegRev5g
+  operator: equals
+  value: '0'
+  description: 5g 預設 RegulatoryDomainRev 應為 0。
+- field: set_5g.ReqRegRev5g
+  operator: equals
+  value: '8'
+  description: 5g setter 請求值應為 8。
+- field: after_set_5g.AfterSetRegRev5g
+  operator: equals
+  value: '8'
+  description: 5g setter=8 後 getter 應回報 8。
+- field: supported_5g.RegDomSupported5g
   operator: regex
-  value: ^\d+$
-- field: getter_6g.RegulatoryDomainRev
+  value: .*#a.*
+  description: 5g supported list 應維持非空且包含 #a。
+- field: country_5g.Country5g
+  operator: equals
+  value: '#a (#a/0) <unknown>'
+  description: 5g wl country 應維持 workbook note 記載的 #a invariant。
+- field: restore_5g.RestoreRegRev5g
+  operator: equals
+  value: '0'
+  description: 5g restore 請求值應為 0。
+- field: after_restore_5g.AfterRestoreRegRev5g
+  operator: equals
+  value: '0'
+  description: 5g restore 後 getter 應回報 0。
+- field: default_6g.DefRegRev6g
+  operator: equals
+  value: '0'
+  description: 6g 預設 RegulatoryDomainRev 應為 0。
+- field: set_6g.ReqRegRev6g
+  operator: equals
+  value: '8'
+  description: 6g setter 請求值應為 8。
+- field: after_set_6g.AfterSetRegRev6g
+  operator: equals
+  value: '8'
+  description: 6g setter=8 後 getter 應回報 8。
+- field: supported_6g.RegDomSupported6g
   operator: regex
-  value: ^\d+$
-- field: getter_24g.RegulatoryDomainRev
+  value: .*#a.*
+  description: 6g supported list 應維持非空且包含 #a。
+- field: country_6g.Country6g
+  operator: equals
+  value: '#a (#a/0) <unknown>'
+  description: 6g wl country 應維持 workbook note 記載的 #a invariant。
+- field: restore_6g.RestoreRegRev6g
+  operator: equals
+  value: '0'
+  description: 6g restore 請求值應為 0。
+- field: after_restore_6g.AfterRestoreRegRev6g
+  operator: equals
+  value: '0'
+  description: 6g restore 後 getter 應回報 0。
+- field: default_24g.DefRegRev24g
+  operator: equals
+  value: '0'
+  description: 2.4g 預設 RegulatoryDomainRev 應為 0。
+- field: set_24g.ReqRegRev24g
+  operator: equals
+  value: '8'
+  description: 2.4g setter 請求值應為 8。
+- field: after_set_24g.AfterSetRegRev24g
+  operator: equals
+  value: '8'
+  description: 2.4g setter=8 後 getter 應回報 8。
+- field: supported_24g.RegDomSupported24g
   operator: regex
-  value: ^\d+$
+  value: .*#a.*
+  description: 2.4g supported list 應維持非空且包含 #a。
+- field: country_24g.Country24g
+  operator: equals
+  value: '#a (#a/0) <unknown>'
+  description: 2.4g wl country 應維持 workbook note 記載的 #a invariant。
+- field: restore_24g.RestoreRegRev24g
+  operator: equals
+  value: '0'
+  description: 2.4g restore 請求值應為 0。
+- field: after_restore_24g.AfterRestoreRegRev24g
+  operator: equals
+  value: '0'
+  description: 2.4g restore 後 getter 應回報 0。

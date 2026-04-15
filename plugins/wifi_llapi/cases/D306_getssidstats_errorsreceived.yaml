@@ -1,7 +1,7 @@
 id: d306-getssidstats-errorsreceived
 name: D306 getSSIDStats ErrorsReceived
 source:
-  row: 231
+  row: 306
   object: WiFi.SSID.{i}.
   api: getSSIDStats()
   baseline: 0310-BGW720-300
@@ -20,7 +20,7 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_stats
   target: dut

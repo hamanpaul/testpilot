@@ -1,7 +1,7 @@
 id: d528-spectruminfo-bandwidth
 name: D528 getSpectrumInfo bandwidth
 source:
-  row: 530
+  row: 528
   object: WiFi.Radio.{i}.getSpectrumInfo()
   api: bandwidth
   baseline: 0310-BGW720-300
@@ -10,17 +10,12 @@ bands:
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_method
   target: dut
@@ -45,11 +40,20 @@ steps:
   description: Radio.3 (2.4g) getSpectrumInfo → bandwidth
 pass_criteria:
 - field: method_5g.bandwidth
-  operator: regex
-  value: ^\d+$
+  operator: equals
+  value: 20MHz
+  description: 5g getSpectrumInfo() sync path serializes SWL_BW_20MHZ as the cstring "20MHz".
 - field: method_6g.bandwidth
-  operator: regex
-  value: ^\d+$
+  operator: equals
+  value: 20MHz
+  description: 6g getSpectrumInfo() sync path serializes SWL_BW_20MHZ as the cstring "20MHz".
 - field: method_24g.bandwidth
-  operator: regex
-  value: ^\d+$
+  operator: equals
+  value: 20MHz
+  description: 2.4g getSpectrumInfo() sync path serializes SWL_BW_20MHZ as the cstring "20MHz".
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: 'Multiband source-backed retest: active 0403 `getSpectrumInfo()` returns its RPC payload through `_getSpectrumInfo()` -> `s_prepareSpectrumOutput()` -> `amxc_var_add_key(cstring_t, "bandwidth", swl_bandwidth_str[llEntry->bandwidth])`, and the sync refresh path `wifiGen_rad_getSpectrumInfo(..., update=false)` currently seeds each survey-derived spectrum entry with `SWL_BW_20MHZ` in `wld_rad_nl80211_updateUsageStatsFromSurveyInfo()`. Real runner replay therefore locks the public 5g/6g/2.4g shape to `bandwidth="20MHz"` rather than the stale workbook-era numeric-only regex.'

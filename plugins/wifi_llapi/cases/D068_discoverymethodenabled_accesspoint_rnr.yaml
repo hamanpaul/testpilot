@@ -20,11 +20,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
   links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role; DiscoveryMethodEnabled is validated as an AP-only case with no STA transport)
+  - DUT: COM1 (AP role; DiscoveryMethodEnabled is validated as an AP-only case with no STA transport)
   Live band mapping:
   - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
   - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
@@ -262,25 +262,24 @@ pass_criteria:
   operator: equals
   value: '2'
   description: wl1 hostapd config should still expose two total `rnr=` lines after restore.
-verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"
-  ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"
-  ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"
-  ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=RNR
-  ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=RNR
-  ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=RNR
-  ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?"
-  awk '/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled5gCount=" enabled+0; print "RnrDisabled5gCount=" disabled+0; print "RnrTotal5gCount=" total+0}' /tmp/wl0_hapd.conf
-  awk '/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled6gCount=" enabled+0; print "RnrDisabled6gCount=" disabled+0; print "RnrTotal6gCount=" total+0}' /tmp/wl1_hapd.conf
-  awk '/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled24gCount=" enabled+0; print "RnrDisabled24gCount=" disabled+0; print "RnrTotal24gCount=" total+0}' /tmp/wl2_hapd.conf
-  ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=Default
-  ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=Default
-  ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=Default
-  ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?" | sed -n '1,20p'
-  awk '/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled6gCount=" enabled+0; print "RnrDisabled6gCount=" disabled+0; print "RnrTotal6gCount=" total+0}' /tmp/wl1_hapd.conf | sed -n '1,20p'
+verification_command:
+  - 'ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"'
+  - 'ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"'
+  - 'ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"'
+  - ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=RNR
+  - ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=RNR
+  - ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=RNR
+  - 'ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?"'
+  - 'awk ''/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled5gCount=" enabled+0; print "RnrDisabled5gCount=" disabled+0; print "RnrTotal5gCount=" total+0}'' /tmp/wl0_hapd.conf'
+  - 'awk ''/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled6gCount=" enabled+0; print "RnrDisabled6gCount=" disabled+0; print "RnrTotal6gCount=" total+0}'' /tmp/wl1_hapd.conf'
+  - 'awk ''/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled24gCount=" enabled+0; print "RnrDisabled24gCount=" disabled+0; print "RnrTotal24gCount=" total+0}'' /tmp/wl2_hapd.conf'
+  - ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=Default
+  - ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=Default
+  - ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=Default
+  - 'ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?" | sed -n ''1,20p'''
+  - 'awk ''/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled6gCount=" enabled+0; print "RnrDisabled6gCount=" disabled+0; print "RnrTotal6gCount=" total+0}'' /tmp/wl1_hapd.conf | sed -n ''1,20p'''
 results_reference:
   v4.0.3:
-    5g: Fail
+    5g: Pass
     6g: Pass
-    2.4g: Fail
-    comment: 'AP1/AP3/AP5 all started at DiscoveryMethodEnabled="Default"; RNR was accepted and read back as `RNR` on all three bands, but only wl1 hostapd config changed from `rnr=0/0` to `rnr=1/0`; wl0 and wl2 still exposed no `rnr=` lines. After restore, AP1/AP3/AP5 returned to `Default` and wl1 returned to `rnr=0/0`. This case is calibrated as 5G Fail / 6G Pass / 2.4G Fail.'
+    2.4g: Pass

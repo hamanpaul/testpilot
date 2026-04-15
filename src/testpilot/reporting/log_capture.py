@@ -9,17 +9,16 @@ from __future__ import annotations
 import base64
 import json
 import logging
-import os
 import shutil
 import subprocess
-import sys
 import time
 from pathlib import Path
 from typing import Any
 
+from testpilot.serialwrap_binary import resolve_serialwrap_binary
+
 logger = logging.getLogger(__name__)
 
-SERIALWRAP_BIN_ENV = "SERIALWRAP_BIN"
 DEFAULT_WAL_DIR = Path("/tmp/serialwrap/wal")
 
 _configured_bin: str | None = None
@@ -33,18 +32,11 @@ def configure(binary: str | None = None) -> None:
 
 
 def _resolve_bin() -> str:
-    """Resolve serialwrap binary: ENV → configure() value → error."""
-    env_bin = os.environ.get(SERIALWRAP_BIN_ENV)
-    if env_bin:
-        return env_bin
-    if _configured_bin:
-        return _configured_bin
-    print(
-        f"ERROR: serialwrap binary not found. "
-        f"Set {SERIALWRAP_BIN_ENV} env var or 'serialwrap_binary' in testbed config.",
-        file=sys.stderr,
+    """Resolve serialwrap binary: ENV → configure() value → PATH."""
+    return resolve_serialwrap_binary(
+        _configured_bin,
+        config_label="'serialwrap_binary' in testbed config",
     )
-    raise SystemExit(1)
 
 
 def _run_sw(args: list[str], timeout: float = 10.0) -> dict[str, Any]:

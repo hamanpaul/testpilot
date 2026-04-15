@@ -1,7 +1,7 @@
 id: d192-radio-guardinterval
 name: D192 Radio GuardInterval
 source:
-  row: 155
+  row: 192
   object: WiFi.Radio.{i}.
   api: GuardInterval
   baseline: 0310-BGW720-300
@@ -15,7 +15,7 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
-    comment: setter 只接受 Auto；400ns/800ns 等值回 error 10 (invalid value)
+    comment: read-only getter stays at the active 0403 tri-band value Auto
 topology:
   devices:
     DUT:

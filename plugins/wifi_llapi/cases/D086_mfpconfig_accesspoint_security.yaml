@@ -4,7 +4,7 @@ version: '1.1'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 80
+  row: 86
   object: WiFi.AccessPoint.{i}.Security
   api: MFPConfig
   baseline: BCM v4.0.3
@@ -20,18 +20,18 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
   links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role; MFPConfig is calibrated as an AP-only Security setter/getter case with no STA transport)
+  - DUT: COM1 (AP role; MFPConfig is calibrated as an AP-only Security setter/getter case with no STA transport)
   Live band mapping:
   - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
   - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
   - 2.4G: DUT wl2 / AP5 / SSID.8 / testpilot2G / WPA2-Personal / 00000000
   Preconditions:
   - keep AP1, AP3, and AP5 enabled on the documented non-open baseline before probing `Security.MFPConfig`
-  - workbook row 80 keeps the v4.0.3 reference at `Not Supported / Not Supported / Not Supported` with comment `hardcode in pwhm`
+  - workbook row 86 keeps the v4.0.3 reference at `Not Supported / Not Supported / Not Supported` with comment `hardcode in pwhm`
   - live 0320 probe showed `MFPConfig=Disabled` is accepted and read back as `Disabled` on all three bands
   - hostapd diverges by band: wl0 and wl2 keep `ieee80211w=0` (semantic `Disabled`), while wl1 keeps `wpa_key_mgmt=SAE` with `ieee80211w=2` (semantic `Required`)
   - this makes the current firmware a mixed-band checkpoint: 5G and 2.4G genuinely converge to `Disabled`, while 6G remains hardcoded at the northbound getter and does not project the forced SAE/MFP requirement
@@ -43,10 +43,10 @@ setup_steps: |
      - set `MFPConfig=Disabled` on the same AP
      - allow hostapd reload to settle, then re-read the getter and map hostapd `ieee80211w=` to the semantic MFP value (`0=Disabled`, `1=Optional`, `2=Required`)
      - also record `wpa_key_mgmt=` so the 6G SAE-enforced path stays explicit
-  3) Verdict model:
-     - this is a mixed-band checkpoint
-     - 5G and 2.4G pass only when the getter and hostapd both converge to `Disabled`
-     - 6G passes only when the getter remains hardcoded at `Disabled` while hostapd still exposes `Required` (`ieee80211w=2`) under `wpa_key_mgmt=SAE`
+   3) Verdict model:
+      - workbook row 86 is a hardcode/not-supported checkpoint, not a genuine all-band pass row
+      - active 0403 still accepts and reads back `MFPConfig=Disabled`, but the object stays default-biased while hostapd enforcement is derived from live security mode
+      - the authored steps therefore keep the mixed-band runtime evidence, while `results_reference` is aligned back to workbook row 86 authority
 sta_env_setup: |
   DUT:
     ubus-cli WiFi.AccessPoint.1.Enable=1
@@ -74,8 +74,9 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: >-
-    printf 'RequestedMfpConfig5g=Disabled\n'; ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+  command:
+    - printf 'RequestedMfpConfig5g=Disabled\n'
+    - ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
   depends_on: step1_security_mode_5g
   capture: mfp_disable_5g
 - id: step3_mfp_after_disable_5g
@@ -97,8 +98,9 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: >-
-    printf 'RequestedMfpConfig6g=Disabled\n'; ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Disabled
+  command:
+    - printf 'RequestedMfpConfig6g=Disabled\n'
+    - ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Disabled
   depends_on: step4_security_mode_6g
   capture: mfp_disable_6g
 - id: step6_mfp_after_disable_6g
@@ -120,8 +122,9 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: >-
-    printf 'RequestedMfpConfig24g=Disabled\n'; ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled
+  command:
+    - printf 'RequestedMfpConfig24g=Disabled\n'
+    - ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled
   depends_on: step7_security_mode_24g
   capture: mfp_disable_24g
 - id: step9_mfp_after_disable_24g
@@ -219,19 +222,19 @@ pass_criteria:
   reference: mfp_after_disable_24g.HostapdMfpConfig24g
   description: 2.4G AP5 / wl2 getter and hostapd should converge on Disabled.
 
-verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
-  ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
-  ubus-cli "WiFi.AccessPoint.1.Security.MFPConfig?"
-  grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl0_hapd.conf || true
-  ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"
-  ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Disabled
-  ubus-cli "WiFi.AccessPoint.3.Security.MFPConfig?"
-  grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl1_hapd.conf || true
-  ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"
-  ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled
-  ubus-cli "WiFi.AccessPoint.5.Security.MFPConfig?"
-  grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl2_hapd.conf || true
+verification_command:
+  - 'ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"'
+  - ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+  - 'ubus-cli "WiFi.AccessPoint.1.Security.MFPConfig?"'
+  - 'grep -E ''^(wpa_key_mgmt|ieee80211w)'' /tmp/wl0_hapd.conf || true'
+  - 'ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"'
+  - ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Disabled
+  - 'ubus-cli "WiFi.AccessPoint.3.Security.MFPConfig?"'
+  - 'grep -E ''^(wpa_key_mgmt|ieee80211w)'' /tmp/wl1_hapd.conf || true'
+  - 'ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"'
+  - ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled
+  - 'ubus-cli "WiFi.AccessPoint.5.Security.MFPConfig?"'
+  - 'grep -E ''^(wpa_key_mgmt|ieee80211w)'' /tmp/wl2_hapd.conf || true'
 
 results_reference:
   v4.0.1:
@@ -240,7 +243,7 @@ results_reference:
     2.4g: Fail
     comment: 'ARC : API always return "Disabled"'
   v4.0.3:
-    5g: Pass
+    5g: Not Supported
     6g: Not Supported
-    2.4g: Pass
-    comment: '0320 serialwrap live probe showed `MFPConfig=Disabled` is accepted and read back as `Disabled` on AP1/AP3/AP5; wl0/wl2 hostapd also stay at `ieee80211w=0`, but wl1 remains `wpa_key_mgmt=SAE` with `ieee80211w=2`, so the current firmware is mixed-band rather than the workbook''s all-band `hardcode in pwhm` shape.'
+    2.4g: Not Supported
+    comment: 'workbook row 86 is explicitly `Not Supported / Not Supported / Not Supported` with comment `hardcode in pwhm`. Active 0403 still reads back `MFPConfig=Disabled` on AP1/AP3/AP5, but the object remains default-biased while hostapd enforcement follows live security mode (`ieee80211w=0` on WPA2 5G/2.4G, `ieee80211w=2` on WPA3 6G).'

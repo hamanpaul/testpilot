@@ -20,11 +20,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
   links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role; this is an AP-only checkpoint with no STA transport)
+  - DUT: COM1 (AP role; this is an AP-only checkpoint with no STA transport)
   Live band mapping:
   - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
   - 6G: AP3 / wl1 is out of scope for this checkpoint.
@@ -144,16 +144,16 @@ pass_criteria:
   operator: equals
   value: up
   description: AP1 should remain up after the unsupported toggle sequence so the mismatch is not due to the AP being down.
-verification_command: |
-  ubus-cli WiFi.AccessPoint.1.APBridgeDisable=1
-  ubus-cli "WiFi.AccessPoint.1.APBridgeDisable?"
-  wl -i wl0 ap_isolate | sed -n 's/^/DriverApIsolateOn=/p'
-  grep '^ap_isolate=' /tmp/wl0_hapd.conf | awk -F= '/^ap_isolate=/ {print "HostapdApIsolate=" $2; if ($2 == 0) zeros++} END {print "HostapdApIsolateZeroCount=" zeros}'
-  ubus-cli WiFi.AccessPoint.1.APBridgeDisable=0
-  sleep 5
-  ubus-cli "WiFi.AccessPoint.1.APBridgeDisable?"
-  wl -i wl0 ap_isolate | sed -n 's/^/DriverApIsolateOff=/p'
-  wl -i wl0 bss | sed -n 's/^/DriverBssState=/p'
+verification_command:
+  - ubus-cli WiFi.AccessPoint.1.APBridgeDisable=1
+  - 'ubus-cli "WiFi.AccessPoint.1.APBridgeDisable?"'
+  - 'wl -i wl0 ap_isolate | sed -n ''s/^/DriverApIsolateOn=/p'''
+  - 'grep ''^ap_isolate='' /tmp/wl0_hapd.conf | awk -F= ''/^ap_isolate=/ {print "HostapdApIsolate=" $2; if ($2 == 0) zeros++} END {print "HostapdApIsolateZeroCount=" zeros}'''
+  - ubus-cli WiFi.AccessPoint.1.APBridgeDisable=0
+  - sleep 5
+  - 'ubus-cli "WiFi.AccessPoint.1.APBridgeDisable?"'
+  - 'wl -i wl0 ap_isolate | sed -n ''s/^/DriverApIsolateOff=/p'''
+  - 'wl -i wl0 bss | sed -n ''s/^/DriverBssState=/p'''
 results_reference:
   v4.0.3:
     5g: Not Supported

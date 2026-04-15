@@ -1,7 +1,7 @@
-id: d484-getradiostats-wmm-bytessent-ac_vi
-name: D484 getRadioStats WmmBytesSent AC_VI
+id: d484-radio-stats-wmmbytessent-ac_vi
+name: D484 Radio Stats WmmBytesSent AC_VI
 source:
-  row: 351
+  row: 484
   object: WiFi.Radio.{i}.Stats.WmmBytesSent.
   api: AC_VI
   baseline: 0310-BGW720-300
@@ -15,41 +15,73 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: workbook row 484 keeps this radio-level counter on Pass; workbook H484 uses wl wme_counters AC_VI tx bytes as the driver oracle.
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
-- id: step_5g_stats
+- id: step_5g_direct
   target: dut
-  action: read
-  capture: stats_5g
-  command: ubus-cli "WiFi.Radio.1.getRadioStats()" | grep AC_VI_Stats
-  expected: getRadioStats() 回傳有效值
-  description: Radio.1 (5g) getRadioStats()
-- id: step_6g_stats
+  action: exec
+  capture: direct_5g
+  command: 'ubus-cli "WiFi.Radio.1.Stats.WmmBytesSent.AC_VI?"'
+  expected: Stats.WmmBytesSent.AC_VI getter 回傳有效值
+  description: Radio.1 (5g) direct Stats.WmmBytesSent.AC_VI
+- id: step_5g_driver
   target: dut
-  action: read
-  capture: stats_6g
-  command: ubus-cli "WiFi.Radio.2.getRadioStats()" | grep AC_VI_Stats
-  expected: getRadioStats() 回傳有效值
-  description: Radio.2 (6g) getRadioStats()
-- id: step_24g_stats
+  action: exec
+  capture: driver_5g
+  command: wl -i wl0 wme_counters | grep '^AC_VI:' | awk '{print "DriverWmmBytesSent5g="$6}'
+  expected: wl0 wme_counters 匯出 AC_VI tx bytes
+  description: Radio.1 (5g) driver AC_VI tx bytes
+- id: step_6g_direct
   target: dut
-  action: read
-  capture: stats_24g
-  command: ubus-cli "WiFi.Radio.3.getRadioStats()" | grep AC_VI_Stats
-  expected: getRadioStats() 回傳有效值
-  description: Radio.3 (2.4g) getRadioStats()
+  action: exec
+  capture: direct_6g
+  command: 'ubus-cli "WiFi.Radio.2.Stats.WmmBytesSent.AC_VI?"'
+  expected: Stats.WmmBytesSent.AC_VI getter 回傳有效值
+  description: Radio.2 (6g) direct Stats.WmmBytesSent.AC_VI
+- id: step_6g_driver
+  target: dut
+  action: exec
+  capture: driver_6g
+  command: wl -i wl1 wme_counters | grep '^AC_VI:' | awk '{print "DriverWmmBytesSent6g="$6}'
+  expected: wl1 wme_counters 匯出 AC_VI tx bytes
+  description: Radio.2 (6g) driver AC_VI tx bytes
+- id: step_24g_direct
+  target: dut
+  action: exec
+  capture: direct_24g
+  command: 'ubus-cli "WiFi.Radio.3.Stats.WmmBytesSent.AC_VI?"'
+  expected: Stats.WmmBytesSent.AC_VI getter 回傳有效值
+  description: Radio.3 (2.4g) direct Stats.WmmBytesSent.AC_VI
+- id: step_24g_driver
+  target: dut
+  action: exec
+  capture: driver_24g
+  command: wl -i wl2 wme_counters | grep '^AC_VI:' | awk '{print "DriverWmmBytesSent24g="$6}'
+  expected: wl2 wme_counters 匯出 AC_VI tx bytes
+  description: Radio.3 (2.4g) driver AC_VI tx bytes
 pass_criteria:
-- field: stats_5g.WmmBytesSent
-  operator: regex
-  value: ^\d+$
-- field: stats_6g.WmmBytesSent
-  operator: regex
-  value: ^\d+$
-- field: stats_24g.WmmBytesSent
-  operator: regex
-  value: ^\d+$
+- field: direct_5g.AC_VI
+  operator: equals
+  reference: driver_5g.DriverWmmBytesSent5g
+  description: 5g direct Stats.WmmBytesSent.AC_VI must match wl0 wme_counters AC_VI tx bytes.
+- field: direct_6g.AC_VI
+  operator: equals
+  reference: driver_6g.DriverWmmBytesSent6g
+  description: 6g direct Stats.WmmBytesSent.AC_VI must match wl1 wme_counters AC_VI tx bytes.
+- field: direct_24g.AC_VI
+  operator: equals
+  reference: driver_24g.DriverWmmBytesSent24g
+  description: 2.4g direct Stats.WmmBytesSent.AC_VI must match wl2 wme_counters AC_VI tx bytes.
+verification_command:
+  - 'ubus-cli "WiFi.Radio.1.Stats.WmmBytesSent.AC_VI?"'
+  - 'wl -i wl0 wme_counters | grep ''^AC_VI:'' | awk ''{print "DriverWmmBytesSent5g="$6}'''
+  - 'ubus-cli "WiFi.Radio.2.Stats.WmmBytesSent.AC_VI?"'
+  - 'wl -i wl1 wme_counters | grep ''^AC_VI:'' | awk ''{print "DriverWmmBytesSent6g="$6}'''
+  - 'ubus-cli "WiFi.Radio.3.Stats.WmmBytesSent.AC_VI?"'
+  - 'wl -i wl2 wme_counters | grep ''^AC_VI:'' | awk ''{print "DriverWmmBytesSent24g="$6}'''

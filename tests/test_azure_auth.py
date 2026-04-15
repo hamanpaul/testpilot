@@ -12,6 +12,7 @@ from testpilot.core.azure_auth import (
     DEFAULT_API_VERSION,
     AzureAuthError,
     export_azure_env,
+    normalize_azure_base_url,
     resolve_provider_config,
     verify_azure_connectivity,
 )
@@ -67,6 +68,36 @@ class TestResolveProviderConfig:
         assert result is not None
         assert result["azure"]["api_version"] == "2025-01-01"
 
+    def test_normalizes_full_deployment_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv(AZURE_ENV_VARS["type"], "azure")
+        monkeypatch.setenv(
+            AZURE_ENV_VARS["base_url"],
+            "https://rs1200ai001.openai.azure.com/openai/deployments/gpt-5/chat/completions?api-version=2025-01-01-preview",
+        )
+        monkeypatch.setenv(AZURE_ENV_VARS["api_key"], "secret-key")
+
+        result = resolve_provider_config()
+        assert result is not None
+        assert result["base_url"] == "https://rs1200ai001.openai.azure.com"
+
+
+class TestNormalizeAzureBaseUrl:
+    """Tests for normalize_azure_base_url()."""
+
+    def test_keeps_resource_root_unchanged(self) -> None:
+        assert (
+            normalize_azure_base_url("https://my-resource.openai.azure.com")
+            == "https://my-resource.openai.azure.com"
+        )
+
+    def test_extracts_resource_root_from_full_deployment_url(self) -> None:
+        assert (
+            normalize_azure_base_url(
+                "https://rs1200ai001.openai.azure.com/openai/deployments/gpt-5/chat/completions?api-version=2025-01-01-preview"
+            )
+            == "https://rs1200ai001.openai.azure.com"
+        )
+
 
 class TestExportAzureEnv:
     """Tests for export_azure_env()."""
@@ -87,6 +118,19 @@ class TestExportAzureEnv:
         assert os.environ[AZURE_ENV_VARS["api_key"]] == "test-key"
         assert os.environ[AZURE_ENV_VARS["model"]] == "gpt-4o"
         assert os.environ[AZURE_ENV_VARS["api_version"]] == DEFAULT_API_VERSION
+
+    def test_normalizes_full_deployment_url_before_export(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        for var in AZURE_ENV_VARS.values():
+            monkeypatch.delenv(var, raising=False)
+
+        creds = {
+            "base_url": "https://rs1200ai001.openai.azure.com/openai/deployments/gpt-5/chat/completions?api-version=2025-01-01-preview",
+            "api_key": "test-key",
+            "model": "gpt-5",
+        }
+        export_azure_env(creds)
+
+        assert os.environ[AZURE_ENV_VARS["base_url"]] == "https://rs1200ai001.openai.azure.com"
 
 
 class TestVerifyAzureConnectivity:
@@ -125,3 +169,15 @@ class TestVerifyAzureConnectivity:
             call_args = mock.call_args
             req = call_args[0][0]
             assert "//openai" not in req.full_url
+
+    def test_normalizes_full_deployment_url_before_probe(self) -> None:
+        with patch("testpilot.core.azure_auth.urllib.request.urlopen") as mock:
+            mock.return_value = MagicMock()
+            verify_azure_connectivity(
+                "https://rs1200ai001.openai.azure.com/openai/deployments/gpt-5/chat/completions?api-version=2025-01-01-preview"
+            )
+            req = mock.call_args[0][0]
+            assert req.full_url == (
+                "https://rs1200ai001.openai.azure.com/openai/models"
+                f"?api-version={DEFAULT_API_VERSION}"
+            )

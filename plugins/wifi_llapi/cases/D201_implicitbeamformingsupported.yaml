@@ -1,7 +1,7 @@
 id: d201-radio-implicitbeamformingsupported
 name: D201 Radio ImplicitBeamFormingSupported
 source:
-  row: 164
+  row: 201
   object: WiFi.Radio.{i}.
   api: ImplicitBeamFormingSupported
   baseline: 0310-BGW720-300
@@ -15,6 +15,7 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: read-only getter exact-closes the active 0403 tri-band ImplicitBeamFormingSupported values
 topology:
   devices:
     DUT:

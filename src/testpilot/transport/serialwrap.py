@@ -3,41 +3,44 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import subprocess
-import sys
 import time
 from typing import Any
 
+from testpilot.serialwrap_binary import resolve_serialwrap_binary
+
 from .base import TransportBase
 
-SERIALWRAP_BIN_ENV = "SERIALWRAP_BIN"
-TERMINAL_STATUSES = {"done", "failed", "error", "timeout", "cancelled", "canceled"}
+TERMINAL_STATUSES = {
+    "done",
+    "failed",
+    "error",
+    "timeout",
+    "cancelled",
+    "canceled",
+    "interactive",
+}
 MODE_ALIASES = {"fg": "line", "bg": "background"}
+
+# Serial terminals have limited line buffers.  Commands longer than this
+# threshold are automatically staged to a temp script on the device and
+# executed via ``sh``, avoiding truncation.
+_MAX_SERIAL_LINE_LENGTH = 120
+_TEMPSCRIPT = "/tmp/_tp_cmd.sh"
+# Overhead per printf chunk: printf '%s\n' '' >> /tmp/_tp_cmd.sh  ≈ 39 chars
+_PRINTF_OVERHEAD = 39
 
 
 def _resolve_serialwrap_binary(config: dict[str, Any]) -> str:
-    """Resolve serialwrap binary path: ENV → config['binary'] → error.
-
-    If ENV is set but config is missing, backfill config['binary'] from ENV.
-    """
-    env_bin = os.environ.get(SERIALWRAP_BIN_ENV)
     cfg_bin = config.get("binary")
-
-    if env_bin:
-        if not cfg_bin:
-            config["binary"] = env_bin
-        return env_bin
-    if cfg_bin:
-        return str(cfg_bin)
-
-    print(
-        f"ERROR: serialwrap binary not found. "
-        f"Set {SERIALWRAP_BIN_ENV} env var or 'binary' in transport config.",
-        file=sys.stderr,
+    binary = resolve_serialwrap_binary(
+        str(cfg_bin) if cfg_bin is not None else None,
+        config_label="'binary' in transport config",
     )
-    raise SystemExit(1)
+    if not cfg_bin:
+        config["binary"] = binary
+    return binary
 
 
 class SerialWrapTransport(TransportBase):
@@ -115,6 +118,88 @@ class SerialWrapTransport(TransportBase):
         if not self._connected or not self._selector:
             raise RuntimeError("serialwrap transport is not connected")
 
+        if len(command) > _MAX_SERIAL_LINE_LENGTH:
+            return self._execute_via_tempscript(command, timeout)
+
+        return self._submit_and_poll(command, timeout)
+
+    # ------------------------------------------------------------------
+    # Long-command handler: stage to temp script, execute via ``sh``
+    # ------------------------------------------------------------------
+
+    def _execute_via_tempscript(self, command: str, timeout: float) -> dict[str, Any]:
+        """Write *command* to a temp script on the device then execute it.
+
+        Uses ``printf '%s\\n'`` with single-quote escaping to transmit the
+        script in small chunks, each well under the serial line-length
+        limit.  Newlines in the command are handled by splitting into
+        separate lines first.
+        """
+        lines = command.split("\n")
+        setup_timeout = min(timeout, 10.0)
+        first = True
+
+        for line in lines:
+            chunks = self._sq_chunks(line)
+            for chunk_idx, chunk in enumerate(chunks):
+                is_last_chunk = chunk_idx == len(chunks) - 1
+                redir = ">" if first else ">>"
+                first = False
+                fmt = "%s\\n" if is_last_chunk else "%s"
+                self._submit_and_poll(
+                    f"printf '{fmt}' '{chunk}' {redir} {_TEMPSCRIPT}",
+                    setup_timeout,
+                )
+
+        result = self._submit_and_poll(
+            f"sh {_TEMPSCRIPT}; rm -f {_TEMPSCRIPT}",
+            timeout,
+        )
+        return result
+
+    @staticmethod
+    def _sq_chunks(line: str) -> list[str]:
+        """Split *line* into single-quote-escaped chunks for ``printf``.
+
+        Each chunk, when wrapped as ``printf '%s' '<chunk>' >> file``,
+        stays under ``_MAX_SERIAL_LINE_LENGTH`` characters.  Single
+        quotes in *line* are escaped as ``'\\''`` (end-quote, literal
+        quote, start-quote) — standard POSIX shell quoting.
+        """
+        max_content = _MAX_SERIAL_LINE_LENGTH - _PRINTF_OVERHEAD
+        if max_content < 10:
+            max_content = 10
+
+        chunks: list[str] = []
+        current: list[str] = []
+        current_len = 0
+
+        for c in line:
+            if c == "'":
+                piece = "'\\''"
+                piece_len = 4
+            else:
+                piece = c
+                piece_len = 1
+
+            if current_len + piece_len > max_content and current:
+                chunks.append("".join(current))
+                current = []
+                current_len = 0
+
+            current.append(piece)
+            current_len += piece_len
+
+        if current:
+            chunks.append("".join(current))
+
+        return chunks or [""]
+
+    # ------------------------------------------------------------------
+    # Low-level submit + poll
+    # ------------------------------------------------------------------
+
+    def _submit_and_poll(self, command: str, timeout: float = 30.0) -> dict[str, Any]:
         timeout_s = max(float(timeout), 0.1)
         start = time.monotonic()
         submit_payload = self._run_json(

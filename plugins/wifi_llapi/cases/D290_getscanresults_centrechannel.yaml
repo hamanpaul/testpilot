@@ -1,7 +1,7 @@
 id: d290-getscanresults-centrechannel
 name: D290 getScanResults CentreChannel
 source:
-  row: 292
+  row: 290
   object: WiFi.Radio.{i}.
   api: getScanResults()
   baseline: 0310-BGW720-300
@@ -13,43 +13,74 @@ llapi_support: Support
 results_reference:
   v4.0.3:
     5g: Pass
-    6g: Pass
+    6g: Fail
     2.4g: Pass
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_scan
   target: dut
-  action: read
+  action: exec
   capture: scan_5g
-  command: ubus-cli "WiFi.Radio.1.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.1 (5g) getScanResults()
+  command: 'BLOCK=$(ubus-cli "WiFi.Radio.1.getScanResults()" | head -60 | sed -n "/BSSID = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n "s/.*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); LLCC=$(printf "%s\n" "$BLOCK" | sed -n "s/.*CentreChannel = \([0-9][0-9]*\).*/\1/p" | head -n1); WLBLOCK=$(wl -i wl0 escanresults | grep -im1 -A20 "BSSID: $BSSID"); WLCC=$(printf "%s\n" "$WLBLOCK" | sed -n "s/.*Chanspec: .* channel \([0-9][0-9]*\) .*/\1/p" | head -n1); LBSSID=$(printf "%s" "$BSSID" | tr "A-F" "a-f"); printf "LlapiBssid5g=%s\nLlapiCentreChannel5g=%s\nWlCentreChannel5g=%s\n" "$LBSSID" "$LLCC" "$WLCC"'
+  expected: 5G getScanResults() 第一個 target 的 CentreChannel 需能與同 BSSID wl escanresults Chanspec 對位
+  description: Radio.1 (5g) 以縮版 scan capture 對位 LLAPI 與 wl escanresults 的 CentreChannel
 - id: step_6g_scan
   target: dut
-  action: read
+  action: exec
   capture: scan_6g
-  command: ubus-cli "WiFi.Radio.2.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.2 (6g) getScanResults()
+  command: 'BLOCK=$(ubus-cli "WiFi.Radio.2.getScanResults()" | head -60 | sed -n "/BSSID = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n "s/.*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); LLCC=$(printf "%s\n" "$BLOCK" | sed -n "s/.*CentreChannel = \([0-9][0-9]*\).*/\1/p" | head -n1); WLBLOCK=$(wl -i wl1 escanresults | grep -im1 -A20 "BSSID: $BSSID"); WLCC=$(printf "%s\n" "$WLBLOCK" | sed -n "s/.*Chanspec: .* channel \([0-9][0-9]*\) .*/\1/p" | head -n1); LBSSID=$(printf "%s" "$BSSID" | tr "A-F" "a-f"); printf "LlapiBssid6g=%s\nLlapiCentreChannel6g=%s\nWlCentreChannel6g=%s\n" "$LBSSID" "$LLCC" "$WLCC"'
+  expected: 6G getScanResults() 第一個 target 需維持目前的 fail-shaped centre-channel mismatch（LLAPI 31 vs wl escanresults 15）
+  description: Radio.2 (6g) 以縮版 scan capture 對位 LLAPI 與 wl escanresults 的 CentreChannel fail shape
 - id: step_24g_scan
   target: dut
-  action: read
+  action: exec
   capture: scan_24g
-  command: ubus-cli "WiFi.Radio.3.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.3 (2.4g) getScanResults()
+  command: 'BLOCK=$(ubus-cli "WiFi.Radio.3.getScanResults()" | head -60 | sed -n "/BSSID = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n "s/.*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); LLCC=$(printf "%s\n" "$BLOCK" | sed -n "s/.*CentreChannel = \([0-9][0-9]*\).*/\1/p" | head -n1); WLBLOCK=$(wl -i wl2 escanresults | grep -im1 -A20 "BSSID: $BSSID"); WLCC=$(printf "%s\n" "$WLBLOCK" | sed -n "s/.*Chanspec: .* channel \([0-9][0-9]*\) .*/\1/p" | head -n1); LBSSID=$(printf "%s" "$BSSID" | tr "A-F" "a-f"); printf "LlapiBssid24g=%s\nLlapiCentreChannel24g=%s\nWlCentreChannel24g=%s\n" "$LBSSID" "$LLCC" "$WLCC"'
+  expected: 2.4G getScanResults() 第一個 target 的 CentreChannel 需能與同 BSSID wl escanresults Chanspec 對位
+  description: Radio.3 (2.4g) 以縮版 scan capture 對位 LLAPI 與 wl escanresults 的 CentreChannel
 pass_criteria:
-- field: scan_5g.CentreChannel
+- field: scan_5g.LlapiBssid5g
   operator: regex
-  value: '.+'
-- field: scan_6g.CentreChannel
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  description: 5G 必須先鎖定第一個 scan target BSSID
+- field: scan_5g.LlapiCentreChannel5g
   operator: regex
-  value: '.+'
-- field: scan_24g.CentreChannel
+  value: ^[0-9][0-9]*$
+  description: 5G LLAPI CentreChannel 必須成功擷取
+- field: scan_5g.WlCentreChannel5g
+  operator: equals
+  reference: scan_5g.LlapiCentreChannel5g
+  description: 5G wl escanresults Chanspec 中的 centre channel 必須與 LLAPI CentreChannel 相同
+- field: scan_6g.LlapiBssid6g
   operator: regex
-  value: '.+'
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  description: 6G 必須先鎖定第一個 scan target BSSID
+- field: scan_6g.LlapiCentreChannel6g
+  operator: equals
+  value: '31'
+  description: 6G 當前 LLAPI getScanResults() 仍回 CentreChannel 31
+- field: scan_6g.WlCentreChannel6g
+  operator: equals
+  value: '15'
+  description: 6G 同 target wl escanresults Chanspec 目前仍是 centre channel 15
+- field: scan_6g.WlCentreChannel6g
+  operator: not_equals
+  reference: scan_6g.LlapiCentreChannel6g
+  description: 6G LLAPI CentreChannel 必須持續偏離同 target wl escanresults 的 centre channel
+- field: scan_24g.LlapiBssid24g
+  operator: regex
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  description: 2.4G 必須先鎖定第一個 scan target BSSID
+- field: scan_24g.LlapiCentreChannel24g
+  operator: regex
+  value: ^[0-9][0-9]*$
+  description: 2.4G LLAPI CentreChannel 必須成功擷取
+- field: scan_24g.WlCentreChannel24g
+  operator: equals
+  reference: scan_24g.LlapiCentreChannel24g
+  description: 2.4G wl escanresults Chanspec 中的 centre channel 必須與 LLAPI CentreChannel 相同

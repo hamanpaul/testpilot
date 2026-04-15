@@ -38,6 +38,7 @@ _CASES: list[dict[str, Any]] = [
         "result_5g": "pass",
         "result_6g": "fail",
         "result_24g": "pass",
+        "diagnostic_status": "FailEnv",
         "comment": "6G radio off",
         "tester": "bot",
     },
@@ -49,6 +50,7 @@ _CASES: list[dict[str, Any]] = [
         "result_5g": "pass",
         "result_6g": "not_supported",
         "result_24g": "pass",
+        "diagnostic_status": "PassAfterRemediation",
         "comment": "",
         "tester": "bot",
     },
@@ -89,6 +91,7 @@ class TestMarkdownReporter:
         assert "| case_id |" in text
         assert "| D001 |" in text
         assert "| D002 |" in text
+        assert "diagnostic_status" in text
 
     def test_case_details_collapsible(self, tmp_path: Path) -> None:
         out = tmp_path / "report.md"
@@ -142,6 +145,10 @@ class TestJsonReporter:
         assert summary["fail"] == 1
         assert summary["not_supported"] == 1
         assert summary["error"] == 0
+        assert summary["diagnostic_status"] == {
+            "FailEnv": 1,
+            "PassAfterRemediation": 1,
+        }
 
     def test_meta_preserved(self, tmp_path: Path) -> None:
         out = tmp_path / "report.json"

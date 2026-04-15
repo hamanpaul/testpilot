@@ -147,6 +147,37 @@ class TestHookVerdictInteraction:
         assert len(on_failure_calls) >= 1
         assert result.verdict is True
 
+    @pytest.mark.parametrize(
+        ("plugin_kwargs", "expected_phase"),
+        [
+            ({"setup_ok": False}, "setup_env"),
+            ({"verify_ok": False}, "verify_env"),
+            ({"evaluate_ok": False}, "evaluate"),
+        ],
+    )
+    def test_on_failure_hook_receives_non_step_failures(
+        self,
+        hooked_engine: tuple[ExecutionEngine, HookDispatcher],
+        plugin_kwargs: dict[str, Any],
+        expected_phase: str,
+    ) -> None:
+        eng, dispatcher = hooked_engine
+        phases: list[str] = []
+        dispatcher.register(
+            "on_failure",
+            lambda ctx, data: (phases.append(str(data.get("phase", ""))), HookResult())[1],
+        )
+        plugin = _make_plugin(**plugin_kwargs)
+        result = eng.execute_case_once(
+            plugin=plugin,
+            case=_make_case(),
+            attempt_index=1,
+            attempt_timeout_seconds=120.0,
+            runner=_RUNNER,
+        )
+        assert result["verdict"] is False
+        assert phases == [expected_phase]
+
     def test_post_case_hook_receives_correct_verdict(self, hooked_engine: tuple[ExecutionEngine, HookDispatcher]) -> None:
         eng, dispatcher = hooked_engine
         captured: list[dict[str, Any]] = []
@@ -178,6 +209,44 @@ class TestHookVerdictInteraction:
         )
         assert result["verdict"] is True
         assert result["comment"] == ""
+
+    def test_execute_case_once_records_resolved_step_commands(self, engine: ExecutionEngine) -> None:
+        plugin = _make_plugin(evaluate_ok=True)
+        plugin.execute_step.side_effect = [
+            {"success": True, "output": "ok-1", "command": "resolved_cmd_1"},
+            {"success": True, "output": "ok-2", "command": "resolved_cmd_2"},
+        ]
+
+        result = engine.execute_case_once(
+            plugin=plugin,
+            case=_make_case(steps=2),
+            attempt_index=1,
+            attempt_timeout_seconds=120.0,
+            runner=_RUNNER,
+        )
+
+        assert result["commands"] == ["resolved_cmd_1", "resolved_cmd_2"]
+
+    def test_execute_case_once_stringifies_list_step_command_when_plugin_omits_command(
+        self, engine: ExecutionEngine
+    ) -> None:
+        plugin = _make_plugin(evaluate_ok=True)
+        plugin.execute_step.return_value = {"success": True, "output": "ok"}
+        case = {
+            "id": "D999",
+            "steps": [{"id": "step_0", "command": ["echo one", "echo two"]}],
+            "pass_criteria": [],
+        }
+
+        result = engine.execute_case_once(
+            plugin=plugin,
+            case=case,
+            attempt_index=1,
+            attempt_timeout_seconds=120.0,
+            runner=_RUNNER,
+        )
+
+        assert result["commands"] == ["echo one\necho two"]
 
 
 # ===================================================================

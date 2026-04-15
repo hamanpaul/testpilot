@@ -1,7 +1,7 @@
 id: d272-getradiostats-multicastpacketssent
 name: D272 getRadioStats MulticastPacketsSent
 source:
-  row: 274
+  row: 272
   object: WiFi.Radio.{i}.
   api: getRadioStats()
   baseline: 0310-BGW720-300
@@ -20,7 +20,7 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_stats
   target: dut

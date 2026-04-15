@@ -70,13 +70,15 @@ class AdvisoryCollector:
         def _handler(ctx: HookContext, data: dict[str, Any]) -> HookResult:
             verdict = data.get("verdict")
             comment = data.get("comment", "")
+            failure_snapshot = data.get("failure_snapshot")
+            snapshot = failure_snapshot if isinstance(failure_snapshot, dict) else {}
 
             # Only generate advisory for failures
             if verdict is not False and ctx.hook_name != "on_failure":
                 return HookResult(proceed=True)
 
             severity = "error" if ctx.hook_name == "on_failure" else "warning"
-            category = "environment"
+            category = str(snapshot.get("category", "environment") or "environment")
             summary_text = comment if comment else f"Failure in {ctx.case_id}"
 
             advisory = AdvisoryOutput(

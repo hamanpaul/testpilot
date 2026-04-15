@@ -1,7 +1,7 @@
 id: d308-getssidstats-failedretranscount
 name: D308 getSSIDStats FailedRetransCount
 source:
-  row: 233
+  row: 308
   object: WiFi.SSID.{i}.
   api: getSSIDStats()
   baseline: 0310-BGW720-300
@@ -15,13 +15,13 @@ results_reference:
     5g: Not Supported
     6g: Not Supported
     2.4g: Not Supported
-    comment: workbook v4.0.3 marks as Not Supported for SSID scope; field is always 0 per-band on this platform
+    comment: 'workbook v4.0.3 marks FailedRetransCount as Not Supported; current getSSIDStats() probe still returns 0 on 5g/6g/2.4g.'
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_stats
   target: dut
@@ -46,11 +46,11 @@ steps:
   description: SSID.8 (2.4g) getSSIDStats()
 pass_criteria:
 - field: stats_5g.FailedRetransCount
-  operator: regex
-  value: ^\d+$
+  operator: equals
+  value: 0
 - field: stats_6g.FailedRetransCount
-  operator: regex
-  value: ^\d+$
+  operator: equals
+  value: 0
 - field: stats_24g.FailedRetransCount
-  operator: regex
-  value: ^\d+$
+  operator: equals
+  value: 0

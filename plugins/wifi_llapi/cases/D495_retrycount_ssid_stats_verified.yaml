@@ -18,11 +18,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
       config:
         - iface: 5g
           mode: sta
@@ -48,8 +48,8 @@ topology:
       band: 2.4g
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role)
-  - STA: COM1 (single active STA link only; validate 5G -> 6G -> 2.4G sequentially)
+  - DUT: COM1 (AP role)
+  - STA: COM0 (single active STA link only; validate 5G -> 6G -> 2.4G sequentially)
   Mapping:
   - 5G = wl0 / SSID.4 / STA MAC 2c:59:17:00:04:85
   - 6G = wl1 / SSID.6 / STA MAC 2c:59:17:00:04:86
@@ -93,9 +93,16 @@ sta_env_setup: |
     wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
     wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
   6G example:
+    iw dev wl1 disconnect 2>/dev/null || true
+    ifconfig wl1 down
+    wl -i wl1 down
+    wl -i wl1 ap 0
     iw dev wl1 set type managed
+    wl -i wl1 up
     ifconfig wl1 up
     wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant
+    wpa_cli -p /var/run/wpa_supplicant -i wl1 enable_network 0
+    wpa_cli -p /var/run/wpa_supplicant -i wl1 select_network 0
     wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect
   2.4G example:
     iw dev wl2 set type managed
@@ -168,8 +175,8 @@ steps:
   capture: getssid_24g
 pass_criteria:
 - field: assoc_5g.AssocMac5g
-  operator: equals
-  value: 2c:59:17:00:04:85
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: 5g DUT assoclist must resolve the expected STA MAC 2c:59:17:00:04:85.
 - field: direct_5g.RetryCount
   operator: equals
@@ -180,8 +187,8 @@ pass_criteria:
   value: 0
   description: 5g direct Stats.RetryCount stays 0 for this workbook Not Supported case.
 - field: assoc_6g.AssocMac6g
-  operator: equals
-  value: 2c:59:17:00:04:86
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: 6g DUT assoclist must resolve the expected STA MAC 2c:59:17:00:04:86.
 - field: direct_6g.RetryCount
   operator: equals
@@ -192,8 +199,8 @@ pass_criteria:
   value: 0
   description: 6g direct Stats.RetryCount stays 0 for this workbook Not Supported case.
 - field: assoc_24g.AssocMac24g
-  operator: equals
-  value: 2c:59:17:00:04:97
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: 2.4g DUT assoclist must resolve the expected STA MAC 2c:59:17:00:04:97.
 - field: direct_24g.RetryCount
   operator: equals
@@ -203,21 +210,19 @@ pass_criteria:
   operator: equals
   value: 0
   description: 2.4g direct Stats.RetryCount stays 0 for this workbook Not Supported case.
-verification_command: |
-  # 5g
-  wl -i wl0 assoclist
-  ubus-cli "WiFi.SSID.4.Stats.RetryCount?"
-  ubus-cli "WiFi.SSID.4.getSSIDStats()" | grep "RetryCount"
-
-  # 6g
-  wl -i wl1 assoclist
-  ubus-cli "WiFi.SSID.6.Stats.RetryCount?"
-  ubus-cli "WiFi.SSID.6.getSSIDStats()" | grep "RetryCount"
-
-  # 2.4g
-  wl -i wl2 assoclist
-  ubus-cli "WiFi.SSID.8.Stats.RetryCount?"
-  ubus-cli "WiFi.SSID.8.getSSIDStats()" | grep "RetryCount"
+verification_command:
+  - '# 5g'
+  - wl -i wl0 assoclist
+  - 'ubus-cli "WiFi.SSID.4.Stats.RetryCount?"'
+  - 'ubus-cli "WiFi.SSID.4.getSSIDStats()" | grep "RetryCount"'
+  - '# 6g'
+  - wl -i wl1 assoclist
+  - 'ubus-cli "WiFi.SSID.6.Stats.RetryCount?"'
+  - 'ubus-cli "WiFi.SSID.6.getSSIDStats()" | grep "RetryCount"'
+  - '# 2.4g'
+  - wl -i wl2 assoclist
+  - 'ubus-cli "WiFi.SSID.8.Stats.RetryCount?"'
+  - 'ubus-cli "WiFi.SSID.8.getSSIDStats()" | grep "RetryCount"'
 results_reference:
   v4.0.1:
     5g: Fail

@@ -23,88 +23,56 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
   links: []
-test_environment: "Topology:\n  - DUT: COM0 (B0, AP role)\n  Transport:\n  - DUT via serialwrap COM0\n  Baseline:\n  - 5G  = AP1 / wl0 / testpilot5G / WPA2-Personal\n  - 6G  = AP3 / wl1 / testpilot6G /\
-  \ WPA3-Personal / SAE\n  - 2.4G = AP5 / wl2 / testpilot2G / WPA2-Personal\n  Notes:\n  - Setter round-trip on all 3 bands\n  - Workbook marks Not Support but live evidence shows convergence\n  - hostapd\
-  \ wmm_enabled flips correctly on all bands\n  - Setter triggers BSS restart"
+test_environment: "Topology:\n  - DUT: COM1 (B0, AP role)\n  Transport:\n  - DUT via serialwrap COM0\n  Baseline:\n  - 5G  = AP1 / wl0 / testpilot5G / WPA2-Personal\n  - 6G  = AP3 / wl1 / testpilot6G / WPA3-Personal / SAE\n  - 2.4G = AP5 / wl2 / testpilot2G / WPA2-Personal\n  Notes:\n  - Setter round-trip on all 3 bands\n  - Workbook marks Not Support but live evidence shows convergence\n  - hostapd wmm_enabled flips correctly on all bands\n  - Setter triggers BSS restart"
 steps:
 - id: step_5g_setter
   action: exec
   target: DUT
-  command: 'echo "Baseline5g=$(ubus-cli ''WiFi.AccessPoint.1.WMMEnable?'' 2>/dev/null | grep -o ''WMMEnable=[0-9]*'' | cut -d= -f2)"
-
-    echo "HapdBaseline5g=$(grep ''wmm_enabled='' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-
-    ubus-cli "WiFi.AccessPoint.1.WMMEnable=0" 2>/dev/null
-
-    sleep 5
-
-    echo "AfterSet5g=$(ubus-cli ''WiFi.AccessPoint.1.WMMEnable?'' 2>/dev/null | grep -o ''WMMEnable=[0-9]*'' | cut -d= -f2)"
-
-    echo "HapdAfterSet5g=$(grep ''wmm_enabled='' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-
-    ubus-cli "WiFi.AccessPoint.1.WMMEnable=1" 2>/dev/null
-
-    sleep 5
-
-    echo "AfterRestore5g=$(ubus-cli ''WiFi.AccessPoint.1.WMMEnable?'' 2>/dev/null | grep -o ''WMMEnable=[0-9]*'' | cut -d= -f2)"
-
-    echo "HapdAfterRestore5g=$(grep ''wmm_enabled='' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-
-    '
+  command:
+  - echo "Baseline5g=$(ubus-cli 'WiFi.AccessPoint.1.WMMEnable?' 2>/dev/null | grep -o 'WMMEnable=[0-9]*' | cut -d= -f2)"
+  - echo "HapdBaseline5g=$(grep 'wmm_enabled=' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+  - ubus-cli "WiFi.AccessPoint.1.WMMEnable=0" 2>/dev/null
+  - sleep 5
+  - echo "AfterSet5g=$(ubus-cli 'WiFi.AccessPoint.1.WMMEnable?' 2>/dev/null | grep -o 'WMMEnable=[0-9]*' | cut -d= -f2)"
+  - echo "HapdAfterSet5g=$(grep 'wmm_enabled=' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+  - ubus-cli "WiFi.AccessPoint.1.WMMEnable=1" 2>/dev/null
+  - sleep 5
+  - echo "AfterRestore5g=$(ubus-cli 'WiFi.AccessPoint.1.WMMEnable?' 2>/dev/null | grep -o 'WMMEnable=[0-9]*' | cut -d= -f2)"
+  - echo "HapdAfterRestore5g=$(grep 'wmm_enabled=' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
   capture: wmm_5g
 - id: step_6g_setter
   action: exec
   target: DUT
   depends_on: step_5g_setter
-  command: 'echo "Baseline6g=$(ubus-cli ''WiFi.AccessPoint.3.WMMEnable?'' 2>/dev/null | grep -o ''WMMEnable=[0-9]*'' | cut -d= -f2)"
-
-    echo "HapdBaseline6g=$(grep ''wmm_enabled='' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-
-    ubus-cli "WiFi.AccessPoint.3.WMMEnable=0" 2>/dev/null
-
-    sleep 5
-
-    echo "AfterSet6g=$(ubus-cli ''WiFi.AccessPoint.3.WMMEnable?'' 2>/dev/null | grep -o ''WMMEnable=[0-9]*'' | cut -d= -f2)"
-
-    echo "HapdAfterSet6g=$(grep ''wmm_enabled='' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-
-    ubus-cli "WiFi.AccessPoint.3.WMMEnable=1" 2>/dev/null
-
-    sleep 5
-
-    echo "AfterRestore6g=$(ubus-cli ''WiFi.AccessPoint.3.WMMEnable?'' 2>/dev/null | grep -o ''WMMEnable=[0-9]*'' | cut -d= -f2)"
-
-    echo "HapdAfterRestore6g=$(grep ''wmm_enabled='' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-
-    '
+  command:
+  - echo "Baseline6g=$(ubus-cli 'WiFi.AccessPoint.3.WMMEnable?' 2>/dev/null | grep -o 'WMMEnable=[0-9]*' | cut -d= -f2)"
+  - echo "HapdBaseline6g=$(grep 'wmm_enabled=' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+  - ubus-cli "WiFi.AccessPoint.3.WMMEnable=0" 2>/dev/null
+  - sleep 5
+  - echo "AfterSet6g=$(ubus-cli 'WiFi.AccessPoint.3.WMMEnable?' 2>/dev/null | grep -o 'WMMEnable=[0-9]*' | cut -d= -f2)"
+  - echo "HapdAfterSet6g=$(grep 'wmm_enabled=' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+  - ubus-cli "WiFi.AccessPoint.3.WMMEnable=1" 2>/dev/null
+  - sleep 5
+  - echo "AfterRestore6g=$(ubus-cli 'WiFi.AccessPoint.3.WMMEnable?' 2>/dev/null | grep -o 'WMMEnable=[0-9]*' | cut -d= -f2)"
+  - echo "HapdAfterRestore6g=$(grep 'wmm_enabled=' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
   capture: wmm_6g
 - id: step_24g_setter
   action: exec
   target: DUT
   depends_on: step_6g_setter
-  command: 'echo "Baseline24g=$(ubus-cli ''WiFi.AccessPoint.5.WMMEnable?'' 2>/dev/null | grep -o ''WMMEnable=[0-9]*'' | cut -d= -f2)"
-
-    echo "HapdBaseline24g=$(grep ''wmm_enabled='' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-
-    ubus-cli "WiFi.AccessPoint.5.WMMEnable=0" 2>/dev/null
-
-    sleep 5
-
-    echo "AfterSet24g=$(ubus-cli ''WiFi.AccessPoint.5.WMMEnable?'' 2>/dev/null | grep -o ''WMMEnable=[0-9]*'' | cut -d= -f2)"
-
-    echo "HapdAfterSet24g=$(grep ''wmm_enabled='' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-
-    ubus-cli "WiFi.AccessPoint.5.WMMEnable=1" 2>/dev/null
-
-    sleep 5
-
-    echo "AfterRestore24g=$(ubus-cli ''WiFi.AccessPoint.5.WMMEnable?'' 2>/dev/null | grep -o ''WMMEnable=[0-9]*'' | cut -d= -f2)"
-
-    echo "HapdAfterRestore24g=$(grep ''wmm_enabled='' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-
-    '
+  command:
+  - echo "Baseline24g=$(ubus-cli 'WiFi.AccessPoint.5.WMMEnable?' 2>/dev/null | grep -o 'WMMEnable=[0-9]*' | cut -d= -f2)"
+  - echo "HapdBaseline24g=$(grep 'wmm_enabled=' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+  - ubus-cli "WiFi.AccessPoint.5.WMMEnable=0" 2>/dev/null
+  - sleep 5
+  - echo "AfterSet24g=$(ubus-cli 'WiFi.AccessPoint.5.WMMEnable?' 2>/dev/null | grep -o 'WMMEnable=[0-9]*' | cut -d= -f2)"
+  - echo "HapdAfterSet24g=$(grep 'wmm_enabled=' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+  - ubus-cli "WiFi.AccessPoint.5.WMMEnable=1" 2>/dev/null
+  - sleep 5
+  - echo "AfterRestore24g=$(ubus-cli 'WiFi.AccessPoint.5.WMMEnable?' 2>/dev/null | grep -o 'WMMEnable=[0-9]*' | cut -d= -f2)"
+  - echo "HapdAfterRestore24g=$(grep 'wmm_enabled=' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
   capture: wmm_24g
 pass_criteria:
 - field: wmm_5g.Baseline5g
@@ -181,10 +149,9 @@ pass_criteria:
   description: 2.4g after restore hostapd wmm_enabled=1
 results_reference:
   v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
     comment: 'All 3 bands: setter 1→0→1 converges with hostapd wmm_enabled.'
-verification_command: 'grep ''wmm_enabled='' /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf
-
-  '
+verification_command:
+  - 'grep ''wmm_enabled='' /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf'

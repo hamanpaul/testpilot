@@ -4,7 +4,7 @@ version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 117
+  row: 115
   object: WiFi.AccessPoint.{i}.
   api: getStationStats()
   baseline: 0310-BGW720-300
@@ -16,16 +16,18 @@ llapi_support: Support
 implemented_by: pWHM
 bands:
 - 5g
+- 6g
+- 2.4g
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
       config:
       - iface: wl0
         mode: sta
@@ -33,52 +35,235 @@ topology:
         ssid: testpilot5G
         security: WPA2-Personal
         key: '00000000'
+      - iface: wl1
+        mode: sta
+        band: 6g
+        ssid: testpilot6G
+        security: WPA3-Personal
+        key_mgmt: SAE
+        key: '00000000'
+      - iface: wl2
+        mode: sta
+        band: 2.4g
+        ssid: testpilot2G
+        security: WPA2-Personal
+        key: '00000000'
   links:
   - from: STA
     to: DUT
     band: 5g
+  - from: STA
+    to: DUT
+    band: 6g
+  - from: STA
+    to: DUT
+    band: 2.4g
 test_environment: |
   Topology:
-  - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role)
+  - DUT: COM1 (B0, AP role)
+  - STA: COM0 (A0, STA role)
   Transport:
   - DUT/STA via serialwrap COM0/COM1
   Baseline:
   - 5G = AP1 / wl0 / testpilot5G / WPA2-Personal
+  - 6G = AP3 / wl1 / testpilot6G / WPA3-Personal / SAE
+  - 2.4G = AP5 / wl2 / testpilot2G / WPA2-Personal
   Pre-check:
-  - COM1 iw dev wl0 link -> connected
-  - DUT wl -i wl0 assoclist -> STA MAC
+  - STA verifies per-band link on wl0 / wl1 / wl2 before each getter
+  - DUT wl -i wl{0,1,2} assoclist -> live STA MAC
   Notes:
-  - Live value was 2985; increases monotonically while STA associated
-  - Only 5G tested (COM1 associated to AP1)
+  - ConnectionDuration is a live counter in seconds while the STA remains associated
+  - Validate by reading getStationStats() twice per band and cross-checking driver `wl sta_info ... in network` seconds
+  - Sequential per-band validation only; no simultaneous multi-band STA association
 steps:
-- id: step1_assoc_precheck
+- id: step1_5g_sta_join
+  action: exec
+  target: STA
+  band: 5g
+  command:
+  - iw dev wl0 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+- id: step2_5g_assoc
   action: exec
   target: DUT
+  band: 5g
   command: wl -i wl0 assoclist
-  capture: assoc_check
-- id: step2_getstationstats
+  capture: assoc_5g
+- id: step3_5g_getstationstats
   action: exec
   target: DUT
+  band: 5g
   command: ubus-cli "WiFi.AccessPoint.1.getStationStats()"
-  capture: stats_output
-  depends_on: step1_assoc_precheck
+  capture: result_5g
+  depends_on: step2_5g_assoc
+- id: step4_5g_getstationstats_after_wait
+  action: exec
+  target: DUT
+  band: 5g
+  command:
+  - sleep 3
+  - ubus-cli "WiFi.AccessPoint.1.getStationStats()"
+  capture: result_after_wait_5g
+  depends_on: step3_5g_getstationstats
+- id: step5_5g_driver_age
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'STA_MAC=$(wl -i wl0 assoclist | awk ''NR==1{print $NF}''); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds5g=\1/p'''
+  capture: driver_duration_5g
+  depends_on: step4_5g_getstationstats_after_wait
+- id: step6_6g_sta_join
+  action: exec
+  target: STA
+  band: 6g
+  command:
+  - iw dev wl1 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+  - wl -i wl1 status
+- id: step7_6g_assoc
+  action: exec
+  target: DUT
+  band: 6g
+  command: wl -i wl1 assoclist
+  capture: assoc_6g
+  depends_on: step6_6g_sta_join
+- id: step8_6g_getstationstats
+  action: exec
+  target: DUT
+  band: 6g
+  command: ubus-cli "WiFi.AccessPoint.3.getStationStats()"
+  capture: result_6g
+  depends_on: step7_6g_assoc
+- id: step9_6g_getstationstats_after_wait
+  action: exec
+  target: DUT
+  band: 6g
+  command:
+  - sleep 3
+  - ubus-cli "WiFi.AccessPoint.3.getStationStats()"
+  capture: result_after_wait_6g
+  depends_on: step8_6g_getstationstats
+- id: step10_6g_driver_age
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'STA_MAC=$(wl -i wl1 assoclist | awk ''NR==1{print $NF}''); [ -n "$STA_MAC" ] && wl -i wl1 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds6g=\1/p'''
+  capture: driver_duration_6g
+  depends_on: step9_6g_getstationstats_after_wait
+- id: step11_24g_sta_join
+  action: exec
+  target: STA
+  band: 2.4g
+  command:
+  - iw dev wl2 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+- id: step12_24g_assoc
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: wl -i wl2 assoclist
+  capture: assoc_24g
+  depends_on: step11_24g_sta_join
+- id: step13_24g_getstationstats
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: ubus-cli "WiFi.AccessPoint.5.getStationStats()"
+  capture: result_24g
+  depends_on: step12_24g_assoc
+- id: step14_24g_getstationstats_after_wait
+  action: exec
+  target: DUT
+  band: 2.4g
+  command:
+  - sleep 3
+  - ubus-cli "WiFi.AccessPoint.5.getStationStats()"
+  capture: result_after_wait_24g
+  depends_on: step13_24g_getstationstats
+- id: step15_24g_driver_age
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'STA_MAC=$(wl -i wl2 assoclist | awk ''NR==1{print $NF}''); [ -n "$STA_MAC" ] && wl -i wl2 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds24g=\1/p'''
+  capture: driver_duration_24g
+  depends_on: step14_24g_getstationstats_after_wait
 pass_criteria:
-- field: assoc_check
+- field: assoc_5g
   operator: not_equals
   value: ''
   band: 5g
   description: AP1 should have at least one associated STA
-- field: stats_output.ConnectionDuration
+- field: result_5g.ConnectionDuration
   operator: regex
-  value: "^\\d+$"
+  value: '^[0-9]+$'
   band: 5g
-  description: ConnectionDuration should be non-negative integer seconds
-verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep ConnectionDuration
+  description: 5G first ConnectionDuration read should be an integer counter
+- field: result_after_wait_5g.ConnectionDuration
+  operator: '>'
+  reference: result_5g.ConnectionDuration
+  band: 5g
+  description: 5G second ConnectionDuration read should increase beyond the first read
+- field: driver_duration_5g.DriverConnectionSeconds5g
+  operator: '>='
+  reference: result_after_wait_5g.ConnectionDuration
+  band: 5g
+  description: 5G driver in-network seconds should be at least the later getStationStats() value
+- field: assoc_6g
+  operator: not_equals
+  value: ''
+  band: 6g
+  description: AP3 should have at least one associated STA
+- field: result_6g.ConnectionDuration
+  operator: regex
+  value: '^[0-9]+$'
+  band: 6g
+  description: 6G first ConnectionDuration read should be an integer counter
+- field: result_after_wait_6g.ConnectionDuration
+  operator: '>'
+  reference: result_6g.ConnectionDuration
+  band: 6g
+  description: 6G second ConnectionDuration read should increase beyond the first read
+- field: driver_duration_6g.DriverConnectionSeconds6g
+  operator: '>='
+  reference: result_after_wait_6g.ConnectionDuration
+  band: 6g
+  description: 6G driver in-network seconds should be at least the later getStationStats() value
+- field: assoc_24g
+  operator: not_equals
+  value: ''
+  band: 2.4g
+  description: AP5 should have at least one associated STA
+- field: result_24g.ConnectionDuration
+  operator: regex
+  value: '^[0-9]+$'
+  band: 2.4g
+  description: 2.4G first ConnectionDuration read should be an integer counter
+- field: result_after_wait_24g.ConnectionDuration
+  operator: '>'
+  reference: result_24g.ConnectionDuration
+  band: 2.4g
+  description: 2.4G second ConnectionDuration read should increase beyond the first read
+- field: driver_duration_24g.DriverConnectionSeconds24g
+  operator: '>='
+  reference: result_after_wait_24g.ConnectionDuration
+  band: 2.4g
+  description: 2.4G driver in-network seconds should be at least the later getStationStats() value
+verification_command:
+  - ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep ConnectionDuration
+  - sleep 3
+  - ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep ConnectionDuration
+  - STA_MAC=$(wl -i wl0 assoclist | awk 'NR==1{print $NF}'); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | grep "in network"
+  - ubus-cli "WiFi.AccessPoint.3.getStationStats()" 2>&1 | grep ConnectionDuration
+  - sleep 3
+  - ubus-cli "WiFi.AccessPoint.3.getStationStats()" 2>&1 | grep ConnectionDuration
+  - STA_MAC=$(wl -i wl1 assoclist | awk 'NR==1{print $NF}'); [ -n "$STA_MAC" ] && wl -i wl1 sta_info $STA_MAC | grep "in network"
+  - ubus-cli "WiFi.AccessPoint.5.getStationStats()" 2>&1 | grep ConnectionDuration
+  - sleep 3
+  - ubus-cli "WiFi.AccessPoint.5.getStationStats()" 2>&1 | grep ConnectionDuration
+  - STA_MAC=$(wl -i wl2 assoclist | awk 'NR==1{print $NF}'); [ -n "$STA_MAC" ] && wl -i wl2 sta_info $STA_MAC | grep "in network"
 results_reference:
   v4.0.3:
     5g: Pass
-    6g: N/A
-    2.4g: N/A
-    comment: 5G-only, ConnectionDuration field verified via getStationStats() on AP1
+    6g: Pass
+    2.4g: Pass
+    comment: ConnectionDuration field verified as a live monotonic getStationStats() counter cross-checked with wl sta_info in-network seconds on AP1/AP3/AP5.

@@ -1,9 +1,9 @@
 id: d459-radiostats-temperature
 name: D459 getRadioStats Temperature
 source:
-  row: 461
-  object: WiFi.Radio.{i}.getRadioStats()
-  api: Temperature
+  row: 459
+  object: WiFi.Radio.{i}.
+  api: getRadioStats()
   baseline: 0310-BGW720-300
 bands:
 - 5g
@@ -20,7 +20,7 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_method
   target: dut

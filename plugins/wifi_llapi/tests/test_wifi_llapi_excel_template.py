@@ -249,7 +249,7 @@ def test_collect_alignment_issues(tmp_path: Path):
 def test_collect_alignment_issues_on_repo_template_case():
     repo_root = Path(__file__).resolve().parents[3]
     case = load_case(
-        repo_root / "plugins/wifi_llapi/cases/D059_uplinkbandwidth.yaml"
+        repo_root / "plugins/wifi_llapi/cases/D018_downlinkshortguard.yaml"
     )
     template = repo_root / "plugins/wifi_llapi/reports/templates/wifi_llapi_template.xlsx"
 

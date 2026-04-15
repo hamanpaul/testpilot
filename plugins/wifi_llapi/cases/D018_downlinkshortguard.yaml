@@ -1,16 +1,17 @@
 id: wifi-llapi-D018-downlinkshortguard
 name: "DownlinkShortGuard — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
-version: '1.1'
+version: "1.1"
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
   sheet: Wifi_LLAPI
-  row: 15
+  row: 18
   object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
-  api: DownlinkShortGuard
-  baseline: BCM v4.0.3
+  api: "DownlinkShortGuard"
+  baseline: "BCM v4.0.3"
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
+hlapi_command: 'ubus-cli "WiFi.AccessPoint.{i}.AssociatedDevice.1.DownlinkShortGuard?"'
 llapi_support: Support
 implemented_by: pWHM
 topology:
@@ -18,92 +19,259 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
   links:
-  - from: STA
-    to: DUT
-    band: 5g
-  - from: STA
-    to: DUT
-    band: 2.4g
+    - from: STA
+      to: DUT
+      band: 5g
+    - from: STA
+      to: DUT
+      band: 6g
+    - from: STA
+      to: DUT
+      band: 2.4g
+
 test_environment: |
-  Topology: DUT=COM0(AP) / STA=COM1(station)
-  Live band mapping:
-  - 5G : DUT wl0 / AP1 / BSSID 2c:59:17:00:19:95 / STA MAC 2C:59:17:00:04:85
-  - 6G : DUT wl1 / AP3 -- BCME_NOTREADY (STA cannot associate; skip all 6G steps)
-  - 2.4G: DUT wl2 / AP5 / BSSID 2C:59:17:00:19:A7 / STA MAC 2C:59:17:00:04:97
-  Precondition: STA associated on the target band so AssociatedDevice.1 is deterministic.
+  Topology:
+  - DUT: COM1 (BGW720-300, AP role)
+  - STA: COM0 (BCM board, STA role)
+  Transport:
+  - serialwrap attach COM0 / COM1
+  Band mapping (live baseline 2026-04-02):
+  - 5G:   DUT AP.1 / wl0 / SSID=testpilot5G    ↔ STA wl0 / WPA2-Personal
+  - 6G:   DUT AP.3 / wl1 / SSID=testpilot6G    ↔ STA wl1 / WPA3-Personal + SAE
+  - 2.4G: DUT AP.5 / wl2 / SSID=testpilot2G    ↔ STA wl2 / WPA2-Personal
+  Preconditions:
+  - keep exactly one associated STA on each target AP so AssociatedDevice.1 remains deterministic
+  - reuse the validated deterministic single-band baseline from verify_env; do not keep all three bands associated simultaneously
+  - workbook row 18 `G/H` sample text is internally inconsistent (`DownlinkShortGuard=0` while the driver sample shows short GI), so the live contract must be derived from same-STA LLAPI/driver equality on current firmware
+  - for each band, DownlinkShortGuard must match the same STA's AP-side `wl sta_info` downlink short-guard sample (`tx nrate` on current firmware)
+
+setup_steps: |
+  Sequential per-band (5G → 6G → 2.4G); no simultaneous multi-band connections.
+  [5G]
+  1) STA wl0 verify DUT AP.1 association on the deterministic WPA2-Personal baseline:
+     iw dev wl0 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  2) DUT AP.1 verify the associated STA and compare DownlinkShortGuard with wl0 sta_info tx nrate GI:
+     ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+     ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkShortGuard?"
+     wl -i wl0 sta_info <STA_MAC> | grep -A 1 'tx nrate'
+  [6G]
+  1) STA wl1 verify DUT AP.3 association on the validated WPA3/SAE baseline:
+     iw dev wl1 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+     wl -i wl1 status
+  2) DUT AP.3 verify the associated STA and compare DownlinkShortGuard with wl1 sta_info tx nrate GI:
+     ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"
+     ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DownlinkShortGuard?"
+     wl -i wl1 sta_info <STA_MAC> | grep -A 1 'tx nrate'
+  [2.4G]
+  1) STA wl2 verify DUT AP.5 association on the deterministic WPA2-Personal baseline:
+     iw dev wl2 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  2) DUT AP.5 verify the associated STA and compare DownlinkShortGuard with wl2 sta_info tx nrate GI:
+     ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"
+     ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkShortGuard?"
+     wl -i wl2 sta_info <STA_MAC> | grep -A 1 'tx nrate'
+
 test_procedure: |
-  Read-only boolean telemetry. DownlinkShortGuard indicates whether the AP-to-STA
-  link is using short guard interval (SGI). Value 1 = SGI enabled, 0 = disabled.
-  Steps:
-  1) Confirm 5G STA is associated; read AP1 AssociatedDevice.1.DownlinkShortGuard.
-  2) Confirm 2.4G STA is associated; read AP5 AssociatedDevice.1.DownlinkShortGuard.
-  6G is skipped (BCME_NOTREADY).
-  Pass: both active bands return `1`, matching live-verified SGI enabled state.
+  For each active band (5G, 6G, then 2.4G):
+  1) STA verifies target AP association on the deterministic baseline prepared by verify_env
+     (5G=testpilot5G WPA2-Personal, 6G=testpilot6G WPA3/SAE, 2.4G=testpilot2G WPA2-Personal).
+  2) Record the live AssociatedDevice.1 MAC from DUT and confirm it is a valid station MAC.
+  3) Read `DownlinkShortGuard` from DUT and confirm it remains a live boolean 0/1 value.
+  4) Cross-check the same STA with `wl sta_info` and normalize the AP-side `tx nrate` GI token into a downlink short-guard boolean
+     (`0.4us` / `0.8us` / `1.6us` => 1, `3.2us` => 0, anything else => explicit unknown).
+  Pass:
+  - DUT exposes one live STA MAC for the target band.
+  - `DownlinkShortGuard` remains a boolean 0/1 value.
+  - Driver `tx nrate` emits a concrete GI token for the same STA.
+  - The driver-derived downlink short-guard boolean is concrete 0/1.
+  - LLAPI `DownlinkShortGuard` equals the driver-derived downlink short-guard boolean for the same band.
+
 steps:
-- id: step1_5g_assoc
-  action: exec
-  target: DUT
-  band: 5g
-  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
-  capture: assoc_5g
-- id: step2_5g
-  action: exec
-  target: DUT
-  band: 5g
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkShortGuard?"
-  depends_on: step1_5g_assoc
-  capture: result_5g
-- id: step3_6g
-  action: skip
-  target: DUT
-  band: 6g
-  reason: 6G BCME_NOTREADY -- STA cannot associate on wl1/AP3 in current lab.
-- id: step4_24g_assoc
-  action: exec
-  target: DUT
-  band: 2.4g
-  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
-  capture: assoc_24g
-- id: step5_24g
-  action: exec
-  target: DUT
-  band: 2.4g
-  command: ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkShortGuard?"
-  depends_on: step4_24g_assoc
-  capture: result_24g
+  - id: step1_5g_sta_join
+    action: exec
+    target: STA
+    band: 5g
+    command:
+      - iw dev wl0 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  - id: step2_5g_assoc
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
+    depends_on: step1_5g_sta_join
+    capture: assoc_5g
+  - id: step3_5g_get
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkShortGuard?"'
+    depends_on: step2_5g_assoc
+    capture: result_5g
+  - id: step4_5g_driver_shortguard
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC" | tr ''A-F'' ''a-f''); GI=$(wl -i wl0 sta_info $STA_MAC_LOWER | sed -n ''/tx nrate/{n;s/.*GI \([^ ]*\).*/\1/p;}''); [ -n "$STA_MAC" ] && echo DriverAssocMac5g=$STA_MAC && echo DriverDownlinkShortGuardGI5g=$GI && case "$GI" in 0.4us|0.8us|1.6us) echo DriverDownlinkShortGuard5g=1 ;; 3.2us) echo DriverDownlinkShortGuard5g=0 ;; *) echo DriverDownlinkShortGuard5g=UNKNOWN_GI:$GI ;; esac'
+    depends_on: step3_5g_get
+    capture: driver_shortguard_5g
+  - id: step5_6g_sta_join
+    action: exec
+    target: STA
+    band: 6g
+    command:
+      - iw dev wl1 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+      - wl -i wl1 status
+  - id: step6_6g_assoc
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
+    depends_on: step5_6g_sta_join
+    capture: assoc_6g
+  - id: step7_6g_get
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DownlinkShortGuard?"'
+    depends_on: step6_6g_assoc
+    capture: result_6g
+  - id: step8_6g_driver_shortguard
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC" | tr ''A-F'' ''a-f''); GI=$(wl -i wl1 sta_info $STA_MAC_LOWER | sed -n ''/tx nrate/{n;s/.*GI \([^ ]*\).*/\1/p;}''); [ -n "$STA_MAC" ] && echo DriverAssocMac6g=$STA_MAC && echo DriverDownlinkShortGuardGI6g=$GI && case "$GI" in 0.4us|0.8us|1.6us) echo DriverDownlinkShortGuard6g=1 ;; 3.2us) echo DriverDownlinkShortGuard6g=0 ;; *) echo DriverDownlinkShortGuard6g=UNKNOWN_GI:$GI ;; esac'
+    depends_on: step7_6g_get
+    capture: driver_shortguard_6g
+  - id: step9_24g_sta_join
+    action: exec
+    target: STA
+    band: 2.4g
+    command:
+      - iw dev wl2 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  - id: step10_24g_assoc
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
+    depends_on: step9_24g_sta_join
+    capture: assoc_24g
+  - id: step11_24g_get
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkShortGuard?"'
+    depends_on: step10_24g_assoc
+    capture: result_24g
+  - id: step12_24g_driver_shortguard
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC" | tr ''A-F'' ''a-f''); GI=$(wl -i wl2 sta_info $STA_MAC_LOWER | sed -n ''/tx nrate/{n;s/.*GI \([^ ]*\).*/\1/p;}''); [ -n "$STA_MAC" ] && echo DriverAssocMac24g=$STA_MAC && echo DriverDownlinkShortGuardGI24g=$GI && case "$GI" in 0.4us|0.8us|1.6us) echo DriverDownlinkShortGuard24g=1 ;; 3.2us) echo DriverDownlinkShortGuard24g=0 ;; *) echo DriverDownlinkShortGuard24g=UNKNOWN_GI:$GI ;; esac'
+    depends_on: step11_24g_get
+    capture: driver_shortguard_24g
+
 pass_criteria:
-- field: assoc_5g.AssocMac5g
-  operator: equals
-  value: 2c:59:17:00:04:85
-  description: "5G -- DownlinkShortGuard 讀取前必須先確認 wl0 STA 已關聯"
-- field: result_5g.DownlinkShortGuard
-  operator: equals
-  value: 1
-  description: "5G -- live DownlinkShortGuard should remain 1 (SGI enabled)"
-- field: assoc_24g.AssocMac24g
-  operator: equals
-  value: 2c:59:17:00:04:97
-  description: "2.4G -- DownlinkShortGuard 讀取前必須先確認 wl2 STA 已關聯"
-- field: result_24g.DownlinkShortGuard
-  operator: equals
-  value: 1
-  description: "2.4G -- live DownlinkShortGuard should remain 1 (SGI enabled)"
-verification_command: |
-  DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkShortGuard?"
-  DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkShortGuard?"
+  - field: assoc_5g.MACAddress
+    operator: regex
+    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+    description: "5G: AP1 AssociatedDevice.1 must resolve to a live station MAC."
+  - field: result_5g.DownlinkShortGuard
+    operator: regex
+    value: '^[0-1]$'
+    description: "5G: DownlinkShortGuard must remain a concrete boolean."
+  - field: driver_shortguard_5g.DriverAssocMac5g
+    operator: equals
+    reference: assoc_5g.MACAddress
+    description: "5G: driver downlink sampling must target the same STA as AssociatedDevice.1."
+  - field: driver_shortguard_5g.DriverDownlinkShortGuardGI5g
+    operator: regex
+    value: '^[0-9.]+us$'
+    description: "5G: wl0 sta_info tx nrate must emit a concrete GI token for the same STA."
+  - field: driver_shortguard_5g.DriverDownlinkShortGuard5g
+    operator: regex
+    value: '^[0-1]$'
+    description: "5G: driver GI token must map to a concrete downlink short-guard boolean; unknown values fail closed."
+  - field: result_5g.DownlinkShortGuard
+    operator: equals
+    reference: driver_shortguard_5g.DriverDownlinkShortGuard5g
+    description: "5G: LLAPI DownlinkShortGuard must match the driver-derived downlink short-guard boolean."
+  - field: assoc_6g.MACAddress
+    operator: regex
+    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+    description: "6G: AP3 AssociatedDevice.1 must resolve to a live station MAC."
+  - field: result_6g.DownlinkShortGuard
+    operator: regex
+    value: '^[0-1]$'
+    description: "6G: DownlinkShortGuard must remain a concrete boolean."
+  - field: driver_shortguard_6g.DriverAssocMac6g
+    operator: equals
+    reference: assoc_6g.MACAddress
+    description: "6G: driver downlink sampling must target the same STA as AssociatedDevice.1."
+  - field: driver_shortguard_6g.DriverDownlinkShortGuardGI6g
+    operator: regex
+    value: '^[0-9.]+us$'
+    description: "6G: wl1 sta_info tx nrate must emit a concrete GI token for the same STA."
+  - field: driver_shortguard_6g.DriverDownlinkShortGuard6g
+    operator: regex
+    value: '^[0-1]$'
+    description: "6G: driver GI token must map to a concrete downlink short-guard boolean; unknown values fail closed."
+  - field: result_6g.DownlinkShortGuard
+    operator: equals
+    reference: driver_shortguard_6g.DriverDownlinkShortGuard6g
+    description: "6G: LLAPI DownlinkShortGuard must match the driver-derived downlink short-guard boolean."
+  - field: assoc_24g.MACAddress
+    operator: regex
+    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+    description: "2.4G: AP5 AssociatedDevice.1 must resolve to a live station MAC."
+  - field: result_24g.DownlinkShortGuard
+    operator: regex
+    value: '^[0-1]$'
+    description: "2.4G: DownlinkShortGuard must remain a concrete boolean."
+  - field: driver_shortguard_24g.DriverAssocMac24g
+    operator: equals
+    reference: assoc_24g.MACAddress
+    description: "2.4G: driver downlink sampling must target the same STA as AssociatedDevice.1."
+  - field: driver_shortguard_24g.DriverDownlinkShortGuardGI24g
+    operator: regex
+    value: '^[0-9.]+us$'
+    description: "2.4G: wl2 sta_info tx nrate must emit a concrete GI token for the same STA."
+  - field: driver_shortguard_24g.DriverDownlinkShortGuard24g
+    operator: regex
+    value: '^[0-1]$'
+    description: "2.4G: driver GI token must map to a concrete downlink short-guard boolean; unknown values fail closed."
+  - field: result_24g.DownlinkShortGuard
+    operator: equals
+    reference: driver_shortguard_24g.DriverDownlinkShortGuard24g
+    description: "2.4G: LLAPI DownlinkShortGuard must match the driver-derived downlink short-guard boolean."
+
+verification_command:
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkShortGuard?"'
+  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+  - 'wl -i wl0 sta_info $STA_MAC | grep -A 1 "tx nrate"'
+  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
+  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DownlinkShortGuard?"'
+  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+  - 'wl -i wl1 sta_info $STA_MAC | grep -A 1 "tx nrate"'
+  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
+  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkShortGuard?"'
+  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+  - 'wl -i wl2 sta_info $STA_MAC | grep -A 1 "tx nrate"'
+
 results_reference:
   v4.0.3:
     5g: Pass
-    6g: Skip
+    6g: Pass
     2.4g: Pass
-    comment: |
-      Live evidence (BCM v4.0.3):
-      5G: WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkShortGuard=1 (SGI enabled)
-      2.4G: WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkShortGuard=1 (SGI enabled)
-      Both bands return boolean 1; LLAPI correctly reflects link SGI state.
+    comment: "0401 row 18 expects Pass on all three bands; live verification on the current deterministic baseline exposed DownlinkShortGuard=1 on AP1/AP3/AP5, while wl sta_info tx nrate reported GI 1.6us / 0.8us / 0.8us and the same short-guard mapping also stayed 1 on all three bands."

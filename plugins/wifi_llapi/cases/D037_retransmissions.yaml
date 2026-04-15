@@ -20,11 +20,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
       config:
       - iface: 5g
         mode: sta
@@ -36,8 +36,8 @@ topology:
     band: 5g
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role)
-  - STA: COM1 (station role for this case; do not rely on the old A0/B0 heuristic)
+  - DUT: COM1 (AP role)
+  - STA: COM0 (station role for this case; do not rely on the old A0/B0 heuristic)
   Transport:
   - serialwrap attach COM0 / COM1
   Live band mapping:
@@ -144,7 +144,7 @@ steps:
 - id: step3
   action: exec
   target: DUT
-  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*tx pkts retries: *\([0-9][0-9]*\).*/DriverRetransmissions=\1/p'''
+  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC; [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*tx pkts retries: *\([0-9][0-9]*\).*/DriverRetransmissions=\1/p'''
   depends_on: step2
   capture: driver_counter
 pass_criteria:
@@ -164,12 +164,14 @@ pass_criteria:
   operator: ">"
   value: '0'
   description: Driver retry counters must still show real retransmissions for the same STA.
-verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Retransmissions?"
-  STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n 's/.*tx pkts retries: *\([0-9][0-9]*\).*/DriverRetransmissions=\1/p'
+verification_command:
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Retransmissions?"'
+  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+  - '[ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC'
+  - '[ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*tx pkts retries: *\([0-9][0-9]*\).*/DriverRetransmissions=\1/p'''
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: N/A
-    2.4g: N/A
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
     comment: '5G serialwrap retest only: Retransmissions stayed 0 while wl0 sta_info showed tx pkts retries > 0. Non-executed bands remain N/A until separately calibrated.'

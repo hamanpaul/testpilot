@@ -1,16 +1,17 @@
 id: wifi-llapi-D013-capabilities
 name: "Capabilities — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
-version: '1.1'
+version: "1.3"
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
   sheet: Wifi_LLAPI
-  row: 10
+  row: 13
   object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
-  api: Capabilities
-  baseline: BCM v4.0.3
+  api: "Capabilities"
+  baseline: "BCM v4.0.3"
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
+hlapi_command: 'ubus-cli "WiFi.AccessPoint.{i}.AssociatedDevice.1.Capabilities?"'
 llapi_support: Support
 implemented_by: pWHM
 topology:
@@ -18,108 +19,239 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
   links:
-  - from: STA
-    to: DUT
-    band: 5g
-  - from: STA
-    to: DUT
-    band: 2.4g
+    - from: STA
+      to: DUT
+      band: 5g
+    - from: STA
+      to: DUT
+      band: 6g
+    - from: STA
+      to: DUT
+      band: 2.4g
+
 test_environment: |
-  Topology: DUT=COM0(AP) / STA=COM1(station)
-  Live band mapping:
-  - 5G : DUT wl0 / AP1 / BSSID 2c:59:17:00:19:95 / STA MAC 2C:59:17:00:04:85
-  - 6G : DUT wl1 / AP3 -- BCME_NOTREADY (STA cannot associate; skip all 6G steps)
-  - 2.4G: DUT wl2 / AP5 / BSSID 2C:59:17:00:19:A7 / STA MAC 2C:59:17:00:04:97
-  Precondition: STA associated on the target band so AssociatedDevice.1 is deterministic.
+  Topology:
+  - DUT: COM1 (BGW720-300, AP role)
+  - STA: COM0 (BCM board, STA role)
+  Transport:
+  - serialwrap attach COM0 / COM1
+  Band mapping (live baseline 2026-04-02):
+  - 5G:   DUT AP.1 / wl0 / SSID=testpilot5G    ↔ STA wl0 / WPA2-Personal
+  - 6G:   DUT AP.3 / wl1 / SSID=testpilot6G    ↔ STA wl1 / WPA3-Personal + SAE
+  - 2.4G: DUT AP.5 / wl2 / SSID=testpilot2G    ↔ STA wl2 / WPA2-Personal
+  Current live evidence on the associated STA path:
+  - AP1 / wl0:  Capabilities="RRM,BTM,QOS_MAP" and `wl sta_info` reports `RRM capability = 0x32`
+  - AP3 / wl1:  Capabilities="BTM,QOS_MAP,PMF" and `wl sta_info` reports `RRM capability = 0x0`
+  - AP5 / wl2:  Capabilities="RRM,BTM,QOS_MAP" and `wl sta_info` reports `RRM capability = 0x32`
+  Workbook row 13 instead records `RRM,BTM,QOS_MAP,PMF` using a different STA sample (`4A:0A:A5:80:23:7B`).
+
+setup_steps: |
+  Sequential per-band (5G → 6G → 2.4G); no simultaneous multi-band connections.
+  [5G]
+  1) STA wl0 verify DUT AP.1 association on the deterministic WPA2-Personal baseline:
+     iw dev wl0 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  2) DUT AP.1 verify the associated STA and cross-check both getter and driver capability:
+     wl -i wl0 assoclist
+     ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities?"
+     wl -i wl0 sta_info <STA_MAC> | grep -i "RRM capability"
+  [6G]
+  1) STA wl1 verify DUT AP.3 association on the validated WPA3/SAE baseline:
+     iw dev wl1 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+     wl -i wl1 status
+  2) DUT AP.3 verify the associated STA and cross-check both getter and driver capability:
+     wl -i wl1 assoclist
+     ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.Capabilities?"
+     wl -i wl1 sta_info <STA_MAC> | grep -i "RRM capability"
+  [2.4G]
+  1) STA wl2 verify DUT AP.5 association on the deterministic WPA2-Personal baseline:
+     iw dev wl2 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  2) DUT AP.5 verify the associated STA and cross-check both getter and driver capability:
+     wl -i wl2 assoclist
+     ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Capabilities?"
+     wl -i wl2 sta_info <STA_MAC> | grep -i "RRM capability"
+
 test_procedure: |
-  Read-only telemetry. Capabilities returns the STA's advertised capability string (comma-separated).
-  Steps:
-  1) Confirm 5G STA is associated; read AP1 AssociatedDevice.1.Capabilities.
-  2) 5G live value should advertise BTM/QOS_MAP/PMF and should not advertise RRM.
-  3) Confirm 2.4G STA is associated; read AP5 AssociatedDevice.1.Capabilities.
-  4) 2.4G live value should remain empty string.
-  6G is skipped (BCME_NOTREADY).
-  Pass: 5G value matches the live-advertised capability bits; 2.4G empty string is valid.
-  Note: 5G STA wl0 has RRM capability=0x0 (no RRM), but has BTM via Extended Caps.
-        2.4G STA wl2 shows no BTM/QOS_MAP/PMF bits -> empty string is correct.
+  `Capabilities` is a read-only AssociatedDevice getter. Current source and live evidence show it is STA-dependent:
+  pWHM publishes the parsed station capability bits from the associated STA IEs, not a configurable AP-local constant.
+  For each active band (5G, 6G, then 2.4G):
+  1) STA verifies target AP association on the deterministic baseline prepared by verify_env
+     (5G=testpilot5G WPA2-Personal, 6G=testpilot6G WPA3/SAE, 2.4G=testpilot2G WPA2-Personal).
+  2) Record the live associated STA MAC from DUT driver evidence.
+  3) Cross-check `wl sta_info` for the same STA and normalize the live RRM capability into
+     `DriverRrmCapability{band}`.
+  4) Read `WiFi.AccessPoint.{i}.AssociatedDevice.1.Capabilities` on DUT.
+  Pass for this current lab-STA calibration case:
+  - DUT exposes one live STA MAC for the band under test.
+  - `wl sta_info` reports the current per-band live RRM capability for the same STA:
+    - 5G: `0x32`
+    - 6G: `0x0`
+    - 2.4G: `0x32`
+  - The read-only getter matches the current STA-dependent live shape:
+    - 5G: `RRM,BTM,QOS_MAP`
+    - 6G: `BTM,QOS_MAP,PMF`
+    - 2.4G: `RRM,BTM,QOS_MAP`
+  This keeps the case aligned to the current deterministic lab STA profile even though workbook row 13
+  still references a different sample capability shape (`RRM,BTM,QOS_MAP,PMF`).
+
 steps:
-- id: step1_5g_assoc
-  action: exec
-  target: DUT
-  band: 5g
-  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
-  capture: assoc_5g
-- id: step2_5g
-  action: exec
-  target: DUT
-  band: 5g
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities?"
-  depends_on: step1_5g_assoc
-  capture: result_5g
-- id: step3_6g
-  action: skip
-  target: DUT
-  band: 6g
-  reason: 6G BCME_NOTREADY -- STA cannot associate on wl1/AP3 in current lab.
-- id: step4_24g_assoc
-  action: exec
-  target: DUT
-  band: 2.4g
-  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
-  capture: assoc_24g
-- id: step5_24g
-  action: exec
-  target: DUT
-  band: 2.4g
-  command: ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Capabilities?"
-  depends_on: step4_24g_assoc
-  capture: result_24g
+  - id: step1_5g_sta_join
+    action: exec
+    target: STA
+    band: 5g
+    command:
+      - iw dev wl0 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  - id: step2_5g_assoc
+    action: exec
+    target: DUT
+    band: 5g
+    command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+    depends_on: step1_5g_sta_join
+    capture: assoc_5g
+  - id: step3_5g_rrm
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'STA_MAC=$(wl -i wl0 assoclist | awk ''NR==1{print $2}''); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/^RRM capability = \(0x[0-9A-Fa-f]\+\).*/DriverRrmCapability5g=\1/p'''
+    depends_on: step2_5g_assoc
+    capture: driver_rrm_5g
+  - id: step4_5g_get
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities?"'
+    depends_on: step3_5g_rrm
+    capture: result_5g
+  - id: step5_6g_sta_join
+    action: exec
+    target: STA
+    band: 6g
+    command:
+      - iw dev wl1 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+      - wl -i wl1 status
+  - id: step6_6g_assoc
+    action: exec
+    target: DUT
+    band: 6g
+    command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+    depends_on: step5_6g_sta_join
+    capture: assoc_6g
+  - id: step7_6g_rrm
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'STA_MAC=$(wl -i wl1 assoclist | awk ''NR==1{print $2}''); [ -n "$STA_MAC" ] && wl -i wl1 sta_info $STA_MAC | sed -n ''s/^RRM capability = \(0x[0-9A-Fa-f]\+\).*/DriverRrmCapability6g=\1/p'''
+    depends_on: step6_6g_assoc
+    capture: driver_rrm_6g
+  - id: step8_6g_get
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.Capabilities?"'
+    depends_on: step7_6g_rrm
+    capture: result_6g
+  - id: step9_24g_sta_join
+    action: exec
+    target: STA
+    band: 2.4g
+    command:
+      - iw dev wl2 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  - id: step10_24g_assoc
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+    depends_on: step9_24g_sta_join
+    capture: assoc_24g
+  - id: step11_24g_rrm
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'STA_MAC=$(wl -i wl2 assoclist | awk ''NR==1{print $2}''); [ -n "$STA_MAC" ] && wl -i wl2 sta_info $STA_MAC | sed -n ''s/^RRM capability = \(0x[0-9A-Fa-f]\+\).*/DriverRrmCapability24g=\1/p'''
+    depends_on: step10_24g_assoc
+    capture: driver_rrm_24g
+  - id: step12_24g_get
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Capabilities?"'
+    depends_on: step11_24g_rrm
+    capture: result_24g
+
 pass_criteria:
-- field: assoc_5g.AssocMac5g
-  operator: equals
-  value: 2c:59:17:00:04:85
-  description: "5G -- Capabilities 讀取前必須先確認 wl0 STA 已關聯"
-- field: result_5g.Capabilities
-  operator: contains
-  value: BTM
-  description: "5G -- live Capabilities must advertise BTM"
-- field: result_5g.Capabilities
-  operator: contains
-  value: QOS_MAP
-  description: "5G -- live Capabilities must advertise QOS_MAP"
-- field: result_5g.Capabilities
-  operator: contains
-  value: PMF
-  description: "5G -- live Capabilities must advertise PMF"
-- field: result_5g.Capabilities
-  operator: not_contains
-  value: RRM
-  description: "5G -- wl0 RRM capability=0x0, so Capabilities must not claim RRM"
-- field: assoc_24g.AssocMac24g
-  operator: equals
-  value: 2c:59:17:00:04:97
-  description: "2.4G -- Capabilities 讀取前必須先確認 wl2 STA 已關聯"
-- field: result_24g.Capabilities
-  operator: empty
-  description: "2.4G -- live Capabilities should remain empty string for wl2 STA"
-verification_command: |
-  DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities?"
-  DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Capabilities?"
+  - field: assoc_5g.AssocMac5g
+    operator: regex
+    value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+    description: "5G: AP1 must expose one live STA MAC from wl0 assoclist before Capabilities is read."
+  - field: driver_rrm_5g.DriverRrmCapability5g
+    operator: equals
+    value: "0x32"
+    description: "5G: the associated STA currently advertises RRM capability 0x32 on wl0."
+  - field: result_5g.Capabilities
+    operator: equals
+    value: "RRM,BTM,QOS_MAP"
+    description: "5G: current live getter exposes RRM/BTM/QOS_MAP for the associated STA."
+  - field: assoc_6g.AssocMac6g
+    operator: regex
+    value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+    description: "6G: AP3 must expose one live STA MAC from wl1 assoclist before Capabilities is read."
+  - field: driver_rrm_6g.DriverRrmCapability6g
+    operator: equals
+    value: "0x0"
+    description: "6G: the associated STA currently advertises RRM capability 0x0 on wl1."
+  - field: result_6g.Capabilities
+    operator: equals
+    value: "BTM,QOS_MAP,PMF"
+    description: "6G: current live getter exposes BTM/QOS_MAP/PMF without RRM."
+  - field: assoc_24g.AssocMac24g
+    operator: regex
+    value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+    description: "2.4G: AP5 must expose one live STA MAC from wl2 assoclist before Capabilities is read."
+  - field: driver_rrm_24g.DriverRrmCapability24g
+    operator: equals
+    value: "0x32"
+    description: "2.4G: the associated STA currently advertises RRM capability 0x32 on wl2."
+  - field: result_24g.Capabilities
+    operator: equals
+    value: "RRM,BTM,QOS_MAP"
+    description: "2.4G: current live getter exposes RRM/BTM/QOS_MAP for the associated STA."
+
+verification_command:
+  - 'wl -i wl0 assoclist'
+  - 'STA_MAC=$(wl -i wl0 assoclist | awk ''NR==1{print $2}'')'
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities?"'
+  - 'wl -i wl0 sta_info $STA_MAC | grep -i "RRM capability"'
+  - 'wl -i wl1 assoclist'
+  - 'STA_MAC=$(wl -i wl1 assoclist | awk ''NR==1{print $2}'')'
+  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.Capabilities?"'
+  - 'wl -i wl1 sta_info $STA_MAC | grep -i "RRM capability"'
+  - 'wl -i wl2 assoclist'
+  - 'STA_MAC=$(wl -i wl2 assoclist | awk ''NR==1{print $2}'')'
+  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Capabilities?"'
+  - 'wl -i wl2 sta_info $STA_MAC | grep -i "RRM capability"'
+
 results_reference:
   v4.0.3:
     5g: Pass
-    6g: Skip
+    6g: Pass
     2.4g: Pass
-    comment: |
-      Live evidence (BCM v4.0.3):
-      5G: WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities=BTM,QOS_MAP,PMF
-          (5G STA wl0 RRM capability=0x0 -- no RRM; BTM present via Extended Caps)
-      2.4G: WiFi.AccessPoint.5.AssociatedDevice.1.Capabilities=
-          (2.4G STA wl2 flags show no BTM/QOS_MAP/PMF bits -- empty string is correct)
-      Value is STA-dependent; LLAPI correctly reflects what each STA advertises.
+    comment: >
+      0401 workbook row 13 still expects Pass/Pass/Pass, but the current deterministic lab STA
+      exposes a different capability profile than the workbook sample. `Capabilities` is a read-only
+      AssociatedDevice getter, and pWHM publishes the parsed station capability bits from
+      `pWirelessDevIE->capabilities`. Current live evidence on AP1/AP3/AP5 stabilizes at
+      `RRM,BTM,QOS_MAP / BTM,QOS_MAP,PMF / RRM,BTM,QOS_MAP` with driver RRM capability
+      `0x32 / 0x0 / 0x32`. The workbook H-column sample still references a different STA
+      (`4A:0A:A5:80:23:7B`) and a broader capability string, so this YAML follows the proven live
+      lab shape rather than the stale workbook sample.

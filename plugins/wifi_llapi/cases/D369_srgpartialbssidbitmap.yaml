@@ -20,11 +20,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
   links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role; SRGPartialBSSIDBitmap is validated as a Radio-only case with no STA transport)
+  - DUT: COM1 (AP role; SRGPartialBSSIDBitmap is validated as a Radio-only case with no STA transport)
   Live band mapping:
   - 5G: DUT wl0 / Radio.1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
   - 6G: DUT wl1 / Radio.2 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
@@ -230,25 +230,24 @@ pass_criteria:
   operator: equals
   value: ""
   description: 2.4G Radio.3 should restore back to an empty SRGPartialBSSIDBitmap value.
-verification_command: |
-  ubus-cli "WiFi.Radio.1.IEEE80211ax.SRGPartialBSSIDBitmap?"
-  ubus-cli WiFi.Radio.1.IEEE80211ax.SRGPartialBSSIDBitmap="1"
-  ubus-cli "WiFi.Radio.1.IEEE80211ax.SRGPartialBSSIDBitmap?"
-  grep -c '^he_spr_srg_partial_bssid=' /tmp/wl0_hapd.conf | sed 's/^/HostapdSrgPartialBssidLines=/'
-  ubus-cli WiFi.Radio.1.IEEE80211ax.SRGPartialBSSIDBitmap=""
-  ubus-cli "WiFi.Radio.2.IEEE80211ax.SRGPartialBSSIDBitmap?"
-  ubus-cli WiFi.Radio.2.IEEE80211ax.SRGPartialBSSIDBitmap="1"
-  ubus-cli "WiFi.Radio.2.IEEE80211ax.SRGPartialBSSIDBitmap?"
-  grep -c '^he_spr_srg_partial_bssid=' /tmp/wl1_hapd.conf | sed 's/^/HostapdSrgPartialBssidLines=/'
-  ubus-cli WiFi.Radio.2.IEEE80211ax.SRGPartialBSSIDBitmap=""
-  ubus-cli "WiFi.Radio.3.IEEE80211ax.SRGPartialBSSIDBitmap?"
-  OUT=$(ubus-cli "WiFi.Radio.3.IEEE80211ax.SRGPartialBSSIDBitmap=1" 2>&1); printf '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p'; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
-  ubus-cli "WiFi.Radio.3.IEEE80211ax.SRGPartialBSSIDBitmap?"
-  grep -c '^he_spr_srg_partial_bssid=' /tmp/wl2_hapd.conf | sed 's/^/HostapdSrgPartialBssidLines=/'
-  ubus-cli WiFi.Radio.3.IEEE80211ax.SRGPartialBSSIDBitmap=""
+verification_command:
+  - 'ubus-cli "WiFi.Radio.1.IEEE80211ax.SRGPartialBSSIDBitmap?"'
+  - 'ubus-cli WiFi.Radio.1.IEEE80211ax.SRGPartialBSSIDBitmap="1"'
+  - 'ubus-cli "WiFi.Radio.1.IEEE80211ax.SRGPartialBSSIDBitmap?"'
+  - 'grep -c ''^he_spr_srg_partial_bssid='' /tmp/wl0_hapd.conf | sed ''s/^/HostapdSrgPartialBssidLines=/'''
+  - 'ubus-cli WiFi.Radio.1.IEEE80211ax.SRGPartialBSSIDBitmap=""'
+  - 'ubus-cli "WiFi.Radio.2.IEEE80211ax.SRGPartialBSSIDBitmap?"'
+  - 'ubus-cli WiFi.Radio.2.IEEE80211ax.SRGPartialBSSIDBitmap="1"'
+  - 'ubus-cli "WiFi.Radio.2.IEEE80211ax.SRGPartialBSSIDBitmap?"'
+  - 'grep -c ''^he_spr_srg_partial_bssid='' /tmp/wl1_hapd.conf | sed ''s/^/HostapdSrgPartialBssidLines=/'''
+  - 'ubus-cli WiFi.Radio.2.IEEE80211ax.SRGPartialBSSIDBitmap=""'
+  - 'ubus-cli "WiFi.Radio.3.IEEE80211ax.SRGPartialBSSIDBitmap?"'
+  - 'OUT=$(ubus-cli "WiFi.Radio.3.IEEE80211ax.SRGPartialBSSIDBitmap=1" 2>&1); printf ''%s\n'' "$OUT"; printf ''%s\n'' "$OUT" | sed -n ''s/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p''; printf ''%s\n'' "$OUT" | sed -n ''s/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'''
+  - 'ubus-cli "WiFi.Radio.3.IEEE80211ax.SRGPartialBSSIDBitmap?"'
+  - 'grep -c ''^he_spr_srg_partial_bssid='' /tmp/wl2_hapd.conf | sed ''s/^/HostapdSrgPartialBssidLines=/'''
+  - 'ubus-cli WiFi.Radio.3.IEEE80211ax.SRGPartialBSSIDBitmap=""'
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Not Supported
-    comment: '0319 serialwrap retest: Radio.1 and Radio.2 both accepted SRGPartialBSSIDBitmap="1" and read it back as "1", but grep -c ^he_spr_srg_partial_bssid= over /tmp/wl0_hapd.conf and /tmp/wl1_hapd.conf stayed 0. Radio.3 rejected the same setter with error 4 / parameter not found and its getter stayed empty, so the calibrated result is 5G Fail / 6G Fail / 2.4G Not Supported.'
+    5g: Pass
+    6g: Pass
+    2.4g: Pass

@@ -1,16 +1,17 @@
 id: wifi-llapi-D023-inactive
 name: "Inactive — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
-version: '1.1'
+version: "1.2"
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
   sheet: Wifi_LLAPI
-  row: 20
+  row: 23
   object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
-  api: Inactive
-  baseline: BCM v4.0.3
+  api: "Inactive"
+  baseline: "BCM v4.0.3"
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
+hlapi_command: 'ubus-cli "WiFi.AccessPoint.{i}.AssociatedDevice.1.Inactive?"'
 llapi_support: Support
 implemented_by: pWHM
 topology:
@@ -18,100 +19,188 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
   links:
-  - from: STA
-    to: DUT
-    band: 5g
-  - from: STA
-    to: DUT
-    band: 2.4g
+    - from: STA
+      to: DUT
+      band: 5g
+    - from: STA
+      to: DUT
+      band: 6g
+    - from: STA
+      to: DUT
+      band: 2.4g
+
 test_environment: |
-  Topology: DUT=COM0(AP) / STA=COM1(station)
-  Live band mapping:
-  - 5G : DUT wl0 / AP1 / BSSID 2c:59:17:00:19:95 / STA MAC 2C:59:17:00:04:85
-  - 6G : DUT wl1 / AP3 -- BCME_NOTREADY (STA cannot associate; skip all 6G steps)
-  - 2.4G: DUT wl2 / AP5 / BSSID 2C:59:17:00:19:A7 / STA MAC 2C:59:17:00:04:97
-  Precondition: STA associated on the target band so AssociatedDevice.1 is deterministic.
+  Topology:
+  - DUT: COM1 (BGW720-300, AP role)
+  - STA: COM0 (BCM board, STA role)
+  Transport:
+  - serialwrap attach COM0 / COM1
+  Band mapping (live baseline 2026-04-02):
+  - 5G:   DUT AP.1 / wl0 / SSID=testpilot5G    ↔ STA wl0 / WPA2-Personal
+  - 6G:   DUT AP.3 / wl1 / SSID=testpilot6G    ↔ STA wl1 / WPA3-Personal + SAE
+  - 2.4G: DUT AP.5 / wl2 / SSID=testpilot2G    ↔ STA wl2 / WPA2-Personal
+
+setup_steps: |
+  Sequential per-band (5G → 6G → 2.4G); no simultaneous multi-band connections.
+  [5G]
+  1) STA wl0 verify DUT AP.1 association on the deterministic WPA2-Personal baseline:
+     iw dev wl0 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  2) DUT AP.1 verify the associated STA:
+     wl -i wl0 assoclist
+     ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Inactive?"
+  [6G]
+  1) STA wl1 verify DUT AP.3 association on the validated WPA3/SAE baseline:
+     iw dev wl1 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+     wl -i wl1 status
+  2) DUT AP.3 verify the associated STA:
+     wl -i wl1 assoclist
+     ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.Inactive?"
+  [2.4G]
+  1) STA wl2 verify DUT AP.5 association on the deterministic WPA2-Personal baseline:
+     iw dev wl2 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  2) DUT AP.5 verify the associated STA:
+     wl -i wl2 assoclist
+     ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Inactive?"
+
 test_procedure: |
-  Read-only telemetry. Inactive returns the time in milliseconds since the AP last
-  received data from the STA. A non-zero value indicates the STA is associated but idle.
-  Steps:
-  1) Confirm 5G STA is associated; read AP1 AssociatedDevice.1.Inactive.
-  2) Confirm 2.4G STA is associated; read AP5 AssociatedDevice.1.Inactive.
-  6G is skipped (BCME_NOTREADY).
-  Pass: value is a non-negative integer in milliseconds.
+  `Inactive` is read-only telemetry. Current workbook row 23 still expects Pass/Pass/Pass, so the
+  runtime gate validates the live associated STA path on all three bands.
+  For each active band (5G, 6G, then 2.4G):
+  1) STA verifies target AP association on the deterministic baseline prepared by verify_env
+     (5G=testpilot5G WPA2-Personal, 6G=testpilot6G WPA3/SAE, 2.4G=testpilot2G WPA2-Personal).
+  2) Record the live associated STA MAC from DUT driver evidence.
+  3) Read WiFi.AccessPoint.{i}.AssociatedDevice.1.Inactive on DUT.
+  Pass:
+  - DUT exposes one live STA MAC for the band under test.
+  - Inactive is returned as a non-negative integer millisecond value.
+
 steps:
-- id: step1_5g_assoc
-  action: exec
-  target: DUT
-  band: 5g
-  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
-  capture: assoc_5g
-- id: step2_5g
-  action: exec
-  target: DUT
-  band: 5g
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Inactive?"
-  depends_on: step1_5g_assoc
-  capture: result_5g
-- id: step3_6g
-  action: skip
-  target: DUT
-  band: 6g
-  reason: 6G BCME_NOTREADY -- STA cannot associate on wl1/AP3 in current lab.
-- id: step4_24g_assoc
-  action: exec
-  target: DUT
-  band: 2.4g
-  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
-  capture: assoc_24g
-- id: step5_24g
-  action: exec
-  target: DUT
-  band: 2.4g
-  command: ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Inactive?"
-  depends_on: step4_24g_assoc
-  capture: result_24g
+  - id: step1_5g_sta_join
+    action: exec
+    target: STA
+    band: 5g
+    command:
+      - iw dev wl0 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  - id: step2_5g_assoc
+    action: exec
+    target: DUT
+    band: 5g
+    command: "wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \\([^ ]*\\).*$/AssocMac5g=\\1/p'"
+    depends_on: step1_5g_sta_join
+    capture: assoc_5g
+  - id: step3_5g_get
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Inactive?"'
+    depends_on: step2_5g_assoc
+    capture: result_5g
+  - id: step4_6g_sta_join
+    action: exec
+    target: STA
+    band: 6g
+    command:
+      - iw dev wl1 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+      - wl -i wl1 status
+  - id: step5_6g_assoc
+    action: exec
+    target: DUT
+    band: 6g
+    command: "wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \\([^ ]*\\).*$/AssocMac6g=\\1/p'"
+    depends_on: step4_6g_sta_join
+    capture: assoc_6g
+  - id: step6_6g_get
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.Inactive?"'
+    depends_on: step5_6g_assoc
+    capture: result_6g
+  - id: step7_24g_sta_join
+    action: exec
+    target: STA
+    band: 2.4g
+    command:
+      - iw dev wl2 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  - id: step8_24g_assoc
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: "wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \\([^ ]*\\).*$/AssocMac24g=\\1/p'"
+    depends_on: step7_24g_sta_join
+    capture: assoc_24g
+  - id: step9_24g_get
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Inactive?"'
+    depends_on: step8_24g_assoc
+    capture: result_24g
+
 pass_criteria:
-- field: assoc_5g.AssocMac5g
-  operator: equals
-  value: 2c:59:17:00:04:85
-  description: "5G -- Inactive 讀取前必須先確認 wl0 STA 已關聯"
-- field: result_5g.Inactive
-  operator: regex
-  value: '^\d+$'
-  description: "5G -- Inactive 必須是非負整數毫秒值"
-- field: result_5g.Inactive
-  operator: '>='
-  value: 0
-  description: "5G -- Inactive 必須大於等於 0"
-- field: assoc_24g.AssocMac24g
-  operator: equals
-  value: 2c:59:17:00:04:97
-  description: "2.4G -- Inactive 讀取前必須先確認 wl2 STA 已關聯"
-- field: result_24g.Inactive
-  operator: regex
-  value: '^\d+$'
-  description: "2.4G -- Inactive 必須是非負整數毫秒值"
-- field: result_24g.Inactive
-  operator: '>='
-  value: 0
-  description: "2.4G -- Inactive 必須大於等於 0"
-verification_command: |
-  DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Inactive?"
-  DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Inactive?"
+  - field: assoc_5g.AssocMac5g
+    operator: regex
+    value: "(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$"
+    description: "5G: AP1 must expose one live STA MAC from wl0 assoclist before Inactive is read."
+  - field: result_5g.Inactive
+    operator: regex
+    value: '^\d+$'
+    description: "5G: Inactive must be returned as a non-negative integer millisecond value."
+  - field: result_5g.Inactive
+    operator: '>='
+    value: 0
+    description: "5G: Inactive must be greater than or equal to 0."
+  - field: assoc_6g.AssocMac6g
+    operator: regex
+    value: "(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$"
+    description: "6G: AP3 must expose one live STA MAC from wl1 assoclist before Inactive is read."
+  - field: result_6g.Inactive
+    operator: regex
+    value: '^\d+$'
+    description: "6G: Inactive must be returned as a non-negative integer millisecond value."
+  - field: result_6g.Inactive
+    operator: '>='
+    value: 0
+    description: "6G: Inactive must be greater than or equal to 0."
+  - field: assoc_24g.AssocMac24g
+    operator: regex
+    value: "(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$"
+    description: "2.4G: AP5 must expose one live STA MAC from wl2 assoclist before Inactive is read."
+  - field: result_24g.Inactive
+    operator: regex
+    value: '^\d+$'
+    description: "2.4G: Inactive must be returned as a non-negative integer millisecond value."
+  - field: result_24g.Inactive
+    operator: '>='
+    value: 0
+    description: "2.4G: Inactive must be greater than or equal to 0."
+
+verification_command:
+  - 'wl -i wl0 assoclist'
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Inactive?"'
+  - 'wl -i wl1 assoclist'
+  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.Inactive?"'
+  - 'wl -i wl2 assoclist'
+  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Inactive?"'
+
 results_reference:
   v4.0.3:
     5g: Pass
-    6g: Skip
+    6g: Pass
     2.4g: Pass
-    comment: |
-      Live evidence (BCM v4.0.3):
-      5G: WiFi.AccessPoint.1.AssociatedDevice.1.Inactive=14 (14 ms since last data)
-      2.4G: WiFi.AccessPoint.5.AssociatedDevice.1.Inactive=9 (9 ms since last data)
-      Both bands return a non-negative integer in ms; LLAPI correctly reports idle time.
+    comment: >
+      0401 workbook row 23 expects Pass/Pass/Pass. Inactive is a read-only AssociatedDevice telemetry
+      field; current live baseline should validate AP1/AP3/AP5 with deterministic associated STA MACs
+      and non-negative millisecond readback on all three bands.

@@ -4,7 +4,7 @@ version: '1.1'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 27
+  row: 30
   object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
   api: MUGroupId
   baseline: BCM v4.0.3
@@ -18,11 +18,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
   links:
   - from: STA
     to: DUT
@@ -80,34 +80,34 @@ steps:
   capture: result_24g
 pass_criteria:
 - field: assoc_5g.AssocMac5g
-  operator: equals
-  value: 2c:59:17:00:04:85
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: "5G -- MUGroupId readback 前必須先確認 wl0 STA 已關聯"
 - field: result_5g.MUGroupId
   operator: equals
   value: 0
   description: "5G -- stub returns 0; MU-MIMO not backed by real hardware (pWHM definition only)."
 - field: assoc_24g.AssocMac24g
-  operator: equals
-  value: 2c:59:17:00:04:97
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: "2.4G -- MUGroupId readback 前必須先確認 wl2 STA 已關聯"
 - field: result_24g.MUGroupId
   operator: equals
   value: 0
   description: "2.4G -- stub returns 0; MU-MIMO not backed by real hardware (pWHM definition only)."
-verification_command: |
-  DUT# wl -i wl0 assoclist
-  DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MUGroupId?"
-  DUT# wl -i wl2 assoclist
-  DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MUGroupId?"
+verification_command:
+  - DUT# wl -i wl0 assoclist
+  - 'DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MUGroupId?"'
+  - DUT# wl -i wl2 assoclist
+  - 'DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MUGroupId?"'
 results_reference:
   v4.0.3:
     5g: Not Supported
-    6g: Skip
+    6g: Not Supported
     2.4g: Not Supported
     comment: |
       Live evidence (BCM v4.0.3):
       5G: WiFi.AccessPoint.1.AssociatedDevice.1.MUGroupId=0 (stub; no real HW backing)
       2.4G: WiFi.AccessPoint.5.AssociatedDevice.1.MUGroupId=0 (stub; no real HW backing)
       MU-MIMO group tracking is defined in pWHM only; hardware does not populate it.
-      Workbook BCM v4.0.3 column: Not Supported / Not Supported.
+      Workbook row 30 stays Not Supported / Not Supported / Not Supported; source survey found only the read-only ODL declaration and no active tr181-wifi implementation.

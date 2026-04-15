@@ -1,7 +1,7 @@
 id: d280-getscanresults-encryptionmode
 name: D280 getScanResults EncryptionMode
 source:
-  row: 282
+  row: 280
   object: WiFi.Radio.{i}.
   api: getScanResults()
   baseline: 0310-BGW720-300
@@ -20,36 +20,108 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_scan
   target: dut
-  action: read
-  capture: scan_5g
-  command: ubus-cli "WiFi.Radio.1.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.1 (5g) getScanResults()
+  action: exec
+  capture: llapi_5g
+  command: 'BLOCK=$(ubus-cli "WiFi.Radio.1.getScanResults()" | awk ''/BSSID = /{b=$0;e="";next} /EncryptionMode = /{e=$0;next} /SecurityModeEnabled = /{if ($0 ~ /SecurityModeEnabled = "WPA/) { print b; print e; print $0; exit }}''); BSSID=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*BSSID = "\([^"]*\)".*/\1/p'' | head -n1); ENC=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*EncryptionMode = "\([^"]*\)".*/\1/p'' | head -n1); SEC=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*SecurityModeEnabled = "\([^"]*\)".*/\1/p'' | head -n1); [ -n "$BSSID" ] && printf "LlapiBssid5g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; [ -n "$ENC" ] && printf "LlapiEncryptionMode5g=%s\n" "$ENC"; [ -n "$SEC" ] && printf "LlapiSecurityMode5g=%s\n" "$SEC"'
+  expected: 5G getScanResults() 需先找到一個 WPA 類 target 並擷取其 EncryptionMode
+  description: Radio.1 (5g) 以第一個 WPA 類 target 驗證 LLAPI EncryptionMode fail shape
+- id: step_5g_iw_scan
+  target: dut
+  action: exec
+  capture: iw_5g
+  command: 'TARGET="{{llapi_5g.LlapiBssid5g}}"; BLOCK=$(iw dev wl0 scan | grep -A30 -im1 "^BSS $TARGET"); CIPHER=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*Pairwise ciphers: \(.*\)$/\1/p'' | head -n1); MODE=None; if printf "%s" "$CIPHER" | grep -q CCMP; then MODE=AES; fi; if printf "%s" "$CIPHER" | grep -q TKIP; then if [ "$MODE" = AES ]; then MODE=TKIPandAES; else MODE=TKIP; fi; fi; [ -n "$CIPHER" ] && printf "IwCipher5g=%s\n" "$CIPHER"; printf "IwEncryptionMode5g=%s\n" "$MODE"'
+  expected: wl0 scan 需能對同 target 萃取出實際 pairwise cipher
+  description: wl0 scan 對位 5G target 的實際 encryption mode
 - id: step_6g_scan
   target: dut
-  action: read
-  capture: scan_6g
-  command: ubus-cli "WiFi.Radio.2.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.2 (6g) getScanResults()
+  action: exec
+  capture: llapi_6g
+  command: 'BLOCK=$(ubus-cli "WiFi.Radio.2.getScanResults()" | awk ''/BSSID = /{b=$0;e="";next} /EncryptionMode = /{e=$0;next} /SecurityModeEnabled = /{if ($0 ~ /SecurityModeEnabled = "WPA/) { print b; print e; print $0; exit }}''); BSSID=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*BSSID = "\([^"]*\)".*/\1/p'' | head -n1); ENC=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*EncryptionMode = "\([^"]*\)".*/\1/p'' | head -n1); SEC=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*SecurityModeEnabled = "\([^"]*\)".*/\1/p'' | head -n1); [ -n "$BSSID" ] && printf "LlapiBssid6g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; [ -n "$ENC" ] && printf "LlapiEncryptionMode6g=%s\n" "$ENC"; [ -n "$SEC" ] && printf "LlapiSecurityMode6g=%s\n" "$SEC"'
+  expected: 6G getScanResults() 需先找到一個 WPA 類 target 並擷取其 EncryptionMode
+  description: Radio.2 (6g) 以第一個 WPA 類 target 驗證 LLAPI EncryptionMode fail shape
+- id: step_6g_iw_scan
+  target: dut
+  action: exec
+  capture: iw_6g
+  command: 'TARGET="{{llapi_6g.LlapiBssid6g}}"; BLOCK=$(iw dev wl1 scan | grep -A30 -im1 "^BSS $TARGET"); CIPHER=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*Pairwise ciphers: \(.*\)$/\1/p'' | head -n1); MODE=None; if printf "%s" "$CIPHER" | grep -q CCMP; then MODE=AES; fi; if printf "%s" "$CIPHER" | grep -q TKIP; then if [ "$MODE" = AES ]; then MODE=TKIPandAES; else MODE=TKIP; fi; fi; [ -n "$CIPHER" ] && printf "IwCipher6g=%s\n" "$CIPHER"; printf "IwEncryptionMode6g=%s\n" "$MODE"'
+  expected: wl1 scan 需能對同 target 萃取出實際 pairwise cipher
+  description: wl1 scan 對位 6G target 的實際 encryption mode
 - id: step_24g_scan
   target: dut
-  action: read
-  capture: scan_24g
-  command: ubus-cli "WiFi.Radio.3.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.3 (2.4g) getScanResults()
+  action: exec
+  capture: llapi_24g
+  command: 'BLOCK=$(ubus-cli "WiFi.Radio.3.getScanResults()" | awk ''/BSSID = /{b=$0;e="";next} /EncryptionMode = /{e=$0;next} /SecurityModeEnabled = /{if ($0 ~ /SecurityModeEnabled = "WPA/) { print b; print e; print $0; exit }}''); BSSID=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*BSSID = "\([^"]*\)".*/\1/p'' | head -n1); ENC=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*EncryptionMode = "\([^"]*\)".*/\1/p'' | head -n1); SEC=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*SecurityModeEnabled = "\([^"]*\)".*/\1/p'' | head -n1); [ -n "$BSSID" ] && printf "LlapiBssid24g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; [ -n "$ENC" ] && printf "LlapiEncryptionMode24g=%s\n" "$ENC"; [ -n "$SEC" ] && printf "LlapiSecurityMode24g=%s\n" "$SEC"'
+  expected: 2.4G getScanResults() 需先找到一個 WPA 類 target 並擷取其 EncryptionMode
+  description: Radio.3 (2.4g) 以第一個 WPA 類 target 驗證 LLAPI EncryptionMode fail shape
+- id: step_24g_iw_scan
+  target: dut
+  action: exec
+  capture: iw_24g
+  command: 'TARGET="{{llapi_24g.LlapiBssid24g}}"; BLOCK=$(iw dev wl2 scan | grep -A30 -im1 "^BSS $TARGET"); CIPHER=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*Pairwise ciphers: \(.*\)$/\1/p'' | head -n1); MODE=None; if printf "%s" "$CIPHER" | grep -q CCMP; then MODE=AES; fi; if printf "%s" "$CIPHER" | grep -q TKIP; then if [ "$MODE" = AES ]; then MODE=TKIPandAES; else MODE=TKIP; fi; fi; [ -n "$CIPHER" ] && printf "IwCipher24g=%s\n" "$CIPHER"; printf "IwEncryptionMode24g=%s\n" "$MODE"'
+  expected: wl2 scan 需能對同 target 萃取出實際 pairwise cipher
+  description: wl2 scan 對位 2.4G target 的實際 encryption mode
 pass_criteria:
-- field: scan_5g.EncryptionMode
+- field: llapi_5g.LlapiBssid5g
   operator: regex
-  value: '.+'
-- field: scan_6g.EncryptionMode
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  description: 5G 必須先鎖定一個 WPA 類 scan target
+- field: llapi_5g.LlapiSecurityMode5g
   operator: regex
-  value: '.+'
-- field: scan_24g.EncryptionMode
+  value: ^WPA
+  description: 5G target 必須是 WPA 類 security mode，避免 open-network 假陽性
+- field: llapi_5g.LlapiEncryptionMode5g
+  operator: equals
+  value: Default
+  description: 5G 當前 LLAPI EncryptionMode 仍是 fail-shaped Default
+- field: iw_5g.IwEncryptionMode5g
   operator: regex
-  value: '.+'
+  value: ^(TKIP|AES|TKIPandAES)$
+  description: 5G 同 target 的 iw scan 仍可解析出真實 cipher 類型
+- field: llapi_5g.LlapiEncryptionMode5g
+  operator: not_equals
+  reference: iw_5g.IwEncryptionMode5g
+  description: 5G LLAPI Default 必須持續偏離同 target 的真實 iw encryption mode
+- field: llapi_6g.LlapiBssid6g
+  operator: regex
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  description: 6G 必須先鎖定一個 WPA 類 scan target
+- field: llapi_6g.LlapiSecurityMode6g
+  operator: regex
+  value: ^WPA
+  description: 6G target 必須是 WPA 類 security mode，避免 open-network 假陽性
+- field: llapi_6g.LlapiEncryptionMode6g
+  operator: equals
+  value: Default
+  description: 6G 當前 LLAPI EncryptionMode 仍是 fail-shaped Default
+- field: iw_6g.IwEncryptionMode6g
+  operator: regex
+  value: ^(TKIP|AES|TKIPandAES)$
+  description: 6G 同 target 的 iw scan 仍可解析出真實 cipher 類型
+- field: llapi_6g.LlapiEncryptionMode6g
+  operator: not_equals
+  reference: iw_6g.IwEncryptionMode6g
+  description: 6G LLAPI Default 必須持續偏離同 target 的真實 iw encryption mode
+- field: llapi_24g.LlapiBssid24g
+  operator: regex
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  description: 2.4G 必須先鎖定一個 WPA 類 scan target
+- field: llapi_24g.LlapiSecurityMode24g
+  operator: regex
+  value: ^WPA
+  description: 2.4G target 必須是 WPA 類 security mode，避免 open-network 假陽性
+- field: llapi_24g.LlapiEncryptionMode24g
+  operator: equals
+  value: Default
+  description: 2.4G 當前 LLAPI EncryptionMode 仍是 fail-shaped Default
+- field: iw_24g.IwEncryptionMode24g
+  operator: regex
+  value: ^(TKIP|AES|TKIPandAES)$
+  description: 2.4G 同 target 的 iw scan 仍可解析出真實 cipher 類型
+- field: llapi_24g.LlapiEncryptionMode24g
+  operator: not_equals
+  reference: iw_24g.IwEncryptionMode24g
+  description: 2.4G LLAPI Default 必須持續偏離同 target 的真實 iw encryption mode

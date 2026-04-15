@@ -1,7 +1,7 @@
 id: d261-getradioairstats-txtime
 name: D261 getRadioAirStats TxTime
 source:
-  row: 263
+  row: 261
   object: WiFi.Radio.{i}.
   api: getRadioAirStats()
   baseline: 0310-BGW720-300
@@ -15,13 +15,13 @@ results_reference:
     5g: Fail
     6g: Fail
     2.4g: Fail
-    comment: need to support survey in driver level
+    comment: 'BRCM: CSP CS00012439197'
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_stats
   target: dut

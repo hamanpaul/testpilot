@@ -38,6 +38,31 @@ def _setup_logging(verbose: bool) -> None:
     )
 
 
+def _run_command_guidance() -> str:
+    return (
+        "Correct format:\n"
+        "  testpilot run <plugin_name> [--case <case_id>] [--dut-fw-ver <fw_ver>]\n\n"
+        "Example:\n"
+        "  testpilot run wifi_llapi --case wifi-llapi-D004-kickstation --dut-fw-ver BGW720-B0-403\n\n"
+        "Tip:\n"
+        "  testpilot list-cases wifi_llapi"
+    )
+
+
+class HelpfulRunCommand(click.Command):
+    def parse_args(self, ctx: click.Context, args: list[str]) -> list[str]:
+        try:
+            return super().parse_args(ctx, args)
+        except click.MissingParameter as exc:
+            if getattr(exc.param, "name", None) == "plugin_name":
+                raise click.UsageError(
+                    "Missing required argument PLUGIN_NAME.\n\n"
+                    f"{_run_command_guidance()}",
+                    ctx=ctx,
+                ) from exc
+            raise
+
+
 @click.group()
 @click.version_option(__version__, prog_name="testpilot")
 @click.option("-v", "--verbose", is_flag=True, help="Enable debug logging.")
@@ -59,6 +84,7 @@ def main(ctx: click.Context, verbose: bool, root: str | None, azure: bool) -> No
     _setup_logging(verbose)
     ctx.ensure_object(dict)
     ctx.obj["root"] = Path(root) if root else Path(__file__).resolve().parents[2]
+    ctx.obj["provider_notice"] = None
 
     # --- Authentication: Azure BYOK → GitHub OAuth fallback ---
     provider_config: dict | None = None
@@ -70,12 +96,12 @@ def main(ctx: click.Context, verbose: bool, root: str | None, azure: bool) -> No
                 "Cannot proceed. Please check your credentials and network.",
             )
             raise SystemExit(1)
-        console.print("[green]✓ Azure OpenAI authenticated.[/green]")
+        ctx.obj["provider_notice"] = "azure_interactive"
     else:
         # Check if COPILOT_PROVIDER_* env vars are already set
         provider_config = resolve_provider_config()
         if provider_config:
-            console.print("[green]✓ Azure OpenAI (from env vars).[/green]")
+            ctx.obj["provider_notice"] = "azure_env"
         # else: fall through to GitHub OAuth (handled by Copilot SDK)
 
     ctx.obj["provider_config"] = provider_config
@@ -127,7 +153,7 @@ def list_cases(ctx: click.Context, plugin_name: str) -> None:
     console.print(table)
 
 
-@main.command("run")
+@main.command("run", cls=HelpfulRunCommand)
 @click.argument("plugin_name")
 @click.option("--case", "case_ids", multiple=True, help="Specific case IDs to run.")
 @click.option(
@@ -150,9 +176,21 @@ def run_tests(
     dut_fw_ver: str,
     report_source_xlsx: str | None,
 ) -> None:
-    """Run tests for a plugin (skeleton)."""
+    """Run tests for a plugin.
+
+    Correct format:
+      testpilot run PLUGIN_NAME [--case CASE_ID] [--dut-fw-ver FW_VER]
+
+    Example:
+      testpilot run wifi_llapi --case wifi-llapi-D004-kickstation --dut-fw-ver BGW720-B0-403
+    """
     orch: Orchestrator = ctx.obj["orchestrator"]
     provider_config = ctx.obj.get("provider_config")
+    provider_notice = str(ctx.obj.get("provider_notice") or "")
+    if provider_config and provider_notice == "azure_interactive":
+        console.print("[green]✓ Azure OpenAI authenticated.[/green]")
+    elif provider_config and provider_notice == "azure_env":
+        console.print("[green]✓ Azure OpenAI (from env vars).[/green]")
     result = orch.run(
         plugin_name,
         list(case_ids) if case_ids else None,
@@ -166,6 +204,55 @@ def run_tests(
 @main.group("wifi-llapi")
 def wifi_llapi_group() -> None:
     """wifi_llapi plugin helper commands."""
+
+
+@wifi_llapi_group.command("baseline-qualify")
+@click.option(
+    "--band",
+    "bands",
+    multiple=True,
+    type=click.Choice(["5g", "6g", "2.4g"], case_sensitive=False),
+    help="Band to qualify. Repeatable. Defaults to all enabled sta_available_bands.",
+)
+@click.option(
+    "--repeat-count",
+    default=5,
+    show_default=True,
+    type=click.IntRange(min=1),
+    help="Consecutive successful rounds required per band.",
+)
+@click.option(
+    "--soak-minutes",
+    default=15,
+    show_default=True,
+    type=click.IntRange(min=0),
+    help="Soak time after each successful round.",
+)
+@click.pass_context
+def baseline_qualify(
+    ctx: click.Context,
+    bands: tuple[str, ...],
+    repeat_count: int,
+    soak_minutes: int,
+) -> None:
+    """Qualify reusable DUT/STA baseline connectivity before full wifi_llapi runs."""
+    orch: Orchestrator = ctx.obj["orchestrator"]
+    plugin = orch.loader.load("wifi_llapi")
+    qualify = getattr(plugin, "qualify_baseline", None)
+    if not callable(qualify):
+        raise click.ClickException("wifi_llapi plugin does not support baseline qualification")
+    try:
+        result = qualify(
+            orch.config,
+            bands=tuple(str(band).lower() for band in bands),
+            repeat_count=repeat_count,
+            soak_minutes=soak_minutes,
+        )
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+    console.print(result)
+    if str(result.get("overall_status", "")).lower() != "stable":
+        raise SystemExit(1)
 
 
 @wifi_llapi_group.command("build-template-report")

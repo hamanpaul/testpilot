@@ -28,6 +28,34 @@ def sanitize_case_id(case_id: str) -> str:
     return normalized or "case"
 
 
+def normalize_step_command(value: Any) -> str | list[str]:
+    """Normalize a step command while preserving `str | list[str]` semantics."""
+    if isinstance(value, list):
+        commands: list[str] = []
+        for item in value:
+            text = str(item).strip()
+            if text:
+                commands.append(text)
+        return commands
+    return str(value or "").strip()
+
+
+def step_command_lines(value: Any) -> list[str]:
+    """Return the step command as a list of executable command strings."""
+    normalized = normalize_step_command(value)
+    if isinstance(normalized, list):
+        return normalized
+    return [normalized] if normalized else []
+
+
+def stringify_step_command(value: Any) -> str:
+    """Return a display string for `str | list[str]` step commands."""
+    normalized = normalize_step_command(value)
+    if isinstance(normalized, list):
+        return "\n".join(normalized).strip()
+    return normalized
+
+
 def case_aliases(case: dict[str, Any]) -> list[str]:
     """Extract the list of alias strings from *case*."""
     raw_aliases = case.get("aliases")
@@ -100,6 +128,13 @@ def baseline_results_reference(case: dict[str, Any]) -> dict[str, Any] | None:
             return value
         for key, entry in results_reference.items():
             if isinstance(key, str) and key.strip().lower() == norm.lower() and isinstance(entry, dict):
+                return entry
+    for fallback in ("v4.0.3", "4.0.3", "v4.0.1", "4.0.1"):
+        value = results_reference.get(fallback)
+        if isinstance(value, dict):
+            return value
+        for key, entry in results_reference.items():
+            if isinstance(key, str) and key.strip().lower() == fallback.lower() and isinstance(entry, dict):
                 return entry
     return None
 

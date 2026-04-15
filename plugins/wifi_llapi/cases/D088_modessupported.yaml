@@ -4,7 +4,7 @@ version: '1.1'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 82
+  row: 88
   object: WiFi.AccessPoint.{i}.Security
   api: ModesSupported
   baseline: BCM v4.0.3
@@ -20,11 +20,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
   links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role; ModesSupported is a read-only getter — no STA transport needed)
+  - DUT: COM1 (AP role; ModesSupported is a read-only getter — no STA transport needed)
   Live band mapping:
   - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
   - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
@@ -52,7 +52,8 @@ steps:
   - id: step2
     action: exec
     target: DUT
-    command: 'ubus-cli WiFi.AccessPoint.1.Security.ModesSupported=WPA3-Personal'
+    command: >-
+      OUT=$(ubus-cli WiFi.AccessPoint.1.Security.ModesSupported=WPA3-Personal 2>&1 || true); printf '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p'; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
     depends_on: step1
     capture: setter_5g
 
@@ -68,7 +69,8 @@ steps:
   - id: step4
     action: exec
     target: DUT
-    command: 'ubus-cli WiFi.AccessPoint.3.Security.ModesSupported=WPA3-Personal'
+    command: >-
+      OUT=$(ubus-cli WiFi.AccessPoint.3.Security.ModesSupported=WPA3-Personal 2>&1 || true); printf '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p'; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
     depends_on: step3
     capture: setter_6g
 
@@ -84,7 +86,8 @@ steps:
   - id: step6
     action: exec
     target: DUT
-    command: 'ubus-cli WiFi.AccessPoint.5.Security.ModesSupported=WPA3-Personal'
+    command: >-
+      OUT=$(ubus-cli WiFi.AccessPoint.5.Security.ModesSupported=WPA3-Personal 2>&1 || true); printf '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p'; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
     depends_on: step5
     capture: setter_24g
 
@@ -148,10 +151,10 @@ pass_criteria:
     value: "15"
     description: "2.4G setter 回傳 error 15 (read-only)"
 
-verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.Security.ModesSupported?"
-  ubus-cli "WiFi.AccessPoint.3.Security.ModesSupported?"
-  ubus-cli "WiFi.AccessPoint.5.Security.ModesSupported?"
+verification_command:
+  - 'ubus-cli "WiFi.AccessPoint.1.Security.ModesSupported?"'
+  - 'ubus-cli "WiFi.AccessPoint.3.Security.ModesSupported?"'
+  - 'ubus-cli "WiFi.AccessPoint.5.Security.ModesSupported?"'
 
 results_reference:
   v4.0.1:

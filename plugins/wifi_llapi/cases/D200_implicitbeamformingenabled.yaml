@@ -1,7 +1,7 @@
 id: d200-radio-implicitbeamformingenabled
 name: D200 Radio ImplicitBeamFormingEnabled
 source:
-  row: 163
+  row: 200
   object: WiFi.Radio.{i}.
   api: ImplicitBeamFormingEnabled
   baseline: 0310-BGW720-300
@@ -15,6 +15,7 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: read-only getter exact-closes the active 0403 tri-band ImplicitBeamFormingEnabled values
 topology:
   devices:
     DUT:

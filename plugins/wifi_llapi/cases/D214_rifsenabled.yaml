@@ -1,7 +1,7 @@
 id: d214-radio-rifsenabled
 name: D214 Radio RIFSEnabled
 source:
-  row: 175
+  row: 214
   object: WiFi.Radio.{i}.
   api: RIFSEnabled
   baseline: 0310-BGW720-300
@@ -15,6 +15,7 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: workbook pass intent is tri-band Default -> Auto -> Default replay via northbound setter/readback on active 0403 lab state
 topology:
   devices:
     DUT:
@@ -22,34 +23,223 @@ topology:
       transport: serial
       selector: COM0
 steps:
-- id: step_5g_getter
-  target: dut
-  action: read
-  capture: getter_5g
-  command: ubus-cli "WiFi.Radio.1.RIFSEnabled?"
-  expected: RIFSEnabled 回傳有效值
-  description: Radio.1 (5g) RIFSEnabled getter（live=Default）
-- id: step_6g_getter
-  target: dut
-  action: read
-  capture: getter_6g
-  command: ubus-cli "WiFi.Radio.2.RIFSEnabled?"
-  expected: RIFSEnabled 回傳有效值
-  description: Radio.2 (6g) RIFSEnabled getter（live=Default）
-- id: step_24g_getter
-  target: dut
-  action: read
-  capture: getter_24g
-  command: ubus-cli "WiFi.Radio.3.RIFSEnabled?"
-  expected: RIFSEnabled 回傳有效值
-  description: Radio.3 (2.4g) RIFSEnabled getter（live=Default）
+- id: step1_rifs_default_5g
+  target: DUT
+  action: exec
+  band: 5g
+  capture: default_5g
+  command: >-
+    ubus-cli "WiFi.Radio.1.RIFSEnabled?" | sed -n 's/.*RIFSEnabled="\([^"]*\)".*/DefaultRIFSEnabled5g=\1/p'
+  expected: 5g getter 應先回報 workbook default `Default`
+  description: Radio.1 (5g) 先確認 RIFSEnabled 初值為 Default。
+- id: step2_rifs_set_auto_5g
+  target: DUT
+  action: exec
+  band: 5g
+  capture: set_auto_5g
+  command:
+  - printf 'RequestedRIFSEnabled5g=Auto\n'
+  - >-
+    ubus-cli 'WiFi.Radio.1.RIFSEnabled="Auto"'
+  expected: 5g setter 應接受 Auto
+  depends_on: step1_rifs_default_5g
+  description: Radio.1 (5g) 將 RIFSEnabled 設為 Auto。
+- id: step3_rifs_after_set_5g
+  target: DUT
+  action: exec
+  band: 5g
+  capture: after_set_5g
+  command: >-
+    sleep 5; ubus-cli "WiFi.Radio.1.RIFSEnabled?" | sed -n 's/.*RIFSEnabled="\([^"]*\)".*/AfterSetRIFSEnabled5g=\1/p'
+  expected: 5g setter=Auto 後 getter 應回報 Auto
+  depends_on: step2_rifs_set_auto_5g
+  description: Radio.1 (5g) setter=Auto 後驗證 getter readback。
+- id: step4_rifs_restore_5g
+  target: DUT
+  action: exec
+  band: 5g
+  capture: restore_5g
+  command:
+  - printf 'RestoreRIFSEnabled5g=Default\n'
+  - >-
+    ubus-cli 'WiFi.Radio.1.RIFSEnabled="Default"'
+  expected: 5g restore 應接受 Default
+  depends_on: step3_rifs_after_set_5g
+  description: Radio.1 (5g) restore 回 Default。
+- id: step5_rifs_after_restore_5g
+  target: DUT
+  action: exec
+  band: 5g
+  capture: after_restore_5g
+  command: >-
+    sleep 5; ubus-cli "WiFi.Radio.1.RIFSEnabled?" | sed -n 's/.*RIFSEnabled="\([^"]*\)".*/AfterRestoreRIFSEnabled5g=\1/p'
+  expected: 5g restore 後 getter 應回報 Default
+  depends_on: step4_rifs_restore_5g
+  description: Radio.1 (5g) restore 後再次確認 getter。
+- id: step6_rifs_default_6g
+  target: DUT
+  action: exec
+  band: 6g
+  capture: default_6g
+  command: >-
+    ubus-cli "WiFi.Radio.2.RIFSEnabled?" | sed -n 's/.*RIFSEnabled="\([^"]*\)".*/DefaultRIFSEnabled6g=\1/p'
+  expected: 6g getter 應先回報 workbook default `Default`
+  description: Radio.2 (6g) 先確認 RIFSEnabled 初值為 Default。
+- id: step7_rifs_set_auto_6g
+  target: DUT
+  action: exec
+  band: 6g
+  capture: set_auto_6g
+  command:
+  - printf 'RequestedRIFSEnabled6g=Auto\n'
+  - >-
+    ubus-cli 'WiFi.Radio.2.RIFSEnabled="Auto"'
+  expected: 6g setter 應接受 Auto
+  depends_on: step6_rifs_default_6g
+  description: Radio.2 (6g) 將 RIFSEnabled 設為 Auto。
+- id: step8_rifs_after_set_6g
+  target: DUT
+  action: exec
+  band: 6g
+  capture: after_set_6g
+  command: >-
+    sleep 5; ubus-cli "WiFi.Radio.2.RIFSEnabled?" | sed -n 's/.*RIFSEnabled="\([^"]*\)".*/AfterSetRIFSEnabled6g=\1/p'
+  expected: 6g setter=Auto 後 getter 應回報 Auto
+  depends_on: step7_rifs_set_auto_6g
+  description: Radio.2 (6g) setter=Auto 後驗證 getter readback。
+- id: step9_rifs_restore_6g
+  target: DUT
+  action: exec
+  band: 6g
+  capture: restore_6g
+  command:
+  - printf 'RestoreRIFSEnabled6g=Default\n'
+  - >-
+    ubus-cli 'WiFi.Radio.2.RIFSEnabled="Default"'
+  expected: 6g restore 應接受 Default
+  depends_on: step8_rifs_after_set_6g
+  description: Radio.2 (6g) restore 回 Default。
+- id: step10_rifs_after_restore_6g
+  target: DUT
+  action: exec
+  band: 6g
+  capture: after_restore_6g
+  command: >-
+    sleep 5; ubus-cli "WiFi.Radio.2.RIFSEnabled?" | sed -n 's/.*RIFSEnabled="\([^"]*\)".*/AfterRestoreRIFSEnabled6g=\1/p'
+  expected: 6g restore 後 getter 應回報 Default
+  depends_on: step9_rifs_restore_6g
+  description: Radio.2 (6g) restore 後再次確認 getter。
+- id: step11_rifs_default_24g
+  target: DUT
+  action: exec
+  band: 2.4g
+  capture: default_24g
+  command: >-
+    ubus-cli "WiFi.Radio.3.RIFSEnabled?" | sed -n 's/.*RIFSEnabled="\([^"]*\)".*/DefaultRIFSEnabled24g=\1/p'
+  expected: 2.4g getter 應先回報 workbook default `Default`
+  description: Radio.3 (2.4g) 先確認 RIFSEnabled 初值為 Default。
+- id: step12_rifs_set_auto_24g
+  target: DUT
+  action: exec
+  band: 2.4g
+  capture: set_auto_24g
+  command:
+  - printf 'RequestedRIFSEnabled24g=Auto\n'
+  - >-
+    ubus-cli 'WiFi.Radio.3.RIFSEnabled="Auto"'
+  expected: 2.4g setter 應接受 Auto
+  depends_on: step11_rifs_default_24g
+  description: Radio.3 (2.4g) 將 RIFSEnabled 設為 Auto。
+- id: step13_rifs_after_set_24g
+  target: DUT
+  action: exec
+  band: 2.4g
+  capture: after_set_24g
+  command: >-
+    sleep 5; ubus-cli "WiFi.Radio.3.RIFSEnabled?" | sed -n 's/.*RIFSEnabled="\([^"]*\)".*/AfterSetRIFSEnabled24g=\1/p'
+  expected: 2.4g setter=Auto 後 getter 應回報 Auto
+  depends_on: step12_rifs_set_auto_24g
+  description: Radio.3 (2.4g) setter=Auto 後驗證 getter readback。
+- id: step14_rifs_restore_24g
+  target: DUT
+  action: exec
+  band: 2.4g
+  capture: restore_24g
+  command:
+  - printf 'RestoreRIFSEnabled24g=Default\n'
+  - >-
+    ubus-cli 'WiFi.Radio.3.RIFSEnabled="Default"'
+  expected: 2.4g restore 應接受 Default
+  depends_on: step13_rifs_after_set_24g
+  description: Radio.3 (2.4g) restore 回 Default。
+- id: step15_rifs_after_restore_24g
+  target: DUT
+  action: exec
+  band: 2.4g
+  capture: after_restore_24g
+  command: >-
+    sleep 5; ubus-cli "WiFi.Radio.3.RIFSEnabled?" | sed -n 's/.*RIFSEnabled="\([^"]*\)".*/AfterRestoreRIFSEnabled24g=\1/p'
+  expected: 2.4g restore 後 getter 應回報 Default
+  depends_on: step14_rifs_restore_24g
+  description: Radio.3 (2.4g) restore 後再次確認 getter。
 pass_criteria:
-- field: getter_5g.RIFSEnabled
-  operator: regex
-  value: ".+"
-- field: getter_6g.RIFSEnabled
-  operator: regex
-  value: ".+"
-- field: getter_24g.RIFSEnabled
-  operator: regex
-  value: ".+"
+- field: default_5g.DefaultRIFSEnabled5g
+  operator: equals
+  value: Default
+  description: 5g 預設 getter 應為 Default。
+- field: set_auto_5g.RequestedRIFSEnabled5g
+  operator: equals
+  value: Auto
+  description: 5g setter 請求值應為 Auto。
+- field: after_set_5g.AfterSetRIFSEnabled5g
+  operator: equals
+  value: Auto
+  description: 5g setter=Auto 後 getter 應回報 Auto。
+- field: restore_5g.RestoreRIFSEnabled5g
+  operator: equals
+  value: Default
+  description: 5g restore 請求值應為 Default。
+- field: after_restore_5g.AfterRestoreRIFSEnabled5g
+  operator: equals
+  value: Default
+  description: 5g restore 後 getter 應回報 Default。
+- field: default_6g.DefaultRIFSEnabled6g
+  operator: equals
+  value: Default
+  description: 6g 預設 getter 應為 Default。
+- field: set_auto_6g.RequestedRIFSEnabled6g
+  operator: equals
+  value: Auto
+  description: 6g setter 請求值應為 Auto。
+- field: after_set_6g.AfterSetRIFSEnabled6g
+  operator: equals
+  value: Auto
+  description: 6g setter=Auto 後 getter 應回報 Auto。
+- field: restore_6g.RestoreRIFSEnabled6g
+  operator: equals
+  value: Default
+  description: 6g restore 請求值應為 Default。
+- field: after_restore_6g.AfterRestoreRIFSEnabled6g
+  operator: equals
+  value: Default
+  description: 6g restore 後 getter 應回報 Default。
+- field: default_24g.DefaultRIFSEnabled24g
+  operator: equals
+  value: Default
+  description: 2.4g 預設 getter 應為 Default。
+- field: set_auto_24g.RequestedRIFSEnabled24g
+  operator: equals
+  value: Auto
+  description: 2.4g setter 請求值應為 Auto。
+- field: after_set_24g.AfterSetRIFSEnabled24g
+  operator: equals
+  value: Auto
+  description: 2.4g setter=Auto 後 getter 應回報 Auto。
+- field: restore_24g.RestoreRIFSEnabled24g
+  operator: equals
+  value: Default
+  description: 2.4g restore 請求值應為 Default。
+- field: after_restore_24g.AfterRestoreRIFSEnabled24g
+  operator: equals
+  value: Default
+  description: 2.4g restore 後 getter 應回報 Default。

@@ -1,12 +1,10 @@
 id: wifi-llapi-D025-lastdatauplinkrate
-aliases:
-- wifi-llapi-r022-lastdatauplinkrate
 name: "LastDataUplinkRate \u2014 WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 22
+  row: 25
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: LastDataUplinkRate
 platform:
@@ -20,11 +18,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
       config:
       - iface: 5g
         mode: sta
@@ -36,8 +34,8 @@ topology:
     band: 5g
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role)
-  - STA: COM1 (station role for this case; do not rely on the old A0/B0 heuristic)
+  - DUT: COM1 (AP role)
+  - STA: COM0 (station role for this case; do not rely on the old A0/B0 heuristic)
   Transport:
   - serialwrap attach COM0 / COM1
   Live band mapping:
@@ -173,10 +171,10 @@ pass_criteria:
   operator: equals
   reference: driver_rate.DriverLastUplinkRateRounded
   description: LLAPI uplink rate must match the driver last-rx rate after 100-kbps normalization.
-verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataUplinkRate?"
-  STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
-  wl -i wl0 sta_info $STA_MAC | grep "rate of last rx pkt"
+verification_command:
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataUplinkRate?"'
+  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+  - 'wl -i wl0 sta_info $STA_MAC | grep "rate of last rx pkt"'
 results_reference:
   v4.0.1:
     5g: Pass
@@ -187,4 +185,4 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
-    comment: '5G serialwrap retest: LastDataUplinkRate returned 6000/8100 while wl0 sta_info last-rx rate was 6000/8120 kbps; after 100-kbps normalization the values matched, so workbook Pass is confirmed.'
+    comment: '5G official rerun 20260412T174551843336: LastDataUplinkRate=6000 and driver last-rx rounded=6000; workbook H, public HAL comments, and repeated runtime replays all point to the driver last-rx rate as the STA -> AP truth source, so the stale 6G Fail result_reference no longer matches the current workbook-Pass shape.'

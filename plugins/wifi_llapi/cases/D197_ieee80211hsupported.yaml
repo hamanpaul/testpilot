@@ -1,7 +1,7 @@
 id: d197-radio-ieee80211hsupported
 name: D197 Radio IEEE80211hSupported
 source:
-  row: 160
+  row: 197
   object: WiFi.Radio.{i}.
   api: IEEE80211hSupported
   baseline: 0310-BGW720-300
@@ -15,6 +15,7 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: read-only getter exact-closes the active 0403 tri-band IEEE80211hSupported values
 topology:
   devices:
     DUT:

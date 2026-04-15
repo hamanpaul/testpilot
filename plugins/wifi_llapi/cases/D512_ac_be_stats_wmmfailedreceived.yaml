@@ -1,7 +1,7 @@
 id: d512-ssid-wmm-ac_be_stats_wmmfailedreceived
 name: D512 WmmFailedReceived.AC_BE
 source:
-  row: 379
+  row: 512
   object: WiFi.SSID.{i}.Stats.WmmFailedReceived.
   api: AC_BE
   baseline: 0310-BGW720-300
@@ -20,36 +20,103 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
-- id: step_5g_getter
+- id: step_5g_refresh
   target: dut
-  action: read
-  capture: getter_5g
-  command: ubus-cli "WiFi.SSID.4.Stats.WmmFailedReceived.AC_BE?"
-  expected: AC_BE 回傳有效值
-  description: SSID.4 (5g) WmmFailedReceived.AC_BE getter
-- id: step_6g_getter
+  action: exec
+  capture: refresh_5g
+  command: ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n '/WmmFailedReceived = {/,/}/s/^[[:space:]]*AC_BE = \([0-9][0-9]*\).*/GetSSIDStatsWmmFailedReceived5g=\1/p'
+  expected: getSSIDStats() 匯出 WmmFailedReceived.AC_BE
+  description: SSID.4 (5g) getSSIDStats() WmmFailedReceived.AC_BE refresh
+- id: step_5g_direct
   target: dut
-  action: read
-  capture: getter_6g
-  command: ubus-cli "WiFi.SSID.6.Stats.WmmFailedReceived.AC_BE?"
-  expected: AC_BE 回傳有效值
-  description: SSID.6 (6g) WmmFailedReceived.AC_BE getter
-- id: step_24g_getter
+  action: exec
+  capture: direct_5g
+  command: 'ubus-cli "WiFi.SSID.4.Stats.WmmFailedReceived.AC_BE?"'
+  expected: Stats.WmmFailedReceived.AC_BE getter 回傳有效值
+  description: SSID.4 (5g) direct Stats.WmmFailedReceived.AC_BE
+- id: step_5g_driver
   target: dut
-  action: read
-  capture: getter_24g
-  command: ubus-cli "WiFi.SSID.8.Stats.WmmFailedReceived.AC_BE?"
-  expected: AC_BE 回傳有效值
-  description: SSID.8 (2.4g) WmmFailedReceived.AC_BE getter
+  action: exec
+  capture: driver_5g
+  command: wl -i wl0 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmFailedReceived5g="$8}'
+  expected: wl0 wme_counters 匯出 AC_BE rx failed frames
+  description: SSID.4 (5g) driver AC_BE rx failed frames
+- id: step_6g_refresh
+  target: dut
+  action: exec
+  capture: refresh_6g
+  command: ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n '/WmmFailedReceived = {/,/}/s/^[[:space:]]*AC_BE = \([0-9][0-9]*\).*/GetSSIDStatsWmmFailedReceived6g=\1/p'
+  expected: getSSIDStats() 匯出 WmmFailedReceived.AC_BE
+  description: SSID.6 (6g) getSSIDStats() WmmFailedReceived.AC_BE refresh
+- id: step_6g_direct
+  target: dut
+  action: exec
+  capture: direct_6g
+  command: 'ubus-cli "WiFi.SSID.6.Stats.WmmFailedReceived.AC_BE?"'
+  expected: Stats.WmmFailedReceived.AC_BE getter 回傳有效值
+  description: SSID.6 (6g) direct Stats.WmmFailedReceived.AC_BE
+- id: step_6g_driver
+  target: dut
+  action: exec
+  capture: driver_6g
+  command: wl -i wl1 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmFailedReceived6g="$8}'
+  expected: wl1 wme_counters 匯出 AC_BE rx failed frames
+  description: SSID.6 (6g) driver AC_BE rx failed frames
+- id: step_24g_refresh
+  target: dut
+  action: exec
+  capture: refresh_24g
+  command: ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n '/WmmFailedReceived = {/,/}/s/^[[:space:]]*AC_BE = \([0-9][0-9]*\).*/GetSSIDStatsWmmFailedReceived24g=\1/p'
+  expected: getSSIDStats() 匯出 WmmFailedReceived.AC_BE
+  description: SSID.8 (2.4g) getSSIDStats() WmmFailedReceived.AC_BE refresh
+- id: step_24g_direct
+  target: dut
+  action: exec
+  capture: direct_24g
+  command: 'ubus-cli "WiFi.SSID.8.Stats.WmmFailedReceived.AC_BE?"'
+  expected: Stats.WmmFailedReceived.AC_BE getter 回傳有效值
+  description: SSID.8 (2.4g) direct Stats.WmmFailedReceived.AC_BE
+- id: step_24g_driver
+  target: dut
+  action: exec
+  capture: driver_24g
+  command: wl -i wl2 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmFailedReceived24g="$8}'
+  expected: wl2 wme_counters 匯出 AC_BE rx failed frames
+  description: SSID.8 (2.4g) driver AC_BE rx failed frames
 pass_criteria:
-- field: getter_5g.AC_BE
-  operator: regex
-  value: ^\d+$
-- field: getter_6g.AC_BE
-  operator: regex
-  value: ^\d+$
-- field: getter_24g.AC_BE
-  operator: regex
-  value: ^\d+$
+- field: direct_5g.AC_BE
+  operator: equals
+  reference: refresh_5g.GetSSIDStatsWmmFailedReceived5g
+  description: 5g direct Stats.WmmFailedReceived.AC_BE must match getSSIDStats().WmmFailedReceived.AC_BE after refresh.
+- field: direct_5g.AC_BE
+  operator: equals
+  reference: driver_5g.DriverWmmFailedReceived5g
+  description: 5g direct Stats.WmmFailedReceived.AC_BE must match wl0 wme_counters AC_BE rx failed frames.
+- field: direct_6g.AC_BE
+  operator: equals
+  reference: refresh_6g.GetSSIDStatsWmmFailedReceived6g
+  description: 6g direct Stats.WmmFailedReceived.AC_BE must match getSSIDStats().WmmFailedReceived.AC_BE after refresh.
+- field: direct_6g.AC_BE
+  operator: equals
+  reference: driver_6g.DriverWmmFailedReceived6g
+  description: 6g direct Stats.WmmFailedReceived.AC_BE must match wl1 wme_counters AC_BE rx failed frames.
+- field: direct_24g.AC_BE
+  operator: equals
+  reference: refresh_24g.GetSSIDStatsWmmFailedReceived24g
+  description: 2.4g direct Stats.WmmFailedReceived.AC_BE must match getSSIDStats().WmmFailedReceived.AC_BE after refresh.
+- field: direct_24g.AC_BE
+  operator: equals
+  reference: driver_24g.DriverWmmFailedReceived24g
+  description: 2.4g direct Stats.WmmFailedReceived.AC_BE must match wl2 wme_counters AC_BE rx failed frames.
+verification_command:
+  - 'ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n ''/WmmFailedReceived = {/,/}/s/^[[:space:]]*AC_BE = \([0-9][0-9]*\).*/GetSSIDStatsWmmFailedReceived5g=\1/p'''
+  - 'ubus-cli "WiFi.SSID.4.Stats.WmmFailedReceived.AC_BE?"'
+  - 'wl -i wl0 wme_counters | grep -A2 ''^AC_BE:'' | awk ''/rx frames:/ {print "DriverWmmFailedReceived5g="$8}'''
+  - 'ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n ''/WmmFailedReceived = {/,/}/s/^[[:space:]]*AC_BE = \([0-9][0-9]*\).*/GetSSIDStatsWmmFailedReceived6g=\1/p'''
+  - 'ubus-cli "WiFi.SSID.6.Stats.WmmFailedReceived.AC_BE?"'
+  - 'wl -i wl1 wme_counters | grep -A2 ''^AC_BE:'' | awk ''/rx frames:/ {print "DriverWmmFailedReceived6g="$8}'''
+  - 'ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n ''/WmmFailedReceived = {/,/}/s/^[[:space:]]*AC_BE = \([0-9][0-9]*\).*/GetSSIDStatsWmmFailedReceived24g=\1/p'''
+  - 'ubus-cli "WiFi.SSID.8.Stats.WmmFailedReceived.AC_BE?"'
+  - 'wl -i wl2 wme_counters | grep -A2 ''^AC_BE:'' | awk ''/rx frames:/ {print "DriverWmmFailedReceived24g="$8}'''

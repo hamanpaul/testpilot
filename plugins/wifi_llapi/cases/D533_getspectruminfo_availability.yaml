@@ -1,9 +1,9 @@
 id: d533-spectruminfo-availability
 name: D533 getSpectrumInfo availability
 source:
-  row: 535
-  object: WiFi.Radio.{i}.getSpectrumInfo()
-  api: availability
+  row: 533
+  object: WiFi.Radio.{i}.
+  api: getSpectrumInfo()
   baseline: 0310-BGW720-300
 bands:
 - 5g
@@ -15,12 +15,13 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: 'Multiband source-backed retest: active 0403 serializes `availability` through `_getSpectrumInfo()` -> `s_prepareSpectrumOutputWithChanFilter()` -> `amxc_var_add_key(uint32_t, ..., "availability", llEntry->availability)`, and the sync refresh path `wld_rad_nl80211_updateUsageStatsFromSurveyInfo()` derives `chanInfo.availability` from survey timing (`(timeOn - timeBusy) / timeOn` for idle channels, or `free_time / total_time` when in-use airtime stats are available). Real runner replay therefore locks the public 5g/6g/2.4g shape to integer percentage values rather than the stale fail-shaped workbook carry-over.'
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_method
   target: dut

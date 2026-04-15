@@ -4,7 +4,7 @@ version: '1.1'
 source:
   report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
   sheet: Wifi_LLAPI
-  row: 5
+  row: 7
   object: "WiFi.AccessPoint.{i}."
   api: "sendRemoteMeasumentRequest()"
 platform:
@@ -19,58 +19,71 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
   links:
   - from: STA
     to: DUT
     band: 5g
   - from: STA
     to: DUT
+    band: 6g
+  - from: STA
+    to: DUT
     band: 2.4g
 test_environment: |
   Topology:
-  - DUT: COM0 (BGW720-300, AP role)
-  - STA: COM1 (BCM board, STA role)
-  Band mapping (live-verified 2026-03-16):
-  - 5G:   DUT wl0 / AP.1 / BSSID 2c:59:17:00:19:95 / STA MAC 2C:59:17:00:04:85
-  - 6G:   DUT wl1 / AP.3 — BCME_NOTREADY blocker (STA cannot associate)
-  - 2.4G: DUT wl2 / AP.5 / BSSID 2C:59:17:00:19:A7 / STA MAC 2C:59:17:00:04:97
+  - DUT: COM1 (BGW720-300, AP role)
+  - STA: COM0 (BCM board, STA role)
+  Band mapping (live-verified 2026-04-02):
+  - 5G:   DUT AP.1 / wl0 / SSID=testpilot5G / AP BSSID 2c:59:17:00:04:85
+          STA associated MAC on DUT wl0 assoclist = 2c:59:17:00:19:95
+  - 6G:   DUT AP.3 / wl1 / SSID=testpilot6G / AP BSSID 2c:59:17:00:04:86
+          STA associated MAC on DUT wl1 assoclist = 2c:59:17:00:19:96
+  - 2.4G: DUT AP.5 / wl2 / SSID=testpilot2G / AP BSSID 2c:59:17:00:04:97
+          STA associated MAC on DUT wl2 assoclist = 2c:59:17:00:19:a7
 
 test_procedure: |
   Each band tests AP.{i}.sendRemoteMeasumentRequest() independently.
   Note: function name is sendRemoteMeasumentRequest (canonical typo - missing 'r').
         Using sendRemoteMeasurementRequest returns ERROR: function not found.
         class parameter must be integer 0 (not string uint32).
-  6G is skipped due to BCME_NOTREADY blocker (STA cannot associate to wl1).
 
   [5G - AP.1 / wl0]
-  Pre-condition: STA 2C:59:17:00:04:85 associated to AP.1 (wl0)
+  Pre-condition: STA associated to AP.1 on the deterministic testpilot5G WPA2 baseline.
   DUT:
-    ubus-cli "WiFi.AccessPoint.1.sendRemoteMeasumentRequest(mac=2C:59:17:00:04:85,bssid=2c:59:17:00:19:95,class=0,channel=36,timeout=5)"
+    ubus-cli "WiFi.AccessPoint.1.sendRemoteMeasumentRequest(mac={{assoc_5g.AssocMac5g}},bssid=2c:59:17:00:04:85,class=0,channel=36,timeout=5)"
   Expected: returns [ [ ] ]  (empty list = command accepted, async measurement initiated)
 
-  [6G - AP.3 / wl1 - SKIP]
-  Reason: wl1 join fails with WLC_SET_SSID BCME_NOTREADY (-17, cmd=23); STA cannot associate to AP.3.
+  [6G - AP.3 / wl1]
+  Pre-condition: STA associated to AP.3 on the validated testpilot6G WPA3/SAE baseline.
+  DUT:
+    ubus-cli "WiFi.AccessPoint.3.sendRemoteMeasumentRequest(mac={{assoc_6g.AssocMac6g}},bssid=2c:59:17:00:04:85,class=0,channel=36,timeout=5)"
+  Expected: returns [ [ ] ]  (same empty-list shape as the workbook Pass baseline)
 
   [2.4G - AP.5 / wl2]
-  Pre-condition: STA 2C:59:17:00:04:97 associated to AP.5 (wl2)
+  Pre-condition: STA associated to AP.5 on the deterministic testpilot2G WPA2 baseline.
   DUT:
-    ubus-cli "WiFi.AccessPoint.5.sendRemoteMeasumentRequest(mac=2C:59:17:00:04:97,bssid=2C:59:17:00:19:A7,class=0,channel=1,timeout=5)"
+    ubus-cli "WiFi.AccessPoint.5.sendRemoteMeasumentRequest(mac={{assoc_24g.AssocMac24g}},bssid=2c:59:17:00:04:97,class=0,channel=1,timeout=5)"
   Expected: returns [ [ ] ]  (same as 5G)
 
 steps:
+- id: step0_5g_prep
+  action: exec
+  target: DUT
+  band: 5g
+  command:
+    - ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=25"
 - id: step1_5g_sta_join
   action: exec
   target: STA
   band: 5g
-  command: |
-    wl -i wl0 down; sleep 1; wl -i wl0 up; sleep 1
-    wl -i wl0 join TestPilot_5G imode bss; sleep 3
-    wl -i wl0 status
+  command:
+    - iw dev wl0 link
+    - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
 - id: step2_5g_assoc
   action: exec
   target: DUT
@@ -83,41 +96,71 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    ubus-cli "WiFi.AccessPoint.1.sendRemoteMeasumentRequest(mac=2C:59:17:00:04:85,bssid=2c:59:17:00:19:95,class=0,channel=36,timeout=5)"
+    ubus-cli "WiFi.AccessPoint.1.sendRemoteMeasumentRequest(mac={{assoc_5g.AssocMac5g}},bssid=2c:59:17:00:04:85,class=0,channel=36,timeout=5)"
   depends_on: step2_5g_assoc
   capture: result_5g
-- id: step4_6g
-  action: skip
+- id: step4_6g_prep
+  action: exec
   target: DUT
-  reason: BCME_NOTREADY - wl1 STA cannot associate; consistent with D006/D007/D008 blocker
-- id: step5_24g_sta_join
+  band: 6g
+  command:
+    - ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=25"
+- id: step5_6g_sta_join
+  action: exec
+  target: STA
+  band: 6g
+  command:
+    - iw dev wl1 link
+    - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+    - wl -i wl1 status
+- id: step6_6g_assoc
+  action: exec
+  target: DUT
+  band: 6g
+  command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+  depends_on: step5_6g_sta_join
+  capture: assoc_6g
+- id: step7_6g
+  action: exec
+  target: DUT
+  band: 6g
+  command: >-
+    ubus-cli "WiFi.AccessPoint.3.sendRemoteMeasumentRequest(mac={{assoc_6g.AssocMac6g}},bssid=2c:59:17:00:04:85,class=0,channel=36,timeout=5)"
+  depends_on: step6_6g_assoc
+  capture: result_6g
+- id: step8_24g_prep
+  action: exec
+  target: DUT
+  band: 2.4g
+  command:
+    - ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=25"
+- id: step9_24g_sta_join
   action: exec
   target: STA
   band: 2.4g
-  command: |
-    wl -i wl2 down; sleep 1; wl -i wl2 up; sleep 1
-    wl -i wl2 join TestPilot_24G imode bss; sleep 3
-    wl -i wl2 status
-- id: step6_24g_assoc
+  command:
+    - iw dev wl2 link
+    - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+- id: step10_24g_assoc
   action: exec
   target: DUT
   band: 2.4g
   command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
-  depends_on: step5_24g_sta_join
+  depends_on: step9_24g_sta_join
   capture: assoc_24g
-- id: step7_24g
+- id: step11_24g
   action: exec
   target: DUT
   band: 2.4g
   command: >-
-    ubus-cli "WiFi.AccessPoint.5.sendRemoteMeasumentRequest(mac=2C:59:17:00:04:97,bssid=2C:59:17:00:19:A7,class=0,channel=1,timeout=5)"
-  depends_on: step6_24g_assoc
+    ubus-cli "WiFi.AccessPoint.5.sendRemoteMeasumentRequest(mac={{assoc_24g.AssocMac24g}},bssid=2c:59:17:00:04:97,class=0,channel=1,timeout=5)"
+  depends_on: step10_24g_assoc
   capture: result_24g
 
 pass_criteria:
 - field: assoc_5g.AssocMac5g
-  operator: equals
-  value: 2c:59:17:00:04:85
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: "5G: sendRemoteMeasumentRequest() 前必須先確認 wl0 STA 已關聯"
 - field: result_5g
   operator: not_contains
@@ -131,9 +174,25 @@ pass_criteria:
   operator: regex
   value: '(?s)\[\s*\[\s*\]\s*\]'
   description: "5G: 成功回傳應維持 [ [ ] ] 的空 list 形狀"
+- field: assoc_6g.AssocMac6g
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+  description: "6G: sendRemoteMeasumentRequest() 前必須先確認 wl1 STA 已關聯"
+- field: result_6g
+  operator: not_contains
+  value: ERROR
+  description: "6G: sendRemoteMeasumentRequest() no ERROR"
+- field: result_6g
+  operator: not_contains
+  value: syntax error
+  description: "6G: no syntax error"
+- field: result_6g
+  operator: regex
+  value: '(?s)\[\s*\[\s*\]\s*\]'
+  description: "6G: 成功回傳應維持 [ [ ] ] 的空 list 形狀"
 - field: assoc_24g.AssocMac24g
-  operator: equals
-  value: 2c:59:17:00:04:97
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: "2.4G: sendRemoteMeasumentRequest() 前必須先確認 wl2 STA 已關聯"
 - field: result_24g
   operator: not_contains
@@ -148,10 +207,10 @@ pass_criteria:
   value: '(?s)\[\s*\[\s*\]\s*\]'
   description: "2.4G: 成功回傳應維持 [ [ ] ] 的空 list 形狀"
 
-verification_command: |
-  wl -i wl0 assoclist
-  wl -i wl2 assoclist
-
+verification_command:
+  - wl -i wl0 assoclist
+  - wl -i wl1 assoclist
+  - wl -i wl2 assoclist
 results_reference:
   v4.0.1:
     5g: Fail
@@ -160,10 +219,10 @@ results_reference:
     comment: 'ARC: GW does not send sendRemoteMeasumentRequest by using the command.'
   v4.0.3:
     5g: Pass
-    6g: Blocker
+    6g: Pass
     2.4g: Pass
     comment: >-
-      Live-verified 2026-03-16. Returns [ [ ] ] on both 5G and 2.4G.
+      Live-verified target shape is [ [ ] ] on all three bands.
       Function name is sendRemoteMeasumentRequest (canonical typo).
       class parameter must be integer 0.
-      6G blocked: BCME_NOTREADY (wl1 STA cannot associate).
+      6G now uses the validated testpilot6G WPA3/SAE baseline instead of the old blocker path.

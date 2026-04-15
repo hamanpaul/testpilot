@@ -1,7 +1,7 @@
 id: d311-getssidstats-packetsreceived
 name: D311 getSSIDStats PacketsReceived
 source:
-  row: 236
+  row: 311
   object: WiFi.SSID.{i}.
   api: getSSIDStats()
   baseline: 0310-BGW720-300
@@ -20,7 +20,7 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_stats
   target: dut

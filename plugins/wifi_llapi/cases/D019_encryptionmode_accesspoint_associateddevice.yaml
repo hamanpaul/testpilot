@@ -1,12 +1,10 @@
 id: wifi-llapi-D019-encryptionmode-accesspoint-associateddevice
-aliases:
-- wifi-llapi-r016-encryptionmode-accesspoint-associateddevice
 name: "EncryptionMode \u2014 WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 16
+  row: 19
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: EncryptionMode
 platform:
@@ -20,11 +18,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
       config:
       - iface: 6g
         mode: sta
@@ -36,8 +34,8 @@ topology:
     band: 6g
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role)
-  - STA: COM1 (station role for this case; do not rely on the old A0/B0 heuristic)
+  - DUT: COM1 (AP role)
+  - STA: COM0 (station role for this case; do not rely on the old A0/B0 heuristic)
   Transport:
   - serialwrap attach COM0 / COM1
   Live band mapping:
@@ -88,6 +86,7 @@ sta_env_setup: |
     ubus-cli WiFi.SSID.6.SSID=TestPilot_BTM
     ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet=
     ubus-cli WiFi.AccessPoint.4.IEEE80211u.QoSMapSet=
+    sleep 3
     ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
     ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase=testpilot6g
     ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Required
@@ -102,15 +101,21 @@ sta_env_setup: |
     rm -f /var/run/wpa_supplicant/wl1 2>/dev/null || true
     iw dev wl1.1 del 2>/dev/null || true
     iw dev wl1 disconnect 2>/dev/null || true
+    ifconfig wl1 down
+    wl -i wl1 down
+    wl -i wl1 ap 0
     iw dev wl1 set type managed
+    wl -i wl1 up
     ifconfig wl1 up
     mkdir -p /var/run/wpa_supplicant
     printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\nnetwork={\nssid="TestPilot_BTM"\nkey_mgmt=SAE\nsae_password="testpilot6g"\nieee80211w=2\nscan_ssid=1\n}\n' > /tmp/wpa_wl1.conf
     wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant
+    wpa_cli -p /var/run/wpa_supplicant -i wl1 enable_network 0
+    wpa_cli -p /var/run/wpa_supplicant -i wl1 select_network 0
     sleep 3
   STA 6G connect verify:
     wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect
-    sleep 8
+    sleep 15
     iw dev wl1 link
     wpa_cli -p /var/run/wpa_supplicant -i wl1 status
   DUT association evidence:
@@ -118,7 +123,8 @@ sta_env_setup: |
 test_procedure: |
   1) Confirm the 6G STA has completed SAE association on wl1 from COM1.
   2) Confirm AP3 still shows one associated STA in wl1 assoclist so AssociatedDevice.1 identity is deterministic.
-  3) Read WiFi.AccessPoint.3.AssociatedDevice.1.EncryptionMode on DUT. For this API, the BCM workbook expects the LLAPI value Default; the driver auth/crypto lines are supporting context and must not be mis-copied into the LLAPI expected string.
+  3) Read WiFi.AccessPoint.3.AssociatedDevice.1.EncryptionMode on DUT.
+  4) Workbook row 19 remains fail-shaped: the LLAPI getter stays `Default` while the same associated STA still shows `key_mgmt=SAE` plus `pairwise_cipher=CCMP`, so this case must not be authored back into a pass-style `AES` expectation.
 steps:
 - id: step1
   action: exec
@@ -150,12 +156,12 @@ pass_criteria:
   operator: equals
   value: Default
   description: EncryptionMode should stay Default; do not replace it with driver auth/crypto strings.
-verification_command: |
-  wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-  wl -i wl1 assoclist
-  STA_MAC=$(wl -i wl1 assoclist | awk 'NR==1{print $2}')
-  ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.EncryptionMode?"
-  wl -i wl1 sta_info $STA_MAC | grep -E "auth:|crypto:"
+verification_command:
+  - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+  - wl -i wl1 assoclist
+  - STA_MAC=$(wl -i wl1 assoclist | awk 'NR==1{print $2}')
+  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.EncryptionMode?"'
+  - 'wl -i wl1 sta_info $STA_MAC | grep -E "auth:|crypto:"'
 results_reference:
   v4.0.1:
     5g: Fail
@@ -163,7 +169,7 @@ results_reference:
     2.4g: Fail
     comment: 'ARC: wld_ap_hostapd_getStaInfo doesn''t support cipher paser'
   v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: Workbook BCM v4.0.3 row 16 is Pass. Serialwrap 6G retest returned EncryptionMode="Default" while wl1 sta_info still showed WPA3-SAE / AES_CCM driver detail.
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
+    comment: Workbook row 19 is fail-shaped; the getter still returns EncryptionMode="Default" while the same STA still shows SAE / CCMP security context.

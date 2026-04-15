@@ -1,7 +1,7 @@
 id: d190-radio-explicitbeamformingenabled
 name: D190 Radio ExplicitBeamFormingEnabled
 source:
-  row: 153
+  row: 190
   object: WiFi.Radio.{i}.
   api: ExplicitBeamFormingEnabled
   baseline: 0310-BGW720-300
@@ -15,7 +15,7 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
-    comment: setter 接受 0 並 readback，但 driver txbf 不隨之改變
+    comment: read-only getter stays at the active 0403 tri-band value 1
 topology:
   devices:
     DUT:

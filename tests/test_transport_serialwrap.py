@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 
+from testpilot.serialwrap_binary import SERIALWRAP_BIN_ENV
 from testpilot.transport.serialwrap import SerialWrapTransport
 
 
@@ -20,7 +21,17 @@ def _cp(args: list[str], payload: dict[str, Any], returncode: int = 0) -> subpro
     )
 
 
+@pytest.fixture(autouse=True)
+def _clear_serialwrap_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv(SERIALWRAP_BIN_ENV, raising=False)
+
+
 def test_connect_resolves_by_alias(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "testpilot.transport.serialwrap.resolve_serialwrap_binary",
+        lambda configured_bin, *, config_label: str(configured_bin),
+    )
+
     def fake_run(
         args: list[str],
         capture_output: bool,
@@ -433,6 +444,83 @@ def test_execute_returns_empty_stdout_when_command_stdout_is_empty(
     assert state["status_calls"] == 1
 
 
+def test_execute_treats_interactive_status_as_terminal_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    state = {"status_calls": 0}
+
+    def fake_run(
+        args: list[str],
+        capture_output: bool,
+        text: bool,
+        check: bool,
+        timeout: float | None,
+    ) -> subprocess.CompletedProcess[str]:
+        del capture_output, text, check, timeout
+        op = tuple(args[1:3])
+
+        if op == ("session", "list"):
+            return _cp(
+                args,
+                {
+                    "ok": True,
+                    "sessions": [
+                        {
+                            "alias": "dut-main",
+                            "com": "COM0",
+                            "session_id": "lab:COM0",
+                            "state": "READY",
+                        }
+                    ],
+                },
+            )
+
+        if op == ("cmd", "submit"):
+            return _cp(args, {"ok": True, "cmd_id": "cmd-interactive", "status": "accepted"})
+
+        if op == ("cmd", "status"):
+            state["status_calls"] += 1
+            return _cp(
+                args,
+                {
+                    "ok": True,
+                    "command": {
+                        "cmd_id": "cmd-interactive",
+                        "status": "interactive",
+                        "error_code": None,
+                        "stdout": "DriverSmoothedRSSI=-7",
+                        "partial": False,
+                        "background_capture_id": None,
+                        "interactive_session_id": "isess-001",
+                        "recovery_action": None,
+                        "execution_mode": "interactive",
+                        "command": "stateful multiline shell",
+                    },
+                },
+            )
+
+        raise AssertionError(f"unexpected subprocess call: {args}")
+
+    monkeypatch.setattr("testpilot.transport.serialwrap.subprocess.run", fake_run)
+    transport = SerialWrapTransport(
+        {
+            "binary": "/tmp/serialwrap",
+            "selector": "COM0",
+            "poll_interval": 0.0,
+        }
+    )
+    transport.connect()
+    result = transport.execute("stateful multiline shell", timeout=5.0)
+
+    assert result["returncode"] == 0
+    assert result["status"] == "interactive"
+    assert result["stdout"] == "DriverSmoothedRSSI=-7"
+    assert result["stderr"] == ""
+    assert result["execution_mode"] == "interactive"
+    assert result["interactive_session_id"] == "isess-001"
+    assert state["status_calls"] == 1
+
+
 def test_execute_retries_submit_after_session_not_ready(monkeypatch: pytest.MonkeyPatch) -> None:
     state = {
         "submit_calls": 0,
@@ -689,3 +777,91 @@ def test_execute_normalizes_legacy_mode_alias(monkeypatch: pytest.MonkeyPatch) -
 
     assert result["returncode"] == 0
     assert state["submit_mode"] == "line"
+
+
+# ------------------------------------------------------------------
+# Tempscript chunking tests
+# ------------------------------------------------------------------
+
+
+def test_sq_chunks_short_command():
+    """Short commands produce a single chunk."""
+    chunks = SerialWrapTransport._sq_chunks("echo hello")
+    assert chunks == ["echo hello"]
+
+
+def test_sq_chunks_preserves_single_quotes():
+    """Single quotes are escaped as '\\'' and never split mid-escape."""
+    chunks = SerialWrapTransport._sq_chunks("echo 'hello world'")
+    assert len(chunks) >= 1
+    reassembled = "".join(chunks).replace("'\\'", "").replace("''", "")
+    # Just verify the escaping is present
+    assert "'\\''" in "".join(chunks)
+
+
+def test_sq_chunks_all_under_serial_limit():
+    """Every generated printf command stays under _MAX_SERIAL_LINE_LENGTH."""
+    from testpilot.transport.serialwrap import _MAX_SERIAL_LINE_LENGTH, _TEMPSCRIPT
+
+    # 500-char command simulating a long STA_MAC chain
+    cmd = "STA_MAC=$(ubus-cli 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?' | " + "A" * 400 + ")"
+    chunks = SerialWrapTransport._sq_chunks(cmd)
+    assert len(chunks) > 1
+    for chunk in chunks:
+        full = f"printf '%s\\n' '{chunk}' >> {_TEMPSCRIPT}"
+        assert len(full) <= _MAX_SERIAL_LINE_LENGTH, (
+            f"chunk printf command too long: {len(full)} > {_MAX_SERIAL_LINE_LENGTH}"
+        )
+
+
+def test_sq_chunks_roundtrip():
+    """Reassembled chunks reproduce the original command."""
+    cmd = """OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHe160MCS?" 2>&1); printf '%s\\n' "$OUT"; printf '%s\\n' "$OUT" | sed -n 's/.*failed/error/p'"""
+    chunks = SerialWrapTransport._sq_chunks(cmd)
+    reassembled = "".join(chunks).replace("'\\''" , "'")
+    assert reassembled == cmd
+
+
+def test_execute_via_tempscript_stages_chunks(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Long commands are staged via printf chunks then executed with sh."""
+    from testpilot.transport.serialwrap import _MAX_SERIAL_LINE_LENGTH, _TEMPSCRIPT
+
+    submitted: list[str] = []
+
+    def fake_submit(self, command, timeout=30.0):
+        submitted.append(command)
+        return {
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+            "elapsed": 0.1,
+            "cmd_id": "fake",
+            "status": "done",
+            "partial": False,
+            "execution_mode": "line",
+            "background_capture_id": None,
+            "interactive_session_id": None,
+            "recovery_action": None,
+        }
+
+    monkeypatch.setattr(SerialWrapTransport, "_submit_and_poll", fake_submit)
+
+    transport = SerialWrapTransport.__new__(SerialWrapTransport)
+    transport._connected = True
+    transport._selector = "COM0"
+
+    long_cmd = "echo " + "X" * 200
+    transport.execute(long_cmd, timeout=10.0)
+
+    # Must have printf staging commands + final sh command
+    assert len(submitted) >= 3  # at least 2 chunks + sh
+    assert submitted[0].startswith("printf '%s")
+    assert " > " in submitted[0]  # first chunk uses >
+    for mid in submitted[1:-1]:
+        assert mid.startswith("printf '%s")
+        assert " >> " in mid  # subsequent chunks use >>
+    assert submitted[-1].startswith(f"sh {_TEMPSCRIPT}")
+
+    # All printf commands must be under the serial limit
+    for cmd in submitted[:-1]:
+        assert len(cmd) <= _MAX_SERIAL_LINE_LENGTH, f"too long: {len(cmd)}"

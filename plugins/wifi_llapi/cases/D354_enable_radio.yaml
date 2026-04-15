@@ -1,8 +1,8 @@
 id: d354-radio-enable
-name: D354 Radio Enable
+name: D354 Radio Sensing Enable
 source:
-  row: 152
-  object: WiFi.Radio.{i}.
+  row: 354
+  object: WiFi.Radio.{i}.Sensing.
   api: Enable
   baseline: 0310-BGW720-300
 bands:
@@ -15,41 +15,177 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: workbook pass intent is tri-band Sensing.Enable 1 -> 0 -> 1 setter/readback replay on active 0403 lab state
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
-- id: step_5g_getter
+- id: step1_sensing_default_5g
   target: dut
   action: read
-  capture: getter_5g
-  command: ubus-cli "WiFi.Radio.1.Enable?"
-  expected: Enable 回傳有效值
-  description: Radio.1 (5g) 0 或 1 radio enable 狀態
-- id: step_6g_getter
+  band: 5g
+  capture: default_5g
+  command: ubus-cli "WiFi.Radio.1.Sensing.Enable?"
+  expected: 預設 Sensing.Enable 維持啟用
+  description: Radio.1 (5g) 讀取預設 Sensing.Enable
+- id: step2_sensing_set_disable_5g
+  target: dut
+  action: exec
+  band: 5g
+  capture: set_disable_5g
+  command: ubus-cli WiFi.Radio.1.Sensing.Enable=0
+  expected: Sensing.Enable setter 回傳停用狀態
+  description: Radio.1 (5g) 依 workbook setter intent 設為 0
+- id: step3_sensing_after_disable_5g
   target: dut
   action: read
-  capture: getter_6g
-  command: ubus-cli "WiFi.Radio.2.Enable?"
-  expected: Enable 回傳有效值
-  description: Radio.2 (6g) 0 或 1 radio enable 狀態
-- id: step_24g_getter
+  band: 5g
+  capture: after_disable_5g
+  command: ubus-cli "WiFi.Radio.1.Sensing.Enable?"
+  expected: 停用後 readback 為 0
+  description: Radio.1 (5g) 驗證停用後的 Sensing.Enable
+- id: step4_sensing_restore_5g
+  target: dut
+  action: exec
+  band: 5g
+  capture: restore_5g
+  command: ubus-cli WiFi.Radio.1.Sensing.Enable=1
+  expected: Sensing.Enable setter 回傳還原狀態
+  description: Radio.1 (5g) 還原 Sensing.Enable 為 1
+- id: step5_sensing_after_restore_5g
   target: dut
   action: read
-  capture: getter_24g
-  command: ubus-cli "WiFi.Radio.3.Enable?"
-  expected: Enable 回傳有效值
-  description: Radio.3 (2.4g) 0 或 1 radio enable 狀態
+  band: 5g
+  capture: after_restore_5g
+  command: ubus-cli "WiFi.Radio.1.Sensing.Enable?"
+  expected: 還原後 readback 為 1
+  description: Radio.1 (5g) 驗證還原後的 Sensing.Enable
+- id: step6_sensing_default_6g
+  target: dut
+  action: read
+  band: 6g
+  capture: default_6g
+  command: ubus-cli "WiFi.Radio.2.Sensing.Enable?"
+  expected: 預設 Sensing.Enable 維持啟用
+  description: Radio.2 (6g) 讀取預設 Sensing.Enable
+- id: step7_sensing_set_disable_6g
+  target: dut
+  action: exec
+  band: 6g
+  capture: set_disable_6g
+  command: ubus-cli WiFi.Radio.2.Sensing.Enable=0
+  expected: Sensing.Enable setter 回傳停用狀態
+  description: Radio.2 (6g) 依 workbook setter intent 設為 0
+- id: step8_sensing_after_disable_6g
+  target: dut
+  action: read
+  band: 6g
+  capture: after_disable_6g
+  command: ubus-cli "WiFi.Radio.2.Sensing.Enable?"
+  expected: 停用後 readback 為 0
+  description: Radio.2 (6g) 驗證停用後的 Sensing.Enable
+- id: step9_sensing_restore_6g
+  target: dut
+  action: exec
+  band: 6g
+  capture: restore_6g
+  command: ubus-cli WiFi.Radio.2.Sensing.Enable=1
+  expected: Sensing.Enable setter 回傳還原狀態
+  description: Radio.2 (6g) 還原 Sensing.Enable 為 1
+- id: step10_sensing_after_restore_6g
+  target: dut
+  action: read
+  band: 6g
+  capture: after_restore_6g
+  command: ubus-cli "WiFi.Radio.2.Sensing.Enable?"
+  expected: 還原後 readback 為 1
+  description: Radio.2 (6g) 驗證還原後的 Sensing.Enable
+- id: step11_sensing_default_24g
+  target: dut
+  action: read
+  band: 2.4g
+  capture: default_24g
+  command: ubus-cli "WiFi.Radio.3.Sensing.Enable?"
+  expected: 預設 Sensing.Enable 維持啟用
+  description: Radio.3 (2.4g) 讀取預設 Sensing.Enable
+- id: step12_sensing_set_disable_24g
+  target: dut
+  action: exec
+  band: 2.4g
+  capture: set_disable_24g
+  command: ubus-cli WiFi.Radio.3.Sensing.Enable=0
+  expected: Sensing.Enable setter 回傳停用狀態
+  description: Radio.3 (2.4g) 依 workbook setter intent 設為 0
+- id: step13_sensing_after_disable_24g
+  target: dut
+  action: read
+  band: 2.4g
+  capture: after_disable_24g
+  command: ubus-cli "WiFi.Radio.3.Sensing.Enable?"
+  expected: 停用後 readback 為 0
+  description: Radio.3 (2.4g) 驗證停用後的 Sensing.Enable
+- id: step14_sensing_restore_24g
+  target: dut
+  action: exec
+  band: 2.4g
+  capture: restore_24g
+  command: ubus-cli WiFi.Radio.3.Sensing.Enable=1
+  expected: Sensing.Enable setter 回傳還原狀態
+  description: Radio.3 (2.4g) 還原 Sensing.Enable 為 1
+- id: step15_sensing_after_restore_24g
+  target: dut
+  action: read
+  band: 2.4g
+  capture: after_restore_24g
+  command: ubus-cli "WiFi.Radio.3.Sensing.Enable?"
+  expected: 還原後 readback 為 1
+  description: Radio.3 (2.4g) 驗證還原後的 Sensing.Enable
 pass_criteria:
-- field: getter_5g.Enable
-  operator: regex
-  value: ^[01]$
-- field: getter_6g.Enable
-  operator: regex
-  value: ^[01]$
-- field: getter_24g.Enable
-  operator: regex
-  value: ^[01]$
+- field: default_5g.Enable
+  operator: equals
+  value: "1"
+- field: set_disable_5g.Enable
+  operator: equals
+  value: "0"
+- field: after_disable_5g.Enable
+  operator: equals
+  value: "0"
+- field: restore_5g.Enable
+  operator: equals
+  value: "1"
+- field: after_restore_5g.Enable
+  operator: equals
+  value: "1"
+- field: default_6g.Enable
+  operator: equals
+  value: "1"
+- field: set_disable_6g.Enable
+  operator: equals
+  value: "0"
+- field: after_disable_6g.Enable
+  operator: equals
+  value: "0"
+- field: restore_6g.Enable
+  operator: equals
+  value: "1"
+- field: after_restore_6g.Enable
+  operator: equals
+  value: "1"
+- field: default_24g.Enable
+  operator: equals
+  value: "1"
+- field: set_disable_24g.Enable
+  operator: equals
+  value: "0"
+- field: after_disable_24g.Enable
+  operator: equals
+  value: "0"
+- field: restore_24g.Enable
+  operator: equals
+  value: "1"
+- field: after_restore_24g.Enable
+  operator: equals
+  value: "1"

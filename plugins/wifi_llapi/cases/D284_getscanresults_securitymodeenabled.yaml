@@ -1,7 +1,7 @@
 id: d284-getscanresults-securitymodeenabled
 name: D284 getScanResults SecurityModeEnabled
 source:
-  row: 286
+  row: 284
   object: WiFi.Radio.{i}.
   api: getScanResults()
   baseline: 0310-BGW720-300
@@ -20,36 +20,84 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_scan
   target: dut
-  action: read
-  capture: scan_5g
-  command: ubus-cli "WiFi.Radio.1.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.1 (5g) getScanResults()
+  action: exec
+  capture: llapi_5g
+  command: 'BLOCK=$(ubus-cli "WiFi.Radio.1.getScanResults()" | head -60 | sed -n "/BSSID = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*BSSID = "\([^"]*\)".*/\1/p'' | head -n1); SEC=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*SecurityModeEnabled = "\([^"]*\)".*/\1/p'' | head -n1); [ -n "$BSSID" ] && printf "LlapiBssid5g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; [ -n "$SEC" ] && printf "LlapiSecurityMode5g=%s\n" "$SEC"'
+  expected: 5G 第一個 serialized scan object 需提供 BSSID 與 SecurityModeEnabled
+  description: Radio.1 (5g) 以 first-object capture 驗證 SecurityModeEnabled
+- id: step_5g_iw_scan
+  target: dut
+  action: exec
+  capture: iw_5g
+  command: 'TARGET="{{llapi_5g.LlapiBssid5g}}"; BLOCK=$(iw dev wl0 scan | grep -A40 -im1 "^BSS $TARGET"); AUTH=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*Authentication suites: \(.*\)$/\1/p'' | tr "\n" ";"); AUTH=${AUTH%;}; HAS_RSN=0; HAS_WPA=0; HAS_PSK=0; HAS_SAE=0; printf "%s\n" "$BLOCK" | grep -q "RSN:" && HAS_RSN=1; printf "%s\n" "$BLOCK" | grep -q "WPA:" && HAS_WPA=1; printf "%s\n" "$BLOCK" | grep -Eq ''Authentication suites: .*PSK|Authentication suites: .*00-0f-ac:2|Authentication suites: .*00-50-f2:2'' && HAS_PSK=1; printf "%s\n" "$BLOCK" | grep -Eq ''Authentication suites: .*00-0f-ac:8|Authentication suites: .*00-0f-ac:24|Authentication suites: .*SAE'' && HAS_SAE=1; MODE=None; if [ "$HAS_RSN" -eq 1 ] && [ "$HAS_SAE" -eq 1 ] && [ "$HAS_PSK" -eq 1 ]; then MODE=WPA2-WPA3-Personal; elif [ "$HAS_RSN" -eq 1 ] && [ "$HAS_SAE" -eq 1 ]; then MODE=WPA3-Personal; elif [ "$HAS_RSN" -eq 1 ] && [ "$HAS_WPA" -eq 1 ] && [ "$HAS_PSK" -eq 1 ]; then MODE=WPA-WPA2-Personal; elif [ "$HAS_RSN" -eq 1 ] && [ "$HAS_PSK" -eq 1 ]; then MODE=WPA2-Personal; elif [ "$HAS_WPA" -eq 1 ] && [ "$HAS_PSK" -eq 1 ]; then MODE=WPA-Personal; elif [ "$HAS_RSN" -eq 1 ]; then MODE=WPA2-Enterprise; elif [ "$HAS_WPA" -eq 1 ]; then MODE=WPA-Enterprise; fi; [ -n "$AUTH" ] && printf "IwAuth5g=%s\n" "$AUTH"; printf "IwSecurityMode5g=%s\n" "$MODE"'
+  expected: wl0 scan 需能對同一個 first-object target 回放 security mode
+  description: wl0 scan 對位 5G first-object target 的 security mode
 - id: step_6g_scan
   target: dut
-  action: read
-  capture: scan_6g
-  command: ubus-cli "WiFi.Radio.2.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.2 (6g) getScanResults()
+  action: exec
+  capture: llapi_6g
+  command: 'BLOCK=$(ubus-cli "WiFi.Radio.2.getScanResults()" | head -60 | sed -n "/BSSID = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*BSSID = "\([^"]*\)".*/\1/p'' | head -n1); SEC=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*SecurityModeEnabled = "\([^"]*\)".*/\1/p'' | head -n1); [ -n "$BSSID" ] && printf "LlapiBssid6g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; [ -n "$SEC" ] && printf "LlapiSecurityMode6g=%s\n" "$SEC"'
+  expected: 6G 第一個 serialized scan object 需提供 BSSID 與 SecurityModeEnabled
+  description: Radio.2 (6g) 以 first-object capture 驗證 SecurityModeEnabled
+- id: step_6g_iw_scan
+  target: dut
+  action: exec
+  capture: iw_6g
+  command: 'TARGET="{{llapi_6g.LlapiBssid6g}}"; BLOCK=$(iw dev wl1 scan | grep -A40 -im1 "^BSS $TARGET"); AUTH=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*Authentication suites: \(.*\)$/\1/p'' | tr "\n" ";"); AUTH=${AUTH%;}; HAS_RSN=0; HAS_WPA=0; HAS_PSK=0; HAS_SAE=0; printf "%s\n" "$BLOCK" | grep -q "RSN:" && HAS_RSN=1; printf "%s\n" "$BLOCK" | grep -q "WPA:" && HAS_WPA=1; printf "%s\n" "$BLOCK" | grep -Eq ''Authentication suites: .*PSK|Authentication suites: .*00-0f-ac:2|Authentication suites: .*00-50-f2:2'' && HAS_PSK=1; printf "%s\n" "$BLOCK" | grep -Eq ''Authentication suites: .*00-0f-ac:8|Authentication suites: .*00-0f-ac:24|Authentication suites: .*SAE'' && HAS_SAE=1; MODE=None; if [ "$HAS_RSN" -eq 1 ] && [ "$HAS_SAE" -eq 1 ] && [ "$HAS_PSK" -eq 1 ]; then MODE=WPA2-WPA3-Personal; elif [ "$HAS_RSN" -eq 1 ] && [ "$HAS_SAE" -eq 1 ]; then MODE=WPA3-Personal; elif [ "$HAS_RSN" -eq 1 ] && [ "$HAS_WPA" -eq 1 ] && [ "$HAS_PSK" -eq 1 ]; then MODE=WPA-WPA2-Personal; elif [ "$HAS_RSN" -eq 1 ] && [ "$HAS_PSK" -eq 1 ]; then MODE=WPA2-Personal; elif [ "$HAS_WPA" -eq 1 ] && [ "$HAS_PSK" -eq 1 ]; then MODE=WPA-Personal; elif [ "$HAS_RSN" -eq 1 ]; then MODE=WPA2-Enterprise; elif [ "$HAS_WPA" -eq 1 ]; then MODE=WPA-Enterprise; fi; [ -n "$AUTH" ] && printf "IwAuth6g=%s\n" "$AUTH"; printf "IwSecurityMode6g=%s\n" "$MODE"'
+  expected: wl1 scan 需能對同一個 first-object target 回放 security mode
+  description: wl1 scan 對位 6G first-object target 的 security mode
 - id: step_24g_scan
   target: dut
-  action: read
-  capture: scan_24g
-  command: ubus-cli "WiFi.Radio.3.getScanResults()"
-  expected: getScanResults() 回傳有效值
-  description: Radio.3 (2.4g) getScanResults()
+  action: exec
+  capture: llapi_24g
+  command: 'BLOCK=$(ubus-cli "WiFi.Radio.3.getScanResults()" | head -60 | sed -n "/BSSID = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*BSSID = "\([^"]*\)".*/\1/p'' | head -n1); SEC=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*SecurityModeEnabled = "\([^"]*\)".*/\1/p'' | head -n1); [ -n "$BSSID" ] && printf "LlapiBssid24g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; [ -n "$SEC" ] && printf "LlapiSecurityMode24g=%s\n" "$SEC"'
+  expected: 2.4G 第一個 serialized scan object 需提供 BSSID 與 SecurityModeEnabled
+  description: Radio.3 (2.4g) 以 first-object capture 驗證 SecurityModeEnabled
+- id: step_24g_iw_scan
+  target: dut
+  action: exec
+  capture: iw_24g
+  command: 'TARGET="{{llapi_24g.LlapiBssid24g}}"; BLOCK=$(iw dev wl2 scan | grep -A40 -im1 "^BSS $TARGET"); AUTH=$(printf "%s\n" "$BLOCK" | sed -n ''s/.*Authentication suites: \(.*\)$/\1/p'' | tr "\n" ";"); AUTH=${AUTH%;}; HAS_RSN=0; HAS_WPA=0; HAS_PSK=0; HAS_SAE=0; printf "%s\n" "$BLOCK" | grep -q "RSN:" && HAS_RSN=1; printf "%s\n" "$BLOCK" | grep -q "WPA:" && HAS_WPA=1; printf "%s\n" "$BLOCK" | grep -Eq ''Authentication suites: .*PSK|Authentication suites: .*00-0f-ac:2|Authentication suites: .*00-50-f2:2'' && HAS_PSK=1; printf "%s\n" "$BLOCK" | grep -Eq ''Authentication suites: .*00-0f-ac:8|Authentication suites: .*00-0f-ac:24|Authentication suites: .*SAE'' && HAS_SAE=1; MODE=None; if [ "$HAS_RSN" -eq 1 ] && [ "$HAS_SAE" -eq 1 ] && [ "$HAS_PSK" -eq 1 ]; then MODE=WPA2-WPA3-Personal; elif [ "$HAS_RSN" -eq 1 ] && [ "$HAS_SAE" -eq 1 ]; then MODE=WPA3-Personal; elif [ "$HAS_RSN" -eq 1 ] && [ "$HAS_WPA" -eq 1 ] && [ "$HAS_PSK" -eq 1 ]; then MODE=WPA-WPA2-Personal; elif [ "$HAS_RSN" -eq 1 ] && [ "$HAS_PSK" -eq 1 ]; then MODE=WPA2-Personal; elif [ "$HAS_WPA" -eq 1 ] && [ "$HAS_PSK" -eq 1 ]; then MODE=WPA-Personal; elif [ "$HAS_RSN" -eq 1 ]; then MODE=WPA2-Enterprise; elif [ "$HAS_WPA" -eq 1 ]; then MODE=WPA-Enterprise; fi; [ -n "$AUTH" ] && printf "IwAuth24g=%s\n" "$AUTH"; printf "IwSecurityMode24g=%s\n" "$MODE"'
+  expected: wl2 scan 需能對同一個 first-object target 回放 security mode
+  description: wl2 scan 對位 2.4G first-object target 的 security mode
 pass_criteria:
-- field: scan_5g.SecurityModeEnabled
+- field: llapi_5g.LlapiBssid5g
   operator: regex
-  value: '.+'
-- field: scan_6g.SecurityModeEnabled
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+- field: llapi_5g.LlapiSecurityMode5g
   operator: regex
-  value: '.+'
-- field: scan_24g.SecurityModeEnabled
+  value: .+
+- field: iw_5g.IwSecurityMode5g
   operator: regex
-  value: '.+'
+  value: .+
+- field: llapi_5g.LlapiSecurityMode5g
+  operator: equals
+  reference: iw_5g.IwSecurityMode5g
+- field: llapi_6g.LlapiBssid6g
+  operator: regex
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+- field: llapi_6g.LlapiSecurityMode6g
+  operator: regex
+  value: .+
+- field: iw_6g.IwSecurityMode6g
+  operator: regex
+  value: .+
+- field: llapi_6g.LlapiSecurityMode6g
+  operator: equals
+  reference: iw_6g.IwSecurityMode6g
+- field: llapi_24g.LlapiBssid24g
+  operator: regex
+  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+- field: llapi_24g.LlapiSecurityMode24g
+  operator: regex
+  value: .+
+- field: iw_24g.IwSecurityMode24g
+  operator: regex
+  value: .+
+- field: llapi_24g.LlapiSecurityMode24g
+  operator: equals
+  reference: iw_24g.IwSecurityMode24g

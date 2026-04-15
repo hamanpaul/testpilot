@@ -1,7 +1,9 @@
 id: d455-getradiostats-multipleretrycount
 name: D455 getRadioStats MultipleRetryCount
 source:
-  row: 294
+  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  sheet: Wifi_LLAPI
+  row: 455
   object: WiFi.Radio.{i}.
   api: getRadioStats()
   baseline: 0310-BGW720-300
@@ -9,47 +11,95 @@ bands:
 - 5g
 - 6g
 - 2.4g
+hlapi_command: 'ubus-cli "WiFi.Radio.{i}.getRadioStats()"'
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
+implemented_by: pWHM
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
+  links: []
+test_environment: |
+  DUT-only tri-band radio stats replay.
+  - 5G = wl0 / Radio.1
+  - 6G = wl1 / Radio.2
+  - 2.4G = wl2 / Radio.3
+  - Workbook row 455 notes MultipleRetryCount should stay pass-shaped while the matching txretrie readback also remains zero.
 steps:
-- id: step_5g_stats
+- id: step1_method_5g
   target: dut
   action: read
-  capture: stats_5g
+  capture: method_5g
   command: ubus-cli "WiFi.Radio.1.getRadioStats()"
-  expected: getRadioStats() 回傳有效值
-  description: Radio.1 (5g) getRadioStats()
-- id: step_6g_stats
+  expected: Radio.1 (5g) getRadioStats() 回傳 MultipleRetryCount
+  description: Radio.1 (5g) getRadioStats() 取得 MultipleRetryCount
+- id: step2_driver_5g
+  target: dut
+  action: exec
+  capture: driver_5g
+  command: 'wl -i wl0 if_counters | sed -n ''s/.*txretrie \([0-9][0-9]*\).*/DriverMultipleRetryCount5g=\1/p'''
+  expected: wl0 if_counters 回傳 txretrie
+  description: wl0 if_counters 取得 txretrie
+  depends_on: step1_method_5g
+- id: step3_method_6g
   target: dut
   action: read
-  capture: stats_6g
+  capture: method_6g
   command: ubus-cli "WiFi.Radio.2.getRadioStats()"
-  expected: getRadioStats() 回傳有效值
-  description: Radio.2 (6g) getRadioStats()
-- id: step_24g_stats
+  expected: Radio.2 (6g) getRadioStats() 回傳 MultipleRetryCount
+  description: Radio.2 (6g) getRadioStats() 取得 MultipleRetryCount
+- id: step4_driver_6g
+  target: dut
+  action: exec
+  capture: driver_6g
+  command: 'wl -i wl1 if_counters | sed -n ''s/.*txretrie \([0-9][0-9]*\).*/DriverMultipleRetryCount6g=\1/p'''
+  expected: wl1 if_counters 回傳 txretrie
+  description: wl1 if_counters 取得 txretrie
+  depends_on: step3_method_6g
+- id: step5_method_24g
   target: dut
   action: read
-  capture: stats_24g
+  capture: method_24g
   command: ubus-cli "WiFi.Radio.3.getRadioStats()"
-  expected: getRadioStats() 回傳有效值
-  description: Radio.3 (2.4g) getRadioStats()
+  expected: Radio.3 (2.4g) getRadioStats() 回傳 MultipleRetryCount
+  description: Radio.3 (2.4g) getRadioStats() 取得 MultipleRetryCount
+- id: step6_driver_24g
+  target: dut
+  action: exec
+  capture: driver_24g
+  command: 'wl -i wl2 if_counters | sed -n ''s/.*txretrie \([0-9][0-9]*\).*/DriverMultipleRetryCount24g=\1/p'''
+  expected: wl2 if_counters 回傳 txretrie
+  description: wl2 if_counters 取得 txretrie
+  depends_on: step5_method_24g
 pass_criteria:
-- field: stats_5g.MultipleRetryCount
-  operator: regex
-  value: ^\d+$
-- field: stats_6g.MultipleRetryCount
-  operator: regex
-  value: ^\d+$
-- field: stats_24g.MultipleRetryCount
-  operator: regex
-  value: ^\d+$
+- field: method_5g.MultipleRetryCount
+  operator: equals
+  reference: driver_5g.DriverMultipleRetryCount5g
+  description: 5g getRadioStats().MultipleRetryCount must match wl0 if_counters txretrie.
+- field: method_6g.MultipleRetryCount
+  operator: equals
+  reference: driver_6g.DriverMultipleRetryCount6g
+  description: 6g getRadioStats().MultipleRetryCount must match wl1 if_counters txretrie.
+- field: method_24g.MultipleRetryCount
+  operator: equals
+  reference: driver_24g.DriverMultipleRetryCount24g
+  description: 2.4g getRadioStats().MultipleRetryCount must match wl2 if_counters txretrie.
+verification_command:
+  - '# 5g'
+  - 'ubus-cli "WiFi.Radio.1.getRadioStats()" | grep MultipleRetryCount'
+  - 'wl -i wl0 if_counters | sed -n ''s/.*txretrie \([0-9][0-9]*\).*/DriverMultipleRetryCount5g=\1/p'''
+  - ''
+  - '# 6g'
+  - 'ubus-cli "WiFi.Radio.2.getRadioStats()" | grep MultipleRetryCount'
+  - 'wl -i wl1 if_counters | sed -n ''s/.*txretrie \([0-9][0-9]*\).*/DriverMultipleRetryCount6g=\1/p'''
+  - ''
+  - '# 2.4g'
+  - 'ubus-cli "WiFi.Radio.3.getRadioStats()" | grep MultipleRetryCount'
+  - 'wl -i wl2 if_counters | sed -n ''s/.*txretrie \([0-9][0-9]*\).*/DriverMultipleRetryCount24g=\1/p'''
+results_reference:
+  v4.0.3:
+    5g: Pass
+    6g: Pass
+    2.4g: Pass

@@ -1,7 +1,7 @@
 id: d315-getssidstats-unicastpacketssent
 name: D315 getSSIDStats UnicastPacketsSent
 source:
-  row: 240
+  row: 315
   object: WiFi.SSID.{i}.
   api: getSSIDStats()
   baseline: 0310-BGW720-300
@@ -20,7 +20,7 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_stats
   target: dut

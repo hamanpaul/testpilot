@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any
 
@@ -29,6 +30,18 @@ class AzureAuthError(RuntimeError):
     """Raised when Azure OpenAI authentication or connectivity fails."""
 
 
+def normalize_azure_base_url(base_url: str) -> str:
+    """Normalize Azure URLs to the resource root."""
+    raw = str(base_url).strip().rstrip("/")
+    if not raw:
+        return ""
+
+    parsed = urllib.parse.urlsplit(raw)
+    if parsed.scheme and parsed.netloc:
+        return f"{parsed.scheme}://{parsed.netloc}"
+    return raw
+
+
 def resolve_provider_config() -> dict[str, Any] | None:
     """Build provider config dict from COPILOT_PROVIDER_* env vars.
 
@@ -38,7 +51,7 @@ def resolve_provider_config() -> dict[str, Any] | None:
     if provider_type != "azure":
         return None
 
-    base_url = os.environ.get(AZURE_ENV_VARS["base_url"], "").strip()
+    base_url = normalize_azure_base_url(os.environ.get(AZURE_ENV_VARS["base_url"], ""))
     api_key = os.environ.get(AZURE_ENV_VARS["api_key"], "").strip()
     if not base_url or not api_key:
         return None
@@ -92,7 +105,7 @@ def prompt_azure_credentials() -> dict[str, str]:
 def export_azure_env(creds: dict[str, str]) -> None:
     """Export Azure credentials as COPILOT_PROVIDER_* environment variables."""
     os.environ[AZURE_ENV_VARS["type"]] = "azure"
-    os.environ[AZURE_ENV_VARS["base_url"]] = creds["base_url"]
+    os.environ[AZURE_ENV_VARS["base_url"]] = normalize_azure_base_url(creds["base_url"])
     os.environ[AZURE_ENV_VARS["api_key"]] = creds["api_key"]
     os.environ[AZURE_ENV_VARS["model"]] = creds["model"]
     os.environ[AZURE_ENV_VARS["api_version"]] = DEFAULT_API_VERSION
@@ -104,7 +117,8 @@ def verify_azure_connectivity(base_url: str) -> bool:
 
     Returns True if HTTP response is received (any status code).
     """
-    url = base_url.rstrip("/") + "/openai/models?api-version=" + DEFAULT_API_VERSION
+    normalized_base_url = normalize_azure_base_url(base_url)
+    url = normalized_base_url + "/openai/models?api-version=" + DEFAULT_API_VERSION
     req = urllib.request.Request(url, method="GET")
     try:
         urllib.request.urlopen(req, timeout=10)
@@ -113,7 +127,7 @@ def verify_azure_connectivity(base_url: str) -> bool:
         # 401/403/404 still means the endpoint is reachable
         return True
     except (urllib.error.URLError, OSError, TimeoutError) as exc:
-        logger.warning("Azure endpoint unreachable: %s — %s", base_url, exc)
+        logger.warning("Azure endpoint unreachable: %s — %s", normalized_base_url, exc)
         return False
 
 

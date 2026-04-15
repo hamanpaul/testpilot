@@ -20,11 +20,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
   links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role; DiscoveryMethodEnabled is validated as an AP-only case with no STA transport)
+  - DUT: COM1 (AP role; DiscoveryMethodEnabled is validated as an AP-only case with no STA transport)
   Live band mapping:
   - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
   - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
@@ -254,26 +254,26 @@ pass_criteria:
   operator: equals
   value: Default
   description: 2.4G AP5 should be restored to Default before the case exits.
-verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"
-  ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"
-  ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"
-  ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=FILS
-  ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=FILS
-  ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=FILS
-  ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"
-  ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"
-  ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"
-  ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=FILSDiscovery
-  ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=FILSDiscovery
-  ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=FILSDiscovery
-  ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"
-  ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"
-  ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"
-  ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=Default
-  ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=Default
-  ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=Default
-  ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?"
+verification_command:
+  - 'ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"'
+  - 'ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"'
+  - 'ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"'
+  - ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=FILS
+  - ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=FILS
+  - ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=FILS
+  - 'ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"'
+  - 'ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"'
+  - 'ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"'
+  - ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=FILSDiscovery
+  - ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=FILSDiscovery
+  - ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=FILSDiscovery
+  - 'ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"'
+  - 'ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"'
+  - 'ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"'
+  - ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=Default
+  - ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=Default
+  - ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=Default
+  - 'ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?"'
 results_reference:
   v4.0.3:
     5g: Not Supported

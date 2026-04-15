@@ -1,7 +1,7 @@
 id: d194-radio-hecapssupported
 name: D194 Radio HeCapsSupported
 source:
-  row: 157
+  row: 194
   object: WiFi.Radio.{i}.
   api: HeCapsSupported
   baseline: 0310-BGW720-300
@@ -15,6 +15,7 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: read-only getter stays at the active 0403 tri-band HE capability string
 topology:
   devices:
     DUT:

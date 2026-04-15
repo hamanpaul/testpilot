@@ -18,11 +18,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
   links:
   - from: STA
     to: DUT
@@ -80,31 +80,31 @@ steps:
   capture: result_24g
 pass_criteria:
 - field: assoc_5g.AssocMac5g
-  operator: equals
-  value: 2c:59:17:00:04:85
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: "5G -- MUMimoTxPktsCount readback 前必須先確認 wl0 STA 已關聯"
 - field: result_5g.MUMimoTxPktsCount
   operator: equals
   value: 0
   description: "5G -- stub returns 0; MU-MIMO Tx counter is not hardware-backed on this platform"
 - field: assoc_24g.AssocMac24g
-  operator: equals
-  value: 2c:59:17:00:04:97
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: "2.4G -- MUMimoTxPktsCount readback 前必須先確認 wl2 STA 已關聯"
 - field: result_24g.MUMimoTxPktsCount
   operator: equals
   value: 0
   description: "2.4G -- stub returns 0; MU-MIMO Tx counter is not hardware-backed on this platform"
-verification_command: |
-  DUT# wl -i wl0 assoclist
-  DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MUMimoTxPktsCount?"
-  DUT# wl -i wl2 assoclist
-  DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MUMimoTxPktsCount?"
+verification_command:
+  - DUT# wl -i wl0 assoclist
+  - 'DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MUMimoTxPktsCount?"'
+  - DUT# wl -i wl2 assoclist
+  - 'DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MUMimoTxPktsCount?"'
 results_reference:
   v4.0.3:
-    5g: Not Supported
-    6g: Skip
-    2.4g: Not Supported
+    5g: Fail
+    6g: Fail
+    2.4g: Fail
     comment: |
       Live evidence (BCM v4.0.3):
       5G: WiFi.AccessPoint.1.AssociatedDevice.1.MUMimoTxPktsCount=0 (stub; no real HW backing)

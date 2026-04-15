@@ -66,6 +66,28 @@ def test_default_teardown_is_noop():
     assert result is None
 
 
+def test_run_pipeline_records_list_command_as_multiline_string():
+    class _PipelinePlugin(_MinimalPlugin):
+        def run_step_results(self) -> dict[str, Any]:
+            return {"success": True, "output": "", "captured": {}, "timing": 0.0}
+
+        def execute_step(
+            self, case: dict[str, Any], step: dict[str, Any], topology: Any
+        ) -> dict[str, Any]:
+            return self.run_step_results()
+
+    plugin = _PipelinePlugin()
+    case = {
+        "id": "D001",
+        "steps": [{"id": "s1", "action": "exec", "target": "DUT", "command": ["echo one", "echo two"]}],
+        "pass_criteria": [],
+    }
+
+    result = plugin.run_pipeline(case, topology=None)
+
+    assert result["commands"] == ["echo one\necho two"]
+
+
 # -- abstract enforcement ---------------------------------------------------
 
 

@@ -4,7 +4,7 @@ version: '1.1'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 67
+  row: 65
   object: WiFi.AccessPoint.{i}.
   api: BridgeInterface
   baseline: BCM v4.0.3
@@ -20,11 +20,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
   links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role; BridgeInterface is validated as an AP-only case with no STA transport)
+  - DUT: COM1 (AP role; BridgeInterface is validated as an AP-only case with no STA transport)
   Live band mapping:
   - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
   - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
@@ -98,8 +98,10 @@ steps:
 - id: step7_bridge_state
   action: exec
   target: DUT
-  command: >-
-    cat /sys/class/net/wl0/master/uevent | sed -n 's/^INTERFACE=/BridgeMaster5g=/p' && cat /sys/class/net/wl1/master/uevent | sed -n 's/^INTERFACE=/BridgeMaster6g=/p' && cat /sys/class/net/wl2/master/uevent | sed -n 's/^INTERFACE=/BridgeMaster24g=/p'
+  command:
+    - cat /sys/class/net/wl0/master/uevent | sed -n 's/^INTERFACE=/BridgeMaster5g=/p'
+    - cat /sys/class/net/wl1/master/uevent | sed -n 's/^INTERFACE=/BridgeMaster6g=/p'
+    - cat /sys/class/net/wl2/master/uevent | sed -n 's/^INTERFACE=/BridgeMaster24g=/p'
   depends_on: step6_24g_config
   capture: bridge_state
 pass_criteria:
@@ -163,14 +165,16 @@ pass_criteria:
   operator: equals
   reference: result_24g.BridgeInterface
   description: wl2's live Linux bridge master should match the 2.4G BridgeInterface getter.
-verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.BridgeInterface?"
-  ubus-cli "WiFi.AccessPoint.3.BridgeInterface?"
-  ubus-cli "WiFi.AccessPoint.5.BridgeInterface?"
-  grep '^bridge=' /tmp/wl0_hapd.conf | awk -F= '/^bridge=/ {if (count == 0) first=$2; if ($2 != first) mismatch=1; count++} END {print "BridgeConfig5g=" first; print "BridgeConfig5gCount=" count+0; print "BridgeConfig5gMismatch=" mismatch+0}'
-  grep '^bridge=' /tmp/wl1_hapd.conf | awk -F= '/^bridge=/ {if (count == 0) first=$2; if ($2 != first) mismatch=1; count++} END {print "BridgeConfig6g=" first; print "BridgeConfig6gCount=" count+0; print "BridgeConfig6gMismatch=" mismatch+0}'
-  grep '^bridge=' /tmp/wl2_hapd.conf | awk -F= '/^bridge=/ {if (count == 0) first=$2; if ($2 != first) mismatch=1; count++} END {print "BridgeConfig24g=" first; print "BridgeConfig24gCount=" count+0; print "BridgeConfig24gMismatch=" mismatch+0}'
-  cat /sys/class/net/wl0/master/uevent | sed -n 's/^INTERFACE=/BridgeMaster5g=/p' && cat /sys/class/net/wl1/master/uevent | sed -n 's/^INTERFACE=/BridgeMaster6g=/p' && cat /sys/class/net/wl2/master/uevent | sed -n 's/^INTERFACE=/BridgeMaster24g=/p'
+verification_command:
+  - 'ubus-cli "WiFi.AccessPoint.1.BridgeInterface?"'
+  - 'ubus-cli "WiFi.AccessPoint.3.BridgeInterface?"'
+  - 'ubus-cli "WiFi.AccessPoint.5.BridgeInterface?"'
+  - 'grep ''^bridge='' /tmp/wl0_hapd.conf | awk -F= ''/^bridge=/ {if (count == 0) first=$2; if ($2 != first) mismatch=1; count++} END {print "BridgeConfig5g=" first; print "BridgeConfig5gCount=" count+0; print "BridgeConfig5gMismatch=" mismatch+0}'''
+  - 'grep ''^bridge='' /tmp/wl1_hapd.conf | awk -F= ''/^bridge=/ {if (count == 0) first=$2; if ($2 != first) mismatch=1; count++} END {print "BridgeConfig6g=" first; print "BridgeConfig6gCount=" count+0; print "BridgeConfig6gMismatch=" mismatch+0}'''
+  - 'grep ''^bridge='' /tmp/wl2_hapd.conf | awk -F= ''/^bridge=/ {if (count == 0) first=$2; if ($2 != first) mismatch=1; count++} END {print "BridgeConfig24g=" first; print "BridgeConfig24gCount=" count+0; print "BridgeConfig24gMismatch=" mismatch+0}'''
+  - 'cat /sys/class/net/wl0/master/uevent | sed -n ''s/^INTERFACE=/BridgeMaster5g=/p'''
+  - 'cat /sys/class/net/wl1/master/uevent | sed -n ''s/^INTERFACE=/BridgeMaster6g=/p'''
+  - 'cat /sys/class/net/wl2/master/uevent | sed -n ''s/^INTERFACE=/BridgeMaster24g=/p'''
 results_reference:
   v4.0.3:
     5g: Pass

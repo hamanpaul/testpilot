@@ -1,12 +1,10 @@
 id: wifi-llapi-D022-htcapabilities-accesspoint-associateddevice
-aliases:
-- wifi-llapi-r019-htcapabilities-accesspoint-associateddevice
 name: "HtCapabilities \u2014 WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 19
+  row: 22
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: HtCapabilities
 platform:
@@ -20,11 +18,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
       config:
       - iface: 5g
         mode: sta
@@ -36,8 +34,8 @@ topology:
     band: 5g
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role)
-  - STA: COM1 (station role for this case; do not rely on the old A0/B0 heuristic)
+  - DUT: COM1 (AP role)
+  - STA: COM0 (station role for this case; do not rely on the old A0/B0 heuristic)
   Transport:
   - serialwrap attach COM0 / COM1
   Live band mapping:
@@ -129,8 +127,8 @@ sta_env_setup: |
 test_procedure: |
   1) Confirm the 5G STA is associated to AP1 and resolve its live MAC address.
   2) Read WiFi.AccessPoint.1.AssociatedDevice.1.HtCapabilities on DUT.
-  3) Cross-check the same STA against wl0 sta_info HT caps output.
-  4) Pass when LLAPI returns 40MHz,SGI20,SGI40 and the driver HT capability line exposes the same three markers.
+  3) Cross-check the same STA against the wl0 sta_info HT caps bitmask.
+  4) Pass when LLAPI returns 40MHz,SGI20,SGI40 and the driver HT capability bitmask exposes the same three features.
 steps:
 - id: step1
   action: exec
@@ -146,7 +144,7 @@ steps:
 - id: step3
   action: exec
   target: DUT
-  command: STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n '/HT caps/{/40MHz/s/.*/DriverHt40MHz=1/p; /SGI20/s/.*/DriverHtSgi20=1/p; /SGI40/s/.*/DriverHtSgi40=1/p;}'
+  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); HT_HEX=$([ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*HT caps 0x\([0-9A-Fa-f][0-9A-Fa-f]*\):.*/\1/p'' | head -n1); if [ -n "$HT_HEX" ]; then HT_VAL=$((0x$HT_HEX)); [ $((HT_VAL & 0x0002)) -ne 0 ] && echo DriverHt40MHz=1; [ $((HT_VAL & 0x0020)) -ne 0 ] && echo DriverHtSgi20=1; [ $((HT_VAL & 0x0040)) -ne 0 ] && echo DriverHtSgi40=1; fi'
   depends_on: step2
   capture: driver_ht
 pass_criteria:
@@ -170,10 +168,10 @@ pass_criteria:
   operator: equals
   value: '1'
   description: wl0 sta_info HT caps must expose SGI40 support.
-verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.HtCapabilities?"
-  STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
-  wl -i wl0 sta_info $STA_MAC | grep "HT caps"
+verification_command:
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.HtCapabilities?"'
+  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+  - 'wl -i wl0 sta_info $STA_MAC | grep "HT caps"'
 results_reference:
   v4.0.1:
     5g: Pass
@@ -182,6 +180,6 @@ results_reference:
     comment: 'ARC : 6G radio support only 11ax(HE) and 11be(EHT)'
   v4.0.3:
     5g: Pass
-    6g: Pass
+    6g: Not Supported
     2.4g: Pass
-    comment: '5G serialwrap retest: LLAPI HtCapabilities="40MHz,SGI20,SGI40" and wl0 sta_info HT caps contained 40MHz SGI20 SGI40, matching workbook Pass.'
+    comment: '5G official rerun 20260412T175538121906: HtCapabilities="40MHz,SGI20,SGI40" and the parsed wl0 sta_info `HT caps 0x...` bitmask emitted DriverHt40MHz=1, DriverHtSgi20=1, DriverHtSgi40=1; the durable oracle is therefore the source-backed feature-bit parse rather than a brittle token scrape.'

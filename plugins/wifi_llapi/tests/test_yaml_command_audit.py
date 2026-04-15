@@ -38,6 +38,62 @@ pass_criteria:
     )
 
 
+def _write_folded_case(path: Path) -> None:
+    path.write_text(
+        """
+id: wifi-llapi-D998-audit-folded
+name: audit-folded
+verification_command: >-
+  wl -i wl0 status; wl -i wl1 status
+pass_criteria:
+  - field: result
+    operator: contains
+    value: ok
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_folded_multiline_case(path: Path) -> None:
+    path.write_text(
+        """
+id: wifi-llapi-D997-audit-folded-multiline
+name: audit-folded-multiline
+steps:
+  - id: step1
+    command: >-
+      ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?" | sed -n 's/^WiFi\\.AccessPoint\\.1\\.IEEE80211r\\.Enabled=/Enabled5g=/p'
+      ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?" | sed -n 's/^WiFi\\.AccessPoint\\.1\\.IEEE80211r\\.MobilityDomain=/MobilityDomain5g=/p'
+pass_criteria:
+  - field: result
+    operator: contains
+    value: ok
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_quoted_inline_case(path: Path) -> None:
+    path.write_text(
+        """
+id: wifi-llapi-D996-audit-quoted-inline
+name: audit-quoted-inline
+verification_command: 'ubus-cli "WiFi.AccessPoint.1.WPS.Configured?" && ubus-cli "WiFi.AccessPoint.3.WPS.Configured?" && ubus-cli "WiFi.AccessPoint.5.WPS.Configured?"'
+steps:
+  - id: step1
+    command: 'ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=0; ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=0'
+pass_criteria:
+  - field: result
+    operator: contains
+    value: ok
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+
 def test_audit_string_field_respects_quoted_semicolon() -> None:
     findings = audit_string_field("printf 'a;b'")
     assert findings == []
@@ -98,6 +154,46 @@ def test_rewrite_yaml_chained_commands_dry_run_and_apply(tmp_path: Path) -> None
     assert "verification_command: |\n  wl -i wl0 status\n  wl -i wl1 status\n" in updated
     assert "command: |\n      iw dev wl0 set type managed\n      ifconfig wl0 up\n" in updated
     assert '[ -z "$STA_MAC" ] && STA_MAC="$(wl -i wl0 assoclist | awk "NR==1{print $2}")"' in updated
+
+
+def test_rewrite_yaml_chained_commands_normalizes_folded_block_headers(tmp_path: Path) -> None:
+    cases_dir = tmp_path / "cases"
+    cases_dir.mkdir(parents=True, exist_ok=True)
+    case_path = cases_dir / "D998_audit_folded.yaml"
+    _write_folded_case(case_path)
+
+    applied = rewrite_yaml_chained_commands(cases_dir, apply_changes=True)
+    updated = case_path.read_text(encoding="utf-8")
+
+    assert applied["rewritten_files_count"] == 1
+    assert "verification_command: |-\n  wl -i wl0 status\n  wl -i wl1 status\n" in updated
+
+
+def test_rewrite_yaml_chained_commands_normalizes_existing_multiline_folded_steps(tmp_path: Path) -> None:
+    cases_dir = tmp_path / "cases"
+    cases_dir.mkdir(parents=True, exist_ok=True)
+    case_path = cases_dir / "D997_audit_folded_multiline.yaml"
+    _write_folded_multiline_case(case_path)
+
+    applied = rewrite_yaml_chained_commands(cases_dir, apply_changes=True)
+    updated = case_path.read_text(encoding="utf-8")
+
+    assert applied["rewritten_files_count"] == 1
+    assert 'command: |-\n      ubus-cli "WiFi.AccessPoint.1.IEEE80211r.Enabled?"' in updated
+
+
+def test_rewrite_yaml_chained_commands_rewrites_quoted_inline_scalars(tmp_path: Path) -> None:
+    cases_dir = tmp_path / "cases"
+    cases_dir.mkdir(parents=True, exist_ok=True)
+    case_path = cases_dir / "D996_audit_quoted_inline.yaml"
+    _write_quoted_inline_case(case_path)
+
+    applied = rewrite_yaml_chained_commands(cases_dir, apply_changes=True)
+    updated = case_path.read_text(encoding="utf-8")
+
+    assert applied["rewritten_files_count"] == 1
+    assert 'verification_command: |\n  ubus-cli "WiFi.AccessPoint.1.WPS.Configured?"\n  ubus-cli "WiFi.AccessPoint.3.WPS.Configured?"\n  ubus-cli "WiFi.AccessPoint.5.WPS.Configured?"\n' in updated
+    assert "command: |\n      ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=0\n      ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=0\n" in updated
 
 
 def test_cli_audit_yaml_commands_outputs_preview_and_report(tmp_path: Path) -> None:

@@ -1,8 +1,8 @@
 id: d462-radio-bsscolor
 name: D462 Radio BssColor
 source:
-  row: 339
-  object: WiFi.Radio.{i}.
+  row: 462
+  object: WiFi.Radio.{i}.IEEE80211ax.
   api: BssColor
   baseline: 0310-BGW720-300
 bands:
@@ -20,7 +20,7 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_getter
   target: dut

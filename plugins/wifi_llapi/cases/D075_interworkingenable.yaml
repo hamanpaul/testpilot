@@ -20,11 +20,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
   links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role; InterworkingEnable is validated as an AP-only case with no STA transport)
+  - DUT: COM1 (AP role; InterworkingEnable is validated as an AP-only case with no STA transport)
   Live band mapping:
   - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
   - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
@@ -71,8 +71,10 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: >-
-    grep -c '^interworking=1$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gOneCount=/'; grep -c '^interworking=0$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gZeroCount=/'; grep -c '^interworking=' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gTotalCount=/'
+  command:
+    - grep -c '^interworking=1$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gOneCount=/'
+    - grep -c '^interworking=0$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gZeroCount=/'
+    - grep -c '^interworking=' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gTotalCount=/'
   depends_on: step1_state_baseline_5g
   capture: cfg_baseline_5g
 - id: step3_set_interworking_5g
@@ -94,8 +96,10 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: >-
-    grep -c '^interworking=1$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gOneCount=/'; grep -c '^interworking=0$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gZeroCount=/'; grep -c '^interworking=' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gTotalCount=/'
+  command:
+    - grep -c '^interworking=1$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gOneCount=/'
+    - grep -c '^interworking=0$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gZeroCount=/'
+    - grep -c '^interworking=' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gTotalCount=/'
   depends_on: step4_state_set_interworking_5g
   capture: cfg_set_interworking_5g
 - id: step6_restore_interworking_5g
@@ -117,8 +121,10 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: >-
-    grep -c '^interworking=1$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gOneCount=/'; grep -c '^interworking=0$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gZeroCount=/'; grep -c '^interworking=' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gTotalCount=/'
+  command:
+    - grep -c '^interworking=1$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gOneCount=/'
+    - grep -c '^interworking=0$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gZeroCount=/'
+    - grep -c '^interworking=' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gTotalCount=/'
   depends_on: step7_state_restore_interworking_5g
   capture: cfg_restore_interworking_5g
 - id: step9_state_baseline_6g
@@ -133,8 +139,10 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: >-
-    grep -c '^interworking=1$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gOneCount=/'; grep -c '^interworking=0$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gZeroCount=/'; grep -c '^interworking=' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gTotalCount=/'
+  command:
+    - grep -c '^interworking=1$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gOneCount=/'
+    - grep -c '^interworking=0$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gZeroCount=/'
+    - grep -c '^interworking=' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gTotalCount=/'
   depends_on: step9_state_baseline_6g
   capture: cfg_baseline_6g
 - id: step11_set_interworking_6g
@@ -156,8 +164,10 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: >-
-    grep -c '^interworking=1$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gOneCount=/'; grep -c '^interworking=0$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gZeroCount=/'; grep -c '^interworking=' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gTotalCount=/'
+  command:
+    - grep -c '^interworking=1$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gOneCount=/'
+    - grep -c '^interworking=0$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gZeroCount=/'
+    - grep -c '^interworking=' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gTotalCount=/'
   depends_on: step12_state_set_interworking_6g
   capture: cfg_set_interworking_6g
 - id: step14_restore_interworking_6g
@@ -179,8 +189,10 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: >-
-    grep -c '^interworking=1$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gOneCount=/'; grep -c '^interworking=0$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gZeroCount=/'; grep -c '^interworking=' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gTotalCount=/'
+  command:
+    - grep -c '^interworking=1$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gOneCount=/'
+    - grep -c '^interworking=0$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gZeroCount=/'
+    - grep -c '^interworking=' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gTotalCount=/'
   depends_on: step15_state_restore_interworking_6g
   capture: cfg_restore_interworking_6g
 - id: step17_state_baseline_24g
@@ -195,8 +207,10 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: >-
-    grep -c '^interworking=1$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gOneCount=/'; grep -c '^interworking=0$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gZeroCount=/'; grep -c '^interworking=' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gTotalCount=/'
+  command:
+    - grep -c '^interworking=1$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gOneCount=/'
+    - grep -c '^interworking=0$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gZeroCount=/'
+    - grep -c '^interworking=' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gTotalCount=/'
   depends_on: step17_state_baseline_24g
   capture: cfg_baseline_24g
 - id: step19_set_interworking_24g
@@ -218,8 +232,10 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: >-
-    grep -c '^interworking=1$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gOneCount=/'; grep -c '^interworking=0$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gZeroCount=/'; grep -c '^interworking=' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gTotalCount=/'
+  command:
+    - grep -c '^interworking=1$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gOneCount=/'
+    - grep -c '^interworking=0$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gZeroCount=/'
+    - grep -c '^interworking=' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gTotalCount=/'
   depends_on: step20_state_set_interworking_24g
   capture: cfg_set_interworking_24g
 - id: step22_restore_interworking_24g
@@ -241,8 +257,10 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: >-
-    grep -c '^interworking=1$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gOneCount=/'; grep -c '^interworking=0$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gZeroCount=/'; grep -c '^interworking=' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gTotalCount=/'
+  command:
+    - grep -c '^interworking=1$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gOneCount=/'
+    - grep -c '^interworking=0$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gZeroCount=/'
+    - grep -c '^interworking=' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gTotalCount=/'
   depends_on: step23_state_restore_interworking_24g
   capture: cfg_restore_interworking_24g
 pass_criteria:
@@ -414,34 +432,51 @@ pass_criteria:
   operator: equals
   value: '2'
   description: 2.4G wl2 hostapd file should still expose exactly two interworking lines after restore.
-verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211u\.InterworkingEnable=/Interworking5g=/p'
-  grep -c '^interworking=1$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gOneCount=/'; grep -c '^interworking=0$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gZeroCount=/'; grep -c '^interworking=' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gTotalCount=/'
-  ubus-cli WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable=1
-  ubus-cli "WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211u\.InterworkingEnable=/Interworking5g=/p' | sed -n '1,20p'
-  grep -c '^interworking=1$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gOneCount=/' | sed -n '1,20p'; grep -c '^interworking=0$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gZeroCount=/' | sed -n '1,20p'; grep -c '^interworking=' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gTotalCount=/' | sed -n '1,20p'
-  ubus-cli WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable=0
-  ubus-cli "WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable?" | sed -n 's/^WiFi\.AccessPoint\.1\.IEEE80211u\.InterworkingEnable=/Interworking5g=/p' | sed -n '1,21p'
-  grep -c '^interworking=1$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gOneCount=/' | sed -n '1,21p'; grep -c '^interworking=0$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gZeroCount=/' | sed -n '1,21p'; grep -c '^interworking=' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gTotalCount=/' | sed -n '1,21p'
-  ubus-cli "WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211u\.InterworkingEnable=/Interworking6g=/p'
-  grep -c '^interworking=1$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gOneCount=/'; grep -c '^interworking=0$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gZeroCount=/'; grep -c '^interworking=' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gTotalCount=/'
-  ubus-cli WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable=1
-  ubus-cli "WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211u\.InterworkingEnable=/Interworking6g=/p' | sed -n '1,20p'
-  grep -c '^interworking=1$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gOneCount=/' | sed -n '1,20p'; grep -c '^interworking=0$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gZeroCount=/' | sed -n '1,20p'; grep -c '^interworking=' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gTotalCount=/' | sed -n '1,20p'
-  ubus-cli WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable=0
-  ubus-cli "WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable?" | sed -n 's/^WiFi\.AccessPoint\.3\.IEEE80211u\.InterworkingEnable=/Interworking6g=/p' | sed -n '1,21p'
-  grep -c '^interworking=1$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gOneCount=/' | sed -n '1,21p'; grep -c '^interworking=0$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gZeroCount=/' | sed -n '1,21p'; grep -c '^interworking=' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gTotalCount=/' | sed -n '1,21p'
-  ubus-cli "WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211u\.InterworkingEnable=/Interworking24g=/p'
-  grep -c '^interworking=1$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gOneCount=/'; grep -c '^interworking=0$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gZeroCount=/'; grep -c '^interworking=' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gTotalCount=/'
-  ubus-cli WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable=1
-  ubus-cli "WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211u\.InterworkingEnable=/Interworking24g=/p' | sed -n '1,20p'
-  grep -c '^interworking=1$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gOneCount=/' | sed -n '1,20p'; grep -c '^interworking=0$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gZeroCount=/' | sed -n '1,20p'; grep -c '^interworking=' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gTotalCount=/' | sed -n '1,20p'
-  ubus-cli WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable=0
-  ubus-cli "WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable?" | sed -n 's/^WiFi\.AccessPoint\.5\.IEEE80211u\.InterworkingEnable=/Interworking24g=/p' | sed -n '1,21p'
-  grep -c '^interworking=1$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gOneCount=/' | sed -n '1,21p'; grep -c '^interworking=0$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gZeroCount=/' | sed -n '1,21p'; grep -c '^interworking=' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gTotalCount=/' | sed -n '1,21p'
+verification_command:
+  - 'ubus-cli "WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.1\.IEEE80211u\.InterworkingEnable=/Interworking5g=/p'''
+  - 'grep -c ''^interworking=1$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gOneCount=/'''
+  - 'grep -c ''^interworking=0$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gZeroCount=/'''
+  - 'grep -c ''^interworking='' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gTotalCount=/'''
+  - ubus-cli WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable=1
+  - 'ubus-cli "WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.1\.IEEE80211u\.InterworkingEnable=/Interworking5g=/p'' | sed -n ''1,20p'''
+  - 'grep -c ''^interworking=1$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gOneCount=/'' | sed -n ''1,20p'''
+  - 'grep -c ''^interworking=0$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gZeroCount=/'' | sed -n ''1,20p'''
+  - 'grep -c ''^interworking='' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gTotalCount=/'' | sed -n ''1,20p'''
+  - ubus-cli WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable=0
+  - 'ubus-cli "WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.1\.IEEE80211u\.InterworkingEnable=/Interworking5g=/p'' | sed -n ''1,21p'''
+  - 'grep -c ''^interworking=1$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gOneCount=/'' | sed -n ''1,21p'''
+  - 'grep -c ''^interworking=0$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gZeroCount=/'' | sed -n ''1,21p'''
+  - 'grep -c ''^interworking='' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gTotalCount=/'' | sed -n ''1,21p'''
+  - 'ubus-cli "WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.3\.IEEE80211u\.InterworkingEnable=/Interworking6g=/p'''
+  - 'grep -c ''^interworking=1$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gOneCount=/'''
+  - 'grep -c ''^interworking=0$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gZeroCount=/'''
+  - 'grep -c ''^interworking='' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gTotalCount=/'''
+  - ubus-cli WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable=1
+  - 'ubus-cli "WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.3\.IEEE80211u\.InterworkingEnable=/Interworking6g=/p'' | sed -n ''1,20p'''
+  - 'grep -c ''^interworking=1$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gOneCount=/'' | sed -n ''1,20p'''
+  - 'grep -c ''^interworking=0$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gZeroCount=/'' | sed -n ''1,20p'''
+  - 'grep -c ''^interworking='' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gTotalCount=/'' | sed -n ''1,20p'''
+  - ubus-cli WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable=0
+  - 'ubus-cli "WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.3\.IEEE80211u\.InterworkingEnable=/Interworking6g=/p'' | sed -n ''1,21p'''
+  - 'grep -c ''^interworking=1$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gOneCount=/'' | sed -n ''1,21p'''
+  - 'grep -c ''^interworking=0$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gZeroCount=/'' | sed -n ''1,21p'''
+  - 'grep -c ''^interworking='' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gTotalCount=/'' | sed -n ''1,21p'''
+  - 'ubus-cli "WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.5\.IEEE80211u\.InterworkingEnable=/Interworking24g=/p'''
+  - 'grep -c ''^interworking=1$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gOneCount=/'''
+  - 'grep -c ''^interworking=0$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gZeroCount=/'''
+  - 'grep -c ''^interworking='' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gTotalCount=/'''
+  - ubus-cli WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable=1
+  - 'ubus-cli "WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.5\.IEEE80211u\.InterworkingEnable=/Interworking24g=/p'' | sed -n ''1,20p'''
+  - 'grep -c ''^interworking=1$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gOneCount=/'' | sed -n ''1,20p'''
+  - 'grep -c ''^interworking=0$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gZeroCount=/'' | sed -n ''1,20p'''
+  - 'grep -c ''^interworking='' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gTotalCount=/'' | sed -n ''1,20p'''
+  - ubus-cli WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable=0
+  - 'ubus-cli "WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.5\.IEEE80211u\.InterworkingEnable=/Interworking24g=/p'' | sed -n ''1,21p'''
+  - 'grep -c ''^interworking=1$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gOneCount=/'' | sed -n ''1,21p'''
+  - 'grep -c ''^interworking=0$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gZeroCount=/'' | sed -n ''1,21p'''
+  - 'grep -c ''^interworking='' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gTotalCount=/'' | sed -n ''1,21p'''
 results_reference:
   v4.0.3:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: ''
+    5g: Pass
+    6g: Pass
+    2.4g: Pass

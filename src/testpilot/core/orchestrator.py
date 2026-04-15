@@ -45,7 +45,10 @@ from testpilot.core.case_utils import (
     sanitize_case_id as _sanitize_case_id,
 )
 from testpilot.core.execution_engine import ExecutionEngine, RetryResult
+from testpilot.core.advisory import AdvisoryCollector
+from testpilot.core.hook_policy import HookDispatcher, build_hook_policy
 from testpilot.core.plugin_loader import PluginLoader
+from testpilot.core.remediation import RuntimeRemediationCoordinator
 from testpilot.core.runner_selector import (
     DEFAULT_WIFI_LLAPI_EXECUTION_POLICY,
     RunnerSelector,
@@ -98,6 +101,43 @@ class Orchestrator:
         self.runner_selector = RunnerSelector(self.plugins_dir)
         self.execution_engine = ExecutionEngine(self.config)
         self.session_manager: CopilotSessionManager | None = self._try_init_session_manager()
+
+    def _build_execution_engine(
+        self,
+        *,
+        plugin_name: str,
+        plugin: Any,
+        agent_config: dict[str, Any],
+    ) -> ExecutionEngine:
+        policy = build_hook_policy(agent_config)
+        dispatcher = HookDispatcher(policy)
+        advisory_collector = AdvisoryCollector()
+        advisory_handler = advisory_collector.to_hook_handler()
+        dispatcher.register("on_failure", advisory_handler)
+        dispatcher.register("post_case", advisory_handler)
+
+        remediation_policy = agent_config.get("remediation", {})
+        if not isinstance(remediation_policy, dict):
+            remediation_policy = {}
+        remediation = RuntimeRemediationCoordinator(
+            plugin=plugin,
+            topology=self.config,
+            policy=remediation_policy,
+        )
+        for hook_name, handler in (
+            ("pre_case", remediation.handle_pre_case),
+            ("on_failure", remediation.handle_on_failure),
+            ("on_retry", remediation.handle_on_retry),
+            ("post_case", remediation.handle_post_case),
+        ):
+            dispatcher.register(hook_name, handler)
+        self.execution_engine = ExecutionEngine(self.config, dispatcher)
+        log.debug(
+            "execution engine rebuilt for %s hooks=%s",
+            plugin_name,
+            dispatcher.registered_hooks,
+        )
+        return self.execution_engine
 
     # -- SDK session management ------------------------------------------------
 
@@ -487,6 +527,11 @@ class Orchestrator:
 
         agent_config = self.runner_selector.load_agent_config(plugin_name)
         execution_policy = self.runner_selector.build_execution_policy(agent_config)
+        self._build_execution_engine(
+            plugin_name=plugin_name,
+            plugin=plugin,
+            agent_config=agent_config,
+        )
         run_id = datetime.now().strftime("%Y%m%dT%H%M%S%f")
         agent_trace_dir = reports_root / "agent_trace" / run_id
         agent_trace_dir.mkdir(parents=True, exist_ok=True)
@@ -591,7 +636,11 @@ class Orchestrator:
                         "evaluation_verdict": "Pass" if verdict else "Fail",
                         "attempts_used": retry_result.attempts_used,
                         "comment": comment,
+                        "diagnostic_status": retry_result.diagnostic_status,
                     },
+                    "diagnostic_status": retry_result.diagnostic_status,
+                    "remediation_history": retry_result.remediation_history or [],
+                    "failure_snapshot": retry_result.failure_snapshot,
                 },
             )
             case_trace_files.append(str(case_trace_path))
@@ -610,6 +659,9 @@ class Orchestrator:
                     result_6g=result_6g,
                     result_24g=result_24g,
                     comment=comment,
+                    diagnostic_status=retry_result.diagnostic_status,
+                    remediation_history=retry_result.remediation_history or [],
+                    failure_snapshot=retry_result.failure_snapshot,
                 )
             )
 

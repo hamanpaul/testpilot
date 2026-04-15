@@ -1,8 +1,8 @@
 id: d465-radio-srginformationvalid
 name: D465 Radio SRGInformationValid
 source:
-  row: 342
-  object: WiFi.Radio.{i}.
+  row: 465
+  object: WiFi.Radio.{i}.IEEE80211ax.
   api: SRGInformationValid
   baseline: 0310-BGW720-300
 bands:
@@ -20,7 +20,7 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_getter
   target: dut
@@ -35,7 +35,7 @@ steps:
   capture: getter_6g
   command: ubus-cli "WiFi.Radio.2.IEEE80211ax.SRGInformationValid?"
   expected: SRGInformationValid 回傳有效值
-  description: Radio.2 (6g) SRGInformationValid getter（live=1）
+  description: Radio.2 (6g) SRGInformationValid getter（live=0）
 - id: step_24g_getter
   target: dut
   action: read

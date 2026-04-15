@@ -297,7 +297,7 @@ From `docs/audit-todo.md`, **7-step per-case procedure**:
    - Check platform documentation and driver interaction
 
 2. **Normalization**
-   - Clean workbook column F/G (Test Steps / Command Output)
+   - Clean workbook column G/H (Test Steps / Command Output)
    - Remove prompt fragments, wrapped lines, sample outputs
    - Identify the authoritative readback source per case
    - Flag rows requiring special infrastructure (Radius, traffic generator, etc.)

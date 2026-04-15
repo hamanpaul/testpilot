@@ -1,7 +1,7 @@
 id: d212-radio-possiblechannels
 name: D212 Radio PossibleChannels
 source:
-  row: 173
+  row: 212
   object: WiFi.Radio.{i}.
   api: PossibleChannels
   baseline: 0310-BGW720-300
@@ -15,6 +15,7 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: read-only getter exact-closes the active 0403 tri-band PossibleChannels lists
 topology:
   devices:
     DUT:

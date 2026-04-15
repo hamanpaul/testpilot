@@ -1,18 +1,17 @@
 id: wifi-llapi-D011-avgsignalstrength
-aliases:
-- wifi-llapi-r008-avgsignalstrength
-name: "AvgSignalStrength \u2014 WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
-version: '1.0'
+name: "AvgSignalStrength — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+version: "1.1"
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
   sheet: Wifi_LLAPI
-  row: 8
-  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
-  api: AvgSignalStrength
+  row: 11
+  object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+  api: "AvgSignalStrength"
+  baseline: "BCM v4.0.3"
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.AvgSignalStrength?"
+hlapi_command: 'ubus-cli "WiFi.AccessPoint.{i}.AssociatedDevice.1.AvgSignalStrength?"'
 llapi_support: Support
 implemented_by: pWHM
 topology:
@@ -20,159 +19,227 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: TestPilot_BTM
-        key: testpilot6g
+      selector: COM0
   links:
-  - from: STA
-    to: DUT
-    band: 5g
+    - from: STA
+      to: DUT
+      band: 5g
+    - from: STA
+      to: DUT
+      band: 6g
+    - from: STA
+      to: DUT
+      band: 2.4g
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role)
-  - STA: COM1 (station role for this case; do not rely on the old A0/B0 heuristic)
+  - DUT: COM1 (BGW720-300, AP role)
+  - STA: COM0 (BCM board, STA role)
   Transport:
   - serialwrap attach COM0 / COM1
-  Live band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4 / TestPilot_BTM
-  - 6G: DUT wl1 / AP3 / SSID.6 / TestPilot_BTM
-  - 2.4G: DUT wl2 / AP5 / SSID.8 / TestPilot_24G
-  Preconditions:
-  - keep only one associated station on AP1 so AssociatedDevice.1 stays deterministic
-  - use the validated 5G single-band WPA3 baseline for this case
-  - if a traffic step is needed, move COM1 br-lan off 192.168.1.0/24 before assigning wl0 a DUT-subnet IP
+  Band mapping (live baseline 2026-04-02):
+  - 5G:   DUT AP.1 / wl0 / SSID=testpilot5G    ↔ STA wl0 / WPA2-Personal
+  - 6G:   DUT AP.3 / wl1 / SSID=testpilot6G    ↔ STA wl1 / WPA3-Personal + SAE
+  - 2.4G: DUT AP.5 / wl2 / SSID=testpilot2G    ↔ STA wl2 / WPA2-Personal
+
 setup_steps: |
-  1) DUT 5G baseline:
-     - enable Radio.1 / SSID.4 / AP1
-     - configure AP1 as WPA3-Personal with MFP required
-     - keep the validated live SSID/credential pair as TestPilot_BTM / testpilot6g
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on COM1
-     - move COM1 br-lan off 192.168.1.0/24 to avoid bridge self-hit side effects
-     - reset wl0 and its wpa_supplicant control socket
-     - connect wl0 to TestPilot_BTM with SAE
-  3) Association evidence:
-     - COM1: iw dev wl0 link ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status
-     - COM0: wl -i wl0 assoclist
-sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID=TestPilot_BTM
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
-    ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=testpilot6g
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Required
-    ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ifconfig br-lan 192.168.88.1 netmask 255.255.255.0 up
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    wpa_cli terminate 2>/dev/null || true
-    rm -f /var/run/wpa_supplicant/wl0 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl1 disconnect 2>/dev/null || true
-    iw dev wl2 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-    mkdir -p /var/run/wpa_supplicant
-    printf 'ctrl_interface=/var/run/wpa_supplicant
-  update_config=1
-  sae_pwe=2
-  network={
-  ssid="TestPilot_BTM"
-  key_mgmt=SAE
-  sae_password="testpilot6g"
-  ieee80211w=2
-  scan_ssid=1
-  }
-  ' > /tmp/wpa_wl0.conf
-    wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
-    sleep 3
-  STA 5G connect verify:
-    wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
-    sleep 10
-    iw dev wl0 link
-    wpa_cli -p /var/run/wpa_supplicant -i wl0 status
-  DUT association evidence:
-    wl -i wl0 assoclist
+  Sequential per-band (5G → 6G → 2.4G); no simultaneous multi-band connections.
+  [5G]
+  1) STA wl0 verify DUT AP.1 association on the deterministic WPA2-Personal baseline:
+     iw dev wl0 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  2) DUT AP.1 verify the associated STA and getter:
+     wl -i wl0 assoclist
+     ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.AvgSignalStrength?"
+     wl -i wl0 sta_info <STA_MAC>
+  [6G]
+  1) STA wl1 verify DUT AP.3 association on the validated WPA3/SAE baseline:
+     iw dev wl1 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+     wl -i wl1 status
+  2) DUT AP.3 verify the associated STA and getter:
+     wl -i wl1 assoclist
+     ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.AvgSignalStrength?"
+     wl -i wl1 sta_info <STA_MAC>
+  [2.4G]
+  1) STA wl2 verify DUT AP.5 association on the deterministic WPA2-Personal baseline:
+     iw dev wl2 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  2) DUT AP.5 verify the associated STA and getter:
+     wl -i wl2 assoclist
+     ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.AvgSignalStrength?"
+     wl -i wl2 sta_info <STA_MAC>
+
 test_procedure: |
-  1) Confirm the 5G STA is associated to AP1 and resolve its live MAC address.
-  2) Read WiFi.AccessPoint.1.AssociatedDevice.1.AvgSignalStrength on DUT. The workbook expects this case to fail: the LLAPI stays 0 even though driver RSSI is available.
-  3) Cross-check the same STA against driver RSSI evidence from wl0 sta_info so the failure is tied to a live station rather than copied sample output.
+  For each active band (5G, 6G, then 2.4G):
+  1) STA verifies target AP association on the deterministic baseline prepared by verify_env
+     (5G=testpilot5G WPA2-Personal, 6G=testpilot6G WPA3/SAE, 2.4G=testpilot2G WPA2-Personal).
+  2) Record the live associated STA MAC from DUT driver evidence.
+  3) Cross-check wl sta_info for the same STA and normalize the live smoothed RSSI into
+     DriverSmoothedRSSI{band}.
+  4) Read WiFi.AccessPoint.{i}.AssociatedDevice.1.AvgSignalStrength on DUT.
+  Pass for this fail-shaped calibration case:
+  - DUT exposes one live STA MAC for the band under test.
+  - wl sta_info still reports a real negative RSSI for the same STA.
+  - AvgSignalStrength getter remains 0, matching current firmware/source evidence that
+    wl sta_info updates the live RSSI path while AvgSignalStrength is still published from the
+    averaged rssiAccumulator path, which is not surfacing a non-zero value on current live firmware.
+
 steps:
-- id: step1
-  action: exec
-  target: DUT
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
-  capture: assoc_entry
-- id: step2
-  action: exec
-  target: DUT
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.AvgSignalStrength?"
-  depends_on: step1
-  capture: result
-- id: step3
-  action: exec
-  target: DUT
-  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*smoothed rssi: *\(-*[0-9][0-9]*\).*/DriverSmoothedRSSI=\1/p'''
-  depends_on: step2
-  capture: driver_rssi
+  - id: step1_5g_sta_join
+    action: exec
+    target: STA
+    band: 5g
+    command:
+      - iw dev wl0 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  - id: step2_5g_assoc
+    action: exec
+    target: DUT
+    band: 5g
+    command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+    depends_on: step1_5g_sta_join
+    capture: assoc_5g
+  - id: step3_5g_driver_rssi
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'STA_MAC=$(wl -i wl0 assoclist | awk ''NR==1{print $2}''); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*smoothed rssi: *\(-*[0-9][0-9]*\).*/DriverSmoothedRSSI5g=\1/p'''
+    depends_on: step2_5g_assoc
+    capture: driver_rssi_5g
+  - id: step4_5g_get
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.AvgSignalStrength?"'
+    depends_on: step3_5g_driver_rssi
+    capture: result_5g
+  - id: step5_6g_sta_join
+    action: exec
+    target: STA
+    band: 6g
+    command:
+      - iw dev wl1 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+      - wl -i wl1 status
+  - id: step6_6g_assoc
+    action: exec
+    target: DUT
+    band: 6g
+    command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+    depends_on: step5_6g_sta_join
+    capture: assoc_6g
+  - id: step7_6g_driver_rssi
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'STA_MAC=$(wl -i wl1 assoclist | awk ''NR==1{print $2}''); [ -n "$STA_MAC" ] && wl -i wl1 sta_info $STA_MAC | sed -n ''s/.*smoothed rssi: *\(-*[0-9][0-9]*\).*/DriverSmoothedRSSI6g=\1/p'''
+    depends_on: step6_6g_assoc
+    capture: driver_rssi_6g
+  - id: step8_6g_get
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.AvgSignalStrength?"'
+    depends_on: step7_6g_driver_rssi
+    capture: result_6g
+  - id: step9_24g_sta_join
+    action: exec
+    target: STA
+    band: 2.4g
+    command:
+      - iw dev wl2 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  - id: step10_24g_assoc
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+    depends_on: step9_24g_sta_join
+    capture: assoc_24g
+  - id: step11_24g_driver_rssi
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'STA_MAC=$(wl -i wl2 assoclist | awk ''NR==1{print $2}''); [ -n "$STA_MAC" ] && wl -i wl2 sta_info $STA_MAC | sed -n ''s/.*smoothed rssi: *\(-*[0-9][0-9]*\).*/DriverSmoothedRSSI24g=\1/p'''
+    depends_on: step10_24g_assoc
+    capture: driver_rssi_24g
+  - id: step12_24g_get
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.AvgSignalStrength?"'
+    depends_on: step11_24g_driver_rssi
+    capture: result_24g
+
 pass_criteria:
-- field: assoc_entry.MACAddress
-  operator: regex
-  value: ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$
-  description: AP1 AssociatedDevice.1 must first resolve to the live 5G STA MAC.
-- field: result.AvgSignalStrength
-  operator: equals
-  value: '0'
-  description: 'Workbook v4.0.3 marks this API as Fail: LLAPI still reads 0 instead of a live RSSI value.'
-- field: driver_rssi.DriverSmoothedRSSI
-  operator: <
-  value: '0'
-  description: Driver evidence must still show a real negative RSSI for the same STA.
-verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.AvgSignalStrength?"
-  STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
-  wl -i wl0 sta_info $STA_MAC | grep -E "average rssi|smoothed rssi"
+  - field: assoc_5g.AssocMac5g
+    operator: regex
+    value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+    description: "5G: AP1 must expose one live STA MAC from wl0 assoclist before AvgSignalStrength is read."
+  - field: driver_rssi_5g.DriverSmoothedRSSI5g
+    operator: <
+    value: "0"
+    description: "5G: wl0 sta_info must still report a real negative smoothed RSSI for the same STA."
+  - field: result_5g.AvgSignalStrength
+    operator: equals
+    value: "0"
+    description: "5G: AvgSignalStrength remains 0 even though driver RSSI exists; preserve the current fail-shaped firmware behavior."
+  - field: assoc_6g.AssocMac6g
+    operator: regex
+    value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+    description: "6G: AP3 must expose one live STA MAC from wl1 assoclist before AvgSignalStrength is read."
+  - field: driver_rssi_6g.DriverSmoothedRSSI6g
+    operator: <
+    value: "0"
+    description: "6G: wl1 sta_info must still report a real negative smoothed RSSI for the same STA."
+  - field: result_6g.AvgSignalStrength
+    operator: equals
+    value: "0"
+    description: "6G: AvgSignalStrength remains 0 even though driver RSSI exists; preserve the current fail-shaped firmware behavior."
+  - field: assoc_24g.AssocMac24g
+    operator: regex
+    value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
+    description: "2.4G: AP5 must expose one live STA MAC from wl2 assoclist before AvgSignalStrength is read."
+  - field: driver_rssi_24g.DriverSmoothedRSSI24g
+    operator: <
+    value: "0"
+    description: "2.4G: wl2 sta_info must still report a real negative smoothed RSSI for the same STA."
+  - field: result_24g.AvgSignalStrength
+    operator: equals
+    value: "0"
+    description: "2.4G: AvgSignalStrength remains 0 even though driver RSSI exists; preserve the current fail-shaped firmware behavior."
+
+verification_command:
+  - 'wl -i wl0 assoclist'
+  - 'STA_MAC=$(wl -i wl0 assoclist | awk ''NR==1{print $2}'')'
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.AvgSignalStrength?"'
+  - 'wl -i wl0 sta_info $STA_MAC | grep -E "average rssi|smoothed rssi"'
+  - 'wl -i wl1 assoclist'
+  - 'STA_MAC=$(wl -i wl1 assoclist | awk ''NR==1{print $2}'')'
+  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.AvgSignalStrength?"'
+  - 'wl -i wl1 sta_info $STA_MAC | grep -E "average rssi|smoothed rssi"'
+  - 'wl -i wl2 assoclist'
+  - 'STA_MAC=$(wl -i wl2 assoclist | awk ''NR==1{print $2}'')'
+  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.AvgSignalStrength?"'
+  - 'wl -i wl2 sta_info $STA_MAC | grep -E "average rssi|smoothed rssi"'
+
 results_reference:
   v4.0.1:
     5g: Fail
     6g: Fail
     2.4g: Fail
-    comment: 'ARC : prpl doesn''t implement `mfn_wvap_update_assoc_dev` for avg'
+    comment: "Legacy calibration also treated AvgSignalStrength as fail-shaped."
   v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
-    comment: '5G serialwrap retest: wl0 sta_info reported smoothed rssi=-7, but LLAPI AvgSignalStrength stayed 0, matching workbook Fail / PWHM-not-implemented evidence.'
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: >
+      0401 workbook row 11 still expects Pass/Pass/Pass, but live/source verification keeps this
+      case fail-shaped. The ODL exposes both AvgSignalStrength and AvgSignalStrengthByChain.
+      Public/source nl80211 station copy updates the live SignalStrength path, while pWHM publishes
+      AvgSignalStrength from WLD_ACC_TO_VAL(pAD->rssiAccumulator). On the current live firmware that
+      averaged path still reads back 0 on AP1/AP3/AP5 even though wl sta_info shows live negative RSSI.

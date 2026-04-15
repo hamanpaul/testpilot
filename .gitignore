@@ -20,6 +20,7 @@ build/
 plugins/wifi_llapi/reports/*
 !plugins/wifi_llapi/reports/templates/
 !plugins/wifi_llapi/reports/.gitkeep
+!plugins/wifi_llapi/reports/D181_block.md
 
 # OS
 .DS_Store
@@ -29,3 +30,13 @@ Thumbs.db
 configs/testbed.yaml
 .env
 .coverage
+
+# Local-only notes / handoff / scratch artifacts
+.codex
+report.*.json
+uv.lock
+0414-handover.md
+5G-STA-sccuss-exp.md
+6G-STA-exp.md
+docs/copilot-sdk-hooks-skills-session-resume-persistenc.md
+docs/wifi_llapi_cases_summary.txt

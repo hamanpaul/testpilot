@@ -4,7 +4,7 @@ version: '1.1'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 77
+  row: 83
   object: WiFi.AccessPoint.{i}.
   api: Neighbour
   baseline: BCM v4.0.3
@@ -20,11 +20,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
   links: []
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role; Neighbour is calibrated as an AP-only object workflow with no STA transport)
+  - DUT: COM1 (AP role; Neighbour is calibrated as an AP-only object workflow with no STA transport)
   Live band mapping:
   - 5G: DUT wl0 / AP1 / SSID.4 / testpilot5G / WPA2-Personal / 00000000
   - 6G: DUT wl1 / AP3 / SSID.6 / testpilot6G / WPA3-Personal / SAE / 00000000
@@ -74,8 +74,10 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: >-
-    printf 'RequestedBssid5g=11:22:33:44:55:66\n'; printf 'RequestedChannel5g=36\n'; ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
+  command:
+    - printf 'RequestedBssid5g=11:22:33:44:55:66\n'
+    - printf 'RequestedChannel5g=36\n'
+    - ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
   depends_on: step1_neighbour_baseline_5g
   capture: neighbour_add_5g
 - id: step3_neighbour_after_add_5g
@@ -90,8 +92,9 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: >-
-    printf 'DeleteBssid5g=11:22:33:44:55:66\n'; ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
+  command:
+    - printf 'DeleteBssid5g=11:22:33:44:55:66\n'
+    - ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
   depends_on: step3_neighbour_after_add_5g
   capture: neighbour_delete_5g
 - id: step5_neighbour_after_delete_5g
@@ -113,8 +116,10 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: >-
-    printf 'RequestedBssid6g=11:22:33:44:55:77\n'; printf 'RequestedChannel6g=1\n'; ubus-cli "WiFi.AccessPoint.3.setNeighbourAP(BSSID=11:22:33:44:55:77,Channel=1)"
+  command:
+    - printf 'RequestedBssid6g=11:22:33:44:55:77\n'
+    - printf 'RequestedChannel6g=1\n'
+    - ubus-cli "WiFi.AccessPoint.3.setNeighbourAP(BSSID=11:22:33:44:55:77,Channel=1)"
   depends_on: step6_neighbour_baseline_6g
   capture: neighbour_add_6g
 - id: step8_neighbour_after_add_6g
@@ -129,8 +134,9 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: >-
-    printf 'DeleteBssid6g=11:22:33:44:55:77\n'; ubus-cli "WiFi.AccessPoint.3.delNeighbourAP(BSSID=11:22:33:44:55:77)"
+  command:
+    - printf 'DeleteBssid6g=11:22:33:44:55:77\n'
+    - ubus-cli "WiFi.AccessPoint.3.delNeighbourAP(BSSID=11:22:33:44:55:77)"
   depends_on: step8_neighbour_after_add_6g
   capture: neighbour_delete_6g
 - id: step10_neighbour_after_delete_6g
@@ -152,8 +158,10 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: >-
-    printf 'RequestedBssid24g=11:22:33:44:55:88\n'; printf 'RequestedChannel24g=11\n'; ubus-cli "WiFi.AccessPoint.5.setNeighbourAP(BSSID=11:22:33:44:55:88,Channel=11)"
+  command:
+    - printf 'RequestedBssid24g=11:22:33:44:55:88\n'
+    - printf 'RequestedChannel24g=11\n'
+    - ubus-cli "WiFi.AccessPoint.5.setNeighbourAP(BSSID=11:22:33:44:55:88,Channel=11)"
   depends_on: step11_neighbour_baseline_24g
   capture: neighbour_add_24g
 - id: step13_neighbour_after_add_24g
@@ -168,8 +176,9 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: >-
-    printf 'DeleteBssid24g=11:22:33:44:55:88\n'; ubus-cli "WiFi.AccessPoint.5.delNeighbourAP(BSSID=11:22:33:44:55:88)"
+  command:
+    - printf 'DeleteBssid24g=11:22:33:44:55:88\n'
+    - ubus-cli "WiFi.AccessPoint.5.delNeighbourAP(BSSID=11:22:33:44:55:88)"
   depends_on: step13_neighbour_after_add_24g
   capture: neighbour_delete_24g
 - id: step15_neighbour_after_delete_24g
@@ -363,12 +372,12 @@ pass_criteria:
   value: ABSENT
   description: 2.4G AP5 / wl2 should have no neighbour channel after delete.
 
-verification_command: |
-  ubus-cli WiFi.AccessPoint.1.? | grep -E 'Neighbour\.[0-9]+\.(BSSID|Channel)' || true
-  ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
-  ubus-cli WiFi.AccessPoint.1.? | grep -E 'Neighbour\.[0-9]+\.(BSSID|Channel)' || true
-  ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
-  ubus-cli WiFi.AccessPoint.1.? | grep -E 'Neighbour\.[0-9]+\.(BSSID|Channel)' || true
+verification_command:
+  - 'ubus-cli WiFi.AccessPoint.1.? | grep -E ''Neighbour\.[0-9]+\.(BSSID|Channel)'' || true'
+  - 'ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"'
+  - 'ubus-cli WiFi.AccessPoint.1.? | grep -E ''Neighbour\.[0-9]+\.(BSSID|Channel)'' || true'
+  - 'ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"'
+  - 'ubus-cli WiFi.AccessPoint.1.? | grep -E ''Neighbour\.[0-9]+\.(BSSID|Channel)'' || true'
 
 results_reference:
   v4.0.1:

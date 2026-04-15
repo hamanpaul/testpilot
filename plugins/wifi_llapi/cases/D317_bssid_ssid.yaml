@@ -1,7 +1,7 @@
 id: d317-bssid-ssid
 name: D317 BSSID SSID
 source:
-  row: 242
+  row: 317
   object: WiFi.SSID.{i}.
   api: BSSID
   baseline: 0310-BGW720-300
@@ -21,7 +21,7 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g
   target: dut

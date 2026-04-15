@@ -1,7 +1,7 @@
 id: d262-getradioairstats-void
 name: D262 getRadioAirStats Void
 source:
-  row: 264
+  row: 262
   object: WiFi.Radio.{i}.
   api: getRadioAirStats()
   baseline: 0310-BGW720-300
@@ -12,16 +12,15 @@ bands:
 llapi_support: Support
 results_reference:
   v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
-    comment: need to support survey in driver level
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
 steps:
 - id: step_5g_stats
   target: dut

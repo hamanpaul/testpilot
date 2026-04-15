@@ -1,18 +1,17 @@
 id: wifi-llapi-D015-connectionduration
-aliases:
-- wifi-llapi-r012-connectionduration
-name: "ConnectionDuration \u2014 WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
-version: '1.0'
+name: "ConnectionDuration — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+version: "1.1"
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
+  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
   sheet: Wifi_LLAPI
-  row: 12
-  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
-  api: ConnectionDuration
+  row: 15
+  object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+  api: "ConnectionDuration"
+  baseline: "BCM v4.0.3"
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"
+hlapi_command: 'ubus-cli "WiFi.AccessPoint.{i}.AssociatedDevice.1.ConnectionDuration?"'
 llapi_support: Support
 implemented_by: pWHM
 topology:
@@ -20,174 +19,274 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
-      config:
-      - iface: 5g
-        mode: sta
-        ssid: TestPilot_BTM
-        key: testpilot6g
+      selector: COM0
   links:
-  - from: STA
-    to: DUT
-    band: 5g
+    - from: STA
+      to: DUT
+      band: 5g
+    - from: STA
+      to: DUT
+      band: 6g
+    - from: STA
+      to: DUT
+      band: 2.4g
+
 test_environment: |
   Topology:
-  - DUT: COM0 (AP role)
-  - STA: COM1 (station role for this case; do not rely on the old A0/B0 heuristic)
+  - DUT: COM1 (BGW720-300, AP role)
+  - STA: COM0 (BCM board, STA role)
   Transport:
   - serialwrap attach COM0 / COM1
-  Live band mapping:
-  - 5G: DUT wl0 / AP1 / SSID.4 / TestPilot_BTM
-  - 6G: DUT wl1 / AP3 / SSID.6 / TestPilot_BTM
-  - 2.4G: DUT wl2 / AP5 / SSID.8 / TestPilot_24G
+  Band mapping (live baseline 2026-04-02):
+  - 5G:   DUT AP.1 / wl0 / SSID=testpilot5G    ↔ STA wl0 / WPA2-Personal
+  - 6G:   DUT AP.3 / wl1 / SSID=testpilot6G    ↔ STA wl1 / WPA3-Personal + SAE
+  - 2.4G: DUT AP.5 / wl2 / SSID=testpilot2G    ↔ STA wl2 / WPA2-Personal
   Preconditions:
-  - keep only one associated station on AP1 so AssociatedDevice.1 stays deterministic
-  - use the validated 5G single-band WPA3 baseline for this case
-  - if a traffic step is needed, move COM1 br-lan off 192.168.1.0/24 before assigning wl0 a DUT-subnet IP
+  - keep exactly one associated STA on each target AP so AssociatedDevice.1 remains deterministic
+  - reuse the validated deterministic single-band baseline from verify_env; do not keep all three bands associated simultaneously
+  - for each band, ConnectionDuration must monotonically increase across two reads and remain less than or equal to the driver `in network` seconds for the same STA
+
 setup_steps: |
-  1) DUT 5G baseline:
-     - enable Radio.1 / SSID.4 / AP1
-     - configure AP1 as WPA3-Personal with MFP required
-     - keep the validated live SSID/credential pair as TestPilot_BTM / testpilot6g
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on COM1
-     - move COM1 br-lan off 192.168.1.0/24 to avoid bridge self-hit side effects
-     - reset wl0 and its wpa_supplicant control socket
-     - connect wl0 to TestPilot_BTM with SAE
-  3) Association evidence:
-     - COM1: iw dev wl0 link ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status
-     - COM0: wl -i wl0 assoclist
-sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID=TestPilot_BTM
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
-    ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=testpilot6g
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Required
-    ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ifconfig br-lan 192.168.88.1 netmask 255.255.255.0 up
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    wpa_cli terminate 2>/dev/null || true
-    rm -f /var/run/wpa_supplicant/wl0 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl1 disconnect 2>/dev/null || true
-    iw dev wl2 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-    mkdir -p /var/run/wpa_supplicant
-    printf 'ctrl_interface=/var/run/wpa_supplicant
-  update_config=1
-  sae_pwe=2
-  network={
-  ssid="TestPilot_BTM"
-  key_mgmt=SAE
-  sae_password="testpilot6g"
-  ieee80211w=2
-  scan_ssid=1
-  }
-  ' > /tmp/wpa_wl0.conf
-    wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
-    sleep 3
-  STA 5G connect verify:
-    wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
-    sleep 10
-    iw dev wl0 link
-    wpa_cli -p /var/run/wpa_supplicant -i wl0 status
-  DUT association evidence:
-    wl -i wl0 assoclist
+  Sequential per-band (5G → 6G → 2.4G); no simultaneous multi-band connections.
+  [5G]
+  1) STA wl0 verify DUT AP.1 association on the deterministic WPA2-Personal baseline:
+     iw dev wl0 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  2) DUT AP.1 verify the associated STA and read ConnectionDuration twice:
+     wl -i wl0 assoclist
+     ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"
+     wl -i wl0 sta_info <STA_MAC> | grep "in network"
+  [6G]
+  1) STA wl1 verify DUT AP.3 association on the validated WPA3/SAE baseline:
+     iw dev wl1 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+     wl -i wl1 status
+  2) DUT AP.3 verify the associated STA and read ConnectionDuration twice:
+     wl -i wl1 assoclist
+     ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ConnectionDuration?"
+     wl -i wl1 sta_info <STA_MAC> | grep "in network"
+  [2.4G]
+  1) STA wl2 verify DUT AP.5 association on the deterministic WPA2-Personal baseline:
+     iw dev wl2 link
+     wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  2) DUT AP.5 verify the associated STA and read ConnectionDuration twice:
+     wl -i wl2 assoclist
+     ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.ConnectionDuration?"
+     wl -i wl2 sta_info <STA_MAC> | grep "in network"
+
 test_procedure: |
-  1) Confirm the 5G STA is associated to AP1 and resolve its current MAC.
-  2) Read the live LLAPI counter on DUT.
-  3) Wait briefly and re-read to confirm the value is a live counter rather than a fixed workbook sample.
-  4) Cross-check the same STA against wl0 sta_info 'in network' seconds.
-  5) Pass when ConnectionDuration is a positive integer that increases on re-read and remains less than or equal to the driver-side in-network duration.
+  For each active band (5G, 6G, then 2.4G):
+  1) STA verifies target AP association on the deterministic baseline prepared by verify_env
+     (5G=testpilot5G WPA2-Personal, 6G=testpilot6G WPA3/SAE, 2.4G=testpilot2G WPA2-Personal).
+  2) Record the live AssociatedDevice.1 MAC from DUT and confirm it is a valid station MAC.
+  3) Read `ConnectionDuration` twice with a short wait to prove the value is a live counter instead of a stale workbook sample.
+  4) Cross-check the same STA with `wl sta_info` and normalize the driver `in network` age.
+  Pass:
+  - DUT exposes one live STA MAC for the target band.
+  - Both ConnectionDuration reads are parseable integer seconds.
+  - The second read is greater than the first read.
+  - Driver `in network` age is greater than or equal to the later ConnectionDuration value.
+
 steps:
-- id: step1
-  action: exec
-  target: DUT
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
-  capture: assoc_entry
-- id: step2
-  action: exec
-  target: DUT
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"
-  depends_on: step1
-  capture: result
-- id: step3
-  action: exec
-  target: DUT
-  command: sleep 3 && ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"
-  depends_on: step2
-  capture: result_after_wait
-- id: step4
-  action: exec
-  target: DUT
-  command: STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n 's/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds=\1/p'
-  depends_on: step3
-  capture: driver_duration
+  - id: step1_5g_sta_join
+    action: exec
+    target: STA
+    band: 5g
+    command:
+      - iw dev wl0 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  - id: step2_5g_assoc
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
+    depends_on: step1_5g_sta_join
+    capture: assoc_5g
+  - id: step3_5g_get
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"'
+    depends_on: step2_5g_assoc
+    capture: result_5g
+  - id: step4_5g_get_after_wait
+    action: exec
+    target: DUT
+    band: 5g
+    command:
+      - sleep 3
+      - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"'
+    depends_on: step3_5g_get
+    capture: result_after_wait_5g
+  - id: step5_5g_driver_age
+    action: exec
+    target: DUT
+    band: 5g
+    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds5g=\1/p'''
+    depends_on: step4_5g_get_after_wait
+    capture: driver_duration_5g
+  - id: step6_6g_sta_join
+    action: exec
+    target: STA
+    band: 6g
+    command:
+      - iw dev wl1 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+      - wl -i wl1 status
+  - id: step7_6g_assoc
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
+    depends_on: step6_6g_sta_join
+    capture: assoc_6g
+  - id: step8_6g_get
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ConnectionDuration?"'
+    depends_on: step7_6g_assoc
+    capture: result_6g
+  - id: step9_6g_get_after_wait
+    action: exec
+    target: DUT
+    band: 6g
+    command:
+      - sleep 3
+      - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ConnectionDuration?"'
+    depends_on: step8_6g_get
+    capture: result_after_wait_6g
+  - id: step10_6g_driver_age
+    action: exec
+    target: DUT
+    band: 6g
+    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl1 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds6g=\1/p'''
+    depends_on: step9_6g_get_after_wait
+    capture: driver_duration_6g
+  - id: step11_24g_sta_join
+    action: exec
+    target: STA
+    band: 2.4g
+    command:
+      - iw dev wl2 link
+      - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  - id: step12_24g_assoc
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
+    depends_on: step11_24g_sta_join
+    capture: assoc_24g
+  - id: step13_24g_get
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.ConnectionDuration?"'
+    depends_on: step12_24g_assoc
+    capture: result_24g
+  - id: step14_24g_get_after_wait
+    action: exec
+    target: DUT
+    band: 2.4g
+    command:
+      - sleep 3
+      - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.ConnectionDuration?"'
+    depends_on: step13_24g_get
+    capture: result_after_wait_24g
+  - id: step15_24g_driver_age
+    action: exec
+    target: DUT
+    band: 2.4g
+    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl2 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds24g=\1/p'''
+    depends_on: step14_24g_get_after_wait
+    capture: driver_duration_24g
+
 pass_criteria:
-- field: assoc_entry.MACAddress
-  operator: regex
-  value: ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$
-  description: AP1 AssociatedDevice.1 must first resolve to the live 5G STA MAC.
-- field: result.ConnectionDuration
-  operator: regex
-  value: ^[0-9]+$
-  description: ConnectionDuration should be a live integer second counter.
-- field: result_after_wait.ConnectionDuration
-  operator: '>'
-  reference: result.ConnectionDuration
-  description: The second read must increase beyond the first read.
-- field: driver_duration.DriverConnectionSeconds
-  operator: '>='
-  reference: result_after_wait.ConnectionDuration
-  description: Driver in-network time must be at least as large as the later LLAPI ConnectionDuration value.
-verification_command: |
-  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
-  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"
-  sleep 3
-  ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"
-  STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
-  wl -i wl0 sta_info $STA_MAC | grep "in network"
+  - field: assoc_5g.MACAddress
+    operator: regex
+    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+    description: "5G: AP1 AssociatedDevice.1 must resolve to a live station MAC."
+  - field: result_5g.ConnectionDuration
+    operator: regex
+    value: '^[0-9]+$'
+    description: "5G: first ConnectionDuration read must be an integer counter."
+  - field: result_after_wait_5g.ConnectionDuration
+    operator: '>'
+    reference: result_5g.ConnectionDuration
+    description: "5G: second ConnectionDuration read must increase beyond the first read."
+  - field: driver_duration_5g.DriverConnectionSeconds5g
+    operator: '>='
+    reference: result_after_wait_5g.ConnectionDuration
+    description: "5G: driver in-network seconds must be at least the later LLAPI ConnectionDuration value."
+  - field: assoc_6g.MACAddress
+    operator: regex
+    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+    description: "6G: AP3 AssociatedDevice.1 must resolve to a live station MAC."
+  - field: result_6g.ConnectionDuration
+    operator: regex
+    value: '^[0-9]+$'
+    description: "6G: first ConnectionDuration read must be an integer counter."
+  - field: result_after_wait_6g.ConnectionDuration
+    operator: '>'
+    reference: result_6g.ConnectionDuration
+    description: "6G: second ConnectionDuration read must increase beyond the first read."
+  - field: driver_duration_6g.DriverConnectionSeconds6g
+    operator: '>='
+    reference: result_after_wait_6g.ConnectionDuration
+    description: "6G: driver in-network seconds must be at least the later LLAPI ConnectionDuration value."
+  - field: assoc_24g.MACAddress
+    operator: regex
+    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+    description: "2.4G: AP5 AssociatedDevice.1 must resolve to a live station MAC."
+  - field: result_24g.ConnectionDuration
+    operator: regex
+    value: '^[0-9]+$'
+    description: "2.4G: first ConnectionDuration read must be an integer counter."
+  - field: result_after_wait_24g.ConnectionDuration
+    operator: '>'
+    reference: result_24g.ConnectionDuration
+    description: "2.4G: second ConnectionDuration read must increase beyond the first read."
+  - field: driver_duration_24g.DriverConnectionSeconds24g
+    operator: '>='
+    reference: result_after_wait_24g.ConnectionDuration
+    description: "2.4G: driver in-network seconds must be at least the later LLAPI ConnectionDuration value."
+
+verification_command:
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"'
+  - sleep 3
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"'
+  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+  - 'wl -i wl0 sta_info $STA_MAC | grep "in network"'
+  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
+  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ConnectionDuration?"'
+  - sleep 3
+  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ConnectionDuration?"'
+  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+  - 'wl -i wl1 sta_info $STA_MAC | grep "in network"'
+  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
+  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.ConnectionDuration?"'
+  - sleep 3
+  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.ConnectionDuration?"'
+  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+  - 'wl -i wl2 sta_info $STA_MAC | grep "in network"'
+
 results_reference:
   v4.0.1:
     5g: Pass
     6g: Pass
     2.4g: Pass
-    comment: ''
+    comment: ""
   v4.0.3:
     5g: Pass
     6g: Pass
     2.4g: Pass
-    comment: '5G serialwrap retest: ConnectionDuration advanced from 19 to 23 over 3 seconds while wl0 sta_info reported in network 31 seconds, matching workbook Pass.'
+    comment: >
+      0401 workbook row 15 expects Pass/Pass/Pass. ConnectionDuration is validated as a live,
+      monotonic AssociatedDevice counter on AP1/AP3/AP5 by reading the getter twice per band and
+      cross-checking the same STA against `wl sta_info ... in network` seconds on the deterministic
+      5G/6G/2.4G baseline.

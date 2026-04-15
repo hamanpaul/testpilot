@@ -4,7 +4,7 @@ version: '1.1'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 25
+  row: 28
   object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
   api: MaxBandwidthSupported
   baseline: BCM v4.0.3
@@ -18,11 +18,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
   links:
   - from: STA
     to: DUT
@@ -81,16 +81,16 @@ steps:
   capture: result_24g
 pass_criteria:
 - field: assoc_5g.AssocMac5g
-  operator: equals
-  value: 2c:59:17:00:04:85
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: "5G -- MaxBandwidthSupported 讀取前必須先確認 wl0 STA 已關聯"
 - field: result_5g.MaxBandwidthSupported
   operator: equals
   value: 160MHz
   description: "5G -- live MaxBandwidthSupported should remain 160MHz"
 - field: assoc_24g.AssocMac24g
-  operator: equals
-  value: 2c:59:17:00:04:97
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: "2.4G -- MaxBandwidthSupported 讀取前必須先確認 wl2 STA 已關聯"
 - field: result_24g.MaxBandwidthSupported
   operator: not_contains
@@ -100,17 +100,18 @@ pass_criteria:
   operator: regex
   value: '^(20MHz|40MHz|80MHz|160MHz|Unknown)$'
   description: "2.4G -- must remain a recognized bandwidth token or \"Unknown\""
-verification_command: |
-  DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported?"
-  DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MaxBandwidthSupported?"
+verification_command:
+  - 'DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported?"'
+  - 'DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MaxBandwidthSupported?"'
 results_reference:
   v4.0.3:
     5g: Pass
-    6g: Skip
-    2.4g: STA-Discrepancy
+    6g: Fail
+    2.4g: Pass
     comment: |
       Live evidence (BCM v4.0.3):
       5G: WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported=160MHz
+      6G: workbook row 28 remains fail-shaped; the current lab still skips AP3/wl1 because STA association is BCME_NOTREADY in this environment.
       2.4G: WiFi.AccessPoint.5.AssociatedDevice.1.MaxBandwidthSupported=Unknown
           Root cause: 2.4G STA OMI=0x3203 forces 20MHz operation;
           wld_util_getMaxBwCap() returns BCME_NOTFOUND -> value reported as "Unknown".

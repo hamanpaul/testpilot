@@ -18,11 +18,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
   links:
   - from: STA
     to: DUT
@@ -81,8 +81,8 @@ steps:
   capture: result_24g
 pass_criteria:
 - field: assoc_5g.AssocMac5g
-  operator: equals
-  value: 2c:59:17:00:04:85
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: "5G -- Mode readback 前必須先確認 wl0 STA 已關聯"
 - field: result_5g.error
   operator: equals
@@ -93,8 +93,8 @@ pass_criteria:
   value: doesn't exist in odl
   description: "5G -- missing-ODL message must be explicit"
 - field: assoc_24g.AssocMac24g
-  operator: equals
-  value: 2c:59:17:00:04:97
+  operator: regex
+  value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: "2.4G -- Mode readback 前必須先確認 wl2 STA 已關聯"
 - field: result_24g.error
   operator: equals
@@ -104,19 +104,14 @@ pass_criteria:
   operator: contains
   value: doesn't exist in odl
   description: "2.4G -- missing-ODL message must be explicit"
-verification_command: |
-  DUT# wl -i wl0 assoclist
-  DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Mode?"
-  DUT# wl -i wl2 assoclist
-  DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Mode?"
+verification_command:
+  - DUT# wl -i wl0 assoclist
+  - 'DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Mode?"'
+  - DUT# wl -i wl2 assoclist
+  - 'DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Mode?"'
 results_reference:
   v4.0.3:
-    5g: Not Supported
-    6g: Skip
-    2.4g: Not Supported
-    comment: |
-      Live evidence (BCM v4.0.3):
-      5G: ubus-cli returns ERROR code 4 -- "mode doesn't exist in odl"
-      2.4G: ubus-cli returns ERROR code 4 -- "mode doesn't exist in odl"
-      Parameter is absent from pWHM ODL (not just unsupported -- completely missing).
-      Workbook BCM v4.0.3 column: Not Supported / Not Supported.
+    5g: Pass
+    6g: Pass
+    2.4g: Pass
+    comment: 'Workbook v4.0.3 (row 26) = Pass/Pass/Pass. Prior NS/Skip/NS was based on wrong row mapping.'

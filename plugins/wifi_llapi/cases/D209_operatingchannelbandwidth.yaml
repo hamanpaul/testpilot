@@ -1,7 +1,7 @@
 id: d209-radio-operatingchannelbandwidth
 name: D209 Radio OperatingChannelBandwidth
 source:
-  row: 171
+  row: 209
   object: WiFi.Radio.{i}.
   api: OperatingChannelBandwidth
   baseline: 0310-BGW720-300
@@ -15,6 +15,7 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
+    comment: read-only getter exact-closes the active 0403 tri-band OperatingChannelBandwidth values
 topology:
   devices:
     DUT:

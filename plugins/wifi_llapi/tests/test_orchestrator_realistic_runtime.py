@@ -98,7 +98,10 @@ def _prepare_runtime_project(tmp_path: Path) -> tuple[Path, Path]:
     repo_root = Path(__file__).resolve().parents[3]
     source_plugin_dir = repo_root / "plugins" / "wifi_llapi"
     shutil.copy2(source_plugin_dir / "plugin.py", plugin_dir / "plugin.py")
+    shutil.copy2(source_plugin_dir / "command_resolver.py", plugin_dir / "command_resolver.py")
     shutil.copy2(source_plugin_dir / "agent-config.yaml", plugin_dir / "agent-config.yaml")
+    shutil.copy2(source_plugin_dir / "band-baselines.yaml", plugin_dir / "band-baselines.yaml")
+    shutil.copy2(source_plugin_dir / "baseline_qualifier.py", plugin_dir / "baseline_qualifier.py")
 
     _write_testbed_yaml(project_root / "configs" / "testbed.yaml")
     source_xlsx = project_root / "source.xlsx"
@@ -696,3 +699,110 @@ def test_realistic_runtime_can_rerun_from_existing_template_without_source_xlsx(
     assert Path(second_result["template_path"]).is_file()
     assert Path(second_result["report_path"]).is_file()
     assert second_result["source_report"] == str(source_xlsx)
+
+
+def test_realistic_runtime_records_pass_after_remediation(tmp_path: Path, monkeypatch):
+    project_root, source_xlsx = _prepare_runtime_project(tmp_path)
+    orch = Orchestrator(
+        project_root=project_root,
+        plugins_dir=project_root / "plugins",
+        config_path=project_root / "configs" / "testbed.yaml",
+    )
+    plugin = orch.loader.load("wifi_llapi")
+    cases = [
+        {
+            "id": "wifi-llapi-D900-remediation-pass",
+            "name": "remediation-pass",
+            "source": {
+                "row": 4,
+                "object": "WiFi.AccessPoint.{i}.",
+                "api": "kickStation()",
+            },
+            "steps": [
+                {
+                    "id": "step1",
+                    "target": "DUT",
+                    "command": 'ubus-cli "WiFi.AccessPoint.1.kickStation(macaddress=AA:BB:CC:DD:EE:FF)"',
+                }
+            ],
+            "pass_criteria": [
+                {
+                    "field": "step1.output",
+                    "operator": "contains",
+                    "value": PASS_TOKEN,
+                }
+            ],
+            "emit_pass_token": True,
+            "bands": ["5g"],
+        }
+    ]
+    state = _patch_runtime_hooks(monkeypatch, plugin=plugin, cases=cases)
+    verify_attempts = {"count": 0}
+    remediation_calls: list[dict[str, Any]] = []
+
+    def verify_env(case: dict[str, Any], topology: Any) -> bool:
+        del topology
+        verify_attempts["count"] += 1
+        if verify_attempts["count"] == 1:
+            case["_last_failure"] = {
+                "case_id": case["id"],
+                "attempt_index": int(case.get("_attempt_index", 1)),
+                "phase": "verify_env",
+                "comment": "STA band baseline/connect failed",
+                "category": "environment",
+                "reason_code": "sta_band_not_ready",
+                "band": "5g",
+                "device": "STA",
+            }
+            return False
+        return True
+
+    def build_remediation_decision(case: dict[str, Any], failure_snapshot: Any, topology: Any, *, runner=None, remediation_policy=None):
+        del topology, runner, remediation_policy
+        return {
+            "case_id": case["id"],
+            "attempt_index": failure_snapshot.attempt_index,
+            "summary": "repair baseline",
+            "actions": [
+                {"executor_key": "sta_band_rebaseline", "band": "5g"},
+                {"executor_key": "case_env_reverify"},
+            ],
+        }
+
+    def execute_remediation(case: dict[str, Any], decision: Any, topology: Any) -> dict[str, Any]:
+        del case, topology
+        remediation_calls.append(decision.to_dict())
+        return {
+            "success": True,
+            "verify_after": True,
+            "comment": "baseline repaired",
+            "actions": [
+                {"executor_key": "sta_band_rebaseline", "success": True},
+                {"executor_key": "case_env_reverify", "success": True},
+            ],
+        }
+
+    monkeypatch.setattr(plugin, "verify_env", verify_env)
+    monkeypatch.setattr(plugin, "build_remediation_decision", build_remediation_decision)
+    monkeypatch.setattr(plugin, "execute_remediation", execute_remediation)
+
+    result = orch.run(
+        "wifi_llapi",
+        case_ids=[cases[0]["id"]],
+        dut_fw_ver="FW-IT-REMEDIATION-1",
+        report_source_xlsx=str(source_xlsx),
+    )
+
+    assert result["status"] == "completed"
+    assert result["pass_count"] == 1
+    assert verify_attempts["count"] == 2
+    assert len(remediation_calls) == 1
+
+    traces = _load_case_traces(Path(result["agent_trace_dir"]))
+    trace = traces["wifi-llapi-D900-remediation-pass"]
+    assert trace["final"]["diagnostic_status"] == "PassAfterRemediation"
+    assert trace["final"]["attempts_used"] == 2
+    assert len(trace["remediation_history"]) == 1
+    assert trace["remediation_history"][0]["applied"] is True
+    assert trace["remediation_history"][0]["verify_after"] is True
+    assert state["evaluate_calls"][-1]["case_id"] == "wifi-llapi-D900-remediation-pass"

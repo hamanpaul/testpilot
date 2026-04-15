@@ -16,7 +16,7 @@ def test_variable_resolve():
     root = Path(__file__).resolve().parents[1]
     cfg = TestbedConfig(root / "configs" / "testbed.yaml")
     result = cfg.resolve("SSID is {{SSID_5G}}")
-    assert "TestPilot_5G" in result
+    assert "testpilot5G" in result
 
 
 def test_missing_variable():

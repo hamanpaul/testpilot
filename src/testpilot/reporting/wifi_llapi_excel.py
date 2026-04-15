@@ -9,7 +9,7 @@ This module keeps report layout compatible with the reference
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 import json
 from pathlib import Path
@@ -88,6 +88,9 @@ class WifiLlapiCaseResult:
     tester: str = "testpilot"
     dut_log_lines: str = ""
     sta_log_lines: str = ""
+    diagnostic_status: str = ""
+    remediation_history: list[dict[str, object]] = field(default_factory=list)
+    failure_snapshot: dict[str, object] | None = None
 
 
 def normalize_text(text: str | None) -> str:

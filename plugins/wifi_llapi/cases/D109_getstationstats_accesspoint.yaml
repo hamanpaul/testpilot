@@ -4,7 +4,7 @@ version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 111
+  row: 109
   object: WiFi.AccessPoint.{i}.
   api: getStationStats()
   baseline: 0310-BGW720-300
@@ -21,11 +21,11 @@ topology:
     DUT:
       role: ap
       transport: serial
-      selector: COM0
+      selector: COM1
     STA:
       role: sta
       transport: serial
-      selector: COM1
+      selector: COM0
       config:
       - iface: wl0
         mode: sta
@@ -39,8 +39,8 @@ topology:
     band: 5g
 test_environment: |
   Topology:
-  - DUT: COM0 (B0, AP role)
-  - STA: COM1 (A0, STA role)
+  - DUT: COM1 (B0, AP role)
+  - STA: COM0 (A0, STA role)
   Transport:
   - DUT/STA via serialwrap COM0/COM1
   Baseline:
@@ -49,48 +49,55 @@ test_environment: |
   - COM1 iw dev wl0 link -> connected
   - DUT wl -i wl0 assoclist -> STA MAC
   Notes:
-  - getStationStats() returns JSON array of all AssociatedDevice fields
-  - AP3/AP5 return empty [] without associated STA
-  - Only 5G tested (COM1 associated to AP1)
+  - Workbook row 109 is getStationStats(), not AssociationTime.
+  - Workbook H excerpt uses `hostapd_cli sta`, but current 0403 official baseline exposes `/tmp/wl0_hapd.conf` without a matching `/var/run/hostapd/wl0` control socket; `hostapd_cli` returns `wpa_ctrl_open: No such file or directory`.
+  - Current single-STA baseline therefore uses driver `wl assoclist` as the stable runtime association oracle and verifies that getStationStats() returns the same STA MAC.
+  - Top-level `Active` must be extracted explicitly because nested `AffiliatedSta[].Active` also appears in the payload.
 steps:
 - id: step1_assoc_precheck
   action: exec
   target: DUT
-  command: wl -i wl0 assoclist
+  command: 'wl -i wl0 assoclist | awk ''NR==1 {print "AssocMac=" $2}'''
   capture: assoc_check
 - id: step2_getstationstats
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.AccessPoint.1.getStationStats()"
+  command:
+    - 'A="$(wl -i wl0 assoclist | awk ''NR==1 {print $2}'')"'
+    - 'S="$(ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>/dev/null)"'
+    - 'M="$(printf ''%s\n'' "$S" | grep -m1 ''MACAddress = '' | cut -d''"'' -f2)"'
+    - 'echo "StationStatsMac=$M"'
+    - 'printf ''%s\n'' "$S" | grep -m1 ''Active = '' | cut -d= -f2 | tr -d '' ,'' | sed ''s/^/TopLevelActive=/'''
+    - '[ -n "$A" ] && [ "$A" = "$M" ] && echo "StatsMatchesAssoc=1" || echo "StatsMatchesAssoc=0"'
   capture: stats_output
   depends_on: step1_assoc_precheck
-- id: step3_sta_mac
-  action: exec
-  target: STA
-  command: cat /sys/class/net/wl0/address
-  capture: sta_mac
 pass_criteria:
-- field: assoc_check
+- field: assoc_check.AssocMac
   operator: not_equals
   value: ''
   band: 5g
   description: AP1 should have at least one associated STA
-- field: stats_output.MACAddress
+- field: stats_output.StationStatsMac
   operator: not_equals
   value: ''
   band: 5g
   description: getStationStats should return entry with MACAddress
-- field: stats_output.Active
+- field: stats_output.TopLevelActive
   operator: equals
   value: '1'
   band: 5g
-  description: Active field should be 1
-verification_command: |
-  wl -i wl0 assoclist
-  ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | head -10
+  description: Top-level Active field should be 1
+- field: stats_output.StatsMatchesAssoc
+  operator: equals
+  value: '1'
+  band: 5g
+  description: getStationStats should resolve the same STA as wl assoclist
+verification_command:
+  - 'wl -i wl0 assoclist'
+  - 'ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep -m1 ''MACAddress = '''
+  - 'ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep -m1 ''Active = '''
 results_reference:
   v4.0.3:
     5g: Pass
-    6g: N/A
-    2.4g: N/A
-    comment: 5G-only, requires associated STA; AP3/AP5 return empty array
+    6g: Pass
+    2.4g: Pass

@@ -37,9 +37,10 @@ cp configs/testbed.yaml.example configs/testbed.yaml   # 首次設定
 python -m testpilot.cli --version
 python -m testpilot.cli list-plugins
 python -m testpilot.cli list-cases wifi_llapi
+python -m testpilot.cli wifi-llapi baseline-qualify --repeat-count 5 --soak-minutes 15
 python -m testpilot.cli run wifi_llapi
 python -m testpilot.cli wifi-llapi build-template-report --source-xlsx <path>
-pytest
+uv run pytest -q
 ```
 
 ## Todo Governance（嚴格）
@@ -120,6 +121,9 @@ pytest
 5. `wifi_llapi` 執行策略以 case-level 為主（每個 test case 各自呼叫 agent）。
 6. `wifi_llapi` 排程策略預設為 `sequential`（`max_concurrency=1`）。
 7. case 失敗策略為 `retry_then_fail_and_continue`，且 timeout 需隨 retry attempt 調整。
+8. `wifi_llapi` 目前允許的 live remediation 只限 safe environment repair：`serial_session_recover`、`sta_band_reconnect`、`sta_band_rebaseline`、`dut_band_rebaseline`、`case_env_reverify`。
+9. live remediation 僅允許發生在 retry attempts 之間；不得 mid-step takeover，也不得修改 YAML semantics、step 指令、pass criteria 或 xlsx final verdict。
+10. 若 agent remediation decision 無法取得、格式不合法、或超出 whitelist，必須 fallback 到 deterministic builtin classifier，或直接不套 remediation。
 
 ## Azure OpenAI BYOK Policy
 

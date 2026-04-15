@@ -4,10 +4,15 @@ from __future__ import annotations
 
 import pytest
 from testpilot.core.advisory import AdvisoryCollector, AdvisoryOutput
+from testpilot.core.hook_policy import HookContext
 from testpilot.core.remediation import (
+    FailureSnapshot,
     RemediationAction,
+    RemediationDecision,
     RemediationPlan,
     RemediationPlanner,
+    RuntimeRemediationAction,
+    RuntimeRemediationCoordinator,
 )
 
 
@@ -196,3 +201,181 @@ class TestRemediationPlanner:
         assert impacts["D001"] == "high"
         assert impacts["D002"] == "medium"
         assert impacts["D003"] == "low"
+
+
+class TestLiveRemediationDataclasses:
+    def test_failure_snapshot_to_dict(self) -> None:
+        snapshot = FailureSnapshot(
+            case_id="D001",
+            attempt_index=1,
+            phase="verify_env",
+            comment="STA band baseline/connect failed",
+            category="environment",
+            reason_code="sta_band_not_ready",
+            band="5g",
+        )
+        payload = snapshot.to_dict()
+        assert payload["case_id"] == "D001"
+        assert payload["band"] == "5g"
+
+    def test_remediation_decision_to_dict(self) -> None:
+        decision = RemediationDecision(
+            case_id="D001",
+            attempt_index=1,
+            summary="repair env",
+            actions=[
+                RuntimeRemediationAction(executor_key="case_env_reverify"),
+            ],
+            failure=FailureSnapshot(
+                case_id="D001",
+                attempt_index=1,
+                phase="verify_env",
+                comment="fail",
+            ),
+        )
+        payload = decision.to_dict()
+        assert payload["actions"][0]["executor_key"] == "case_env_reverify"
+        assert payload["failure"]["phase"] == "verify_env"
+
+
+class _LivePlugin:
+    def __init__(self) -> None:
+        self.executed: list[str] = []
+
+    def build_remediation_decision(self, case, failure_snapshot, topology, *, runner=None, remediation_policy=None):
+        del topology, runner, remediation_policy
+        return {
+            "case_id": case["id"],
+            "attempt_index": failure_snapshot.attempt_index,
+            "summary": "repair env",
+            "actions": [
+                {"executor_key": "sta_band_rebaseline", "band": "5g"},
+                {"executor_key": "case_env_reverify"},
+            ],
+        }
+
+    def execute_remediation(self, case, decision, topology):
+        del case, topology
+        for action in decision.actions:
+            self.executed.append(action.executor_key)
+        return {
+            "success": True,
+            "verify_after": True,
+            "comment": "remediation applied",
+            "actions": [
+                {"executor_key": action.executor_key, "success": True}
+                for action in decision.actions
+            ],
+        }
+
+
+class _UnsafeLivePlugin(_LivePlugin):
+    def build_remediation_decision(self, case, failure_snapshot, topology, *, runner=None, remediation_policy=None):
+        del case, failure_snapshot, topology, runner, remediation_policy
+        return {
+            "summary": "unsafe",
+            "actions": [
+                {"executor_key": "rewrite_yaml", "safety_class": "unsafe"},
+            ],
+        }
+
+
+class TestRuntimeRemediationCoordinator:
+    def _ctx(self, hook_name: str, *, attempt_index: int = 1) -> HookContext:
+        return HookContext(
+            hook_name=hook_name,
+            case_id="D001",
+            plugin_name="wifi_llapi",
+            attempt_index=attempt_index,
+            runner={"cli_agent": "copilot", "model": "gpt-5.4"},
+        )
+
+    def test_on_failure_emits_decision_and_retry_executes_it(self) -> None:
+        plugin = _LivePlugin()
+        coordinator = RuntimeRemediationCoordinator(
+            plugin=plugin,
+            topology=object(),
+            policy={
+                "enabled": True,
+                "allowed_actions": ["sta_band_rebaseline", "case_env_reverify"],
+                "max_actions_per_attempt": 3,
+            },
+        )
+        case = {
+            "id": "D001",
+            "_last_failure": {
+                "case_id": "D001",
+                "attempt_index": 1,
+                "phase": "verify_env",
+                "comment": "STA band baseline/connect failed",
+                "category": "environment",
+                "reason_code": "sta_band_not_ready",
+                "band": "5g",
+            },
+        }
+
+        pre_case_data: dict[str, object] = {}
+        coordinator.handle_pre_case(self._ctx("pre_case"), pre_case_data)
+
+        failure_data = {
+            "case": case,
+            "phase": "verify_env",
+            "comment": "env_verify gate failed",
+        }
+        coordinator.handle_on_failure(self._ctx("on_failure"), failure_data)
+        assert failure_data["failure_snapshot"]["category"] == "environment"
+        assert failure_data["remediation_decision"]["actions"][0]["executor_key"] == "sta_band_rebaseline"
+
+        retry_data = {
+            "case": case,
+            "previous_attempts": [],
+            "attempt_index": 2,
+        }
+        coordinator.handle_on_retry(self._ctx("on_retry", attempt_index=2), retry_data)
+        assert plugin.executed == ["sta_band_rebaseline", "case_env_reverify"]
+        assert retry_data["remediation_trace_entry"]["applied"] is True
+        assert retry_data["remediation_history"][0]["verify_after"] is True
+
+    def test_non_env_failure_does_not_emit_decision(self) -> None:
+        plugin = _LivePlugin()
+        coordinator = RuntimeRemediationCoordinator(
+            plugin=plugin,
+            topology=object(),
+            policy={"enabled": True, "allowed_actions": ["case_env_reverify"]},
+        )
+        case = {
+            "id": "D001",
+            "_last_failure": {
+                "case_id": "D001",
+                "attempt_index": 1,
+                "phase": "evaluate",
+                "comment": "pass_criteria not satisfied",
+                "category": "test",
+                "reason_code": "pass_criteria_not_satisfied",
+            },
+        }
+        failure_data = {"case": case, "phase": "evaluate", "comment": "pass_criteria not satisfied"}
+        coordinator.handle_on_failure(self._ctx("on_failure"), failure_data)
+        assert "remediation_decision" not in failure_data
+
+    def test_unsafe_actions_are_rejected(self) -> None:
+        plugin = _UnsafeLivePlugin()
+        coordinator = RuntimeRemediationCoordinator(
+            plugin=plugin,
+            topology=object(),
+            policy={"enabled": True, "allowed_actions": ["case_env_reverify"]},
+        )
+        case = {
+            "id": "D001",
+            "_last_failure": {
+                "case_id": "D001",
+                "attempt_index": 1,
+                "phase": "verify_env",
+                "comment": "fail",
+                "category": "environment",
+                "reason_code": "sta_band_not_ready",
+            },
+        }
+        failure_data = {"case": case, "phase": "verify_env", "comment": "env_verify gate failed"}
+        coordinator.handle_on_failure(self._ctx("on_failure"), failure_data)
+        assert "remediation_decision" not in failure_data
