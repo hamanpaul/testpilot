@@ -1,5 +1,75 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-15 early-169)
+
+> This checkpoint records the `D527 SSID WMM AC_VO Stats WmmPacketsSent` workbook alignment.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D527 SSID WMM AC_VO Stats WmmPacketsSent` 已完成 closure
+- workbook authority 已刷新為 row `527`
+- 舊 source row `394` 已退休
+- landed case 已改回 workbook direct `WiFi.SSID.{i}.Stats.WmmPacketsSent.` / `AC_VO`
+- official rerun `20260415T165703228123` 以 `pass after retry (2/2)` 落地：attempt 1 停在 `step_5g_refresh` 的 serialwrap status timeout，attempt 2 exact-close tri-band refresh / direct getter / driver `307 / 206 / 247`
+- official rerun 維持 `diagnostic_status=Pass`
+- compare 仍維持 `394 / 420 full matches`、`26 mismatches`，metadata drifts 維持 `43`，因為 D527 在這次 rewrite 前就已經是 compare 內的 pass-shaped row
+- 這也把 current compare-open 的 SSID-level WMM stats closure family 擴大到十九筆：`D496` / `D499` / `D502` / `D505` / `D506` / `D507` / `D510` / `D512` / `D513` / `D517` / `D518` / `D519` / `D520` / `D521` / `D522` / `D523` / `D525` / `D526` / `D527`
+- localized blockers `D490` / `D481` / `D482` / `D485` / `D454` / `D371` / `D508` / `D524` 仍維持
+- targeted runtime/budget guardrails=`1251 passed`；full repo regression=`1660 passed`
+- `D355-D357` 仍保留在需要 CSI client setup 的 placeholder bucket，`D359 AccessPoint.IsolationEnable` 仍暫停在 current single-STA lab shape
+- systemic active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- `D414/D415` 仍保留為 readiness-review cluster；workbook `G` 已明示需要 dual-STA 802.11k split
+- next ready actionable survey target=`D588 SSID MLDUnit`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D527 | 527 | Stats.WmmPacketsSent.AC_VO | Pass / Pass / Pass | `bgw720-b0-403_wifi_llapi_20260415t165703228123.md L9-L11; L17-L28; L48-L50; 20260415T165703228123_DUT.log L45-L62; L69-L80; L87-L98` | `N/A（20260415T165703228123_STA.log is empty）` |
+
+### D527 SSID WMM AC_VO Stats WmmPacketsSent alignment evidence
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n '/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent5g=\1/p'
+ubus-cli "WiFi.SSID.4.Stats.WmmPacketsSent.AC_VO?"
+wl -i wl0 wme_counters | grep '^AC_VO:' | awk '{print "DriverWmmPacketsSent5g="$4}'
+ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n '/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent6g=\1/p'
+ubus-cli "WiFi.SSID.6.Stats.WmmPacketsSent.AC_VO?"
+wl -i wl1 wme_counters | grep '^AC_VO:' | awk '{print "DriverWmmPacketsSent6g="$4}'
+ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n '/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent24g=\1/p'
+ubus-cli "WiFi.SSID.8.Stats.WmmPacketsSent.AC_VO?"
+wl -i wl2 wme_counters | grep '^AC_VO:' | awk '{print "DriverWmmPacketsSent24g="$4}'
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260415T165703228123
+- bgw720-b0-403_wifi_llapi_20260415t165703228123.md L9-L11
+  result_5g/result_6g/result_24g = Pass / Pass / Pass with diagnostic_status=Pass; comment = pass after retry (2/2)
+- bgw720-b0-403_wifi_llapi_20260415t165703228123.md L17-L28
+  workbook-faithful row-527 replay uses getSSIDStats/direct Stats.WmmPacketsSent.AC_VO plus wl wme_counters AC_VO tx-frame cross-checks
+- bgw720-b0-403_wifi_llapi_20260415t165703228123.md L48-L50
+  attempt 1 failure snapshot = `step_5g_refresh command failed` with `serialwrap cmd status timeout`
+- 20260415T165703228123_DUT.log L45-L62
+  retry attempt 2 exact-closes 5G `GetSSIDStatsWmmPacketsSent5g=307`, `WiFi.SSID.4.Stats.WmmPacketsSent.AC_VO=307`, and `DriverWmmPacketsSent5g=307`
+- 20260415T165703228123_DUT.log L69-L80
+  retry attempt 2 exact-closes 6G `GetSSIDStatsWmmPacketsSent6g=206`, `WiFi.SSID.6.Stats.WmmPacketsSent.AC_VO=206`, and `DriverWmmPacketsSent6g=206`
+- 20260415T165703228123_DUT.log L87-L98
+  retry attempt 2 exact-closes 2.4G `GetSSIDStatsWmmPacketsSent24g=247`, `WiFi.SSID.8.Stats.WmmPacketsSent.AC_VO=247`, and `DriverWmmPacketsSent24g=247`
+```
+
 ## Checkpoint summary (2026-04-15 early-168)
 
 > This checkpoint records the `D526 SSID WMM AC_VI Stats WmmPacketsSent` workbook alignment.

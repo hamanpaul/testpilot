@@ -3152,7 +3152,7 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         524: ("Fail", "Fail", "Fail"),
     }
     for case_num in range(496, 528):
-        if case_num in {496, 499, 502, 505, 506, 507, 510, 512, 513, 517, 518, 519, 520, 521, 522, 523, 525, 526}:
+        if case_num in {496, 499, 502, 505, 506, 507, 510, 512, 513, 517, 518, 519, 520, 521, 522, 523, 525, 526, 527}:
             continue
         filename = next(cases_dir.glob(f"D{case_num}_*.yaml"))
         case_data = yaml.safe_load(filename.read_text(encoding="utf-8"))
@@ -22681,7 +22681,6 @@ _SSID_WMM_STATS_CASES = [
     ("D515_ac_vo_stats_wmmfailedreceived.yaml", 382, "AC_VO", "WmmFailedReceived"),
     ("D516_ac_be_stats_wmmfailedsent.yaml", 383, "AC_BE", "WmmFailedSent"),
     ("D524_ac_be_stats_wmmpacketssent.yaml", 391, "AC_BE", "WmmPacketsSent"),
-    ("D527_ac_vo_stats_wmmpacketssent.yaml", 394, "AC_VO", "WmmPacketsSent"),
 ]
 _SSID_WMM_IDS = [t[0].split(".")[0] for t in _SSID_WMM_STATS_CASES]
 
@@ -24209,6 +24208,91 @@ def test_d526_ssid_stats_wmmpacketssent_ac_vi_evaluate():
             "step_24g_driver": {
                 "success": True,
                 "output": "DriverWmmPacketsSent24g=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d527_ssid_stats_wmmpacketssent_ac_vo_load():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D527_ac_vo_stats_wmmpacketssent.yaml")
+    assert case["id"] == "d527-ssid-wmm-ac_vo_stats_wmmpacketssent"
+    assert case["source"]["row"] == 527
+    assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmPacketsSent."
+    assert case["source"]["api"] == "AC_VO"
+    assert case["llapi_support"] == "Support"
+    ref = case["results_reference"]["v4.0.3"]
+    assert ref["5g"] == "Pass"
+    assert ref["6g"] == "Pass"
+    assert ref["2.4g"] == "Pass"
+    assert len(case["steps"]) == 9
+    assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
+    assert 'WiFi.SSID.4.Stats.WmmPacketsSent.AC_VO?' in case["steps"][1]["command"]
+    assert 'DriverWmmPacketsSent5g' in case["steps"][2]["command"]
+    assert case["pass_criteria"][0]["field"] == "direct_5g.AC_VO"
+    assert case["pass_criteria"][0]["reference"] == "refresh_5g.GetSSIDStatsWmmPacketsSent5g"
+    assert case["pass_criteria"][1]["reference"] == "driver_5g.DriverWmmPacketsSent5g"
+
+
+def test_d527_ssid_stats_wmmpacketssent_ac_vo_discover():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D527_ac_vo_stats_wmmpacketssent.yaml")
+    plugin = _load_plugin()
+    discoverable = {c["id"] for c in plugin.discover_cases()}
+    assert case["id"] in discoverable, f"{case['id']} not discoverable"
+
+
+def test_d527_ssid_stats_wmmpacketssent_ac_vo_evaluate():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D527_ac_vo_stats_wmmpacketssent.yaml")
+    results = {
+        "steps": {
+            "step_5g_refresh": {
+                "success": True,
+                "output": "GetSSIDStatsWmmPacketsSent5g=336",
+                "timing": 0.01,
+            },
+            "step_5g_direct": {
+                "success": True,
+                "output": "WiFi.SSID.4.Stats.WmmPacketsSent.AC_VO=336",
+                "timing": 0.01,
+            },
+            "step_5g_driver": {
+                "success": True,
+                "output": "DriverWmmPacketsSent5g=336",
+                "timing": 0.01,
+            },
+            "step_6g_refresh": {
+                "success": True,
+                "output": "GetSSIDStatsWmmPacketsSent6g=210",
+                "timing": 0.01,
+            },
+            "step_6g_direct": {
+                "success": True,
+                "output": "WiFi.SSID.6.Stats.WmmPacketsSent.AC_VO=210",
+                "timing": 0.01,
+            },
+            "step_6g_driver": {
+                "success": True,
+                "output": "DriverWmmPacketsSent6g=210",
+                "timing": 0.01,
+            },
+            "step_24g_refresh": {
+                "success": True,
+                "output": "GetSSIDStatsWmmPacketsSent24g=237",
+                "timing": 0.01,
+            },
+            "step_24g_direct": {
+                "success": True,
+                "output": "WiFi.SSID.8.Stats.WmmPacketsSent.AC_VO=237",
+                "timing": 0.01,
+            },
+            "step_24g_driver": {
+                "success": True,
+                "output": "DriverWmmPacketsSent24g=237",
                 "timing": 0.01,
             },
         }

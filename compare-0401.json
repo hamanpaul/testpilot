@@ -168,7 +168,8 @@
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T153211589688",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T154857895725",
     "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T161920085367",
-    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T164208535136"
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T164208535136",
+    "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T165703228123"
   ],
   "answers_xlsx": "/home/paul_chen/prj_arc/testpilot/0401.xlsx",
   "cases_dir": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases",
@@ -17363,7 +17364,7 @@
       "case_id": "d527-ssid-wmm-ac_vo_stats_wmmpacketssent",
       "case_file": "D527_ac_vo_stats_wmmpacketssent.yaml",
       "dnum": 527,
-      "source_row": 394,
+      "source_row": 527,
       "source_object": "WiFi.SSID.{i}.Stats.WmmPacketsSent.",
       "source_api": "AC_VO",
       "answer_row": 527,
@@ -17374,8 +17375,8 @@
       "mapping_api_match": true,
       "final_status": "Pass",
       "evaluation_verdict": "Pass",
-      "attempts_used": 1,
-      "comment": "",
+      "attempts_used": 2,
+      "comment": "pass after retry (2/2)",
       "bands": {
         "5g": {
           "actual_raw": "Pass",
@@ -17400,7 +17401,7 @@
       "matches_answer": true,
       "workbook_test_steps_excerpt": "1. Connect two WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF \"iperf3 -c <server> -u -b 20M --tos 0xB8\" 3. Verify SSID stats WmmPacketsSent.AC_VO root@prplOS:/# ubus-cli WiFi.SSID.*.Stats.WmmPacketsSent....",
       "workbook_command_output_excerpt": "=== wl0 === AC_VO: tx frames: 34553 bytes: 51750513 failed frames: 0 failed bytes: 0 rx frames: 17428 bytes: 26453929 failed frames: 0 failed bytes: 0 === wl1 === AC_VO: tx frames: 51806 bytes: 77598569 failed frames: 0 failed bytes: 0 r...",
-      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d527-ssid-wmm-ac_vo_stats_wmmpacketssent.json"
+      "trace_path": "/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T165703228123/d527-ssid-wmm-ac_vo_stats_wmmpacketssent.json"
     },
     {
       "case_id": "d528-spectruminfo-bandwidth",
