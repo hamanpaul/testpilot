@@ -167,6 +167,7 @@
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T144404255055`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T145951312696`
   - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T151515413180`
+  - `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260415T153211589688`
 - answer sheet: `/home/paul_chen/prj_arc/testpilot/0401.xlsx`
 - cases dir: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/cases`
 - compare rule: normalize both sides so only `Pass` stays `Pass`; all other values become `Fail`.
@@ -177,8 +178,8 @@
 | metric | value |
 | --- | ---: |
 | compared cases | 420 |
-| full matches | 390 |
-| mismatch cases | 30 |
+| full matches | 391 |
+| mismatch cases | 29 |
 | missing answer rows | 0 |
 | metadata drift rows | 43 |
 
@@ -186,9 +187,9 @@
 
 | band | matched | mismatched |
 | --- | ---: | ---: |
-| 5g | 390 | 30 |
-| 6g | 390 | 30 |
-| 2.4g | 391 | 29 |
+| 5g | 391 | 29 |
+| 6g | 391 | 29 |
+| 2.4g | 392 | 28 |
 
 ## Mismatch table
 
@@ -217,7 +218,6 @@
 | `d485-getradiostats-wmm-bytessent-ac_vo` | 485 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d490-getradiostats-wmm-failedbytessent-ac_be` | 490 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d508-ssid-wmm-ac_be_stats_wmmfailedbytessent_ssid` | 508 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
-| `d522-ssid-wmm-ac_vi_stats_wmmpacketsreceived` | 522 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d523-ssid-wmm-ac_vo_stats_wmmpacketsreceived` | 523 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d524-ssid-wmm-ac_be_stats_wmmpacketssent` | 524 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
 | `d525-ssid-wmm-ac_bk_stats_wmmpacketssent` | 525 | exact | Fail / Fail / Fail | Pass / Pass / Pass | Fail / Fail / Fail | Pass / Pass / Pass | 5g, 6g, 2.4g |
@@ -673,25 +673,6 @@
 - 0401 G excerpt: (empty)
 - 0401 H excerpt: (empty)
 - trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d508-ssid-wmm-ac_be_stats_wmmfailedbytessent_ssid.json`
-
-### d522-ssid-wmm-ac_vi_stats_wmmpacketsreceived
-
-- case file: `D522_ac_vi_stats_wmmpacketsreceived.yaml`
-- answer row: `522`
-- mapping status: `exact`
-- source metadata: `WiFi.SSID.{i}.Stats.WmmPacketsReceived.` / `AC_VI`
-- workbook metadata: `WiFi.SSID.{i}.Stats.WmmPacketsReceived.` / `AC_VI`
-- final status: `Fail`
-- evaluation verdict: `Pass`
-- attempts used: `1`
-- actual raw: `Fail` / `Fail` / `Fail`
-- expected raw: `Pass` / `Pass` / `Pass`
-- actual normalized: `Fail` / `Fail` / `Fail`
-- expected normalized: `Pass` / `Pass` / `Pass`
-- mismatch bands: `5g, 6g, 2.4g`
-- 0401 G excerpt: 1. Connect WiFi station (use another WiFi7 GW as station with built-in IPERF3) 2. Run IPERF "iperf3 -c <server> -u -b 20M --tos 0x88" 3. Verify SSID stats WmmPacketsReceived.AC_VI=0 root@prplOS:/# ubus-cli WiFi.SSID.*.Stats.WmmPacketsRec...
-- 0401 H excerpt: === wl0 === AC_VI: tx frames: 34558 bytes: 51766446 failed frames: 0 failed bytes: 0 rx frames: 17205 bytes: 26495350 failed frames: 0 failed bytes: 0 === wl1 === AC_VI: tx frames: 34536 bytes: 51733490 failed frames: 0 failed bytes: 0 r...
-- trace: `/home/paul_chen/prj_arc/testpilot/plugins/wifi_llapi/reports/agent_trace/20260412T113008433351/d522-ssid-wmm-ac_vi_stats_wmmpacketsreceived.json`
 
 ### d523-ssid-wmm-ac_vo_stats_wmmpacketsreceived
 
