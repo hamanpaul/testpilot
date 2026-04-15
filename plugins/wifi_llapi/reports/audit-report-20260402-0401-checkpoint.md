@@ -1,5 +1,73 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-15 early-161)
+
+> This checkpoint records the `D519 SSID WMM AC_VO Stats WmmFailedSent` workbook alignment.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D519 SSID WMM AC_VO Stats WmmFailedSent` 已完成 closure
+- workbook authority 已刷新為 row `519`
+- 舊 source row `386` 已退休
+- landed case 已改回 workbook direct `WiFi.SSID.{i}.Stats.WmmFailedSent.` / `AC_VO`
+- focused serialwrap survey 與 official rerun `20260415T144404255055` 都 exact-close tri-band refresh / direct getter / driver `0 / 0 / 0`
+- official rerun 維持 `diagnostic_status=Pass`
+- compare 已更新為 `388 / 420 full matches`、`32 mismatches`，metadata drifts 維持 `43`
+- 這也把 current compare-open 的 SSID-level WMM stats closure family 擴大到十二筆：`D496` / `D499` / `D502` / `D505` / `D506` / `D507` / `D510` / `D512` / `D513` / `D517` / `D518` / `D519`
+- localized blockers `D490` / `D481` / `D482` / `D485` / `D454` / `D371` / `D508` 仍維持
+- targeted runtime/budget guardrails=`1251 passed`；full repo regression=`1660 passed`
+- `D355-D357` 仍保留在需要 CSI client setup 的 placeholder bucket，`D359 AccessPoint.IsolationEnable` 仍暫停在 current single-STA lab shape
+- systemic active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- `D414/D415` 仍保留為 readiness-review cluster；workbook `G` 已明示需要 dual-STA 802.11k split
+- next compare-open case=`D520 SSID WMM AC_BE Stats WmmPacketsReceived`；workbook `G/H` 需要 dual-station throughput / iperf traffic，因此先做 readiness survey
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D519 | 519 | Stats.WmmFailedSent.AC_VO | Pass / Pass / Pass | `bgw720-b0-403_wifi_llapi_20260415t144404255055.md L9-L11; L17-L28; 20260415T144404255055_DUT.log L13-L22; L31-L40; L49-L58` | `N/A（20260415T144404255055_STA.log empty）` |
+
+### D519 SSID WMM AC_VO Stats WmmFailedSent alignment evidence
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n '/WmmFailedSent = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmFailedSent5g=\1/p'
+ubus-cli "WiFi.SSID.4.Stats.WmmFailedSent.AC_VO?"
+wl -i wl0 wme_counters | grep '^AC_VO:' | awk '{print "DriverWmmFailedSent5g="$9}'
+ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n '/WmmFailedSent = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmFailedSent6g=\1/p'
+ubus-cli "WiFi.SSID.6.Stats.WmmFailedSent.AC_VO?"
+wl -i wl1 wme_counters | grep '^AC_VO:' | awk '{print "DriverWmmFailedSent6g="$9}'
+ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n '/WmmFailedSent = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmFailedSent24g=\1/p'
+ubus-cli "WiFi.SSID.8.Stats.WmmFailedSent.AC_VO?"
+wl -i wl2 wme_counters | grep '^AC_VO:' | awk '{print "DriverWmmFailedSent24g="$9}'
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260415T144404255055
+- bgw720-b0-403_wifi_llapi_20260415t144404255055.md L9-L11
+  result_5g/result_6g/result_24g = Pass / Pass / Pass with diagnostic_status=Pass
+- bgw720-b0-403_wifi_llapi_20260415t144404255055.md L17-L28
+  workbook-faithful row-519 replay uses getSSIDStats/direct Stats.WmmFailedSent.AC_VO plus wl wme_counters AC_VO tx failed-frame cross-checks
+- 20260415T144404255055_DUT.log L13-L22
+  5G exact-closes `GetSSIDStatsWmmFailedSent5g=0`, `WiFi.SSID.4.Stats.WmmFailedSent.AC_VO=0`, and `DriverWmmFailedSent5g=0`
+- 20260415T144404255055_DUT.log L31-L40
+  6G exact-closes `GetSSIDStatsWmmFailedSent6g=0`, `WiFi.SSID.6.Stats.WmmFailedSent.AC_VO=0`, and `DriverWmmFailedSent6g=0`
+- 20260415T144404255055_DUT.log L49-L58
+  2.4G exact-closes `GetSSIDStatsWmmFailedSent24g=0`, `WiFi.SSID.8.Stats.WmmFailedSent.AC_VO=0`, and `DriverWmmFailedSent24g=0`
+```
+
 ## Checkpoint summary (2026-04-15 early-160)
 
 > This checkpoint records the `D518 SSID WMM AC_VI Stats WmmFailedSent` workbook alignment.
