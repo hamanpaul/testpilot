@@ -81,11 +81,11 @@
 
 ## Latest repo handoff snapshot（2026-04-15）
 
-- `D488 Radio Stats WmmFailedBytesReceived AC_VI` is now aligned via official rerun `20260415T104126818390`
-- workbook authority is row `488`; the stale row `355` plus `getRadioStats() | grep AC_VI_Stats` replay is retired in favor of direct `WiFi.Radio.{i}.Stats.WmmFailedBytesReceived.AC_VI?` getters plus `wl0/wl1/wl2 wme_counters` `AC_VI` rx failed-byte cross-checks
+- `D489 Radio Stats WmmFailedBytesReceived AC_VO` is now aligned via official rerun `20260415T105002687631`
+- workbook authority is row `489`; the stale row `356` plus `getRadioStats() | grep AC_VO_Stats` replay is retired in favor of direct `WiFi.Radio.{i}.Stats.WmmFailedBytesReceived.AC_VO?` getters plus `wl0/wl1/wl2 wme_counters` `AC_VO` rx failed-byte cross-checks
 - the official rerun exact-closes tri-band workbook `Pass / Pass / Pass` at `0 / 0 / 0` with `diagnostic_status=Pass`
-- the rerun logs another transient `serialwrap daemon start failed` warning at startup, but decoded DUT/STA logs are still saved successfully, so evidence completeness is unaffected
-- `D486 Radio Stats WmmFailedBytesReceived AC_BE` and `D487 Radio Stats WmmFailedBytesReceived AC_BK` remain the immediately preceding aligned closures, both exact-closing tri-band `0 / 0 / 0`
+- the focused preprobe also confirms this is not another D481-style mismatch: AC_VO traffic bytes are non-zero, but the authoritative `failed bytes` field still stays at zero on all three bands
+- `D486` / `D487` / `D488` remain the immediately preceding aligned closures, all exact-closing tri-band `0 / 0 / 0`
 - focused workbook-faithful rerun `20260415T101223410820` still marks `D485 Radio Stats WmmBytesSent AC_VO` as a localized blocker: 5G and 2.4G direct getters exact-close `53599 / 43099`, but 6G direct getter `WiFi.Radio.2.Stats.WmmBytesSent.AC_VO?` stays at `0` on both attempts while `wl1 wme_counters` `AC_VO` tx bytes stay at `41612`
 - the D485 focused preprobe had shown an earlier tri-band zero-getter / non-zero-driver shape (`48406 / 31681 / 34271`), but the official rerun proves the stable blocker is localized to 6G; the exploratory rewrite was rolled back instead of being committed
 - focused workbook-faithful rerun `20260415T093205719889` still marks `D481 Radio Stats WmmBytesReceived AC_VO` as a localized blocker instead of a closure: 5G/2.4G direct getter still exact-close `45322 / 31588`, but 6G direct getter `WiFi.Radio.2.Stats.WmmBytesReceived.AC_VO?` stays at `0` while `wl1 wme_counters` `AC_VO` RX bytes stay at `32323`
@@ -96,8 +96,8 @@
 - `D371 AccessPoint.AssociatedDevice.DisassociationTime` is still parked as a localized blocker after focused survey runs `20260415T014146461381` / `20260415T015629548681` / `20260415T020725267608`; the rewrite was rolled back after 24G `assoclist` residue plus later 5G residue / 6G `step11_6g_post_assoc` serialwrap timeout after driver-level detach
 - systemic active blockers remain `D047` authority conflict plus the shared 6G baseline manifestations in `D179` and `D181`; parked clarification items remain `D204` and `D211`
 - `D359 AccessPoint.IsolationEnable` remains parked: workbook requires two WiFi stations plus isolation ping, but the current lab/testbed flow only exposes the standard single-STA path
-- historical blocker context for the temporary D257 empty-array failure is retained in `plugins/wifi_llapi/reports/D257_block.md`; latest committed closure is now `D488 Radio Stats WmmFailedBytesReceived AC_VI`
-- targeted D488/runtime tests, command-budget guardrail, and full repo regression all passed (`1660 passed`). Compare therefore rises to `372 / 420 full matches` / `48 mismatches` while metadata drifts stay at `43`; `D355-D357` remain in the CSI-client placeholder bucket, `D414/D415` stay in readiness review because workbook `G` requires a dual-STA 802.11k split, and the next ready actionable survey target now moves to `D489 Radio Stats WmmFailedBytesReceived AC_VO`
+- historical blocker context for the temporary D257 empty-array failure is retained in `plugins/wifi_llapi/reports/D257_block.md`; latest committed closure is now `D489 Radio Stats WmmFailedBytesReceived AC_VO`
+- targeted D489/runtime tests, command-budget guardrail, and full repo regression all passed (`1660 passed`). Compare therefore rises to `373 / 420 full matches` / `47 mismatches` while metadata drifts stay at `43`; `D355-D357` remain in the CSI-client placeholder bucket, `D414/D415` stay in readiness review because workbook `G` requires a dual-STA 802.11k split, and the next ready actionable survey target now moves to `D490 Radio Stats WmmFailedBytesSent AC_BE`
 - `D214 Radio.RIFSEnabled` is now aligned via official rerun `20260414T175434503053`
 - workbook authority is row `214`, not stale row `175`; the rerun exact-closes the tri-band setter-backed `Default -> Auto -> Default` replay, so the landed case now refreshes stale row `175` / raw `Fail / Fail / Fail` to workbook row `214` / raw `Pass / Pass / Pass`
 - targeted radio/runtime guardrails are now `202 passed`; final full repo regression remains `1662 passed`; compare is now `324 / 420 full matches` / `96 mismatches` / `58 metadata drifts`, and the next ready non-blocked compare-open case moves to `D251 Radio.Vendor.RegulatoryDomainRev`

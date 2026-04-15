@@ -1,5 +1,75 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-15 early-144)
+
+> This checkpoint records the `D489 Radio Stats WmmFailedBytesReceived AC_VO` workbook alignment.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D489 Radio Stats WmmFailedBytesReceived AC_VO` 已完成 closure
+- workbook authority 已刷新為 row `489`
+- 舊 source row `356` 與 `getRadioStats() | grep AC_VO_Stats` replay 已退休
+- landed case 已改回 workbook `WiFi.Radio.{i}.Stats.WmmFailedBytesReceived.` / `AC_VO`
+- focused serialwrap preprobe 已先確認 tri-band direct getter 都是 `0`，而 driver `failed bytes` 也都是 `0`
+- 雖然同一份 preprobe 中 `AC_VO` traffic bytes 本身是非零（5G/6G/2.4G `60420 / 43680 / 42351`），但 workbook authority 對位的是 `failed bytes`，因此這筆不是 D481-style blocker
+- official rerun `20260415T105002687631` exact-close workbook `Pass / Pass / Pass`
+- tri-band direct getter / driver cross-check 都穩定回 `0 / 0 / 0`
+- final report 維持 `diagnostic_status=Pass`
+- targeted D489/runtime tests、command-budget guardrail 與 full repo regression（`1660 passed`）已通過
+- compare 已更新為 `373 / 420 full matches`、`47 mismatches`，metadata drifts 維持 `43`
+- `D486-D488` 也已在同族前幾筆 closure，official rerun 同樣 exact-close `0 / 0 / 0`
+- `D485 Radio Stats WmmBytesSent AC_VO` 仍保留為 localized 6G zero-getter blocker，exploratory rewrite 已回退
+- `D481 Radio Stats WmmBytesReceived AC_VO`、`D482 Radio Stats WmmBytesSent AC_BE`、`D454 getRadioStats().FailedRetransCount` 與 `D371 AccessPoint.AssociatedDevice.DisassociationTime` 仍維持 blocker 狀態
+- `D355-D357` 仍保留在需要 CSI client setup 的 placeholder bucket
+- `D359 AccessPoint.IsolationEnable` 因 two-station isolation ping 需求而暫停在 current single-STA lab shape
+- systemic active blockers 維持 `D047` authority conflict + shared 6G baseline manifestations（`D179`、`D181`）
+- `D414/D415` 仍保留為 readiness-review cluster；workbook `G` 已明示需要 dual-STA 802.11k split
+- next ready actionable survey target=`D490 Radio Stats WmmFailedBytesSent AC_BE`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D489 | 489 | Stats.WmmFailedBytesReceived.AC_VO | Pass / Pass / Pass | `bgw720-0403_wifi_llapi_20260415t105002687631.md L9-L11; L17-L25; 20260415T105002687631_DUT.log L5-L13; L14-L22; L23-L31` | `N/A（DUT-only case；20260415T105002687631_STA.log empty）` |
+
+### D489 Radio Stats WmmFailedBytesReceived AC_VO alignment evidence
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.Stats.WmmFailedBytesReceived.AC_VO?"
+wl -i wl0 wme_counters | grep -A2 '^AC_VO:' | awk '/rx frames:/ {print "DriverWmmFailedBytesReceived5g="$11}'
+ubus-cli "WiFi.Radio.2.Stats.WmmFailedBytesReceived.AC_VO?"
+wl -i wl1 wme_counters | grep -A2 '^AC_VO:' | awk '/rx frames:/ {print "DriverWmmFailedBytesReceived6g="$11}'
+ubus-cli "WiFi.Radio.3.Stats.WmmFailedBytesReceived.AC_VO?"
+wl -i wl2 wme_counters | grep -A2 '^AC_VO:' | awk '/rx frames:/ {print "DriverWmmFailedBytesReceived24g="$11}'
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260415T105002687631
+- bgw720-0403_wifi_llapi_20260415t105002687631.md L9-L11
+  result_5g/result_6g/result_24g = Pass / Pass / Pass with diagnostic_status=Pass
+- bgw720-0403_wifi_llapi_20260415t105002687631.md L17-L25
+  workbook-faithful row-489 replay uses tri-band direct Stats.WmmFailedBytesReceived.AC_VO getters plus wl wme_counters AC_VO rx failed-byte cross-checks
+- 20260415T105002687631_DUT.log L5-L13
+  5G exact-closes `WiFi.Radio.1.Stats.WmmFailedBytesReceived.AC_VO=0` against `DriverWmmFailedBytesReceived5g=0`
+- 20260415T105002687631_DUT.log L14-L22
+  6G exact-closes `WiFi.Radio.2.Stats.WmmFailedBytesReceived.AC_VO=0` against `DriverWmmFailedBytesReceived6g=0`
+- 20260415T105002687631_DUT.log L23-L31
+  2.4G exact-closes `WiFi.Radio.3.Stats.WmmFailedBytesReceived.AC_VO=0` against `DriverWmmFailedBytesReceived24g=0`
+```
+
 ## Checkpoint summary (2026-04-15 early-143)
 
 > This checkpoint records the `D488 Radio Stats WmmFailedBytesReceived AC_VI` workbook alignment.
