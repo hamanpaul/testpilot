@@ -3149,7 +3149,6 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         506: ("Fail", "Fail", "Fail"),
         507: ("Fail", "Fail", "Fail"),
         508: ("Fail", "Fail", "Fail"),
-        517: ("Pass", "Fail", "Pass"),
         518: ("Pass", "Fail", "Fail"),
         519: ("Fail", "Fail", "Fail"),
         520: ("Fail", "Fail", "Fail"),
@@ -3161,7 +3160,7 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         526: ("Fail", "Fail", "Fail"),
     }
     for case_num in range(496, 528):
-        if case_num in {496, 499, 502, 505, 506, 507, 510, 512, 513}:
+        if case_num in {496, 499, 502, 505, 506, 507, 510, 512, 513, 517}:
             continue
         filename = next(cases_dir.glob(f"D{case_num}_*.yaml"))
         case_data = yaml.safe_load(filename.read_text(encoding="utf-8"))
@@ -22689,7 +22688,6 @@ _SSID_WMM_STATS_CASES = [
     ("D514_ac_vi_stats_wmmfailedreceived.yaml", 381, "AC_VI", "WmmFailedReceived"),
     ("D515_ac_vo_stats_wmmfailedreceived.yaml", 382, "AC_VO", "WmmFailedReceived"),
     ("D516_ac_be_stats_wmmfailedsent.yaml", 383, "AC_BE", "WmmFailedSent"),
-    ("D517_ac_bk_stats_wmmfailedsent.yaml", 384, "AC_BK", "WmmFailedSent"),
     ("D518_ac_vi_stats_wmmfailedsent.yaml", 385, "AC_VI", "WmmFailedSent"),
     ("D519_ac_vo_stats_wmmfailedsent.yaml", 386, "AC_VO", "WmmFailedSent"),
     ("D520_ac_be_stats_wmmpacketsreceived.yaml", 387, "AC_BE", "WmmPacketsReceived"),
@@ -23462,6 +23460,91 @@ def test_d513_ssid_stats_wmmfailedreceived_ac_bk_evaluate():
             "step_24g_driver": {
                 "success": True,
                 "output": "DriverWmmFailedReceived24g=0",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case, results) is True
+
+
+def test_d517_ssid_stats_wmmfailedsent_ac_bk_load():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D517_ac_bk_stats_wmmfailedsent.yaml")
+    assert case["id"] == "d517-ssid-wmm-ac_bk_stats_wmmfailedsent"
+    assert case["source"]["row"] == 517
+    assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmFailedSent."
+    assert case["source"]["api"] == "AC_BK"
+    assert case["llapi_support"] == "Support"
+    ref = case["results_reference"]["v4.0.3"]
+    assert ref["5g"] == "Pass"
+    assert ref["6g"] == "Pass"
+    assert ref["2.4g"] == "Pass"
+    assert len(case["steps"]) == 9
+    assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
+    assert 'WiFi.SSID.4.Stats.WmmFailedSent.AC_BK?' in case["steps"][1]["command"]
+    assert 'wme_counters' in case["steps"][2]["command"]
+    assert case["pass_criteria"][0]["field"] == "direct_5g.AC_BK"
+    assert case["pass_criteria"][0]["reference"] == "refresh_5g.GetSSIDStatsWmmFailedSent5g"
+    assert case["pass_criteria"][1]["reference"] == "driver_5g.DriverWmmFailedSent5g"
+
+
+def test_d517_ssid_stats_wmmfailedsent_ac_bk_discover():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D517_ac_bk_stats_wmmfailedsent.yaml")
+    plugin = _load_plugin()
+    discoverable = {c["id"] for c in plugin.discover_cases()}
+    assert case["id"] in discoverable, f"{case['id']} not discoverable"
+
+
+def test_d517_ssid_stats_wmmfailedsent_ac_bk_evaluate():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D517_ac_bk_stats_wmmfailedsent.yaml")
+    results = {
+        "steps": {
+            "step_5g_refresh": {
+                "success": True,
+                "output": "GetSSIDStatsWmmFailedSent5g=0",
+                "timing": 0.01,
+            },
+            "step_5g_direct": {
+                "success": True,
+                "output": "WiFi.SSID.4.Stats.WmmFailedSent.AC_BK=0",
+                "timing": 0.01,
+            },
+            "step_5g_driver": {
+                "success": True,
+                "output": "DriverWmmFailedSent5g=0",
+                "timing": 0.01,
+            },
+            "step_6g_refresh": {
+                "success": True,
+                "output": "GetSSIDStatsWmmFailedSent6g=0",
+                "timing": 0.01,
+            },
+            "step_6g_direct": {
+                "success": True,
+                "output": "WiFi.SSID.6.Stats.WmmFailedSent.AC_BK=0",
+                "timing": 0.01,
+            },
+            "step_6g_driver": {
+                "success": True,
+                "output": "DriverWmmFailedSent6g=0",
+                "timing": 0.01,
+            },
+            "step_24g_refresh": {
+                "success": True,
+                "output": "GetSSIDStatsWmmFailedSent24g=0",
+                "timing": 0.01,
+            },
+            "step_24g_direct": {
+                "success": True,
+                "output": "WiFi.SSID.8.Stats.WmmFailedSent.AC_BK=0",
+                "timing": 0.01,
+            },
+            "step_24g_driver": {
+                "success": True,
+                "output": "DriverWmmFailedSent24g=0",
                 "timing": 0.01,
             },
         }
