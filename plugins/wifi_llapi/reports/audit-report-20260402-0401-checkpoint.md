@@ -1,5 +1,69 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-15 early-137)
+
+> This checkpoint records the `D482 Radio Stats WmmBytesSent AC_BE` focused blocker survey.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D482 Radio Stats WmmBytesSent AC_BE` 尚未 closure；latest committed closure 仍是 `D480`
+- workbook authority 仍是 row `482` 的 direct `WiFi.Radio.{i}.Stats.WmmBytesSent.AC_BE?` getter + `wl wme_counters` AC_BE tx-byte cross-check
+- focused workbook-faithful rerun `20260415T094309892619` 失敗兩次，失敗點先落在 `direct_5g.AC_BE`
+- follow-up serialwrap probe 顯示 5G 與 2.4G direct getter 在補做 `getRadioStats()` refresh 後可追上或 exact-close driver：5G `60344447 -> 63976497` 對 `64000705`、2.4G `59657477 -> 63313893` 對 `63313893`
+- 但 6G direct getter `WiFi.Radio.2.Stats.WmmBytesSent.AC_BE?` 在 refresh 前後都固定維持 `0`
+- 同時間 `wl1 wme_counters` `AC_BE` tx bytes 穩定為 `60485578`
+- `ubus-cli "WiFi.Radio.2.getRadioStats()" | grep AC_BE_Stats` 同樣維持空輸出
+- exploratory rewrite 已回退、不進 commit
+- compare 因此維持 `367 / 420 full matches`、`53 mismatches`，metadata drifts 維持 `43`
+- next ready actionable survey target=`D483 Radio Stats WmmBytesSent AC_BK`
+
+</details>
+
+### D482 Radio Stats WmmBytesSent AC_BE blocker evidence
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.Stats.WmmBytesSent.AC_BE?"
+wl -i wl0 wme_counters | grep '^AC_BE:' | awk '{print "DriverWmmBytesSent5g="$6}'
+ubus-cli "WiFi.Radio.2.Stats.WmmBytesSent.AC_BE?"
+wl -i wl1 wme_counters | grep '^AC_BE:' | awk '{print "DriverWmmBytesSent6g="$6}'
+ubus-cli "WiFi.Radio.3.Stats.WmmBytesSent.AC_BE?"
+wl -i wl2 wme_counters | grep '^AC_BE:' | awk '{print "DriverWmmBytesSent24g="$6}'
+ubus-cli "WiFi.Radio.1.getRadioStats()" | grep AC_BE_Stats
+ubus-cli "WiFi.Radio.1.Stats.WmmBytesSent.AC_BE?"
+wl -i wl0 wme_counters | grep '^AC_BE:'
+ubus-cli "WiFi.Radio.2.getRadioStats()" | grep AC_BE_Stats
+ubus-cli "WiFi.Radio.2.Stats.WmmBytesSent.AC_BE?"
+wl -i wl1 wme_counters | grep '^AC_BE:'
+ubus-cli "WiFi.Radio.3.getRadioStats()" | grep AC_BE_Stats
+ubus-cli "WiFi.Radio.3.Stats.WmmBytesSent.AC_BE?"
+wl -i wl2 wme_counters | grep '^AC_BE:'
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Official rerun 20260415T094309892619
+- bgw720-0403_wifi_llapi_20260415t094309892619.md L9-L11
+  result_5g/result_6g/result_24g = Fail / Fail / Fail with diagnostic_status=FailTest
+- bgw720-0403_wifi_llapi_20260415t094309892619.md L17-L25
+  workbook-faithful row-482 replay uses tri-band direct Stats.WmmBytesSent.AC_BE getters plus wl wme_counters AC_BE tx-byte cross-checks
+- bgw720-0403_wifi_llapi_20260415t094309892619.md L30-L39
+  5G and 2.4G are in the same family as driver counters but fail the current no-refresh comparison, while 6G stays `WiFi.Radio.2.Stats.WmmBytesSent.AC_BE=0` vs `DriverWmmBytesSent6g=60437196`
+- 20260415T094309892619_DUT.log L5-L63
+  official rerun repeats the same 6G zero-getter drift on both attempts
+
+Focused serialwrap probe after rerun
+- 5G direct-before / refresh / direct-after / driver
+  `60344447 -> 63976497` after refresh; driver `64000705`
+- 6G direct-before / refresh / direct-after / driver
+  direct getter stays `0`, `ubus-cli "WiFi.Radio.2.getRadioStats()" | grep AC_BE_Stats` stays empty, driver `60485578`
+- 2.4G direct-before / refresh / direct-after / driver
+  `59657477 -> 63313893` after refresh; driver `63313893`
+```
+
 ## Checkpoint summary (2026-04-15 early-136)
 
 > This checkpoint records the `D481 Radio Stats WmmBytesReceived AC_VO` focused blocker survey.
