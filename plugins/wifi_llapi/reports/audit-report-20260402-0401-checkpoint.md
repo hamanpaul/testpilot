@@ -1,5 +1,69 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-04-15 early-166)
+
+> This checkpoint records the `D524 SSID WMM AC_BE Stats WmmPacketsSent` blocker survey.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- `D524 SSID WMM AC_BE Stats WmmPacketsSent` 尚未 closure，先記錄為 blocker
+- workbook authority 仍是 row `524`
+- committed YAML 仍停在舊 source row `391`，沒有 land workbook-faithful rewrite
+- focused serialwrap survey 顯示 tri-band `getSSIDStats()` 與 direct getter 都 exact-close，但 driver `wl wme_counters` `AC_BE` `tx frames` 在三個 band 都穩定漂移
+- tri-band drift 形狀：
+  - 5G `452 / 452 / 896`
+  - 6G `510 / 510 / 1015`
+  - 2.4G `547 / 547 / 1090`
+- 在沒有 stable independent oracle 前，不能把 D524 升成 workbook `Pass / Pass / Pass`
+- repo-visible blocker note 已落在 `plugins/wifi_llapi/reports/D524_block.md`
+- strict compare 仍維持 `392 / 420 full matches`、`28 mismatches`、`43` metadata drifts
+- next ready actionable survey target=`D525 SSID WMM AC_BK Stats WmmPacketsSent`
+
+</details>
+
+### D524 SSID WMM AC_BE Stats WmmPacketsSent blocker evidence
+
+**STA 指令**
+
+```sh
+# N/A (DUT-only survey)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n '/WmmPacketsSent = {/,/}/p'
+ubus-cli "WiFi.SSID.4.Stats.WmmPacketsSent.AC_BE?"
+wl -i wl0 wme_counters | grep -A2 '^AC_BE:'
+
+ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n '/WmmPacketsSent = {/,/}/p'
+ubus-cli "WiFi.SSID.6.Stats.WmmPacketsSent.AC_BE?"
+wl -i wl1 wme_counters | grep -A2 '^AC_BE:'
+
+ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n '/WmmPacketsSent = {/,/}/p'
+ubus-cli "WiFi.SSID.8.Stats.WmmPacketsSent.AC_BE?"
+wl -i wl2 wme_counters | grep -A2 '^AC_BE:'
+```
+
+**關鍵 log 摘錄 / log 區間**
+
+```text
+Focused serialwrap survey (2026-04-15)
+- 5G
+  GetSSIDStatsWmmPacketsSent5g=452
+  WiFi.SSID.4.Stats.WmmPacketsSent.AC_BE=452
+  AC_BE: tx frames: 896 bytes: 398214 failed frames: 0 failed bytes: 0
+- 6G
+  GetSSIDStatsWmmPacketsSent6g=510
+  WiFi.SSID.6.Stats.WmmPacketsSent.AC_BE=510
+  AC_BE: tx frames: 1015 bytes: 484878 failed frames: 0 failed bytes: 0
+- 2.4G
+  GetSSIDStatsWmmPacketsSent24g=547
+  WiFi.SSID.8.Stats.WmmPacketsSent.AC_BE=547
+  AC_BE: tx frames: 1090 bytes: 526480 failed frames: 0 failed bytes: 0
+```
+
 ## Checkpoint summary (2026-04-15 early-165)
 
 > This checkpoint records the `D523 SSID WMM AC_VO Stats WmmPacketsReceived` workbook alignment.
