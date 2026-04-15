@@ -1,7 +1,7 @@
-id: d488-getradiostats-wmm-failedbytesreceived-ac_vi
-name: D488 getRadioStats WmmFailedBytesReceived AC_VI
+id: d488-radio-stats-wmmfailedbytesreceived-ac_vi
+name: D488 Radio Stats WmmFailedBytesReceived AC_VI
 source:
-  row: 355
+  row: 488
   object: WiFi.Radio.{i}.Stats.WmmFailedBytesReceived.
   api: AC_VI
   baseline: 0310-BGW720-300
@@ -22,34 +22,65 @@ topology:
       transport: serial
       selector: COM1
 steps:
-- id: step_5g_stats
+- id: step_5g_direct
   target: dut
-  action: read
-  capture: stats_5g
-  command: ubus-cli "WiFi.Radio.1.getRadioStats()" | grep AC_VI_Stats
-  expected: getRadioStats() 回傳有效值
-  description: Radio.1 (5g) getRadioStats()
-- id: step_6g_stats
+  action: exec
+  capture: direct_5g
+  command: 'ubus-cli "WiFi.Radio.1.Stats.WmmFailedBytesReceived.AC_VI?"'
+  expected: Stats.WmmFailedBytesReceived.AC_VI getter 回傳有效值
+  description: Radio.1 (5g) direct Stats.WmmFailedBytesReceived.AC_VI
+- id: step_5g_driver
   target: dut
-  action: read
-  capture: stats_6g
-  command: ubus-cli "WiFi.Radio.2.getRadioStats()" | grep AC_VI_Stats
-  expected: getRadioStats() 回傳有效值
-  description: Radio.2 (6g) getRadioStats()
-- id: step_24g_stats
+  action: exec
+  capture: driver_5g
+  command: wl -i wl0 wme_counters | grep -A2 '^AC_VI:' | awk '/rx frames:/ {print "DriverWmmFailedBytesReceived5g="$11}'
+  expected: wl0 wme_counters 匯出 AC_VI rx failed bytes
+  description: Radio.1 (5g) driver AC_VI rx failed bytes
+- id: step_6g_direct
   target: dut
-  action: read
-  capture: stats_24g
-  command: ubus-cli "WiFi.Radio.3.getRadioStats()" | grep AC_VI_Stats
-  expected: getRadioStats() 回傳有效值
-  description: Radio.3 (2.4g) getRadioStats()
+  action: exec
+  capture: direct_6g
+  command: 'ubus-cli "WiFi.Radio.2.Stats.WmmFailedBytesReceived.AC_VI?"'
+  expected: Stats.WmmFailedBytesReceived.AC_VI getter 回傳有效值
+  description: Radio.2 (6g) direct Stats.WmmFailedBytesReceived.AC_VI
+- id: step_6g_driver
+  target: dut
+  action: exec
+  capture: driver_6g
+  command: wl -i wl1 wme_counters | grep -A2 '^AC_VI:' | awk '/rx frames:/ {print "DriverWmmFailedBytesReceived6g="$11}'
+  expected: wl1 wme_counters 匯出 AC_VI rx failed bytes
+  description: Radio.2 (6g) driver AC_VI rx failed bytes
+- id: step_24g_direct
+  target: dut
+  action: exec
+  capture: direct_24g
+  command: 'ubus-cli "WiFi.Radio.3.Stats.WmmFailedBytesReceived.AC_VI?"'
+  expected: Stats.WmmFailedBytesReceived.AC_VI getter 回傳有效值
+  description: Radio.3 (2.4g) direct Stats.WmmFailedBytesReceived.AC_VI
+- id: step_24g_driver
+  target: dut
+  action: exec
+  capture: driver_24g
+  command: wl -i wl2 wme_counters | grep -A2 '^AC_VI:' | awk '/rx frames:/ {print "DriverWmmFailedBytesReceived24g="$11}'
+  expected: wl2 wme_counters 匯出 AC_VI rx failed bytes
+  description: Radio.3 (2.4g) driver AC_VI rx failed bytes
 pass_criteria:
-- field: stats_5g.WmmFailedBytesReceived
-  operator: regex
-  value: ^\d+$
-- field: stats_6g.WmmFailedBytesReceived
-  operator: regex
-  value: ^\d+$
-- field: stats_24g.WmmFailedBytesReceived
-  operator: regex
-  value: ^\d+$
+- field: direct_5g.AC_VI
+  operator: equals
+  reference: driver_5g.DriverWmmFailedBytesReceived5g
+  description: 5g direct Stats.WmmFailedBytesReceived.AC_VI must match wl0 wme_counters AC_VI rx failed bytes.
+- field: direct_6g.AC_VI
+  operator: equals
+  reference: driver_6g.DriverWmmFailedBytesReceived6g
+  description: 6g direct Stats.WmmFailedBytesReceived.AC_VI must match wl1 wme_counters AC_VI rx failed bytes.
+- field: direct_24g.AC_VI
+  operator: equals
+  reference: driver_24g.DriverWmmFailedBytesReceived24g
+  description: 2.4g direct Stats.WmmFailedBytesReceived.AC_VI must match wl2 wme_counters AC_VI rx failed bytes.
+verification_command:
+  - 'ubus-cli "WiFi.Radio.1.Stats.WmmFailedBytesReceived.AC_VI?"'
+  - 'wl -i wl0 wme_counters | grep -A2 ''^AC_VI:'' | awk ''/rx frames:/ {print "DriverWmmFailedBytesReceived5g="$11}'''
+  - 'ubus-cli "WiFi.Radio.2.Stats.WmmFailedBytesReceived.AC_VI?"'
+  - 'wl -i wl1 wme_counters | grep -A2 ''^AC_VI:'' | awk ''/rx frames:/ {print "DriverWmmFailedBytesReceived6g="$11}'''
+  - 'ubus-cli "WiFi.Radio.3.Stats.WmmFailedBytesReceived.AC_VI?"'
+  - 'wl -i wl2 wme_counters | grep -A2 ''^AC_VI:'' | awk ''/rx frames:/ {print "DriverWmmFailedBytesReceived24g="$11}'''
