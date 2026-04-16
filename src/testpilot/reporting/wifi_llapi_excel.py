@@ -91,6 +91,10 @@ class WifiLlapiCaseResult:
     diagnostic_status: str = ""
     remediation_history: list[dict[str, object]] = field(default_factory=list)
     failure_snapshot: dict[str, object] | None = None
+    case_started_at: str = ""
+    case_finished_at: str = ""
+    case_duration_seconds: float = 0.0
+    overall_status: str = ""
 
 
 def normalize_text(text: str | None) -> str:

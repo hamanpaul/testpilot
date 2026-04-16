@@ -27,6 +27,20 @@ _META: dict[str, Any] = {
     "dut_model": "AX-9000",
     "firmware_version": "1.2.3",
     "plugin": "wifi_llapi",
+    "timing": [
+        {
+            "metric": "suite run",
+            "started_at": "2025-07-15T10:00:00+08:00",
+            "finished_at": "2025-07-15T10:02:00+08:00",
+            "duration_seconds": 120,
+        },
+        {
+            "metric": "environment buildup",
+            "started_at": "2025-07-15T10:00:00+08:00",
+            "finished_at": "2025-07-15T10:00:15+08:00",
+            "duration_seconds": 15,
+        },
+    ],
 }
 
 _CASES: list[dict[str, Any]] = [
@@ -41,6 +55,9 @@ _CASES: list[dict[str, Any]] = [
         "diagnostic_status": "FailEnv",
         "comment": "6G radio off",
         "tester": "bot",
+        "case_started_at": "2025-07-15T10:00:15+08:00",
+        "case_finished_at": "2025-07-15T10:01:00+08:00",
+        "case_duration_seconds": 45,
     },
     {
         "case_id": "D002",
@@ -53,6 +70,9 @@ _CASES: list[dict[str, Any]] = [
         "diagnostic_status": "PassAfterRemediation",
         "comment": "",
         "tester": "bot",
+        "case_started_at": "2025-07-15T10:01:00+08:00",
+        "case_finished_at": "2025-07-15T10:02:00+08:00",
+        "case_duration_seconds": 60,
     },
 ]
 
@@ -92,6 +112,12 @@ class TestMarkdownReporter:
         assert "| D001 |" in text
         assert "| D002 |" in text
         assert "diagnostic_status" in text
+        assert "## Timing" in text
+        assert "## Suite summary" in text
+        assert "## Per-case timing" in text
+        assert "| pass_cases | failed_cases | other_cases | pass_rate |" in text
+        assert "| 0 | 1 | 1 | `0.00%` |" in text
+        assert "| D001 | `2025-07-15T10:01:00+08:00` | `00:00:45` |" in text
 
     def test_case_details_collapsible(self, tmp_path: Path) -> None:
         out = tmp_path / "report.md"
@@ -149,6 +175,10 @@ class TestJsonReporter:
             "FailEnv": 1,
             "PassAfterRemediation": 1,
         }
+        assert summary["pass_cases"] == 0
+        assert summary["failed_cases"] == 1
+        assert summary["other_cases"] == 1
+        assert summary["pass_rate"] == 0.0
 
     def test_meta_preserved(self, tmp_path: Path) -> None:
         out = tmp_path / "report.json"

@@ -15,6 +15,7 @@ from datetime import date, datetime
 import json
 import logging
 from pathlib import Path
+import time
 from typing import Any
 
 try:
@@ -549,6 +550,10 @@ class Orchestrator:
         pass_count = 0
         fail_count = 0
         case_trace_files: list[str] = []
+        run_started_monotonic = time.monotonic()
+        run_started_at_iso = datetime.now().astimezone().isoformat(timespec="seconds")
+        first_case_started_monotonic: float | None = None
+        first_case_started_at_iso = ""
 
         # -- serialwrap daemon lifecycle: start fresh for this run -------------
         wal_path = self._start_serialwrap_for_run()
@@ -589,6 +594,11 @@ class Orchestrator:
                         active_session_id = session_handle.get("session_id")
 
             seq_before = log_capture.get_current_seq(wal_path)
+            case_started_monotonic = time.monotonic()
+            case_started_at_iso = datetime.now().astimezone().isoformat(timespec="seconds")
+            if first_case_started_monotonic is None:
+                first_case_started_monotonic = case_started_monotonic
+                first_case_started_at_iso = case_started_at_iso
             try:
                 retry_result = self.execution_engine.execute_with_retry(
                     plugin=plugin,
@@ -598,6 +608,8 @@ class Orchestrator:
                 )
             finally:
                 self._cleanup_case_session(active_session_id)
+            case_finished_monotonic = time.monotonic()
+            case_finished_at_iso = datetime.now().astimezone().isoformat(timespec="seconds")
             seq_after = log_capture.get_current_seq(wal_path)
             case_seq_ranges[case_id] = {
                 "seq_start": seq_before,
@@ -662,6 +674,13 @@ class Orchestrator:
                     diagnostic_status=retry_result.diagnostic_status,
                     remediation_history=retry_result.remediation_history or [],
                     failure_snapshot=retry_result.failure_snapshot,
+                    case_started_at=case_started_at_iso,
+                    case_finished_at=case_finished_at_iso,
+                    case_duration_seconds=round(
+                        case_finished_monotonic - case_started_monotonic,
+                        3,
+                    ),
+                    overall_status=status,
                 )
             )
 
@@ -695,12 +714,39 @@ class Orchestrator:
         # -- md / json reports ------------------------------------------------
         import dataclasses
 
+        run_finished_monotonic = time.monotonic()
+        run_finished_at_iso = datetime.now().astimezone().isoformat(timespec="seconds")
+        timing_rows: list[dict[str, Any]] = [
+            {
+                "metric": "suite run",
+                "started_at": run_started_at_iso,
+                "finished_at": run_finished_at_iso,
+                "duration_seconds": round(
+                    run_finished_monotonic - run_started_monotonic,
+                    3,
+                ),
+            }
+        ]
+        if first_case_started_monotonic is not None:
+            timing_rows.append(
+                {
+                    "metric": "environment buildup",
+                    "started_at": run_started_at_iso,
+                    "finished_at": first_case_started_at_iso,
+                    "duration_seconds": round(
+                        first_case_started_monotonic - run_started_monotonic,
+                        3,
+                    ),
+                }
+            )
+
         report_meta: dict[str, Any] = {
             "title": f"{fw_ver}_wifi_LLAPI_{run_id}",
             "date": run_date.isoformat(),
             "plugin": plugin_name,
             "firmware_version": fw_ver,
             "run_id": run_id,
+            "timing": timing_rows,
         }
         case_dicts = [dataclasses.asdict(cr) for cr in case_results]
         md_json_paths = generate_reports(
