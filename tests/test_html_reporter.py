@@ -345,6 +345,53 @@ class TestEdgeCases:
         assert "L50-L80" in text
         assert "Log Reference" in text
 
+    def test_log_snippets_from_artifact_logs(self, tmp_path: Path) -> None:
+        (tmp_path / "DUT.log").write_text(
+            "dut line 1\ndut line 2\ndut line 3\ndut line 4\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "STA.log").write_text(
+            "sta line 1\nsta line 2\nsta line 3\n",
+            encoding="utf-8",
+        )
+        cases: list[dict[str, Any]] = [
+            {
+                "case_id": "D071",
+                "result_5g": "fail",
+                "dut_log_lines": "L2-L3",
+                "sta_log_lines": "L1-L2",
+            },
+        ]
+        out = tmp_path / "report.html"
+        HtmlReporter().generate(cases, _META, out)
+        text = out.read_text(encoding="utf-8")
+        assert "DUT Log Snippet" in text
+        assert "STA Log Snippet" in text
+        assert "L2: dut line 2" in text
+        assert "L3: dut line 3" in text
+        assert "L1: sta line 1" in text
+        assert "L2: sta line 2" in text
+
+    def test_log_snippets_truncate_large_ranges(self, tmp_path: Path) -> None:
+        dut_lines = "\n".join(f"dut line {idx}" for idx in range(1, 201)) + "\n"
+        (tmp_path / "DUT.log").write_text(dut_lines, encoding="utf-8")
+        cases: list[dict[str, Any]] = [
+            {
+                "case_id": "D072",
+                "result_5g": "fail",
+                "dut_log_lines": "L1-L200",
+            },
+        ]
+        out = tmp_path / "report.html"
+        HtmlReporter().generate(cases, _META, out)
+        text = out.read_text(encoding="utf-8")
+        assert "Snippet truncated for readability" in text
+        assert "L1: dut line 1" in text
+        assert "L60: dut line 60" in text
+        assert "... (80 lines omitted) ..." in text
+        assert "L141: dut line 141" in text
+        assert "L200: dut line 200" in text
+
     def test_multiline_command_output(self, tmp_path: Path) -> None:
         cases: list[dict[str, Any]] = [
             {

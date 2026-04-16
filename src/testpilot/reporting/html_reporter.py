@@ -7,6 +7,7 @@ beyond optional Google Fonts for Montserrat / Noto Sans TC.
 from __future__ import annotations
 
 import html
+import re
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -43,6 +44,11 @@ _OVERALL_COLORS: dict[str, tuple[str, str]] = {
     "Mixed": ("#fff8e1", "#FEB80A"),
     "Non-pass expected": ("#e8f4fd", "#00ADDC"),
 }
+
+_LOG_RANGE_RE = re.compile(r"^L(?P<start>\d+)(?:-L(?P<end>\d+))?$")
+_MAX_LOG_SNIPPET_LINES = 120
+_TRUNCATED_HEAD_LINES = 60
+_TRUNCATED_TAIL_LINES = 60
 
 
 def _esc(value: Any) -> str:
@@ -234,6 +240,7 @@ class HtmlReporter:
         output_path: Path,
     ) -> Path:
         summary = _summarise(case_results)
+        artifact_dir = output_path.parent
         parts: list[str] = []
         parts.append(self._doc_open(meta))
         parts.append(self._kpi_strip(summary))
@@ -241,11 +248,58 @@ class HtmlReporter:
         parts.append(self._timing_section(meta, case_results))
         parts.append(self._suite_summary_section(summary))
         parts.append(self._per_case_timing(case_results))
-        parts.append(self._case_details(case_results))
+        parts.append(self._case_details(case_results, artifact_dir))
         parts.append(self._doc_close())
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text("\n".join(parts), encoding="utf-8")
         return output_path
+
+    @staticmethod
+    def _parse_line_range(raw: str) -> tuple[int, int] | None:
+        match = _LOG_RANGE_RE.match(raw.strip())
+        if not match:
+            return None
+        start = int(match.group("start"))
+        end = int(match.group("end") or start)
+        if start > end:
+            start, end = end, start
+        return start, end
+
+    @classmethod
+    def _log_excerpt(cls, log_path: Path, line_ref: str) -> tuple[str, bool] | None:
+        parsed = cls._parse_line_range(line_ref)
+        if parsed is None or not log_path.is_file():
+            return None
+        start, end = parsed
+        lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+        if not lines or start < 1:
+            return None
+        excerpt_lines = lines[start - 1:end]
+        if not excerpt_lines:
+            return None
+
+        truncated = len(excerpt_lines) > _MAX_LOG_SNIPPET_LINES
+        if truncated:
+            head = excerpt_lines[:_TRUNCATED_HEAD_LINES]
+            tail = excerpt_lines[-_TRUNCATED_TAIL_LINES:]
+            numbered_lines = [
+                f"L{start + idx}: {line}"
+                for idx, line in enumerate(head)
+            ]
+            omitted = len(excerpt_lines) - (_TRUNCATED_HEAD_LINES + _TRUNCATED_TAIL_LINES)
+            if omitted > 0:
+                numbered_lines.append(f"... ({omitted} lines omitted) ...")
+            tail_start = end - len(tail) + 1
+            numbered_lines.extend(
+                f"L{tail_start + idx}: {line}"
+                for idx, line in enumerate(tail)
+            )
+        else:
+            numbered_lines = [
+                f"L{start + idx}: {line}"
+                for idx, line in enumerate(excerpt_lines)
+            ]
+        return "\n".join(numbered_lines), truncated
 
     # -- document shell -----------------------------------------------------
 
@@ -419,10 +473,17 @@ class HtmlReporter:
     # -- per-case collapsible details ---------------------------------------
 
     @staticmethod
-    def _case_details(case_results: Sequence[Mapping[str, Any]]) -> str:
+    def _case_details(
+        case_results: Sequence[Mapping[str, Any]],
+        artifact_dir: Path,
+    ) -> str:
         if not case_results:
             return ""
         lines = ["<h2>Case Details</h2>"]
+        log_paths = {
+            "DUT": artifact_dir / "DUT.log",
+            "STA": artifact_dir / "STA.log",
+        }
         for case in case_results:
             cid = case.get("case_id", "unknown")
             overall = _overall_status(case)
@@ -472,6 +533,24 @@ class HtmlReporter:
                 if sta_lines:
                     lines.append(f"<li>STA: <code>{_esc(sta_lines)}</code></li>")
                 lines.append("</ul>")
+                for device, line_ref in (("DUT", dut_lines), ("STA", sta_lines)):
+                    if not line_ref:
+                        continue
+                    excerpt = HtmlReporter._log_excerpt(log_paths[device], line_ref)
+                    if excerpt is None:
+                        continue
+                    excerpt_text, truncated = excerpt
+                    lines.append(
+                        f"<p><strong>{device} Log Snippet</strong> "
+                        f"<code>{_esc(line_ref)}</code></p>"
+                    )
+                    if truncated:
+                        lines.append(
+                            "<div class='detail-meta'>"
+                            "Snippet truncated for readability; showing head and tail of the referenced range."
+                            "</div>"
+                        )
+                    lines.append(f'<pre class="code-block">{_esc(excerpt_text)}</pre>')
 
             # Duration
             dur = case.get("case_duration_seconds")
