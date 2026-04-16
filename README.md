@@ -501,6 +501,15 @@ uv pip install -e ".[dev]"    # Install (first time only)
 uv run pytest -q              # Run full test suite
 ```
 
+### Versioning & Releases
+
+- TestPilot uses Semantic Versioning with git tags in the form `vX.Y.Z`; the managed baseline for this flow starts at `v0.1.5`.
+- The canonical project version lives in `pyproject.toml`; `src/testpilot/__init__.py` mirrors it for runtime `--version` output and must stay identical.
+- `CHANGELOG.md` keeps the curated repo changelog, while GitHub Releases publish auto-generated release notes from the tagged release.
+- User-facing pull requests should update `CHANGELOG.md` under `Unreleased` unless the change truly has no release-note impact.
+- Release preparation happens in a dedicated `release/vX.Y.Z` PR, and the tag `vX.Y.Z` is created from the merged `main` commit after CI is green.
+- Full policy: [`docs/release-flow.md`](docs/release-flow.md)
+
 ### License
 
 MIT
@@ -852,6 +861,15 @@ testpilot/
 uv pip install -e ".[dev]"    # 安裝（僅首次）
 uv run pytest -q              # 執行全部測試
 ```
+
+### 版號與 Release
+
+- TestPilot 採用 Semantic Versioning，git tag 格式固定為 `vX.Y.Z`；此流程的受管理起始 baseline 為 `v0.1.5`。
+- canonical project version 放在 `pyproject.toml`；`src/testpilot/__init__.py` 是提供 runtime `--version` 的 mirror，兩者必須保持一致。
+- `CHANGELOG.md` 保存 repo 內的 curated changelog；GitHub Releases 則負責從 tagged release 自動產生 release notes。
+- 只要是 user-facing 的 PR，原則上都要更新 `CHANGELOG.md` 的 `Unreleased` 區塊；若確實不需要，應在 PR 中明確說明。
+- release preparation 應放在專用的 `release/vX.Y.Z` PR 中進行，並在 CI 綠燈後，從已合併的 `main` commit 建立 `vX.Y.Z` tag。
+- 完整流程請見：[`docs/release-flow.md`](docs/release-flow.md)
 
 ### 授權
 

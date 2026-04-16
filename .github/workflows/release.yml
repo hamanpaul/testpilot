@@ -1,0 +1,63 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Verify tag matches project version
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          import tomllib
+          from pathlib import Path
+
+          tag_name = os.environ["TAG_NAME"]
+          pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+          package_version = pyproject["project"]["version"]
+          init_text = Path("src/testpilot/__init__.py").read_text(encoding="utf-8")
+          match = re.search(r'__version__\s*=\s*"([^"]+)"', init_text)
+          if match is None:
+              raise SystemExit("Could not read __version__ from src/testpilot/__init__.py")
+          runtime_version = match.group(1)
+          expected_tag = f"v{package_version}"
+          if runtime_version != package_version:
+              raise SystemExit(
+                  f"Version mismatch: pyproject={package_version} __init__={runtime_version}"
+              )
+          if tag_name != expected_tag:
+              raise SystemExit(f"Tag {tag_name} does not match expected {expected_tag}")
+          print(f"Validated release tag {tag_name}")
+          PY
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Release already exists for $TAG_NAME"
+            exit 0
+          fi
+          gh release create "$TAG_NAME" --verify-tag --generate-notes --title "$TAG_NAME"

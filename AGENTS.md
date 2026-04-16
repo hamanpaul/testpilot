@@ -49,6 +49,15 @@ uv run pytest -q
 2. one-off campaign notes such as `*-full-run-static.md` and root-level STA experiment scratch notes are local-only unless explicitly promoted into `docs/`.
 3. reusable report assets that stay versioned belong under `plugins/wifi_llapi/reports/templates/`; runtime output bundles under `plugins/wifi_llapi/reports/<artifact_name>/` remain untracked.
 
+## Versioning and Release Policy
+
+1. Repository release tags use Semantic Versioning in the form `vX.Y.Z`; the managed baseline for this workflow starts at `v0.1.5`.
+2. Canonical project version lives in `pyproject.toml`; `src/testpilot/__init__.py` is the runtime mirror for `testpilot --version` and must stay identical.
+3. User-facing pull requests should update `CHANGELOG.md` under `Unreleased`, or explicitly record why no changelog entry is needed.
+4. Release preparation happens in a dedicated `release/vX.Y.Z` PR that updates version metadata, finalizes `CHANGELOG.md`, and syncs `README.md`, `docs/release-flow.md`, and this `AGENTS.md` when process guidance changes.
+5. Only tag merged `main` commits; release tags must be `vX.Y.Z` and match the in-repo version. Tag push is responsible for publishing the GitHub Release.
+6. Prefer GitHub-native controls first: PR template checklist, Actions CI, and tag-triggered Releases. Add extra local rules only where GitHub cannot enforce behavior directly.
+
 ## Todo Governance（嚴格）
 
 1. `docs/todos.md` 是唯一待辦看板。
