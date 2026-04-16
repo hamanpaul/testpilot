@@ -423,10 +423,26 @@ class JsonReporter:
 # Convenience helper
 # ---------------------------------------------------------------------------
 
-_FORMAT_REGISTRY: dict[str, type[MarkdownReporter | JsonReporter]] = {
+def _html_reporter_class() -> type:
+    """Lazy import to avoid circular dependency."""
+    from testpilot.reporting.html_reporter import HtmlReporter
+    return HtmlReporter
+
+
+_FORMAT_REGISTRY: dict[str, type] = {
     "md": MarkdownReporter,
     "json": JsonReporter,
 }
+
+
+def _resolve_reporter(fmt: str) -> type:
+    """Resolve format key to reporter class, supporting lazy-loaded entries."""
+    if fmt == "html":
+        return _html_reporter_class()
+    cls = _FORMAT_REGISTRY.get(fmt)
+    if cls is None:
+        raise ValueError(f"Unsupported report format: {fmt!r}")
+    return cls
 
 
 def generate_reports(
@@ -441,9 +457,7 @@ def generate_reports(
     stem = explicit_stem or str(meta.get("title", "report")).replace(" ", "_").lower()
     paths: list[Path] = []
     for fmt in formats:
-        cls = _FORMAT_REGISTRY.get(fmt)
-        if cls is None:
-            raise ValueError(f"Unsupported report format: {fmt!r}")
+        cls = _resolve_reporter(fmt)
         out = output_dir / f"{stem}.{fmt}"
         reporter = cls()
         reporter.generate(case_results, meta, out)

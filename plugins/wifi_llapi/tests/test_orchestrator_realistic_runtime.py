@@ -720,7 +720,8 @@ def test_realistic_runtime_can_rerun_from_existing_template_without_source_xlsx(
     assert second_result["status"] == "completed"
     assert Path(second_result["template_path"]).is_file()
     assert Path(second_result["report_path"]).is_file()
-    assert second_result["source_report"] == str(source_xlsx)
+    # Manifest now stores portable relative paths, so compare basenames
+    assert Path(second_result["source_report"]).name == Path(str(source_xlsx)).name
 
 
 def test_realistic_runtime_records_pass_after_remediation(tmp_path: Path, monkeypatch):

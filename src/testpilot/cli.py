@@ -430,5 +430,27 @@ def rewrite_yaml_commands(
     click.echo(json.dumps(preview, indent=2, ensure_ascii=False))
 
 
+@wifi_llapi_group.command("json-to-html")
+@click.argument("json_report", type=click.Path(exists=True, dir_okay=False))
+@click.option(
+    "--out",
+    default=None,
+    type=click.Path(dir_okay=False),
+    help="Output HTML path. Defaults to same stem as JSON report with .html extension.",
+)
+def json_to_html(json_report: str, out: str | None) -> None:
+    """Generate an HTML report from an existing JSON report file."""
+    from testpilot.reporting.html_reporter import HtmlReporter
+
+    src = Path(json_report)
+    payload = json.loads(src.read_text(encoding="utf-8"))
+    cases = payload.get("cases", [])
+    meta = payload.get("meta", {})
+    out_path = Path(out) if out else src.with_suffix(".html")
+    reporter = HtmlReporter()
+    result = reporter.generate(cases, meta, out_path)
+    console.print(f"[green]✓[/green] HTML report: {result}")
+
+
 if __name__ == "__main__":
     main()
