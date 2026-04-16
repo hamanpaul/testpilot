@@ -216,12 +216,13 @@ TestPilot 的主目標是：
 ### 3.2 Final verdict authority
 
 - `plugin.evaluate()` 與 deterministic rerun outcome 才能決定最終 `Pass/Fail`。
-- advisory agent 可以補充 root cause / suggestion / diagnostic status，但不可覆寫 canonical evidence。
+- advisory agent 可以補充 comment / root cause / suggestion / diagnostic annotations，但不可覆寫 canonical evidence。
 
 ### 3.3 報告投影分離
 
 - `xlsx`：Pass / Fail only
-- `md/json`：`Pass`、`PassAfterRemediation`、`FailEnv`、`FailConfig`、`FailTest`、`Inconclusive` + root cause + suggestion + remediation history
+- `md/json`：`comment`、`diagnostic_status`、`failure_snapshot`、`remediation_history`、timing、log line references
+- `html`：由既有 `json` opt-in 轉出的 self-contained diagnostic review artifact
 
 ### 3.4 Agent / model policy（第三次重構目標）
 

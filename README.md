@@ -13,11 +13,20 @@ Plugin-based test automation framework for embedded device verification (prplOS 
 TestPilot is a plugin-based test automation framework for prplOS / OpenWrt embedded devices. The architecture splits into two planes:
 
 - **Deterministic verdict kernel** — test execution, evidence collection, pass/fail verdicts, and report projection.
-- **Copilot SDK control plane** — session management, custom agents, advisory audit, and hook-governed safe remediation.
+- **Copilot SDK control plane** — per-case session foundation, lifecycle hooks, advisory audit, safe remediation, and extension surfaces such as custom agents / skills / selective MCP.
 
 Core principle: **the Copilot SDK handles the control plane; it does NOT decide the final verdict.**
 
 `wifi_llapi` currently supports in-run safe remediation between retry attempts. Scope is limited to environment repair only: serial session recovery, STA reconnect, band baseline rebuild, and environment re-verify. It does not rewrite YAML semantics, step commands, or pass criteria.
+
+Current landed control-plane subset today:
+
+- per-case runner selection with `selection_trace`
+- best-effort per-case Copilot session foundation
+- lifecycle hook dispatch (`pre_case`, `post_case`, `pre_step`, `post_step`, `on_failure`, `on_retry`)
+- advisory collection plus safe-environment remediation between retry attempts
+
+Custom agents / skills / MCP remain extension surfaces in the current codebase rather than default hot-path runtime wiring.
 
 ### Prerequisites
 
@@ -150,6 +159,10 @@ python scripts/compare_0401_answers.py \
   --output-md compare-0401.md \
   --output-json compare-0401.json
 
+# Generate an HTML diagnostic report from an existing JSON run artifact
+testpilot wifi-llapi json-to-html \
+  plugins/wifi_llapi/reports/<artifact_name>/<artifact_name>.json
+
 # With Azure OpenAI
 testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
 ```
@@ -165,6 +178,7 @@ Baseline experiment authority and current lab findings live in `docs/wifi-baseli
 | External delivery | `xlsx` | Pass / Fail only, written to Excel report |
 | Internal diagnostics | `md` | Human-readable summary with per-case commands, output, log line references, and diagnostic status |
 | Structured data | `json` | Machine-readable with summary stats, diagnostic status, remediation history, and log line numbers |
+| Local HTML diagnostic | `html` | Self-contained review/share output generated from an existing JSON report |
 | UART RAW log | `DUT.log` / `STA.log` | serialwrap WAL decoded per-run UART communication records |
 
 Per-run output location: `plugins/wifi_llapi/reports/<artifact_name>/`
@@ -173,12 +187,15 @@ Typical artifact bundle contents:
 - `<artifact_name>.xlsx`
 - `<artifact_name>.md`
 - `<artifact_name>.json`
+- `<artifact_name>.html` (when generated via `json-to-html`)
 - `DUT.log`
 - `STA.log`
 - `agent_trace/`
 - `alignment_issues.json` (only when row alignment warnings are emitted)
 
 Shared template files remain under `plugins/wifi_llapi/reports/templates/`.
+
+> **Historical checkpoint note:** the time-stamped calibration/full-run bullets below are retained as audit handoff history. Their counts are period-specific snapshots, not the current branch-wide regression baseline.
 
 - current lab readiness status: multi-band baseline qualification is complete — `5G/6G/2.4G` all passed `baseline-qualify --repeat-count 5 --soak-minutes 15`; custom-6G hardening stabilized the old `D019/D027` 6G bring-up path, and the old `D032` `sta_band_not_ready` environment failure is gone. The invalid full run `20260412T084218316557` was stopped after early `D007`/`D009`/`D010`/`D011` multi-band instability, then both boards were hard-reset and recovered back to `READY`; patched sequential reruns `20260412T110545613993` (`D009`), `20260412T111048362099` (`D010`), and `20260412T111549474171` (`D011`) all returned `Pass/Pass/Pass` on the same baseline, so the old `D009/D010 FailEnv` and `D011 FailTest` prefix no longer reproduces
 - latest full-run checkpoint: recovery commit `338891b7115e5c41d04f45bd79c70ce4b117cebc` is now pushed, and authoritative full run `20260412T113008433351` completed all `420` cases without reintroducing the old early baseline collapse (`D004`~`D013` all stayed `Pass/Pass/Pass`). `compare-0401` on that run raised the snapshot to `235 / 420 full matches`, `185 mismatches`, and `62 metadata drifts`; actionable workbook-Pass gaps are `156`
@@ -349,11 +366,11 @@ graph TB
     end
 
     subgraph CP["Copilot SDK Control Plane"]
-        sdk["SDK Client<br/>create / resume / delete"]
-        hooks["Hooks<br/>on_session_start / on_pre_tool_use<br/>on_post_tool_use / on_error_occurred"]
-        agents["Custom Agents<br/>operator / case-auditor<br/>remediation-planner / run-summarizer"]
-        skills["Skills<br/>wifi diagnostics / remediation policy"]
-        mcp["Selective MCP<br/>GitHub / KB / lab inventory"]
+        sdk["SDK Session Foundation<br/>create / delete per-case session"]
+        hooks["Lifecycle Hooks<br/>pre_case / post_case<br/>pre_step / post_step<br/>on_failure / on_retry"]
+        agents["Advisory / Remediation<br/>selection trace / safe env repair"]
+        skills["Skills (extension surface)<br/>not auto-wired by default"]
+        mcp["Selective MCP (extension surface)<br/>not hot path by default"]
     end
 
     subgraph Kernel["Deterministic Verdict Kernel"]
@@ -363,7 +380,7 @@ graph TB
         yaml["YAML Cases"]
         transport["Transport<br/>serialwrap / adb / ssh / network"]
         evidence["Evidence Store<br/>selection trace / attempts / canonical result"]
-        report["Report Projection<br/>xlsx / md / json"]
+        report["Report Projection<br/>xlsx / md / json<br/>html (opt-in from json)"]
     end
 
     cli --> sdk
@@ -467,7 +484,7 @@ testpilot/
 │   │   ├── copilot_session.py   # SDK session manager
 │   │   ├── plugin_base.py       # PluginBase (abstract)
 │   │   └── plugin_loader.py     # sys.path-safe loader
-│   ├── reporting/               # xlsx / md / json reporters
+│   ├── reporting/               # xlsx / md / json (+ html) reporters
 │   └── transport/               # serialwrap / adb / ssh / network
 ├── plugins/
 │   ├── _template/               # Plugin skeleton
@@ -481,7 +498,7 @@ testpilot/
 
 ```bash
 uv pip install -e ".[dev]"    # Install (first time only)
-uv run pytest -q              # Run full test suite (currently 1654 tests)
+uv run pytest -q              # Run full test suite
 ```
 
 ### License
@@ -499,11 +516,20 @@ plugin-based 嵌入式裝置測試自動化框架（prplOS / OpenWrt）。
 TestPilot 是一套 plugin-based 嵌入式裝置測試自動化框架，面向 prplOS / OpenWrt 裝置。系統架構分為兩個平面：
 
 - **Deterministic verdict kernel**：負責測試執行、證據蒐集、pass/fail 判定與報表投影
-- **Copilot SDK control plane**：負責 session 管理、custom agents、advisory audit、hook-governed safe remediation
+- **Copilot SDK control plane**：負責 per-case session foundation、lifecycle hooks、advisory audit、safe remediation，以及 custom agents / skills / selective MCP 等 extension surfaces
 
 核心原則：**Copilot SDK 負責 control plane，不負責最終 verdict**。
 
 `wifi_llapi` 目前已支援 retry attempt 之間的 in-run safe remediation；範圍只限環境修復：serial session recover、STA reconnect、band baseline rebuild、env re-verify，不會改寫 YAML semantics、step 指令或 pass criteria。
+
+目前已落地的 control-plane 子集：
+
+- per-case runner selection 與 `selection_trace`
+- best-effort 的 per-case Copilot session foundation
+- lifecycle hook dispatch（`pre_case`、`post_case`、`pre_step`、`post_step`、`on_failure`、`on_retry`）
+- advisory collection 與 retry 間的 safe-environment remediation
+
+custom agents / skills / MCP 在目前 codebase 仍屬 extension surface，尚不是預設 hot-path runtime wiring。
 
 ### 環境需求
 
@@ -636,6 +662,10 @@ python scripts/compare_0401_answers.py \
   --output-md compare-0401.md \
   --output-json compare-0401.json
 
+# 由既有 JSON run artifact 產生 HTML 診斷報告
+testpilot wifi-llapi json-to-html \
+  plugins/wifi_llapi/reports/<artifact_name>/<artifact_name>.json
+
 # 使用 Azure OpenAI
 testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
 ```
@@ -649,9 +679,24 @@ testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
 | 對外交付 | `xlsx` | Pass / Fail only，寫入 Excel 報告 |
 | 內部診斷 | `md` | 人可讀摘要，含 per-case 指令、輸出、log 行號引用與 diagnostic status |
 | 結構化資料 | `json` | 機器可讀，含 summary 統計、diagnostic status、remediation history 與 log 行號 |
+| 本地 HTML 診斷 | `html` | 由既有 JSON 報告轉出的 self-contained 檢視／分享格式 |
 | UART RAW log | `DUT.log` / `STA.log` | serialwrap WAL 解碼，per-run DUT/STA 原始 UART 通訊記錄 |
 
-輸出位置：`plugins/wifi_llapi/reports/`
+每次執行的輸出位置：`plugins/wifi_llapi/reports/<artifact_name>/`
+
+典型 artifact bundle 內容：
+- `<artifact_name>.xlsx`
+- `<artifact_name>.md`
+- `<artifact_name>.json`
+- `<artifact_name>.html`（透過 `json-to-html` 額外產生時）
+- `DUT.log`
+- `STA.log`
+- `agent_trace/`
+- `alignment_issues.json`（只有 row/object/api 對齊警告時才會出現）
+
+共用 template 檔維持在 `plugins/wifi_llapi/reports/templates/`。
+
+> **歷史 checkpoint 說明：** 下方帶時間戳的 calibration / full-run bullets 是 audit handoff 歷史記錄；其中的 counts 屬於各自時點的快照，不等同目前 branch 的最新 regression baseline。
 
 - current lab readiness status：multi-band baseline qualification 已完成（`5G/6G/2.4G` 全部通過 `baseline-qualify --repeat-count 5 --soak-minutes 15`）；後續 custom 6G hardening 已讓舊的 `D019/D027` 6G bring-up path 穩定可重播，舊的 `D032 sta_band_not_ready` 環境失敗也已消失。無效 full run `20260412T084218316557` 已在早期 `D007`/`D009`/`D010`/`D011` multi-band instability 後停止，接著兩片板子都以 hard reset 拉回 `READY`；patched sequential rerun `20260412T110545613993`（`D009`）、`20260412T111048362099`（`D010`）、`20260412T111549474171`（`D011`）已在同一條 baseline 上全部回到 `Pass/Pass/Pass`，因此舊的 `D009/D010 FailEnv` 與 `D011 FailTest` prefix 已不再重現
 - latest full-run checkpoint：recovery commit `338891b7115e5c41d04f45bd79c70ce4b117cebc` 已 push，authoritative full run `20260412T113008433351` 也已完整跑完 `420` cases，且舊的早期 baseline collapse 沒再重現（`D004`~`D013` 全都維持 `Pass/Pass/Pass`）。該 run 的 `compare-0401` 快照已提升到 `235 / 420 full matches`、`185 mismatches`、`62 metadata drifts`；actionable workbook-Pass gap 為 `156`
@@ -673,11 +718,11 @@ graph TB
     end
 
     subgraph CP["Copilot SDK Control Plane"]
-        sdk["SDK Client<br/>create / resume / delete"]
-        hooks["Hooks<br/>on_session_start / on_pre_tool_use<br/>on_post_tool_use / on_error_occurred"]
-        agents["Custom Agents<br/>operator / case-auditor<br/>remediation-planner / run-summarizer"]
-        skills["Skills<br/>wifi diagnostics / remediation policy"]
-        mcp["Selective MCP<br/>GitHub / KB / lab inventory"]
+        sdk["SDK Session Foundation<br/>create / delete per-case session"]
+        hooks["Lifecycle Hooks<br/>pre_case / post_case<br/>pre_step / post_step<br/>on_failure / on_retry"]
+        agents["Advisory / Remediation<br/>selection trace / safe env repair"]
+        skills["Skills（extension surface）<br/>預設不自動接線"]
+        mcp["Selective MCP（extension surface）<br/>預設不在 hot path"]
     end
 
     subgraph Kernel["Deterministic Verdict Kernel"]
@@ -687,7 +732,7 @@ graph TB
         yaml["YAML Cases"]
         transport["Transport<br/>serialwrap / adb / ssh / network"]
         evidence["Evidence Store<br/>selection trace / attempts / canonical result"]
-        report["Report Projection<br/>xlsx / md / json"]
+        report["Report Projection<br/>xlsx / md / json<br/>html（由 json opt-in 轉出）"]
     end
 
     cli --> sdk
@@ -791,7 +836,7 @@ testpilot/
 │   │   ├── copilot_session.py   # SDK session 管理
 │   │   ├── plugin_base.py       # PluginBase（抽象基類）
 │   │   └── plugin_loader.py     # sys.path-safe loader
-│   ├── reporting/               # xlsx / md / json reporters
+│   ├── reporting/               # xlsx / md / json（+ html）reporters
 │   └── transport/               # serialwrap / adb / ssh / network
 ├── plugins/
 │   ├── _template/               # Plugin 骨架
@@ -805,7 +850,7 @@ testpilot/
 
 ```bash
 uv pip install -e ".[dev]"    # 安裝（僅首次）
-uv run pytest -q              # 執行全部測試（目前 1654 筆）
+uv run pytest -q              # 執行全部測試
 ```
 
 ### 授權

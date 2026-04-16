@@ -1,7 +1,7 @@
 # TestPilot 系統規格書
 
 > 版本：v0.1.0-draft（第三次重構規劃基線）
-> 更新日期：2026-03-31
+> 更新日期：2026-04-16
 > 深度參考已收斂回本文件；詳細研究筆記改為 local-only，不再納入 repo。
 
 ---
@@ -11,9 +11,18 @@
 TestPilot 是一套 plugin-based 嵌入式裝置測試自動化框架，面向 prplOS / OpenWrt 裝置。第三次重構後的系統設計以兩個平面為核心：
 
 1. **Deterministic verdict kernel**：負責正式測試執行、證據蒐集、pass/fail 判定與報表投影。
-2. **Copilot SDK control plane**：負責 session、resume、hooks、custom agents、skills、selective MCP，以及操作員導向的自然語言 UX。
+2. **Copilot SDK control plane**：負責 per-case session foundation、lifecycle hooks、advisory/remediation，以及 `custom_agents`、`skills`、`selective MCP` 等 extension surfaces，並提供操作員導向的自然語言 UX。
 
 `wifi_llapi` 仍是目前最完整的落地路徑；第三次重構的重點不是把 YAML 變成 prompt，也不是把最終 verdict 交給 agent，而是把既有 deterministic hot path 保留下來，再讓 Copilot SDK 吃掉 agent orchestration 的複雜度。自 2026-03-31 起，`wifi_llapi` 已接上 hook-governed live remediation loop，但範圍只限 safe environment repair，不允許 agent 改 testcase semantics、step 指令或 pass criteria。
+
+目前已落地的 control-plane 子集：
+
+- per-case runner selection 與 `selection_trace`
+- best-effort 的 per-case Copilot session foundation
+- lifecycle hooks：`pre_case` / `post_case` / `pre_step` / `post_step` / `on_failure` / `on_retry`
+- advisory collection 與 retry 間的 safe-environment remediation
+
+`custom_agents`、`skills`、`mcp_servers` 等欄位已存在於 request / 規格層，但目前 orchestrator 建 session 時尚未預設自動接線，因此這些部分仍屬 extension surface，而不是完整 current-state hot path。
 
 ### 核心設計原則
 
@@ -34,11 +43,11 @@ graph TB
     end
 
     subgraph CP["Copilot SDK Control Plane"]
-        sdk["Copilot SDK Client\ncreate/resume/delete/list"]
-        hooks["Hooks\non_session_start / on_pre_tool_use\non_post_tool_use / on_error_occurred"]
-        agents["Custom Agents\noperator / case-auditor\nremediation-planner / run-summarizer"]
-        skills["Skills\nwifi diagnostics / remediation policy\nreport style"]
-        mcp["Selective MCP\nGitHub / KB / lab inventory"]
+        sdk["SDK Session Foundation\ncreate/delete per-case session"]
+        hooks["Lifecycle Hooks\npre_case / post_case\npre_step / post_step\non_failure / on_retry"]
+        agents["Advisory / Remediation\nselection trace / safe env repair"]
+        skills["Skills (extension surface)\nnot auto-wired by default"]
+        mcp["Selective MCP (extension surface)\nnot hot path by default"]
     end
 
     subgraph Kernel["Deterministic Verdict Kernel"]
@@ -48,7 +57,7 @@ graph TB
         yaml["YAML Cases"]
         transport["Transport\nserialwrap / adb / ssh / network"]
         evidence["Structured Evidence\nselection trace / attempts / canonical result"]
-        report["Report Projection\nxlsx / md / json"]
+        report["Report Projection\nxlsx / md / json\nhtml (opt-in from json)"]
     end
 
     ui --> sdk
@@ -158,23 +167,29 @@ sequenceDiagram
   - `run-{run_id}`
   - `run-{run_id}-case-{case_id}`
   - `run-{run_id}-case-{case_id}-remediate-{attempt}`
-- `disconnect()` 用於釋放 active session，但保留 resume 能力。
-- `deleteSession()` 僅在 run / summary 完成且 artifacts 已落地後使用。
+- 目前已落地的 default 行為是 **per-case create → case 結束後 best-effort delete**。
+- `resume_session()` / `list_sessions()` 已有 session adapter API，但尚未成為 orchestrator 預設流程。
 - session state 儲存 conversational context；canonical result 仍由 kernel artifacts 承擔。
 
-### 4.3 Hook 邊界
+### 4.3 目前已落地的 runtime hooks
 
 | Hook | 目的 | 限制 |
 |---|---|---|
-| `on_session_start` | 注入 run/case/testbed/context metadata | 不改 formal case semantics |
-| `on_pre_tool_use` | allow/deny/modify tool args、限制高風險工具 | 不直接代替 transport 執行正式測試 |
-| `on_post_tool_use` | redact/truncate/annotate tool results | 不覆寫 canonical evidence |
-| `on_user_prompt_submitted` | normalize operator intents | 不把 YAML 改寫為自由 prompt |
-| `on_error_occurred` | advisory session retry/skip/abort | 不改正式 pass/fail 結果 |
+| `pre_case` | case attempt 前置檢查 / remediation preflight | 不改 formal case semantics |
+| `post_case` | 收斂 advisory / remediation history / final annotations | 不覆寫 canonical evidence |
+| `pre_step` | step 前攔截與前置校驗 | 不直接代替 transport 執行正式測試 |
+| `post_step` | step 後觀測 / 附加結構化資料 | 不改正式 pass/fail 判定 |
+| `on_failure` | advisory / failure snapshot / remediation proposal | 不直接改 YAML、pass criteria、或最終 verdict |
+| `on_retry` | retry 間 safe-env remediation | 只允許 policy whitelist 內的 environment repair |
+
+補充：
+
+- Copilot SDK session-level hooks（例如 `on_session_start` / `on_pre_tool_use` / `on_post_tool_use` / `on_error_occurred`）目前仍屬 extension surface。
+- `CopilotSessionRequest` 已支援這些欄位，但 orchestrator 的預設 per-case session create path 尚未自動注入。
 
 ### 4.4 Custom agents
 
-建議角色：
+建議角色（目前仍屬 extension surface，未自動接入 per-case session create path）：
 
 - `operator`：操作員對話與 run/case 狀態說明
 - `case-auditor`：讀 trace / evidence，輸出 root cause 與 suggestion
@@ -184,7 +199,7 @@ sequenceDiagram
 
 ### 4.5 Skills
 
-建議 skill 套件：
+建議 skill 套件（目前未作為 runtime 預設自動接線）：
 
 - `wifi-llapi-diagnostics`
 - `env-remediation-policy`
@@ -192,7 +207,7 @@ sequenceDiagram
 
 ### 4.6 MCP
 
-MCP 只作為 **selective extension**，優先順序低於 in-process custom tools。
+MCP 目前仍只作為 **selective extension surface**，優先順序低於 in-process custom tools；session request 型別已保留欄位，但 runtime 預設尚未自動接線。
 
 適合的 MCP：
 
@@ -217,34 +232,42 @@ MCP 只作為 **selective extension**，優先順序低於 in-process custom too
 - plugin hook execution
 - transport binding
 - canonical result 寫入
-- xlsx / md/json report projection
+- xlsx / md/json report projection（另支援由 json opt-in 轉出 html）
 
 ### 5.2 Canonical result
 
-建議以 single canonical result 作為所有報表投影來源：
+目前已落地的 canonical trace/result 形狀較接近下列 payload：
 
 ```json
 {
   "run_id": "20260311T000000",
   "case_id": "D271",
-  "final_verdict": "Pass",
-  "diagnostic_status": "PassAfterRemediation",
-  "root_cause": "STA config missing before retry",
-  "suggestions": ["preflight check STA profile before case start"],
+  "source_row": 271,
+  "execution": {},
   "selection_trace": {},
   "attempts": [],
+  "final": {
+    "status": "Failed",
+    "evaluation_verdict": "Fail",
+    "attempts_used": 2,
+    "comment": "env_verify gate failed",
+    "diagnostic_status": "FailEnv"
+  },
+  "diagnostic_status": "FailEnv",
   "failure_snapshot": {},
-  "remediation_history": [],
-  "evidence_refs": []
+  "remediation_history": []
 }
 ```
+
+`root_cause` / `suggestions` 類欄位目前仍較偏 advisory / summarizer layer 的衍生資訊，而不是 runtime 必備 canonical keys。
 
 ### 5.3 Report projection
 
 | 輸出 | 內容 |
 |---|---|
 | `xlsx` | `Pass` / `Fail` only |
-| `md/json` | `Pass` / `PassAfterRemediation` / `FailEnv` / `FailConfig` / `FailTest` / `Inconclusive` + root cause + suggestion + remediation history |
+| `md/json` | `comment` / `diagnostic_status` / `failure_snapshot` / `remediation_history` / timing / log line references |
+| `html` | 由既有 `json` opt-in 轉出的 self-contained diagnostic review artifact |
 
 ### 5.4 不可退讓的 kernel 邊界
 
@@ -268,7 +291,7 @@ MCP 只作為 **selective extension**，優先順序低於 in-process custom too
 | attempt trace | 記錄 timeout / commands / outputs / comments | 每次 retry 都保留 |
 | canonical result | 報表投影與 agent summary 的共同來源 | 不可被 agent 任意覆寫 |
 | xlsx report | 對外交付 | Pass/Fail only |
-| md/json report | 內部診斷 / remediation / summary | richer statuses |
+| md/json/html report | 內部診斷 / remediation / summary | `html` 由既有 `json` opt-in 轉出 |
 
 ---
 
