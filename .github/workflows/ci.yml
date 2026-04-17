@@ -12,6 +12,8 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      SERIALWRAP_BIN: /tmp/serialwrap
 
     steps:
       - name: Check out repository
@@ -27,6 +29,46 @@ jobs:
 
       - name: Install project and test dependencies
         run: uv pip install --system -e ".[dev]"
+
+      - name: Bootstrap CI testbed and serialwrap stub
+        run: |
+          mkdir -p configs
+          rm -rf /tmp/serialwrap
+          cat > configs/testbed.yaml <<'EOF'
+          testbed:
+            name: lab-bench-1
+            devices:
+              DUT:
+                role: ap
+                transport: serial
+                selector: COM0
+                serial_port: /dev/ttyUSB0
+                baudrate: 115200
+              STA:
+                role: sta
+                transport: serial
+                selector: COM1
+                serial_port: /dev/ttyUSB1
+                baudrate: 115200
+              EndpointPC:
+                role: endpoint
+                transport: ssh
+                host: 192.168.1.100
+                user: testpilot
+            variables:
+              SSID_5G: testpilot5G
+              KEY_5G: "00000000"
+              SSID_6G: testpilot6G
+              KEY_6G: "00000000"
+              SSID_24G: testpilot2G
+              KEY_24G: "00000000"
+              sta_available_bands: [5g, 6g, 2.4g]
+          EOF
+          cat > /tmp/serialwrap <<'EOF'
+          #!/usr/bin/env sh
+          exit 0
+          EOF
+          chmod +x /tmp/serialwrap
 
       - name: Run test suite
         run: uv run pytest -q
