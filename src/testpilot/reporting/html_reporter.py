@@ -20,7 +20,6 @@ from testpilot.reporting.reporter import (
     _overall_status,
     _suite_timing_rows,
     _summarise,
-    _verdict,
 )
 
 # ---------------------------------------------------------------------------
@@ -306,7 +305,6 @@ class HtmlReporter:
     @staticmethod
     def _doc_open(meta: Mapping[str, Any]) -> str:
         title = _esc(meta.get("title", "Test Report"))
-        date = _esc(meta.get("date", ""))
         lines = [
             "<!DOCTYPE html>",
             '<html lang="en">',

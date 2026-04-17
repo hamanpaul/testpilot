@@ -400,14 +400,14 @@ def _serialize_manifest_path(path: Path | str, manifest_path: Path | str) -> str
     repo_root = _find_git_root(manifest.parent)
     if repo_root is not None:
         try:
-            return str(resolved_target.relative_to(repo_root.resolve(strict=False)))
+            return resolved_target.relative_to(repo_root.resolve(strict=False)).as_posix()
         except ValueError:
             pass
     try:
         return os.path.relpath(
             resolved_target,
             start=manifest.parent.resolve(strict=False),
-        )
+        ).replace("\\", "/")
     except ValueError:
         pass
     return str(resolved_target if target.is_absolute() else target)

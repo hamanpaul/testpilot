@@ -486,7 +486,6 @@ class Orchestrator:
         report_name = generate_report_filename(run_date, fw_ver, unique_suffix=run_id)
         artifact_name = Path(report_name).stem
         artifact_dir = reports_root / artifact_name
-        artifact_dir.mkdir(parents=True, exist_ok=True)
 
         if source_xlsx is not None:
             if not source_xlsx.exists():
@@ -508,6 +507,7 @@ class Orchestrator:
                 "or pass `--report-source-xlsx <path>` to rebuild it."
             )
 
+        artifact_dir.mkdir(parents=True, exist_ok=True)
         alignment_issues = collect_alignment_issues(cases, alignment_xlsx)
         if alignment_issues:
             alignment_path = artifact_dir / "alignment_issues.json"

@@ -9,6 +9,7 @@ import shutil
 from typing import Any
 
 from openpyxl import Workbook, load_workbook
+import pytest
 
 from testpilot.core.orchestrator import Orchestrator
 
@@ -722,6 +723,32 @@ def test_realistic_runtime_can_rerun_from_existing_template_without_source_xlsx(
     assert Path(second_result["report_path"]).is_file()
     # Manifest now stores portable relative paths, so compare basenames
     assert Path(second_result["source_report"]).name == Path(str(source_xlsx)).name
+
+
+def test_realistic_runtime_missing_source_xlsx_does_not_create_artifact_dir(
+    tmp_path: Path,
+    monkeypatch,
+):
+    project_root, _source_xlsx = _prepare_runtime_project(tmp_path)
+    orch = Orchestrator(
+        project_root=project_root,
+        plugins_dir=project_root / "plugins",
+        config_path=project_root / "configs" / "testbed.yaml",
+    )
+    plugin = orch.loader.load("wifi_llapi")
+    cases = _build_cases()
+    _patch_runtime_hooks(monkeypatch, plugin=plugin, cases=cases)
+
+    missing_source_xlsx = project_root / "missing.xlsx"
+    with pytest.raises(FileNotFoundError, match="wifi_llapi source report not found"):
+        orch.run(
+            "wifi_llapi",
+            case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
+            dut_fw_ver="FW-IT-REALISTIC-1",
+            report_source_xlsx=str(missing_source_xlsx),
+        )
+
+    assert not (project_root / "plugins" / "wifi_llapi" / "reports").exists()
 
 
 def test_realistic_runtime_records_pass_after_remediation(tmp_path: Path, monkeypatch):
