@@ -6,6 +6,7 @@ from typing import Any
 import yaml
 
 from plugins.brcm_fw_upgrade.strategies.flash import run_flash_sequence
+from plugins.brcm_fw_upgrade.strategies.transfer import render_md5_command, select_transfer_method
 from plugins.brcm_fw_upgrade.strategies.verify import extract_named_group
 from testpilot.core.plugin_base import PluginBase
 from testpilot.schema.case_schema import (
@@ -74,6 +75,105 @@ class Plugin(PluginBase):
     def evaluate(self, case: dict[str, Any], results: dict[str, Any]) -> bool:
         return True
 
+    def _resolve_template_value(self, raw: str, runtime_overrides: dict[str, str]) -> str:
+        if not isinstance(raw, str):
+            raise RuntimeError(f"expected template value to be a string, got {type(raw).__name__}")
+        if raw.startswith("{{") and raw.endswith("}}"):
+            key = raw[2:-2]
+            value = runtime_overrides.get(key)
+            if not value:
+                raise RuntimeError(f"missing runtime override: {key}")
+            return value
+        return raw
+
+    def _resolve_runtime_inputs(
+        self,
+        case: dict[str, Any],
+        runtime_overrides: dict[str, str],
+    ) -> dict[str, str]:
+        resolved: dict[str, str] = {}
+        for key, raw in case.get("runtime_inputs", {}).items():
+            resolved[key] = self._resolve_template_value(raw, runtime_overrides)
+        return resolved
+
+    def _resolve_artifacts(
+        self,
+        case: dict[str, Any],
+        runtime_overrides: dict[str, str],
+    ) -> dict[str, Any]:
+        artifacts = case.get("artifacts", {})
+        active_role = artifacts.get("active_image_role")
+        if not isinstance(active_role, str) or not active_role:
+            raise RuntimeError("missing active_image_role")
+        resolved_paths = {
+            key: self._resolve_template_value(value, runtime_overrides)
+            for key, value in artifacts.items()
+            if key != "active_image_role"
+        }
+        if active_role not in resolved_paths:
+            raise RuntimeError(f"active artifact role not found: {active_role}")
+        return {
+            "paths": resolved_paths,
+            "active_role": active_role,
+            "active_path": resolved_paths[active_role],
+        }
+
+    def _required_devices(self, topology: dict[str, Any]) -> list[str]:
+        return [
+            device
+            for device, config in topology["devices"].items()
+            if isinstance(config, dict) and config.get("required", False)
+        ]
+
+    def _build_precheck_phase(
+        self,
+        *,
+        topology: dict[str, Any],
+        shells: dict[str, Any],
+        runtime_inputs: dict[str, str],
+        artifacts: dict[str, Any],
+    ) -> dict[str, Any]:
+        required_devices = self._required_devices(topology)
+        missing_devices = [device for device in required_devices if device not in shells]
+        if missing_devices:
+            raise RuntimeError(f"missing required shells: {missing_devices}")
+        return {
+            "id": "precheck",
+            "required_devices": required_devices,
+            "available_devices": sorted(shells.keys()),
+            "runtime_inputs": runtime_inputs,
+            "artifacts": artifacts["paths"],
+            "active_image_role": artifacts["active_role"],
+            "active_artifact_path": artifacts["active_path"],
+        }
+
+    def _build_transfer_phase(
+        self,
+        *,
+        phase_id: str,
+        target: str,
+        profile: dict[str, Any],
+        topology: dict[str, Any],
+        shells: dict[str, Any],
+        artifact_path: str,
+    ) -> dict[str, Any]:
+        if target not in shells:
+            raise RuntimeError(f"missing shell for transfer target: {target}")
+        transfer_method = select_transfer_method(
+            profile["capabilities"],
+            sta_present="STA" in topology["devices"],
+        )
+        evidence = {
+            "id": phase_id,
+            "target": target,
+            "artifact_path": artifact_path,
+            "transfer_method": transfer_method,
+            "shell_ready": True,
+        }
+        if "md5" in profile["commands"]:
+            evidence["md5_command"] = render_md5_command(profile["commands"]["md5"], path=artifact_path)
+        return evidence
+
     def _verify_runtime_state(
         self,
         *,
@@ -120,20 +220,52 @@ class Plugin(PluginBase):
         case = self._resolve_case(case_id)
         profile = self.platform_profiles[case["platform_profile"]]
         topology = self.topologies[case["topology_ref"]]
-        fw_name = runtime_overrides["FW_NAME"]
-        build_time_expected = runtime_overrides["EXPECTED_BUILD_TIME"]
-        image_tag_expected = runtime_overrides["EXPECTED_IMAGE_TAG"]
+        runtime_inputs = self._resolve_runtime_inputs(case, runtime_overrides)
+        artifacts = self._resolve_artifacts(case, runtime_overrides)
+        fw_name = runtime_inputs["fw_name"]
+        build_time_expected = runtime_inputs["expected_build_time"]
+        image_tag_expected = runtime_inputs["expected_image_tag"]
         evidence: dict[str, Any] = {"phases": []}
 
         for phase in topology["phases"]:
-            if phase in {"precheck", "transfer_dut", "transfer_sta"}:
-                evidence["phases"].append({"id": phase, "status": "not_implemented_in_task_4"})
+            if phase == "precheck":
+                evidence["phases"].append(
+                    self._build_precheck_phase(
+                        topology=topology,
+                        shells=shells,
+                        runtime_inputs=runtime_inputs,
+                        artifacts=artifacts,
+                    )
+                )
+            elif phase == "transfer_dut":
+                evidence["phases"].append(
+                    self._build_transfer_phase(
+                        phase_id=phase,
+                        target="DUT",
+                        profile=profile,
+                        topology=topology,
+                        shells=shells,
+                        artifact_path=artifacts["active_path"],
+                    )
+                )
+            elif phase == "transfer_sta":
+                evidence["phases"].append(
+                    self._build_transfer_phase(
+                        phase_id=phase,
+                        target="STA",
+                        profile=profile,
+                        topology=topology,
+                        shells=shells,
+                        artifact_path=artifacts["active_path"],
+                    )
+                )
             elif phase == "flash_sta":
                 evidence["phases"].append(
                     {
                         "id": phase,
                         "transcript": run_flash_sequence(
                             shells["STA"],
+                            commands=profile["commands"],
                             fw_name=fw_name,
                             flash_marker=profile["log_markers"]["flash_complete"],
                         ),
@@ -157,6 +289,7 @@ class Plugin(PluginBase):
                         "id": phase,
                         "transcript": run_flash_sequence(
                             shells["DUT"],
+                            commands=profile["commands"],
                             fw_name=fw_name,
                             flash_marker=profile["log_markers"]["flash_complete"],
                         ),

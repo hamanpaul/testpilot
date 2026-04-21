@@ -8,6 +8,7 @@ from testpilot.core.plugin_loader import PluginLoader
 
 from plugins.brcm_fw_upgrade.strategies.evidence import slice_log_window
 from plugins.brcm_fw_upgrade.strategies.login import build_login_commands
+from plugins.brcm_fw_upgrade.strategies.flash import render_flash_command
 from plugins.brcm_fw_upgrade.strategies.transfer import render_md5_command, select_transfer_method
 from plugins.brcm_fw_upgrade.strategies.verify import extract_named_group
 
@@ -61,6 +62,11 @@ def test_render_md5_command_substitutes_path():
     assert render_md5_command(template, path="/tmp/file.bin") == "md5sum /tmp/file.bin"
 
 
+def test_render_flash_command_substitutes_fw_name():
+    template = "bcm_flasher {{fw_name}}"
+    assert render_flash_command(template, fw_name="image.pkgtb") == "bcm_flasher image.pkgtb"
+
+
 def test_plugin_loads_profile_and_topology_metadata():
     plugin = _load_plugin()
     assert "bgw720_prpl" in plugin.platform_profiles
@@ -108,22 +114,28 @@ def test_flash_sequence_runs_one_command_at_a_time():
 
     shell = _RecordingShell(
         {
-            "cd /tmp": "/tmp",
-            "bcm_flasher bcmBGW720-300_squashfs_full_update.pkgtb": "Image flash complete",
-            "bcm_bootstate 1": "The booted partition is marked to boot",
-            "reboot": "rebooting",
+            "cd /firmware": "/firmware",
+            "flash_tool bcmBGW720-300_squashfs_full_update.pkgtb": "Image flash complete",
+            "set_boot 1": "The booted partition is marked to boot",
+            "restart_platform": "",
         }
     )
     run_flash_sequence(
         shell,
+        commands={
+            "change_dir": "cd /firmware",
+            "flash": "flash_tool {{fw_name}}",
+            "bootstate_set": "set_boot 1",
+            "reboot": "restart_platform",
+        },
         fw_name="bcmBGW720-300_squashfs_full_update.pkgtb",
         flash_marker="Image flash complete",
     )
     assert shell.commands == [
-        "cd /tmp",
-        "bcm_flasher bcmBGW720-300_squashfs_full_update.pkgtb",
-        "bcm_bootstate 1",
-        "reboot",
+        "cd /firmware",
+        "flash_tool bcmBGW720-300_squashfs_full_update.pkgtb",
+        "set_boot 1",
+        "restart_platform",
     ]
 
 
@@ -139,6 +151,12 @@ def test_flash_sequence_raises_when_marker_missing():
     with pytest.raises(RuntimeError, match="Image flash complete"):
         run_flash_sequence(
             shell,
+            commands={
+                "change_dir": "cd /tmp",
+                "flash": "bcm_flasher {{fw_name}}",
+                "bootstate_set": "bcm_bootstate 1",
+                "reboot": "reboot",
+            },
             fw_name="bcmBGW720-300_squashfs_full_update.pkgtb",
             flash_marker="Image flash complete",
         )
@@ -157,6 +175,12 @@ def test_flash_sequence_raises_when_bootstate_marker_missing():
     with pytest.raises(RuntimeError, match="marked to boot"):
         run_flash_sequence(
             shell,
+            commands={
+                "change_dir": "cd /tmp",
+                "flash": "bcm_flasher {{fw_name}}",
+                "bootstate_set": "bcm_bootstate 1",
+                "reboot": "reboot",
+            },
             fw_name="bcmBGW720-300_squashfs_full_update.pkgtb",
             flash_marker="Image flash complete",
         )
@@ -186,6 +210,38 @@ def test_dut_sta_case_verifies_sta_before_flashing_dut():
         "flash_dut",
         "verify_dut",
     ]
+    assert result["evidence"]["phases"][0] == {
+        "id": "precheck",
+        "required_devices": ["DUT", "STA"],
+        "available_devices": ["DUT", "STA"],
+        "runtime_inputs": {
+            "fw_name": "bcmBGW720-300_squashfs_full_update.pkgtb",
+            "expected_image_tag": "631BGW720-3001101323",
+            "expected_build_time": "Apr 20 13:02:57 CST 2026",
+        },
+        "artifacts": {
+            "forward_image": "/tmp/forward.pkgtb",
+            "rollback_image": "/tmp/rollback.pkgtb",
+        },
+        "active_image_role": "forward_image",
+        "active_artifact_path": "/tmp/forward.pkgtb",
+    }
+    assert result["evidence"]["phases"][1] == {
+        "id": "transfer_dut",
+        "target": "DUT",
+        "artifact_path": "/tmp/forward.pkgtb",
+        "transfer_method": "host_to_dut_scp",
+        "shell_ready": True,
+        "md5_command": "md5sum /tmp/forward.pkgtb",
+    }
+    assert result["evidence"]["phases"][2] == {
+        "id": "transfer_sta",
+        "target": "STA",
+        "artifact_path": "/tmp/forward.pkgtb",
+        "transfer_method": "host_to_dut_scp",
+        "shell_ready": True,
+        "md5_command": "md5sum /tmp/forward.pkgtb",
+    }
     assert harness.shells["STA"].commands[:4] == [
         "cd /tmp",
         "bcm_flasher bcmBGW720-300_squashfs_full_update.pkgtb",
@@ -198,6 +254,26 @@ def test_dut_sta_case_verifies_sta_before_flashing_dut():
         "bcm_bootstate 1",
         "reboot",
     ]
+
+
+def test_dut_sta_case_fails_precheck_when_runtime_override_missing():
+    plugin = _load_plugin()
+    harness = _RuntimePluginHarness()
+
+    with pytest.raises(RuntimeError, match="missing runtime override: FW_FORWARD_PATH"):
+        plugin.run_case(
+            case_id="brcm-fw-upgrade-dut-sta-forward",
+            shells=harness.shells,
+            runtime_overrides={
+                "FW_ROLLBACK_PATH": "/tmp/rollback.pkgtb",
+                "FW_NAME": "bcmBGW720-300_squashfs_full_update.pkgtb",
+                "EXPECTED_IMAGE_TAG": "631BGW720-3001101323",
+                "EXPECTED_BUILD_TIME": "Apr 20 13:02:57 CST 2026",
+            },
+        )
+
+    assert harness.shells["STA"].commands == []
+    assert harness.shells["DUT"].commands == []
 
 
 def test_dut_sta_case_stops_when_sta_verification_fails():

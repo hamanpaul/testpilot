@@ -10,10 +10,12 @@ profiles:
       has_md5sum: true
       has_bcm_bootstate: true
     commands:
+      change_dir: "cd /tmp"
       proc_version: "cat /proc/version"
       image_state: "bcm_bootstate"
       md5: "md5sum {{path}}"
       flash: "bcm_flasher {{fw_name}}"
+      bootstate_set: "bcm_bootstate 1"
       reboot: "reboot"
     success_parsers:
       proc_version_build_time: "Linux version .* (?P<build_time>[A-Z][a-z]{2} .+ CST 20[0-9]{2})"
@@ -31,9 +33,11 @@ profiles:
       has_md5sum: false
       has_bcm_bootstate: true
     commands:
+      change_dir: "cd /tmp"
       proc_version: "cat /proc/version"
       image_state: "bcm_bootstate"
       flash: "bcm_flasher {{fw_name}}"
+      bootstate_set: "bcm_bootstate 1"
       reboot: "reboot"
     success_parsers:
       proc_version_build_time: "Linux version .* (?P<build_time>[A-Z][a-z]{2} .+ CST 20[0-9]{2})"
