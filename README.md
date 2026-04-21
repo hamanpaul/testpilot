@@ -202,7 +202,7 @@ python -m testpilot.cli brcm-fw-upgrade run \
   --rollback-image /home/build20/BGW720-0403-PATCH/targets/BGW720-300/bcmBGW720-300_squashfs_full_update.pkgtb \
   --fw-name bcmBGW720-300_squashfs_full_update.pkgtb \
   --expected-image-tag 631BGW720-3001101323 \
-  --expected-build-time "Mon Apr 20 13:02:57 CST 2026" \
+  --expected-build-time "Apr 20 13:02:57 CST 2026" \
   --platform-profile bgw720_prpl \
   --topology dut_plus_sta
 ```
