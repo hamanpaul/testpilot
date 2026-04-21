@@ -53,6 +53,7 @@ configs/testbed.yaml
 .coverage
 
 # Local-only notes / handoff / scratch artifacts
+.worktrees/
 .codex
 report.*.json
 /*.xlsx
