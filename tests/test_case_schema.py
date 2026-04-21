@@ -350,6 +350,36 @@ profiles:
     assert profiles["bgw720_prpl"]["capabilities"]["has_scp"] is True
 
 
+def test_load_brcm_fw_upgrade_platform_profiles_rejects_non_bool_capability(tmp_path):
+    path = tmp_path / "profiles.yaml"
+    path.write_text(
+        """
+version: "2026-04-21"
+profiles:
+  bgw720_prpl:
+    family: brcm
+    board: BGW720-300
+    os_flavor: prpl
+    login_strategy: none
+    capabilities:
+      has_scp: "yes"
+    commands:
+      proc_version: cat /proc/version
+      image_state: bcm_bootstate
+      flash: bcm_flasher {{fw_name}}
+      reboot: reboot
+    success_parsers:
+      proc_version_build_time: "Linux version .*"
+      image_tag: image
+    log_markers:
+      flash_complete: Image flash complete
+""".strip(),
+        encoding="utf-8",
+    )
+    with pytest.raises(CaseValidationError, match="capabilities.has_scp"):
+        load_brcm_fw_upgrade_platform_profiles(path)
+
+
 def test_load_brcm_fw_upgrade_platform_profiles_rejects_missing_login_strategy(tmp_path):
     path = tmp_path / "profiles.yaml"
     path.write_text(
@@ -364,6 +394,36 @@ profiles:
         encoding="utf-8",
     )
     with pytest.raises(CaseValidationError, match="login_strategy"):
+        load_brcm_fw_upgrade_platform_profiles(path)
+
+
+def test_load_brcm_fw_upgrade_platform_profiles_rejects_missing_required_command(tmp_path):
+    path = tmp_path / "profiles.yaml"
+    path.write_text(
+        """
+version: "2026-04-21"
+profiles:
+  bgw720_prpl:
+    family: brcm
+    board: BGW720-300
+    os_flavor: prpl
+    login_strategy: none
+    capabilities:
+      has_md5sum: true
+    commands:
+      proc_version: cat /proc/version
+      image_state: bcm_bootstate
+      flash: bcm_flasher {{fw_name}}
+      reboot: reboot
+    success_parsers:
+      proc_version_build_time: "Linux version .*"
+      image_tag: image
+    log_markers:
+      flash_complete: Image flash complete
+""".strip(),
+        encoding="utf-8",
+    )
+    with pytest.raises(CaseValidationError, match="commands missing required keys"):
         load_brcm_fw_upgrade_platform_profiles(path)
 
 
@@ -387,6 +447,33 @@ profiles:
         load_brcm_fw_upgrade_platform_profiles(path)
 
 
+def test_load_brcm_fw_upgrade_platform_profiles_rejects_missing_required_parser(tmp_path):
+    path = tmp_path / "profiles.yaml"
+    path.write_text(
+        """
+version: "2026-04-21"
+profiles:
+  bgw720_prpl:
+    family: brcm
+    board: BGW720-300
+    os_flavor: prpl
+    login_strategy: none
+    commands:
+      proc_version: cat /proc/version
+      image_state: bcm_bootstate
+      flash: bcm_flasher {{fw_name}}
+      reboot: reboot
+    success_parsers:
+      image_tag: image
+    log_markers:
+      flash_complete: Image flash complete
+""".strip(),
+        encoding="utf-8",
+    )
+    with pytest.raises(CaseValidationError, match="success_parsers missing required keys"):
+        load_brcm_fw_upgrade_platform_profiles(path)
+
+
 def test_load_brcm_fw_upgrade_platform_profiles_rejects_non_mapping_commands(tmp_path):
     path = tmp_path / "profiles.yaml"
     path.write_text(
@@ -403,6 +490,34 @@ profiles:
         encoding="utf-8",
     )
     with pytest.raises(CaseValidationError, match="commands"):
+        load_brcm_fw_upgrade_platform_profiles(path)
+
+
+def test_load_brcm_fw_upgrade_platform_profiles_rejects_missing_required_log_marker(tmp_path):
+    path = tmp_path / "profiles.yaml"
+    path.write_text(
+        """
+version: "2026-04-21"
+profiles:
+  bgw720_prpl:
+    family: brcm
+    board: BGW720-300
+    os_flavor: prpl
+    login_strategy: none
+    commands:
+      proc_version: cat /proc/version
+      image_state: bcm_bootstate
+      flash: bcm_flasher {{fw_name}}
+      reboot: reboot
+    success_parsers:
+      proc_version_build_time: "Linux version .*"
+      image_tag: image
+    log_markers:
+      delayed_commit: done
+""".strip(),
+        encoding="utf-8",
+    )
+    with pytest.raises(CaseValidationError, match="log_markers missing required keys"):
         load_brcm_fw_upgrade_platform_profiles(path)
 
 
@@ -440,6 +555,43 @@ topologies:
         encoding="utf-8",
     )
     with pytest.raises(CaseValidationError, match="phases"):
+        load_brcm_fw_upgrade_topologies(path)
+
+
+def test_load_brcm_fw_upgrade_topologies_rejects_missing_required_flag(tmp_path):
+    path = tmp_path / "topologies.yaml"
+    path.write_text(
+        """
+version: "2026-04-21"
+topologies:
+  single_dut:
+    devices:
+      DUT: {}
+    phases:
+      - precheck
+""".strip(),
+        encoding="utf-8",
+    )
+    with pytest.raises(CaseValidationError, match="devices.DUT.required"):
+        load_brcm_fw_upgrade_topologies(path)
+
+
+def test_load_brcm_fw_upgrade_topologies_rejects_non_bool_required_flag(tmp_path):
+    path = tmp_path / "topologies.yaml"
+    path.write_text(
+        """
+version: "2026-04-21"
+topologies:
+  single_dut:
+    devices:
+      DUT:
+        required: "yes"
+    phases:
+      - precheck
+""".strip(),
+        encoding="utf-8",
+    )
+    with pytest.raises(CaseValidationError, match="devices.DUT.required"):
         load_brcm_fw_upgrade_topologies(path)
 
 
@@ -551,6 +703,25 @@ def test_brcm_plugin_discovery_accepts_log_marker_required_for_pass(tmp_path, mo
 
     cases = Plugin().discover_cases()
     assert len(cases) == 1
+
+
+def test_brcm_plugin_discovery_synthesizes_steps_from_topology_phases_in_order():
+    cases = {case["id"]: case for case in Plugin().discover_cases()}
+    assert [step["id"] for step in cases["brcm-fw-upgrade-single-dut-forward"]["steps"]] == [
+        "precheck",
+        "transfer_dut",
+        "flash_dut",
+        "verify_dut",
+    ]
+    assert [step["id"] for step in cases["brcm-fw-upgrade-dut-sta-forward"]["steps"]] == [
+        "precheck",
+        "transfer_dut",
+        "transfer_sta",
+        "flash_sta",
+        "verify_sta",
+        "flash_dut",
+        "verify_dut",
+    ]
 
 
 def test_brcm_plugin_discovery_rejects_non_mapping_case_yaml(tmp_path, monkeypatch):

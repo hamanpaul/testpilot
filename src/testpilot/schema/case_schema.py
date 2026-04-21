@@ -21,6 +21,9 @@ REQUIRED_STEP_KEYS = {"id", "action", "target"}
 ALLOWED_BRCM_SUCCESS_OPERATORS = {"equals", "one_of", "contains", "regex"}
 
 REQUIRED_WIFI_BAND_BASELINE_BANDS = ("5g", "6g", "2.4g")
+REQUIRED_BRCM_PROFILE_COMMAND_KEYS = ("proc_version", "image_state", "flash", "reboot")
+REQUIRED_BRCM_PROFILE_PARSER_KEYS = ("proc_version_build_time", "image_tag")
+REQUIRED_BRCM_PROFILE_LOG_MARKER_KEYS = ("flash_complete",)
 
 
 class CaseValidationError(Exception):
@@ -106,6 +109,12 @@ def _require_string_mapping(
             field=f"{field}.{key}",
         )
     return normalized
+
+
+def _require_bool(value: Any, *, source: Path | str, field: str) -> bool:
+    if not isinstance(value, bool):
+        raise CaseValidationError(f"{source}: {field} must be a boolean")
+    return value
 
 
 def _validate_wifi_band_baseline_profile(
@@ -264,47 +273,80 @@ def load_brcm_fw_upgrade_platform_profiles(path: Path | str) -> dict[str, dict[s
     for name, raw_profile in data["profiles"].items():
         if not isinstance(raw_profile, dict):
             raise CaseValidationError(f"{path}: profiles.{name} must be a mapping")
+        family = _require_non_empty_string(
+            raw_profile.get("family"),
+            source=path,
+            field=f"profiles.{name}.family",
+        )
+        board = _require_non_empty_string(
+            raw_profile.get("board"),
+            source=path,
+            field=f"profiles.{name}.board",
+        )
+        os_flavor = _require_non_empty_string(
+            raw_profile.get("os_flavor"),
+            source=path,
+            field=f"profiles.{name}.os_flavor",
+        )
+        login_strategy = _require_non_empty_string(
+            raw_profile.get("login_strategy"),
+            source=path,
+            field=f"profiles.{name}.login_strategy",
+        )
+        capabilities_raw = _require_mapping(
+            raw_profile.get("capabilities", {}),
+            source=path,
+            field=f"profiles.{name}.capabilities",
+        )
+        capabilities = {
+            key: _require_bool(
+                value,
+                source=path,
+                field=f"profiles.{name}.capabilities.{key}",
+            )
+            for key, value in capabilities_raw.items()
+        }
+        commands = _require_string_mapping(
+            raw_profile.get("commands", {}),
+            source=path,
+            field=f"profiles.{name}.commands",
+        )
+        success_parsers = _require_string_mapping(
+            raw_profile.get("success_parsers", {}),
+            source=path,
+            field=f"profiles.{name}.success_parsers",
+        )
+        log_markers = _require_string_mapping(
+            raw_profile.get("log_markers", {}),
+            source=path,
+            field=f"profiles.{name}.log_markers",
+        )
+        missing_commands = [key for key in REQUIRED_BRCM_PROFILE_COMMAND_KEYS if key not in commands]
+        if capabilities.get("has_md5sum") is True and "md5" not in commands:
+            missing_commands.append("md5")
+        if missing_commands:
+            raise CaseValidationError(
+                f"{path}: profiles.{name}.commands missing required keys: {sorted(missing_commands)}"
+            )
+        missing_parsers = [key for key in REQUIRED_BRCM_PROFILE_PARSER_KEYS if key not in success_parsers]
+        if missing_parsers:
+            raise CaseValidationError(
+                f"{path}: profiles.{name}.success_parsers missing required keys: {sorted(missing_parsers)}"
+            )
+        missing_log_markers = [key for key in REQUIRED_BRCM_PROFILE_LOG_MARKER_KEYS if key not in log_markers]
+        if missing_log_markers:
+            raise CaseValidationError(
+                f"{path}: profiles.{name}.log_markers missing required keys: {sorted(missing_log_markers)}"
+            )
         profiles[name] = {
-            "family": _require_non_empty_string(
-                raw_profile.get("family"),
-                source=path,
-                field=f"profiles.{name}.family",
-            ),
-            "board": _require_non_empty_string(
-                raw_profile.get("board"),
-                source=path,
-                field=f"profiles.{name}.board",
-            ),
-            "os_flavor": _require_non_empty_string(
-                raw_profile.get("os_flavor"),
-                source=path,
-                field=f"profiles.{name}.os_flavor",
-            ),
-            "login_strategy": _require_non_empty_string(
-                raw_profile.get("login_strategy"),
-                source=path,
-                field=f"profiles.{name}.login_strategy",
-            ),
-            "capabilities": _require_mapping(
-                raw_profile.get("capabilities", {}),
-                source=path,
-                field=f"profiles.{name}.capabilities",
-            ),
-            "commands": _require_string_mapping(
-                raw_profile.get("commands", {}),
-                source=path,
-                field=f"profiles.{name}.commands",
-            ),
-            "success_parsers": _require_string_mapping(
-                raw_profile.get("success_parsers", {}),
-                source=path,
-                field=f"profiles.{name}.success_parsers",
-            ),
-            "log_markers": _require_string_mapping(
-                raw_profile.get("log_markers", {}),
-                source=path,
-                field=f"profiles.{name}.log_markers",
-            ),
+            "family": family,
+            "board": board,
+            "os_flavor": os_flavor,
+            "login_strategy": login_strategy,
+            "capabilities": capabilities,
+            "commands": commands,
+            "success_parsers": success_parsers,
+            "log_markers": log_markers,
         }
     return profiles
 
@@ -331,6 +373,11 @@ def load_brcm_fw_upgrade_topologies(path: Path | str) -> dict[str, dict[str, Any
                 raise CaseValidationError(
                     f"{path}: topologies.{name}.devices.{device_name} must be a mapping"
                 )
+            _require_bool(
+                raw_device.get("required"),
+                source=path,
+                field=f"topologies.{name}.devices.{device_name}.required",
+            )
         topologies[name] = {
             "devices": devices,
             "phases": _validate_string_list(
