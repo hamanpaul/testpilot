@@ -19,6 +19,23 @@ def _load_plugin():
     return loader.load("brcm_fw_upgrade")
 
 
+def _runtime_artifact_paths() -> tuple[Path, Path]:
+    return Path(__file__).resolve(), Path(__file__).resolve().parents[1] / "plugin.py"
+
+
+def _runtime_overrides(*, forward_path: Path | None = None, fw_name: str | None = None) -> dict[str, str]:
+    forward_artifact, rollback_artifact = _runtime_artifact_paths()
+    selected_forward = forward_path or forward_artifact
+    selected_fw_name = fw_name or selected_forward.name
+    return {
+        "FW_FORWARD_PATH": str(selected_forward),
+        "FW_ROLLBACK_PATH": str(rollback_artifact),
+        "FW_NAME": selected_fw_name,
+        "EXPECTED_IMAGE_TAG": "631BGW720-3001101323",
+        "EXPECTED_BUILD_TIME": "Apr 20 13:02:57 CST 2026",
+    }
+
+
 def test_transfer_prefers_network_then_relay_then_serial():
     assert select_transfer_method({"has_scp": True}, sta_present=False) == "host_to_dut_scp"
     assert select_transfer_method({"has_scp": False}, sta_present=True) == "dut_to_sta_relay"
@@ -84,14 +101,16 @@ class _RecordingShell:
 
 
 class _RuntimePluginHarness:
-    def __init__(self) -> None:
+    def __init__(self, *, fw_name: str | None = None) -> None:
+        active_fw_name = fw_name or Path(__file__).name
         self.shells = {
             "STA": _RecordingShell(
                 {
                     "cd /tmp": "/tmp",
-                    "bcm_flasher bcmBGW720-300_squashfs_full_update.pkgtb": "Image flash complete",
+                    f"bcm_flasher {active_fw_name}": "Image flash complete",
                     "bcm_bootstate 1": "The booted partition is marked to boot",
                     "reboot": "rebooting",
+                    "echo ready": "ready",
                     "cat /proc/version": "Linux version 5.15.176 #1 SMP PREEMPT Mon Apr 20 13:02:57 CST 2026",
                     "bcm_bootstate": "$imageversion: 631BGW720-3001101323 $",
                 }
@@ -99,9 +118,10 @@ class _RuntimePluginHarness:
             "DUT": _RecordingShell(
                 {
                     "cd /tmp": "/tmp",
-                    "bcm_flasher bcmBGW720-300_squashfs_full_update.pkgtb": "Image flash complete",
+                    f"bcm_flasher {active_fw_name}": "Image flash complete",
                     "bcm_bootstate 1": "The booted partition is marked to boot",
                     "reboot": "rebooting",
+                    "echo ready": "ready",
                     "cat /proc/version": "Linux version 5.15.176 #1 SMP PREEMPT Mon Apr 20 13:02:57 CST 2026",
                     "bcm_bootstate": "$imageversion: 631BGW720-3001101323 $",
                 }
@@ -188,18 +208,14 @@ def test_flash_sequence_raises_when_bootstate_marker_missing():
 
 def test_dut_sta_case_verifies_sta_before_flashing_dut():
     plugin = _load_plugin()
-    harness = _RuntimePluginHarness()
+    overrides = _runtime_overrides()
+    harness = _RuntimePluginHarness(fw_name=overrides["FW_NAME"])
     result = plugin.run_case(
         case_id="brcm-fw-upgrade-dut-sta-forward",
         shells=harness.shells,
-        runtime_overrides={
-            "FW_FORWARD_PATH": "/tmp/forward.pkgtb",
-            "FW_ROLLBACK_PATH": "/tmp/rollback.pkgtb",
-            "FW_NAME": "bcmBGW720-300_squashfs_full_update.pkgtb",
-            "EXPECTED_IMAGE_TAG": "631BGW720-3001101323",
-            "EXPECTED_BUILD_TIME": "Apr 20 13:02:57 CST 2026",
-        },
+        runtime_overrides=overrides,
     )
+    forward_artifact, rollback_artifact = _runtime_artifact_paths()
     assert result["verdict"] is True
     assert [phase["id"] for phase in result["evidence"]["phases"]] == [
         "precheck",
@@ -215,44 +231,59 @@ def test_dut_sta_case_verifies_sta_before_flashing_dut():
         "required_devices": ["DUT", "STA"],
         "available_devices": ["DUT", "STA"],
         "runtime_inputs": {
-            "fw_name": "bcmBGW720-300_squashfs_full_update.pkgtb",
+            "fw_name": forward_artifact.name,
             "expected_image_tag": "631BGW720-3001101323",
             "expected_build_time": "Apr 20 13:02:57 CST 2026",
         },
         "artifacts": {
-            "forward_image": "/tmp/forward.pkgtb",
-            "rollback_image": "/tmp/rollback.pkgtb",
+            "forward_image": str(forward_artifact),
+            "rollback_image": str(rollback_artifact),
         },
         "active_image_role": "forward_image",
-        "active_artifact_path": "/tmp/forward.pkgtb",
+        "active_artifact_path": str(forward_artifact),
+        "active_artifact_filename": forward_artifact.name,
+        "fw_name_binding": {
+            "declared_fw_name": forward_artifact.name,
+            "artifact_filename": forward_artifact.name,
+        },
     }
     assert result["evidence"]["phases"][1] == {
         "id": "transfer_dut",
         "target": "DUT",
-        "artifact_path": "/tmp/forward.pkgtb",
+        "artifact_path": str(forward_artifact),
+        "artifact_filename": forward_artifact.name,
         "transfer_method": "host_to_dut_scp",
         "shell_ready": True,
-        "md5_command": "md5sum /tmp/forward.pkgtb",
+        "md5_command": f"md5sum {forward_artifact}",
     }
     assert result["evidence"]["phases"][2] == {
         "id": "transfer_sta",
         "target": "STA",
-        "artifact_path": "/tmp/forward.pkgtb",
+        "artifact_path": str(forward_artifact),
+        "artifact_filename": forward_artifact.name,
         "transfer_method": "host_to_dut_scp",
         "shell_ready": True,
-        "md5_command": "md5sum /tmp/forward.pkgtb",
+        "md5_command": f"md5sum {forward_artifact}",
     }
-    assert harness.shells["STA"].commands[:4] == [
+    assert result["evidence"]["phases"][3]["artifact_path"] == str(forward_artifact)
+    assert result["evidence"]["phases"][3]["artifact_filename"] == forward_artifact.name
+    assert result["evidence"]["phases"][4]["checks"]["ready_probe"] == {
+        "command": "echo ready",
+        "output": "ready",
+    }
+    assert harness.shells["STA"].commands[:5] == [
         "cd /tmp",
-        "bcm_flasher bcmBGW720-300_squashfs_full_update.pkgtb",
+        f"bcm_flasher {forward_artifact.name}",
         "bcm_bootstate 1",
         "reboot",
+        "echo ready",
     ]
-    assert harness.shells["DUT"].commands[:4] == [
+    assert harness.shells["DUT"].commands[:5] == [
         "cd /tmp",
-        "bcm_flasher bcmBGW720-300_squashfs_full_update.pkgtb",
+        f"bcm_flasher {forward_artifact.name}",
         "bcm_bootstate 1",
         "reboot",
+        "echo ready",
     ]
 
 
@@ -265,11 +296,29 @@ def test_dut_sta_case_fails_precheck_when_runtime_override_missing():
             case_id="brcm-fw-upgrade-dut-sta-forward",
             shells=harness.shells,
             runtime_overrides={
-                "FW_ROLLBACK_PATH": "/tmp/rollback.pkgtb",
-                "FW_NAME": "bcmBGW720-300_squashfs_full_update.pkgtb",
-                "EXPECTED_IMAGE_TAG": "631BGW720-3001101323",
-                "EXPECTED_BUILD_TIME": "Apr 20 13:02:57 CST 2026",
+                key: value
+                for key, value in _runtime_overrides().items()
+                if key != "FW_FORWARD_PATH"
             },
+        )
+
+    assert harness.shells["STA"].commands == []
+    assert harness.shells["DUT"].commands == []
+
+
+def test_dut_sta_case_fails_precheck_when_active_artifact_missing():
+    plugin = _load_plugin()
+    harness = _RuntimePluginHarness(fw_name="missing-artifact.pkgtb")
+    missing_artifact = Path(__file__).resolve().parent / "missing-artifact.pkgtb"
+
+    with pytest.raises(RuntimeError, match="active artifact path does not exist"):
+        plugin.run_case(
+            case_id="brcm-fw-upgrade-dut-sta-forward",
+            shells=harness.shells,
+            runtime_overrides=_runtime_overrides(
+                forward_path=missing_artifact,
+                fw_name=missing_artifact.name,
+            ),
         )
 
     assert harness.shells["STA"].commands == []
@@ -278,20 +327,39 @@ def test_dut_sta_case_fails_precheck_when_runtime_override_missing():
 
 def test_dut_sta_case_stops_when_sta_verification_fails():
     plugin = _load_plugin()
-    harness = _RuntimePluginHarness()
+    overrides = _runtime_overrides()
+    harness = _RuntimePluginHarness(fw_name=overrides["FW_NAME"])
     harness.shells["STA"].outputs["bcm_bootstate"] = "$imageversion: unexpected $"
 
     with pytest.raises(RuntimeError, match="image tag mismatch"):
         plugin.run_case(
             case_id="brcm-fw-upgrade-dut-sta-forward",
             shells=harness.shells,
-            runtime_overrides={
-                "FW_FORWARD_PATH": "/tmp/forward.pkgtb",
-                "FW_ROLLBACK_PATH": "/tmp/rollback.pkgtb",
-                "FW_NAME": "bcmBGW720-300_squashfs_full_update.pkgtb",
-                "EXPECTED_IMAGE_TAG": "631BGW720-3001101323",
-                "EXPECTED_BUILD_TIME": "Apr 20 13:02:57 CST 2026",
-            },
+            runtime_overrides=overrides,
         )
 
+    assert harness.shells["DUT"].commands == []
+
+
+def test_dut_sta_case_fails_when_ready_probe_is_empty():
+    plugin = _load_plugin()
+    overrides = _runtime_overrides()
+    harness = _RuntimePluginHarness(fw_name=overrides["FW_NAME"])
+    harness.shells["STA"].outputs["echo ready"] = ""
+
+    with pytest.raises(RuntimeError, match="ready probe returned empty output"):
+        plugin.run_case(
+            case_id="brcm-fw-upgrade-dut-sta-forward",
+            shells=harness.shells,
+            runtime_overrides=overrides,
+        )
+
+    forward_artifact, _ = _runtime_artifact_paths()
+    assert harness.shells["STA"].commands == [
+        "cd /tmp",
+        f"bcm_flasher {forward_artifact.name}",
+        "bcm_bootstate 1",
+        "reboot",
+        "echo ready",
+    ]
     assert harness.shells["DUT"].commands == []

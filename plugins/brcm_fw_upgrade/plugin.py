@@ -112,10 +112,17 @@ class Plugin(PluginBase):
         }
         if active_role not in resolved_paths:
             raise RuntimeError(f"active artifact role not found: {active_role}")
+        active_path = resolved_paths[active_role]
+        active_path_obj = Path(active_path)
+        if not active_path.strip():
+            raise RuntimeError("active artifact path is empty")
+        if not active_path_obj.exists():
+            raise RuntimeError(f"active artifact path does not exist: {active_path}")
         return {
             "paths": resolved_paths,
             "active_role": active_role,
-            "active_path": resolved_paths[active_role],
+            "active_path": active_path,
+            "active_filename": active_path_obj.name,
         }
 
     def _required_devices(self, topology: dict[str, Any]) -> list[str]:
@@ -145,6 +152,11 @@ class Plugin(PluginBase):
             "artifacts": artifacts["paths"],
             "active_image_role": artifacts["active_role"],
             "active_artifact_path": artifacts["active_path"],
+            "active_artifact_filename": artifacts["active_filename"],
+            "fw_name_binding": {
+                "declared_fw_name": runtime_inputs["fw_name"],
+                "artifact_filename": artifacts["active_filename"],
+            },
         }
 
     def _build_transfer_phase(
@@ -167,6 +179,7 @@ class Plugin(PluginBase):
             "id": phase_id,
             "target": target,
             "artifact_path": artifact_path,
+            "artifact_filename": Path(artifact_path).name,
             "transfer_method": transfer_method,
             "shell_ready": True,
         }
@@ -181,7 +194,11 @@ class Plugin(PluginBase):
         profile: dict[str, Any],
         build_time_expected: str,
         image_tag_expected: str,
-    ) -> dict[str, str]:
+    ) -> dict[str, Any]:
+        ready_probe_command = profile["commands"].get("ready_probe", profile["commands"]["proc_version"])
+        ready_probe_output = shell.run(ready_probe_command)
+        if not ready_probe_output.strip():
+            raise RuntimeError(f"ready probe returned empty output: {ready_probe_command}")
         proc_version = shell.run(profile["commands"]["proc_version"])
         image_state = shell.run(profile["commands"]["image_state"])
         build_time_actual = extract_named_group(
@@ -202,7 +219,14 @@ class Plugin(PluginBase):
             raise RuntimeError(
                 f"image tag mismatch: expected {image_tag_expected!r}, got {image_tag_actual!r}"
             )
-        return {"build_time": build_time_actual, "image_tag": image_tag_actual}
+        return {
+            "ready_probe": {
+                "command": ready_probe_command,
+                "output": ready_probe_output,
+            },
+            "build_time": build_time_actual,
+            "image_tag": image_tag_actual,
+        }
 
     def _resolve_case(self, case_id: str) -> dict[str, Any]:
         for case in self.discover_cases():
@@ -222,7 +246,11 @@ class Plugin(PluginBase):
         topology = self.topologies[case["topology_ref"]]
         runtime_inputs = self._resolve_runtime_inputs(case, runtime_overrides)
         artifacts = self._resolve_artifacts(case, runtime_overrides)
-        fw_name = runtime_inputs["fw_name"]
+        fw_name = artifacts["active_filename"]
+        if runtime_inputs["fw_name"] != fw_name:
+            raise RuntimeError(
+                f"fw_name does not match active artifact filename: {runtime_inputs['fw_name']!r} != {fw_name!r}"
+            )
         build_time_expected = runtime_inputs["expected_build_time"]
         image_tag_expected = runtime_inputs["expected_image_tag"]
         evidence: dict[str, Any] = {"phases": []}
@@ -263,6 +291,8 @@ class Plugin(PluginBase):
                 evidence["phases"].append(
                     {
                         "id": phase,
+                        "artifact_path": artifacts["active_path"],
+                        "artifact_filename": artifacts["active_filename"],
                         "transcript": run_flash_sequence(
                             shells["STA"],
                             commands=profile["commands"],
@@ -287,6 +317,8 @@ class Plugin(PluginBase):
                 evidence["phases"].append(
                     {
                         "id": phase,
+                        "artifact_path": artifacts["active_path"],
+                        "artifact_filename": artifacts["active_filename"],
                         "transcript": run_flash_sequence(
                             shells["DUT"],
                             commands=profile["commands"],
