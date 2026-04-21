@@ -9,6 +9,7 @@ import yaml
 from plugins.brcm_fw_upgrade.strategies.flash import run_flash_sequence
 from plugins.brcm_fw_upgrade.strategies.transfer import render_md5_command, select_transfer_method
 from plugins.brcm_fw_upgrade.strategies.verify import extract_named_group
+from testpilot.core.testbed_config import TestbedConfig
 from testpilot.core.plugin_base import PluginBase
 from testpilot.schema.case_schema import (
     CaseValidationError,
@@ -271,9 +272,21 @@ class Plugin(PluginBase):
                 return case
         raise KeyError(f"unknown case id: {case_id}")
 
+    def _topology_name(self, topology: Any) -> str:
+        if isinstance(topology, TestbedConfig):
+            return topology.name
+        if isinstance(topology, dict):
+            name = topology.get("name")
+            if isinstance(name, str) and name:
+                return name
+        name = getattr(topology, "name", None)
+        if isinstance(name, str) and name:
+            return name
+        return "unnamed"
+
     def run_cases(
         self,
-        topology: dict[str, Any],
+        topology: Any,
         *,
         case_ids: list[str] | None,
         runtime_overrides: dict[str, str],
@@ -285,15 +298,28 @@ class Plugin(PluginBase):
         if unknown_case_ids:
             raise ValueError(f"unknown case id(s): {', '.join(unknown_case_ids)}")
 
-        topology_name = topology.get("name", "unnamed") if isinstance(topology, dict) else "unnamed"
+        requested_platform_profile = runtime_overrides.get("PLATFORM_PROFILE")
+        requested_topology = runtime_overrides.get("TOPOLOGY")
+        topology_name = self._topology_name(topology)
         results = []
         for case_id in requested_case_ids:
             case = cases_by_id[case_id]
+            case_platform_profile = str(case["platform_profile"])
+            case_topology_ref = str(case["topology_ref"])
+            if requested_platform_profile and requested_platform_profile != case_platform_profile:
+                raise ValueError(
+                    f"case {case_id!r} requires platform_profile {case_platform_profile!r}, "
+                    f"got {requested_platform_profile!r}"
+                )
+            if requested_topology and requested_topology != case_topology_ref:
+                raise ValueError(
+                    f"case {case_id!r} requires topology {case_topology_ref!r}, got {requested_topology!r}"
+                )
             results.append(
                 {
                     "case_id": case_id,
-                    "platform_profile": case["platform_profile"],
-                    "topology_ref": case["topology_ref"],
+                    "platform_profile": case_platform_profile,
+                    "topology_ref": case_topology_ref,
                     "topology_name": topology_name,
                     "runtime_overrides": dict(runtime_overrides),
                 }

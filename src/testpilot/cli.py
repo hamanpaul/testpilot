@@ -259,11 +259,14 @@ def brcm_fw_upgrade_run(
             runtime_overrides[key] = value
     except ValueError as exc:
         raise click.ClickException(str(exc)) from exc
-    result = plugin.run_cases(
-        orch.config,
-        case_ids=list(case_ids) if case_ids else None,
-        runtime_overrides=runtime_overrides,
-    )
+    try:
+        result = plugin.run_cases(
+            orch.config,
+            case_ids=list(case_ids) if case_ids else None,
+            runtime_overrides=runtime_overrides,
+        )
+    except (KeyError, ValueError) as exc:
+        raise click.ClickException(str(exc)) from exc
     console.print_json(data=result)
 
 
