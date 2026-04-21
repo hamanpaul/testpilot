@@ -118,6 +118,8 @@ class Plugin(PluginBase):
             raise RuntimeError("active artifact path is empty")
         if not active_path_obj.exists():
             raise RuntimeError(f"active artifact path does not exist: {active_path}")
+        if not active_path_obj.is_file():
+            raise RuntimeError(f"active artifact path is not a file: {active_path}")
         return {
             "paths": resolved_paths,
             "active_role": active_role,
@@ -196,9 +198,26 @@ class Plugin(PluginBase):
         image_tag_expected: str,
     ) -> dict[str, Any]:
         ready_probe_command = profile["commands"].get("ready_probe", profile["commands"]["proc_version"])
-        ready_probe_output = shell.run(ready_probe_command)
-        if not ready_probe_output.strip():
-            raise RuntimeError(f"ready probe returned empty output: {ready_probe_command}")
+        ready_probe_attempts = int(profile["commands"].get("ready_probe_attempts", "1"))
+        if ready_probe_attempts < 1:
+            raise RuntimeError(f"ready_probe_attempts must be >= 1, got {ready_probe_attempts}")
+        ready_probe_history: list[dict[str, Any]] = []
+        ready_probe_output = ""
+        for attempt in range(1, ready_probe_attempts + 1):
+            ready_probe_output = shell.run(ready_probe_command)
+            ready_probe_history.append(
+                {
+                    "attempt": attempt,
+                    "command": ready_probe_command,
+                    "output": ready_probe_output,
+                }
+            )
+            if ready_probe_output.strip():
+                break
+        else:
+            raise RuntimeError(
+                f"ready probe returned empty output after {ready_probe_attempts} attempts: {ready_probe_command}"
+            )
         proc_version = shell.run(profile["commands"]["proc_version"])
         image_state = shell.run(profile["commands"]["image_state"])
         build_time_actual = extract_named_group(
@@ -222,6 +241,7 @@ class Plugin(PluginBase):
         return {
             "ready_probe": {
                 "command": ready_probe_command,
+                "attempts": ready_probe_history,
                 "output": ready_probe_output,
             },
             "build_time": build_time_actual,

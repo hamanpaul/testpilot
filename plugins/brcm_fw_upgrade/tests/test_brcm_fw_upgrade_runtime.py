@@ -91,13 +91,18 @@ def test_plugin_loads_profile_and_topology_metadata():
 
 
 class _RecordingShell:
-    def __init__(self, outputs: dict[str, str]) -> None:
+    def __init__(self, outputs: dict[str, str | list[str]]) -> None:
         self.outputs = dict(outputs)
         self.commands: list[str] = []
 
     def run(self, command: str) -> str:
         self.commands.append(command)
-        return self.outputs.get(command, "")
+        output = self.outputs.get(command, "")
+        if isinstance(output, list):
+            if output:
+                return output.pop(0)
+            return ""
+        return output
 
 
 class _RuntimePluginHarness:
@@ -269,6 +274,9 @@ def test_dut_sta_case_verifies_sta_before_flashing_dut():
     assert result["evidence"]["phases"][3]["artifact_filename"] == forward_artifact.name
     assert result["evidence"]["phases"][4]["checks"]["ready_probe"] == {
         "command": "echo ready",
+        "attempts": [
+            {"attempt": 1, "command": "echo ready", "output": "ready"},
+        ],
         "output": "ready",
     }
     assert harness.shells["STA"].commands[:5] == [
@@ -325,6 +333,25 @@ def test_dut_sta_case_fails_precheck_when_active_artifact_missing():
     assert harness.shells["DUT"].commands == []
 
 
+def test_dut_sta_case_fails_precheck_when_active_artifact_is_not_a_file():
+    plugin = _load_plugin()
+    harness = _RuntimePluginHarness(fw_name=Path(__file__).resolve().parent.name)
+    not_a_file = Path(__file__).resolve().parent
+
+    with pytest.raises(RuntimeError, match="active artifact path is not a file"):
+        plugin.run_case(
+            case_id="brcm-fw-upgrade-dut-sta-forward",
+            shells=harness.shells,
+            runtime_overrides=_runtime_overrides(
+                forward_path=not_a_file,
+                fw_name=not_a_file.name,
+            ),
+        )
+
+    assert harness.shells["STA"].commands == []
+    assert harness.shells["DUT"].commands == []
+
+
 def test_dut_sta_case_stops_when_sta_verification_fails():
     plugin = _load_plugin()
     overrides = _runtime_overrides()
@@ -347,7 +374,7 @@ def test_dut_sta_case_fails_when_ready_probe_is_empty():
     harness = _RuntimePluginHarness(fw_name=overrides["FW_NAME"])
     harness.shells["STA"].outputs["echo ready"] = ""
 
-    with pytest.raises(RuntimeError, match="ready probe returned empty output"):
+    with pytest.raises(RuntimeError, match="ready probe returned empty output after 3 attempts"):
         plugin.run_case(
             case_id="brcm-fw-upgrade-dut-sta-forward",
             shells=harness.shells,
@@ -361,5 +388,30 @@ def test_dut_sta_case_fails_when_ready_probe_is_empty():
         "bcm_bootstate 1",
         "reboot",
         "echo ready",
+        "echo ready",
+        "echo ready",
     ]
     assert harness.shells["DUT"].commands == []
+
+
+def test_dut_sta_case_ready_probe_retries_until_success():
+    plugin = _load_plugin()
+    overrides = _runtime_overrides()
+    harness = _RuntimePluginHarness(fw_name=overrides["FW_NAME"])
+    harness.shells["STA"].outputs["echo ready"] = ["", "ready"]
+
+    result = plugin.run_case(
+        case_id="brcm-fw-upgrade-dut-sta-forward",
+        shells=harness.shells,
+        runtime_overrides=overrides,
+    )
+
+    assert result["verdict"] is True
+    assert result["evidence"]["phases"][4]["checks"]["ready_probe"] == {
+        "command": "echo ready",
+        "attempts": [
+            {"attempt": 1, "command": "echo ready", "output": ""},
+            {"attempt": 2, "command": "echo ready", "output": "ready"},
+        ],
+        "output": "ready",
+    }
