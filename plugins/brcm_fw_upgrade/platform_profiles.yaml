@@ -1,0 +1,10 @@
+version: "2026-04-21"
+profiles:
+  bgw720_prpl:
+    family: brcm
+    board: BGW720-300
+    os_flavor: prpl
+  bgw720_bdk:
+    family: brcm
+    board: BGW720-300
+    os_flavor: pure_bdk

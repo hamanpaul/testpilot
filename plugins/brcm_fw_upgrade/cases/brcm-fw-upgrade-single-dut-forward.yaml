@@ -1,0 +1,4 @@
+id: brcm-fw-upgrade-single-dut-forward
+name: BRCM single DUT forward upgrade
+platform_profile: bgw720_prpl
+topology_ref: single_dut

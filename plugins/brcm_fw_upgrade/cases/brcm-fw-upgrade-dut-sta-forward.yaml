@@ -1,0 +1,4 @@
+id: brcm-fw-upgrade-dut-sta-forward
+name: BRCM DUT+STA forward upgrade
+platform_profile: bgw720_prpl
+topology_ref: dut_plus_sta

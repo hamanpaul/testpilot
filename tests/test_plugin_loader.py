@@ -35,3 +35,18 @@ def test_discover_cases():
     assert "d263-getradiostats-broadcastpacketsreceived" in ids
     assert "wifi-llapi-legacy-fixture-kickstation" not in ids
     assert "wifi-llapi-legacy-fixture-getradiostats" not in ids
+
+
+def test_discover_plugins_includes_brcm_fw_upgrade():
+    root = Path(__file__).resolve().parents[1]
+    loader = PluginLoader(root / "plugins")
+    assert "brcm_fw_upgrade" in loader.discover()
+
+
+def test_load_brcm_fw_upgrade():
+    root = Path(__file__).resolve().parents[1]
+    loader = PluginLoader(root / "plugins")
+    plugin = loader.load("brcm_fw_upgrade")
+    assert plugin.name == "brcm_fw_upgrade"
+    assert plugin.version == "0.1.0"
+    assert len(plugin.discover_cases()) == 2
