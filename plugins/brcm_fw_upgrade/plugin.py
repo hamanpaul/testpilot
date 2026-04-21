@@ -271,6 +271,40 @@ class Plugin(PluginBase):
                 return case
         raise KeyError(f"unknown case id: {case_id}")
 
+    def run_cases(
+        self,
+        topology: dict[str, Any],
+        *,
+        case_ids: list[str] | None,
+        runtime_overrides: dict[str, str],
+    ) -> dict[str, Any]:
+        discovered_cases = self.discover_cases()
+        cases_by_id = {str(case["id"]): case for case in discovered_cases}
+        requested_case_ids = case_ids or list(cases_by_id)
+        unknown_case_ids = [case_id for case_id in requested_case_ids if case_id not in cases_by_id]
+        if unknown_case_ids:
+            raise ValueError(f"unknown case id(s): {', '.join(unknown_case_ids)}")
+
+        topology_name = topology.get("name", "unnamed") if isinstance(topology, dict) else "unnamed"
+        results = []
+        for case_id in requested_case_ids:
+            case = cases_by_id[case_id]
+            results.append(
+                {
+                    "case_id": case_id,
+                    "platform_profile": case["platform_profile"],
+                    "topology_ref": case["topology_ref"],
+                    "topology_name": topology_name,
+                    "runtime_overrides": dict(runtime_overrides),
+                }
+            )
+
+        return {
+            "status": "ok",
+            "selected_case_ids": requested_case_ids,
+            "results": results,
+        }
+
     def run_case(
         self,
         *,

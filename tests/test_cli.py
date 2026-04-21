@@ -111,6 +111,7 @@ def test_help_text_for_main():
     assert "list-plugins" in result.output
     assert "list-cases" in result.output
     assert "run" in result.output
+    assert "brcm-fw-upgrade" in result.output
     assert "wifi-llapi" in result.output
 
 
@@ -122,6 +123,87 @@ def test_help_text_for_wifi_llapi_group():
     assert "baseline-qualify" in result.output
     assert "build-template-report" in result.output
     assert "audit-yaml-commands" in result.output
+
+
+def test_help_text_for_brcm_fw_upgrade_group():
+    runner = CliRunner()
+    result = runner.invoke(main, ["brcm-fw-upgrade", "--help"])
+    assert result.exit_code == 0
+    assert "run" in result.output
+
+
+def test_brcm_fw_upgrade_run_invokes_plugin_with_runtime_overrides(monkeypatch):
+    _clear_provider_env(monkeypatch)
+    calls: list[dict[str, Any]] = []
+
+    class FakePlugin:
+        def run_cases(self, topology, *, case_ids, runtime_overrides):
+            calls.append(
+                {
+                    "topology": topology,
+                    "case_ids": case_ids,
+                    "runtime_overrides": runtime_overrides,
+                }
+            )
+            return {"status": "ok", "case_ids": case_ids}
+
+    class FakeLoader:
+        def load(self, plugin_name: str):
+            assert plugin_name == "brcm_fw_upgrade"
+            return FakePlugin()
+
+    class FakeOrchestrator:
+        def __init__(self, project_root):
+            self.project_root = project_root
+            self.loader = FakeLoader()
+            self.config = {"name": "fake-topology"}
+
+    monkeypatch.setattr(testpilot.cli, "Orchestrator", FakeOrchestrator)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "brcm-fw-upgrade",
+            "run",
+            "--case",
+            "brcm-fw-upgrade-dut-sta-forward",
+            "--forward-image",
+            "/tmp/0410.pkgtb",
+            "--rollback-image",
+            "/tmp/0403.pkgtb",
+            "--fw-name",
+            "bcmBGW720-300_squashfs_full_update.pkgtb",
+            "--expected-image-tag",
+            "631BGW720-3001101323",
+            "--expected-build-time",
+            "Mon Apr 20 13:02:57 CST 2026",
+            "--platform-profile",
+            "bgw720_prpl",
+            "--topology",
+            "dut_plus_sta",
+            "--set",
+            "DUT_IP=192.168.1.1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert calls == [
+        {
+            "topology": {"name": "fake-topology"},
+            "case_ids": ["brcm-fw-upgrade-dut-sta-forward"],
+            "runtime_overrides": {
+                "FW_FORWARD_PATH": "/tmp/0410.pkgtb",
+                "FW_ROLLBACK_PATH": "/tmp/0403.pkgtb",
+                "FW_NAME": "bcmBGW720-300_squashfs_full_update.pkgtb",
+                "EXPECTED_IMAGE_TAG": "631BGW720-3001101323",
+                "EXPECTED_BUILD_TIME": "Mon Apr 20 13:02:57 CST 2026",
+                "PLATFORM_PROFILE": "bgw720_prpl",
+                "TOPOLOGY": "dut_plus_sta",
+                "DUT_IP": "192.168.1.1",
+            },
+        }
+    ]
 
 
 def test_baseline_qualify_invokes_wifi_llapi_plugin(monkeypatch):

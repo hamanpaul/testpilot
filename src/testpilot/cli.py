@@ -49,6 +49,13 @@ def _run_command_guidance() -> str:
     )
 
 
+def _parse_runtime_override(raw: str) -> tuple[str, str]:
+    key, sep, value = raw.partition("=")
+    if not sep or not key:
+        raise ValueError(f"invalid runtime override {raw!r}; expected KEY=VALUE")
+    return key, value
+
+
 class HelpfulRunCommand(click.Command):
     def parse_args(self, ctx: click.Context, args: list[str]) -> list[str]:
         try:
@@ -204,6 +211,60 @@ def run_tests(
 @main.group("wifi-llapi")
 def wifi_llapi_group() -> None:
     """wifi_llapi plugin helper commands."""
+
+
+@main.group("brcm-fw-upgrade")
+def brcm_fw_upgrade_group() -> None:
+    """brcm_fw_upgrade plugin helper commands."""
+
+
+@brcm_fw_upgrade_group.command("run")
+@click.option("--case", "case_ids", multiple=True, help="Specific brcm_fw_upgrade case IDs to run.")
+@click.option("--forward-image", required=True, type=click.Path(dir_okay=False))
+@click.option("--rollback-image", required=True, type=click.Path(dir_okay=False))
+@click.option("--fw-name", required=True)
+@click.option("--expected-image-tag", required=True)
+@click.option("--expected-build-time", required=True)
+@click.option("--platform-profile", required=True)
+@click.option("--topology", "topology_name", required=True)
+@click.option("--set", "extra_vars", multiple=True, help="Extra KEY=VALUE runtime overrides.")
+@click.pass_context
+def brcm_fw_upgrade_run(
+    ctx: click.Context,
+    case_ids: tuple[str, ...],
+    forward_image: str,
+    rollback_image: str,
+    fw_name: str,
+    expected_image_tag: str,
+    expected_build_time: str,
+    platform_profile: str,
+    topology_name: str,
+    extra_vars: tuple[str, ...],
+) -> None:
+    """Run brcm_fw_upgrade cases with explicit runtime overrides."""
+    orch: Orchestrator = ctx.obj["orchestrator"]
+    plugin = orch.loader.load("brcm_fw_upgrade")
+    runtime_overrides = {
+        "FW_FORWARD_PATH": forward_image,
+        "FW_ROLLBACK_PATH": rollback_image,
+        "FW_NAME": fw_name,
+        "EXPECTED_IMAGE_TAG": expected_image_tag,
+        "EXPECTED_BUILD_TIME": expected_build_time,
+        "PLATFORM_PROFILE": platform_profile,
+        "TOPOLOGY": topology_name,
+    }
+    try:
+        for item in extra_vars:
+            key, value = _parse_runtime_override(item)
+            runtime_overrides[key] = value
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+    result = plugin.run_cases(
+        orch.config,
+        case_ids=list(case_ids) if case_ids else None,
+        runtime_overrides=runtime_overrides,
+    )
+    console.print_json(data=result)
 
 
 @wifi_llapi_group.command("baseline-qualify")
