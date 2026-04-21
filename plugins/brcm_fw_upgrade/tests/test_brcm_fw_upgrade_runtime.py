@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -91,18 +92,23 @@ def test_plugin_loads_profile_and_topology_metadata():
 
 
 class _RecordingShell:
-    def __init__(self, outputs: dict[str, str | list[str]]) -> None:
+    def __init__(self, outputs: dict[str, object]) -> None:
         self.outputs = dict(outputs)
         self.commands: list[str] = []
 
     def run(self, command: str) -> str:
         self.commands.append(command)
         output = self.outputs.get(command, "")
+        if isinstance(output, Exception):
+            raise output
         if isinstance(output, list):
             if output:
-                return output.pop(0)
+                next_output = output.pop(0)
+                if isinstance(next_output, Exception):
+                    raise next_output
+                return cast(str, next_output)
             return ""
-        return output
+        return cast(str, output)
 
 
 class _RuntimePluginHarness:
@@ -211,10 +217,12 @@ def test_flash_sequence_raises_when_bootstate_marker_missing():
         )
 
 
-def test_dut_sta_case_verifies_sta_before_flashing_dut():
+def test_dut_sta_case_verifies_sta_before_flashing_dut(monkeypatch: pytest.MonkeyPatch):
     plugin = _load_plugin()
     overrides = _runtime_overrides()
     harness = _RuntimePluginHarness(fw_name=overrides["FW_NAME"])
+    sleep_calls: list[float] = []
+    monkeypatch.setattr("plugins.brcm_fw_upgrade.plugin.time.sleep", lambda delay: sleep_calls.append(delay))
     result = plugin.run_case(
         case_id="brcm-fw-upgrade-dut-sta-forward",
         shells=harness.shells,
@@ -274,11 +282,13 @@ def test_dut_sta_case_verifies_sta_before_flashing_dut():
     assert result["evidence"]["phases"][3]["artifact_filename"] == forward_artifact.name
     assert result["evidence"]["phases"][4]["checks"]["ready_probe"] == {
         "command": "echo ready",
+        "retry_delay_seconds": 1.0,
         "attempts": [
-            {"attempt": 1, "command": "echo ready", "output": "ready"},
+            {"attempt": 1, "command": "echo ready", "output": "ready", "status": "ready"},
         ],
         "output": "ready",
     }
+    assert sleep_calls == []
     assert harness.shells["STA"].commands[:5] == [
         "cd /tmp",
         f"bcm_flasher {forward_artifact.name}",
@@ -368,13 +378,15 @@ def test_dut_sta_case_stops_when_sta_verification_fails():
     assert harness.shells["DUT"].commands == []
 
 
-def test_dut_sta_case_fails_when_ready_probe_is_empty():
+def test_dut_sta_case_fails_when_ready_probe_is_empty(monkeypatch: pytest.MonkeyPatch):
     plugin = _load_plugin()
     overrides = _runtime_overrides()
     harness = _RuntimePluginHarness(fw_name=overrides["FW_NAME"])
     harness.shells["STA"].outputs["echo ready"] = ""
+    sleep_calls: list[float] = []
+    monkeypatch.setattr("plugins.brcm_fw_upgrade.plugin.time.sleep", lambda delay: sleep_calls.append(delay))
 
-    with pytest.raises(RuntimeError, match="ready probe returned empty output after 3 attempts"):
+    with pytest.raises(RuntimeError, match="ready probe failed after 3 attempts"):
         plugin.run_case(
             case_id="brcm-fw-upgrade-dut-sta-forward",
             shells=harness.shells,
@@ -391,14 +403,17 @@ def test_dut_sta_case_fails_when_ready_probe_is_empty():
         "echo ready",
         "echo ready",
     ]
+    assert sleep_calls == [1.0, 1.0]
     assert harness.shells["DUT"].commands == []
 
 
-def test_dut_sta_case_ready_probe_retries_until_success():
+def test_dut_sta_case_ready_probe_retries_until_success(monkeypatch: pytest.MonkeyPatch):
     plugin = _load_plugin()
     overrides = _runtime_overrides()
     harness = _RuntimePluginHarness(fw_name=overrides["FW_NAME"])
     harness.shells["STA"].outputs["echo ready"] = ["", "ready"]
+    sleep_calls: list[float] = []
+    monkeypatch.setattr("plugins.brcm_fw_upgrade.plugin.time.sleep", lambda delay: sleep_calls.append(delay))
 
     result = plugin.run_case(
         case_id="brcm-fw-upgrade-dut-sta-forward",
@@ -409,9 +424,52 @@ def test_dut_sta_case_ready_probe_retries_until_success():
     assert result["verdict"] is True
     assert result["evidence"]["phases"][4]["checks"]["ready_probe"] == {
         "command": "echo ready",
+        "retry_delay_seconds": 1.0,
         "attempts": [
-            {"attempt": 1, "command": "echo ready", "output": ""},
-            {"attempt": 2, "command": "echo ready", "output": "ready"},
+            {
+                "attempt": 1,
+                "command": "echo ready",
+                "output": "",
+                "status": "empty",
+                "slept_seconds": 1.0,
+            },
+            {"attempt": 2, "command": "echo ready", "output": "ready", "status": "ready"},
         ],
         "output": "ready",
     }
+    assert sleep_calls == [1.0]
+
+
+def test_dut_sta_case_ready_probe_retries_after_transient_exception(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    plugin = _load_plugin()
+    overrides = _runtime_overrides()
+    harness = _RuntimePluginHarness(fw_name=overrides["FW_NAME"])
+    harness.shells["STA"].outputs["echo ready"] = [RuntimeError("transport not ready"), "ready"]
+    sleep_calls: list[float] = []
+    monkeypatch.setattr("plugins.brcm_fw_upgrade.plugin.time.sleep", lambda delay: sleep_calls.append(delay))
+
+    result = plugin.run_case(
+        case_id="brcm-fw-upgrade-dut-sta-forward",
+        shells=harness.shells,
+        runtime_overrides=overrides,
+    )
+
+    assert result["verdict"] is True
+    assert result["evidence"]["phases"][4]["checks"]["ready_probe"] == {
+        "command": "echo ready",
+        "retry_delay_seconds": 1.0,
+        "attempts": [
+            {
+                "attempt": 1,
+                "command": "echo ready",
+                "error": "transport not ready",
+                "status": "error",
+                "slept_seconds": 1.0,
+            },
+            {"attempt": 2, "command": "echo ready", "output": "ready", "status": "ready"},
+        ],
+        "output": "ready",
+    }
+    assert sleep_calls == [1.0]

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Any
 
@@ -197,29 +198,44 @@ class Plugin(PluginBase):
         build_time_expected: str,
         image_tag_expected: str,
     ) -> dict[str, Any]:
-        ready_probe_command = profile["commands"].get("ready_probe", profile["commands"]["proc_version"])
-        ready_probe_attempts = int(profile["commands"].get("ready_probe_attempts", "1"))
+        commands = profile["commands"]
+        ready_probe_command = commands.get("ready_probe", commands["proc_version"])
+        ready_probe_attempts = int(commands.get("ready_probe_attempts", "1"))
+        ready_probe_retry_delay_seconds = float(commands.get("ready_probe_retry_delay_seconds", "0"))
         if ready_probe_attempts < 1:
             raise RuntimeError(f"ready_probe_attempts must be >= 1, got {ready_probe_attempts}")
+        if ready_probe_retry_delay_seconds < 0:
+            raise RuntimeError(
+                f"ready_probe_retry_delay_seconds must be >= 0, got {ready_probe_retry_delay_seconds}"
+            )
         ready_probe_history: list[dict[str, Any]] = []
         ready_probe_output = ""
         for attempt in range(1, ready_probe_attempts + 1):
-            ready_probe_output = shell.run(ready_probe_command)
-            ready_probe_history.append(
-                {
-                    "attempt": attempt,
-                    "command": ready_probe_command,
-                    "output": ready_probe_output,
-                }
-            )
-            if ready_probe_output.strip():
-                break
+            attempt_record: dict[str, Any] = {
+                "attempt": attempt,
+                "command": ready_probe_command,
+            }
+            try:
+                ready_probe_output = shell.run(ready_probe_command)
+            except Exception as exc:
+                attempt_record["error"] = str(exc)
+                attempt_record["status"] = "error"
+                ready_probe_history.append(attempt_record)
+            else:
+                attempt_record["output"] = ready_probe_output
+                attempt_record["status"] = "ready" if ready_probe_output.strip() else "empty"
+                ready_probe_history.append(attempt_record)
+                if ready_probe_output.strip():
+                    break
+            if attempt < ready_probe_attempts and ready_probe_retry_delay_seconds > 0:
+                time.sleep(ready_probe_retry_delay_seconds)
+                ready_probe_history[-1]["slept_seconds"] = ready_probe_retry_delay_seconds
         else:
             raise RuntimeError(
-                f"ready probe returned empty output after {ready_probe_attempts} attempts: {ready_probe_command}"
+                f"ready probe failed after {ready_probe_attempts} attempts: {ready_probe_history}"
             )
-        proc_version = shell.run(profile["commands"]["proc_version"])
-        image_state = shell.run(profile["commands"]["image_state"])
+        proc_version = shell.run(commands["proc_version"])
+        image_state = shell.run(commands["image_state"])
         build_time_actual = extract_named_group(
             profile["success_parsers"]["proc_version_build_time"],
             proc_version,
@@ -241,6 +257,7 @@ class Plugin(PluginBase):
         return {
             "ready_probe": {
                 "command": ready_probe_command,
+                "retry_delay_seconds": ready_probe_retry_delay_seconds,
                 "attempts": ready_probe_history,
                 "output": ready_probe_output,
             },
