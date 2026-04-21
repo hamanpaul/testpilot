@@ -1,11 +1,25 @@
 """Test YAML case schema validation."""
 
+from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
+
 import pytest
+import yaml
 from testpilot.schema.case_schema import (
     CaseValidationError,
+    load_brcm_fw_upgrade_platform_profiles,
+    load_brcm_fw_upgrade_topologies,
     load_wifi_band_baselines,
+    validate_brcm_fw_upgrade_case,
     validate_case,
 )
+
+_PLUGIN_PATH = Path(__file__).resolve().parents[1] / "plugins" / "brcm_fw_upgrade" / "plugin.py"
+_PLUGIN_SPEC = spec_from_file_location("tests_brcm_fw_upgrade_plugin", _PLUGIN_PATH)
+assert _PLUGIN_SPEC and _PLUGIN_SPEC.loader
+_PLUGIN_MODULE = module_from_spec(_PLUGIN_SPEC)
+_PLUGIN_SPEC.loader.exec_module(_PLUGIN_MODULE)
+Plugin = _PLUGIN_MODULE.Plugin
 
 
 def _minimal_case(**overrides):
@@ -15,6 +29,39 @@ def _minimal_case(**overrides):
         "topology": {"devices": {"DUT": {"role": "ap"}}},
         "steps": [{"id": "s1", "action": "exec", "target": "DUT"}],
         "pass_criteria": [{"field": "x", "operator": "==", "value": "y"}],
+    }
+    base.update(overrides)
+    return base
+
+
+def _minimal_brcm_case(**overrides):
+    base = {
+        "id": "brcm-fw-upgrade-dut-sta-forward",
+        "name": "BRCM DUT+STA forward upgrade",
+        "platform_profile": "bgw720_prpl",
+        "topology_ref": "dut_plus_sta",
+        "artifacts": {
+            "forward_image": "{{FW_FORWARD_PATH}}",
+            "rollback_image": "{{FW_ROLLBACK_PATH}}",
+            "active_image_role": "forward_image",
+        },
+        "runtime_inputs": {
+            "fw_name": "{{FW_NAME}}",
+            "expected_image_tag": "{{EXPECTED_IMAGE_TAG}}",
+            "expected_build_time": "{{EXPECTED_BUILD_TIME}}",
+        },
+        "success_gates": [
+            {
+                "id": "image_tag_matches",
+                "verifier": "image_tag",
+                "operator": "equals",
+                "expected": "{{EXPECTED_IMAGE_TAG}}",
+            }
+        ],
+        "evidence": {
+            "capture": ["dut_serial", "sta_serial", "command_output"],
+            "required_for_pass": ["image_tag_matches"],
+        },
     }
     base.update(overrides)
     return base
@@ -204,3 +251,314 @@ profiles:
 
     with pytest.raises(CaseValidationError, match="missing wifi baseline profiles"):
         load_wifi_band_baselines(baseline_file)
+
+
+def test_validate_brcm_fw_upgrade_case_accepts_minimal_valid_case():
+    validate_brcm_fw_upgrade_case(_minimal_brcm_case())
+
+
+def test_validate_brcm_fw_upgrade_case_rejects_missing_success_gates():
+    case = _minimal_brcm_case()
+    del case["success_gates"]
+    with pytest.raises(CaseValidationError, match="missing required keys"):
+        validate_brcm_fw_upgrade_case(case)
+
+
+def test_validate_brcm_fw_upgrade_case_rejects_missing_gate_fields():
+    case = _minimal_brcm_case(success_gates=[{"id": "image_tag_matches"}])
+    with pytest.raises(CaseValidationError, match="success_gates\\[0\\] missing required keys"):
+        validate_brcm_fw_upgrade_case(case)
+
+
+def test_validate_brcm_fw_upgrade_case_accepts_one_of_expected_list():
+    case = _minimal_brcm_case(
+        success_gates=[
+            {
+                "id": "image_tag_matches",
+                "verifier": "image_tag",
+                "operator": "one_of",
+                "expected": ["{{EXPECTED_IMAGE_TAG}}", "{{FALLBACK_IMAGE_TAG}}"],
+            }
+        ]
+    )
+    validate_brcm_fw_upgrade_case(case)
+
+
+def test_validate_brcm_fw_upgrade_case_rejects_unknown_operator():
+    case = _minimal_brcm_case(
+        success_gates=[
+            {
+                "id": "image_tag_matches",
+                "verifier": "image_tag",
+                "operator": "typo",
+                "expected": "{{EXPECTED_IMAGE_TAG}}",
+            }
+        ]
+    )
+    with pytest.raises(CaseValidationError, match="operator must be one of"):
+        validate_brcm_fw_upgrade_case(case)
+
+
+def test_validate_brcm_fw_upgrade_case_rejects_invalid_active_image_role():
+    case = _minimal_brcm_case(
+        artifacts={
+            "forward_image": "{{FW_FORWARD_PATH}}",
+            "rollback_image": "{{FW_ROLLBACK_PATH}}",
+            "active_image_role": "active_image_role",
+        }
+    )
+    with pytest.raises(CaseValidationError, match="active_image_role"):
+        validate_brcm_fw_upgrade_case(case)
+
+
+def test_validate_brcm_fw_upgrade_case_rejects_non_string_platform_profile():
+    case = _minimal_brcm_case(platform_profile=["bgw720_prpl"])
+    with pytest.raises(CaseValidationError, match="platform_profile"):
+        validate_brcm_fw_upgrade_case(case)
+
+
+def test_load_brcm_fw_upgrade_platform_profiles_accepts_valid_file(tmp_path):
+    path = tmp_path / "profiles.yaml"
+    path.write_text(
+        """
+version: "2026-04-21"
+profiles:
+  bgw720_prpl:
+    family: brcm
+    board: BGW720-300
+    os_flavor: prpl
+    login_strategy: none
+    capabilities:
+      has_scp: true
+      has_md5sum: true
+      has_bcm_bootstate: true
+    commands:
+      proc_version: cat /proc/version
+      image_state: bcm_bootstate
+      md5: md5sum {{path}}
+      flash: bcm_flasher {{fw_name}}
+      reboot: reboot
+    success_parsers:
+      proc_version_build_time: "Linux version .*"
+      image_tag: '\\$imageversion: (?P<image_tag>[^$]+) \\$'
+    log_markers:
+      flash_complete: Image flash complete
+""".strip(),
+        encoding="utf-8",
+    )
+    profiles = load_brcm_fw_upgrade_platform_profiles(path)
+    assert profiles["bgw720_prpl"]["capabilities"]["has_scp"] is True
+
+
+def test_load_brcm_fw_upgrade_platform_profiles_rejects_missing_login_strategy(tmp_path):
+    path = tmp_path / "profiles.yaml"
+    path.write_text(
+        """
+version: "2026-04-21"
+profiles:
+  bgw720_prpl:
+    family: brcm
+    board: BGW720-300
+    os_flavor: prpl
+""".strip(),
+        encoding="utf-8",
+    )
+    with pytest.raises(CaseValidationError, match="login_strategy"):
+        load_brcm_fw_upgrade_platform_profiles(path)
+
+
+def test_load_brcm_fw_upgrade_platform_profiles_rejects_non_mapping_capabilities(tmp_path):
+    path = tmp_path / "profiles.yaml"
+    path.write_text(
+        """
+version: "2026-04-21"
+profiles:
+  bgw720_prpl:
+    family: brcm
+    board: BGW720-300
+    os_flavor: prpl
+    login_strategy: none
+    capabilities:
+      - has_scp
+""".strip(),
+        encoding="utf-8",
+    )
+    with pytest.raises(CaseValidationError, match="capabilities"):
+        load_brcm_fw_upgrade_platform_profiles(path)
+
+
+def test_load_brcm_fw_upgrade_platform_profiles_rejects_non_mapping_commands(tmp_path):
+    path = tmp_path / "profiles.yaml"
+    path.write_text(
+        """
+version: "2026-04-21"
+profiles:
+  bgw720_prpl:
+    family: brcm
+    board: BGW720-300
+    os_flavor: prpl
+    login_strategy: none
+    commands: ""
+""".strip(),
+        encoding="utf-8",
+    )
+    with pytest.raises(CaseValidationError, match="commands"):
+        load_brcm_fw_upgrade_platform_profiles(path)
+
+
+def test_load_brcm_fw_upgrade_platform_profiles_rejects_non_string_log_marker(tmp_path):
+    path = tmp_path / "profiles.yaml"
+    path.write_text(
+        """
+version: "2026-04-21"
+profiles:
+  bgw720_prpl:
+    family: brcm
+    board: BGW720-300
+    os_flavor: prpl
+    login_strategy: none
+    log_markers:
+      flash_complete: true
+""".strip(),
+        encoding="utf-8",
+    )
+    with pytest.raises(CaseValidationError, match="log_markers.flash_complete"):
+        load_brcm_fw_upgrade_platform_profiles(path)
+
+
+def test_load_brcm_fw_upgrade_topologies_rejects_missing_phases(tmp_path):
+    path = tmp_path / "topologies.yaml"
+    path.write_text(
+        """
+version: "2026-04-21"
+topologies:
+  single_dut:
+    devices:
+      DUT:
+        required: true
+""".strip(),
+        encoding="utf-8",
+    )
+    with pytest.raises(CaseValidationError, match="phases"):
+        load_brcm_fw_upgrade_topologies(path)
+
+
+def test_load_brcm_fw_upgrade_topologies_rejects_non_mapping_device_entry(tmp_path):
+    path = tmp_path / "topologies.yaml"
+    path.write_text(
+        """
+version: "2026-04-21"
+topologies:
+  single_dut:
+    devices:
+      DUT: required
+    phases:
+      - precheck
+""".strip(),
+        encoding="utf-8",
+    )
+    with pytest.raises(CaseValidationError, match="devices.DUT"):
+        load_brcm_fw_upgrade_topologies(path)
+
+
+def test_brcm_plugin_discovery_rejects_unknown_topology_ref(tmp_path, monkeypatch):
+    cases_dir = tmp_path / "cases"
+    cases_dir.mkdir()
+    (cases_dir / "invalid.yaml").write_text(
+        yaml.safe_dump(_minimal_brcm_case(topology_ref="missing-topology"), sort_keys=False),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(Plugin, "cases_dir", property(lambda self: cases_dir))
+
+    with pytest.raises(CaseValidationError, match="unknown topology_ref"):
+        Plugin().discover_cases()
+
+
+def test_brcm_plugin_discovery_rejects_unknown_platform_profile(tmp_path, monkeypatch):
+    cases_dir = tmp_path / "cases"
+    cases_dir.mkdir()
+    (cases_dir / "invalid.yaml").write_text(
+        yaml.safe_dump(_minimal_brcm_case(platform_profile="missing-profile"), sort_keys=False),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(Plugin, "cases_dir", property(lambda self: cases_dir))
+
+    with pytest.raises(CaseValidationError, match="unknown platform_profile"):
+        Plugin().discover_cases()
+
+
+def test_brcm_plugin_discovery_rejects_unknown_verifier(tmp_path, monkeypatch):
+    cases_dir = tmp_path / "cases"
+    cases_dir.mkdir()
+    invalid_case = _minimal_brcm_case(
+        success_gates=[
+            {
+                "id": "image_tag_matches",
+                "verifier": "missing_parser",
+                "operator": "equals",
+                "expected": "{{EXPECTED_IMAGE_TAG}}",
+            }
+        ]
+    )
+    (cases_dir / "invalid.yaml").write_text(
+        yaml.safe_dump(invalid_case, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(Plugin, "cases_dir", property(lambda self: cases_dir))
+
+    with pytest.raises(CaseValidationError, match="unknown verifier"):
+        Plugin().discover_cases()
+
+
+def test_brcm_plugin_discovery_rejects_unknown_required_for_pass_reference(tmp_path, monkeypatch):
+    cases_dir = tmp_path / "cases"
+    cases_dir.mkdir()
+    invalid_case = _minimal_brcm_case(
+        evidence={
+            "capture": ["dut_serial", "sta_serial", "command_output"],
+            "required_for_pass": ["missing-requirement"],
+        }
+    )
+    (cases_dir / "invalid.yaml").write_text(
+        yaml.safe_dump(invalid_case, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(Plugin, "cases_dir", property(lambda self: cases_dir))
+
+    with pytest.raises(CaseValidationError, match="unknown evidence requirement"):
+        Plugin().discover_cases()
+
+
+def test_brcm_plugin_discovery_accepts_log_marker_required_for_pass(tmp_path, monkeypatch):
+    cases_dir = tmp_path / "cases"
+    cases_dir.mkdir()
+    valid_case = _minimal_brcm_case(
+        evidence={
+            "capture": ["dut_serial", "sta_serial", "command_output"],
+            "required_for_pass": ["flash_complete"],
+        }
+    )
+    (cases_dir / "valid.yaml").write_text(
+        yaml.safe_dump(valid_case, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(Plugin, "cases_dir", property(lambda self: cases_dir))
+
+    cases = Plugin().discover_cases()
+    assert len(cases) == 1
+
+
+def test_brcm_plugin_discovery_rejects_non_mapping_case_yaml(tmp_path, monkeypatch):
+    cases_dir = tmp_path / "cases"
+    cases_dir.mkdir()
+    (cases_dir / "invalid.yaml").write_text("- not-a-mapping\n", encoding="utf-8")
+
+    monkeypatch.setattr(Plugin, "cases_dir", property(lambda self: cases_dir))
+
+    with pytest.raises(CaseValidationError, match="case must be a YAML mapping"):
+        Plugin().discover_cases()
