@@ -5,6 +5,8 @@ from typing import Any
 
 import yaml
 
+from plugins.brcm_fw_upgrade.strategies.flash import run_flash_sequence
+from plugins.brcm_fw_upgrade.strategies.verify import extract_named_group
 from testpilot.core.plugin_base import PluginBase
 from testpilot.schema.case_schema import (
     CaseValidationError,
@@ -71,3 +73,108 @@ class Plugin(PluginBase):
 
     def evaluate(self, case: dict[str, Any], results: dict[str, Any]) -> bool:
         return True
+
+    def _verify_runtime_state(
+        self,
+        *,
+        shell: Any,
+        profile: dict[str, Any],
+        build_time_expected: str,
+        image_tag_expected: str,
+    ) -> dict[str, str]:
+        proc_version = shell.run(profile["commands"]["proc_version"])
+        image_state = shell.run(profile["commands"]["image_state"])
+        build_time_actual = extract_named_group(
+            profile["success_parsers"]["proc_version_build_time"],
+            proc_version,
+            "build_time",
+        )
+        image_tag_actual = extract_named_group(
+            profile["success_parsers"]["image_tag"],
+            image_state,
+            "image_tag",
+        ).strip()
+        if build_time_actual != build_time_expected:
+            raise RuntimeError(
+                f"build time mismatch: expected {build_time_expected!r}, got {build_time_actual!r}"
+            )
+        if image_tag_actual != image_tag_expected:
+            raise RuntimeError(
+                f"image tag mismatch: expected {image_tag_expected!r}, got {image_tag_actual!r}"
+            )
+        return {"build_time": build_time_actual, "image_tag": image_tag_actual}
+
+    def _resolve_case(self, case_id: str) -> dict[str, Any]:
+        for case in self.discover_cases():
+            if case["id"] == case_id:
+                return case
+        raise KeyError(f"unknown case id: {case_id}")
+
+    def run_case(
+        self,
+        *,
+        case_id: str,
+        shells: dict[str, Any],
+        runtime_overrides: dict[str, str],
+    ) -> dict[str, Any]:
+        case = self._resolve_case(case_id)
+        profile = self.platform_profiles[case["platform_profile"]]
+        topology = self.topologies[case["topology_ref"]]
+        fw_name = runtime_overrides["FW_NAME"]
+        build_time_expected = runtime_overrides["EXPECTED_BUILD_TIME"]
+        image_tag_expected = runtime_overrides["EXPECTED_IMAGE_TAG"]
+        evidence: dict[str, Any] = {"phases": []}
+
+        for phase in topology["phases"]:
+            if phase in {"precheck", "transfer_dut", "transfer_sta"}:
+                evidence["phases"].append({"id": phase, "status": "not_implemented_in_task_4"})
+            elif phase == "flash_sta":
+                evidence["phases"].append(
+                    {
+                        "id": phase,
+                        "transcript": run_flash_sequence(
+                            shells["STA"],
+                            fw_name=fw_name,
+                            flash_marker=profile["log_markers"]["flash_complete"],
+                        ),
+                    }
+                )
+            elif phase == "verify_sta":
+                evidence["phases"].append(
+                    {
+                        "id": phase,
+                        "checks": self._verify_runtime_state(
+                            shell=shells["STA"],
+                            profile=profile,
+                            build_time_expected=build_time_expected,
+                            image_tag_expected=image_tag_expected,
+                        ),
+                    }
+                )
+            elif phase == "flash_dut":
+                evidence["phases"].append(
+                    {
+                        "id": phase,
+                        "transcript": run_flash_sequence(
+                            shells["DUT"],
+                            fw_name=fw_name,
+                            flash_marker=profile["log_markers"]["flash_complete"],
+                        ),
+                    }
+                )
+            elif phase == "verify_dut":
+                evidence["phases"].append(
+                    {
+                        "id": phase,
+                        "checks": self._verify_runtime_state(
+                            shell=shells["DUT"],
+                            profile=profile,
+                            build_time_expected=build_time_expected,
+                            image_tag_expected=image_tag_expected,
+                        ),
+                    }
+                )
+            else:
+                raise RuntimeError(f"unsupported phase in task 4 runtime pipeline: {phase}")
+
+        return {"verdict": True, "comment": "", "evidence": evidence}
