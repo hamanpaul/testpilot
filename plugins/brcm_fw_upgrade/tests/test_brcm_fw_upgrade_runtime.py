@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from testpilot.core.plugin_loader import PluginLoader
 
 from plugins.brcm_fw_upgrade.strategies.evidence import slice_log_window
-from plugins.brcm_fw_upgrade.strategies.transfer import select_transfer_method
+from plugins.brcm_fw_upgrade.strategies.login import build_login_commands
+from plugins.brcm_fw_upgrade.strategies.transfer import render_md5_command, select_transfer_method
 from plugins.brcm_fw_upgrade.strategies.verify import extract_named_group
 
 
@@ -21,15 +24,41 @@ def test_transfer_prefers_network_then_relay_then_serial():
     assert select_transfer_method({"has_scp": False}, sta_present=False) == "serial_fallback"
 
 
-def test_extract_named_group_returns_expected_value():
+def test_extract_named_group_uses_production_pattern():
     text = "Linux version 5.15.176 #1 SMP PREEMPT Mon Apr 20 13:02:57 CST 2026"
-    pattern = r"Linux version .* (?P<build_time>[A-Z][a-z]{2} [A-Z][a-z]{2} .+ CST 20[0-9]{2})"
-    assert extract_named_group(pattern, text, "build_time") == "Mon Apr 20 13:02:57 CST 2026"
+    # This is the exact pattern from platform_profiles.yaml proc_version_build_time
+    pattern = r"Linux version .* (?P<build_time>[A-Z][a-z]{2} .+ CST 20[0-9]{2})"
+    assert extract_named_group(pattern, text, "build_time") == "Apr 20 13:02:57 CST 2026"
 
 
-def test_slice_log_window_returns_marker_context():
-    log_text = "\\n".join(["line-1", "line-2", "Image flash complete", "line-4", "line-5"])
-    assert "Image flash complete" in slice_log_window(log_text, "Image flash complete", before=1, after=1)
+def test_slice_log_window_returns_marker_with_context():
+    log_text = "\n".join(["line-1", "line-2", "Image flash complete", "line-4", "line-5"])
+    window = slice_log_window(log_text, "Image flash complete", before=1, after=1)
+    assert "Image flash complete" in window
+    assert "line-2" in window
+    assert "line-4" in window
+    assert "line-1" not in window
+    assert "line-5" not in window
+
+
+def test_build_login_commands_with_no_strategy():
+    assert build_login_commands({"login_strategy": "none"}) == []
+    assert build_login_commands({}) == []
+
+
+def test_build_login_commands_with_serialwrap_profile_login():
+    profile = {"login_strategy": "serialwrap_profile_login", "pre_login_commands": ["cmd1", "cmd2"]}
+    assert build_login_commands(profile) == ["cmd1", "cmd2"]
+
+
+def test_build_login_commands_raises_on_unknown_strategy():
+    with pytest.raises(ValueError, match="unsupported login_strategy: unknown"):
+        build_login_commands({"login_strategy": "unknown"})
+
+
+def test_render_md5_command_substitutes_path():
+    template = "md5sum {{path}}"
+    assert render_md5_command(template, path="/tmp/file.bin") == "md5sum /tmp/file.bin"
 
 
 def test_plugin_loads_profile_and_topology_metadata():
