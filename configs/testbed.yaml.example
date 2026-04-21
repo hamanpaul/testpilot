@@ -38,3 +38,12 @@ testbed:
     KEY_6G: testpilot6g
     SSID_24G: TestPilot_24G
     KEY_24G: testpilot24g
+
+    # brcm_fw_upgrade runtime defaults used by the README examples
+    FW_FORWARD_PATH: /home/build20/BGW720-0410-VERIFY/targets/BGW720-300/bcmBGW720-300_squashfs_full_update.pkgtb
+    FW_ROLLBACK_PATH: /home/build20/BGW720-0403-PATCH/targets/BGW720-300/bcmBGW720-300_squashfs_full_update.pkgtb
+    FW_NAME: bcmBGW720-300_squashfs_full_update.pkgtb
+    EXPECTED_IMAGE_TAG: 631BGW720-3001101323
+    EXPECTED_BUILD_TIME: "Mon Apr 20 13:02:57 CST 2026"
+    PLATFORM_PROFILE: bgw720_prpl
+    TOPOLOGY: dut_plus_sta

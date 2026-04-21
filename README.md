@@ -90,6 +90,7 @@ testpilot --version
 python -m testpilot.cli --version
 python -m testpilot.cli list-plugins
 python -m testpilot.cli list-cases wifi_llapi
+python -m testpilot.cli list-cases brcm_fw_upgrade
 python -m testpilot.cli wifi-llapi baseline-qualify --band 5g
 python -m testpilot.cli run wifi_llapi --case wifi-llapi-D004-kickstation
 ```
@@ -186,6 +187,24 @@ testpilot wifi-llapi json-to-html \
 
 # With Azure OpenAI
 testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
+```
+
+### BRCM firmware upgrade plugin
+
+Use `brcm_fw_upgrade` for parameterized BRCM firmware transitions with explicit forward/rollback image overrides. The example `configs/testbed.yaml.example` includes matching default values you can copy into your lab config.
+
+```bash
+python -m testpilot.cli list-cases brcm_fw_upgrade
+
+python -m testpilot.cli brcm-fw-upgrade run \
+  --case brcm-fw-upgrade-dut-sta-forward \
+  --forward-image /home/build20/BGW720-0410-VERIFY/targets/BGW720-300/bcmBGW720-300_squashfs_full_update.pkgtb \
+  --rollback-image /home/build20/BGW720-0403-PATCH/targets/BGW720-300/bcmBGW720-300_squashfs_full_update.pkgtb \
+  --fw-name bcmBGW720-300_squashfs_full_update.pkgtb \
+  --expected-image-tag 631BGW720-3001101323 \
+  --expected-build-time "Mon Apr 20 13:02:57 CST 2026" \
+  --platform-profile bgw720_prpl \
+  --topology dut_plus_sta
 ```
 
 Baseline experiment authority and current lab findings live in `docs/wifi-baseline-exp.md`.
