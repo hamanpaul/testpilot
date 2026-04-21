@@ -11,12 +11,65 @@ from plugins.brcm_fw_upgrade.strategies.transfer import render_md5_command, sele
 from plugins.brcm_fw_upgrade.strategies.verify import extract_named_group
 from testpilot.core.testbed_config import TestbedConfig
 from testpilot.core.plugin_base import PluginBase
+from testpilot.transport.factory import create_transport
 from testpilot.schema.case_schema import (
     CaseValidationError,
     load_brcm_fw_upgrade_platform_profiles,
     load_brcm_fw_upgrade_topologies,
     validate_brcm_fw_upgrade_case,
 )
+
+
+class _TransportShell:
+    def __init__(self, transport: Any, *, profile: dict[str, Any], fw_name: str) -> None:
+        self._transport = transport
+        self._exact_timeouts = self._build_exact_timeouts(profile)
+        self._flash_prefix = self._build_flash_prefix(profile, fw_name)
+        self._flash_timeout = float(profile.get("commands", {}).get("flash_timeout_seconds", 900))
+        self._default_timeout = float(profile.get("commands", {}).get("default_timeout_seconds", 30))
+
+    @staticmethod
+    def _build_exact_timeouts(profile: dict[str, Any]) -> dict[str, float]:
+        commands = profile.get("commands", {})
+        command_timeouts = {
+            "change_dir": float(commands.get("change_dir_timeout_seconds", 30)),
+            "bootstate_set": float(commands.get("bootstate_timeout_seconds", 30)),
+            "reboot": float(commands.get("reboot_timeout_seconds", 30)),
+            "ready_probe": float(commands.get("ready_probe_timeout_seconds", 30)),
+            "proc_version": float(commands.get("proc_version_timeout_seconds", 30)),
+            "image_state": float(commands.get("image_state_timeout_seconds", 30)),
+        }
+        exact: dict[str, float] = {}
+        for key, timeout in command_timeouts.items():
+            command = commands.get(key)
+            if isinstance(command, str) and command.strip():
+                exact[command] = timeout
+        return exact
+
+    @staticmethod
+    def _build_flash_prefix(profile: dict[str, Any], fw_name: str) -> str:
+        flash_template = str(profile.get("commands", {}).get("flash", "") or "")
+        if "{{fw_name}}" in flash_template:
+            return flash_template.split("{{fw_name}}", 1)[0].rstrip()
+        return flash_template.replace(fw_name, "").rstrip()
+
+    def _timeout_for(self, command: str) -> float:
+        exact_timeout = self._exact_timeouts.get(command)
+        if exact_timeout is not None:
+            return exact_timeout
+        if self._flash_prefix and command.startswith(self._flash_prefix):
+            return self._flash_timeout
+        return self._default_timeout
+
+    def run(self, command: str) -> str:
+        result = self._transport.execute(command, timeout=self._timeout_for(command))
+        returncode = int(result.get("returncode", 1))
+        stdout = str(result.get("stdout", "") or "")
+        stderr = str(result.get("stderr", "") or "")
+        if returncode != 0:
+            detail = stderr or stdout or f"returncode {returncode}"
+            raise RuntimeError(f"{command}: {detail}")
+        return stdout
 
 
 class Plugin(PluginBase):
@@ -284,6 +337,86 @@ class Plugin(PluginBase):
             return name
         return "unnamed"
 
+    def _topology_device_config(self, topology: Any, device_name: str) -> dict[str, Any]:
+        if isinstance(topology, TestbedConfig):
+            try:
+                return dict(topology.get_device(device_name))
+            except KeyError:
+                return {}
+        getter = getattr(topology, "get_device", None)
+        if callable(getter):
+            try:
+                got = getter(device_name)
+            except KeyError:
+                return {}
+            if isinstance(got, dict):
+                return dict(got)
+        devices = getattr(topology, "devices", {})
+        if isinstance(devices, dict):
+            cfg = devices.get(device_name)
+            if isinstance(cfg, dict):
+                return dict(cfg)
+        if isinstance(topology, dict):
+            topo_devices = topology.get("devices", {})
+            if isinstance(topo_devices, dict):
+                cfg = topo_devices.get(device_name)
+                if isinstance(cfg, dict):
+                    return dict(cfg)
+        return {}
+
+    def _connect_transport(self, transport: Any, device_config: dict[str, Any]) -> None:
+        connect_kwargs = dict(device_config)
+        connect_kwargs.pop("transport", None)
+        connect_kwargs.pop("role", None)
+        try:
+            try:
+                transport.connect(**connect_kwargs)
+            except TypeError:
+                transport.connect()
+        except Exception as exc:
+            raise RuntimeError(f"failed to connect transport: {exc}") from exc
+
+    def _open_live_shells(
+        self,
+        *,
+        topology: Any,
+        case_topology: dict[str, Any],
+        profile: dict[str, Any],
+        fw_name: str,
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        shells: dict[str, Any] = {}
+        transports: dict[str, Any] = {}
+        try:
+            for device_name in self._required_devices(case_topology):
+                device_config = self._topology_device_config(topology, device_name)
+                if not device_config:
+                    raise RuntimeError(f"missing topology device config: {device_name}")
+                transport_type = str(device_config.get("transport", "") or "").strip()
+                if not transport_type:
+                    raise RuntimeError(f"missing transport type for device: {device_name}")
+                merged_config = dict(device_config)
+                merged_config.setdefault("source", f"agent:{self.name}:{device_name.lower()}")
+                merged_config.setdefault("connect_attempts", 3)
+                merged_config.setdefault("connect_retry_delay", 1.0)
+                transport = create_transport(transport_type, merged_config)
+                self._connect_transport(transport, merged_config)
+                transports[device_name] = transport
+                shells[device_name] = _TransportShell(transport, profile=profile, fw_name=fw_name)
+            return shells, transports
+        except Exception:
+            self._close_transports(transports)
+            raise
+
+    @staticmethod
+    def _close_transports(transports: dict[str, Any]) -> None:
+        for transport in transports.values():
+            disconnect = getattr(transport, "disconnect", None)
+            if callable(disconnect):
+                try:
+                    disconnect()
+                except Exception:
+                    continue
+
     def run_cases(
         self,
         topology: Any,
@@ -315,18 +448,57 @@ class Plugin(PluginBase):
                 raise ValueError(
                     f"case {case_id!r} requires topology {case_topology_ref!r}, got {requested_topology!r}"
                 )
-            results.append(
-                {
-                    "case_id": case_id,
-                    "platform_profile": case_platform_profile,
-                    "topology_ref": case_topology_ref,
-                    "topology_name": topology_name,
-                    "runtime_overrides": dict(runtime_overrides),
-                }
-            )
+            case_topology = self.topologies[case_topology_ref]
+            runtime_inputs: dict[str, Any] = {}
+            artifacts: dict[str, Any] = {}
+            transports: dict[str, Any] = {}
+            try:
+                runtime_inputs = self._resolve_runtime_inputs(case, runtime_overrides)
+                artifacts = self._resolve_artifacts(case, runtime_overrides)
+                fw_name = artifacts["active_filename"]
+                shells, transports = self._open_live_shells(
+                    topology=topology,
+                    case_topology=case_topology,
+                    profile=self.platform_profiles[case_platform_profile],
+                    fw_name=fw_name,
+                )
+                case_result = self.run_case(
+                    case_id=case_id,
+                    shells=shells,
+                    runtime_overrides=runtime_overrides,
+                )
+                results.append(
+                    {
+                        "case_id": case_id,
+                        "platform_profile": case_platform_profile,
+                        "topology_ref": case_topology_ref,
+                        "topology_name": topology_name,
+                        "runtime_inputs": runtime_inputs,
+                        "artifacts": artifacts,
+                        "verdict": bool(case_result.get("verdict", False)),
+                        "comment": str(case_result.get("comment", "")),
+                        "evidence": case_result.get("evidence", {}),
+                    }
+                )
+            except Exception as exc:
+                results.append(
+                    {
+                        "case_id": case_id,
+                        "platform_profile": case_platform_profile,
+                        "topology_ref": case_topology_ref,
+                        "topology_name": topology_name,
+                        "runtime_inputs": runtime_inputs,
+                        "artifacts": artifacts,
+                        "verdict": False,
+                        "comment": str(exc),
+                        "evidence": {},
+                    }
+                )
+            finally:
+                self._close_transports(transports)
 
         return {
-            "status": "ok",
+            "status": "ok" if all(result["verdict"] for result in results) else "failed",
             "selected_case_ids": requested_case_ids,
             "results": results,
         }

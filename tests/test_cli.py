@@ -229,14 +229,79 @@ def test_brcm_fw_upgrade_run_invokes_plugin_with_runtime_overrides(monkeypatch):
     ]
 
 
-def test_brcm_fw_upgrade_run_uses_testbed_config_name(monkeypatch):
+def test_brcm_fw_upgrade_run_exits_nonzero_when_plugin_reports_failure(monkeypatch):
     _clear_provider_env(monkeypatch)
-    root = Path(__file__).resolve().parents[1]
+
+    class FakePlugin:
+        def run_cases(self, topology, *, case_ids, runtime_overrides):
+            return {
+                "status": "failed",
+                "selected_case_ids": case_ids,
+                "results": [{"case_id": case_ids[0], "verdict": False, "comment": "flash failed"}],
+            }
 
     class FakeLoader:
         def load(self, plugin_name: str):
             assert plugin_name == "brcm_fw_upgrade"
-            return _load_real_brcm_plugin()
+            return FakePlugin()
+
+    class FakeOrchestrator:
+        def __init__(self, project_root):
+            self.project_root = project_root
+            self.loader = FakeLoader()
+            self.config = {"name": "fake-topology"}
+
+    monkeypatch.setattr(testpilot.cli, "Orchestrator", FakeOrchestrator)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "brcm-fw-upgrade",
+            "run",
+            "--case",
+            "brcm-fw-upgrade-dut-sta-forward",
+            "--forward-image",
+            "/tmp/0410.pkgtb",
+            "--rollback-image",
+            "/tmp/0403.pkgtb",
+            "--fw-name",
+            "bcmBGW720-300_squashfs_full_update.pkgtb",
+            "--expected-image-tag",
+            "631BGW720-3001101323",
+            "--expected-build-time",
+            "Mon Apr 20 13:02:57 CST 2026",
+            "--platform-profile",
+            "bgw720_prpl",
+            "--topology",
+            "dut_plus_sta",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert '"status":"failed"' in result.output.replace(" ", "")
+
+
+def test_brcm_fw_upgrade_run_uses_testbed_config_name(monkeypatch):
+    _clear_provider_env(monkeypatch)
+    root = Path(__file__).resolve().parents[1]
+    plugin = _load_real_brcm_plugin()
+    forward_image = Path(__file__).resolve()
+    rollback_image = root / "plugins" / "brcm_fw_upgrade" / "plugin.py"
+
+    def _fake_open_live_shells(*, topology, case_topology, profile, fw_name):
+        return {}, {}
+
+    def _fake_run_case(*, case_id, shells, runtime_overrides):
+        return {"verdict": True, "comment": "", "evidence": {"phases": []}}
+
+    monkeypatch.setattr(plugin, "_open_live_shells", _fake_open_live_shells)
+    monkeypatch.setattr(plugin, "run_case", _fake_run_case)
+
+    class FakeLoader:
+        def load(self, plugin_name: str):
+            assert plugin_name == "brcm_fw_upgrade"
+            return plugin
 
     class FakeOrchestrator:
         def __init__(self, project_root):
@@ -255,15 +320,15 @@ def test_brcm_fw_upgrade_run_uses_testbed_config_name(monkeypatch):
             "--case",
             "brcm-fw-upgrade-dut-sta-forward",
             "--forward-image",
-            "images/0410.pkgtb",
+            str(forward_image),
             "--rollback-image",
-            "images/0403.pkgtb",
+            str(rollback_image),
             "--fw-name",
-            "bcmBGW720-300_squashfs_full_update.pkgtb",
+            forward_image.name,
             "--expected-image-tag",
             "631BGW720-3001101323",
             "--expected-build-time",
-            "Mon Apr 20 13:02:57 CST 2026",
+            "Apr 20 13:02:57 CST 2026",
             "--platform-profile",
             "bgw720_prpl",
             "--topology",

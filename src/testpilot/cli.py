@@ -265,9 +265,11 @@ def brcm_fw_upgrade_run(
             case_ids=list(case_ids) if case_ids else None,
             runtime_overrides=runtime_overrides,
         )
-    except (KeyError, ValueError) as exc:
+    except (KeyError, ValueError, RuntimeError) as exc:
         raise click.ClickException(str(exc)) from exc
     console.print_json(data=result)
+    if str(result.get("status", "")).lower() != "ok":
+        raise SystemExit(1)
 
 
 @wifi_llapi_group.command("baseline-qualify")

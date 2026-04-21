@@ -140,6 +140,44 @@ class _RuntimePluginHarness:
         }
 
 
+class _RecordingTransport:
+    def __init__(self, outputs: dict[str, object]) -> None:
+        self.outputs = dict(outputs)
+        self.commands: list[tuple[str, float]] = []
+        self.connected = False
+        self.disconnected = False
+
+    def connect(self, **kwargs) -> None:
+        self.connected = True
+
+    def disconnect(self) -> None:
+        self.disconnected = True
+        self.connected = False
+
+    def execute(self, command: str, timeout: float = 30.0) -> dict[str, object]:
+        self.commands.append((command, timeout))
+        output = self.outputs.get(command, "")
+        if isinstance(output, Exception):
+            return {"returncode": 1, "stdout": "", "stderr": str(output), "elapsed": 0.0}
+        if isinstance(output, list):
+            if output:
+                next_output = output.pop(0)
+                if isinstance(next_output, Exception):
+                    return {"returncode": 1, "stdout": "", "stderr": str(next_output), "elapsed": 0.0}
+                return {"returncode": 0, "stdout": cast(str, next_output), "stderr": "", "elapsed": 0.0}
+            return {"returncode": 0, "stdout": "", "stderr": "", "elapsed": 0.0}
+        return {"returncode": 0, "stdout": cast(str, output), "stderr": "", "elapsed": 0.0}
+
+
+class _FakeTopology:
+    def __init__(self, devices: dict[str, dict[str, object]], name: str = "fake-topology") -> None:
+        self.name = name
+        self.devices = devices
+
+    def get_device(self, role: str) -> dict[str, object]:
+        return dict(self.devices[role])
+
+
 def test_flash_sequence_runs_one_command_at_a_time():
     from plugins.brcm_fw_upgrade.strategies.flash import run_flash_sequence
 
@@ -473,3 +511,198 @@ def test_dut_sta_case_ready_probe_retries_after_transient_exception(
         "output": "ready",
     }
     assert sleep_calls == [1.0]
+
+
+def test_run_cases_executes_live_case_via_transports(monkeypatch: pytest.MonkeyPatch):
+    plugin = _load_plugin()
+    overrides = _runtime_overrides()
+    overrides.update({"PLATFORM_PROFILE": "bgw720_prpl", "TOPOLOGY": "dut_plus_sta"})
+    forward_artifact, _ = _runtime_artifact_paths()
+    dut_transport = _RecordingTransport(
+        {
+            "cd /tmp": "/tmp",
+            f"bcm_flasher {forward_artifact.name}": "Image flash complete",
+            "bcm_bootstate 1": "The booted partition is marked to boot",
+            "reboot": "rebooting",
+            "echo ready": "ready",
+            "cat /proc/version": "Linux version 5.15.176 #1 SMP PREEMPT Mon Apr 20 13:02:57 CST 2026",
+            "bcm_bootstate": "$imageversion: 631BGW720-3001101323 $",
+        }
+    )
+    sta_transport = _RecordingTransport(
+        {
+            "cd /tmp": "/tmp",
+            f"bcm_flasher {forward_artifact.name}": "Image flash complete",
+            "bcm_bootstate 1": "The booted partition is marked to boot",
+            "reboot": "rebooting",
+            "echo ready": "ready",
+            "cat /proc/version": "Linux version 5.15.176 #1 SMP PREEMPT Mon Apr 20 13:02:57 CST 2026",
+            "bcm_bootstate": "$imageversion: 631BGW720-3001101323 $",
+        }
+    )
+
+    def _fake_create_transport(kind: str, config: dict[str, object]):
+        selector = config.get("selector")
+        if selector == "COM0":
+            return dut_transport
+        if selector == "COM1":
+            return sta_transport
+        raise AssertionError(f"unexpected transport request: {kind} {config}")
+
+    monkeypatch.setattr(f"{plugin.__class__.__module__}.create_transport", _fake_create_transport)
+    topology = _FakeTopology(
+        {
+            "DUT": {"transport": "serial", "selector": "COM0"},
+            "STA": {"transport": "serial", "selector": "COM1"},
+        }
+    )
+
+    result = plugin.run_cases(
+        topology,
+        case_ids=["brcm-fw-upgrade-dut-sta-forward"],
+        runtime_overrides=overrides,
+    )
+
+    assert result["status"] == "ok"
+    case_result = result["results"][0]
+    assert case_result["verdict"] is True
+    assert case_result["topology_name"] == "fake-topology"
+    assert dut_transport.connected is False
+    assert dut_transport.disconnected is True
+    assert sta_transport.connected is False
+    assert sta_transport.disconnected is True
+    assert [command for command, _timeout in sta_transport.commands[:5]] == [
+        "cd /tmp",
+        f"bcm_flasher {forward_artifact.name}",
+        "bcm_bootstate 1",
+        "reboot",
+        "echo ready",
+    ]
+    assert [command for command, _timeout in dut_transport.commands[:5]] == [
+        "cd /tmp",
+        f"bcm_flasher {forward_artifact.name}",
+        "bcm_bootstate 1",
+        "reboot",
+        "echo ready",
+    ]
+    assert any(timeout == 900.0 for command, timeout in sta_transport.commands if command.startswith("bcm_flasher "))
+
+
+def test_run_cases_returns_failed_status_on_runtime_error(monkeypatch: pytest.MonkeyPatch):
+    plugin = _load_plugin()
+    overrides = _runtime_overrides()
+    overrides.update({"PLATFORM_PROFILE": "bgw720_prpl", "TOPOLOGY": "dut_plus_sta"})
+    forward_artifact, _ = _runtime_artifact_paths()
+    dut_transport = _RecordingTransport(
+        {
+            "cd /tmp": "/tmp",
+            f"bcm_flasher {forward_artifact.name}": "Image flash complete",
+            "bcm_bootstate 1": "The booted partition is marked to boot",
+            "reboot": "rebooting",
+            "echo ready": "ready",
+            "cat /proc/version": "Linux version 5.15.176 #1 SMP PREEMPT Mon Apr 20 13:02:57 CST 2026",
+            "bcm_bootstate": "$imageversion: 631BGW720-3001101323 $",
+        }
+    )
+    sta_transport = _RecordingTransport(
+        {
+            "cd /tmp": "/tmp",
+            f"bcm_flasher {forward_artifact.name}": "Image flash complete",
+            "bcm_bootstate 1": "The booted partition is marked to boot",
+            "reboot": "rebooting",
+            "echo ready": "",
+        }
+    )
+
+    def _fake_create_transport(kind: str, config: dict[str, object]):
+        selector = config.get("selector")
+        if selector == "COM0":
+            return dut_transport
+        if selector == "COM1":
+            return sta_transport
+        raise AssertionError(f"unexpected transport request: {kind} {config}")
+
+    monkeypatch.setattr(f"{plugin.__class__.__module__}.create_transport", _fake_create_transport)
+    monkeypatch.setattr(f"{plugin.__class__.__module__}.time.sleep", lambda delay: None)
+    topology = _FakeTopology(
+        {
+            "DUT": {"transport": "serial", "selector": "COM0"},
+            "STA": {"transport": "serial", "selector": "COM1"},
+        }
+    )
+
+    result = plugin.run_cases(
+        topology,
+        case_ids=["brcm-fw-upgrade-dut-sta-forward"],
+        runtime_overrides=overrides,
+    )
+
+    assert result["status"] == "failed"
+    case_result = result["results"][0]
+    assert case_result["verdict"] is False
+    assert "ready probe failed after 3 attempts" in case_result["comment"]
+
+
+def test_open_live_shells_disconnects_partial_transports_on_failure(monkeypatch: pytest.MonkeyPatch):
+    plugin = _load_plugin()
+    profile = plugin.platform_profiles["bgw720_prpl"]
+    forward_artifact, _ = _runtime_artifact_paths()
+    dut_transport = _RecordingTransport({})
+
+    class _FailingTransport(_RecordingTransport):
+        def connect(self, **kwargs) -> None:
+            raise RuntimeError("serialwrap session not READY")
+
+    sta_transport = _FailingTransport({})
+
+    def _fake_create_transport(kind: str, config: dict[str, object]):
+        selector = config.get("selector")
+        if selector == "COM0":
+            return dut_transport
+        if selector == "COM1":
+            return sta_transport
+        raise AssertionError(f"unexpected transport request: {kind} {config}")
+
+    monkeypatch.setattr(f"{plugin.__class__.__module__}.create_transport", _fake_create_transport)
+    with pytest.raises(RuntimeError, match="failed to connect transport: serialwrap session not READY"):
+        plugin._open_live_shells(
+            topology=_FakeTopology(
+                {
+                    "DUT": {"transport": "serial", "selector": "COM0"},
+                    "STA": {"transport": "serial", "selector": "COM1"},
+                }
+            ),
+            case_topology=plugin.topologies["dut_plus_sta"],
+            profile=profile,
+            fw_name=forward_artifact.name,
+        )
+
+    assert dut_transport.disconnected is True
+
+
+def test_run_cases_returns_failed_status_when_artifact_missing():
+    plugin = _load_plugin()
+    missing_artifact = Path(__file__).resolve().parent / "missing-live-artifact.pkgtb"
+    result = plugin.run_cases(
+        _FakeTopology(
+            {
+                "DUT": {"transport": "serial", "selector": "COM0"},
+                "STA": {"transport": "serial", "selector": "COM1"},
+            }
+        ),
+        case_ids=["brcm-fw-upgrade-dut-sta-forward"],
+        runtime_overrides={
+            "FW_FORWARD_PATH": str(missing_artifact),
+            "FW_ROLLBACK_PATH": str(Path(__file__).resolve().parents[1] / "plugin.py"),
+            "FW_NAME": missing_artifact.name,
+            "EXPECTED_IMAGE_TAG": "631BGW720-3001101323",
+            "EXPECTED_BUILD_TIME": "Apr 20 13:02:57 CST 2026",
+            "PLATFORM_PROFILE": "bgw720_prpl",
+            "TOPOLOGY": "dut_plus_sta",
+        },
+    )
+
+    assert result["status"] == "failed"
+    case_result = result["results"][0]
+    assert case_result["verdict"] is False
+    assert "active artifact path does not exist" in case_result["comment"]
