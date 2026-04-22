@@ -2865,7 +2865,7 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
     )
     d021_commands = "\n".join(str(step.get("command", "")) for step in d021["steps"])
     assert d021["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d021["source"]["row"] == 18
+    assert d021["source"]["row"] == 21
     assert d021["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.HeCapabilities?"'
     assert "HeCapabilities=" not in d021["hlapi_command"]
     assert "DriverHeMuBfe=1" in d021_commands
@@ -2967,7 +2967,7 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
     )
     d026_commands = "\n".join(str(step.get("command", "")) for step in d026["steps"])
     assert d026["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d026["source"]["row"] == 23
+    assert d026["source"]["row"] == 26
     assert d026["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LinkBandwidth?"'
     assert "LinkBandwidth=160MHz" not in d026["hlapi_command"]
     assert 'WiFi.Radio.1.OperatingChannelBandwidth?' in d026_commands
@@ -2991,7 +2991,7 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         )
     )
     d027_commands = "\n".join(str(step.get("command", "")) for step in d027["steps"])
-    assert d027["source"]["row"] == 24
+    assert d027["source"]["row"] == 27
     assert "MACAddress?" in d027["hlapi_command"]
     assert "MACAddress=AA:6B:30:4E:8E:5C" not in d027["hlapi_command"]
     assert "wpa_cli -p /var/run/wpa_supplicant -i wl1 status" in d027_commands
@@ -3066,7 +3066,7 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         },
         "D337_unknownprotopacketsreceived_ssid_stats.yaml": {"row": 337, "api": "UnknownProtoPacketsReceived", "driver": "DriverUnknownProtoPacketsReceived", "awk_field": "rxbadprotopkts", "expected": "Skip"},
         "D406_multipleretrycount_ssid_stats.yaml": {"row": 406, "api": "MultipleRetryCount", "driver": "DriverMultipleRetryCount", "awk_field": "txretrie", "expected": "Pass"},
-        "D407_retrycount_ssid_stats_basic.yaml": {"row": 407, "api": "RetryCount", "driver": "DriverRetryCount", "awk_field": "txretry", "expected": "Pass"},
+        "D495_retrycount_ssid_stats_basic.yaml": {"row": 495, "api": "RetryCount", "driver": "DriverRetryCount", "awk_field": "txretry", "expected": "Pass"},
         "D495_retrycount_ssid_stats_verified.yaml": {"row": 362, "api": "RetryCount", "expected": "Not Supported"},
     }
 
@@ -3217,7 +3217,7 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         metric = case_data["source"]["object"].split("Stats.", 1)[1].rstrip(".")
         assert "aliases" not in case_data
         assert case_data["source"]["baseline"] == "0310-BGW720-300"
-        assert case_data["source"]["row"] == case_num - 133
+        assert case_data["source"]["row"] == case_num
         assert case_data["bands"] == ["5g", "6g", "2.4g"]
         exp5, exp6, exp24 = _wmm_expected.get(case_num, ("Pass", "Pass", "Pass"))
         assert case_data["results_reference"]["v4.0.3"]["5g"] == exp5
@@ -4969,7 +4969,7 @@ def test_pending_mu_stub_cases_use_supported_contracts():
     }.issubset(discoverable_ids)
 
     mu_cases = {
-        "D031_mumimotxpktscount.yaml": ("MUMimoTxPktsCount", "wifi-llapi-D031-mumimotxpktscount", 33),
+        "D031_mumimotxpktscount.yaml": ("MUMimoTxPktsCount", "wifi-llapi-D031-mumimotxpktscount", 31),
         "D032_mumimotxpktspercentage.yaml": ("MUMimoTxPktsPercentage", "wifi-llapi-D032-mumimotxpktspercentage", 32),
         "D033_muuserpositionid.yaml": ("MUUserPositionId", "wifi-llapi-D033-muuserpositionid", 33),
     }
@@ -5073,7 +5073,7 @@ def test_pending_failure_shaped_associateddevice_cases_use_supported_contracts()
     failure_cases = {
         "D036_powersave.yaml": {
             "id": "wifi-llapi-D036-powersave",
-            "row": 38,
+            "row": 36,
             "api": "PowerSave",
             "driver_token": "DriverPowerSaveFlags=",
             "driver_field": "driver_flags.DriverPowerSaveFlags",
@@ -5082,7 +5082,7 @@ def test_pending_failure_shaped_associateddevice_cases_use_supported_contracts()
         },
         "D040_rxmulticastpacketcount.yaml": {
             "id": "wifi-llapi-D040-rxmulticastpacketcount",
-            "row": 42,
+                "row": 40,
             "api": "RxMulticastPacketCount",
             "driver_token": "DriverRxMulticastPacketCount=",
             "driver_field": "driver_counter.DriverRxMulticastPacketCount",
@@ -5412,21 +5412,21 @@ def test_pending_counter_stub_associateddevice_cases_use_supported_contracts():
     counter_cases = {
         "D037_retransmissions.yaml": {
             "id": "wifi-llapi-D037-retransmissions",
-            "row": 39,
+            "row": 37,
             "api": "Retransmissions",
             "driver_token": "DriverRetransmissions=",
             "driver_field": "driver_counter.DriverRetransmissions",
         },
         "D038_rx_retransmissions.yaml": {
             "id": "wifi-llapi-D038-rx-retransmissions",
-            "row": 40,
+                "row": 38,
             "api": "Rx_Retransmissions",
             "driver_token": "DriverRxRetransmissions=",
             "driver_field": "driver_counter.DriverRxRetransmissions",
         },
         "D042_rxunicastpacketcount.yaml": {
             "id": "wifi-llapi-D042-rxunicastpacketcount",
-            "row": 42,
+                "row": 42,
             "api": "RxUnicastPacketCount",
             "driver_token": "DriverRxUnicastPacketCount=",
             "driver_field": "driver_counter.DriverRxUnicastPacketCount",
@@ -5561,21 +5561,21 @@ def test_pending_counter_pass_associateddevice_cases_use_supported_contracts():
     pass_cases = {
         "D039_rxbytes.yaml": {
             "id": "wifi-llapi-D039-rxbytes",
-            "row": 41,
+            "row": 39,
             "api": "RxBytes",
             "driver_token": "DriverRxBytes=",
             "driver_field": "driver_counter.DriverRxBytes",
         },
         "D041_rxpacketcount.yaml": {
             "id": "wifi-llapi-D041-rxpacketcount",
-            "row": 43,
+            "row": 41,
             "api": "RxPacketCount",
             "driver_token": "DriverRxPacketCount=",
             "driver_field": "driver_counter.DriverRxPacketCount",
         },
         "D056_txpacketcount.yaml": {
             "id": "wifi-llapi-D056-txpacketcount",
-            "row": 58,
+            "row": 56,
             "api": "TxPacketCount",
             "driver_token": "DriverTxPacketCount=",
             "driver_field": "driver_counter.DriverTxPacketCount",
@@ -6154,7 +6154,7 @@ def test_pending_d044_d049_d058_associateddevice_cases_use_supported_contracts()
     d044 = load_case(cases_dir / "D044_signalnoiseratio.yaml")
     d044_commands = "\n".join(str(step.get("command", "")) for step in d044["steps"])
     assert "aliases" not in d044_raw
-    assert d044["source"]["row"] == 46
+    assert d044["source"]["row"] == 44
     assert d044["source"]["baseline"] == "BCM v4.0.3"
     assert d044["bands"] == ["5g"]
     assert "DriverSignal=" in d044_commands
@@ -6184,7 +6184,7 @@ def test_pending_d044_d049_d058_associateddevice_cases_use_supported_contracts()
     d049 = load_case(cases_dir / "D049_supportedmcs.yaml")
     d049_commands = "\n".join(str(step.get("command", "")) for step in d049["steps"])
     assert "aliases" not in d049_raw
-    assert d049["source"]["row"] == 51
+    assert d049["source"]["row"] == 49
     assert d049["source"]["baseline"] == "BCM v4.0.3"
     assert d049["bands"] == ["5g"]
     assert "DriverHeCapsPresent=1" in d049_commands
@@ -6209,7 +6209,7 @@ def test_pending_d044_d049_d058_associateddevice_cases_use_supported_contracts()
     d058 = load_case(cases_dir / "D058_uniibandscapabilities.yaml")
     d058_commands = "\n".join(str(step.get("command", "")) for step in d058["steps"])
     assert "aliases" not in d058_raw
-    assert d058["source"]["row"] == 60
+    assert d058["source"]["row"] == 58
     assert d058["source"]["baseline"] == "BCM v4.0.3"
     assert d058["bands"] == ["5g"]
     assert "DriverUNIIBandsCapabilities=" in d058_commands
@@ -6361,7 +6361,7 @@ def test_pending_security_and_signal_associateddevice_cases_use_supported_contra
 
     assert "aliases" not in d043_raw
     assert d043["id"] == "wifi-llapi-D043-securitymodeenabled"
-    assert d043["source"]["row"] == 45
+    assert d043["source"]["row"] == 43
     assert d043["source"]["baseline"] == "BCM v4.0.3"
     assert d043["bands"] == ["5g"]
     assert d043_links == {"5g"}
@@ -6907,7 +6907,7 @@ def test_d048_supportedhemcs_uses_supported_contracts():
 
     assert "aliases" not in d048_raw
     assert d048["id"] == "wifi-llapi-D048-supportedhemcs"
-    assert d048["source"]["row"] == 50
+    assert d048["source"]["row"] == 48
     assert d048["source"]["baseline"] == "BCM v4.0.3"
     assert d048["llapi_support"] == "Not Supported"
     assert d048["bands"] == ["5g"]
@@ -7295,7 +7295,7 @@ def test_d054_txerrors_uses_same_sta_driver_contract():
     assert "aliases" not in d054_raw
     assert d054["id"] == "wifi-llapi-D054-txerrors"
     assert d054["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d054["source"]["row"] == 56
+    assert d054["source"]["row"] == 54
     assert d054["source"]["baseline"] == "BCM v4.0.3"
     assert d054["llapi_support"] == "Support"
     assert d054["bands"] == ["5g"]
@@ -7449,7 +7449,7 @@ def test_d055_txmulticastpacketcount_uses_same_sta_delivery_contract():
     assert "aliases" not in d055_raw
     assert d055["id"] == "wifi-llapi-D055-txmulticastpacketcount"
     assert d055["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d055["source"]["row"] == 57
+    assert d055["source"]["row"] == 55
     assert d055["source"]["baseline"] == "BCM v4.0.3"
     assert d055["llapi_support"] == "Support"
     assert d055["bands"] == ["5g"]
@@ -8397,7 +8397,7 @@ def test_d064_apbridgedisable_uses_ap_only_unsupported_contract():
     assert "aliases" not in d064_raw
     assert d064["id"] == "wifi-llapi-D064-apbridgedisable"
     assert d064["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d064["source"]["row"] == 66
+    assert d064["source"]["row"] == 64
     assert d064["source"]["baseline"] == "BCM v4.0.3"
     assert d064["llapi_support"] == "Not Supported"
     assert d064["bands"] == ["5g"]
@@ -8781,13 +8781,13 @@ def test_d066_discoverymethodenabled_accesspoint_fils_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d066_raw = yaml.safe_load(
-        (cases_dir / "D066_discoverymethodenabled_accesspoint_fils.yaml").read_text(encoding="utf-8")
+        (cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml").read_text(encoding="utf-8")
     )
-    d066 = load_case(cases_dir / "D066_discoverymethodenabled_accesspoint_fils.yaml")
+    d066 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml")
     d066_commands = "\n".join(str(step.get("command", "")) for step in d066["steps"])
 
     assert "aliases" not in d066_raw
-    assert d066["id"] == "wifi-llapi-D066-discoverymethodenabled-accesspoint-fils"
+    assert d066["id"] == "wifi-llapi-D068-discoverymethodenabled-accesspoint-fils"
     assert d066["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d066["source"]["row"] == 68
     assert d066["source"]["baseline"] == "BCM v4.0.3"
@@ -8831,7 +8831,7 @@ def test_d066_discoverymethodenabled_accesspoint_fils_setup_env_uses_only_dut_tr
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    d066 = load_case(cases_dir / "D066_discoverymethodenabled_accesspoint_fils.yaml")
+    d066 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml")
 
     assert plugin.setup_env(d066, topology=topology) is True
     assert len(recorder.calls) == 1
@@ -8845,7 +8845,7 @@ def test_d066_discoverymethodenabled_accesspoint_fils_setup_env_uses_only_dut_tr
 def test_d066_discoverymethodenabled_accesspoint_fils_evaluate_live_examples():
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    d066 = load_case(cases_dir / "D066_discoverymethodenabled_accesspoint_fils.yaml")
+    d066 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml")
 
     d066_results = {
         "steps": {
@@ -8996,15 +8996,15 @@ def test_d067_discoverymethodenabled_accesspoint_upr_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d067_raw = yaml.safe_load(
-        (cases_dir / "D067_discoverymethodenabled_accesspoint_upr.yaml").read_text(encoding="utf-8")
+        (cases_dir / "D068_discoverymethodenabled_accesspoint_upr.yaml").read_text(encoding="utf-8")
     )
-    d067 = load_case(cases_dir / "D067_discoverymethodenabled_accesspoint_upr.yaml")
+    d067 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_upr.yaml")
     d067_commands = "\n".join(str(step.get("command", "")) for step in d067["steps"])
 
     assert "aliases" not in d067_raw
-    assert d067["id"] == "wifi-llapi-D067-discoverymethodenabled-accesspoint-upr"
+    assert d067["id"] == "wifi-llapi-D068-discoverymethodenabled-accesspoint-upr"
     assert d067["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d067["source"]["row"] == 69
+    assert d067["source"]["row"] == 68
     assert d067["source"]["baseline"] == "BCM v4.0.3"
     assert d067["llapi_support"] == "Support"
     assert d067["bands"] == ["5g", "6g", "2.4g"]
@@ -9039,7 +9039,7 @@ def test_d067_discoverymethodenabled_accesspoint_upr_setup_env_uses_only_dut_tra
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    d067 = load_case(cases_dir / "D067_discoverymethodenabled_accesspoint_upr.yaml")
+    d067 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_upr.yaml")
 
     assert plugin.setup_env(d067, topology=topology) is True
     assert len(recorder.calls) == 1
@@ -9053,7 +9053,7 @@ def test_d067_discoverymethodenabled_accesspoint_upr_setup_env_uses_only_dut_tra
 def test_d067_discoverymethodenabled_accesspoint_upr_evaluate_live_examples():
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    d067 = load_case(cases_dir / "D067_discoverymethodenabled_accesspoint_upr.yaml")
+    d067 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_upr.yaml")
 
     d067_results = {
         "steps": {
@@ -9354,7 +9354,7 @@ def test_d366_srgbsscolorbitmap_radio_contract():
     assert "aliases" not in d366_raw
     assert d366["id"] == "wifi-llapi-D366-srgbsscolorbitmap"
     assert d366["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d366["source"]["row"] == 273
+    assert d366["source"]["row"] == 366
     assert d366["source"]["baseline"] == "BCM v4.0.3"
     assert d366["llapi_support"] == "Support"
     assert d366["bands"] == ["5g", "6g", "2.4g"]
@@ -9522,7 +9522,7 @@ def test_d369_srgpartialbssidbitmap_radio_contract():
     assert "aliases" not in d369_raw
     assert d369["id"] == "wifi-llapi-D369-srgpartialbssidbitmap"
     assert d369["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d369["source"]["row"] == 276
+    assert d369["source"]["row"] == 369
     assert d369["source"]["baseline"] == "BCM v4.0.3"
     assert d369["llapi_support"] == "Support"
     assert d369["bands"] == ["5g", "6g", "2.4g"]
@@ -10552,7 +10552,7 @@ def test_d077_macfilteraddresslist_accesspoint_contract():
     assert "aliases" not in d077_raw
     assert d077["id"] == "wifi-llapi-D077-macfilteraddresslist-accesspoint"
     assert d077["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d077["source"]["row"] == 71
+    assert d077["source"]["row"] == 77
     assert d077["source"]["baseline"] == "BCM v4.0.3"
     assert d077["llapi_support"] == "Support"
     assert d077["implemented_by"] == "pWHM"
@@ -10750,7 +10750,7 @@ def test_d078_entry_accesspoint_macfiltering_contract():
     assert "aliases" not in d078_raw
     assert d078["id"] == "wifi-llapi-D078-entry-accesspoint-macfiltering"
     assert d078["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d078["source"]["row"] == 72
+    assert d078["source"]["row"] == 78
     assert d078["source"]["baseline"] == "BCM v4.0.3"
     assert d078["llapi_support"] == "Support"
     assert d078["implemented_by"] == "pWHM"
@@ -14232,7 +14232,7 @@ def test_d097_vendorie_contract():
     """D097 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D097_vendorie.yaml")
-    assert case["source"]["row"] == 99
+    assert case["source"]["row"] == 97
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 6
     ref = case["results_reference"]["v4.0.3"]
@@ -14420,7 +14420,7 @@ def test_d100_wmmenable_contract():
     """D100 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D100_wmmenable.yaml")
-    assert case["source"]["row"] == 102
+    assert case["source"]["row"] == 100
     assert case["llapi_support"] == "Not Support"
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 18
@@ -14571,7 +14571,7 @@ def test_d102_configmethodssupported_contract():
     """D102 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D102_configmethodssupported.yaml")
-    assert case["source"]["row"] == 104
+    assert case["source"]["row"] == 102
     assert case["llapi_support"] == "Not Support"
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 3
@@ -14608,7 +14608,7 @@ def test_d103_configured_contract():
     """D103 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D103_configured.yaml")
-    assert case["source"]["row"] == 105
+    assert case["source"]["row"] == 103
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 3
@@ -14783,7 +14783,7 @@ def test_d107_selfpin_contract():
     """D107 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D107_selfpin.yaml")
-    assert case["source"]["row"] == 109
+    assert case["source"]["row"] == 107
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 9
@@ -14886,8 +14886,8 @@ def test_d108_uuid_evaluate():
 def test_d109_getstationstats_accesspoint_contract():
     """D109 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D109_getstationstats_accesspoint.yaml")
-    assert case["source"]["row"] == 109
+    case = load_case(cases_dir / "D115_getstationstats_accesspoint.yaml")
+    assert case["source"]["row"] == 115
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 2
     assert len(case["pass_criteria"]) == 4
@@ -14898,7 +14898,7 @@ def test_d109_getstationstats_accesspoint_setup_env(monkeypatch):
     """D109 needs STA + DUT."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    d109 = load_case(cases_dir / "D109_getstationstats_accesspoint.yaml")
+    d109 = load_case(cases_dir / "D115_getstationstats_accesspoint.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
@@ -14929,7 +14929,7 @@ def test_d109_getstationstats_accesspoint_evaluate():
     """D109 all-pass criteria met with live-shaped getStationStats output."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    d109 = load_case(cases_dir / "D109_getstationstats_accesspoint.yaml")
+    d109 = load_case(cases_dir / "D115_getstationstats_accesspoint.yaml")
     results = {
         "steps": {
             "step1_assoc_precheck": {
@@ -14950,8 +14950,8 @@ def test_d109_getstationstats_accesspoint_evaluate():
 def test_d110_getstationstats_active_contract():
     """D110 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D110_getstationstats_active.yaml")
-    assert case["source"]["row"] == 110
+    case = load_case(cases_dir / "D115_getstationstats_active.yaml")
+    assert case["source"]["row"] == 115
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 5
@@ -14962,7 +14962,7 @@ def test_d110_getstationstats_active_setup_env(monkeypatch):
     """D110 needs STA + DUT."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D110_getstationstats_active.yaml")
+    case = load_case(cases_dir / "D115_getstationstats_active.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
@@ -14974,7 +14974,7 @@ def test_d110_getstationstats_active_evaluate():
     """D110 pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D110_getstationstats_active.yaml")
+    case = load_case(cases_dir / "D115_getstationstats_active.yaml")
     results = {
         "steps": {
             "step1_assoc_precheck": {
@@ -15355,7 +15355,7 @@ def test_d117_enable_endpoint_contract():
     """D117 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D117_enable_endpoint.yaml")
-    assert case["source"]["row"] == 105
+    assert case["source"]["row"] == 117
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -18299,7 +18299,7 @@ def test_d065_bridgeinterface_bridge_master_fragment_executes():
 def test_d066_discoverymethodenabled_accesspoint_fils_verification_fragments_preserve_sequence():
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    d066 = load_case(cases_dir / "D066_discoverymethodenabled_accesspoint_fils.yaml")
+    d066 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml")
 
     verification_commands = plugin._extract_cli_fragments(d066["verification_command"])
 
@@ -18326,7 +18326,7 @@ def test_d066_discoverymethodenabled_accesspoint_fils_verification_fragments_pre
 def test_d067_discoverymethodenabled_accesspoint_upr_verification_fragments_preserve_sequence():
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    d067 = load_case(cases_dir / "D067_discoverymethodenabled_accesspoint_upr.yaml")
+    d067 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_upr.yaml")
 
     verification_commands = plugin._extract_cli_fragments(d067["verification_command"])
     expected_commands = [
@@ -22670,7 +22670,7 @@ def test_d183_tpcmode_contract():
     """D183 TPCMode YAML loads as fail-shaped 5G-only case."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D183_tpcmode.yaml")
-    assert case["source"]["row"] == 146
+    assert case["source"]["row"] == 183
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 12
     assert len(case["pass_criteria"]) == 8
@@ -22724,19 +22724,19 @@ def test_d183_tpcmode_evaluate():
 # Batch 6 — SSID WMM Stats (D496-D527): 3-band SSID-level WMM counters
 # ---------------------------------------------------------------------------
 _SSID_WMM_STATS_CASES = [
-    ("D497_ac_bk_stats_wmmbytesreceived_ssid.yaml", 364, "AC_BK", "WmmBytesReceived"),
-    ("D498_ac_vi_stats_wmmbytesreceived_ssid.yaml", 365, "AC_VI", "WmmBytesReceived"),
-    ("D500_ac_be_stats_wmmbytessent_ssid.yaml", 367, "AC_BE", "WmmBytesSent"),
-    ("D501_ac_bk_stats_wmmbytessent_ssid.yaml", 368, "AC_BK", "WmmBytesSent"),
-    ("D503_ac_vo_stats_wmmbytessent_ssid.yaml", 370, "AC_VO", "WmmBytesSent"),
-    ("D504_ac_be_stats_wmmfailedbytesreceived_ssid.yaml", 371, "AC_BE", "WmmFailedBytesReceived"),
-    ("D508_ac_be_stats_wmmfailedbytessent_ssid.yaml", 375, "AC_BE", "WmmFailedbytesSent"),
-    ("D509_ac_bk_stats_wmmfailedbytessent_ssid.yaml", 376, "AC_BK", "WmmFailedbytesSent"),
-    ("D511_ac_vo_stats_wmmfailedbytessent_ssid.yaml", 378, "AC_VO", "WmmFailedbytesSent"),
-    ("D514_ac_vi_stats_wmmfailedreceived.yaml", 381, "AC_VI", "WmmFailedReceived"),
-    ("D515_ac_vo_stats_wmmfailedreceived.yaml", 382, "AC_VO", "WmmFailedReceived"),
-    ("D516_ac_be_stats_wmmfailedsent.yaml", 383, "AC_BE", "WmmFailedSent"),
-    ("D524_ac_be_stats_wmmpacketssent.yaml", 391, "AC_BE", "WmmPacketsSent"),
+    ("D497_ac_bk_stats_wmmbytesreceived_ssid.yaml", 497, "AC_BK", "WmmBytesReceived"),
+    ("D498_ac_vi_stats_wmmbytesreceived_ssid.yaml", 498, "AC_VI", "WmmBytesReceived"),
+    ("D500_ac_be_stats_wmmbytessent_ssid.yaml", 500, "AC_BE", "WmmBytesSent"),
+    ("D501_ac_bk_stats_wmmbytessent_ssid.yaml", 501, "AC_BK", "WmmBytesSent"),
+    ("D503_ac_vo_stats_wmmbytessent_ssid.yaml", 503, "AC_VO", "WmmBytesSent"),
+    ("D504_ac_be_stats_wmmfailedbytesreceived_ssid.yaml", 504, "AC_BE", "WmmFailedBytesReceived"),
+    ("D508_ac_be_stats_wmmfailedbytessent_ssid.yaml", 508, "AC_BE", "WmmFailedbytesSent"),
+    ("D509_ac_bk_stats_wmmfailedbytessent_ssid.yaml", 509, "AC_BK", "WmmFailedbytesSent"),
+    ("D511_ac_vo_stats_wmmfailedbytessent_ssid.yaml", 511, "AC_VO", "WmmFailedbytesSent"),
+    ("D514_ac_vi_stats_wmmfailedreceived.yaml", 514, "AC_VI", "WmmFailedReceived"),
+    ("D515_ac_vo_stats_wmmfailedreceived.yaml", 515, "AC_VO", "WmmFailedReceived"),
+    ("D516_ac_be_stats_wmmfailedsent.yaml", 516, "AC_BE", "WmmFailedSent"),
+    ("D524_ac_be_stats_wmmpacketssent.yaml", 524, "AC_BE", "WmmPacketsSent"),
 ]
 _SSID_WMM_IDS = [t[0].split(".")[0] for t in _SSID_WMM_STATS_CASES]
 
