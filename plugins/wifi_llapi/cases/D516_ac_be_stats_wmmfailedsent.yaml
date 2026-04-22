@@ -1,7 +1,7 @@
 id: d516-ssid-wmm-ac_be_stats_wmmfailedsent
 name: D516 WmmFailedSent.AC_BE
 source:
-  row: 383
+  row: 516
   object: WiFi.SSID.{i}.Stats.WmmFailedSent.
   api: AC_BE
   baseline: 0310-BGW720-300

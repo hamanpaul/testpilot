@@ -1,7 +1,7 @@
 id: d503-ssid-wmm-ac_vo_stats_wmmbytessent_ssid
 name: D503 WmmBytesSent.AC_VO
 source:
-  row: 370
+  row: 503
   object: WiFi.SSID.{i}.Stats.WmmBytesSent.
   api: AC_VO
   baseline: 0310-BGW720-300

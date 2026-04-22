@@ -1,10 +1,10 @@
-id: wifi-llapi-D109-getstationstats-accesspoint
+id: wifi-llapi-D115-getstationstats-accesspoint
 name: getStationStats() — WiFi.AccessPoint.{i}.
 version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 109
+  row: 115
   object: WiFi.AccessPoint.{i}.
   api: getStationStats()
   baseline: 0310-BGW720-300
@@ -37,38 +37,58 @@ topology:
   - from: STA
     to: DUT
     band: 5g
-test_environment: |
-  Topology:
+test_environment: 'Topology:
+
   - DUT: COM1 (B0, AP role)
+
   - STA: COM0 (A0, STA role)
+
   Transport:
+
   - DUT/STA via serialwrap COM0/COM1
+
   Baseline:
+
   - 5G = AP1 / wl0 / testpilot5G / WPA2-Personal
+
   Pre-check:
+
   - COM1 iw dev wl0 link -> connected
+
   - DUT wl -i wl0 assoclist -> STA MAC
+
   Notes:
+
   - Workbook row 109 is getStationStats(), not AssociationTime.
-  - Workbook H excerpt uses `hostapd_cli sta`, but current 0403 official baseline exposes `/tmp/wl0_hapd.conf` without a matching `/var/run/hostapd/wl0` control socket; `hostapd_cli` returns `wpa_ctrl_open: No such file or directory`.
-  - Current single-STA baseline therefore uses driver `wl assoclist` as the stable runtime association oracle and verifies that getStationStats() returns the same STA MAC.
-  - Top-level `Active` must be extracted explicitly because nested `AffiliatedSta[].Active` also appears in the payload.
+
+  - Workbook H excerpt uses `hostapd_cli sta`, but current 0403 official baseline
+  exposes `/tmp/wl0_hapd.conf` without a matching `/var/run/hostapd/wl0` control socket;
+  `hostapd_cli` returns `wpa_ctrl_open: No such file or directory`.
+
+  - Current single-STA baseline therefore uses driver `wl assoclist` as the stable
+  runtime association oracle and verifies that getStationStats() returns the same
+  STA MAC.
+
+  - Top-level `Active` must be extracted explicitly because nested `AffiliatedSta[].Active`
+  also appears in the payload.
+
+  '
 steps:
 - id: step1_assoc_precheck
   action: exec
   target: DUT
-  command: 'wl -i wl0 assoclist | awk ''NR==1 {print "AssocMac=" $2}'''
+  command: wl -i wl0 assoclist | awk 'NR==1 {print "AssocMac=" $2}'
   capture: assoc_check
 - id: step2_getstationstats
   action: exec
   target: DUT
   command:
-    - 'A="$(wl -i wl0 assoclist | awk ''NR==1 {print $2}'')"'
-    - 'S="$(ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>/dev/null)"'
-    - 'M="$(printf ''%s\n'' "$S" | grep -m1 ''MACAddress = '' | cut -d''"'' -f2)"'
-    - 'echo "StationStatsMac=$M"'
-    - 'printf ''%s\n'' "$S" | grep -m1 ''Active = '' | cut -d= -f2 | tr -d '' ,'' | sed ''s/^/TopLevelActive=/'''
-    - '[ -n "$A" ] && [ "$A" = "$M" ] && echo "StatsMatchesAssoc=1" || echo "StatsMatchesAssoc=0"'
+  - A="$(wl -i wl0 assoclist | awk 'NR==1 {print $2}')"
+  - S="$(ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>/dev/null)"
+  - M="$(printf '%s\n' "$S" | grep -m1 'MACAddress = ' | cut -d'"' -f2)"
+  - echo "StationStatsMac=$M"
+  - printf '%s\n' "$S" | grep -m1 'Active = ' | cut -d= -f2 | tr -d ' ,' | sed 's/^/TopLevelActive=/'
+  - '[ -n "$A" ] && [ "$A" = "$M" ] && echo "StatsMatchesAssoc=1" || echo "StatsMatchesAssoc=0"'
   capture: stats_output
   depends_on: step1_assoc_precheck
 pass_criteria:
@@ -93,9 +113,9 @@ pass_criteria:
   band: 5g
   description: getStationStats should resolve the same STA as wl assoclist
 verification_command:
-  - 'wl -i wl0 assoclist'
-  - 'ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep -m1 ''MACAddress = '''
-  - 'ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep -m1 ''Active = '''
+- wl -i wl0 assoclist
+- ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep -m1 'MACAddress = '
+- ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep -m1 'Active = '
 results_reference:
   v4.0.3:
     5g: Pass
