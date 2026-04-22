@@ -734,8 +734,10 @@ def test_realistic_runtime_missing_template_does_not_create_artifact_dir(
 
     template_path = project_root / "plugins" / "wifi_llapi" / "reports" / "templates" / "wifi_llapi_template.xlsx"
     manifest_path = template_path.with_suffix(".manifest.json")
+    reports_dir = project_root / "plugins" / "wifi_llapi" / "reports"
     template_path.unlink()
     manifest_path.unlink()
+    before_entries = sorted(path.relative_to(reports_dir).as_posix() for path in reports_dir.rglob("*"))
     with pytest.raises(FileNotFoundError, match="wifi_llapi template not found"):
         orch.run(
             "wifi_llapi",
@@ -743,7 +745,8 @@ def test_realistic_runtime_missing_template_does_not_create_artifact_dir(
             dut_fw_ver="FW-IT-REALISTIC-1",
         )
 
-    assert not (project_root / "plugins" / "wifi_llapi" / "reports" / "test_runs").exists()
+    after_entries = sorted(path.relative_to(reports_dir).as_posix() for path in reports_dir.rglob("*"))
+    assert after_entries == before_entries == ["templates"]
 
 
 def test_realistic_runtime_records_pass_after_remediation(tmp_path: Path, monkeypatch):
