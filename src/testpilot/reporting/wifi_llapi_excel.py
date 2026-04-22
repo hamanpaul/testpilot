@@ -581,3 +581,55 @@ def collect_alignment_issues(
                 }
             )
     return issues
+
+
+def _clear_result_row(ws, row: int) -> None:
+    for column in ("G", "H", "I", "J", "K", "L"):
+        _set_cell_value_safe(ws, row, column, None)
+
+
+def fill_blocked_markers(report_xlsx: Path, blocked: list[object]) -> None:
+    if not blocked:
+        return
+    path = Path(report_xlsx)
+    wb = load_workbook(path)
+    ws = _get_sheet(wb, DEFAULT_SHEET_NAME)
+
+    for item in blocked:
+        try:
+            row = int(getattr(item, "source_row_before", 0) or 0)
+        except (TypeError, ValueError):
+            row = 0
+        if row <= 0 or row > ws.max_row:
+            continue
+        _clear_result_row(ws, row)
+        reason = getattr(item, "blocked_reason", "unknown")
+        _set_cell_value_safe(ws, row, "H", f"BLOCKED: {reason}")
+
+    wb.save(path)
+    wb.close()
+
+
+def fill_skip_markers(report_xlsx: Path, skipped: list[object]) -> None:
+    if not skipped:
+        return
+    path = Path(report_xlsx)
+    wb = load_workbook(path)
+    ws = _get_sheet(wb, DEFAULT_SHEET_NAME)
+
+    for item in skipped:
+        try:
+            row = int(getattr(item, "source_row_before", 0) or 0)
+        except (TypeError, ValueError):
+            row = 0
+        try:
+            template_row = int(getattr(item, "template_row", 0) or 0)
+        except (TypeError, ValueError):
+            template_row = 0
+        if row <= 0 or row > ws.max_row:
+            continue
+        _clear_result_row(ws, row)
+        _set_cell_value_safe(ws, row, "H", f"SKIP: duplicate with D{template_row:03d}")
+
+    wb.save(path)
+    wb.close()

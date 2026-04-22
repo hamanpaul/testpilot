@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 
 from testpilot.reporting.wifi_llapi_align import (
     AlignmentConflictError,
@@ -15,6 +15,8 @@ from testpilot.reporting.wifi_llapi_align import (
     write_blocked_cases_report,
     write_skipped_cases_report,
 )
+
+from testpilot.reporting.wifi_llapi_excel import create_run_report_from_template, fill_blocked_markers, fill_skip_markers
 
 
 def _build_template(path: Path) -> None:
@@ -369,3 +371,66 @@ def test_write_skipped_report_md(tmp_path: Path):
     text = out_path.read_text(encoding="utf-8")
     assert "| case_id | filename | source.row | winner_filename | template_N |" in text
     assert "D021_hecapabilities.yaml" in text
+
+
+def test_fill_blocked_markers(tmp_path: Path):
+    template = tmp_path / "template.xlsx"
+    _build_template(template)
+    report = tmp_path / "report.xlsx"
+    create_run_report_from_template(template, report)
+
+    blocked = [
+        AlignResult(
+            case_file=tmp_path / "D021_hecapabilities.yaml",
+            status="blocked",
+            source_row_before=6,
+            source_row_after=None,
+            source_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+            source_api="HeCapabilities",
+            filename_before="D021_hecapabilities.yaml",
+            filename_after=None,
+            id_before="wifi-llapi-D021-hecapabilities",
+            id_after=None,
+            blocked_reason="name_not_in_template",
+        )
+    ]
+
+    fill_blocked_markers(report, blocked)
+    wb = load_workbook(report)
+    ws = wb["Wifi_LLAPI"]
+    assert ws["H6"].value == "BLOCKED: name_not_in_template"
+    assert ws["G6"].value is None
+    assert ws["I6"].value is None
+    wb.close()
+
+
+def test_fill_skip_markers(tmp_path: Path):
+    template = tmp_path / "template.xlsx"
+    _build_template(template)
+    report = tmp_path / "report.xlsx"
+    create_run_report_from_template(template, report)
+
+    skipped = [
+        AlignResult(
+            case_file=tmp_path / "D030_dup.yaml",
+            status="skipped",
+            source_row_before=6,
+            source_row_after=6,
+            source_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+            source_api="HeCapabilities",
+            filename_before="D030_dup.yaml",
+            filename_after=None,
+            id_before="wifi-llapi-D030-dup",
+            id_after=None,
+            skip_winner_filename="D021_hecapabilities.yaml",
+            template_row=21,
+        )
+    ]
+
+    fill_skip_markers(report, skipped)
+    wb = load_workbook(report)
+    ws = wb["Wifi_LLAPI"]
+    assert ws["H6"].value == "SKIP: duplicate with D021"
+    assert ws["G6"].value is None
+    assert ws["I6"].value is None
+    wb.close()
