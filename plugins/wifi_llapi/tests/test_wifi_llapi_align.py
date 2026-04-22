@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from openpyxl import Workbook
 
 from testpilot.reporting.wifi_llapi_align import (
@@ -26,9 +27,15 @@ def _build_template(path: Path) -> None:
     wb.close()
 
 
-def test_build_template_index_happy(tmp_path: Path):
+@pytest.fixture
+def template_path(tmp_path: Path) -> Path:
     template = tmp_path / "template.xlsx"
     _build_template(template)
+    return template
+
+
+def test_build_template_index_happy(template_path: Path):
+    template = template_path
 
     index = build_template_index(template)
 
@@ -37,9 +44,8 @@ def test_build_template_index_happy(tmp_path: Path):
     assert index.by_api["HeCapabilities"] == [6]
 
 
-def test_align_already_aligned(tmp_path: Path):
-    template = tmp_path / "template.xlsx"
-    _build_template(template)
+def test_align_already_aligned(tmp_path: Path, template_path: Path):
+    template = template_path
     index = build_template_index(template)
     case_file = tmp_path / "D006_hecapabilities.yaml"
     case_file.write_text("stub\n", encoding="utf-8")
@@ -64,9 +70,8 @@ def test_align_already_aligned(tmp_path: Path):
     assert result.filename_after is None
 
 
-def test_align_auto_source_row_drift(tmp_path: Path):
-    template = tmp_path / "template.xlsx"
-    _build_template(template)
+def test_align_auto_source_row_drift(tmp_path: Path, template_path: Path):
+    template = template_path
     index = build_template_index(template)
     case_file = tmp_path / "D021_hecapabilities.yaml"
     case_file.write_text("stub\n", encoding="utf-8")
@@ -90,9 +95,8 @@ def test_align_auto_source_row_drift(tmp_path: Path):
     assert result.source_row_after == 6
 
 
-def test_align_blocked_name_different_row(tmp_path: Path):
-    template = tmp_path / "template.xlsx"
-    _build_template(template)
+def test_align_blocked_name_different_row(tmp_path: Path, template_path: Path):
+    template = template_path
     index = build_template_index(template)
     case_file = tmp_path / "D021_hecapabilities.yaml"
     case_file.write_text("stub\n", encoding="utf-8")
