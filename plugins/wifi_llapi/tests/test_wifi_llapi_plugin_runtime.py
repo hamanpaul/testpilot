@@ -15042,22 +15042,22 @@ def test_d115_getstationstats_associationtime_evaluate():
     assert plugin.evaluate(case, results) is True
 
 
-def test_d112_getstationstats_authenticationstate_contract():
-    """D112 YAML loads, discovers, and has correct metadata."""
+def test_d115_getstationstats_authenticationstate_contract():
+    """D115 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D112_getstationstats_authenticationstate.yaml")
-    assert case["source"]["row"] == 112
+    case = load_case(cases_dir / "D115_getstationstats_authenticationstate.yaml")
+    assert case["source"]["row"] == 115
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 2
     assert len(case["pass_criteria"]) == 2
     assert case["bands"] == ["5g"]
 
 
-def test_d112_getstationstats_authenticationstate_setup_env(monkeypatch):
-    """D112 needs STA + DUT."""
+def test_d115_getstationstats_authenticationstate_setup_env(monkeypatch):
+    """D115 needs STA + DUT."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D112_getstationstats_authenticationstate.yaml")
+    case = load_case(cases_dir / "D115_getstationstats_authenticationstate.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
@@ -15065,11 +15065,11 @@ def test_d112_getstationstats_authenticationstate_setup_env(monkeypatch):
     plugin.teardown(case, topo)
 
 
-def test_d112_getstationstats_authenticationstate_evaluate():
-    """D112 pass criteria met with live-shaped synthetic output."""
+def test_d115_getstationstats_authenticationstate_evaluate():
+    """D115 pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D112_getstationstats_authenticationstate.yaml")
+    case = load_case(cases_dir / "D115_getstationstats_authenticationstate.yaml")
     results = {
         "steps": {
             "step1_assoc_precheck": {
@@ -15087,22 +15087,22 @@ def test_d112_getstationstats_authenticationstate_evaluate():
     assert plugin.evaluate(case, results) is True
 
 
-def test_d113_getstationstats_avgsignalstrength_contract():
-    """D113 YAML loads, discovers, and has correct metadata."""
+def test_d115_getstationstats_avgsignalstrength_contract():
+    """D115 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D113_getstationstats_avgsignalstrength.yaml")
-    assert case["source"]["row"] == 113
+    case = load_case(cases_dir / "D115_getstationstats_avgsignalstrength.yaml")
+    assert case["source"]["row"] == 115
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 2
     assert len(case["pass_criteria"]) == 2
     assert case["bands"] == ["5g"]
 
 
-def test_d113_getstationstats_avgsignalstrength_setup_env(monkeypatch):
-    """D113 needs STA + DUT."""
+def test_d115_getstationstats_avgsignalstrength_setup_env(monkeypatch):
+    """D115 needs STA + DUT."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D113_getstationstats_avgsignalstrength.yaml")
+    case = load_case(cases_dir / "D115_getstationstats_avgsignalstrength.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
@@ -15110,11 +15110,11 @@ def test_d113_getstationstats_avgsignalstrength_setup_env(monkeypatch):
     plugin.teardown(case, topo)
 
 
-def test_d113_getstationstats_avgsignalstrength_evaluate():
-    """D113 pass criteria met with live-shaped synthetic output."""
+def test_d115_getstationstats_avgsignalstrength_evaluate():
+    """D115 pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D113_getstationstats_avgsignalstrength.yaml")
+    case = load_case(cases_dir / "D115_getstationstats_avgsignalstrength.yaml")
     results = {
         "steps": {
             "step1_assoc_precheck": {
