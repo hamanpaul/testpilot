@@ -60,9 +60,7 @@ from testpilot.reporting import log_capture
 from testpilot.reporting.wifi_llapi_excel import (
     ReportMeta,
     WifiLlapiCaseResult,
-    collect_alignment_issues,
     create_run_report_from_template,
-    ensure_template_report,
     fill_case_results,
     finalize_report_metadata,
     generate_report_filename,
@@ -190,21 +188,6 @@ class Orchestrator:
             log.debug("SDK session cleanup failed for %s", session_id)
 
     # -- discovery -------------------------------------------------------------
-
-    @staticmethod
-    def _load_wifi_llapi_template_source(manifest_path: Path) -> str | None:
-        if not manifest_path.exists():
-            return None
-        try:
-            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-        except Exception:
-            log.warning("failed to read wifi_llapi template manifest: %s", manifest_path)
-            return None
-        source_workbook = payload.get("source_workbook")
-        if not isinstance(source_workbook, str):
-            return None
-        source_text = source_workbook.strip()
-        return source_text or None
 
     def discover_plugins(self) -> list[str]:
         """列出所有可用 plugin。"""
@@ -457,7 +440,6 @@ class Orchestrator:
         plugin_name: str,
         case_ids: list[str] | None,
         dut_fw_ver: str | None,
-        report_source_xlsx: str | None,
         provider_config: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         plugin = self.loader.load(plugin_name)
@@ -476,10 +458,6 @@ class Orchestrator:
 
         reports_root = self.plugins_dir / plugin_name / "reports"
         template_path = reports_root / "templates" / "wifi_llapi_template.xlsx"
-        manifest_path = reports_root / "templates" / "wifi_llapi_template.manifest.json"
-        source_xlsx = Path(report_source_xlsx) if report_source_xlsx else None
-        alignment_xlsx: Path
-        source_report = ""
         run_date = date.today()
         fw_ver = dut_fw_ver or "DUT-FW-VER"
         run_id = datetime.now().strftime("%Y%m%dT%H%M%S%f")
@@ -487,49 +465,14 @@ class Orchestrator:
         artifact_name = Path(report_name).stem
         artifact_dir = reports_root / artifact_name
 
-        if source_xlsx is not None:
-            if not source_xlsx.exists():
-                raise FileNotFoundError(f"wifi_llapi source report not found: {source_xlsx}")
-            ensure_template_report(
-                source_xlsx=source_xlsx,
-                template_path=template_path,
-                manifest_path=manifest_path,
-            )
-            alignment_xlsx = source_xlsx
-            source_report = str(source_xlsx)
-        elif template_path.exists():
-            alignment_xlsx = template_path
-            source_report = self._load_wifi_llapi_template_source(manifest_path) or str(template_path)
-        else:
+        if not template_path.exists():
             raise FileNotFoundError(
                 "wifi_llapi template not found. Run "
                 "`testpilot wifi-llapi build-template-report --source-xlsx <path>` "
-                "or pass `--report-source-xlsx <path>` to rebuild it."
+                "to rebuild it."
             )
 
         artifact_dir.mkdir(parents=True, exist_ok=True)
-        alignment_issues = collect_alignment_issues(cases, alignment_xlsx)
-        if alignment_issues:
-            alignment_path = artifact_dir / "alignment_issues.json"
-            alignment_path.write_text(
-                json.dumps(
-                    {
-                        "source_report": source_report,
-                        "alignment_sheet": str(alignment_xlsx),
-                        "issues_count": len(alignment_issues),
-                        "issues": alignment_issues,
-                    },
-                    indent=2,
-                    ensure_ascii=False,
-                ),
-                encoding="utf-8",
-            )
-            log.warning(
-                "alignment issues: %d case(s) have source.row mismatch with template Excel "
-                "(report row placement may be inaccurate); report: %s",
-                len(alignment_issues),
-                alignment_path,
-            )
 
         agent_config = self.runner_selector.load_agent_config(plugin_name)
         execution_policy = self.runner_selector.build_execution_policy(agent_config)
@@ -708,7 +651,7 @@ class Orchestrator:
             meta=ReportMeta(
                 run_date=run_date,
                 dut_fw_ver=fw_ver,
-                source_excel=source_report,
+                source_excel="",
             ),
         )
 
@@ -775,7 +718,6 @@ class Orchestrator:
             "json_report_path": str(md_json_paths[1]) if len(md_json_paths) > 1 else "",
             "dut_log_path": dut_log_path,
             "sta_log_path": sta_log_path,
-            "source_report": source_report,
             "run_id": run_id,
             "agent_trace_dir": str(agent_trace_dir),
             "agent_trace_count": len(case_trace_files),
@@ -789,7 +731,6 @@ class Orchestrator:
         case_ids: list[str] | None = None,
         *,
         dut_fw_ver: str | None = None,
-        report_source_xlsx: str | None = None,
         provider_config: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """執行測試。
@@ -807,7 +748,6 @@ class Orchestrator:
                 plugin_name=plugin_name,
                 case_ids=case_ids,
                 dut_fw_ver=dut_fw_ver,
-                report_source_xlsx=report_source_xlsx,
                 provider_config=provider_config,
             )
 

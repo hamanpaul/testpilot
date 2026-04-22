@@ -196,19 +196,12 @@ def list_cases(ctx: click.Context, plugin_name: str) -> None:
     show_default=True,
     help="DUT firmware version used in report filename.",
 )
-@click.option(
-    "--report-source-xlsx",
-    type=click.Path(exists=True, dir_okay=False),
-    default=None,
-    help="Optional source Excel path used to (re)build the wifi_llapi template before running.",
-)
 @click.pass_context
 def run_tests(
     ctx: click.Context,
     plugin_name: str,
     case_ids: tuple[str, ...],
     dut_fw_ver: str,
-    report_source_xlsx: str | None,
 ) -> None:
     """Run tests for a plugin.
 
@@ -229,7 +222,6 @@ def run_tests(
         plugin_name,
         list(case_ids) if case_ids else None,
         dut_fw_ver=dut_fw_ver,
-        report_source_xlsx=report_source_xlsx,
         provider_config=provider_config,
     )
     console.print(result)

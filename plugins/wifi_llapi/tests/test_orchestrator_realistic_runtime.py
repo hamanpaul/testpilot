@@ -12,6 +12,7 @@ from openpyxl import Workbook, load_workbook
 import pytest
 
 from testpilot.core.orchestrator import Orchestrator
+from testpilot.reporting.wifi_llapi_excel import ensure_template_report
 
 FAIL_CASE_ID = "wifi-llapi-D004-evaluate-fail"
 PASS_CASE_ID = "wifi-llapi-D005-evaluate-pass"
@@ -107,6 +108,11 @@ def _prepare_runtime_project(tmp_path: Path) -> tuple[Path, Path]:
     _write_testbed_yaml(project_root / "configs" / "testbed.yaml")
     source_xlsx = project_root / "source.xlsx"
     _write_source_xlsx(source_xlsx)
+    ensure_template_report(
+        source_xlsx=source_xlsx,
+        template_path=plugin_dir / "reports" / "templates" / "wifi_llapi_template.xlsx",
+        manifest_path=plugin_dir / "reports" / "templates" / "wifi_llapi_template.manifest.json",
+    )
     return project_root, source_xlsx
 
 
@@ -352,7 +358,7 @@ def _runtime_snapshot(result: dict[str, Any]) -> dict[str, Any]:
 
 
 def _run_realistic_runtime(tmp_path: Path, monkeypatch) -> tuple[dict[str, Any], dict[str, Any]]:
-    project_root, source_xlsx = _prepare_runtime_project(tmp_path)
+    project_root, _source_xlsx = _prepare_runtime_project(tmp_path)
     orch = Orchestrator(
         project_root=project_root,
         plugins_dir=project_root / "plugins",
@@ -367,7 +373,6 @@ def _run_realistic_runtime(tmp_path: Path, monkeypatch) -> tuple[dict[str, Any],
         "wifi_llapi",
         case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
         dut_fw_ver="FW-IT-REALISTIC-1",
-        report_source_xlsx=str(source_xlsx),
     )
     return result, state
 
@@ -376,7 +381,7 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
     tmp_path: Path,
     monkeypatch,
 ):
-    project_root, source_xlsx = _prepare_runtime_project(tmp_path)
+    project_root, _source_xlsx = _prepare_runtime_project(tmp_path)
     orch = Orchestrator(
         project_root=project_root,
         plugins_dir=project_root / "plugins",
@@ -488,7 +493,6 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
         "wifi_llapi",
         case_ids=[case["id"] for case in cases],
         dut_fw_ver="FW-IT-REALISTIC-REF-1",
-        report_source_xlsx=str(source_xlsx),
     )
 
     assert result["status"] == "completed"
@@ -625,7 +629,7 @@ def test_fail_and_continue_with_plugin_evaluate_failure(tmp_path: Path, monkeypa
 
 
 def test_realistic_runtime_report_paths_remain_unique_across_runs(tmp_path: Path, monkeypatch):
-    project_root, source_xlsx = _prepare_runtime_project(tmp_path)
+    project_root, _source_xlsx = _prepare_runtime_project(tmp_path)
     orch = Orchestrator(
         project_root=project_root,
         plugins_dir=project_root / "plugins",
@@ -639,13 +643,11 @@ def test_realistic_runtime_report_paths_remain_unique_across_runs(tmp_path: Path
         "wifi_llapi",
         case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
         dut_fw_ver="FW-IT-REALISTIC-1",
-        report_source_xlsx=str(source_xlsx),
     )
     second_result = orch.run(
         "wifi_llapi",
         case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
         dut_fw_ver="FW-IT-REALISTIC-1",
-        report_source_xlsx=str(source_xlsx),
     )
 
     assert first_result["report_path"] != second_result["report_path"]
@@ -653,7 +655,7 @@ def test_realistic_runtime_report_paths_remain_unique_across_runs(tmp_path: Path
 
 
 def test_realistic_runtime_results_remain_identical_across_three_runs(tmp_path: Path, monkeypatch):
-    project_root, source_xlsx = _prepare_runtime_project(tmp_path)
+    project_root, _source_xlsx = _prepare_runtime_project(tmp_path)
     orch = Orchestrator(
         project_root=project_root,
         plugins_dir=project_root / "plugins",
@@ -667,19 +669,16 @@ def test_realistic_runtime_results_remain_identical_across_three_runs(tmp_path: 
         "wifi_llapi",
         case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
         dut_fw_ver="FW-IT-REALISTIC-1",
-        report_source_xlsx=str(source_xlsx),
     )
     second_result = orch.run(
         "wifi_llapi",
         case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
         dut_fw_ver="FW-IT-REALISTIC-1",
-        report_source_xlsx=str(source_xlsx),
     )
     third_result = orch.run(
         "wifi_llapi",
         case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
         dut_fw_ver="FW-IT-REALISTIC-1",
-        report_source_xlsx=str(source_xlsx),
     )
 
     first_snapshot = _runtime_snapshot(first_result)
@@ -689,11 +688,8 @@ def test_realistic_runtime_results_remain_identical_across_three_runs(tmp_path: 
     assert first_snapshot == second_snapshot == third_snapshot
 
 
-def test_realistic_runtime_can_rerun_from_existing_template_without_source_xlsx(
-    tmp_path: Path,
-    monkeypatch,
-):
-    project_root, source_xlsx = _prepare_runtime_project(tmp_path)
+def test_realistic_runtime_runs_without_source_report_fields(tmp_path: Path, monkeypatch):
+    project_root, _source_xlsx = _prepare_runtime_project(tmp_path)
     orch = Orchestrator(
         project_root=project_root,
         plugins_dir=project_root / "plugins",
@@ -707,10 +703,7 @@ def test_realistic_runtime_can_rerun_from_existing_template_without_source_xlsx(
         "wifi_llapi",
         case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
         dut_fw_ver="FW-IT-REALISTIC-1",
-        report_source_xlsx=str(source_xlsx),
     )
-    Path(source_xlsx).unlink()
-
     second_result = orch.run(
         "wifi_llapi",
         case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
@@ -719,13 +712,13 @@ def test_realistic_runtime_can_rerun_from_existing_template_without_source_xlsx(
 
     assert first_result["status"] == "completed"
     assert second_result["status"] == "completed"
+    assert "source_report" not in second_result
+    assert not (Path(second_result["artifact_dir"]) / "alignment_issues.json").exists()
     assert Path(second_result["template_path"]).is_file()
     assert Path(second_result["report_path"]).is_file()
-    # Manifest now stores portable relative paths, so compare basenames
-    assert Path(second_result["source_report"]).name == Path(str(source_xlsx)).name
 
 
-def test_realistic_runtime_missing_source_xlsx_does_not_create_artifact_dir(
+def test_realistic_runtime_missing_template_does_not_create_artifact_dir(
     tmp_path: Path,
     monkeypatch,
 ):
@@ -739,20 +732,22 @@ def test_realistic_runtime_missing_source_xlsx_does_not_create_artifact_dir(
     cases = _build_cases()
     _patch_runtime_hooks(monkeypatch, plugin=plugin, cases=cases)
 
-    missing_source_xlsx = project_root / "missing.xlsx"
-    with pytest.raises(FileNotFoundError, match="wifi_llapi source report not found"):
+    template_path = project_root / "plugins" / "wifi_llapi" / "reports" / "templates" / "wifi_llapi_template.xlsx"
+    manifest_path = template_path.with_suffix(".manifest.json")
+    template_path.unlink()
+    manifest_path.unlink()
+    with pytest.raises(FileNotFoundError, match="wifi_llapi template not found"):
         orch.run(
             "wifi_llapi",
             case_ids=[FAIL_CASE_ID, PASS_CASE_ID],
             dut_fw_ver="FW-IT-REALISTIC-1",
-            report_source_xlsx=str(missing_source_xlsx),
         )
 
-    assert not (project_root / "plugins" / "wifi_llapi" / "reports").exists()
+    assert not (project_root / "plugins" / "wifi_llapi" / "reports" / "test_runs").exists()
 
 
 def test_realistic_runtime_records_pass_after_remediation(tmp_path: Path, monkeypatch):
-    project_root, source_xlsx = _prepare_runtime_project(tmp_path)
+    project_root, _source_xlsx = _prepare_runtime_project(tmp_path)
     orch = Orchestrator(
         project_root=project_root,
         plugins_dir=project_root / "plugins",
@@ -840,7 +835,6 @@ def test_realistic_runtime_records_pass_after_remediation(tmp_path: Path, monkey
         "wifi_llapi",
         case_ids=[cases[0]["id"]],
         dut_fw_ver="FW-IT-REMEDIATION-1",
-        report_source_xlsx=str(source_xlsx),
     )
 
     assert result["status"] == "completed"

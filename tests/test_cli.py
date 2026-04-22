@@ -107,11 +107,28 @@ def test_run_without_dut_fw_ver_uses_default(monkeypatch):
             "case_ids": ["wifi-llapi-D004-kickstation"],
             "kwargs": {
                 "dut_fw_ver": "DUT-FW-VER",
-                "report_source_xlsx": None,
                 "provider_config": None,
             },
         }
     ]
+
+
+def test_run_wifi_llapi_rejects_removed_report_source_xlsx_flag(monkeypatch):
+    _clear_provider_env(monkeypatch)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        main,
+        [
+            "run",
+            "wifi_llapi",
+            "--report-source-xlsx",
+            "0401.xlsx",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "No such option: --report-source-xlsx" in result.output
 
 
 def test_run_without_plugin_name_shows_correct_format_guidance():
