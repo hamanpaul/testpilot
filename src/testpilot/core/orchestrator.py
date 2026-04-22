@@ -736,7 +736,7 @@ class Orchestrator:
         """執行測試。
 
         wifi_llapi plugin:
-        - builds/extracts template report from source Excel sheet,
+        - uses the checked-in template report,
         - executes cases through plugin hooks,
         - fills report test command/result columns by source row.
 
