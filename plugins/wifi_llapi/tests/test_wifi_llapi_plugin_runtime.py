@@ -15132,22 +15132,22 @@ def test_d115_getstationstats_avgsignalstrength_evaluate():
     assert plugin.evaluate(case, results) is True
 
 
-def test_d114_getstationstats_avgsignalstrengthbychain_contract():
-    """D114 YAML loads, discovers, and has correct metadata."""
+def test_d115_getstationstats_avgsignalstrengthbychain_contract():
+    """D115 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D114_getstationstats_avgsignalstrengthbychain.yaml")
-    assert case["source"]["row"] == 114
+    case = load_case(cases_dir / "D115_getstationstats_avgsignalstrengthbychain.yaml")
+    assert case["source"]["row"] == 115
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 9
     assert len(case["pass_criteria"]) == 9
     assert case["bands"] == ["5g", "6g", "2.4g"]
 
 
-def test_d114_getstationstats_avgsignalstrengthbychain_setup_env(monkeypatch):
-    """D114 needs STA + DUT."""
+def test_d115_getstationstats_avgsignalstrengthbychain_setup_env(monkeypatch):
+    """D115 needs STA + DUT."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D114_getstationstats_avgsignalstrengthbychain.yaml")
+    case = load_case(cases_dir / "D115_getstationstats_avgsignalstrengthbychain.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
@@ -15155,11 +15155,11 @@ def test_d114_getstationstats_avgsignalstrengthbychain_setup_env(monkeypatch):
     plugin.teardown(case, topo)
 
 
-def test_d114_getstationstats_avgsignalstrengthbychain_evaluate():
-    """D114 pass criteria met with live-shaped synthetic output."""
+def test_d115_getstationstats_avgsignalstrengthbychain_evaluate():
+    """D115 pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D114_getstationstats_avgsignalstrengthbychain.yaml")
+    case = load_case(cases_dir / "D115_getstationstats_avgsignalstrengthbychain.yaml")
     results = {
         "steps": {
             "step1_5g_sta_join": {
