@@ -57,14 +57,25 @@ from testpilot.core.runner_selector import (
 from testpilot.core.testbed_config import TestbedConfig
 from testpilot.reporting.reporter import generate_reports
 from testpilot.reporting import log_capture
+from testpilot.reporting.wifi_llapi_align import (
+    _resolve_collisions,
+    align_case,
+    apply_alignment_mutations,
+    build_template_index,
+    write_blocked_cases_report,
+    write_skipped_cases_report,
+)
 from testpilot.reporting.wifi_llapi_excel import (
     ReportMeta,
     WifiLlapiCaseResult,
     create_run_report_from_template,
+    fill_blocked_markers,
     fill_case_results,
+    fill_skip_markers,
     finalize_report_metadata,
     generate_report_filename,
 )
+from testpilot.schema.case_schema import load_case
 
 log = logging.getLogger(__name__)
 
@@ -443,18 +454,26 @@ class Orchestrator:
         provider_config: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         plugin = self.loader.load(plugin_name)
-        discovered_cases = plugin.discover_cases()
+        case_files = [
+            path
+            for path in sorted(plugin.cases_dir.glob("*.y*ml"))
+            if not path.stem.startswith("_")
+        ]
+        case_pairs = [(path, load_case(path)) for path in case_files]
         if case_ids:
             requested_ids = {str(case_id).strip() for case_id in case_ids if str(case_id).strip()}
-            cases = [
-                c for c in discovered_cases if _case_matches_requested_ids(c, requested_ids)
+            case_pairs = [
+                (path, case)
+                for path, case in case_pairs
+                if _case_matches_requested_ids(case, requested_ids)
             ]
         else:
-            cases = [
-                c
-                for c in discovered_cases
-                if _is_wifi_llapi_official_case(c)
+            case_pairs = [
+                (path, case)
+                for path, case in case_pairs
+                if _is_wifi_llapi_official_case(case)
             ]
+        cases = [case for _, case in case_pairs]
 
         reports_root = self.plugins_dir / plugin_name / "reports"
         template_path = reports_root / "templates" / "wifi_llapi_template.xlsx"
@@ -473,6 +492,18 @@ class Orchestrator:
             )
 
         artifact_dir.mkdir(parents=True, exist_ok=True)
+        index = build_template_index(template_path)
+        align_results = [align_case(case, index, path) for path, case in case_pairs]
+        _resolve_collisions(align_results)
+        apply_alignment_mutations(align_results)
+        runnable_results = [
+            result
+            for result in align_results
+            if result.status in {"already_aligned", "auto_aligned"}
+        ]
+        blocked_results = [result for result in align_results if result.status == "blocked"]
+        skipped_results = [result for result in align_results if result.status == "skipped"]
+        cases = [load_case(result.case_file) for result in runnable_results]
 
         agent_config = self.runner_selector.load_agent_config(plugin_name)
         execution_policy = self.runner_selector.build_execution_policy(agent_config)
@@ -646,6 +677,10 @@ class Orchestrator:
             self._stop_serialwrap()
 
         fill_case_results(report_xlsx=report_path, case_results=case_results)
+        fill_blocked_markers(report_xlsx=report_path, blocked=blocked_results)
+        fill_skip_markers(report_xlsx=report_path, skipped=skipped_results)
+        write_blocked_cases_report(blocked_results, artifact_dir / "blocked_cases.md")
+        write_skipped_cases_report(skipped_results, artifact_dir / "skipped_cases.md")
         finalize_report_metadata(
             report_xlsx=report_path,
             meta=ReportMeta(
@@ -692,6 +727,28 @@ class Orchestrator:
             "run_id": run_id,
             "timing": timing_rows,
             "output_stem": artifact_name,
+            "alignment_summary": {
+                "already_aligned": sum(
+                    1 for result in align_results if result.status == "already_aligned"
+                ),
+                "auto_aligned": sum(
+                    1 for result in align_results if result.status == "auto_aligned"
+                ),
+                "blocked": sum(1 for result in align_results if result.status == "blocked"),
+                "skipped": sum(1 for result in align_results if result.status == "skipped"),
+                "mutations": [
+                    {
+                        "case_id": result.id_before,
+                        "filename_before": result.filename_before,
+                        "filename_after": result.case_file.name,
+                        "source_row_before": result.source_row_before,
+                        "source_row_after": result.source_row_after,
+                        "id_after": result.id_after or result.id_before,
+                        "status": result.status,
+                    }
+                    for result in align_results
+                ],
+            },
         }
         case_dicts = [dataclasses.asdict(cr) for cr in case_results]
         md_json_paths = generate_reports(
