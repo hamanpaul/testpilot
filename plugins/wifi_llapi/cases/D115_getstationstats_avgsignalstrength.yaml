@@ -1,10 +1,10 @@
-id: wifi-llapi-D113-getstationstats-avgsignalstrength
+id: wifi-llapi-D115-getstationstats-avgsignalstrength
 name: getStationStats() AvgSignalStrength — WiFi.AccessPoint.{i}.
 version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 113
+  row: 115
   object: WiFi.AccessPoint.{i}.
   api: getStationStats()
   baseline: 0310-BGW720-300
@@ -37,21 +37,35 @@ topology:
   - from: STA
     to: DUT
     band: 5g
-test_environment: |
-  Topology:
+test_environment: 'Topology:
+
   - DUT: COM1 (B0, AP role)
+
   - STA: COM0 (A0, STA role)
+
   Transport:
+
   - DUT/STA via serialwrap COM0/COM1
+
   Baseline:
+
   - 5G = AP1 / wl0 / testpilot5G / WPA2-Personal
+
   Pre-check:
+
   - COM1 iw dev wl0 link -> connected
+
   - DUT wl -i wl0 assoclist -> STA MAC
+
   Notes:
+
   - Workbook row 113 is AvgSignalStrength.
+
   - Live value was 0; field populated but may return 0
+
   - Only 5G tested (COM1 associated to AP1)
+
+  '
 steps:
 - id: step1_assoc_precheck
   action: exec
@@ -72,11 +86,11 @@ pass_criteria:
   description: AP1 should have at least one associated STA
 - field: stats_output.AvgSignalStrength
   operator: regex
-  value: "^-?\\d+$"
+  value: ^-?\d+$
   band: 5g
   description: AvgSignalStrength should be an integer
 verification_command:
-  - ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep AvgSignalStrength
+- ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep AvgSignalStrength
 results_reference:
   v4.0.3:
     5g: Pass
