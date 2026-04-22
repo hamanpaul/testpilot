@@ -1,0 +1,24 @@
+id: brcm-fw-upgrade-dut-sta-forward
+name: BRCM DUT+STA forward upgrade
+platform_profile: bgw720_prpl
+topology_ref: dut_plus_sta
+artifacts:
+  forward_image: "{{FW_FORWARD_PATH}}"
+  rollback_image: "{{FW_ROLLBACK_PATH}}"
+  active_image_role: forward_image
+runtime_inputs:
+  fw_name: "{{FW_NAME}}"
+  expected_image_tag: "{{EXPECTED_IMAGE_TAG}}"
+  expected_build_time: "{{EXPECTED_BUILD_TIME}}"
+success_gates:
+  - id: image_tag_matches
+    verifier: image_tag
+    operator: equals
+    expected: "{{EXPECTED_IMAGE_TAG}}"
+  - id: build_time_matches
+    verifier: proc_version_build_time
+    operator: equals
+    expected: "{{EXPECTED_BUILD_TIME}}"
+evidence:
+  capture: [dut_serial, sta_serial, command_output]
+  required_for_pass: [image_tag_matches, build_time_matches]

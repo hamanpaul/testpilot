@@ -1,0 +1,62 @@
+version: "2026-04-21"
+profiles:
+  bgw720_prpl:
+    family: brcm
+    board: BGW720-300
+    os_flavor: prpl
+    login_strategy: none
+    capabilities:
+      has_scp: true
+      has_md5sum: true
+      has_bcm_bootstate: true
+    commands:
+      change_dir: "cd /tmp"
+      proc_version: "cat /proc/version"
+      image_state: "bcm_bootstate"
+      md5: "md5sum {{path}}"
+      flash: "bcm_flasher {{fw_name}}"
+      bootstate_set: "bcm_bootstate 1"
+      bootstate_timeout_seconds: "180"
+      reboot: "reboot"
+      reboot_timeout_seconds: "180"
+      reboot_settle_seconds: "10"
+      verify_attempts: "5"
+      verify_retry_delay_seconds: "2.0"
+      ready_probe: "echo ready"
+      ready_probe_attempts: "3"
+      ready_probe_retry_delay_seconds: "1.0"
+    success_parsers:
+      proc_version_build_time: "Linux version .* (?P<build_time>[A-Z][a-z]{2} .+ CST 20[0-9]{2})"
+      image_tag: "\\$imageversion: (?P<image_tag>[^$]+) \\$"
+    log_markers:
+      flash_complete: "Image flash complete"
+      delayed_commit: "Delayed commit completed"
+  bgw720_bdk:
+    family: brcm
+    board: BGW720-300
+    os_flavor: pure_bdk
+    login_strategy: serialwrap_profile_login
+    capabilities:
+      has_scp: false
+      has_md5sum: false
+      has_bcm_bootstate: true
+    commands:
+      change_dir: "cd /tmp"
+      proc_version: "cat /proc/version"
+      image_state: "bcm_bootstate"
+      flash: "bcm_flasher {{fw_name}}"
+      bootstate_set: "bcm_bootstate 1"
+      bootstate_timeout_seconds: "180"
+      reboot: "reboot"
+      reboot_timeout_seconds: "180"
+      reboot_settle_seconds: "10"
+      verify_attempts: "5"
+      verify_retry_delay_seconds: "2.0"
+      ready_probe: "echo ready"
+      ready_probe_attempts: "3"
+      ready_probe_retry_delay_seconds: "1.0"
+    success_parsers:
+      proc_version_build_time: "Linux version .* (?P<build_time>[A-Z][a-z]{2} .+ CST 20[0-9]{2})"
+      image_tag: "\\$imageversion: (?P<image_tag>[^$]+) \\$"
+    log_markers:
+      flash_complete: "Image flash complete"

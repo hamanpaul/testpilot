@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -47,6 +48,39 @@ def _run_command_guidance() -> str:
         "Tip:\n"
         "  testpilot list-cases wifi_llapi"
     )
+
+
+def _parse_runtime_override(raw: str) -> tuple[str, str]:
+    key, sep, value = raw.partition("=")
+    if not sep or not key:
+        raise ValueError(f"invalid runtime override {raw!r}; expected KEY=VALUE")
+    return key, value
+
+
+def _extract_brcm_image_named_group(pattern: bytes, data: bytes, group: str) -> str:
+    match = re.search(pattern, data)
+    if not match:
+        raise ValueError(f"pattern not found for group {group}: {pattern.decode('ascii', errors='ignore')}")
+    value = match.group(group)
+    return value.decode("ascii", errors="ignore").strip()
+
+
+def _derive_brcm_image_metadata(image_path: str) -> dict[str, str]:
+    data = Path(image_path).read_bytes()
+    image_tag = _extract_brcm_image_named_group(
+        rb"\$imageversion:\s*(?P<image_tag>[^$]+?)\s*\$",
+        data,
+        "image_tag",
+    )
+    build_time = _extract_brcm_image_named_group(
+        rb"#1 SMP PREEMPT [A-Z][a-z]{2} (?P<build_time>[A-Z][a-z]{2} [ 0-9][0-9] [0-9:]{8} CST 20[0-9]{2})",
+        data,
+        "build_time",
+    )
+    return {
+        "image_tag": image_tag,
+        "build_time": re.sub(r"\s+", " ", build_time),
+    }
 
 
 class HelpfulRunCommand(click.Command):
@@ -204,6 +238,96 @@ def run_tests(
 @main.group("wifi-llapi")
 def wifi_llapi_group() -> None:
     """wifi_llapi plugin helper commands."""
+
+
+@main.group("brcm-fw-upgrade")
+def brcm_fw_upgrade_group() -> None:
+    """brcm_fw_upgrade plugin helper commands."""
+
+
+@brcm_fw_upgrade_group.command("run")
+@click.option("--case", "case_ids", multiple=True, help="Specific brcm_fw_upgrade case IDs to run.")
+@click.option("--forward-image", required=True, type=click.Path(dir_okay=False))
+@click.option(
+    "--rollback-image",
+    required=False,
+    default=None,
+    type=click.Path(dir_okay=False),
+    help="Optional rollback image path. Defaults to the forward image when omitted.",
+)
+@click.option(
+    "--fw-name",
+    required=False,
+    default=None,
+    help="Firmware filename passed to the device flasher. Defaults to the forward image basename.",
+)
+@click.option(
+    "--expected-image-tag",
+    required=False,
+    default=None,
+    help="Expected post-flash image tag. Defaults to the tag extracted from the forward image.",
+)
+@click.option(
+    "--expected-build-time",
+    required=False,
+    default=None,
+    help="Expected post-flash build time. Defaults to the build time extracted from the forward image.",
+)
+@click.option("--platform-profile", required=False, default=None)
+@click.option("--topology", "topology_name", required=False, default=None)
+@click.option("--set", "extra_vars", multiple=True, help="Extra KEY=VALUE runtime overrides.")
+@click.pass_context
+def brcm_fw_upgrade_run(
+    ctx: click.Context,
+    case_ids: tuple[str, ...],
+    forward_image: str,
+    rollback_image: str | None,
+    fw_name: str | None,
+    expected_image_tag: str | None,
+    expected_build_time: str | None,
+    platform_profile: str | None,
+    topology_name: str | None,
+    extra_vars: tuple[str, ...],
+) -> None:
+    """Run brcm_fw_upgrade cases with explicit runtime overrides."""
+    orch: Orchestrator = ctx.obj["orchestrator"]
+    plugin = orch.loader.load("brcm_fw_upgrade")
+    derived_metadata: dict[str, str] | None = None
+    if expected_image_tag is None or expected_build_time is None:
+        try:
+            derived_metadata = _derive_brcm_image_metadata(forward_image)
+        except (OSError, ValueError) as exc:
+            raise click.ClickException(
+                f"failed to derive forward image metadata from {forward_image!r}: {exc}"
+            ) from exc
+    runtime_overrides = {
+        "FW_FORWARD_PATH": forward_image,
+        "FW_ROLLBACK_PATH": rollback_image or forward_image,
+        "FW_NAME": fw_name or Path(forward_image).name,
+        "EXPECTED_IMAGE_TAG": expected_image_tag or derived_metadata["image_tag"],
+        "EXPECTED_BUILD_TIME": expected_build_time or derived_metadata["build_time"],
+    }
+    if platform_profile:
+        runtime_overrides["PLATFORM_PROFILE"] = platform_profile
+    if topology_name:
+        runtime_overrides["TOPOLOGY"] = topology_name
+    try:
+        for item in extra_vars:
+            key, value = _parse_runtime_override(item)
+            runtime_overrides[key] = value
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+    try:
+        result = plugin.run_cases(
+            orch.config,
+            case_ids=list(case_ids) if case_ids else None,
+            runtime_overrides=runtime_overrides,
+        )
+    except (KeyError, ValueError, RuntimeError) as exc:
+        raise click.ClickException(str(exc)) from exc
+    console.print_json(data=result)
+    if str(result.get("status", "")).lower() != "ok":
+        raise SystemExit(1)
 
 
 @wifi_llapi_group.command("baseline-qualify")

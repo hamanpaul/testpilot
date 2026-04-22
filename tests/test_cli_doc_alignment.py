@@ -81,6 +81,12 @@ class TestCLIDocAlignment:
         result = runner.invoke(main, ["wifi-llapi", "--help"])
         assert result.exit_code == 0
 
+    def test_brcm_fw_upgrade_group_exists_in_cli(self):
+        """brcm-fw-upgrade subgroup exists."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["brcm-fw-upgrade", "--help"])
+        assert result.exit_code == 0
+
     def test_build_template_report_exists(self):
         """wifi-llapi build-template-report exists."""
         runner = CliRunner()

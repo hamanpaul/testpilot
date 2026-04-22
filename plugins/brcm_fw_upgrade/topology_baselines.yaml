@@ -1,0 +1,25 @@
+version: "2026-04-21"
+topologies:
+  single_dut:
+    devices:
+      DUT:
+        required: true
+    phases:
+      - precheck
+      - transfer_dut
+      - flash_dut
+      - verify_dut
+  dut_plus_sta:
+    devices:
+      DUT:
+        required: true
+      STA:
+        required: true
+    phases:
+      - precheck
+      - transfer_dut
+      - transfer_sta
+      - flash_sta
+      - verify_sta
+      - flash_dut
+      - verify_dut
