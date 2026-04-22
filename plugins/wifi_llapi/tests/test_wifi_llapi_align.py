@@ -1,4 +1,5 @@
 from pathlib import Path
+from collections import Counter
 
 import pytest
 import yaml
@@ -172,13 +173,18 @@ def test_align_all_repo_cases():
     template = repo_root / "plugins" / "wifi_llapi" / "reports" / "templates" / "wifi_llapi_template.xlsx"
     cases_dir = repo_root / "plugins" / "wifi_llapi" / "cases"
     index = build_template_index(template)
-    results = [
-        align_case(load_case(path), index, path)
+    case_paths = [
+        path
         for path in sorted(cases_dir.glob("*.y*ml"))
         if not path.stem.startswith("_")
     ]
+    cases = [(path, load_case(path)) for path in case_paths]
+    results = [align_case(case, index, path) for path, case in cases]
 
     _resolve_collisions(results)
+
+    case_ids = [str(case.get("id", "")).strip() for _path, case in cases]
+    duplicates = sorted(case_id for case_id, count in Counter(case_ids).items() if count > 1)
 
     counts = {
         "already_aligned": sum(1 for r in results if r.status == "already_aligned"),
@@ -189,6 +195,7 @@ def test_align_all_repo_cases():
 
     assert sum(counts.values()) == 420
     assert counts["auto_aligned"] <= 168
+    assert not duplicates, f"duplicate discoverable case ids: {duplicates}"
 
 
 def test_apply_mutations_rename_collision(tmp_path: Path):
