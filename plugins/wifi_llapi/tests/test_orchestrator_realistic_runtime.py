@@ -501,10 +501,17 @@ def test_run_with_mixed_alignment(tmp_path: Path, monkeypatch):
     result = orch.run("wifi_llapi", dut_fw_ver="FW-IT-REALISTIC-1")
 
     assert result["status"] == "completed"
+    assert result["cases_count"] == 2
+    assert result["agent_trace_count"] == 2
     summary = json.loads(Path(result["json_report_path"]).read_text(encoding="utf-8"))
     assert summary["meta"]["alignment_summary"]["auto_aligned"] == 1
     assert summary["meta"]["alignment_summary"]["skipped"] == 1
-    assert (Path(result["artifact_dir"]) / "skipped_cases.md").is_file()
+    assert yaml.safe_load((cases_dir / "D021_hecapabilities.yaml").read_text(encoding="utf-8"))[
+        "source"
+    ]["row"] == 21
+    skipped_report = Path(result["artifact_dir"]) / "skipped_cases.md"
+    assert skipped_report.is_file()
+    assert "wifi-llapi-D030-duplicate" in skipped_report.read_text(encoding="utf-8")
 
 
 def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(

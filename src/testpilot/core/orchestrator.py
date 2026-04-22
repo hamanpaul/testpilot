@@ -11,6 +11,7 @@ This module keeps the public API identical to pre-split versions so that
 
 from __future__ import annotations
 
+from dataclasses import asdict, dataclass
 from datetime import date, datetime
 import json
 import logging
@@ -85,6 +86,14 @@ DEFAULT_CONFIG_DIR = "configs"
 
 # Re-export for backward compatibility
 __all__ = ["Orchestrator", "DEFAULT_WIFI_LLAPI_EXECUTION_POLICY"]
+
+
+@dataclass(slots=True)
+class WifiLlapiAlignmentPrep:
+    runnable_cases: list[dict[str, Any]]
+    blocked_results: list[Any]
+    skipped_results: list[Any]
+    alignment_summary: dict[str, Any]
 
 
 class Orchestrator:
@@ -444,6 +453,92 @@ class Orchestrator:
             "sta_log_path": str(sta_log_path),
         }
 
+    def _load_wifi_llapi_case_pairs(
+        self,
+        *,
+        plugin: Any,
+        case_ids: list[str] | None,
+    ) -> list[tuple[Path, dict[str, Any]]]:
+        case_files = [
+            path
+            for path in sorted(plugin.cases_dir.glob("*.y*ml"))
+            if not path.stem.startswith("_")
+        ]
+        case_pairs = [(path, load_case(path)) for path in case_files]
+        if case_ids:
+            requested_ids = {str(case_id).strip() for case_id in case_ids if str(case_id).strip()}
+            return [
+                (path, case)
+                for path, case in case_pairs
+                if _case_matches_requested_ids(case, requested_ids)
+            ]
+        return [
+            (path, case)
+            for path, case in case_pairs
+            if _is_wifi_llapi_official_case(case)
+        ]
+
+    @staticmethod
+    def _build_wifi_llapi_alignment_summary(align_results: list[Any]) -> dict[str, Any]:
+        return {
+            "already_aligned": sum(
+                1 for result in align_results if result.status == "already_aligned"
+            ),
+            "auto_aligned": sum(1 for result in align_results if result.status == "auto_aligned"),
+            "blocked": sum(1 for result in align_results if result.status == "blocked"),
+            "skipped": sum(1 for result in align_results if result.status == "skipped"),
+            "mutations": [
+                {
+                    "case_id": result.id_before,
+                    "filename_before": result.filename_before,
+                    "filename_after": result.case_file.name,
+                    "source_row_before": result.source_row_before,
+                    "source_row_after": result.source_row_after,
+                    "id_after": result.id_after or result.id_before,
+                    "status": result.status,
+                }
+                for result in align_results
+            ],
+        }
+
+    def _prepare_wifi_llapi_alignment(
+        self,
+        *,
+        plugin: Any,
+        case_ids: list[str] | None,
+        template_path: Path,
+    ) -> WifiLlapiAlignmentPrep:
+        case_pairs = self._load_wifi_llapi_case_pairs(plugin=plugin, case_ids=case_ids)
+        index = build_template_index(template_path)
+        align_results = [align_case(case, index, path) for path, case in case_pairs]
+        _resolve_collisions(align_results)
+        apply_alignment_mutations(align_results)
+        runnable_results = [
+            result
+            for result in align_results
+            if result.status in {"already_aligned", "auto_aligned"}
+        ]
+        blocked_results = [result for result in align_results if result.status == "blocked"]
+        skipped_results = [result for result in align_results if result.status == "skipped"]
+        return WifiLlapiAlignmentPrep(
+            runnable_cases=[load_case(result.case_file) for result in runnable_results],
+            blocked_results=blocked_results,
+            skipped_results=skipped_results,
+            alignment_summary=self._build_wifi_llapi_alignment_summary(align_results),
+        )
+
+    @staticmethod
+    def _finalize_wifi_llapi_alignment_artifacts(
+        *,
+        report_path: Path,
+        artifact_dir: Path,
+        prep: WifiLlapiAlignmentPrep,
+    ) -> None:
+        fill_blocked_markers(report_xlsx=report_path, blocked=prep.blocked_results)
+        fill_skip_markers(report_xlsx=report_path, skipped=prep.skipped_results)
+        write_blocked_cases_report(prep.blocked_results, artifact_dir / "blocked_cases.md")
+        write_skipped_cases_report(prep.skipped_results, artifact_dir / "skipped_cases.md")
+
     # -- wifi_llapi run loop ---------------------------------------------------
 
     def _run_wifi_llapi(
@@ -454,27 +549,6 @@ class Orchestrator:
         provider_config: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         plugin = self.loader.load(plugin_name)
-        case_files = [
-            path
-            for path in sorted(plugin.cases_dir.glob("*.y*ml"))
-            if not path.stem.startswith("_")
-        ]
-        case_pairs = [(path, load_case(path)) for path in case_files]
-        if case_ids:
-            requested_ids = {str(case_id).strip() for case_id in case_ids if str(case_id).strip()}
-            case_pairs = [
-                (path, case)
-                for path, case in case_pairs
-                if _case_matches_requested_ids(case, requested_ids)
-            ]
-        else:
-            case_pairs = [
-                (path, case)
-                for path, case in case_pairs
-                if _is_wifi_llapi_official_case(case)
-            ]
-        cases = [case for _, case in case_pairs]
-
         reports_root = self.plugins_dir / plugin_name / "reports"
         template_path = reports_root / "templates" / "wifi_llapi_template.xlsx"
         run_date = date.today()
@@ -492,18 +566,12 @@ class Orchestrator:
             )
 
         artifact_dir.mkdir(parents=True, exist_ok=True)
-        index = build_template_index(template_path)
-        align_results = [align_case(case, index, path) for path, case in case_pairs]
-        _resolve_collisions(align_results)
-        apply_alignment_mutations(align_results)
-        runnable_results = [
-            result
-            for result in align_results
-            if result.status in {"already_aligned", "auto_aligned"}
-        ]
-        blocked_results = [result for result in align_results if result.status == "blocked"]
-        skipped_results = [result for result in align_results if result.status == "skipped"]
-        cases = [load_case(result.case_file) for result in runnable_results]
+        alignment_prep = self._prepare_wifi_llapi_alignment(
+            plugin=plugin,
+            case_ids=case_ids,
+            template_path=template_path,
+        )
+        cases = alignment_prep.runnable_cases
 
         agent_config = self.runner_selector.load_agent_config(plugin_name)
         execution_policy = self.runner_selector.build_execution_policy(agent_config)
@@ -677,10 +745,11 @@ class Orchestrator:
             self._stop_serialwrap()
 
         fill_case_results(report_xlsx=report_path, case_results=case_results)
-        fill_blocked_markers(report_xlsx=report_path, blocked=blocked_results)
-        fill_skip_markers(report_xlsx=report_path, skipped=skipped_results)
-        write_blocked_cases_report(blocked_results, artifact_dir / "blocked_cases.md")
-        write_skipped_cases_report(skipped_results, artifact_dir / "skipped_cases.md")
+        self._finalize_wifi_llapi_alignment_artifacts(
+            report_path=report_path,
+            artifact_dir=artifact_dir,
+            prep=alignment_prep,
+        )
         finalize_report_metadata(
             report_xlsx=report_path,
             meta=ReportMeta(
@@ -691,8 +760,6 @@ class Orchestrator:
         )
 
         # -- md / json reports ------------------------------------------------
-        import dataclasses
-
         run_finished_monotonic = time.monotonic()
         run_finished_at_iso = datetime.now().astimezone().isoformat(timespec="seconds")
         timing_rows: list[dict[str, Any]] = [
@@ -727,30 +794,9 @@ class Orchestrator:
             "run_id": run_id,
             "timing": timing_rows,
             "output_stem": artifact_name,
-            "alignment_summary": {
-                "already_aligned": sum(
-                    1 for result in align_results if result.status == "already_aligned"
-                ),
-                "auto_aligned": sum(
-                    1 for result in align_results if result.status == "auto_aligned"
-                ),
-                "blocked": sum(1 for result in align_results if result.status == "blocked"),
-                "skipped": sum(1 for result in align_results if result.status == "skipped"),
-                "mutations": [
-                    {
-                        "case_id": result.id_before,
-                        "filename_before": result.filename_before,
-                        "filename_after": result.case_file.name,
-                        "source_row_before": result.source_row_before,
-                        "source_row_after": result.source_row_after,
-                        "id_after": result.id_after or result.id_before,
-                        "status": result.status,
-                    }
-                    for result in align_results
-                ],
-            },
+            "alignment_summary": alignment_prep.alignment_summary,
         }
-        case_dicts = [dataclasses.asdict(cr) for cr in case_results]
+        case_dicts = [asdict(cr) for cr in case_results]
         md_json_paths = generate_reports(
             case_results=case_dicts,
             meta=report_meta,
