@@ -9,11 +9,9 @@ preparation.
 
 ## [Unreleased]
 
-### Changed
+### Changed - BREAKING
 
-- Removed `testpilot run wifi_llapi --report-source-xlsx`; rebuild the checked-in
-  template with `testpilot wifi-llapi build-template-report --source-xlsx <path>`
-  before running runtime flows.
+- `testpilot run wifi_llapi` no longer accepts `--report-source-xlsx`; rebuild the checked-in template with `testpilot wifi-llapi build-template-report --source-xlsx <path>` before running if the template needs refreshing.
 
 ## [0.2.0]
 

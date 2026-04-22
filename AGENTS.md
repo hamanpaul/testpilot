@@ -43,6 +43,10 @@ python -m testpilot.cli wifi-llapi build-template-report --source-xlsx <path>
 uv run pytest -q
 ```
 
+Wifi_llapi reporting guidance:
+
+3. `testpilot wifi-llapi build-template-report --source-xlsx <path>` is a build/audit path. `testpilot run wifi_llapi` must not depend on raw source workbooks.
+
 ## Local Artifact Version Control Policy
 
 1. repo root workbook inputs (`/*.xlsx`, `/*.xls`, `/*.xlsm`) and compare outputs (`compare-*.md`, `compare-*.json`) are local-only artifacts; do not commit them.

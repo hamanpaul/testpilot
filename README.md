@@ -227,7 +227,7 @@ Typical artifact bundle contents:
 - `DUT.log`
 - `STA.log`
 - `agent_trace/`
-- `alignment_issues.json` (only when row alignment warnings are emitted)
+- `alignment_issues.json` is no longer produced by `testpilot run wifi_llapi`; runtime now uses the checked-in template workbook only and reserves workbook rebuilding for `testpilot wifi-llapi build-template-report`.
 
 Shared template files remain under `plugins/wifi_llapi/reports/templates/`.
 
@@ -737,7 +737,7 @@ testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
 - `DUT.log`
 - `STA.log`
 - `agent_trace/`
-- `alignment_issues.json`（只有 row/object/api 對齊警告時才會出現）
+- `alignment_issues.json` 不再由 `testpilot run wifi_llapi` 產生；runtime 現在只使用 repo 內已提交的 template workbook，而 workbook 重建保留給 `testpilot wifi-llapi build-template-report`。
 
 共用 template 檔維持在 `plugins/wifi_llapi/reports/templates/`。
 
