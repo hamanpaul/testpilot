@@ -247,7 +247,9 @@ def test_apply_mutations_rewrite_rename_and_update_path(tmp_path: Path):
     assert result.case_file == destination
 
 
-def test_apply_mutations_preserve_source_when_move_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_apply_mutations_restore_source_when_second_replace_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
     source = tmp_path / "D021_hecapabilities.yaml"
     destination = tmp_path / "D006_hecapabilities.yaml"
     source.write_text(
@@ -281,11 +283,17 @@ def test_apply_mutations_preserve_source_when_move_fails(tmp_path: Path, monkeyp
         template_row_api="HeCapabilities",
     )
 
-    def _boom(self: Path, target: Path | str) -> Path:
-        raise OSError(f"boom: {self} -> {target}")
+    original_replace = Path.replace
+    replace_calls: list[tuple[str, str]] = []
 
-    monkeypatch.setattr(Path, "rename", _boom)
-    monkeypatch.setattr(Path, "replace", _boom)
+    def _replace_with_second_call_failure(self: Path, target: Path | str) -> Path:
+        target_path = Path(target)
+        replace_calls.append((self.name, target_path.name))
+        if len(replace_calls) == 2:
+            raise OSError(f"boom: {self} -> {target_path}")
+        return original_replace(self, target_path)
+
+    monkeypatch.setattr(Path, "replace", _replace_with_second_call_failure)
 
     with pytest.raises(OSError, match="boom"):
         apply_alignment_mutations([result])
@@ -295,6 +303,16 @@ def test_apply_mutations_preserve_source_when_move_fails(tmp_path: Path, monkeyp
     assert payload["id"] == "wifi-llapi-D021-hecapabilities"
     assert not destination.exists()
     assert sorted(path.name for path in tmp_path.iterdir()) == [source.name]
+    assert result.case_file == source
+    assert len(replace_calls) == 3
+    assert replace_calls[0][0] == source.name
+    assert replace_calls[0][1].startswith(f".{source.name}.")
+    assert replace_calls[0][1].endswith(".bak")
+    assert replace_calls[1][0].startswith(f".{destination.name}.")
+    assert replace_calls[1][0].endswith(".tmp")
+    assert replace_calls[1][1] == destination.name
+    assert replace_calls[2][0] == replace_calls[0][1]
+    assert replace_calls[2][1] == source.name
 
 
 def test_write_blocked_report_md(tmp_path: Path):
