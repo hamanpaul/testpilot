@@ -114,6 +114,23 @@ class SerialWrapTransport(TransportBase):
         self._selector = None
         self._session = None
 
+    def recover(self, timeout: float | None = None) -> None:
+        if not self._selector:
+            raise RuntimeError("serialwrap recover requires resolved selector")
+        recover_timeout = float(timeout if timeout is not None else self._session_attach_timeout)
+        self._run_json(
+            [
+                "session",
+                "recover",
+                "--selector",
+                self._selector,
+                "--timeout",
+                f"{recover_timeout:.3f}",
+            ],
+            timeout=recover_timeout + 2.0,
+        )
+        self._attach_session()
+
     def execute(self, command: str, timeout: float = 30.0) -> dict[str, Any]:
         if not self._connected or not self._selector:
             raise RuntimeError("serialwrap transport is not connected")

@@ -197,15 +197,11 @@ Use `brcm_fw_upgrade` for parameterized BRCM firmware transitions with explicit 
 python -m testpilot.cli list-cases brcm_fw_upgrade
 
 python -m testpilot.cli brcm-fw-upgrade run \
-  --case brcm-fw-upgrade-dut-sta-forward \
-  --forward-image /home/build20/BGW720-0410-VERIFY/targets/BGW720-300/bcmBGW720-300_squashfs_full_update.pkgtb \
-  --rollback-image /home/build20/BGW720-0403-PATCH/targets/BGW720-300/bcmBGW720-300_squashfs_full_update.pkgtb \
-  --fw-name bcmBGW720-300_squashfs_full_update.pkgtb \
-  --expected-image-tag 631BGW720-3001101323 \
-  --expected-build-time "Apr 20 13:02:57 CST 2026" \
-  --platform-profile bgw720_prpl \
-  --topology dut_plus_sta
+  --case brcm-fw-upgrade-single-dut-forward \
+  --forward-image /home/build20/BGW720-0410-VERIFY/targets/BGW720-300/bcmBGW720-300_squashfs_full_update.pkgtb
 ```
+
+When omitted, `brcm-fw-upgrade run` now defaults `--fw-name` to the forward image basename, derives `--expected-image-tag` and `--expected-build-time` from the forward image payload, and reuses the forward image as `--rollback-image`. Pass `--rollback-image`, `--topology`, or explicit expected values only when you need a different image pair or want to override the inferred metadata.
 
 Baseline experiment authority and current lab findings live in `docs/wifi-baseline-exp.md`.
 

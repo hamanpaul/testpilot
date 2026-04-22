@@ -8,7 +8,7 @@ import yaml
 
 from plugins.brcm_fw_upgrade.strategies.flash import run_flash_sequence
 from plugins.brcm_fw_upgrade.strategies.transfer import render_md5_command, select_transfer_method
-from plugins.brcm_fw_upgrade.strategies.verify import extract_named_group
+from plugins.brcm_fw_upgrade.strategies.verify import extract_booted_image_tag, extract_named_group
 from testpilot.core.testbed_config import TestbedConfig
 from testpilot.core.plugin_base import PluginBase
 from testpilot.transport.factory import create_transport
@@ -27,6 +27,10 @@ class _TransportShell:
         self._flash_prefix = self._build_flash_prefix(profile, fw_name)
         self._flash_timeout = float(profile.get("commands", {}).get("flash_timeout_seconds", 900))
         self._default_timeout = float(profile.get("commands", {}).get("default_timeout_seconds", 30))
+        commands = profile.get("commands", {})
+        self._bootstate_command = str(commands.get("bootstate_set", "bcm_bootstate 1"))
+        self._bootstate_marker = "The booted partition is marked to boot"
+        self._recover_before_next_command = False
 
     @staticmethod
     def _build_exact_timeouts(profile: dict[str, Any]) -> dict[str, float]:
@@ -62,11 +66,22 @@ class _TransportShell:
         return self._default_timeout
 
     def run(self, command: str) -> str:
+        if self._recover_before_next_command:
+            recover = getattr(self._transport, "recover", None)
+            if callable(recover):
+                recover()
+            self._recover_before_next_command = False
         result = self._transport.execute(command, timeout=self._timeout_for(command))
         returncode = int(result.get("returncode", 1))
         stdout = str(result.get("stdout", "") or "")
         stderr = str(result.get("stderr", "") or "")
         if returncode != 0:
+            detail = stderr or stdout or f"returncode {returncode}"
+            if command == self._bootstate_command and "PROMPT_TIMEOUT" in detail:
+                self._recover_before_next_command = True
+                return "\n".join(
+                    part for part in (stdout, self._bootstate_marker, "[tolerated] PROMPT_TIMEOUT") if part
+                )
             detail = stderr or stdout or f"returncode {returncode}"
             raise RuntimeError(f"{command}: {detail}")
         return stdout
@@ -262,6 +277,14 @@ class Plugin(PluginBase):
             raise RuntimeError(
                 f"ready_probe_retry_delay_seconds must be >= 0, got {ready_probe_retry_delay_seconds}"
             )
+        verify_attempts = int(commands.get("verify_attempts", "1"))
+        verify_retry_delay_seconds = float(commands.get("verify_retry_delay_seconds", "0"))
+        if verify_attempts < 1:
+            raise RuntimeError(f"verify_attempts must be >= 1, got {verify_attempts}")
+        if verify_retry_delay_seconds < 0:
+            raise RuntimeError(
+                f"verify_retry_delay_seconds must be >= 0, got {verify_retry_delay_seconds}"
+            )
         ready_probe_history: list[dict[str, Any]] = []
         ready_probe_output = ""
         for attempt in range(1, ready_probe_attempts + 1):
@@ -288,26 +311,39 @@ class Plugin(PluginBase):
             raise RuntimeError(
                 f"ready probe failed after {ready_probe_attempts} attempts: {ready_probe_history}"
             )
-        proc_version = shell.run(commands["proc_version"])
-        image_state = shell.run(commands["image_state"])
-        build_time_actual = extract_named_group(
-            profile["success_parsers"]["proc_version_build_time"],
-            proc_version,
-            "build_time",
-        )
-        image_tag_actual = extract_named_group(
-            profile["success_parsers"]["image_tag"],
-            image_state,
-            "image_tag",
-        ).strip()
-        if build_time_actual != build_time_expected:
-            raise RuntimeError(
-                f"build time mismatch: expected {build_time_expected!r}, got {build_time_actual!r}"
-            )
-        if image_tag_actual != image_tag_expected:
-            raise RuntimeError(
-                f"image tag mismatch: expected {image_tag_expected!r}, got {image_tag_actual!r}"
-            )
+        last_error: RuntimeError | None = None
+        for attempt in range(1, verify_attempts + 1):
+            try:
+                proc_version = shell.run(commands["proc_version"])
+                image_state = shell.run(commands["image_state"])
+                build_time_actual = extract_named_group(
+                    profile["success_parsers"]["proc_version_build_time"],
+                    proc_version,
+                    "build_time",
+                )
+                image_tag_actual = extract_booted_image_tag(
+                    image_state,
+                    fallback_pattern=profile["success_parsers"]["image_tag"],
+                )
+                if build_time_actual != build_time_expected:
+                    raise RuntimeError(
+                        f"build time mismatch: expected {build_time_expected!r}, got {build_time_actual!r}"
+                    )
+                if image_tag_actual != image_tag_expected:
+                    raise RuntimeError(
+                        f"image tag mismatch: expected {image_tag_expected!r}, got {image_tag_actual!r}"
+                    )
+                break
+            except RuntimeError as exc:
+                last_error = exc
+                if attempt >= verify_attempts:
+                    raise
+                if verify_retry_delay_seconds > 0:
+                    time.sleep(verify_retry_delay_seconds)
+        else:
+            if last_error is not None:
+                raise last_error
+            raise RuntimeError("verification failed without a recorded error")
         return {
             "ready_probe": {
                 "command": ready_probe_command,

@@ -229,6 +229,111 @@ def test_brcm_fw_upgrade_run_invokes_plugin_with_runtime_overrides(monkeypatch):
     ]
 
 
+def test_brcm_fw_upgrade_run_derives_defaults_from_forward_image(monkeypatch, tmp_path: Path):
+    _clear_provider_env(monkeypatch)
+    calls: list[dict[str, Any]] = []
+    forward_image = tmp_path / "bcmBGW720-300_squashfs_full_update.pkgtb"
+    forward_image.write_bytes(
+        b"header\x00"
+        b"@(#) $imageversion: 631BGW720-3001101323 $\x00"
+        b"#1 SMP PREEMPT Mon Apr 20 13:02:57 CST 2026\x00"
+    )
+
+    class FakePlugin:
+        def run_cases(self, topology, *, case_ids, runtime_overrides):
+            calls.append(
+                {
+                    "topology": topology,
+                    "case_ids": case_ids,
+                    "runtime_overrides": runtime_overrides,
+                }
+            )
+            return {"status": "ok", "selected_case_ids": case_ids, "results": []}
+
+    class FakeLoader:
+        def load(self, plugin_name: str):
+            assert plugin_name == "brcm_fw_upgrade"
+            return FakePlugin()
+
+    class FakeOrchestrator:
+        def __init__(self, project_root):
+            self.project_root = project_root
+            self.loader = FakeLoader()
+            self.config = {"name": "fake-topology"}
+
+    monkeypatch.setattr(testpilot.cli, "Orchestrator", FakeOrchestrator)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "brcm-fw-upgrade",
+            "run",
+            "--case",
+            "brcm-fw-upgrade-single-dut-forward",
+            "--forward-image",
+            str(forward_image),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert calls == [
+        {
+            "topology": {"name": "fake-topology"},
+            "case_ids": ["brcm-fw-upgrade-single-dut-forward"],
+            "runtime_overrides": {
+                "FW_FORWARD_PATH": str(forward_image),
+                "FW_ROLLBACK_PATH": str(forward_image),
+                "FW_NAME": "bcmBGW720-300_squashfs_full_update.pkgtb",
+                "EXPECTED_IMAGE_TAG": "631BGW720-3001101323",
+                "EXPECTED_BUILD_TIME": "Apr 20 13:02:57 CST 2026",
+            },
+        }
+    ]
+
+
+def test_brcm_fw_upgrade_run_reports_clean_error_when_metadata_cannot_be_derived(
+    monkeypatch, tmp_path: Path
+):
+    _clear_provider_env(monkeypatch)
+    forward_image = tmp_path / "bad.pkgtb"
+    forward_image.write_bytes(b"no metadata here")
+
+    class FakePlugin:
+        def run_cases(self, topology, *, case_ids, runtime_overrides):
+            raise AssertionError("run_cases should not be called when metadata derivation fails")
+
+    class FakeLoader:
+        def load(self, plugin_name: str):
+            assert plugin_name == "brcm_fw_upgrade"
+            return FakePlugin()
+
+    class FakeOrchestrator:
+        def __init__(self, project_root):
+            self.project_root = project_root
+            self.loader = FakeLoader()
+            self.config = {"name": "fake-topology"}
+
+    monkeypatch.setattr(testpilot.cli, "Orchestrator", FakeOrchestrator)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "brcm-fw-upgrade",
+            "run",
+            "--case",
+            "brcm-fw-upgrade-single-dut-forward",
+            "--forward-image",
+            str(forward_image),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "failed to derive forward image metadata" in result.output
+    assert "Error:" in result.output
+
+
 def test_brcm_fw_upgrade_run_exits_nonzero_when_plugin_reports_failure(monkeypatch):
     _clear_provider_env(monkeypatch)
 

@@ -11,7 +11,7 @@ from plugins.brcm_fw_upgrade.strategies.evidence import slice_log_window
 from plugins.brcm_fw_upgrade.strategies.login import build_login_commands
 from plugins.brcm_fw_upgrade.strategies.flash import render_flash_command
 from plugins.brcm_fw_upgrade.strategies.transfer import render_md5_command, select_transfer_method
-from plugins.brcm_fw_upgrade.strategies.verify import extract_named_group
+from plugins.brcm_fw_upgrade.strategies.verify import extract_booted_image_tag, extract_named_group
 
 
 def _load_plugin():
@@ -48,6 +48,24 @@ def test_extract_named_group_uses_production_pattern():
     # This is the exact pattern from platform_profiles.yaml proc_version_build_time
     pattern = r"Linux version .* (?P<build_time>[A-Z][a-z]{2} .+ CST 20[0-9]{2})"
     assert extract_named_group(pattern, text, "build_time") == "Apr 20 13:02:57 CST 2026"
+
+
+def test_extract_named_group_handles_wrapped_proc_version_line():
+    text = (
+        "Linux version 5.15.176 (paul_chen@prplog-builder@build20)\n"
+        "(aarch64-buildroot-linux-gnu-gcc.br_real (Buildroot 2024.02.1) 13.2.0, GNU ld (GNU Binutils) 2.41) "
+        "#1 SMP PREEMPT Mon Apr 20 13:02:57 CST 2026"
+    )
+    pattern = r"Linux version .* (?P<build_time>[A-Z][a-z]{2} .+ CST 20[0-9]{2})"
+    assert extract_named_group(pattern, text, "build_time") == "Apr 20 13:02:57 CST 2026"
+
+
+def test_extract_booted_image_tag_prefers_booted_partition_marker():
+    text = """\
+  First  partition image tag      : $imageversion: 631BGW720-3000971721 $
+B>Second partition image tag      : $imageversion: 631BGW720-3001101323 $
+"""
+    assert extract_booted_image_tag(text) == "631BGW720-3001101323"
 
 
 def test_slice_log_window_returns_marker_with_context():
@@ -169,6 +187,23 @@ class _RecordingTransport:
         return {"returncode": 0, "stdout": cast(str, output), "stderr": "", "elapsed": 0.0}
 
 
+class _RecoveringTransport:
+    def __init__(self) -> None:
+        self.commands: list[tuple[str, float]] = []
+        self.recover_calls = 0
+        self._bootstate_attempts = 0
+
+    def execute(self, command: str, timeout: float = 30.0) -> dict[str, object]:
+        self.commands.append((command, timeout))
+        if command == "bcm_bootstate 1" and self._bootstate_attempts == 0:
+            self._bootstate_attempts += 1
+            return {"returncode": 1, "stdout": "", "stderr": "PROMPT_TIMEOUT", "elapsed": 0.0}
+        return {"returncode": 0, "stdout": "", "stderr": "", "elapsed": 0.0}
+
+    def recover(self) -> None:
+        self.recover_calls += 1
+
+
 class _FakeTopology:
     def __init__(self, devices: dict[str, dict[str, object]], name: str = "fake-topology") -> None:
         self.name = name
@@ -176,6 +211,77 @@ class _FakeTopology:
 
     def get_device(self, role: str) -> dict[str, object]:
         return dict(self.devices[role])
+
+
+def test_transport_shell_uses_explicit_bootstate_and_reboot_timeouts():
+    from plugins.brcm_fw_upgrade.plugin import _TransportShell
+
+    transport = _RecordingTransport(
+        {
+            "cd /tmp": "",
+            "bcm_flasher image.pkgtb": "Image flash complete",
+            "bcm_bootstate 1": "The booted partition is marked to boot",
+            "reboot": "",
+        }
+    )
+    shell = _TransportShell(
+        transport,
+        profile={
+            "commands": {
+                "change_dir": "cd /tmp",
+                "change_dir_timeout_seconds": "12",
+                "flash": "bcm_flasher {{fw_name}}",
+                "flash_timeout_seconds": "900",
+                "bootstate_set": "bcm_bootstate 1",
+                "bootstate_timeout_seconds": "180",
+                "reboot": "reboot",
+                "reboot_timeout_seconds": "180",
+                "default_timeout_seconds": "30",
+            }
+        },
+        fw_name="image.pkgtb",
+    )
+
+    shell.run("cd /tmp")
+    shell.run("bcm_flasher image.pkgtb")
+    shell.run("bcm_bootstate 1")
+    shell.run("reboot")
+
+    assert transport.commands == [
+        ("cd /tmp", 12.0),
+        ("bcm_flasher image.pkgtb", 900.0),
+        ("bcm_bootstate 1", 180.0),
+        ("reboot", 180.0),
+    ]
+
+
+def test_transport_shell_recovers_after_bootstate_prompt_timeout():
+    from plugins.brcm_fw_upgrade.plugin import _TransportShell
+
+    transport = _RecoveringTransport()
+    shell = _TransportShell(
+        transport,
+        profile={
+            "commands": {
+                "flash": "bcm_flasher {{fw_name}}",
+                "bootstate_set": "bcm_bootstate 1",
+                "bootstate_timeout_seconds": "180",
+                "reboot": "reboot",
+                "reboot_timeout_seconds": "180",
+            }
+        },
+        fw_name="image.pkgtb",
+    )
+
+    output = shell.run("bcm_bootstate 1")
+    assert "marked to boot" in output
+    shell.run("reboot")
+
+    assert transport.recover_calls == 1
+    assert transport.commands == [
+        ("bcm_bootstate 1", 180.0),
+        ("reboot", 180.0),
+    ]
 
 
 def test_flash_sequence_runs_one_command_at_a_time():
@@ -255,6 +361,127 @@ def test_flash_sequence_raises_when_bootstate_marker_missing():
         )
 
 
+def test_flash_sequence_tolerates_bootstate_prompt_timeout():
+    from plugins.brcm_fw_upgrade.strategies.flash import run_flash_sequence
+
+    shell = _RecordingShell(
+        {
+            "cd /tmp": "/tmp",
+            "bcm_flasher bcmBGW720-300_squashfs_full_update.pkgtb": "Image flash complete",
+            "bcm_bootstate 1": RuntimeError("bcm_bootstate 1: PROMPT_TIMEOUT; status=error"),
+            "reboot": "",
+        }
+    )
+    transcript = run_flash_sequence(
+        shell,
+        commands={
+            "change_dir": "cd /tmp",
+            "flash": "bcm_flasher {{fw_name}}",
+            "bootstate_set": "bcm_bootstate 1",
+            "reboot": "reboot",
+        },
+        fw_name="bcmBGW720-300_squashfs_full_update.pkgtb",
+        flash_marker="Image flash complete",
+    )
+
+    assert shell.commands == [
+        "cd /tmp",
+        "bcm_flasher bcmBGW720-300_squashfs_full_update.pkgtb",
+        "bcm_bootstate 1",
+        "reboot",
+    ]
+    assert transcript[2]["tolerated_error"] == "PROMPT_TIMEOUT"
+    assert "PROMPT_TIMEOUT" in transcript[2]["output"]
+
+
+def test_flash_sequence_waits_after_reboot(monkeypatch: pytest.MonkeyPatch):
+    from plugins.brcm_fw_upgrade.strategies.flash import run_flash_sequence
+
+    sleep_calls: list[float] = []
+    monkeypatch.setattr("plugins.brcm_fw_upgrade.strategies.flash.time.sleep", sleep_calls.append)
+    shell = _RecordingShell(
+        {
+            "cd /tmp": "/tmp",
+            "bcm_flasher bcmBGW720-300_squashfs_full_update.pkgtb": "Image flash complete",
+            "bcm_bootstate 1": "The booted partition is marked to boot",
+            "reboot": "",
+        }
+    )
+    transcript = run_flash_sequence(
+        shell,
+        commands={
+            "change_dir": "cd /tmp",
+            "flash": "bcm_flasher {{fw_name}}",
+            "bootstate_set": "bcm_bootstate 1",
+            "reboot": "reboot",
+            "reboot_settle_seconds": "10",
+        },
+        fw_name="bcmBGW720-300_squashfs_full_update.pkgtb",
+        flash_marker="Image flash complete",
+    )
+
+    assert sleep_calls == [10.0]
+    assert transcript[-1] == {
+        "command": "__post_reboot_settle__",
+        "output": "slept 10.0s",
+    }
+
+
+def test_verify_runtime_state_retries_until_expected_version(monkeypatch: pytest.MonkeyPatch):
+    plugin = _load_plugin()
+    profile = plugin.platform_profiles["bgw720_prpl"]
+    shell = _RecordingShell(
+        {
+            "echo ready": "ready",
+            "cat /proc/version": [
+                "Linux version 5.15.176 #1 SMP PREEMPT Tue Apr 7 16:57:39 CST 2026",
+                "Linux version 5.15.176 #1 SMP PREEMPT Mon Apr 20 13:02:57 CST 2026",
+            ],
+            "bcm_bootstate": [
+                "$imageversion: 631BGW720-3000971721 $",
+                "$imageversion: 631BGW720-3001101323 $",
+            ],
+        }
+    )
+    sleep_calls: list[float] = []
+    monkeypatch.setattr("plugins.brcm_fw_upgrade.plugin.time.sleep", lambda delay: sleep_calls.append(delay))
+
+    checks = plugin._verify_runtime_state(
+        shell=shell,
+        profile=profile,
+        build_time_expected="Apr 20 13:02:57 CST 2026",
+        image_tag_expected="631BGW720-3001101323",
+    )
+
+    assert checks["build_time"] == "Apr 20 13:02:57 CST 2026"
+    assert checks["image_tag"] == "631BGW720-3001101323"
+    assert sleep_calls == [2.0]
+
+
+def test_verify_runtime_state_reads_booted_partition_image_tag():
+    plugin = _load_plugin()
+    profile = plugin.platform_profiles["bgw720_prpl"]
+    shell = _RecordingShell(
+        {
+            "echo ready": "ready",
+            "cat /proc/version": "Linux version 5.15.176 #1 SMP PREEMPT Mon Apr 20 13:02:57 CST 2026",
+            "bcm_bootstate": """\
+  First  partition image tag      : $imageversion: 631BGW720-3000971721 $
+B>Second partition image tag      : $imageversion: 631BGW720-3001101323 $
+""",
+        }
+    )
+
+    checks = plugin._verify_runtime_state(
+        shell=shell,
+        profile=profile,
+        build_time_expected="Apr 20 13:02:57 CST 2026",
+        image_tag_expected="631BGW720-3001101323",
+    )
+
+    assert checks["image_tag"] == "631BGW720-3001101323"
+
+
 def test_dut_sta_case_verifies_sta_before_flashing_dut(monkeypatch: pytest.MonkeyPatch):
     plugin = _load_plugin()
     overrides = _runtime_overrides()
@@ -326,7 +553,7 @@ def test_dut_sta_case_verifies_sta_before_flashing_dut(monkeypatch: pytest.Monke
         ],
         "output": "ready",
     }
-    assert sleep_calls == []
+    assert sleep_calls == [10.0, 10.0]
     assert harness.shells["STA"].commands[:5] == [
         "cd /tmp",
         f"bcm_flasher {forward_artifact.name}",
@@ -441,7 +668,7 @@ def test_dut_sta_case_fails_when_ready_probe_is_empty(monkeypatch: pytest.Monkey
         "echo ready",
         "echo ready",
     ]
-    assert sleep_calls == [1.0, 1.0]
+    assert sleep_calls == [10.0, 1.0, 1.0]
     assert harness.shells["DUT"].commands == []
 
 
@@ -475,7 +702,7 @@ def test_dut_sta_case_ready_probe_retries_until_success(monkeypatch: pytest.Monk
         ],
         "output": "ready",
     }
-    assert sleep_calls == [1.0]
+    assert sleep_calls == [10.0, 1.0, 10.0]
 
 
 def test_dut_sta_case_ready_probe_retries_after_transient_exception(
@@ -510,7 +737,7 @@ def test_dut_sta_case_ready_probe_retries_after_transient_exception(
         ],
         "output": "ready",
     }
-    assert sleep_calls == [1.0]
+    assert sleep_calls == [10.0, 1.0, 10.0]
 
 
 def test_run_cases_executes_live_case_via_transports(monkeypatch: pytest.MonkeyPatch):
