@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 import re
 from typing import Literal
+from uuid import uuid4
 
 from openpyxl import load_workbook
 import yaml
@@ -186,7 +187,8 @@ def _resolve_collisions(results: list[AlignResult]) -> None:
         key=lambda item: item.filename_before,
     )
     for result in runnable:
-        assert result.template_row is not None
+        if result.template_row is None:
+            continue
         winner = winners.get(result.template_row)
         if winner is None:
             winners[result.template_row] = result.filename_before
@@ -201,22 +203,47 @@ def apply_alignment_mutations(results: list[AlignResult]) -> None:
     for result in results:
         if result.status != "auto_aligned":
             continue
-        destination = result.case_file
+        source_path = result.case_file
+        destination = source_path
         if result.filename_after:
-            destination = result.case_file.with_name(result.filename_after)
-            if destination.exists() and destination != result.case_file:
+            destination = source_path.with_name(result.filename_after)
+            if destination.exists() and destination != source_path:
                 raise AlignmentConflictError(f"alignment rename target already exists: {destination}")
-        with result.case_file.open("r", encoding="utf-8") as handle:
+        with source_path.open("r", encoding="utf-8") as handle:
             payload = yaml.safe_load(handle) or {}
         payload.setdefault("source", {})
         payload["source"]["row"] = result.source_row_after
         if result.id_after:
             payload["id"] = result.id_after
         encoded = yaml.safe_dump(payload, sort_keys=False, allow_unicode=True)
-        result.case_file.write_text(encoded, encoding="utf-8")
-        if destination != result.case_file:
-            result.case_file.rename(destination)
+        temp_destination = destination.with_name(f".{destination.name}.{uuid4().hex}.tmp")
+        backup_source: Path | None = None
+        try:
+            temp_destination.write_text(encoded, encoding="utf-8")
+            if destination == source_path:
+                temp_destination.replace(destination)
+            else:
+                backup_source = source_path.with_name(f".{source_path.name}.{uuid4().hex}.bak")
+                source_path.replace(backup_source)
+                try:
+                    temp_destination.replace(destination)
+                except Exception:
+                    if backup_source.exists():
+                        backup_source.replace(source_path)
+                        backup_source = None
+                    raise
+                if backup_source.exists():
+                    backup_source.unlink()
+                    backup_source = None
             result.case_file = destination
+        finally:
+            if temp_destination.exists():
+                temp_destination.unlink()
+            if backup_source is not None and backup_source.exists():
+                if source_path.exists():
+                    backup_source.unlink()
+                else:
+                    backup_source.replace(source_path)
         log.info(
             "aligned: %s -> %s (source.row %s -> %s)",
             result.filename_before,
@@ -257,6 +284,6 @@ def write_skipped_cases_report(skipped: list[AlignResult], out_path: Path) -> No
     for item in skipped:
         lines.append(
             f"| {item.id_before} | {item.filename_before} | {item.source_row_before} | "
-            f"{item.skip_winner_filename or '—'} | {item.template_row or 0} |"
+            f"{item.skip_winner_filename or '—'} | {item.template_row if item.template_row is not None else '—'} |"
         )
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")

@@ -203,6 +203,100 @@ def test_apply_mutations_rename_collision(tmp_path: Path):
         apply_alignment_mutations([result])
 
 
+def test_apply_mutations_rewrite_rename_and_update_path(tmp_path: Path):
+    source = tmp_path / "D021_hecapabilities.yaml"
+    destination = tmp_path / "D006_hecapabilities.yaml"
+    source.write_text(
+        yaml.safe_dump(
+            {
+                "id": "wifi-llapi-D021-hecapabilities",
+                "name": "HeCapabilities",
+                "source": {
+                    "row": 21,
+                    "object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+                    "api": "HeCapabilities",
+                },
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+    result = AlignResult(
+        case_file=source,
+        status="auto_aligned",
+        source_row_before=21,
+        source_row_after=6,
+        source_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+        source_api="HeCapabilities",
+        filename_before=source.name,
+        filename_after=destination.name,
+        id_before="wifi-llapi-D021-hecapabilities",
+        id_after="wifi-llapi-D006-hecapabilities",
+        template_row=6,
+        template_row_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+        template_row_api="HeCapabilities",
+    )
+
+    apply_alignment_mutations([result])
+
+    assert not source.exists()
+    assert destination.exists()
+    payload = yaml.safe_load(destination.read_text(encoding="utf-8"))
+    assert payload["source"]["row"] == 6
+    assert payload["id"] == "wifi-llapi-D006-hecapabilities"
+    assert result.case_file == destination
+
+
+def test_apply_mutations_preserve_source_when_move_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    source = tmp_path / "D021_hecapabilities.yaml"
+    destination = tmp_path / "D006_hecapabilities.yaml"
+    source.write_text(
+        yaml.safe_dump(
+            {
+                "id": "wifi-llapi-D021-hecapabilities",
+                "name": "HeCapabilities",
+                "source": {
+                    "row": 21,
+                    "object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+                    "api": "HeCapabilities",
+                },
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+    result = AlignResult(
+        case_file=source,
+        status="auto_aligned",
+        source_row_before=21,
+        source_row_after=6,
+        source_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+        source_api="HeCapabilities",
+        filename_before=source.name,
+        filename_after=destination.name,
+        id_before="wifi-llapi-D021-hecapabilities",
+        id_after="wifi-llapi-D006-hecapabilities",
+        template_row=6,
+        template_row_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+        template_row_api="HeCapabilities",
+    )
+
+    def _boom(self: Path, target: Path | str) -> Path:
+        raise OSError(f"boom: {self} -> {target}")
+
+    monkeypatch.setattr(Path, "rename", _boom)
+    monkeypatch.setattr(Path, "replace", _boom)
+
+    with pytest.raises(OSError, match="boom"):
+        apply_alignment_mutations([result])
+
+    payload = yaml.safe_load(source.read_text(encoding="utf-8"))
+    assert payload["source"]["row"] == 21
+    assert payload["id"] == "wifi-llapi-D021-hecapabilities"
+    assert not destination.exists()
+    assert sorted(path.name for path in tmp_path.iterdir()) == [source.name]
+
+
 def test_write_blocked_report_md(tmp_path: Path):
     out_path = tmp_path / "blocked_cases.md"
     blocked = [
