@@ -14997,22 +14997,22 @@ def test_d110_getstationstats_active_evaluate():
     assert plugin.evaluate(case, results) is True
 
 
-def test_d111_getstationstats_associationtime_contract():
-    """D111 YAML loads, discovers, and has correct metadata."""
+def test_d115_getstationstats_associationtime_contract():
+    """D115 YAML loads, discovers, and has correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D111_getstationstats_associationtime.yaml")
-    assert case["source"]["row"] == 111
+    case = load_case(cases_dir / "D115_getstationstats_associationtime.yaml")
+    assert case["source"]["row"] == 115
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 2
     assert len(case["pass_criteria"]) == 2
     assert case["bands"] == ["5g"]
 
 
-def test_d111_getstationstats_associationtime_setup_env(monkeypatch):
-    """D111 needs STA + DUT."""
+def test_d115_getstationstats_associationtime_setup_env(monkeypatch):
+    """D115 needs STA + DUT."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D111_getstationstats_associationtime.yaml")
+    case = load_case(cases_dir / "D115_getstationstats_associationtime.yaml")
     topo = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
@@ -15020,11 +15020,11 @@ def test_d111_getstationstats_associationtime_setup_env(monkeypatch):
     plugin.teardown(case, topo)
 
 
-def test_d111_getstationstats_associationtime_evaluate():
-    """D111 pass criteria met with live-shaped synthetic output."""
+def test_d115_getstationstats_associationtime_evaluate():
+    """D115 pass criteria met with live-shaped synthetic output."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case = load_case(cases_dir / "D111_getstationstats_associationtime.yaml")
+    case = load_case(cases_dir / "D115_getstationstats_associationtime.yaml")
     results = {
         "steps": {
             "step1_assoc_precheck": {
