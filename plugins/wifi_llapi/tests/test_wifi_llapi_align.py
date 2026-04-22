@@ -1,13 +1,19 @@
 from pathlib import Path
 
 import pytest
+import yaml
 from openpyxl import Workbook
 
 from testpilot.reporting.wifi_llapi_align import (
+    AlignmentConflictError,
     AlignResult,
     TemplateIndex,
+    _resolve_collisions,
+    apply_alignment_mutations,
     align_case,
     build_template_index,
+    write_blocked_cases_report,
+    write_skipped_cases_report,
 )
 
 
@@ -118,3 +124,136 @@ def test_align_blocked_name_different_row(tmp_path: Path, template_path: Path):
     assert result.status == "blocked"
     assert result.blocked_reason == "name_points_to_different_row"
     assert isinstance(index, TemplateIndex)
+
+
+def test_align_skip_duplicate(tmp_path: Path):
+    template = tmp_path / "template.xlsx"
+    _build_template(template)
+    index = build_template_index(template)
+    winner = align_case(
+        {
+            "id": "wifi-llapi-D006-hecapabilities-a",
+            "name": "HeCapabilities",
+            "source": {
+                "row": 6,
+                "object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+                "api": "HeCapabilities",
+            },
+        },
+        index,
+        tmp_path / "D006_hecapabilities_a.yaml",
+    )
+    loser = align_case(
+        {
+            "id": "wifi-llapi-D021-hecapabilities-b",
+            "name": "HeCapabilities",
+            "source": {
+                "row": 21,
+                "object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+                "api": "HeCapabilities",
+            },
+        },
+        index,
+        tmp_path / "D021_hecapabilities_b.yaml",
+    )
+
+    _resolve_collisions([winner, loser])
+
+    assert winner.status in {"already_aligned", "auto_aligned"}
+    assert loser.status == "skipped"
+    assert loser.skip_winner_filename == "D006_hecapabilities_a.yaml"
+
+
+def test_apply_mutations_rename_collision(tmp_path: Path):
+    source = tmp_path / "D021_hecapabilities.yaml"
+    target = tmp_path / "D006_hecapabilities.yaml"
+    source.write_text(
+        yaml.safe_dump(
+            {
+                "id": "wifi-llapi-D021-hecapabilities",
+                "name": "HeCapabilities",
+                "source": {
+                    "row": 21,
+                    "object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+                    "api": "HeCapabilities",
+                },
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+    target.write_text("already here\n", encoding="utf-8")
+    result = AlignResult(
+        case_file=source,
+        status="auto_aligned",
+        source_row_before=21,
+        source_row_after=6,
+        source_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+        source_api="HeCapabilities",
+        filename_before=source.name,
+        filename_after=target.name,
+        id_before="wifi-llapi-D021-hecapabilities",
+        id_after="wifi-llapi-D006-hecapabilities",
+        template_row=6,
+        template_row_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+        template_row_api="HeCapabilities",
+    )
+
+    with pytest.raises(AlignmentConflictError):
+        apply_alignment_mutations([result])
+
+
+def test_write_blocked_report_md(tmp_path: Path):
+    out_path = tmp_path / "blocked_cases.md"
+    blocked = [
+        AlignResult(
+            case_file=tmp_path / "D021_hecapabilities.yaml",
+            status="blocked",
+            source_row_before=18,
+            source_row_after=None,
+            source_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+            source_api="HeCapabilities",
+            filename_before="D021_hecapabilities.yaml",
+            filename_after=None,
+            id_before="wifi-llapi-D021-hecapabilities",
+            id_after=None,
+            blocked_reason="name_points_to_different_row",
+            template_row=21,
+            template_row_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+            template_row_api="DownlinkShortGuard",
+        )
+    ]
+
+    write_blocked_cases_report(blocked, out_path)
+
+    text = out_path.read_text(encoding="utf-8")
+    assert "| case_id | filename | source.row |" in text
+    assert "name_points_to_different_row" in text
+
+
+def test_write_skipped_report_md(tmp_path: Path):
+    out_path = tmp_path / "skipped_cases.md"
+    skipped = [
+        AlignResult(
+            case_file=tmp_path / "D030_dup.yaml",
+            status="skipped",
+            source_row_before=21,
+            source_row_after=21,
+            source_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+            source_api="HeCapabilities",
+            filename_before="D030_dup.yaml",
+            filename_after=None,
+            id_before="wifi-llapi-D030-dup",
+            id_after=None,
+            skip_winner_filename="D021_hecapabilities.yaml",
+            template_row=21,
+            template_row_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+            template_row_api="HeCapabilities",
+        )
+    ]
+
+    write_skipped_cases_report(skipped, out_path)
+
+    text = out_path.read_text(encoding="utf-8")
+    assert "| case_id | filename | source.row | winner_filename | template_N |" in text
+    assert "D021_hecapabilities.yaml" in text

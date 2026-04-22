@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
 from pathlib import Path
 import re
 from typing import Literal
 
 from openpyxl import load_workbook
+import yaml
 
 from testpilot.reporting.wifi_llapi_excel import (
     DATA_START_ROW,
@@ -24,6 +26,8 @@ BlockedReason = Literal[
 
 _ID_D_PATTERN = re.compile(r"(wifi-llapi-D)(\d{3})(-)")
 _FILE_D_PATTERN = re.compile(r"^D(?P<row>\d{3})(?P<suffix>.*)$")
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -173,3 +177,86 @@ def align_case(case: dict, index: TemplateIndex, case_file: Path) -> AlignResult
         template_row_object=template_object,
         template_row_api=template_api,
     )
+
+
+def _resolve_collisions(results: list[AlignResult]) -> None:
+    winners: dict[int, str] = {}
+    runnable = sorted(
+        [r for r in results if r.status in {"already_aligned", "auto_aligned"} and r.template_row is not None],
+        key=lambda item: item.filename_before,
+    )
+    for result in runnable:
+        assert result.template_row is not None
+        winner = winners.get(result.template_row)
+        if winner is None:
+            winners[result.template_row] = result.filename_before
+            continue
+        result.status = "skipped"
+        result.skip_winner_filename = winner
+        result.filename_after = None
+        result.id_after = None
+
+
+def apply_alignment_mutations(results: list[AlignResult]) -> None:
+    for result in results:
+        if result.status != "auto_aligned":
+            continue
+        destination = result.case_file
+        if result.filename_after:
+            destination = result.case_file.with_name(result.filename_after)
+            if destination.exists() and destination != result.case_file:
+                raise AlignmentConflictError(f"alignment rename target already exists: {destination}")
+        with result.case_file.open("r", encoding="utf-8") as handle:
+            payload = yaml.safe_load(handle) or {}
+        payload.setdefault("source", {})
+        payload["source"]["row"] = result.source_row_after
+        if result.id_after:
+            payload["id"] = result.id_after
+        encoded = yaml.safe_dump(payload, sort_keys=False, allow_unicode=True)
+        result.case_file.write_text(encoded, encoding="utf-8")
+        if destination != result.case_file:
+            result.case_file.rename(destination)
+            result.case_file = destination
+        log.info(
+            "aligned: %s -> %s (source.row %s -> %s)",
+            result.filename_before,
+            result.case_file.name,
+            result.source_row_before,
+            result.source_row_after,
+        )
+
+
+def write_blocked_cases_report(blocked: list[AlignResult], out_path: Path) -> None:
+    if not blocked:
+        return
+    lines = [
+        "| case_id | filename | source.row | source.(object, api) | template_row_(object, api) | reason |",
+        "|---|---|---:|---|---|---|",
+    ]
+    for item in blocked:
+        source_pair = f"({item.source_object or '—'}, {item.source_api or '—'})"
+        template_pair = (
+            f"({item.template_row_object}, {item.template_row_api})"
+            if item.template_row_object and item.template_row_api
+            else "—"
+        )
+        lines.append(
+            f"| {item.id_before} | {item.filename_before} | {item.source_row_before} | "
+            f"{source_pair} | {template_pair} | {item.blocked_reason} |"
+        )
+    out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def write_skipped_cases_report(skipped: list[AlignResult], out_path: Path) -> None:
+    if not skipped:
+        return
+    lines = [
+        "| case_id | filename | source.row | winner_filename | template_N |",
+        "|---|---|---:|---|---:|",
+    ]
+    for item in skipped:
+        lines.append(
+            f"| {item.id_before} | {item.filename_before} | {item.source_row_before} | "
+            f"{item.skip_winner_filename or '—'} | {item.template_row or 0} |"
+        )
+    out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
