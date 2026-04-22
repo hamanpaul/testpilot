@@ -9,6 +9,7 @@ from typing import Any
 from openpyxl import Workbook
 
 from testpilot.core.orchestrator import Orchestrator
+from testpilot.reporting.wifi_llapi_excel import ensure_template_report
 
 FAIL_CASE_ID = "wifi-llapi-D004-retry-fail"
 PASS_CASE_ID = "wifi-llapi-D005-pass-after-fail"
@@ -181,15 +182,21 @@ runners:
 def _build_temp_project(tmp_path: Path) -> tuple[Path, Path]:
     root = tmp_path / "project"
     _write_testbed_yaml(root / "configs" / "testbed.yaml")
-    _write_wifi_llapi_plugin(root / "plugins" / "wifi_llapi")
+    plugin_dir = root / "plugins" / "wifi_llapi"
+    _write_wifi_llapi_plugin(plugin_dir)
 
     source_xlsx = root / "source.xlsx"
     _write_source_xlsx(source_xlsx)
+    ensure_template_report(
+        source_xlsx=source_xlsx,
+        template_path=plugin_dir / "reports" / "templates" / "wifi_llapi_template.xlsx",
+        manifest_path=plugin_dir / "reports" / "templates" / "wifi_llapi_template.manifest.json",
+    )
     return root, source_xlsx
 
 
 def _run_wifi_llapi(tmp_path: Path) -> tuple[dict[str, Any], Orchestrator, Path]:
-    project_root, source_xlsx = _build_temp_project(tmp_path)
+    project_root, _source_xlsx = _build_temp_project(tmp_path)
 
     orch = Orchestrator(
         project_root=project_root,
@@ -200,7 +207,6 @@ def _run_wifi_llapi(tmp_path: Path) -> tuple[dict[str, Any], Orchestrator, Path]
         "wifi_llapi",
         case_ids=[FAIL_CASE_LEGACY_ID, PASS_CASE_LEGACY_ID],
         dut_fw_ver="FW-TEST-1",
-        report_source_xlsx=str(source_xlsx),
     )
     return result, orch, project_root
 
@@ -325,6 +331,7 @@ def test_retry_then_fail_and_continue_and_summary(tmp_path: Path):
     assert result["status"] == "completed"
     assert result["pass_count"] == 1
     assert result["fail_count"] == 1
+    assert "source_report" not in result
     assert Path(result["report_path"]).is_file()
 
     plugin = orch.loader.load("wifi_llapi")
