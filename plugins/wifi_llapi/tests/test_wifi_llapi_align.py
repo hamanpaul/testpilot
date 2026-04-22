@@ -17,6 +17,7 @@ from testpilot.reporting.wifi_llapi_align import (
 )
 
 from testpilot.reporting.wifi_llapi_excel import create_run_report_from_template, fill_blocked_markers, fill_skip_markers
+from testpilot.schema.case_schema import load_case
 
 
 def _build_template(path: Path) -> None:
@@ -164,6 +165,30 @@ def test_align_skip_duplicate(tmp_path: Path):
     assert winner.status in {"already_aligned", "auto_aligned"}
     assert loser.status == "skipped"
     assert loser.skip_winner_filename == "D006_hecapabilities_a.yaml"
+
+
+def test_align_all_repo_cases():
+    repo_root = Path(__file__).resolve().parents[3]
+    template = repo_root / "plugins" / "wifi_llapi" / "reports" / "templates" / "wifi_llapi_template.xlsx"
+    cases_dir = repo_root / "plugins" / "wifi_llapi" / "cases"
+    index = build_template_index(template)
+    results = [
+        align_case(load_case(path), index, path)
+        for path in sorted(cases_dir.glob("*.y*ml"))
+        if not path.stem.startswith("_")
+    ]
+
+    _resolve_collisions(results)
+
+    counts = {
+        "already_aligned": sum(1 for r in results if r.status == "already_aligned"),
+        "auto_aligned": sum(1 for r in results if r.status == "auto_aligned"),
+        "blocked": sum(1 for r in results if r.status == "blocked"),
+        "skipped": sum(1 for r in results if r.status == "skipped"),
+    }
+
+    assert sum(counts.values()) == 420
+    assert counts["auto_aligned"] <= 168
 
 
 def test_apply_mutations_rename_collision(tmp_path: Path):

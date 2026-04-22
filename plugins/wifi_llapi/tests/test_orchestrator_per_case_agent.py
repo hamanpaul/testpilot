@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from openpyxl import Workbook
+import yaml
 
 from testpilot.core.orchestrator import Orchestrator
 from testpilot.reporting.wifi_llapi_excel import ensure_template_report
@@ -179,11 +180,79 @@ runners:
     )
 
 
+def _write_case_files(cases_dir: Path) -> None:
+    cases_dir.mkdir(parents=True, exist_ok=True)
+    cases = [
+        {
+            "id": FAIL_CASE_ID,
+            "aliases": [FAIL_CASE_LEGACY_ID],
+            "name": "kickStation()",
+            "source": {
+                "row": 4,
+                "object": "WiFi.AccessPoint.{i}.",
+                "api": "kickStation()",
+            },
+            "version": "1.0",
+            "topology": {
+                "devices": {
+                    "DUT": {"role": "ap", "transport": "serial"},
+                    "STA": {"role": "sta", "transport": "adb"},
+                }
+            },
+            "steps": [
+                {
+                    "id": "s1",
+                    "action": "exec",
+                    "target": "DUT",
+                    "command": "ubus-cli fail",
+                }
+            ],
+            "pass_criteria": ["step s1 succeeds"],
+            "simulation": "always_fail",
+            "bands": ["5g"],
+        },
+        {
+            "id": PASS_CASE_ID,
+            "aliases": [PASS_CASE_LEGACY_ID],
+            "name": "scan()",
+            "source": {
+                "row": 5,
+                "object": "WiFi.Radio.{i}.",
+                "api": "scan()",
+            },
+            "version": "1.0",
+            "topology": {
+                "devices": {
+                    "DUT": {"role": "ap", "transport": "serial"},
+                    "STA": {"role": "sta", "transport": "adb"},
+                }
+            },
+            "steps": [
+                {
+                    "id": "s1",
+                    "action": "exec",
+                    "target": "DUT",
+                    "command": "ubus-cli pass",
+                }
+            ],
+            "pass_criteria": ["step s1 succeeds"],
+            "simulation": "always_pass",
+            "bands": ["6g"],
+        },
+    ]
+    for case in cases:
+        row = int(case["source"]["row"])
+        stem_suffix = str(case["id"]).split("-", 3)[-1].replace("-", "_")
+        case_path = cases_dir / f"D{row:03d}_{stem_suffix}.yaml"
+        case_path.write_text(yaml.safe_dump(case, sort_keys=False), encoding="utf-8")
+
+
 def _build_temp_project(tmp_path: Path) -> tuple[Path, Path]:
     root = tmp_path / "project"
     _write_testbed_yaml(root / "configs" / "testbed.yaml")
     plugin_dir = root / "plugins" / "wifi_llapi"
     _write_wifi_llapi_plugin(plugin_dir)
+    _write_case_files(plugin_dir / "cases")
 
     source_xlsx = root / "source.xlsx"
     _write_source_xlsx(source_xlsx)
