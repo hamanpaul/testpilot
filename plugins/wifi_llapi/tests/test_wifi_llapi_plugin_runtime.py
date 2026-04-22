@@ -8777,7 +8777,7 @@ def test_d065_bridgeinterface_evaluate_live_examples():
     assert plugin.evaluate(d065, d065_wrong_bridge_name_results) is False
 
 
-def test_d066_discoverymethodenabled_accesspoint_fils_contract():
+def test_d068_discoverymethodenabled_accesspoint_fils_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d066_raw = yaml.safe_load(
@@ -8825,7 +8825,7 @@ def test_d066_discoverymethodenabled_accesspoint_fils_contract():
     assert d066["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
 
 
-def test_d066_discoverymethodenabled_accesspoint_fils_setup_env_uses_only_dut_transport(monkeypatch):
+def test_d068_discoverymethodenabled_accesspoint_fils_setup_env_uses_only_dut_transport(monkeypatch):
     plugin = _load_plugin()
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -8842,7 +8842,7 @@ def test_d066_discoverymethodenabled_accesspoint_fils_setup_env_uses_only_dut_tr
     plugin.teardown(d066, topology)
 
 
-def test_d066_discoverymethodenabled_accesspoint_fils_evaluate_live_examples():
+def test_d068_discoverymethodenabled_accesspoint_fils_evaluate_live_examples():
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d066 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml")
@@ -8992,7 +8992,7 @@ def test_d066_discoverymethodenabled_accesspoint_fils_evaluate_live_examples():
     assert plugin.evaluate(d066, d066_wrong_restore_results) is False
 
 
-def test_d067_discoverymethodenabled_accesspoint_upr_contract():
+def test_d068_discoverymethodenabled_accesspoint_upr_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d067_raw = yaml.safe_load(
@@ -9033,7 +9033,7 @@ def test_d067_discoverymethodenabled_accesspoint_upr_contract():
     assert d067["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
 
 
-def test_d067_discoverymethodenabled_accesspoint_upr_setup_env_uses_only_dut_transport(monkeypatch):
+def test_d068_discoverymethodenabled_accesspoint_upr_setup_env_uses_only_dut_transport(monkeypatch):
     plugin = _load_plugin()
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
@@ -9050,7 +9050,7 @@ def test_d067_discoverymethodenabled_accesspoint_upr_setup_env_uses_only_dut_tra
     plugin.teardown(d067, topology)
 
 
-def test_d067_discoverymethodenabled_accesspoint_upr_evaluate_live_examples():
+def test_d068_discoverymethodenabled_accesspoint_upr_evaluate_live_examples():
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d067 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_upr.yaml")
@@ -18296,7 +18296,7 @@ def test_d065_bridgeinterface_bridge_master_fragment_executes():
     ]
 
 
-def test_d066_discoverymethodenabled_accesspoint_fils_verification_fragments_preserve_sequence():
+def test_d068_discoverymethodenabled_accesspoint_fils_verification_fragments_preserve_sequence():
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d066 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_fils.yaml")
@@ -18323,7 +18323,7 @@ def test_d066_discoverymethodenabled_accesspoint_fils_verification_fragments_pre
     assert verification_commands[-1] == 'ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?"'
 
 
-def test_d067_discoverymethodenabled_accesspoint_upr_verification_fragments_preserve_sequence():
+def test_d068_discoverymethodenabled_accesspoint_upr_verification_fragments_preserve_sequence():
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d067 = load_case(cases_dir / "D068_discoverymethodenabled_accesspoint_upr.yaml")
