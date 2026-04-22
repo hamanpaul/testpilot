@@ -633,8 +633,8 @@ def fill_skip_markers(report_xlsx: Path, skipped: list[object]) -> None:
             # Validate source row
             if row <= 0 or row > ws.max_row:
                 continue
-            # Validate template_row - must be a positive integer
-            if template_row <= 0:
+            # Validate template_row - must be a positive integer and within worksheet bounds
+            if template_row <= 0 or template_row > ws.max_row:
                 continue
             _clear_result_row(ws, row)
             _set_cell_value_safe(ws, row, "H", f"SKIP: duplicate with D{template_row:03d}")

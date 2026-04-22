@@ -422,15 +422,49 @@ def test_fill_skip_markers(tmp_path: Path):
             filename_after=None,
             id_before="wifi-llapi-D030-dup",
             id_after=None,
-            skip_winner_filename="D021_hecapabilities.yaml",
-            template_row=21,
+            skip_winner_filename="D006_hecapabilities.yaml",
+            template_row=6,
         )
     ]
 
     fill_skip_markers(report, skipped)
     wb = load_workbook(report)
     ws = wb["Wifi_LLAPI"]
-    assert ws["H6"].value == "SKIP: duplicate with D021"
+    assert ws["H6"].value == "SKIP: duplicate with D006"
+    assert ws["G6"].value is None
+    assert ws["I6"].value is None
+    wb.close()
+
+
+def test_fill_skip_markers_out_of_range(tmp_path: Path):
+    template = tmp_path / "template.xlsx"
+    _build_template(template)
+    report = tmp_path / "report.xlsx"
+    create_run_report_from_template(template, report)
+
+    # Use a template_row that is out of worksheet bounds
+    skipped = [
+        AlignResult(
+            case_file=tmp_path / "D031_dup.yaml",
+            status="skipped",
+            source_row_before=6,
+            source_row_after=6,
+            source_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+            source_api="HeCapabilities",
+            filename_before="D031_dup.yaml",
+            filename_after=None,
+            id_before="wifi-llapi-D031-dup",
+            id_after=None,
+            skip_winner_filename="D021_hecapabilities.yaml",
+            template_row=999,
+        )
+    ]
+
+    fill_skip_markers(report, skipped)
+    wb = load_workbook(report)
+    ws = wb["Wifi_LLAPI"]
+    # Out-of-range template_row should cause the marker to be skipped
+    assert ws["H6"].value is None
     assert ws["G6"].value is None
     assert ws["I6"].value is None
     wb.close()
