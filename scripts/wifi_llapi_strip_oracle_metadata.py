@@ -53,19 +53,23 @@ def main(argv: list[str] | None = None):
     scanned = 0
     modified = 0
     clean = 0
+    errors = 0
     for p in files:
         scanned += 1
         try:
             removed = process_file(p, args.apply, yaml)
-        except Exception:
-            # skip unreadable
-            removed = []
+        except Exception as exc:
+            # Treat unreadable/invalid YAML as error, not as already clean
+            print(f"{p}: error: {exc}")
+            errors += 1
+            continue
         if removed:
             print(f"{p}: removed [{', '.join(removed)}]")
             modified += 1
         else:
             clean += 1
-    print(f"{scanned} files scanned, {modified} modified, {clean} already clean")
+    # Extend summary with errors count to avoid misclassifying failures
+    print(f"{scanned} files scanned, {modified} modified, {clean} already clean, {errors} errors")
 
 
 if __name__ == '__main__':
