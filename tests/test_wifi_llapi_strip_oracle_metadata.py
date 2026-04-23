@@ -163,3 +163,13 @@ source:
     assert "sheet:" not in txt
 
 
+def test_script_exits_non_zero_when_yaml_is_malformed(tmp_cases_dir):
+    y = tmp_cases_dir / "broken.yaml"
+    write_yaml(y, "id: broken\nsource: [unterminated\n")
+
+    rc, out, err = run_script(tmp_cases_dir, apply=True)
+
+    assert rc != 0
+    assert "error:" in out
+    assert "1 errors" in out
+

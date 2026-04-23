@@ -75,7 +75,7 @@ from testpilot.reporting.wifi_llapi_excel import (
     finalize_report_metadata,
     generate_report_filename,
 )
-from testpilot.schema.case_schema import load_case
+from testpilot.schema.case_schema import load_case, validate_wifi_llapi_case
 
 log = logging.getLogger(__name__)
 
@@ -459,7 +459,7 @@ class Orchestrator:
             for path in sorted(plugin.cases_dir.glob("*.y*ml"))
             if not path.stem.startswith("_")
         ]
-        case_pairs = [(path, load_case(path)) for path in case_files]
+        case_pairs = [(path, load_case(path, validator=validate_wifi_llapi_case)) for path in case_files]
         if case_ids:
             requested_ids = {str(case_id).strip() for case_id in case_ids if str(case_id).strip()}
             return [
@@ -516,7 +516,10 @@ class Orchestrator:
         blocked_results = [result for result in align_results if result.status == "blocked"]
         skipped_results = [result for result in align_results if result.status == "skipped"]
         return WifiLlapiAlignmentPrep(
-            runnable_cases=[load_case(result.case_file) for result in runnable_results],
+            runnable_cases=[
+                load_case(result.case_file, validator=validate_wifi_llapi_case)
+                for result in runnable_results
+            ],
             blocked_results=blocked_results,
             skipped_results=skipped_results,
             alignment_summary=self._build_wifi_llapi_alignment_summary(align_results),

@@ -70,7 +70,8 @@ def main(argv: list[str] | None = None):
             clean += 1
     # Extend summary with errors count to avoid misclassifying failures
     print(f"{scanned} files scanned, {modified} modified, {clean} already clean, {errors} errors")
+    return 1 if errors else 0
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit(main())

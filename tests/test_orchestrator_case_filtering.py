@@ -5,7 +5,11 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+import yaml
+
 from testpilot.core.orchestrator import Orchestrator
+from testpilot.schema.case_schema import CaseValidationError
 
 
 def _make_orchestrator() -> Orchestrator:
@@ -72,3 +76,31 @@ def test_discover_wifi_llapi_has_420_official_cases():
     cases = orch.list_cases("wifi_llapi")
     official = [c for c in cases if Orchestrator._is_wifi_llapi_official_case(c)]
     assert len(official) == 420, f"Expected 420 official cases, got {len(official)}"
+
+
+def test_load_wifi_llapi_case_pairs_rejects_results_reference_on_run_path(tmp_path, monkeypatch):
+    """wifi_llapi orchestrator run-path must enforce the strict validator."""
+    cases_dir = tmp_path / "cases"
+    cases_dir.mkdir()
+    (cases_dir / "D001_invalid.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "id": "wifi-llapi-D001-invalid",
+                "name": "invalid",
+                "source": {"row": 1, "object": "WiFi.AccessPoint.{i}.", "api": "kickStation()"},
+                "topology": {"devices": {"DUT": {"role": "ap"}}},
+                "steps": [{"id": "s1", "action": "exec", "target": "DUT"}],
+                "pass_criteria": [{"field": "x", "operator": "==", "value": "y"}],
+                "results_reference": {"v4.0.3": {"5g": "Pass"}},
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    orch = _make_orchestrator()
+
+    fake_plugin = type("_FakePlugin", (), {"cases_dir": cases_dir})()
+
+    with pytest.raises(CaseValidationError, match=r"#31 cleanup.*results_reference"):
+        orch._load_wifi_llapi_case_pairs(plugin=fake_plugin, case_ids=None)
