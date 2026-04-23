@@ -420,6 +420,32 @@ def test_write_blocked_report_md(tmp_path: Path):
     assert "name_points_to_different_row" in text
 
 
+def test_write_blocked_report_md_includes_candidate_template_rows(tmp_path: Path):
+    out_path = tmp_path / "blocked_cases.md"
+    blocked = [
+        AlignResult(
+            case_file=tmp_path / "D021_hecapabilities.yaml",
+            status="blocked",
+            source_row_before=21,
+            source_row_after=None,
+            source_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+            source_api="HeCapabilities",
+            filename_before="D021_hecapabilities.yaml",
+            filename_after=None,
+            id_before="wifi-llapi-D021-hecapabilities",
+            id_after=None,
+            blocked_reason="ambiguous_object_api_family",
+            candidate_template_rows=[6, 30],
+        )
+    ]
+
+    write_blocked_cases_report(blocked, out_path)
+
+    text = out_path.read_text(encoding="utf-8")
+    assert "ambiguous_object_api_family" in text
+    assert "@ rows [6, 30]" in text
+
+
 def test_write_skipped_report_md(tmp_path: Path):
     out_path = tmp_path / "skipped_cases.md"
     skipped = [

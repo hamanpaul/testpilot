@@ -16,6 +16,10 @@ preparation.
   against the checked-in template workbook before execution.
 - wifi_llapi artifact bundles may now include `blocked_cases.md` and
   `skipped_cases.md` when metadata drift cannot be safely auto-aligned.
+- Ambiguous `(source.object, source.api)` template families are now blocked
+  instead of auto-aligned, and both `blocked_cases.md` plus
+  `meta.alignment_summary.blocked_details` expose the candidate template rows to
+  clean up later.
 
 ### Changed - BREAKING
 

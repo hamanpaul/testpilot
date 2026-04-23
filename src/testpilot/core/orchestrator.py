@@ -480,6 +480,15 @@ class Orchestrator:
 
     @staticmethod
     def _build_wifi_llapi_alignment_summary(align_results: list[Any]) -> dict[str, Any]:
+        blocked_details = [
+            {
+                "case_id": result.id_before,
+                "reason": result.blocked_reason,
+                "candidate_template_rows": list(result.candidate_template_rows or []),
+            }
+            for result in align_results
+            if result.status == "blocked"
+        ]
         return {
             "already_aligned": sum(
                 1 for result in align_results if result.status == "already_aligned"
@@ -487,6 +496,7 @@ class Orchestrator:
             "auto_aligned": sum(1 for result in align_results if result.status == "auto_aligned"),
             "blocked": sum(1 for result in align_results if result.status == "blocked"),
             "skipped": sum(1 for result in align_results if result.status == "skipped"),
+            "blocked_details": blocked_details,
             "mutations": [
                 {
                     "case_id": result.id_before,

@@ -229,9 +229,15 @@ Typical artifact bundle contents:
 - `agent_trace/`
 - `blocked_cases.md` — cases whose `(source.object, source.api)` or `name`
   cannot be reconciled with the template workbook; they are not executed.
+  Ambiguous template families are blocked here instead of auto-aligned, and the
+  report includes candidate template rows for follow-up cleanup.
 - `skipped_cases.md` — duplicate cases that align to a template row already
   claimed by an earlier filename-sorted case; they are marked in the report and
   skipped from execution.
+
+The JSON runtime artifact also carries `meta.alignment_summary.blocked_details`,
+including each blocked case reason plus `candidate_template_rows` when runtime
+alignment hits an ambiguous template family.
 
 > [!IMPORTANT]
 > The first `testpilot run wifi_llapi` after pulling new case metadata may

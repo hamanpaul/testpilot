@@ -532,6 +532,18 @@ def test_run_with_mixed_alignment(tmp_path: Path, monkeypatch):
     assert summary["meta"]["alignment_summary"]["auto_aligned"] == 0
     assert summary["meta"]["alignment_summary"]["blocked"] == 2
     assert summary["meta"]["alignment_summary"]["skipped"] == 0
+    assert summary["meta"]["alignment_summary"]["blocked_details"] == [
+        {
+            "case_id": "wifi-llapi-D021-hecapabilities",
+            "reason": "ambiguous_object_api_family",
+            "candidate_template_rows": [21, 30],
+        },
+        {
+            "case_id": "wifi-llapi-D030-duplicate",
+            "reason": "ambiguous_object_api_family",
+            "candidate_template_rows": [21, 30],
+        },
+    ]
     assert yaml.safe_load((cases_dir / "D021_hecapabilities.yaml").read_text(encoding="utf-8"))[
         "source"
     ]["row"] == 7
@@ -544,6 +556,7 @@ def test_run_with_mixed_alignment(tmp_path: Path, monkeypatch):
     assert "wifi-llapi-D021-hecapabilities" in blocked_text
     assert "wifi-llapi-D030-duplicate" in blocked_text
     assert "ambiguous_object_api_family" in blocked_text
+    assert "@ rows [21, 30]" in blocked_text
     skipped_report = Path(result["artifact_dir"]) / "skipped_cases.md"
     assert not skipped_report.exists()
 
