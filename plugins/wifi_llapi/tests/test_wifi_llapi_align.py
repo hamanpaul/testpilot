@@ -26,6 +26,8 @@ def test_extract_name_api_cases():
     assert _extract_name_api("FailedRetransCount - WiFi.SSID.{i}.getSSIDStats().") == "getSSIDStats()"
     # Should extract left token if no method present
     assert _extract_name_api("AssociationTime - WiFi.AccessPoint.{i}.AssociatedDevice.{i}.") == "AssociationTime"
+    # Regression: em-dash separator
+    assert _extract_name_api("AssociationTime — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.") == "AssociationTime"
 
 def _build_template(path: Path) -> None:
     wb = Workbook()
