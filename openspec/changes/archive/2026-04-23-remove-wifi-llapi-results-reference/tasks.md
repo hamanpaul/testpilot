@@ -75,5 +75,5 @@
 - [x] 8.2 `AGENTS.md` §Case Discovery：加註 "`results_reference` / `source.baseline` / `source.report` / `source.sheet` 已移除；報表值反映 runtime verdict"
 - [x] 8.3 `pyproject.toml`：version bump v0.2.1 → v0.2.2
 - [x] 8.4 Code commit (task groups 1-5 + 7 + 8 的產出)：`feat: remove results_reference oracle from wifi_llapi runtime`
-- [ ] 8.5 開 PR、描述引用 proposal.md 並附加「`Not Supported → Pass` 不等於已驗證」警示段落、列出 pending audit case 清單（若 local smoke 有抓到大量異動）
-- [ ] 8.6 PR 合併後，執行 `openspec archive remove-wifi-llapi-results-reference` 歸檔
+- [x] 8.5 開 PR、描述引用 proposal.md 並附加「`Not Supported → Pass` 不等於已驗證」警示段落、列出 pending audit case 清單（若 local smoke 有抓到大量異動）
+- [x] 8.6 PR 合併後，執行 `openspec archive remove-wifi-llapi-results-reference` 歸檔
