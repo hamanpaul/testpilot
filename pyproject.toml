@@ -17,6 +17,7 @@ dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
     "ruff>=0.4",
+    "ruamel.yaml>=0.17.21",
 ]
 
 [project.scripts]
