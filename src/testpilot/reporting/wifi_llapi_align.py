@@ -150,8 +150,8 @@ def align_case(case: dict, index: TemplateIndex, case_file: Path) -> AlignResult
     template_row = candidate_rows[0]
     template_object, template_api = index.forward.get(template_row, ("", ""))
     if name_api and name_api != template_api:
-        candidate_rows = index.by_api.get(name_api, [])
-        reason = "name_points_to_different_row" if candidate_rows else "name_not_in_template"
+        name_api_candidates = index.by_api.get(name_api, [])
+        reason = "name_points_to_different_row" if name_api_candidates else "name_not_in_template"
         return AlignResult(
             case_file=case_file,
             status="blocked",
@@ -167,7 +167,7 @@ def align_case(case: dict, index: TemplateIndex, case_file: Path) -> AlignResult
             template_row=template_row,
             template_row_object=template_object,
             template_row_api=template_api,
-            candidate_template_rows=list(candidate_rows) if candidate_rows else None,
+            candidate_template_rows=list(name_api_candidates) if name_api_candidates else None,
         )
     filename_after = None
     source_row_after = template_row

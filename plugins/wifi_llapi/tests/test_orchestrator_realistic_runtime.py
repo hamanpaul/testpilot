@@ -424,6 +424,7 @@ def test_run_with_mixed_alignment(tmp_path: Path, monkeypatch):
     source_xlsx = project_root / "source.xlsx"
     wb = load_workbook(source_xlsx)
     ws = wb["Wifi_LLAPI"]
+    # Inject a duplicate family into the generated template so runtime alignment must block it.
     ws["A30"] = "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
     ws["C30"] = "HeCapabilities"
     wb.save(source_xlsx)
