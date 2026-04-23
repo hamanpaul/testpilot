@@ -2,12 +2,9 @@ id: wifi-llapi-D081-mboenable
 name: "MBOEnable — WiFi.AccessPoint.{i}."
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 81
   object: WiFi.AccessPoint.{i}.
   api: MBOEnable
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -71,15 +68,21 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.1.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMbo5g=%s\n' "$VALUE"; else echo 'BaselineGetterMbo5g=EMPTY'; fi; RAW=$(wl -i wl0 mbo ap_enable 2>&1); DRIVER=$(printf '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$DRIVER" ]; then printf 'BaselineDriverMbo5g=%s\n' "$DRIVER"; else echo 'BaselineDriverMbo5g=EMPTY'; fi
+    OUT=$(ubus-cli "WiFi.AccessPoint.1.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT"
+    | sed -n 's/^WiFi\.AccessPoint\.1\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n
+    1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMbo5g=%s\n' "$VALUE"; else
+    echo 'BaselineGetterMbo5g=EMPTY'; fi; RAW=$(wl -i wl0 mbo ap_enable 2>&1); DRIVER=$(printf
+    '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p' | head -n 1);
+    if [ -n "$DRIVER" ]; then printf 'BaselineDriverMbo5g=%s\n' "$DRIVER"; else echo
+    'BaselineDriverMbo5g=EMPTY'; fi
   capture: mbo_baseline_5g
 - id: step2_mbo_enable_5g
   action: exec
   target: DUT
   band: 5g
   command:
-    - printf 'RequestedEnableMbo5g=1\n'
-    - ubus-cli WiFi.AccessPoint.1.MBOEnable=1
+  - printf 'RequestedEnableMbo5g=1\n'
+  - ubus-cli WiFi.AccessPoint.1.MBOEnable=1
   depends_on: step1_mbo_baseline_5g
   capture: mbo_enable_5g
 - id: step3_mbo_after_enable_5g
@@ -87,7 +90,13 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterEnableGetterMbo5g=%s\n' "$VALUE"; else echo 'AfterEnableGetterMbo5g=EMPTY'; fi; RAW=$(wl -i wl0 mbo ap_enable 2>&1); DRIVER=$(printf '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$DRIVER" ]; then printf 'AfterEnableDriverMbo5g=%s\n' "$DRIVER"; else echo 'AfterEnableDriverMbo5g=EMPTY'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.MBOEnable?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MBOEnable=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterEnableGetterMbo5g=%s\n' "$VALUE";
+    else echo 'AfterEnableGetterMbo5g=EMPTY'; fi; RAW=$(wl -i wl0 mbo ap_enable 2>&1);
+    DRIVER=$(printf '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$DRIVER" ]; then printf 'AfterEnableDriverMbo5g=%s\n' "$DRIVER";
+    else echo 'AfterEnableDriverMbo5g=EMPTY'; fi
   depends_on: step2_mbo_enable_5g
   capture: mbo_after_enable_5g
 - id: step4_mbo_restore_5g
@@ -95,8 +104,8 @@ steps:
   target: DUT
   band: 5g
   command:
-    - printf 'RestoreMbo5g=0\n'
-    - ubus-cli WiFi.AccessPoint.1.MBOEnable=0
+  - printf 'RestoreMbo5g=0\n'
+  - ubus-cli WiFi.AccessPoint.1.MBOEnable=0
   depends_on: step3_mbo_after_enable_5g
   capture: mbo_restore_5g
 - id: step5_mbo_after_restore_5g
@@ -104,7 +113,13 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMbo5g=%s\n' "$VALUE"; else echo 'AfterRestoreGetterMbo5g=EMPTY'; fi; RAW=$(wl -i wl0 mbo ap_enable 2>&1); DRIVER=$(printf '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$DRIVER" ]; then printf 'AfterRestoreDriverMbo5g=%s\n' "$DRIVER"; else echo 'AfterRestoreDriverMbo5g=EMPTY'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.MBOEnable?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MBOEnable=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMbo5g=%s\n' "$VALUE";
+    else echo 'AfterRestoreGetterMbo5g=EMPTY'; fi; RAW=$(wl -i wl0 mbo ap_enable 2>&1);
+    DRIVER=$(printf '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$DRIVER" ]; then printf 'AfterRestoreDriverMbo5g=%s\n'
+    "$DRIVER"; else echo 'AfterRestoreDriverMbo5g=EMPTY'; fi
   depends_on: step4_mbo_restore_5g
   capture: mbo_after_restore_5g
 - id: step6_mbo_baseline_6g
@@ -112,15 +127,21 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.3.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMbo6g=%s\n' "$VALUE"; else echo 'BaselineGetterMbo6g=EMPTY'; fi; RAW=$(wl -i wl1 mbo ap_enable 2>&1); DRIVER=$(printf '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$DRIVER" ]; then printf 'BaselineDriverMbo6g=%s\n' "$DRIVER"; else echo 'BaselineDriverMbo6g=EMPTY'; fi
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT"
+    | sed -n 's/^WiFi\.AccessPoint\.3\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n
+    1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMbo6g=%s\n' "$VALUE"; else
+    echo 'BaselineGetterMbo6g=EMPTY'; fi; RAW=$(wl -i wl1 mbo ap_enable 2>&1); DRIVER=$(printf
+    '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p' | head -n 1);
+    if [ -n "$DRIVER" ]; then printf 'BaselineDriverMbo6g=%s\n' "$DRIVER"; else echo
+    'BaselineDriverMbo6g=EMPTY'; fi
   capture: mbo_baseline_6g
 - id: step7_mbo_enable_6g
   action: exec
   target: DUT
   band: 6g
   command:
-    - printf 'RequestedEnableMbo6g=1\n'
-    - ubus-cli WiFi.AccessPoint.3.MBOEnable=1
+  - printf 'RequestedEnableMbo6g=1\n'
+  - ubus-cli WiFi.AccessPoint.3.MBOEnable=1
   depends_on: step6_mbo_baseline_6g
   capture: mbo_enable_6g
 - id: step8_mbo_after_enable_6g
@@ -128,7 +149,13 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterEnableGetterMbo6g=%s\n' "$VALUE"; else echo 'AfterEnableGetterMbo6g=EMPTY'; fi; RAW=$(wl -i wl1 mbo ap_enable 2>&1); DRIVER=$(printf '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$DRIVER" ]; then printf 'AfterEnableDriverMbo6g=%s\n' "$DRIVER"; else echo 'AfterEnableDriverMbo6g=EMPTY'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.MBOEnable?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MBOEnable=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterEnableGetterMbo6g=%s\n' "$VALUE";
+    else echo 'AfterEnableGetterMbo6g=EMPTY'; fi; RAW=$(wl -i wl1 mbo ap_enable 2>&1);
+    DRIVER=$(printf '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$DRIVER" ]; then printf 'AfterEnableDriverMbo6g=%s\n' "$DRIVER";
+    else echo 'AfterEnableDriverMbo6g=EMPTY'; fi
   depends_on: step7_mbo_enable_6g
   capture: mbo_after_enable_6g
 - id: step9_mbo_restore_6g
@@ -136,8 +163,8 @@ steps:
   target: DUT
   band: 6g
   command:
-    - printf 'RestoreMbo6g=0\n'
-    - ubus-cli WiFi.AccessPoint.3.MBOEnable=0
+  - printf 'RestoreMbo6g=0\n'
+  - ubus-cli WiFi.AccessPoint.3.MBOEnable=0
   depends_on: step8_mbo_after_enable_6g
   capture: mbo_restore_6g
 - id: step10_mbo_after_restore_6g
@@ -145,7 +172,13 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMbo6g=%s\n' "$VALUE"; else echo 'AfterRestoreGetterMbo6g=EMPTY'; fi; RAW=$(wl -i wl1 mbo ap_enable 2>&1); DRIVER=$(printf '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$DRIVER" ]; then printf 'AfterRestoreDriverMbo6g=%s\n' "$DRIVER"; else echo 'AfterRestoreDriverMbo6g=EMPTY'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.MBOEnable?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MBOEnable=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMbo6g=%s\n' "$VALUE";
+    else echo 'AfterRestoreGetterMbo6g=EMPTY'; fi; RAW=$(wl -i wl1 mbo ap_enable 2>&1);
+    DRIVER=$(printf '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$DRIVER" ]; then printf 'AfterRestoreDriverMbo6g=%s\n'
+    "$DRIVER"; else echo 'AfterRestoreDriverMbo6g=EMPTY'; fi
   depends_on: step9_mbo_restore_6g
   capture: mbo_after_restore_6g
 - id: step11_mbo_baseline_24g
@@ -153,15 +186,21 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.5.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMbo24g=%s\n' "$VALUE"; else echo 'BaselineGetterMbo24g=EMPTY'; fi; RAW=$(wl -i wl2 mbo ap_enable 2>&1); DRIVER=$(printf '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$DRIVER" ]; then printf 'BaselineDriverMbo24g=%s\n' "$DRIVER"; else echo 'BaselineDriverMbo24g=EMPTY'; fi
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT"
+    | sed -n 's/^WiFi\.AccessPoint\.5\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n
+    1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMbo24g=%s\n' "$VALUE"; else
+    echo 'BaselineGetterMbo24g=EMPTY'; fi; RAW=$(wl -i wl2 mbo ap_enable 2>&1); DRIVER=$(printf
+    '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p' | head -n 1);
+    if [ -n "$DRIVER" ]; then printf 'BaselineDriverMbo24g=%s\n' "$DRIVER"; else echo
+    'BaselineDriverMbo24g=EMPTY'; fi
   capture: mbo_baseline_24g
 - id: step12_mbo_enable_24g
   action: exec
   target: DUT
   band: 2.4g
   command:
-    - printf 'RequestedEnableMbo24g=1\n'
-    - ubus-cli WiFi.AccessPoint.5.MBOEnable=1
+  - printf 'RequestedEnableMbo24g=1\n'
+  - ubus-cli WiFi.AccessPoint.5.MBOEnable=1
   depends_on: step11_mbo_baseline_24g
   capture: mbo_enable_24g
 - id: step13_mbo_after_enable_24g
@@ -169,7 +208,13 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterEnableGetterMbo24g=%s\n' "$VALUE"; else echo 'AfterEnableGetterMbo24g=EMPTY'; fi; RAW=$(wl -i wl2 mbo ap_enable 2>&1); DRIVER=$(printf '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$DRIVER" ]; then printf 'AfterEnableDriverMbo24g=%s\n' "$DRIVER"; else echo 'AfterEnableDriverMbo24g=EMPTY'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.MBOEnable?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MBOEnable=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterEnableGetterMbo24g=%s\n' "$VALUE";
+    else echo 'AfterEnableGetterMbo24g=EMPTY'; fi; RAW=$(wl -i wl2 mbo ap_enable 2>&1);
+    DRIVER=$(printf '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$DRIVER" ]; then printf 'AfterEnableDriverMbo24g=%s\n'
+    "$DRIVER"; else echo 'AfterEnableDriverMbo24g=EMPTY'; fi
   depends_on: step12_mbo_enable_24g
   capture: mbo_after_enable_24g
 - id: step14_mbo_restore_24g
@@ -177,8 +222,8 @@ steps:
   target: DUT
   band: 2.4g
   command:
-    - printf 'RestoreMbo24g=0\n'
-    - ubus-cli WiFi.AccessPoint.5.MBOEnable=0
+  - printf 'RestoreMbo24g=0\n'
+  - ubus-cli WiFi.AccessPoint.5.MBOEnable=0
   depends_on: step13_mbo_after_enable_24g
   capture: mbo_restore_24g
 - id: step15_mbo_after_restore_24g
@@ -186,7 +231,13 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.MBOEnable?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MBOEnable=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMbo24g=%s\n' "$VALUE"; else echo 'AfterRestoreGetterMbo24g=EMPTY'; fi; RAW=$(wl -i wl2 mbo ap_enable 2>&1); DRIVER=$(printf '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$DRIVER" ]; then printf 'AfterRestoreDriverMbo24g=%s\n' "$DRIVER"; else echo 'AfterRestoreDriverMbo24g=EMPTY'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.MBOEnable?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MBOEnable=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMbo24g=%s\n'
+    "$VALUE"; else echo 'AfterRestoreGetterMbo24g=EMPTY'; fi; RAW=$(wl -i wl2 mbo
+    ap_enable 2>&1); DRIVER=$(printf '%s\n' "$RAW" | sed -n 's/^MBO AP ENABLE : \([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$DRIVER" ]; then printf 'AfterRestoreDriverMbo24g=%s\n'
+    "$DRIVER"; else echo 'AfterRestoreDriverMbo24g=EMPTY'; fi
   depends_on: step14_mbo_restore_24g
   capture: mbo_after_restore_24g
 
@@ -202,7 +253,8 @@ pass_criteria:
 - field: mbo_baseline_5g.BaselineDriverMbo5g
   operator: equals
   reference: mbo_baseline_5g.BaselineGetterMbo5g
-  description: 5G AP1 / wl0 direct driver readback should match the northbound getter at baseline.
+  description: 5G AP1 / wl0 direct driver readback should match the northbound 
+    getter at baseline.
 - field: mbo_enable_5g.RequestedEnableMbo5g
   operator: equals
   value: '1'
@@ -214,11 +266,13 @@ pass_criteria:
 - field: mbo_after_enable_5g.AfterEnableDriverMbo5g
   operator: equals
   value: '1'
-  description: 5G AP1 / wl0 direct driver readback should follow the enable setter to 1.
+  description: 5G AP1 / wl0 direct driver readback should follow the enable 
+    setter to 1.
 - field: mbo_after_enable_5g.AfterEnableDriverMbo5g
   operator: equals
   reference: mbo_after_enable_5g.AfterEnableGetterMbo5g
-  description: 5G AP1 / wl0 direct driver readback should match the northbound getter after enable.
+  description: 5G AP1 / wl0 direct driver readback should match the northbound 
+    getter after enable.
 - field: mbo_restore_5g.RestoreMbo5g
   operator: equals
   value: '0'
@@ -230,11 +284,13 @@ pass_criteria:
 - field: mbo_after_restore_5g.AfterRestoreDriverMbo5g
   operator: equals
   value: '0'
-  description: 5G AP1 / wl0 direct driver readback should return to 0 after restore.
+  description: 5G AP1 / wl0 direct driver readback should return to 0 after 
+    restore.
 - field: mbo_after_restore_5g.AfterRestoreDriverMbo5g
   operator: equals
   reference: mbo_after_restore_5g.AfterRestoreGetterMbo5g
-  description: 5G AP1 / wl0 direct driver readback should match the northbound getter after restore.
+  description: 5G AP1 / wl0 direct driver readback should match the northbound 
+    getter after restore.
 - field: mbo_baseline_6g.BaselineGetterMbo6g
   operator: equals
   value: '0'
@@ -246,7 +302,8 @@ pass_criteria:
 - field: mbo_baseline_6g.BaselineDriverMbo6g
   operator: equals
   reference: mbo_baseline_6g.BaselineGetterMbo6g
-  description: 6G AP3 / wl1 direct driver readback should match the northbound getter at baseline.
+  description: 6G AP3 / wl1 direct driver readback should match the northbound 
+    getter at baseline.
 - field: mbo_enable_6g.RequestedEnableMbo6g
   operator: equals
   value: '1'
@@ -258,11 +315,13 @@ pass_criteria:
 - field: mbo_after_enable_6g.AfterEnableDriverMbo6g
   operator: equals
   value: '1'
-  description: 6G AP3 / wl1 direct driver readback should follow the enable setter to 1.
+  description: 6G AP3 / wl1 direct driver readback should follow the enable 
+    setter to 1.
 - field: mbo_after_enable_6g.AfterEnableDriverMbo6g
   operator: equals
   reference: mbo_after_enable_6g.AfterEnableGetterMbo6g
-  description: 6G AP3 / wl1 direct driver readback should match the northbound getter after enable.
+  description: 6G AP3 / wl1 direct driver readback should match the northbound 
+    getter after enable.
 - field: mbo_restore_6g.RestoreMbo6g
   operator: equals
   value: '0'
@@ -274,15 +333,18 @@ pass_criteria:
 - field: mbo_after_restore_6g.AfterRestoreDriverMbo6g
   operator: equals
   value: '0'
-  description: 6G AP3 / wl1 direct driver readback should return to 0 after restore.
+  description: 6G AP3 / wl1 direct driver readback should return to 0 after 
+    restore.
 - field: mbo_after_restore_6g.AfterRestoreDriverMbo6g
   operator: equals
   reference: mbo_after_restore_6g.AfterRestoreGetterMbo6g
-  description: 6G AP3 / wl1 direct driver readback should match the northbound getter after restore.
+  description: 6G AP3 / wl1 direct driver readback should match the northbound 
+    getter after restore.
 - field: mbo_baseline_24g.BaselineGetterMbo24g
   operator: equals
   value: '0'
-  description: 2.4G AP5 / wl2 getter should start from the live baseline value 0.
+  description: 2.4G AP5 / wl2 getter should start from the live baseline value 
+    0.
 - field: mbo_baseline_24g.BaselineDriverMbo24g
   operator: equals
   value: '0'
@@ -290,7 +352,8 @@ pass_criteria:
 - field: mbo_baseline_24g.BaselineDriverMbo24g
   operator: equals
   reference: mbo_baseline_24g.BaselineGetterMbo24g
-  description: 2.4G AP5 / wl2 direct driver readback should match the northbound getter at baseline.
+  description: 2.4G AP5 / wl2 direct driver readback should match the northbound
+    getter at baseline.
 - field: mbo_enable_24g.RequestedEnableMbo24g
   operator: equals
   value: '1'
@@ -302,11 +365,13 @@ pass_criteria:
 - field: mbo_after_enable_24g.AfterEnableDriverMbo24g
   operator: equals
   value: '1'
-  description: 2.4G AP5 / wl2 direct driver readback should follow the enable setter to 1.
+  description: 2.4G AP5 / wl2 direct driver readback should follow the enable 
+    setter to 1.
 - field: mbo_after_enable_24g.AfterEnableDriverMbo24g
   operator: equals
   reference: mbo_after_enable_24g.AfterEnableGetterMbo24g
-  description: 2.4G AP5 / wl2 direct driver readback should match the northbound getter after enable.
+  description: 2.4G AP5 / wl2 direct driver readback should match the northbound
+    getter after enable.
 - field: mbo_restore_24g.RestoreMbo24g
   operator: equals
   value: '0'
@@ -318,32 +383,23 @@ pass_criteria:
 - field: mbo_after_restore_24g.AfterRestoreDriverMbo24g
   operator: equals
   value: '0'
-  description: 2.4G AP5 / wl2 direct driver readback should return to 0 after restore.
+  description: 2.4G AP5 / wl2 direct driver readback should return to 0 after 
+    restore.
 - field: mbo_after_restore_24g.AfterRestoreDriverMbo24g
   operator: equals
   reference: mbo_after_restore_24g.AfterRestoreGetterMbo24g
-  description: 2.4G AP5 / wl2 direct driver readback should match the northbound getter after restore.
+  description: 2.4G AP5 / wl2 direct driver readback should match the northbound
+    getter after restore.
 
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.MBOEnable?"'
-  - 'wl -i wl0 mbo ap_enable'
-  - ubus-cli WiFi.AccessPoint.1.MBOEnable=1
-  - sleep 5
-  - 'ubus-cli "WiFi.AccessPoint.1.MBOEnable?"'
-  - 'wl -i wl0 mbo ap_enable'
-  - ubus-cli WiFi.AccessPoint.1.MBOEnable=0
-  - sleep 5
-  - 'ubus-cli "WiFi.AccessPoint.1.MBOEnable?"'
-  - 'wl -i wl0 mbo ap_enable'
+- 'ubus-cli "WiFi.AccessPoint.1.MBOEnable?"'
+- 'wl -i wl0 mbo ap_enable'
+- ubus-cli WiFi.AccessPoint.1.MBOEnable=1
+- sleep 5
+- 'ubus-cli "WiFi.AccessPoint.1.MBOEnable?"'
+- 'wl -i wl0 mbo ap_enable'
+- ubus-cli WiFi.AccessPoint.1.MBOEnable=0
+- sleep 5
+- 'ubus-cli "WiFi.AccessPoint.1.MBOEnable?"'
+- 'wl -i wl0 mbo ap_enable'
 
-results_reference:
-  v4.0.1:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
-    comment: 'BRCM: CSP CS00012439197'
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'Active 0403 source maps both `handle_set_ap_mbo_enable()` and `handle_get_ap_mbo_enable()` to `wl -i <if> mbo ap_enable`. Workbook row 81 therefore aligns to the northbound getter plus direct driver readback path, which should exact-close `0 -> 1 -> 0` on AP1/AP3/AP5.'

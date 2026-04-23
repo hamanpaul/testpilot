@@ -2,12 +2,9 @@ id: wifi-llapi-D045-signalstrength-accesspoint-associateddevice
 name: "SignalStrength — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 45
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: SignalStrength
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -135,7 +132,13 @@ steps:
 - id: step3
   action: exec
   target: DUT
-  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC" | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ]; iw dev wl0 station dump | awk -v mac="$STA_MAC_LOWER" -v sta="$STA_MAC" ''$1=="Station" && $2==mac {matched=1; print "DriverAssocMac=" sta; next} $1=="Station" {matched=0} matched && $1=="signal:" {signal=$2; print "DriverSignalStrength=" signal; print "DriverSignalStrengthMin=" signal-2; print "DriverSignalStrengthMax=" signal+2}'''
+  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+    | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC"
+    | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ]; iw dev wl0 station dump | awk -v mac="$STA_MAC_LOWER"
+    -v sta="$STA_MAC" ''$1=="Station" && $2==mac {matched=1; print "DriverAssocMac="
+    sta; next} $1=="Station" {matched=0} matched && $1=="signal:" {signal=$2; print
+    "DriverSignalStrength=" signal; print "DriverSignalStrengthMin=" signal-2; print
+    "DriverSignalStrengthMax=" signal+2}'''
   depends_on: step2
   capture: driver_signal
 pass_criteria:
@@ -154,28 +157,34 @@ pass_criteria:
 - field: driver_signal.DriverAssocMac
   operator: equals
   reference: assoc_entry.MACAddress
-  description: Driver sampling must target the same live AssociatedDevice MAC resolved in step1.
+  description: Driver sampling must target the same live AssociatedDevice MAC 
+    resolved in step1.
 - field: driver_signal.DriverSignalStrength
   operator: regex
   value: ^-[0-9]+$
-  description: iw station dump must emit a concrete negative signal integer for the same STA.
+  description: iw station dump must emit a concrete negative signal integer for 
+    the same STA.
 - field: driver_signal.DriverSignalStrength
   operator: '<'
   value: '0'
-  description: iw station dump must report a negative signal value for the same STA.
+  description: iw station dump must report a negative signal value for the same 
+    STA.
 - field: result.SignalStrength
   operator: '>='
   reference: driver_signal.DriverSignalStrengthMin
-  description: LLAPI SignalStrength should stay within 2 dBm below the iw station dump signal for the same STA.
+  description: LLAPI SignalStrength should stay within 2 dBm below the iw 
+    station dump signal for the same STA.
 - field: result.SignalStrength
   operator: '<='
   reference: driver_signal.DriverSignalStrengthMax
-  description: LLAPI SignalStrength should stay within 2 dBm above the iw station dump signal for the same STA.
+  description: LLAPI SignalStrength should stay within 2 dBm above the iw 
+    station dump signal for the same STA.
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SignalStrength?"'
-  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC" | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ] && iw dev wl0 station dump | awk -v mac="$STA_MAC_LOWER" -v sta="$STA_MAC" ''$1=="Station" && $2==mac {matched=1; print "DriverAssocMac=" sta; next} $1=="Station" {matched=0} matched && $1=="signal:" {signal=$2; print "DriverSignalStrength=" signal; print "DriverSignalStrengthMin=" signal-2; print "DriverSignalStrengthMax=" signal+2}'''
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SignalStrength?"'
+- 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
+  ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC" | tr ''A-F''
+  ''a-f''); [ -n "$STA_MAC" ] && iw dev wl0 station dump | awk -v mac="$STA_MAC_LOWER"
+  -v sta="$STA_MAC" ''$1=="Station" && $2==mac {matched=1; print "DriverAssocMac="
+  sta; next} $1=="Station" {matched=0} matched && $1=="signal:" {signal=$2; print
+  "DriverSignalStrength=" signal; print "DriverSignalStrengthMin=" signal-2; print
+  "DriverSignalStrengthMax=" signal+2}'''

@@ -4,17 +4,11 @@ source:
   row: 278
   object: WiFi.Radio.{i}.
   api: getScanResults()
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
 topology:
   devices:
     DUT:
@@ -26,42 +20,57 @@ steps:
   target: dut
   action: exec
   capture: llapi_5g
-  command: 'BSSID=$(ubus-cli "WiFi.Radio.1.getScanResults()" | sed -n "/BSSID = /{s/.*BSSID = \"\\([^\"]*\\)\".*/\\1/p;q;}"); [ -n "$BSSID" ] && printf "LlapiBssid5g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"'
+  command: 'BSSID=$(ubus-cli "WiFi.Radio.1.getScanResults()" | sed -n "/BSSID = /{s/.*BSSID
+    = \"\\([^\"]*\\)\".*/\\1/p;q;}"); [ -n "$BSSID" ] && printf "LlapiBssid5g=%s\n"
+    "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"'
   expected: getScanResults() 需先解析出 5G target BSSID
-  description: Radio.1 (5g) getScanResults() 先擷取 workbook compare 使用的 target BSSID
+  description: Radio.1 (5g) getScanResults() 先擷取 workbook compare 使用的 target 
+    BSSID
 - id: step_5g_iw_scan
   target: dut
   action: exec
   capture: iw_5g
-  command: 'TARGET="{{llapi_5g.LlapiBssid5g}}"; MATCH=$(iw dev wl0 scan | grep -im1 "^BSS $TARGET" | sed -n "s/^BSS \\([^ (]*\\).*/\\1/p"); [ -n "$MATCH" ] && printf "IwBssid5g=%s\n" "$(printf "%s" "$MATCH" | tr "A-F" "a-f")"'
+  command: 'TARGET="{{llapi_5g.LlapiBssid5g}}"; MATCH=$(iw dev wl0 scan | grep -im1
+    "^BSS $TARGET" | sed -n "s/^BSS \\([^ (]*\\).*/\\1/p"); [ -n "$MATCH" ] && printf
+    "IwBssid5g=%s\n" "$(printf "%s" "$MATCH" | tr "A-F" "a-f")"'
   expected: iw dev wl0 scan 需能找到相同 5G BSSID
   description: wl0 scan 交叉比對 workbook target BSSID
 - id: step_6g_scan
   target: dut
   action: exec
   capture: llapi_6g
-  command: 'BSSID=$(ubus-cli "WiFi.Radio.2.getScanResults()" | sed -n "/BSSID = /{s/.*BSSID = \"\\([^\"]*\\)\".*/\\1/p;q;}"); [ -n "$BSSID" ] && printf "LlapiBssid6g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"'
+  command: 'BSSID=$(ubus-cli "WiFi.Radio.2.getScanResults()" | sed -n "/BSSID = /{s/.*BSSID
+    = \"\\([^\"]*\\)\".*/\\1/p;q;}"); [ -n "$BSSID" ] && printf "LlapiBssid6g=%s\n"
+    "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"'
   expected: getScanResults() 需先解析出 6G target BSSID
-  description: Radio.2 (6g) getScanResults() 先擷取 workbook compare 使用的 target BSSID
+  description: Radio.2 (6g) getScanResults() 先擷取 workbook compare 使用的 target 
+    BSSID
 - id: step_6g_iw_scan
   target: dut
   action: exec
   capture: iw_6g
-  command: 'TARGET="{{llapi_6g.LlapiBssid6g}}"; MATCH=$(iw dev wl1 scan | grep -im1 "^BSS $TARGET" | sed -n "s/^BSS \\([^ (]*\\).*/\\1/p"); [ -n "$MATCH" ] && printf "IwBssid6g=%s\n" "$(printf "%s" "$MATCH" | tr "A-F" "a-f")"'
+  command: 'TARGET="{{llapi_6g.LlapiBssid6g}}"; MATCH=$(iw dev wl1 scan | grep -im1
+    "^BSS $TARGET" | sed -n "s/^BSS \\([^ (]*\\).*/\\1/p"); [ -n "$MATCH" ] && printf
+    "IwBssid6g=%s\n" "$(printf "%s" "$MATCH" | tr "A-F" "a-f")"'
   expected: iw dev wl1 scan 需能找到相同 6G BSSID
   description: wl1 scan 交叉比對 workbook target BSSID
 - id: step_24g_scan
   target: dut
   action: exec
   capture: llapi_24g
-  command: 'BSSID=$(ubus-cli "WiFi.Radio.3.getScanResults()" | sed -n "/BSSID = /{s/.*BSSID = \"\\([^\"]*\\)\".*/\\1/p;q;}"); [ -n "$BSSID" ] && printf "LlapiBssid24g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"'
+  command: 'BSSID=$(ubus-cli "WiFi.Radio.3.getScanResults()" | sed -n "/BSSID = /{s/.*BSSID
+    = \"\\([^\"]*\\)\".*/\\1/p;q;}"); [ -n "$BSSID" ] && printf "LlapiBssid24g=%s\n"
+    "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"'
   expected: getScanResults() 需先解析出 2.4G target BSSID
-  description: Radio.3 (2.4g) getScanResults() 先擷取 workbook compare 使用的 target BSSID
+  description: Radio.3 (2.4g) getScanResults() 先擷取 workbook compare 使用的 target 
+    BSSID
 - id: step_24g_iw_scan
   target: dut
   action: exec
   capture: iw_24g
-  command: 'TARGET="{{llapi_24g.LlapiBssid24g}}"; MATCH=$(iw dev wl2 scan | grep -im1 "^BSS $TARGET" | sed -n "s/^BSS \\([^ (]*\\).*/\\1/p"); [ -n "$MATCH" ] && printf "IwBssid24g=%s\n" "$(printf "%s" "$MATCH" | tr "A-F" "a-f")"'
+  command: 'TARGET="{{llapi_24g.LlapiBssid24g}}"; MATCH=$(iw dev wl2 scan | grep -im1
+    "^BSS $TARGET" | sed -n "s/^BSS \\([^ (]*\\).*/\\1/p"); [ -n "$MATCH" ] && printf
+    "IwBssid24g=%s\n" "$(printf "%s" "$MATCH" | tr "A-F" "a-f")"'
   expected: iw dev wl2 scan 需能找到相同 2.4G BSSID
   description: wl2 scan 交叉比對 workbook target BSSID
 pass_criteria:

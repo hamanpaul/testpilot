@@ -2,16 +2,14 @@ id: wifi-llapi-D085-keypassphrase-accesspoint-security
 name: "KeyPassPhrase — WiFi.AccessPoint.{i}.Security"
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 85
   object: WiFi.AccessPoint.{i}.Security
   api: KeyPassPhrase
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: "ubus-cli 'WiFi.AccessPoint.1.Security.KeyPassPhrase=\"0689388783\"'"
+hlapi_command: "ubus-cli 'WiFi.AccessPoint.1.Security.KeyPassPhrase=\"0689388783\"\
+  '"
 llapi_support: Support
 implemented_by: pWHM
 bands: ["5g", "6g", "2.4g"]
@@ -65,15 +63,21 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.1.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterKeyPassPhrase5g=%s\n' "$VALUE"; else echo 'BaselineGetterKeyPassPhrase5g=EMPTY'; fi; HAPD=$(grep -m1 '^wpa_passphrase=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- || true); if [ -n "$HAPD" ]; then printf 'BaselineHostapdKeyPassPhrase5g=%s\n' "$HAPD"; else echo 'BaselineHostapdKeyPassPhrase5g=ABSENT'; fi
+    OUT=$(ubus-cli "WiFi.AccessPoint.1.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterKeyPassPhrase5g=%s\n'
+    "$VALUE"; else echo 'BaselineGetterKeyPassPhrase5g=EMPTY'; fi; HAPD=$(grep -m1
+    '^wpa_passphrase=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- || true); if
+    [ -n "$HAPD" ]; then printf 'BaselineHostapdKeyPassPhrase5g=%s\n' "$HAPD"; else
+    echo 'BaselineHostapdKeyPassPhrase5g=ABSENT'; fi
   capture: keypassphrase_baseline_5g
 - id: step2_keypassphrase_set_5g
   action: exec
   target: DUT
   band: 5g
   command:
-    - printf 'RequestedKeyPassPhrase5g=0689388783\n'
-    - ubus-cli 'WiFi.AccessPoint.1.Security.KeyPassPhrase="0689388783"'
+  - printf 'RequestedKeyPassPhrase5g=0689388783\n'
+  - ubus-cli 'WiFi.AccessPoint.1.Security.KeyPassPhrase="0689388783"'
   depends_on: step1_keypassphrase_baseline_5g
   capture: keypassphrase_set_5g
 - id: step3_keypassphrase_after_set_5g
@@ -81,7 +85,13 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterSetGetterKeyPassPhrase5g=%s\n' "$VALUE"; else echo 'AfterSetGetterKeyPassPhrase5g=EMPTY'; fi; HAPD=$(grep -m1 '^wpa_passphrase=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- || true); if [ -n "$HAPD" ]; then printf 'AfterSetHostapdKeyPassPhrase5g=%s\n' "$HAPD"; else echo 'AfterSetHostapdKeyPassPhrase5g=ABSENT'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterSetGetterKeyPassPhrase5g=%s\n'
+    "$VALUE"; else echo 'AfterSetGetterKeyPassPhrase5g=EMPTY'; fi; HAPD=$(grep -m1
+    '^wpa_passphrase=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- || true); if
+    [ -n "$HAPD" ]; then printf 'AfterSetHostapdKeyPassPhrase5g=%s\n' "$HAPD"; else
+    echo 'AfterSetHostapdKeyPassPhrase5g=ABSENT'; fi
   depends_on: step2_keypassphrase_set_5g
   capture: keypassphrase_after_set_5g
 - id: step4_keypassphrase_restore_5g
@@ -89,8 +99,8 @@ steps:
   target: DUT
   band: 5g
   command:
-    - printf 'RestoreKeyPassPhrase5g=00000000\n'
-    - ubus-cli 'WiFi.AccessPoint.1.Security.KeyPassPhrase="00000000"'
+  - printf 'RestoreKeyPassPhrase5g=00000000\n'
+  - ubus-cli 'WiFi.AccessPoint.1.Security.KeyPassPhrase="00000000"'
   depends_on: step3_keypassphrase_after_set_5g
   capture: keypassphrase_restore_5g
 - id: step5_keypassphrase_after_restore_5g
@@ -98,7 +108,13 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterKeyPassPhrase5g=%s\n' "$VALUE"; else echo 'AfterRestoreGetterKeyPassPhrase5g=EMPTY'; fi; HAPD=$(grep -m1 '^wpa_passphrase=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- || true); if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdKeyPassPhrase5g=%s\n' "$HAPD"; else echo 'AfterRestoreHostapdKeyPassPhrase5g=ABSENT'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterKeyPassPhrase5g=%s\n'
+    "$VALUE"; else echo 'AfterRestoreGetterKeyPassPhrase5g=EMPTY'; fi; HAPD=$(grep
+    -m1 '^wpa_passphrase=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- || true);
+    if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdKeyPassPhrase5g=%s\n' "$HAPD";
+    else echo 'AfterRestoreHostapdKeyPassPhrase5g=ABSENT'; fi
   depends_on: step4_keypassphrase_restore_5g
   capture: keypassphrase_after_restore_5g
 - id: step6_keypassphrase_baseline_6g
@@ -106,15 +122,21 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterKeyPassPhrase6g=%s\n' "$VALUE"; else echo 'BaselineGetterKeyPassPhrase6g=EMPTY'; fi; HAPD=$(grep -m1 '^wpa_passphrase=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- || true); if [ -n "$HAPD" ]; then printf 'BaselineHostapdKeyPassPhrase6g=%s\n' "$HAPD"; else echo 'BaselineHostapdKeyPassPhrase6g=ABSENT'; fi
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterKeyPassPhrase6g=%s\n'
+    "$VALUE"; else echo 'BaselineGetterKeyPassPhrase6g=EMPTY'; fi; HAPD=$(grep -m1
+    '^wpa_passphrase=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- || true); if
+    [ -n "$HAPD" ]; then printf 'BaselineHostapdKeyPassPhrase6g=%s\n' "$HAPD"; else
+    echo 'BaselineHostapdKeyPassPhrase6g=ABSENT'; fi
   capture: keypassphrase_baseline_6g
 - id: step7_keypassphrase_set_6g
   action: exec
   target: DUT
   band: 6g
   command:
-    - printf 'RequestedKeyPassPhrase6g=0689388783\n'
-    - ubus-cli 'WiFi.AccessPoint.3.Security.KeyPassPhrase="0689388783"'
+  - printf 'RequestedKeyPassPhrase6g=0689388783\n'
+  - ubus-cli 'WiFi.AccessPoint.3.Security.KeyPassPhrase="0689388783"'
   depends_on: step6_keypassphrase_baseline_6g
   capture: keypassphrase_set_6g
 - id: step8_keypassphrase_after_set_6g
@@ -122,7 +144,13 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterSetGetterKeyPassPhrase6g=%s\n' "$VALUE"; else echo 'AfterSetGetterKeyPassPhrase6g=EMPTY'; fi; HAPD=$(grep -m1 '^wpa_passphrase=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- || true); if [ -n "$HAPD" ]; then printf 'AfterSetHostapdKeyPassPhrase6g=%s\n' "$HAPD"; else echo 'AfterSetHostapdKeyPassPhrase6g=ABSENT'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterSetGetterKeyPassPhrase6g=%s\n'
+    "$VALUE"; else echo 'AfterSetGetterKeyPassPhrase6g=EMPTY'; fi; HAPD=$(grep -m1
+    '^wpa_passphrase=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- || true); if
+    [ -n "$HAPD" ]; then printf 'AfterSetHostapdKeyPassPhrase6g=%s\n' "$HAPD"; else
+    echo 'AfterSetHostapdKeyPassPhrase6g=ABSENT'; fi
   depends_on: step7_keypassphrase_set_6g
   capture: keypassphrase_after_set_6g
 - id: step9_keypassphrase_restore_6g
@@ -130,8 +158,8 @@ steps:
   target: DUT
   band: 6g
   command:
-    - printf 'RestoreKeyPassPhrase6g=00000000\n'
-    - ubus-cli 'WiFi.AccessPoint.3.Security.KeyPassPhrase="00000000"'
+  - printf 'RestoreKeyPassPhrase6g=00000000\n'
+  - ubus-cli 'WiFi.AccessPoint.3.Security.KeyPassPhrase="00000000"'
   depends_on: step8_keypassphrase_after_set_6g
   capture: keypassphrase_restore_6g
 - id: step10_keypassphrase_after_restore_6g
@@ -139,7 +167,13 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterKeyPassPhrase6g=%s\n' "$VALUE"; else echo 'AfterRestoreGetterKeyPassPhrase6g=EMPTY'; fi; HAPD=$(grep -m1 '^wpa_passphrase=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- || true); if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdKeyPassPhrase6g=%s\n' "$HAPD"; else echo 'AfterRestoreHostapdKeyPassPhrase6g=ABSENT'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterKeyPassPhrase6g=%s\n'
+    "$VALUE"; else echo 'AfterRestoreGetterKeyPassPhrase6g=EMPTY'; fi; HAPD=$(grep
+    -m1 '^wpa_passphrase=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- || true);
+    if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdKeyPassPhrase6g=%s\n' "$HAPD";
+    else echo 'AfterRestoreHostapdKeyPassPhrase6g=ABSENT'; fi
   depends_on: step9_keypassphrase_restore_6g
   capture: keypassphrase_after_restore_6g
 - id: step11_keypassphrase_baseline_24g
@@ -147,15 +181,21 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterKeyPassPhrase24g=%s\n' "$VALUE"; else echo 'BaselineGetterKeyPassPhrase24g=EMPTY'; fi; HAPD=$(grep -m1 '^wpa_passphrase=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- || true); if [ -n "$HAPD" ]; then printf 'BaselineHostapdKeyPassPhrase24g=%s\n' "$HAPD"; else echo 'BaselineHostapdKeyPassPhrase24g=ABSENT'; fi
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterKeyPassPhrase24g=%s\n'
+    "$VALUE"; else echo 'BaselineGetterKeyPassPhrase24g=EMPTY'; fi; HAPD=$(grep -m1
+    '^wpa_passphrase=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- || true); if
+    [ -n "$HAPD" ]; then printf 'BaselineHostapdKeyPassPhrase24g=%s\n' "$HAPD"; else
+    echo 'BaselineHostapdKeyPassPhrase24g=ABSENT'; fi
   capture: keypassphrase_baseline_24g
 - id: step12_keypassphrase_set_24g
   action: exec
   target: DUT
   band: 2.4g
   command:
-    - printf 'RequestedKeyPassPhrase24g=0689388783\n'
-    - ubus-cli 'WiFi.AccessPoint.5.Security.KeyPassPhrase="0689388783"'
+  - printf 'RequestedKeyPassPhrase24g=0689388783\n'
+  - ubus-cli 'WiFi.AccessPoint.5.Security.KeyPassPhrase="0689388783"'
   depends_on: step11_keypassphrase_baseline_24g
   capture: keypassphrase_set_24g
 - id: step13_keypassphrase_after_set_24g
@@ -163,7 +203,13 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterSetGetterKeyPassPhrase24g=%s\n' "$VALUE"; else echo 'AfterSetGetterKeyPassPhrase24g=EMPTY'; fi; HAPD=$(grep -m1 '^wpa_passphrase=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- || true); if [ -n "$HAPD" ]; then printf 'AfterSetHostapdKeyPassPhrase24g=%s\n' "$HAPD"; else echo 'AfterSetHostapdKeyPassPhrase24g=ABSENT'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterSetGetterKeyPassPhrase24g=%s\n'
+    "$VALUE"; else echo 'AfterSetGetterKeyPassPhrase24g=EMPTY'; fi; HAPD=$(grep -m1
+    '^wpa_passphrase=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- || true); if
+    [ -n "$HAPD" ]; then printf 'AfterSetHostapdKeyPassPhrase24g=%s\n' "$HAPD"; else
+    echo 'AfterSetHostapdKeyPassPhrase24g=ABSENT'; fi
   depends_on: step12_keypassphrase_set_24g
   capture: keypassphrase_after_set_24g
 - id: step14_keypassphrase_restore_24g
@@ -171,8 +217,8 @@ steps:
   target: DUT
   band: 2.4g
   command:
-    - printf 'RestoreKeyPassPhrase24g=00000000\n'
-    - ubus-cli 'WiFi.AccessPoint.5.Security.KeyPassPhrase="00000000"'
+  - printf 'RestoreKeyPassPhrase24g=00000000\n'
+  - ubus-cli 'WiFi.AccessPoint.5.Security.KeyPassPhrase="00000000"'
   depends_on: step13_keypassphrase_after_set_24g
   capture: keypassphrase_restore_24g
 - id: step15_keypassphrase_after_restore_24g
@@ -180,7 +226,13 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterKeyPassPhrase24g=%s\n' "$VALUE"; else echo 'AfterRestoreGetterKeyPassPhrase24g=EMPTY'; fi; HAPD=$(grep -m1 '^wpa_passphrase=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- || true); if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdKeyPassPhrase24g=%s\n' "$HAPD"; else echo 'AfterRestoreHostapdKeyPassPhrase24g=ABSENT'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.KeyPassPhrase?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.KeyPassPhrase="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterKeyPassPhrase24g=%s\n'
+    "$VALUE"; else echo 'AfterRestoreGetterKeyPassPhrase24g=EMPTY'; fi; HAPD=$(grep
+    -m1 '^wpa_passphrase=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- || true);
+    if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdKeyPassPhrase24g=%s\n' "$HAPD";
+    else echo 'AfterRestoreHostapdKeyPassPhrase24g=ABSENT'; fi
   depends_on: step14_keypassphrase_restore_24g
   capture: keypassphrase_after_restore_24g
 
@@ -188,116 +240,129 @@ pass_criteria:
 - field: keypassphrase_baseline_5g.BaselineGetterKeyPassPhrase5g
   operator: equals
   value: '00000000'
-  description: 5G AP1 / wl0 getter should start from the documented baseline passphrase.
+  description: 5G AP1 / wl0 getter should start from the documented baseline 
+    passphrase.
 - field: keypassphrase_baseline_5g.BaselineHostapdKeyPassPhrase5g
   operator: equals
   value: '00000000'
-  description: 5G AP1 / wl0 hostapd should start from the documented baseline passphrase.
+  description: 5G AP1 / wl0 hostapd should start from the documented baseline 
+    passphrase.
 - field: keypassphrase_set_5g.RequestedKeyPassPhrase5g
   operator: equals
   value: '0689388783'
-  description: 5G AP1 / wl0 should request the quoted workbook passphrase literally.
+  description: 5G AP1 / wl0 should request the quoted workbook passphrase 
+    literally.
 - field: keypassphrase_after_set_5g.AfterSetGetterKeyPassPhrase5g
   operator: equals
   value: '0689388783'
-  description: 5G AP1 / wl0 getter should preserve the quoted leading-zero workbook value.
+  description: 5G AP1 / wl0 getter should preserve the quoted leading-zero 
+    workbook value.
 - field: keypassphrase_after_set_5g.AfterSetHostapdKeyPassPhrase5g
   operator: equals
   reference: keypassphrase_after_set_5g.AfterSetGetterKeyPassPhrase5g
-  description: 5G AP1 / wl0 hostapd should converge to the same passphrase as the northbound getter after the quoted setter.
+  description: 5G AP1 / wl0 hostapd should converge to the same passphrase as 
+    the northbound getter after the quoted setter.
 - field: keypassphrase_restore_5g.RestoreKeyPassPhrase5g
   operator: equals
   value: '00000000'
-  description: 5G AP1 / wl0 should request restore back to the documented baseline passphrase.
+  description: 5G AP1 / wl0 should request restore back to the documented 
+    baseline passphrase.
 - field: keypassphrase_after_restore_5g.AfterRestoreGetterKeyPassPhrase5g
   operator: equals
   value: '00000000'
-  description: 5G AP1 / wl0 getter should return to the documented baseline after restore.
+  description: 5G AP1 / wl0 getter should return to the documented baseline 
+    after restore.
 - field: keypassphrase_after_restore_5g.AfterRestoreHostapdKeyPassPhrase5g
   operator: equals
   reference: keypassphrase_after_restore_5g.AfterRestoreGetterKeyPassPhrase5g
-  description: 5G AP1 / wl0 hostapd should return to the same baseline passphrase as the getter after restore.
+  description: 5G AP1 / wl0 hostapd should return to the same baseline 
+    passphrase as the getter after restore.
 - field: keypassphrase_baseline_6g.BaselineGetterKeyPassPhrase6g
   operator: equals
   value: '00000000'
-  description: 6G AP3 / wl1 getter should start from the documented baseline passphrase.
+  description: 6G AP3 / wl1 getter should start from the documented baseline 
+    passphrase.
 - field: keypassphrase_baseline_6g.BaselineHostapdKeyPassPhrase6g
   operator: equals
   value: '00000000'
-  description: 6G AP3 / wl1 hostapd `wpa_passphrase=` should start from the documented baseline passphrase.
+  description: 6G AP3 / wl1 hostapd `wpa_passphrase=` should start from the 
+    documented baseline passphrase.
 - field: keypassphrase_set_6g.RequestedKeyPassPhrase6g
   operator: equals
   value: '0689388783'
-  description: 6G AP3 / wl1 should request the quoted workbook passphrase literally.
+  description: 6G AP3 / wl1 should request the quoted workbook passphrase 
+    literally.
 - field: keypassphrase_after_set_6g.AfterSetGetterKeyPassPhrase6g
   operator: equals
   value: '0689388783'
-  description: 6G AP3 / wl1 getter should preserve the quoted leading-zero workbook value.
+  description: 6G AP3 / wl1 getter should preserve the quoted leading-zero 
+    workbook value.
 - field: keypassphrase_after_set_6g.AfterSetHostapdKeyPassPhrase6g
   operator: equals
   reference: keypassphrase_after_set_6g.AfterSetGetterKeyPassPhrase6g
-  description: 6G AP3 / wl1 hostapd `wpa_passphrase=` should converge to the same passphrase as the getter after the quoted setter.
+  description: 6G AP3 / wl1 hostapd `wpa_passphrase=` should converge to the 
+    same passphrase as the getter after the quoted setter.
 - field: keypassphrase_restore_6g.RestoreKeyPassPhrase6g
   operator: equals
   value: '00000000'
-  description: 6G AP3 / wl1 should request restore back to the documented baseline passphrase.
+  description: 6G AP3 / wl1 should request restore back to the documented 
+    baseline passphrase.
 - field: keypassphrase_after_restore_6g.AfterRestoreGetterKeyPassPhrase6g
   operator: equals
   value: '00000000'
-  description: 6G AP3 / wl1 getter should return to the documented baseline after restore.
+  description: 6G AP3 / wl1 getter should return to the documented baseline 
+    after restore.
 - field: keypassphrase_after_restore_6g.AfterRestoreHostapdKeyPassPhrase6g
   operator: equals
   reference: keypassphrase_after_restore_6g.AfterRestoreGetterKeyPassPhrase6g
-  description: 6G AP3 / wl1 hostapd `wpa_passphrase=` should return to the same baseline passphrase as the getter after restore.
+  description: 6G AP3 / wl1 hostapd `wpa_passphrase=` should return to the same 
+    baseline passphrase as the getter after restore.
 - field: keypassphrase_baseline_24g.BaselineGetterKeyPassPhrase24g
   operator: equals
   value: '00000000'
-  description: 2.4G AP5 / wl2 getter should start from the documented baseline passphrase.
+  description: 2.4G AP5 / wl2 getter should start from the documented baseline 
+    passphrase.
 - field: keypassphrase_baseline_24g.BaselineHostapdKeyPassPhrase24g
   operator: equals
   value: '00000000'
-  description: 2.4G AP5 / wl2 hostapd should start from the documented baseline passphrase.
+  description: 2.4G AP5 / wl2 hostapd should start from the documented baseline 
+    passphrase.
 - field: keypassphrase_set_24g.RequestedKeyPassPhrase24g
   operator: equals
   value: '0689388783'
-  description: 2.4G AP5 / wl2 should request the quoted workbook passphrase literally.
+  description: 2.4G AP5 / wl2 should request the quoted workbook passphrase 
+    literally.
 - field: keypassphrase_after_set_24g.AfterSetGetterKeyPassPhrase24g
   operator: equals
   value: '0689388783'
-  description: 2.4G AP5 / wl2 getter should preserve the quoted leading-zero workbook value.
+  description: 2.4G AP5 / wl2 getter should preserve the quoted leading-zero 
+    workbook value.
 - field: keypassphrase_after_set_24g.AfterSetHostapdKeyPassPhrase24g
   operator: equals
   reference: keypassphrase_after_set_24g.AfterSetGetterKeyPassPhrase24g
-  description: 2.4G AP5 / wl2 hostapd should converge to the same passphrase as the getter after the quoted setter.
+  description: 2.4G AP5 / wl2 hostapd should converge to the same passphrase as 
+    the getter after the quoted setter.
 - field: keypassphrase_restore_24g.RestoreKeyPassPhrase24g
   operator: equals
   value: '00000000'
-  description: 2.4G AP5 / wl2 should request restore back to the documented baseline passphrase.
+  description: 2.4G AP5 / wl2 should request restore back to the documented 
+    baseline passphrase.
 - field: keypassphrase_after_restore_24g.AfterRestoreGetterKeyPassPhrase24g
   operator: equals
   value: '00000000'
-  description: 2.4G AP5 / wl2 getter should return to the documented baseline after restore.
+  description: 2.4G AP5 / wl2 getter should return to the documented baseline 
+    after restore.
 - field: keypassphrase_after_restore_24g.AfterRestoreHostapdKeyPassPhrase24g
   operator: equals
   reference: keypassphrase_after_restore_24g.AfterRestoreGetterKeyPassPhrase24g
-  description: 2.4G AP5 / wl2 hostapd should return to the same baseline passphrase as the getter after restore.
+  description: 2.4G AP5 / wl2 hostapd should return to the same baseline 
+    passphrase as the getter after restore.
 
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.Security.KeyPassPhrase?"'
-  - 'grep -E ''^(wpa_passphrase|wpa_pairwise)'' /tmp/wl0_hapd.conf || true'
-  - 'ubus-cli "WiFi.AccessPoint.3.Security.KeyPassPhrase?"'
-  - 'grep -E ''^(wpa_passphrase|wpa_pairwise)'' /tmp/wl1_hapd.conf || true'
-  - 'ubus-cli "WiFi.AccessPoint.5.Security.KeyPassPhrase?"'
-  - 'grep -E ''^(wpa_passphrase|wpa_pairwise)'' /tmp/wl2_hapd.conf || true'
+- 'ubus-cli "WiFi.AccessPoint.1.Security.KeyPassPhrase?"'
+- 'grep -E ''^(wpa_passphrase|wpa_pairwise)'' /tmp/wl0_hapd.conf || true'
+- 'ubus-cli "WiFi.AccessPoint.3.Security.KeyPassPhrase?"'
+- 'grep -E ''^(wpa_passphrase|wpa_pairwise)'' /tmp/wl1_hapd.conf || true'
+- 'ubus-cli "WiFi.AccessPoint.5.Security.KeyPassPhrase?"'
+- 'grep -E ''^(wpa_passphrase|wpa_pairwise)'' /tmp/wl2_hapd.conf || true'
 
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'workbook row 85 is a Pass-shaped KeyPassPhrase checkpoint. On 0403 the bare leading-zero setter is misparsed into `689388783.000000`, but the quoted setter `KeyPassPhrase="0689388783"` converges with hostapd `wpa_passphrase=` on AP1/AP3/AP5 and restores to `00000000`; the 6G `sae_password=` side channel is intentionally excluded because the workbook evidence only anchors KeyPassPhrase plus hostapd `wpa_passphrase=` / `wpa_pairwise`.'

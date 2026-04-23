@@ -2,12 +2,9 @@ id: wifi-llapi-D115-getstationstats-connectionduration
 name: getStationStats() ConnectionDuration — WiFi.AccessPoint.{i}.
 version: '1.0'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 115
   object: WiFi.AccessPoint.{i}.
   api: getStationStats()
-  baseline: 0310-BGW720-300
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -109,7 +106,8 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: 'STA_MAC=$(wl -i wl0 assoclist | awk ''NR==1{print $NF}''); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds5g=\1/p'''
+  command: 'STA_MAC=$(wl -i wl0 assoclist | awk ''NR==1{print $NF}''); [ -n "$STA_MAC"
+    ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds5g=\1/p'''
   capture: driver_duration_5g
   depends_on: step4_5g_getstationstats_after_wait
 - id: step6_6g_sta_join
@@ -147,7 +145,8 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: 'STA_MAC=$(wl -i wl1 assoclist | awk ''NR==1{print $NF}''); [ -n "$STA_MAC" ] && wl -i wl1 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds6g=\1/p'''
+  command: 'STA_MAC=$(wl -i wl1 assoclist | awk ''NR==1{print $NF}''); [ -n "$STA_MAC"
+    ] && wl -i wl1 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds6g=\1/p'''
   capture: driver_duration_6g
   depends_on: step9_6g_getstationstats_after_wait
 - id: step11_24g_sta_join
@@ -184,7 +183,8 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: 'STA_MAC=$(wl -i wl2 assoclist | awk ''NR==1{print $NF}''); [ -n "$STA_MAC" ] && wl -i wl2 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds24g=\1/p'''
+  command: 'STA_MAC=$(wl -i wl2 assoclist | awk ''NR==1{print $NF}''); [ -n "$STA_MAC"
+    ] && wl -i wl2 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds24g=\1/p'''
   capture: driver_duration_24g
   depends_on: step14_24g_getstationstats_after_wait
 pass_criteria:
@@ -202,12 +202,14 @@ pass_criteria:
   operator: '>'
   reference: result_5g.ConnectionDuration
   band: 5g
-  description: 5G second ConnectionDuration read should increase beyond the first read
+  description: 5G second ConnectionDuration read should increase beyond the 
+    first read
 - field: driver_duration_5g.DriverConnectionSeconds5g
   operator: '>='
   reference: result_after_wait_5g.ConnectionDuration
   band: 5g
-  description: 5G driver in-network seconds should be at least the later getStationStats() value
+  description: 5G driver in-network seconds should be at least the later 
+    getStationStats() value
 - field: assoc_6g
   operator: not_equals
   value: ''
@@ -222,12 +224,14 @@ pass_criteria:
   operator: '>'
   reference: result_6g.ConnectionDuration
   band: 6g
-  description: 6G second ConnectionDuration read should increase beyond the first read
+  description: 6G second ConnectionDuration read should increase beyond the 
+    first read
 - field: driver_duration_6g.DriverConnectionSeconds6g
   operator: '>='
   reference: result_after_wait_6g.ConnectionDuration
   band: 6g
-  description: 6G driver in-network seconds should be at least the later getStationStats() value
+  description: 6G driver in-network seconds should be at least the later 
+    getStationStats() value
 - field: assoc_24g
   operator: not_equals
   value: ''
@@ -242,28 +246,27 @@ pass_criteria:
   operator: '>'
   reference: result_24g.ConnectionDuration
   band: 2.4g
-  description: 2.4G second ConnectionDuration read should increase beyond the first read
+  description: 2.4G second ConnectionDuration read should increase beyond the 
+    first read
 - field: driver_duration_24g.DriverConnectionSeconds24g
   operator: '>='
   reference: result_after_wait_24g.ConnectionDuration
   band: 2.4g
-  description: 2.4G driver in-network seconds should be at least the later getStationStats() value
+  description: 2.4G driver in-network seconds should be at least the later 
+    getStationStats() value
 verification_command:
-  - ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep ConnectionDuration
-  - sleep 3
-  - ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep ConnectionDuration
-  - STA_MAC=$(wl -i wl0 assoclist | awk 'NR==1{print $NF}'); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | grep "in network"
-  - ubus-cli "WiFi.AccessPoint.3.getStationStats()" 2>&1 | grep ConnectionDuration
-  - sleep 3
-  - ubus-cli "WiFi.AccessPoint.3.getStationStats()" 2>&1 | grep ConnectionDuration
-  - STA_MAC=$(wl -i wl1 assoclist | awk 'NR==1{print $NF}'); [ -n "$STA_MAC" ] && wl -i wl1 sta_info $STA_MAC | grep "in network"
-  - ubus-cli "WiFi.AccessPoint.5.getStationStats()" 2>&1 | grep ConnectionDuration
-  - sleep 3
-  - ubus-cli "WiFi.AccessPoint.5.getStationStats()" 2>&1 | grep ConnectionDuration
-  - STA_MAC=$(wl -i wl2 assoclist | awk 'NR==1{print $NF}'); [ -n "$STA_MAC" ] && wl -i wl2 sta_info $STA_MAC | grep "in network"
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ConnectionDuration field verified as a live monotonic getStationStats() counter cross-checked with wl sta_info in-network seconds on AP1/AP3/AP5.
+- ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep ConnectionDuration
+- sleep 3
+- ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep ConnectionDuration
+- STA_MAC=$(wl -i wl0 assoclist | awk 'NR==1{print $NF}'); [ -n "$STA_MAC" ] && 
+  wl -i wl0 sta_info $STA_MAC | grep "in network"
+- ubus-cli "WiFi.AccessPoint.3.getStationStats()" 2>&1 | grep ConnectionDuration
+- sleep 3
+- ubus-cli "WiFi.AccessPoint.3.getStationStats()" 2>&1 | grep ConnectionDuration
+- STA_MAC=$(wl -i wl1 assoclist | awk 'NR==1{print $NF}'); [ -n "$STA_MAC" ] && 
+  wl -i wl1 sta_info $STA_MAC | grep "in network"
+- ubus-cli "WiFi.AccessPoint.5.getStationStats()" 2>&1 | grep ConnectionDuration
+- sleep 3
+- ubus-cli "WiFi.AccessPoint.5.getStationStats()" 2>&1 | grep ConnectionDuration
+- STA_MAC=$(wl -i wl2 assoclist | awk 'NR==1{print $NF}'); [ -n "$STA_MAC" ] && 
+  wl -i wl2 sta_info $STA_MAC | grep "in network"

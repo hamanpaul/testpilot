@@ -1,16 +1,15 @@
 id: wifi-llapi-D024-lastdatadownlinkrate
-name: "LastDataDownlinkRate \u2014 WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+name: "LastDataDownlinkRate — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: '1.0'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 24
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: LastDataDownlinkRate
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataDownlinkRate?"
+hlapi_command: ubus-cli 
+  "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataDownlinkRate?"
 llapi_support: Support
 implemented_by: pWHM
 topology:
@@ -145,13 +144,19 @@ steps:
 - id: step3
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataDownlinkRate?"
+  command: ubus-cli 
+    "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataDownlinkRate?"
   depends_on: step2
   capture: result
 - id: step4
   action: exec
   target: DUT
-  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); RATE=$(wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*rate of last tx pkt: \([0-9][0-9]*\) kbps.*/\1/p'' | head -n1); if [ -n "$RATE" ]; then UPPER=$((RATE/100*100)); LOWER=$UPPER; [ "$LOWER" -ge 100 ] && LOWER=$((LOWER-100)); printf "DriverLastDownlinkRateLower=%s\nDriverLastDownlinkRateUpper=%s\n" "$LOWER" "$UPPER"; fi'
+  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+    | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); RATE=$(wl -i wl0 sta_info $STA_MAC
+    | sed -n ''s/.*rate of last tx pkt: \([0-9][0-9]*\) kbps.*/\1/p'' | head -n1);
+    if [ -n "$RATE" ]; then UPPER=$((RATE/100*100)); LOWER=$UPPER; [ "$LOWER" -ge
+    100 ] && LOWER=$((LOWER-100)); printf "DriverLastDownlinkRateLower=%s\nDriverLastDownlinkRateUpper=%s\n"
+    "$LOWER" "$UPPER"; fi'
   depends_on: step3
   capture: driver_rate
 pass_criteria:
@@ -170,23 +175,15 @@ pass_criteria:
 - field: result.LastDataDownlinkRate
   operator: '>='
   reference: driver_rate.DriverLastDownlinkRateLower
-  description: LLAPI downlink rate must not fall below the observed driver last-tx bucket floor minus 100 kbps.
+  description: LLAPI downlink rate must not fall below the observed driver 
+    last-tx bucket floor minus 100 kbps.
 - field: result.LastDataDownlinkRate
   operator: <=
   reference: driver_rate.DriverLastDownlinkRateUpper
-  description: LLAPI downlink rate must not exceed the observed driver last-tx 100-kbps bucket.
+  description: LLAPI downlink rate must not exceed the observed driver last-tx 
+    100-kbps bucket.
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataDownlinkRate?"'
-  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
-  - 'wl -i wl0 sta_info $STA_MAC | grep "rate of last tx pkt"'
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: '5G official rerun 20260412T172957084134: LastDataDownlinkRate=487400 while the driver last-tx bucket window was [487400,487500]; workbook Pass is therefore confirmed with the source-backed [bucket-100,bucket] validator.'
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataDownlinkRate?"'
+- 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
+  ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+- 'wl -i wl0 sta_info $STA_MAC | grep "rate of last tx pkt"'

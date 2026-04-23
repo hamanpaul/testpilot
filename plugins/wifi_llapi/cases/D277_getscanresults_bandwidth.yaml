@@ -4,17 +4,11 @@ source:
   row: 277
   object: WiFi.Radio.{i}.
   api: getScanResults()
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Fail
-    2.4g: Pass
 topology:
   devices:
     DUT:
@@ -26,23 +20,47 @@ steps:
   target: dut
   action: exec
   capture: scan_5g
-  command: 'BLOCK=$(ubus-cli "WiFi.Radio.1.getScanResults()" | head -60 | sed -n "/BSSID = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n "s/.*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); LLBW=$(printf "%s\n" "$BLOCK" | sed -n "s/.*Bandwidth = \([0-9][0-9]*\).*/\1/p" | head -n1); WLBLOCK=$(wl -i wl0 escanresults | grep -im1 -A20 "BSSID: $BSSID"); WLBW=$(printf "%s\n" "$WLBLOCK" | sed -n "s/.*Chanspec: .* \([0-9][0-9]*\)MHz.*/\1/p" | head -n1); LBSSID=$(printf "%s" "$BSSID" | tr "A-F" "a-f"); printf "LlapiBssid5g=%s\nLlapiBandwidth5g=%s\nWlBandwidth5g=%s\n" "$LBSSID" "$LLBW" "$WLBW"'
-  expected: 5G getScanResults() 第一個 target 的 Bandwidth 需能與同 BSSID wl escanresults Chanspec 對位
-  description: Radio.1 (5g) 以縮版 scan capture 對位 LLAPI 與 wl escanresults 的 bandwidth
+  command: 'BLOCK=$(ubus-cli "WiFi.Radio.1.getScanResults()" | head -60 | sed -n "/BSSID
+    = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n "s/.*BSSID = \"\([^\"]*\)\".*/\1/p"
+    | head -n1); LLBW=$(printf "%s\n" "$BLOCK" | sed -n "s/.*Bandwidth = \([0-9][0-9]*\).*/\1/p"
+    | head -n1); WLBLOCK=$(wl -i wl0 escanresults | grep -im1 -A20 "BSSID: $BSSID");
+    WLBW=$(printf "%s\n" "$WLBLOCK" | sed -n "s/.*Chanspec: .* \([0-9][0-9]*\)MHz.*/\1/p"
+    | head -n1); LBSSID=$(printf "%s" "$BSSID" | tr "A-F" "a-f"); printf "LlapiBssid5g=%s\nLlapiBandwidth5g=%s\nWlBandwidth5g=%s\n"
+    "$LBSSID" "$LLBW" "$WLBW"'
+  expected: 5G getScanResults() 第一個 target 的 Bandwidth 需能與同 BSSID wl 
+    escanresults Chanspec 對位
+  description: Radio.1 (5g) 以縮版 scan capture 對位 LLAPI 與 wl escanresults 的 
+    bandwidth
 - id: step_6g_scan
   target: dut
   action: exec
   capture: scan_6g
-  command: 'BLOCK=$(ubus-cli "WiFi.Radio.2.getScanResults()" | head -60 | sed -n "/BSSID = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n "s/.*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); LLBW=$(printf "%s\n" "$BLOCK" | sed -n "s/.*Bandwidth = \([0-9][0-9]*\).*/\1/p" | head -n1); WLBLOCK=$(wl -i wl1 escanresults | grep -im1 -A20 "BSSID: $BSSID"); WLBW=$(printf "%s\n" "$WLBLOCK" | sed -n "s/.*Chanspec: .* \([0-9][0-9]*\)MHz.*/\1/p" | head -n1); LBSSID=$(printf "%s" "$BSSID" | tr "A-F" "a-f"); printf "LlapiBssid6g=%s\nLlapiBandwidth6g=%s\nWlBandwidth6g=%s\n" "$LBSSID" "$LLBW" "$WLBW"'
-  expected: 6G getScanResults() 第一個 target 需維持目前的 fail-shaped bandwidth mismatch（LLAPI 320 vs wl escanresults 160）
-  description: Radio.2 (6g) 以縮版 scan capture 對位 LLAPI 與 wl escanresults 的 bandwidth fail shape
+  command: 'BLOCK=$(ubus-cli "WiFi.Radio.2.getScanResults()" | head -60 | sed -n "/BSSID
+    = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n "s/.*BSSID = \"\([^\"]*\)\".*/\1/p"
+    | head -n1); LLBW=$(printf "%s\n" "$BLOCK" | sed -n "s/.*Bandwidth = \([0-9][0-9]*\).*/\1/p"
+    | head -n1); WLBLOCK=$(wl -i wl1 escanresults | grep -im1 -A20 "BSSID: $BSSID");
+    WLBW=$(printf "%s\n" "$WLBLOCK" | sed -n "s/.*Chanspec: .* \([0-9][0-9]*\)MHz.*/\1/p"
+    | head -n1); LBSSID=$(printf "%s" "$BSSID" | tr "A-F" "a-f"); printf "LlapiBssid6g=%s\nLlapiBandwidth6g=%s\nWlBandwidth6g=%s\n"
+    "$LBSSID" "$LLBW" "$WLBW"'
+  expected: 6G getScanResults() 第一個 target 需維持目前的 fail-shaped bandwidth 
+    mismatch（LLAPI 320 vs wl escanresults 160）
+  description: Radio.2 (6g) 以縮版 scan capture 對位 LLAPI 與 wl escanresults 的 
+    bandwidth fail shape
 - id: step_24g_scan
   target: dut
   action: exec
   capture: scan_24g
-  command: 'BLOCK=$(ubus-cli "WiFi.Radio.3.getScanResults()" | head -60 | sed -n "/BSSID = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n "s/.*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); LLBW=$(printf "%s\n" "$BLOCK" | sed -n "s/.*Bandwidth = \([0-9][0-9]*\).*/\1/p" | head -n1); WLBLOCK=$(wl -i wl2 escanresults | grep -im1 -A20 "BSSID: $BSSID"); WLBW=$(printf "%s\n" "$WLBLOCK" | sed -n "s/.*Chanspec: .* \([0-9][0-9]*\)MHz.*/\1/p" | head -n1); LBSSID=$(printf "%s" "$BSSID" | tr "A-F" "a-f"); printf "LlapiBssid24g=%s\nLlapiBandwidth24g=%s\nWlBandwidth24g=%s\n" "$LBSSID" "$LLBW" "$WLBW"'
-  expected: 2.4G getScanResults() 第一個 target 的 Bandwidth 需能與同 BSSID wl escanresults Chanspec 對位
-  description: Radio.3 (2.4g) 以縮版 scan capture 對位 LLAPI 與 wl escanresults 的 bandwidth
+  command: 'BLOCK=$(ubus-cli "WiFi.Radio.3.getScanResults()" | head -60 | sed -n "/BSSID
+    = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n "s/.*BSSID = \"\([^\"]*\)\".*/\1/p"
+    | head -n1); LLBW=$(printf "%s\n" "$BLOCK" | sed -n "s/.*Bandwidth = \([0-9][0-9]*\).*/\1/p"
+    | head -n1); WLBLOCK=$(wl -i wl2 escanresults | grep -im1 -A20 "BSSID: $BSSID");
+    WLBW=$(printf "%s\n" "$WLBLOCK" | sed -n "s/.*Chanspec: .* \([0-9][0-9]*\)MHz.*/\1/p"
+    | head -n1); LBSSID=$(printf "%s" "$BSSID" | tr "A-F" "a-f"); printf "LlapiBssid24g=%s\nLlapiBandwidth24g=%s\nWlBandwidth24g=%s\n"
+    "$LBSSID" "$LLBW" "$WLBW"'
+  expected: 2.4G getScanResults() 第一個 target 的 Bandwidth 需能與同 BSSID wl 
+    escanresults Chanspec 對位
+  description: Radio.3 (2.4g) 以縮版 scan capture 對位 LLAPI 與 wl escanresults 的 
+    bandwidth
 pass_criteria:
 - field: scan_5g.LlapiBssid5g
   operator: regex

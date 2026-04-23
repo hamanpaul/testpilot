@@ -1,16 +1,15 @@
 id: wifi-llapi-D025-lastdatauplinkrate
-name: "LastDataUplinkRate \u2014 WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+name: "LastDataUplinkRate — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: '1.0'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 25
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: LastDataUplinkRate
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataUplinkRate?"
+hlapi_command: ubus-cli 
+  "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataUplinkRate?"
 llapi_support: Support
 implemented_by: pWHM
 topology:
@@ -151,7 +150,10 @@ steps:
 - id: step4
   action: exec
   target: DUT
-  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); RATE=$(wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*rate of last rx pkt: \([0-9][0-9]*\) kbps.*/\1/p'' | head -n1); [ -n "$RATE" ] && echo DriverLastUplinkRateRounded=$((RATE/100*100))'
+  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+    | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); RATE=$(wl -i wl0 sta_info $STA_MAC
+    | sed -n ''s/.*rate of last rx pkt: \([0-9][0-9]*\) kbps.*/\1/p'' | head -n1);
+    [ -n "$RATE" ] && echo DriverLastUplinkRateRounded=$((RATE/100*100))'
   depends_on: step3
   capture: driver_rate
 pass_criteria:
@@ -170,19 +172,10 @@ pass_criteria:
 - field: result.LastDataUplinkRate
   operator: equals
   reference: driver_rate.DriverLastUplinkRateRounded
-  description: LLAPI uplink rate must match the driver last-rx rate after 100-kbps normalization.
+  description: LLAPI uplink rate must match the driver last-rx rate after 
+    100-kbps normalization.
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataUplinkRate?"'
-  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
-  - 'wl -i wl0 sta_info $STA_MAC | grep "rate of last rx pkt"'
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: '5G official rerun 20260412T174551843336: LastDataUplinkRate=6000 and driver last-rx rounded=6000; workbook H, public HAL comments, and repeated runtime replays all point to the driver last-rx rate as the STA -> AP truth source, so the stale 6G Fail result_reference no longer matches the current workbook-Pass shape.'
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataUplinkRate?"'
+- 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
+  ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+- 'wl -i wl0 sta_info $STA_MAC | grep "rate of last rx pkt"'

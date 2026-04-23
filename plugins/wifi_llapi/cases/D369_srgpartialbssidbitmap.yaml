@@ -2,12 +2,9 @@ id: wifi-llapi-D369-srgpartialbssidbitmap
 name: SRGPartialBSSIDBitmap — WiFi.Radio.{i}.IEEE80211ax.
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 369
   object: WiFi.Radio.{i}.IEEE80211ax.
   api: SRGPartialBSSIDBitmap
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -52,15 +49,15 @@ test_environment: 'Topology:
   getter stayed empty
 
   '
-setup_steps: "1) DUT baseline:\n   - keep wl0 / wl1 / wl2 BSS instances up on the\
-  \ default non-open baseline\n   - confirm `/tmp/wl0_hapd.conf`, `/tmp/wl1_hapd.conf`,\
-  \ and `/tmp/wl2_hapd.conf` exist before the bitmap probe\n2) Setter / getter probe:\n\
+setup_steps: "1) DUT baseline:\n   - keep wl0 / wl1 / wl2 BSS instances up on the
+  default non-open baseline\n   - confirm `/tmp/wl0_hapd.conf`, `/tmp/wl1_hapd.conf`,
+  and `/tmp/wl2_hapd.conf` exist before the bitmap probe\n2) Setter / getter probe:\n\
   \   - read the default SRGPartialBSSIDBitmap getter on Radio.1 / Radio.2 / Radio.3\n\
-  \   - write `SRGPartialBSSIDBitmap=\"1\"` on Radio.1 / Radio.2 and confirm northbound\
-  \ readback changes to `\"1\"`\n   - attempt the same setter on Radio.3 and record\
-  \ the `parameter not found` error\n3) hostapd cross-check:\n   - inspect `/tmp/wl[0-2]_hapd.conf`\
-  \ for `he_spr_srg_partial_bssid=`\n   - every band should keep the line count at\
-  \ `0`, proving the parameter never reaches Broadcom hostapd/runtime config\n4) Cleanup:\n\
+  \   - write `SRGPartialBSSIDBitmap=\"1\"` on Radio.1 / Radio.2 and confirm northbound
+  readback changes to `\"1\"`\n   - attempt the same setter on Radio.3 and record
+  the `parameter not found` error\n3) hostapd cross-check:\n   - inspect `/tmp/wl[0-2]_hapd.conf`
+  for `he_spr_srg_partial_bssid=`\n   - every band should keep the line count at `0`,
+  proving the parameter never reaches Broadcom hostapd/runtime config\n4) Cleanup:\n\
   \   - restore Radio.1 / Radio.2 / Radio.3 back to `SRGPartialBSSIDBitmap=\"\"`\n"
 sta_env_setup: "DUT:\n  wl -i wl0 bss\n  wl -i wl1 bss\n  wl -i wl2 bss\n"
 test_procedure: '1) Read WiFi.Radio.1/2/3.IEEE80211ax.SRGPartialBSSIDBitmap and confirm
@@ -121,10 +118,10 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: OUT=$(ubus-cli "WiFi.Radio.3.IEEE80211ax.SRGPartialBSSIDBitmap=1" 2>&1);
-    printf '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\)
-    - \(.*\))/error=\1/p'; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\)
-    - \(.*\))/message=\2/p'
+  command: OUT=$(ubus-cli "WiFi.Radio.3.IEEE80211ax.SRGPartialBSSIDBitmap=1" 
+    2>&1); printf '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed 
+    (\([0-9][0-9]*\) - \(.*\))/error=\1/p'; printf '%s\n' "$OUT" | sed -n 
+    's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
   depends_on: step5_set_6g
   capture: invalid_24g
 - id: step7_after_5g
@@ -152,21 +149,24 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: grep -c '^he_spr_srg_partial_bssid=' /tmp/wl0_hapd.conf | sed 's/^/HostapdSrgPartialBssidLines=/'
+  command: grep -c '^he_spr_srg_partial_bssid=' /tmp/wl0_hapd.conf | sed 
+    's/^/HostapdSrgPartialBssidLines=/'
   depends_on: step9_after_24g
   capture: cfg_5g_after
 - id: step11_cfg_6g_after
   action: exec
   target: DUT
   band: 6g
-  command: grep -c '^he_spr_srg_partial_bssid=' /tmp/wl1_hapd.conf | sed 's/^/HostapdSrgPartialBssidLines=/'
+  command: grep -c '^he_spr_srg_partial_bssid=' /tmp/wl1_hapd.conf | sed 
+    's/^/HostapdSrgPartialBssidLines=/'
   depends_on: step10_cfg_5g_after
   capture: cfg_6g_after
 - id: step12_cfg_24g_after
   action: exec
   target: DUT
   band: 2.4g
-  command: grep -c '^he_spr_srg_partial_bssid=' /tmp/wl2_hapd.conf | sed 's/^/HostapdSrgPartialBssidLines=/'
+  command: grep -c '^he_spr_srg_partial_bssid=' /tmp/wl2_hapd.conf | sed 
+    's/^/HostapdSrgPartialBssidLines=/'
   depends_on: step11_cfg_6g_after
   capture: cfg_24g_after
 - id: step13_restore_5g
@@ -194,23 +194,28 @@ pass_criteria:
 - field: default_5g.SRGPartialBSSIDBitmap
   operator: equals
   value: ''
-  description: 5G Radio.1 should start with an empty SRGPartialBSSIDBitmap getter.
+  description: 5G Radio.1 should start with an empty SRGPartialBSSIDBitmap 
+    getter.
 - field: default_6g.SRGPartialBSSIDBitmap
   operator: equals
   value: ''
-  description: 6G Radio.2 should start with an empty SRGPartialBSSIDBitmap getter.
+  description: 6G Radio.2 should start with an empty SRGPartialBSSIDBitmap 
+    getter.
 - field: default_24g.SRGPartialBSSIDBitmap
   operator: equals
   value: ''
-  description: 2.4G Radio.3 should start with an empty SRGPartialBSSIDBitmap getter.
+  description: 2.4G Radio.3 should start with an empty SRGPartialBSSIDBitmap 
+    getter.
 - field: set_5g.SRGPartialBSSIDBitmap
   operator: equals
   value: '1'
-  description: 5G Radio.1 should acknowledge the accepted SRGPartialBSSIDBitmap setter.
+  description: 5G Radio.1 should acknowledge the accepted SRGPartialBSSIDBitmap 
+    setter.
 - field: set_6g.SRGPartialBSSIDBitmap
   operator: equals
   value: '1'
-  description: 6G Radio.2 should acknowledge the accepted SRGPartialBSSIDBitmap setter.
+  description: 6G Radio.2 should acknowledge the accepted SRGPartialBSSIDBitmap 
+    setter.
 - field: invalid_24g.error
   operator: equals
   value: '4'
@@ -218,68 +223,72 @@ pass_criteria:
 - field: invalid_24g.message
   operator: contains
   value: parameter not found
-  description: 2.4G Radio.3 should explicitly report parameter not found for SRGPartialBSSIDBitmap.
+  description: 2.4G Radio.3 should explicitly report parameter not found for 
+    SRGPartialBSSIDBitmap.
 - field: after_5g.SRGPartialBSSIDBitmap
   operator: equals
   value: '1'
-  description: 5G Radio.1 getter should read back the written partial-BSSID bitmap.
+  description: 5G Radio.1 getter should read back the written partial-BSSID 
+    bitmap.
 - field: after_6g.SRGPartialBSSIDBitmap
   operator: equals
   value: '1'
-  description: 6G Radio.2 getter should read back the written partial-BSSID bitmap.
+  description: 6G Radio.2 getter should read back the written partial-BSSID 
+    bitmap.
 - field: after_24g.SRGPartialBSSIDBitmap
   operator: equals
   reference: default_24g.SRGPartialBSSIDBitmap
-  description: 2.4G Radio.3 getter should remain at the default empty value after
-    the rejected setter write.
+  description: 2.4G Radio.3 getter should remain at the default empty value 
+    after the rejected setter write.
 - field: cfg_5g_after.HostapdSrgPartialBssidLines
   operator: equals
   value: '0'
-  description: wl0 hostapd config should still expose no he_spr_srg_partial_bssid
-    line after the 5G setter write.
+  description: wl0 hostapd config should still expose no 
+    he_spr_srg_partial_bssid line after the 5G setter write.
 - field: cfg_6g_after.HostapdSrgPartialBssidLines
   operator: equals
   value: '0'
-  description: wl1 hostapd config should still expose no he_spr_srg_partial_bssid
-    line after the 6G setter write.
+  description: wl1 hostapd config should still expose no 
+    he_spr_srg_partial_bssid line after the 6G setter write.
 - field: cfg_24g_after.HostapdSrgPartialBssidLines
   operator: equals
   value: '0'
-  description: wl2 hostapd config should still expose no he_spr_srg_partial_bssid
-    line after the rejected 2.4G setter write.
+  description: wl2 hostapd config should still expose no 
+    he_spr_srg_partial_bssid line after the rejected 2.4G setter write.
 - field: restore_5g.SRGPartialBSSIDBitmap
   operator: equals
   value: ''
-  description: 5G Radio.1 should restore back to an empty SRGPartialBSSIDBitmap value.
+  description: 5G Radio.1 should restore back to an empty SRGPartialBSSIDBitmap 
+    value.
 - field: restore_6g.SRGPartialBSSIDBitmap
   operator: equals
   value: ''
-  description: 6G Radio.2 should restore back to an empty SRGPartialBSSIDBitmap value.
+  description: 6G Radio.2 should restore back to an empty SRGPartialBSSIDBitmap 
+    value.
 - field: restore_24g.SRGPartialBSSIDBitmap
   operator: equals
   value: ''
-  description: 2.4G Radio.3 should restore back to an empty SRGPartialBSSIDBitmap
-    value.
+  description: 2.4G Radio.3 should restore back to an empty 
+    SRGPartialBSSIDBitmap value.
 verification_command:
 - ubus-cli "WiFi.Radio.1.IEEE80211ax.SRGPartialBSSIDBitmap?"
 - ubus-cli WiFi.Radio.1.IEEE80211ax.SRGPartialBSSIDBitmap="1"
 - ubus-cli "WiFi.Radio.1.IEEE80211ax.SRGPartialBSSIDBitmap?"
-- grep -c '^he_spr_srg_partial_bssid=' /tmp/wl0_hapd.conf | sed 's/^/HostapdSrgPartialBssidLines=/'
+- grep -c '^he_spr_srg_partial_bssid=' /tmp/wl0_hapd.conf | sed 
+  's/^/HostapdSrgPartialBssidLines=/'
 - ubus-cli WiFi.Radio.1.IEEE80211ax.SRGPartialBSSIDBitmap=""
 - ubus-cli "WiFi.Radio.2.IEEE80211ax.SRGPartialBSSIDBitmap?"
 - ubus-cli WiFi.Radio.2.IEEE80211ax.SRGPartialBSSIDBitmap="1"
 - ubus-cli "WiFi.Radio.2.IEEE80211ax.SRGPartialBSSIDBitmap?"
-- grep -c '^he_spr_srg_partial_bssid=' /tmp/wl1_hapd.conf | sed 's/^/HostapdSrgPartialBssidLines=/'
+- grep -c '^he_spr_srg_partial_bssid=' /tmp/wl1_hapd.conf | sed 
+  's/^/HostapdSrgPartialBssidLines=/'
 - ubus-cli WiFi.Radio.2.IEEE80211ax.SRGPartialBSSIDBitmap=""
 - ubus-cli "WiFi.Radio.3.IEEE80211ax.SRGPartialBSSIDBitmap?"
-- OUT=$(ubus-cli "WiFi.Radio.3.IEEE80211ax.SRGPartialBSSIDBitmap=1" 2>&1); printf
-  '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p';
-  printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
+- OUT=$(ubus-cli "WiFi.Radio.3.IEEE80211ax.SRGPartialBSSIDBitmap=1" 2>&1); 
+  printf '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed 
+  (\([0-9][0-9]*\) - \(.*\))/error=\1/p'; printf '%s\n' "$OUT" | sed -n 
+  's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
 - ubus-cli "WiFi.Radio.3.IEEE80211ax.SRGPartialBSSIDBitmap?"
-- grep -c '^he_spr_srg_partial_bssid=' /tmp/wl2_hapd.conf | sed 's/^/HostapdSrgPartialBssidLines=/'
+- grep -c '^he_spr_srg_partial_bssid=' /tmp/wl2_hapd.conf | sed 
+  's/^/HostapdSrgPartialBssidLines=/'
 - ubus-cli WiFi.Radio.3.IEEE80211ax.SRGPartialBSSIDBitmap=""
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass

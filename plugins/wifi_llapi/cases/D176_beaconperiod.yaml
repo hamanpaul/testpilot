@@ -5,18 +5,11 @@ source:
   row: 176
   object: WiFi.Radio.{i}.
   api: BeaconPeriod
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: workbook pass intent is setter-backed 100 -> 1000 -> 100 with hostapd beacon_int readback
 topology:
   devices:
     DUT:
@@ -42,7 +35,8 @@ steps:
   target: DUT
   action: exec
   capture: baseline_hostapd_5g
-  command: grep '^beacon_int=' /tmp/wl0_hapd.conf | sed -n '1s/^beacon_int=/BaselineHostapdBeaconPeriod5g=/p'
+  command: grep '^beacon_int=' /tmp/wl0_hapd.conf | sed -n 
+    '1s/^beacon_int=/BaselineHostapdBeaconPeriod5g=/p'
   expected: hostapd beacon_int 基線值應為 100
   depends_on: step1_beacon_baseline_getter_5g
   description: Radio.1 (5g) hostapd config 基線應同步為 100。
@@ -51,8 +45,8 @@ steps:
   action: exec
   capture: set_5g
   command:
-    - printf 'RequestedBeaconPeriod5g=1000\n'
-    - ubus-cli WiFi.Radio.1.BeaconPeriod=1000
+  - printf 'RequestedBeaconPeriod5g=1000\n'
+  - ubus-cli WiFi.Radio.1.BeaconPeriod=1000
   expected: setter 應接受 1000
   depends_on: step2_beacon_baseline_hostapd_5g
   description: Radio.1 (5g) 將 BeaconPeriod 設為 1000。
@@ -68,7 +62,8 @@ steps:
   target: DUT
   action: exec
   capture: after_set_hostapd_5g
-  command: grep '^beacon_int=' /tmp/wl0_hapd.conf | sed -n '1s/^beacon_int=/AfterSetHostapdBeaconPeriod5g=/p'
+  command: grep '^beacon_int=' /tmp/wl0_hapd.conf | sed -n 
+    '1s/^beacon_int=/AfterSetHostapdBeaconPeriod5g=/p'
   expected: hostapd beacon_int 應同步為 1000
   depends_on: step4_beacon_after_set_getter_5g
   description: Radio.1 (5g) hostapd config 應同步切到 1000。
@@ -77,8 +72,8 @@ steps:
   action: exec
   capture: restore_5g
   command:
-    - printf 'RestoreBeaconPeriod5g=100\n'
-    - ubus-cli WiFi.Radio.1.BeaconPeriod=100
+  - printf 'RestoreBeaconPeriod5g=100\n'
+  - ubus-cli WiFi.Radio.1.BeaconPeriod=100
   expected: setter 應接受 restore 100
   depends_on: step5_beacon_after_set_hostapd_5g
   description: Radio.1 (5g) 將 BeaconPeriod restore 回 100。
@@ -94,7 +89,8 @@ steps:
   target: DUT
   action: exec
   capture: after_restore_hostapd_5g
-  command: grep '^beacon_int=' /tmp/wl0_hapd.conf | sed -n '1s/^beacon_int=/AfterRestoreHostapdBeaconPeriod5g=/p'
+  command: grep '^beacon_int=' /tmp/wl0_hapd.conf | sed -n 
+    '1s/^beacon_int=/AfterRestoreHostapdBeaconPeriod5g=/p'
   expected: hostapd beacon_int 應同步回 100
   depends_on: step7_beacon_after_restore_getter_5g
   description: Radio.1 (5g) hostapd config 應同步回到 100。
@@ -109,7 +105,8 @@ steps:
   target: DUT
   action: exec
   capture: baseline_hostapd_6g
-  command: grep '^beacon_int=' /tmp/wl1_hapd.conf | sed -n '1s/^beacon_int=/BaselineHostapdBeaconPeriod6g=/p'
+  command: grep '^beacon_int=' /tmp/wl1_hapd.conf | sed -n 
+    '1s/^beacon_int=/BaselineHostapdBeaconPeriod6g=/p'
   expected: hostapd beacon_int 基線值應為 100
   depends_on: step9_beacon_baseline_getter_6g
   description: Radio.2 (6g) hostapd config 基線應同步為 100。
@@ -118,8 +115,8 @@ steps:
   action: exec
   capture: set_6g
   command:
-    - printf 'RequestedBeaconPeriod6g=1000\n'
-    - ubus-cli WiFi.Radio.2.BeaconPeriod=1000
+  - printf 'RequestedBeaconPeriod6g=1000\n'
+  - ubus-cli WiFi.Radio.2.BeaconPeriod=1000
   expected: setter 應接受 1000
   depends_on: step10_beacon_baseline_hostapd_6g
   description: Radio.2 (6g) 將 BeaconPeriod 設為 1000。
@@ -135,7 +132,8 @@ steps:
   target: DUT
   action: exec
   capture: after_set_hostapd_6g
-  command: grep '^beacon_int=' /tmp/wl1_hapd.conf | sed -n '1s/^beacon_int=/AfterSetHostapdBeaconPeriod6g=/p'
+  command: grep '^beacon_int=' /tmp/wl1_hapd.conf | sed -n 
+    '1s/^beacon_int=/AfterSetHostapdBeaconPeriod6g=/p'
   expected: hostapd beacon_int 應同步為 1000
   depends_on: step12_beacon_after_set_getter_6g
   description: Radio.2 (6g) hostapd config 應同步切到 1000。
@@ -144,8 +142,8 @@ steps:
   action: exec
   capture: restore_6g
   command:
-    - printf 'RestoreBeaconPeriod6g=100\n'
-    - ubus-cli WiFi.Radio.2.BeaconPeriod=100
+  - printf 'RestoreBeaconPeriod6g=100\n'
+  - ubus-cli WiFi.Radio.2.BeaconPeriod=100
   expected: setter 應接受 restore 100
   depends_on: step13_beacon_after_set_hostapd_6g
   description: Radio.2 (6g) 將 BeaconPeriod restore 回 100。
@@ -161,7 +159,8 @@ steps:
   target: DUT
   action: exec
   capture: after_restore_hostapd_6g
-  command: grep '^beacon_int=' /tmp/wl1_hapd.conf | sed -n '1s/^beacon_int=/AfterRestoreHostapdBeaconPeriod6g=/p'
+  command: grep '^beacon_int=' /tmp/wl1_hapd.conf | sed -n 
+    '1s/^beacon_int=/AfterRestoreHostapdBeaconPeriod6g=/p'
   expected: hostapd beacon_int 應同步回 100
   depends_on: step15_beacon_after_restore_getter_6g
   description: Radio.2 (6g) hostapd config 應同步回到 100。
@@ -176,7 +175,8 @@ steps:
   target: DUT
   action: exec
   capture: baseline_hostapd_24g
-  command: grep '^beacon_int=' /tmp/wl2_hapd.conf | sed -n '1s/^beacon_int=/BaselineHostapdBeaconPeriod24g=/p'
+  command: grep '^beacon_int=' /tmp/wl2_hapd.conf | sed -n 
+    '1s/^beacon_int=/BaselineHostapdBeaconPeriod24g=/p'
   expected: hostapd beacon_int 基線值應為 100
   depends_on: step17_beacon_baseline_getter_24g
   description: Radio.3 (2.4g) hostapd config 基線應同步為 100。
@@ -185,8 +185,8 @@ steps:
   action: exec
   capture: set_24g
   command:
-    - printf 'RequestedBeaconPeriod24g=1000\n'
-    - ubus-cli WiFi.Radio.3.BeaconPeriod=1000
+  - printf 'RequestedBeaconPeriod24g=1000\n'
+  - ubus-cli WiFi.Radio.3.BeaconPeriod=1000
   expected: setter 應接受 1000
   depends_on: step18_beacon_baseline_hostapd_24g
   description: Radio.3 (2.4g) 將 BeaconPeriod 設為 1000。
@@ -202,7 +202,8 @@ steps:
   target: DUT
   action: exec
   capture: after_set_hostapd_24g
-  command: grep '^beacon_int=' /tmp/wl2_hapd.conf | sed -n '1s/^beacon_int=/AfterSetHostapdBeaconPeriod24g=/p'
+  command: grep '^beacon_int=' /tmp/wl2_hapd.conf | sed -n 
+    '1s/^beacon_int=/AfterSetHostapdBeaconPeriod24g=/p'
   expected: hostapd beacon_int 應同步為 1000
   depends_on: step20_beacon_after_set_getter_24g
   description: Radio.3 (2.4g) hostapd config 應同步切到 1000。
@@ -211,8 +212,8 @@ steps:
   action: exec
   capture: restore_24g
   command:
-    - printf 'RestoreBeaconPeriod24g=100\n'
-    - ubus-cli WiFi.Radio.3.BeaconPeriod=100
+  - printf 'RestoreBeaconPeriod24g=100\n'
+  - ubus-cli WiFi.Radio.3.BeaconPeriod=100
   expected: setter 應接受 restore 100
   depends_on: step21_beacon_after_set_hostapd_24g
   description: Radio.3 (2.4g) 將 BeaconPeriod restore 回 100。
@@ -228,7 +229,8 @@ steps:
   target: DUT
   action: exec
   capture: after_restore_hostapd_24g
-  command: grep '^beacon_int=' /tmp/wl2_hapd.conf | sed -n '1s/^beacon_int=/AfterRestoreHostapdBeaconPeriod24g=/p'
+  command: grep '^beacon_int=' /tmp/wl2_hapd.conf | sed -n 
+    '1s/^beacon_int=/AfterRestoreHostapdBeaconPeriod24g=/p'
   expected: hostapd beacon_int 應同步回 100
   depends_on: step23_beacon_after_restore_getter_24g
   description: Radio.3 (2.4g) hostapd config 應同步回到 100。

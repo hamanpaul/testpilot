@@ -4,18 +4,11 @@ source:
   row: 478
   object: WiFi.Radio.{i}.Stats.WmmBytesReceived.
   api: AC_BE
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: workbook row 478 keeps this radio-level counter on Pass; workbook H478 uses wl wme_counters AC_BE rx bytes as the driver oracle.
 topology:
   devices:
     DUT:
@@ -34,7 +27,8 @@ steps:
   target: dut
   action: exec
   capture: driver_5g
-  command: wl -i wl0 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmBytesReceived5g="$5}'
+  command: wl -i wl0 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ 
+    {print "DriverWmmBytesReceived5g="$5}'
   expected: wl0 wme_counters 匯出 AC_BE rx bytes
   description: Radio.1 (5g) driver AC_BE rx bytes
 - id: step_6g_direct
@@ -48,7 +42,8 @@ steps:
   target: dut
   action: exec
   capture: driver_6g
-  command: wl -i wl1 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmBytesReceived6g="$5}'
+  command: wl -i wl1 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ 
+    {print "DriverWmmBytesReceived6g="$5}'
   expected: wl1 wme_counters 匯出 AC_BE rx bytes
   description: Radio.2 (6g) driver AC_BE rx bytes
 - id: step_24g_direct
@@ -62,26 +57,30 @@ steps:
   target: dut
   action: exec
   capture: driver_24g
-  command: wl -i wl2 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmBytesReceived24g="$5}'
+  command: wl -i wl2 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ 
+    {print "DriverWmmBytesReceived24g="$5}'
   expected: wl2 wme_counters 匯出 AC_BE rx bytes
   description: Radio.3 (2.4g) driver AC_BE rx bytes
 pass_criteria:
 - field: direct_5g.AC_BE
   operator: equals
   reference: driver_5g.DriverWmmBytesReceived5g
-  description: 5g direct Stats.WmmBytesReceived.AC_BE must match wl0 wme_counters AC_BE rx bytes.
+  description: 5g direct Stats.WmmBytesReceived.AC_BE must match wl0 
+    wme_counters AC_BE rx bytes.
 - field: direct_6g.AC_BE
   operator: equals
   reference: driver_6g.DriverWmmBytesReceived6g
-  description: 6g direct Stats.WmmBytesReceived.AC_BE must match wl1 wme_counters AC_BE rx bytes.
+  description: 6g direct Stats.WmmBytesReceived.AC_BE must match wl1 
+    wme_counters AC_BE rx bytes.
 - field: direct_24g.AC_BE
   operator: equals
   reference: driver_24g.DriverWmmBytesReceived24g
-  description: 2.4g direct Stats.WmmBytesReceived.AC_BE must match wl2 wme_counters AC_BE rx bytes.
+  description: 2.4g direct Stats.WmmBytesReceived.AC_BE must match wl2 
+    wme_counters AC_BE rx bytes.
 verification_command:
-  - 'ubus-cli "WiFi.Radio.1.Stats.WmmBytesReceived.AC_BE?"'
-  - 'wl -i wl0 wme_counters | grep -A2 ''^AC_BE:'' | awk ''/rx frames:/ {print "DriverWmmBytesReceived5g="$5}'''
-  - 'ubus-cli "WiFi.Radio.2.Stats.WmmBytesReceived.AC_BE?"'
-  - 'wl -i wl1 wme_counters | grep -A2 ''^AC_BE:'' | awk ''/rx frames:/ {print "DriverWmmBytesReceived6g="$5}'''
-  - 'ubus-cli "WiFi.Radio.3.Stats.WmmBytesReceived.AC_BE?"'
-  - 'wl -i wl2 wme_counters | grep -A2 ''^AC_BE:'' | awk ''/rx frames:/ {print "DriverWmmBytesReceived24g="$5}'''
+- 'ubus-cli "WiFi.Radio.1.Stats.WmmBytesReceived.AC_BE?"'
+- 'wl -i wl0 wme_counters | grep -A2 ''^AC_BE:'' | awk ''/rx frames:/ {print "DriverWmmBytesReceived5g="$5}'''
+- 'ubus-cli "WiFi.Radio.2.Stats.WmmBytesReceived.AC_BE?"'
+- 'wl -i wl1 wme_counters | grep -A2 ''^AC_BE:'' | awk ''/rx frames:/ {print "DriverWmmBytesReceived6g="$5}'''
+- 'ubus-cli "WiFi.Radio.3.Stats.WmmBytesReceived.AC_BE?"'
+- 'wl -i wl2 wme_counters | grep -A2 ''^AC_BE:'' | awk ''/rx frames:/ {print "DriverWmmBytesReceived24g="$5}'''

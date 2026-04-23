@@ -2,8 +2,6 @@ id: wifi-llapi-d330-multicastpacketsreceived
 name: "MulticastPacketsReceived — WiFi.SSID.{i}.Stats."
 version: '1.0'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 330
   object: WiFi.SSID.{i}.Stats.
   api: MulticastPacketsReceived
@@ -24,28 +22,28 @@ topology:
       transport: serial
       selector: COM0
       config:
-        - iface: 5g
-          mode: sta
-          ssid: TestPilot_BTM
-          key: testpilot6g
-        - iface: 6g
-          mode: sta
-          ssid: TestPilot_BTM
-          key: testpilot6g
-        - iface: 2.4g
-          mode: sta
-          ssid: TestPilot_24G
-          key: ''
+      - iface: 5g
+        mode: sta
+        ssid: TestPilot_BTM
+        key: testpilot6g
+      - iface: 6g
+        mode: sta
+        ssid: TestPilot_BTM
+        key: testpilot6g
+      - iface: 2.4g
+        mode: sta
+        ssid: TestPilot_24G
+        key: ''
   links:
-    - from: STA
-      to: DUT
-      band: 5g
-    - from: STA
-      to: DUT
-      band: 6g
-    - from: STA
-      to: DUT
-      band: 2.4g
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: STA
+    to: DUT
+    band: 6g
+  - from: STA
+    to: DUT
+    band: 2.4g
 test_environment: |
   Topology:
   - DUT: COM1 (AP role)
@@ -125,7 +123,8 @@ steps:
 - id: assoc_5g
   action: exec
   target: DUT
-  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac5g=\1/p'
   capture: assoc_5g
 - id: direct_5g
   action: exec
@@ -136,19 +135,28 @@ steps:
 - id: getssid_5g
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n 's/.*MulticastPacketsReceived = \([0-9][0-9]*\).*/GetSSIDStatsMulticastPacketsReceived5g=\1/p'
+  command: ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n 
+    's/.*MulticastPacketsReceived = 
+    \([0-9][0-9]*\).*/GetSSIDStatsMulticastPacketsReceived5g=\1/p'
   depends_on: direct_5g
   capture: getssid_5g
 - id: driver_5g
   action: exec
   target: DUT
-  command: ap=wl0; w=0; rx=$(wl -i "$ap" if_counters | sed -n 's/.*rxmulti \([0-9][0-9]*\).*/\1/p'); for i in $(ls /sys/class/net | grep -E '^wds0\.0\.[0-9]+$' || true); do v=$(wl -i "$i" if_counters 2>/dev/null | sed -n 's/.*rxmulti \([0-9][0-9]*\).*/\1/p'); w=$((w+${v:-0})); done; b=$(ubus-cli "WiFi.SSID.4.Stats.BroadcastPacketsReceived?" | sed -n 's/.*=\([0-9][0-9]*\).*/\1/p'); t=$(( ${rx:-0}+w )); [ "$t" -gt "${b:-0}" ] && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived5g=%s\n' "$r"
+  command: ap=wl0; w=0; rx=$(wl -i "$ap" if_counters | sed -n 's/.*rxmulti 
+    \([0-9][0-9]*\).*/\1/p'); for i in $(ls /sys/class/net | grep -E 
+    '^wds0\.0\.[0-9]+$' || true); do v=$(wl -i "$i" if_counters 2>/dev/null | 
+    sed -n 's/.*rxmulti \([0-9][0-9]*\).*/\1/p'); w=$((w+${v:-0})); done; 
+    b=$(ubus-cli "WiFi.SSID.4.Stats.BroadcastPacketsReceived?" | sed -n 
+    's/.*=\([0-9][0-9]*\).*/\1/p'); t=$(( ${rx:-0}+w )); [ "$t" -gt "${b:-0}" ] 
+    && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived5g=%s\n' "$r"
   depends_on: getssid_5g
   capture: driver_5g
 - id: assoc_6g
   action: exec
   target: DUT
-  command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+  command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac6g=\1/p'
   capture: assoc_6g
 - id: direct_6g
   action: exec
@@ -159,19 +167,28 @@ steps:
 - id: getssid_6g
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n 's/.*MulticastPacketsReceived = \([0-9][0-9]*\).*/GetSSIDStatsMulticastPacketsReceived6g=\1/p'
+  command: ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n 
+    's/.*MulticastPacketsReceived = 
+    \([0-9][0-9]*\).*/GetSSIDStatsMulticastPacketsReceived6g=\1/p'
   depends_on: direct_6g
   capture: getssid_6g
 - id: driver_6g
   action: exec
   target: DUT
-  command: ap=wl1; w=0; rx=$(wl -i "$ap" if_counters | sed -n 's/.*rxmulti \([0-9][0-9]*\).*/\1/p'); for i in $(ls /sys/class/net | grep -E '^wds1\.0\.[0-9]+$' || true); do v=$(wl -i "$i" if_counters 2>/dev/null | sed -n 's/.*rxmulti \([0-9][0-9]*\).*/\1/p'); w=$((w+${v:-0})); done; b=$(ubus-cli "WiFi.SSID.6.Stats.BroadcastPacketsReceived?" | sed -n 's/.*=\([0-9][0-9]*\).*/\1/p'); t=$(( ${rx:-0}+w )); [ "$t" -gt "${b:-0}" ] && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived6g=%s\n' "$r"
+  command: ap=wl1; w=0; rx=$(wl -i "$ap" if_counters | sed -n 's/.*rxmulti 
+    \([0-9][0-9]*\).*/\1/p'); for i in $(ls /sys/class/net | grep -E 
+    '^wds1\.0\.[0-9]+$' || true); do v=$(wl -i "$i" if_counters 2>/dev/null | 
+    sed -n 's/.*rxmulti \([0-9][0-9]*\).*/\1/p'); w=$((w+${v:-0})); done; 
+    b=$(ubus-cli "WiFi.SSID.6.Stats.BroadcastPacketsReceived?" | sed -n 
+    's/.*=\([0-9][0-9]*\).*/\1/p'); t=$(( ${rx:-0}+w )); [ "$t" -gt "${b:-0}" ] 
+    && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived6g=%s\n' "$r"
   depends_on: getssid_6g
   capture: driver_6g
 - id: assoc_24g
   action: exec
   target: DUT
-  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac24g=\1/p'
   capture: assoc_24g
 - id: direct_24g
   action: exec
@@ -182,78 +199,102 @@ steps:
 - id: getssid_24g
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n 's/.*MulticastPacketsReceived = \([0-9][0-9]*\).*/GetSSIDStatsMulticastPacketsReceived24g=\1/p'
+  command: ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n 
+    's/.*MulticastPacketsReceived = 
+    \([0-9][0-9]*\).*/GetSSIDStatsMulticastPacketsReceived24g=\1/p'
   depends_on: direct_24g
   capture: getssid_24g
 - id: driver_24g
   action: exec
   target: DUT
-  command: ap=wl2; w=0; rx=$(wl -i "$ap" if_counters | sed -n 's/.*rxmulti \([0-9][0-9]*\).*/\1/p'); for i in $(ls /sys/class/net | grep -E '^wds2\.0\.[0-9]+$' || true); do v=$(wl -i "$i" if_counters 2>/dev/null | sed -n 's/.*rxmulti \([0-9][0-9]*\).*/\1/p'); w=$((w+${v:-0})); done; b=$(ubus-cli "WiFi.SSID.8.Stats.BroadcastPacketsReceived?" | sed -n 's/.*=\([0-9][0-9]*\).*/\1/p'); t=$(( ${rx:-0}+w )); [ "$t" -gt "${b:-0}" ] && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived24g=%s\n' "$r"
+  command: ap=wl2; w=0; rx=$(wl -i "$ap" if_counters | sed -n 's/.*rxmulti 
+    \([0-9][0-9]*\).*/\1/p'); for i in $(ls /sys/class/net | grep -E 
+    '^wds2\.0\.[0-9]+$' || true); do v=$(wl -i "$i" if_counters 2>/dev/null | 
+    sed -n 's/.*rxmulti \([0-9][0-9]*\).*/\1/p'); w=$((w+${v:-0})); done; 
+    b=$(ubus-cli "WiFi.SSID.8.Stats.BroadcastPacketsReceived?" | sed -n 
+    's/.*=\([0-9][0-9]*\).*/\1/p'); t=$(( ${rx:-0}+w )); [ "$t" -gt "${b:-0}" ] 
+    && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived24g=%s\n' "$r"
   depends_on: getssid_24g
   capture: driver_24g
 pass_criteria:
 - field: assoc_5g.AssocMac5g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: 5g DUT assoclist must resolve the expected STA MAC 2c:59:17:00:04:85.
+  description: 5g DUT assoclist must resolve the expected STA MAC 
+    2c:59:17:00:04:85.
 - field: direct_5g.MulticastPacketsReceived
   operator: equals
   reference: getssid_5g.GetSSIDStatsMulticastPacketsReceived5g
-  description: 5g direct Stats.MulticastPacketsReceived must match getSSIDStats().MulticastPacketsReceived.
+  description: 5g direct Stats.MulticastPacketsReceived must match 
+    getSSIDStats().MulticastPacketsReceived.
 - field: direct_5g.MulticastPacketsReceived
   operator: equals
   reference: driver_5g.DriverMulticastPacketsReceived5g
-  description: 5g direct Stats.MulticastPacketsReceived must match max((wl0 rxmulti + matching wds rxmulti) - BroadcastPacketsReceived, 0).
+  description: 5g direct Stats.MulticastPacketsReceived must match max((wl0 
+    rxmulti + matching wds rxmulti) - BroadcastPacketsReceived, 0).
 - field: assoc_6g.AssocMac6g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: 6g DUT assoclist must resolve the expected STA MAC 2c:59:17:00:04:86.
+  description: 6g DUT assoclist must resolve the expected STA MAC 
+    2c:59:17:00:04:86.
 - field: direct_6g.MulticastPacketsReceived
   operator: equals
   reference: getssid_6g.GetSSIDStatsMulticastPacketsReceived6g
-  description: 6g direct Stats.MulticastPacketsReceived must match getSSIDStats().MulticastPacketsReceived.
+  description: 6g direct Stats.MulticastPacketsReceived must match 
+    getSSIDStats().MulticastPacketsReceived.
 - field: direct_6g.MulticastPacketsReceived
   operator: equals
   reference: driver_6g.DriverMulticastPacketsReceived6g
-  description: 6g direct Stats.MulticastPacketsReceived must match max((wl1 rxmulti + matching wds rxmulti) - BroadcastPacketsReceived, 0).
+  description: 6g direct Stats.MulticastPacketsReceived must match max((wl1 
+    rxmulti + matching wds rxmulti) - BroadcastPacketsReceived, 0).
 - field: assoc_24g.AssocMac24g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: 2.4g DUT assoclist must resolve the expected STA MAC 2c:59:17:00:04:97.
+  description: 2.4g DUT assoclist must resolve the expected STA MAC 
+    2c:59:17:00:04:97.
 - field: direct_24g.MulticastPacketsReceived
   operator: equals
   reference: getssid_24g.GetSSIDStatsMulticastPacketsReceived24g
-  description: 2.4g direct Stats.MulticastPacketsReceived must match getSSIDStats().MulticastPacketsReceived.
+  description: 2.4g direct Stats.MulticastPacketsReceived must match 
+    getSSIDStats().MulticastPacketsReceived.
 - field: direct_24g.MulticastPacketsReceived
   operator: equals
   reference: driver_24g.DriverMulticastPacketsReceived24g
-  description: 2.4g direct Stats.MulticastPacketsReceived must match max((wl2 rxmulti + matching wds rxmulti) - BroadcastPacketsReceived, 0).
-verification_command: 
-  - '# 5g'
-  - wl -i wl0 assoclist
-  - ubus-cli "WiFi.SSID.4.Stats.MulticastPacketsReceived?"
-  - 'ubus-cli "WiFi.SSID.4.getSSIDStats()" | grep "MulticastPacketsReceived"'
-  - "ap=wl0; w=0; rx=$(wl -i \"$ap\" if_counters | sed -n 's/.*rxmulti \\([0-9][0-9]*\\).*/\\1/p'); for i in $(ls /sys/class/net | grep -E '^wds0\\.0\\.[0-9]+$' || true); do v=$(wl -i \"$i\" if_counters 2>/dev/null | sed -n 's/.*rxmulti \\([0-9][0-9]*\\).*/\\1/p'); w=$((w+${v:-0})); done; b=$(ubus-cli \"WiFi.SSID.4.Stats.BroadcastPacketsReceived?\" | sed -n 's/.*=\\([0-9][0-9]*\\).*/\\1/p'); t=$(( ${rx:-0}+w )); [ \"$t\" -gt \"${b:-0}\" ] && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived5g=%s\\n' \"$r\""
-  - ''
-  - '# 6g'
-  - wl -i wl1 assoclist
-  - ubus-cli "WiFi.SSID.6.Stats.MulticastPacketsReceived?"
-  - 'ubus-cli "WiFi.SSID.6.getSSIDStats()" | grep "MulticastPacketsReceived"'
-  - "ap=wl1; w=0; rx=$(wl -i \"$ap\" if_counters | sed -n 's/.*rxmulti \\([0-9][0-9]*\\).*/\\1/p'); for i in $(ls /sys/class/net | grep -E '^wds1\\.0\\.[0-9]+$' || true); do v=$(wl -i \"$i\" if_counters 2>/dev/null | sed -n 's/.*rxmulti \\([0-9][0-9]*\\).*/\\1/p'); w=$((w+${v:-0})); done; b=$(ubus-cli \"WiFi.SSID.6.Stats.BroadcastPacketsReceived?\" | sed -n 's/.*=\\([0-9][0-9]*\\).*/\\1/p'); t=$(( ${rx:-0}+w )); [ \"$t\" -gt \"${b:-0}\" ] && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived6g=%s\\n' \"$r\""
-  - ''
-  - '# 2.4g'
-  - wl -i wl2 assoclist
-  - ubus-cli "WiFi.SSID.8.Stats.MulticastPacketsReceived?"
-  - 'ubus-cli "WiFi.SSID.8.getSSIDStats()" | grep "MulticastPacketsReceived"'
-  - "ap=wl2; w=0; rx=$(wl -i \"$ap\" if_counters | sed -n 's/.*rxmulti \\([0-9][0-9]*\\).*/\\1/p'); for i in $(ls /sys/class/net | grep -E '^wds2\\.0\\.[0-9]+$' || true); do v=$(wl -i \"$i\" if_counters 2>/dev/null | sed -n 's/.*rxmulti \\([0-9][0-9]*\\).*/\\1/p'); w=$((w+${v:-0})); done; b=$(ubus-cli \"WiFi.SSID.8.Stats.BroadcastPacketsReceived?\" | sed -n 's/.*=\\([0-9][0-9]*\\).*/\\1/p'); t=$(( ${rx:-0}+w )); [ \"$t\" -gt \"${b:-0}\" ] && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived24g=%s\\n' \"$r\""
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'Active 0403 source-backed formula is max((wl if_counters rxmulti + matching wds rxmulti) - BroadcastPacketsReceived, 0), not workbook /proc/net/dev_extstats $9. Isolated rerun 20260411T191442926703 re-proved /proc $9 is stale (5g 0 vs 740/741); follow-up rerun uses the broadcast-subtraction formula.'
+  description: 2.4g direct Stats.MulticastPacketsReceived must match max((wl2 
+    rxmulti + matching wds rxmulti) - BroadcastPacketsReceived, 0).
+verification_command:
+- '# 5g'
+- wl -i wl0 assoclist
+- ubus-cli "WiFi.SSID.4.Stats.MulticastPacketsReceived?"
+- 'ubus-cli "WiFi.SSID.4.getSSIDStats()" | grep "MulticastPacketsReceived"'
+- "ap=wl0; w=0; rx=$(wl -i \"$ap\" if_counters | sed -n 's/.*rxmulti \\([0-9][0-9]*\\\
+  ).*/\\1/p'); for i in $(ls /sys/class/net | grep -E '^wds0\\.0\\.[0-9]+$' || true);
+  do v=$(wl -i \"$i\" if_counters 2>/dev/null | sed -n 's/.*rxmulti \\([0-9][0-9]*\\\
+  ).*/\\1/p'); w=$((w+${v:-0})); done; b=$(ubus-cli \"WiFi.SSID.4.Stats.BroadcastPacketsReceived?\"\
+  \ | sed -n 's/.*=\\([0-9][0-9]*\\).*/\\1/p'); t=$(( ${rx:-0}+w )); [ \"$t\" -gt
+  \"${b:-0}\" ] && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived5g=%s\\\
+  n' \"$r\""
+- ''
+- '# 6g'
+- wl -i wl1 assoclist
+- ubus-cli "WiFi.SSID.6.Stats.MulticastPacketsReceived?"
+- 'ubus-cli "WiFi.SSID.6.getSSIDStats()" | grep "MulticastPacketsReceived"'
+- "ap=wl1; w=0; rx=$(wl -i \"$ap\" if_counters | sed -n 's/.*rxmulti \\([0-9][0-9]*\\\
+  ).*/\\1/p'); for i in $(ls /sys/class/net | grep -E '^wds1\\.0\\.[0-9]+$' || true);
+  do v=$(wl -i \"$i\" if_counters 2>/dev/null | sed -n 's/.*rxmulti \\([0-9][0-9]*\\\
+  ).*/\\1/p'); w=$((w+${v:-0})); done; b=$(ubus-cli \"WiFi.SSID.6.Stats.BroadcastPacketsReceived?\"\
+  \ | sed -n 's/.*=\\([0-9][0-9]*\\).*/\\1/p'); t=$(( ${rx:-0}+w )); [ \"$t\" -gt
+  \"${b:-0}\" ] && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived6g=%s\\\
+  n' \"$r\""
+- ''
+- '# 2.4g'
+- wl -i wl2 assoclist
+- ubus-cli "WiFi.SSID.8.Stats.MulticastPacketsReceived?"
+- 'ubus-cli "WiFi.SSID.8.getSSIDStats()" | grep "MulticastPacketsReceived"'
+- "ap=wl2; w=0; rx=$(wl -i \"$ap\" if_counters | sed -n 's/.*rxmulti \\([0-9][0-9]*\\\
+  ).*/\\1/p'); for i in $(ls /sys/class/net | grep -E '^wds2\\.0\\.[0-9]+$' || true);
+  do v=$(wl -i \"$i\" if_counters 2>/dev/null | sed -n 's/.*rxmulti \\([0-9][0-9]*\\\
+  ).*/\\1/p'); w=$((w+${v:-0})); done; b=$(ubus-cli \"WiFi.SSID.8.Stats.BroadcastPacketsReceived?\"\
+  \ | sed -n 's/.*=\\([0-9][0-9]*\\).*/\\1/p'); t=$(( ${rx:-0}+w )); [ \"$t\" -gt
+  \"${b:-0}\" ] && r=$((t-b)) || r=0; printf 'DriverMulticastPacketsReceived24g=%s\\\
+  n' \"$r\""

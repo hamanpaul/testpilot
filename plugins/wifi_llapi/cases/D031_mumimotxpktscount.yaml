@@ -2,12 +2,9 @@ id: wifi-llapi-D031-mumimotxpktscount
 name: MUMimoTxPktsCount — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 31
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: MUMimoTxPktsCount
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -69,7 +66,8 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac5g=\1/p'
   capture: assoc_5g
 - id: step2_5g
   action: exec
@@ -87,7 +85,8 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac24g=\1/p'
   capture: assoc_24g
 - id: step5_24g
   action: exec
@@ -104,8 +103,8 @@ pass_criteria:
 - field: result_5g.MUMimoTxPktsCount
   operator: equals
   value: 0
-  description: 5G -- stub returns 0; MU-MIMO Tx counter is not hardware-backed on
-    this platform
+  description: 5G -- stub returns 0; MU-MIMO Tx counter is not hardware-backed 
+    on this platform
 - field: assoc_24g.AssocMac24g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -113,29 +112,10 @@ pass_criteria:
 - field: result_24g.MUMimoTxPktsCount
   operator: equals
   value: 0
-  description: 2.4G -- stub returns 0; MU-MIMO Tx counter is not hardware-backed on
-    this platform
+  description: 2.4G -- stub returns 0; MU-MIMO Tx counter is not hardware-backed
+    on this platform
 verification_command:
 - DUT# wl -i wl0 assoclist
 - DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MUMimoTxPktsCount?"
 - DUT# wl -i wl2 assoclist
 - DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MUMimoTxPktsCount?"
-results_reference:
-  v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
-    comment: 'Live evidence (BCM v4.0.3):
-
-      5G: WiFi.AccessPoint.1.AssociatedDevice.1.MUMimoTxPktsCount=0 (stub; no real
-      HW backing)
-
-      2.4G: WiFi.AccessPoint.5.AssociatedDevice.1.MUMimoTxPktsCount=0 (stub; no real
-      HW backing)
-
-      MU-MIMO Tx packet counting is defined in pWHM only; hardware does not populate
-      it.
-
-      Workbook BCM v4.0.3 column: Not Supported / Not Supported.
-
-      '

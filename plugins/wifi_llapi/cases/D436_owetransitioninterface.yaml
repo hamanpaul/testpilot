@@ -2,16 +2,14 @@ id: d436-security-owetransitioninterface
 name: "D436 Security OWETransitionInterface"
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 436
   object: WiFi.AccessPoint.{i}.Security.
   api: OWETransitionInterface
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli WiFi.AccessPoint.1.Security.OWETransitionInterface=DEFAULT_WL1_1
+hlapi_command: ubus-cli 
+  WiFi.AccessPoint.1.Security.OWETransitionInterface=DEFAULT_WL1_1
 llapi_support: Not Supported
 implemented_by: pWHM
 bands: ["5g", "6g", "2.4g"]
@@ -78,19 +76,54 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    OUT1=$(ubus-cli "WiFi.AccessPoint.1.Security.OWETransitionInterface?" 2>&1); C1=$(printf '%s\n' "$OUT1" | grep -c '^WiFi\.AccessPoint\.1\.Security\.OWETransitionInterface='); V1=$(printf '%s\n' "$OUT1" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); OUT2=$(ubus-cli "WiFi.AccessPoint.2.Security.OWETransitionInterface?" 2>&1); C2=$(printf '%s\n' "$OUT2" | grep -c '^WiFi\.AccessPoint\.2\.Security\.OWETransitionInterface='); V2=$(printf '%s\n' "$OUT2" | sed -n 's/^WiFi\.AccessPoint\.2\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); OUT3=$(ubus-cli "WiFi.AccessPoint.3.Security.OWETransitionInterface?" 2>&1); C3=$(printf '%s\n' "$OUT3" | grep -c '^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface='); V3=$(printf '%s\n' "$OUT3" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); OUT4=$(ubus-cli "WiFi.AccessPoint.4.Security.OWETransitionInterface?" 2>&1); C4=$(printf '%s\n' "$OUT4" | grep -c '^WiFi\.AccessPoint\.4\.Security\.OWETransitionInterface='); V4=$(printf '%s\n' "$OUT4" | sed -n 's/^WiFi\.AccessPoint\.4\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); OUT5=$(ubus-cli "WiFi.AccessPoint.5.Security.OWETransitionInterface?" 2>&1); C5=$(printf '%s\n' "$OUT5" | grep -c '^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface='); V5=$(printf '%s\n' "$OUT5" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); OUT6=$(ubus-cli "WiFi.AccessPoint.6.Security.OWETransitionInterface?" 2>&1); C6=$(printf '%s\n' "$OUT6" | grep -c '^WiFi\.AccessPoint\.6\.Security\.OWETransitionInterface='); V6=$(printf '%s\n' "$OUT6" | sed -n 's/^WiFi\.AccessPoint\.6\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); M1=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n 1); M2=$(ubus-cli "WiFi.AccessPoint.2.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.2\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n 1); if [ "$C1" -gt 0 ]; then printf 'BaselineOweTransitionAp1="%s"\n' "$V1"; else echo 'BaselineOweTransitionAp1=ABSENT'; fi; if [ "$C2" -gt 0 ]; then printf 'BaselineOweTransitionAp2="%s"\n' "$V2"; else echo 'BaselineOweTransitionAp2=ABSENT'; fi; if [ "$C3" -gt 0 ]; then printf 'BaselineOweTransitionAp3="%s"\n' "$V3"; else echo 'BaselineOweTransitionAp3=ABSENT'; fi; if [ "$C4" -gt 0 ]; then printf 'BaselineOweTransitionAp4="%s"\n' "$V4"; else echo 'BaselineOweTransitionAp4=ABSENT'; fi; if [ "$C5" -gt 0 ]; then printf 'BaselineOweTransitionAp5="%s"\n' "$V5"; else echo 'BaselineOweTransitionAp5=ABSENT'; fi; if [ "$C6" -gt 0 ]; then printf 'BaselineOweTransitionAp6="%s"\n' "$V6"; else echo 'BaselineOweTransitionAp6=ABSENT'; fi; if [ -n "$M1" ]; then printf 'BaselineModeEnabledAp1=%s\n' "$M1"; else echo 'BaselineModeEnabledAp1=EMPTY'; fi; if [ -n "$M2" ]; then printf 'BaselineModeEnabledAp2=%s\n' "$M2"; else echo 'BaselineModeEnabledAp2=EMPTY'; fi
+    OUT1=$(ubus-cli "WiFi.AccessPoint.1.Security.OWETransitionInterface?" 2>&1); C1=$(printf
+    '%s\n' "$OUT1" | grep -c '^WiFi\.AccessPoint\.1\.Security\.OWETransitionInterface=');
+    V1=$(printf '%s\n' "$OUT1" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); OUT2=$(ubus-cli "WiFi.AccessPoint.2.Security.OWETransitionInterface?"
+    2>&1); C2=$(printf '%s\n' "$OUT2" | grep -c '^WiFi\.AccessPoint\.2\.Security\.OWETransitionInterface=');
+    V2=$(printf '%s\n' "$OUT2" | sed -n 's/^WiFi\.AccessPoint\.2\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); OUT3=$(ubus-cli "WiFi.AccessPoint.3.Security.OWETransitionInterface?"
+    2>&1); C3=$(printf '%s\n' "$OUT3" | grep -c '^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface=');
+    V3=$(printf '%s\n' "$OUT3" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); OUT4=$(ubus-cli "WiFi.AccessPoint.4.Security.OWETransitionInterface?"
+    2>&1); C4=$(printf '%s\n' "$OUT4" | grep -c '^WiFi\.AccessPoint\.4\.Security\.OWETransitionInterface=');
+    V4=$(printf '%s\n' "$OUT4" | sed -n 's/^WiFi\.AccessPoint\.4\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); OUT5=$(ubus-cli "WiFi.AccessPoint.5.Security.OWETransitionInterface?"
+    2>&1); C5=$(printf '%s\n' "$OUT5" | grep -c '^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface=');
+    V5=$(printf '%s\n' "$OUT5" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); OUT6=$(ubus-cli "WiFi.AccessPoint.6.Security.OWETransitionInterface?"
+    2>&1); C6=$(printf '%s\n' "$OUT6" | grep -c '^WiFi\.AccessPoint\.6\.Security\.OWETransitionInterface=');
+    V6=$(printf '%s\n' "$OUT6" | sed -n 's/^WiFi\.AccessPoint\.6\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); M1=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" 2>&1 |
+    sed -n 's/^WiFi\.AccessPoint\.1\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head
+    -n 1); M2=$(ubus-cli "WiFi.AccessPoint.2.Security.ModeEnabled?" 2>&1 | sed -n
+    's/^WiFi\.AccessPoint\.2\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n
+    1); if [ "$C1" -gt 0 ]; then printf 'BaselineOweTransitionAp1="%s"\n' "$V1"; else
+    echo 'BaselineOweTransitionAp1=ABSENT'; fi; if [ "$C2" -gt 0 ]; then printf 'BaselineOweTransitionAp2="%s"\n'
+    "$V2"; else echo 'BaselineOweTransitionAp2=ABSENT'; fi; if [ "$C3" -gt 0 ]; then
+    printf 'BaselineOweTransitionAp3="%s"\n' "$V3"; else echo 'BaselineOweTransitionAp3=ABSENT';
+    fi; if [ "$C4" -gt 0 ]; then printf 'BaselineOweTransitionAp4="%s"\n' "$V4"; else
+    echo 'BaselineOweTransitionAp4=ABSENT'; fi; if [ "$C5" -gt 0 ]; then printf 'BaselineOweTransitionAp5="%s"\n'
+    "$V5"; else echo 'BaselineOweTransitionAp5=ABSENT'; fi; if [ "$C6" -gt 0 ]; then
+    printf 'BaselineOweTransitionAp6="%s"\n' "$V6"; else echo 'BaselineOweTransitionAp6=ABSENT';
+    fi; if [ -n "$M1" ]; then printf 'BaselineModeEnabledAp1=%s\n' "$M1"; else echo
+    'BaselineModeEnabledAp1=EMPTY'; fi; if [ -n "$M2" ]; then printf 'BaselineModeEnabledAp2=%s\n'
+    "$M2"; else echo 'BaselineModeEnabledAp2=EMPTY'; fi
   capture: owe_transition_baseline_all
 - id: step2_owe_transition_set_all
   action: exec
   target: DUT
   band: 5g
   command:
-    - printf 'RequestedOweTransitionAp1=DEFAULT_WL1_1\n'
-    - ubus-cli WiFi.AccessPoint.1.Security.OWETransitionInterface=DEFAULT_WL1_1 >/dev/null 2>&1
-    - printf 'RequestedOweTransitionAp3=DEFAULT_WL0_1\n'
-    - ubus-cli WiFi.AccessPoint.3.Security.OWETransitionInterface=DEFAULT_WL0_1 >/dev/null 2>&1
-    - printf 'RequestedOweTransitionAp5=DEFAULT_WL0_1\n'
-    - ubus-cli WiFi.AccessPoint.5.Security.OWETransitionInterface=DEFAULT_WL0_1 >/dev/null 2>&1
+  - printf 'RequestedOweTransitionAp1=DEFAULT_WL1_1\n'
+  - ubus-cli WiFi.AccessPoint.1.Security.OWETransitionInterface=DEFAULT_WL1_1 
+    >/dev/null 2>&1
+  - printf 'RequestedOweTransitionAp3=DEFAULT_WL0_1\n'
+  - ubus-cli WiFi.AccessPoint.3.Security.OWETransitionInterface=DEFAULT_WL0_1 
+    >/dev/null 2>&1
+  - printf 'RequestedOweTransitionAp5=DEFAULT_WL0_1\n'
+  - ubus-cli WiFi.AccessPoint.5.Security.OWETransitionInterface=DEFAULT_WL0_1 
+    >/dev/null 2>&1
   depends_on: step1_owe_transition_baseline_all
   capture: owe_transition_set_all
 - id: step3_owe_transition_after_set_all
@@ -98,7 +131,33 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    OUT1=$(ubus-cli "WiFi.AccessPoint.1.Security.OWETransitionInterface?" 2>&1); C1=$(printf '%s\n' "$OUT1" | grep -c '^WiFi\.AccessPoint\.1\.Security\.OWETransitionInterface='); V1=$(printf '%s\n' "$OUT1" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); OUT2=$(ubus-cli "WiFi.AccessPoint.2.Security.OWETransitionInterface?" 2>&1); C2=$(printf '%s\n' "$OUT2" | grep -c '^WiFi\.AccessPoint\.2\.Security\.OWETransitionInterface='); V2=$(printf '%s\n' "$OUT2" | sed -n 's/^WiFi\.AccessPoint\.2\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); OUT3=$(ubus-cli "WiFi.AccessPoint.3.Security.OWETransitionInterface?" 2>&1); C3=$(printf '%s\n' "$OUT3" | grep -c '^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface='); V3=$(printf '%s\n' "$OUT3" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); OUT4=$(ubus-cli "WiFi.AccessPoint.4.Security.OWETransitionInterface?" 2>&1); C4=$(printf '%s\n' "$OUT4" | grep -c '^WiFi\.AccessPoint\.4\.Security\.OWETransitionInterface='); V4=$(printf '%s\n' "$OUT4" | sed -n 's/^WiFi\.AccessPoint\.4\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); OUT5=$(ubus-cli "WiFi.AccessPoint.5.Security.OWETransitionInterface?" 2>&1); C5=$(printf '%s\n' "$OUT5" | grep -c '^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface='); V5=$(printf '%s\n' "$OUT5" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); OUT6=$(ubus-cli "WiFi.AccessPoint.6.Security.OWETransitionInterface?" 2>&1); C6=$(printf '%s\n' "$OUT6" | grep -c '^WiFi\.AccessPoint\.6\.Security\.OWETransitionInterface='); V6=$(printf '%s\n' "$OUT6" | sed -n 's/^WiFi\.AccessPoint\.6\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); if [ "$C1" -gt 0 ]; then printf 'AfterSetOweTransitionAp1="%s"\n' "$V1"; else echo 'AfterSetOweTransitionAp1=ABSENT'; fi; if [ "$C2" -gt 0 ]; then printf 'AfterSetOweTransitionAp2="%s"\n' "$V2"; else echo 'AfterSetOweTransitionAp2=ABSENT'; fi; if [ "$C3" -gt 0 ]; then printf 'AfterSetOweTransitionAp3="%s"\n' "$V3"; else echo 'AfterSetOweTransitionAp3=ABSENT'; fi; if [ "$C4" -gt 0 ]; then printf 'AfterSetOweTransitionAp4="%s"\n' "$V4"; else echo 'AfterSetOweTransitionAp4=ABSENT'; fi; if [ "$C5" -gt 0 ]; then printf 'AfterSetOweTransitionAp5="%s"\n' "$V5"; else echo 'AfterSetOweTransitionAp5=ABSENT'; fi; if [ "$C6" -gt 0 ]; then printf 'AfterSetOweTransitionAp6="%s"\n' "$V6"; else echo 'AfterSetOweTransitionAp6=ABSENT'; fi
+    OUT1=$(ubus-cli "WiFi.AccessPoint.1.Security.OWETransitionInterface?" 2>&1); C1=$(printf
+    '%s\n' "$OUT1" | grep -c '^WiFi\.AccessPoint\.1\.Security\.OWETransitionInterface=');
+    V1=$(printf '%s\n' "$OUT1" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); OUT2=$(ubus-cli "WiFi.AccessPoint.2.Security.OWETransitionInterface?"
+    2>&1); C2=$(printf '%s\n' "$OUT2" | grep -c '^WiFi\.AccessPoint\.2\.Security\.OWETransitionInterface=');
+    V2=$(printf '%s\n' "$OUT2" | sed -n 's/^WiFi\.AccessPoint\.2\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); OUT3=$(ubus-cli "WiFi.AccessPoint.3.Security.OWETransitionInterface?"
+    2>&1); C3=$(printf '%s\n' "$OUT3" | grep -c '^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface=');
+    V3=$(printf '%s\n' "$OUT3" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); OUT4=$(ubus-cli "WiFi.AccessPoint.4.Security.OWETransitionInterface?"
+    2>&1); C4=$(printf '%s\n' "$OUT4" | grep -c '^WiFi\.AccessPoint\.4\.Security\.OWETransitionInterface=');
+    V4=$(printf '%s\n' "$OUT4" | sed -n 's/^WiFi\.AccessPoint\.4\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); OUT5=$(ubus-cli "WiFi.AccessPoint.5.Security.OWETransitionInterface?"
+    2>&1); C5=$(printf '%s\n' "$OUT5" | grep -c '^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface=');
+    V5=$(printf '%s\n' "$OUT5" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); OUT6=$(ubus-cli "WiFi.AccessPoint.6.Security.OWETransitionInterface?"
+    2>&1); C6=$(printf '%s\n' "$OUT6" | grep -c '^WiFi\.AccessPoint\.6\.Security\.OWETransitionInterface=');
+    V6=$(printf '%s\n' "$OUT6" | sed -n 's/^WiFi\.AccessPoint\.6\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ "$C1" -gt 0 ]; then printf 'AfterSetOweTransitionAp1="%s"\n'
+    "$V1"; else echo 'AfterSetOweTransitionAp1=ABSENT'; fi; if [ "$C2" -gt 0 ]; then
+    printf 'AfterSetOweTransitionAp2="%s"\n' "$V2"; else echo 'AfterSetOweTransitionAp2=ABSENT';
+    fi; if [ "$C3" -gt 0 ]; then printf 'AfterSetOweTransitionAp3="%s"\n' "$V3"; else
+    echo 'AfterSetOweTransitionAp3=ABSENT'; fi; if [ "$C4" -gt 0 ]; then printf 'AfterSetOweTransitionAp4="%s"\n'
+    "$V4"; else echo 'AfterSetOweTransitionAp4=ABSENT'; fi; if [ "$C5" -gt 0 ]; then
+    printf 'AfterSetOweTransitionAp5="%s"\n' "$V5"; else echo 'AfterSetOweTransitionAp5=ABSENT';
+    fi; if [ "$C6" -gt 0 ]; then printf 'AfterSetOweTransitionAp6="%s"\n' "$V6"; else
+    echo 'AfterSetOweTransitionAp6=ABSENT'; fi
   depends_on: step2_owe_transition_set_all
   capture: owe_transition_after_set_all
 - id: step4_owe_transition_5g_mode_probe
@@ -106,7 +165,26 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    printf 'RequestedModeEnabledAp1=OWE\n'; printf 'RequestedModeEnabledAp2=None\n'; ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=OWE >/dev/null 2>&1; ubus-cli WiFi.AccessPoint.2.Security.ModeEnabled=None >/dev/null 2>&1; sleep 5; MODE1=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n 1); MODE2=$(ubus-cli "WiFi.AccessPoint.2.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.2\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n 1); OWE1=$(ubus-cli "WiFi.AccessPoint.1.Security.OWETransitionInterface?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); printf 'AfterModeEnabledAp1=%s\n' "${MODE1:-EMPTY}"; printf 'AfterModeEnabledAp2=%s\n' "${MODE2:-EMPTY}"; printf 'AfterModeOweTransitionAp1="%s"\n' "$OWE1"; CONF=$(grep -m1 '^owe_transition_ifname=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ -n "$CONF" ]; then printf 'HostapdOweTransitionIfname5g=%s\n' "$CONF"; else echo 'HostapdOweTransitionIfname5g=ABSENT'; fi; ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal >/dev/null 2>&1; ubus-cli WiFi.AccessPoint.2.Security.ModeEnabled=WPA2-Personal >/dev/null 2>&1; sleep 5; REST1=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n 1); REST2=$(ubus-cli "WiFi.AccessPoint.2.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.2\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n 1); printf 'AfterRestoreModeEnabledAp1=%s\n' "${REST1:-EMPTY}"; printf 'AfterRestoreModeEnabledAp2=%s\n' "${REST2:-EMPTY}"
+    printf 'RequestedModeEnabledAp1=OWE\n'; printf 'RequestedModeEnabledAp2=None\n';
+    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=OWE >/dev/null 2>&1; ubus-cli
+    WiFi.AccessPoint.2.Security.ModeEnabled=None >/dev/null 2>&1; sleep 5; MODE1=$(ubus-cli
+    "WiFi.AccessPoint.1.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.ModeEnabled="\([^"]*\)".*/\1/p'
+    | head -n 1); MODE2=$(ubus-cli "WiFi.AccessPoint.2.Security.ModeEnabled?" 2>&1
+    | sed -n 's/^WiFi\.AccessPoint\.2\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' |
+    head -n 1); OWE1=$(ubus-cli "WiFi.AccessPoint.1.Security.OWETransitionInterface?"
+    2>&1 | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); printf 'AfterModeEnabledAp1=%s\n' "${MODE1:-EMPTY}"; printf 'AfterModeEnabledAp2=%s\n'
+    "${MODE2:-EMPTY}"; printf 'AfterModeOweTransitionAp1="%s"\n' "$OWE1"; CONF=$(grep
+    -m1 '^owe_transition_ifname=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- |
+    xargs || true); if [ -n "$CONF" ]; then printf 'HostapdOweTransitionIfname5g=%s\n'
+    "$CONF"; else echo 'HostapdOweTransitionIfname5g=ABSENT'; fi; ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+    >/dev/null 2>&1; ubus-cli WiFi.AccessPoint.2.Security.ModeEnabled=WPA2-Personal
+    >/dev/null 2>&1; sleep 5; REST1=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
+    2>&1 | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.ModeEnabled="\([^"]*\)".*/\1/p'
+    | head -n 1); REST2=$(ubus-cli "WiFi.AccessPoint.2.Security.ModeEnabled?" 2>&1
+    | sed -n 's/^WiFi\.AccessPoint\.2\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' |
+    head -n 1); printf 'AfterRestoreModeEnabledAp1=%s\n' "${REST1:-EMPTY}"; printf
+    'AfterRestoreModeEnabledAp2=%s\n' "${REST2:-EMPTY}"
   depends_on: step3_owe_transition_after_set_all
   capture: owe_transition_5g_mode_probe
 - id: step5_owe_transition_conf_6g
@@ -114,7 +192,14 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.OWETransitionInterface?" 2>&1); COUNT=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface='); VAL=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); if [ "$COUNT" -gt 0 ]; then printf 'AfterConfOweTransitionAp3="%s"\n' "$VAL"; else echo 'AfterConfOweTransitionAp3=ABSENT'; fi; CONF=$(grep -m1 '^owe_transition_ifname=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ -n "$CONF" ]; then printf 'HostapdOweTransitionIfname6g=%s\n' "$CONF"; else echo 'HostapdOweTransitionIfname6g=ABSENT'; fi
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.OWETransitionInterface?" 2>&1); COUNT=$(printf
+    '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface=');
+    VAL=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ "$COUNT" -gt 0 ]; then printf 'AfterConfOweTransitionAp3="%s"\n'
+    "$VAL"; else echo 'AfterConfOweTransitionAp3=ABSENT'; fi; CONF=$(grep -m1 '^owe_transition_ifname='
+    /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ -n "$CONF"
+    ]; then printf 'HostapdOweTransitionIfname6g=%s\n' "$CONF"; else echo 'HostapdOweTransitionIfname6g=ABSENT';
+    fi
   depends_on: step4_owe_transition_5g_mode_probe
   capture: owe_transition_conf_6g
 - id: step6_owe_transition_conf_24g
@@ -122,7 +207,14 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.OWETransitionInterface?" 2>&1); COUNT=$(printf '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface='); VAL=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); if [ "$COUNT" -gt 0 ]; then printf 'AfterConfOweTransitionAp5="%s"\n' "$VAL"; else echo 'AfterConfOweTransitionAp5=ABSENT'; fi; CONF=$(grep -m1 '^owe_transition_ifname=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ -n "$CONF" ]; then printf 'HostapdOweTransitionIfname24g=%s\n' "$CONF"; else echo 'HostapdOweTransitionIfname24g=ABSENT'; fi
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.OWETransitionInterface?" 2>&1); COUNT=$(printf
+    '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface=');
+    VAL=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ "$COUNT" -gt 0 ]; then printf 'AfterConfOweTransitionAp5="%s"\n'
+    "$VAL"; else echo 'AfterConfOweTransitionAp5=ABSENT'; fi; CONF=$(grep -m1 '^owe_transition_ifname='
+    /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); if [ -n "$CONF"
+    ]; then printf 'HostapdOweTransitionIfname24g=%s\n' "$CONF"; else echo 'HostapdOweTransitionIfname24g=ABSENT';
+    fi
   depends_on: step5_owe_transition_conf_6g
   capture: owe_transition_conf_24g
 - id: step7_owe_transition_reset_all
@@ -130,12 +222,12 @@ steps:
   target: DUT
   band: 5g
   command:
-    - printf 'RestoreOweTransitionAp1=""\n'
-    - ubus-cli WiFi.AccessPoint.1.Security.OWETransitionInterface= >/dev/null 2>&1
-    - printf 'RestoreOweTransitionAp3=""\n'
-    - ubus-cli WiFi.AccessPoint.3.Security.OWETransitionInterface= >/dev/null 2>&1
-    - printf 'RestoreOweTransitionAp5=""\n'
-    - ubus-cli WiFi.AccessPoint.5.Security.OWETransitionInterface= >/dev/null 2>&1
+  - printf 'RestoreOweTransitionAp1=""\n'
+  - ubus-cli WiFi.AccessPoint.1.Security.OWETransitionInterface= >/dev/null 2>&1
+  - printf 'RestoreOweTransitionAp3=""\n'
+  - ubus-cli WiFi.AccessPoint.3.Security.OWETransitionInterface= >/dev/null 2>&1
+  - printf 'RestoreOweTransitionAp5=""\n'
+  - ubus-cli WiFi.AccessPoint.5.Security.OWETransitionInterface= >/dev/null 2>&1
   depends_on: step6_owe_transition_conf_24g
   capture: owe_transition_reset_all
 - id: step8_owe_transition_after_reset_all
@@ -143,7 +235,34 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    OUT1=$(ubus-cli "WiFi.AccessPoint.1.Security.OWETransitionInterface?" 2>&1); C1=$(printf '%s\n' "$OUT1" | grep -c '^WiFi\.AccessPoint\.1\.Security\.OWETransitionInterface='); V1=$(printf '%s\n' "$OUT1" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); OUT2=$(ubus-cli "WiFi.AccessPoint.2.Security.OWETransitionInterface?" 2>&1); C2=$(printf '%s\n' "$OUT2" | grep -c '^WiFi\.AccessPoint\.2\.Security\.OWETransitionInterface='); V2=$(printf '%s\n' "$OUT2" | sed -n 's/^WiFi\.AccessPoint\.2\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); OUT3=$(ubus-cli "WiFi.AccessPoint.3.Security.OWETransitionInterface?" 2>&1); C3=$(printf '%s\n' "$OUT3" | grep -c '^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface='); V3=$(printf '%s\n' "$OUT3" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); OUT4=$(ubus-cli "WiFi.AccessPoint.4.Security.OWETransitionInterface?" 2>&1); C4=$(printf '%s\n' "$OUT4" | grep -c '^WiFi\.AccessPoint\.4\.Security\.OWETransitionInterface='); V4=$(printf '%s\n' "$OUT4" | sed -n 's/^WiFi\.AccessPoint\.4\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); OUT5=$(ubus-cli "WiFi.AccessPoint.5.Security.OWETransitionInterface?" 2>&1); C5=$(printf '%s\n' "$OUT5" | grep -c '^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface='); V5=$(printf '%s\n' "$OUT5" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); OUT6=$(ubus-cli "WiFi.AccessPoint.6.Security.OWETransitionInterface?" 2>&1); C6=$(printf '%s\n' "$OUT6" | grep -c '^WiFi\.AccessPoint\.6\.Security\.OWETransitionInterface='); V6=$(printf '%s\n' "$OUT6" | sed -n 's/^WiFi\.AccessPoint\.6\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p' | head -n 1); if [ "$C1" -gt 0 ]; then printf 'AfterResetOweTransitionAp1="%s"\n' "$V1"; else echo 'AfterResetOweTransitionAp1=ABSENT'; fi; if [ "$C2" -gt 0 ]; then printf 'AfterResetOweTransitionAp2="%s"\n' "$V2"; else echo 'AfterResetOweTransitionAp2=ABSENT'; fi; if [ "$C3" -gt 0 ]; then printf 'AfterResetOweTransitionAp3="%s"\n' "$V3"; else echo 'AfterResetOweTransitionAp3=ABSENT'; fi; if [ "$C4" -gt 0 ]; then printf 'AfterResetOweTransitionAp4="%s"\n' "$V4"; else echo 'AfterResetOweTransitionAp4=ABSENT'; fi; if [ "$C5" -gt 0 ]; then printf 'AfterResetOweTransitionAp5="%s"\n' "$V5"; else echo 'AfterResetOweTransitionAp5=ABSENT'; fi; if [ "$C6" -gt 0 ]; then printf 'AfterResetOweTransitionAp6="%s"\n' "$V6"; else echo 'AfterResetOweTransitionAp6=ABSENT'; fi
+    OUT1=$(ubus-cli "WiFi.AccessPoint.1.Security.OWETransitionInterface?" 2>&1); C1=$(printf
+    '%s\n' "$OUT1" | grep -c '^WiFi\.AccessPoint\.1\.Security\.OWETransitionInterface=');
+    V1=$(printf '%s\n' "$OUT1" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); OUT2=$(ubus-cli "WiFi.AccessPoint.2.Security.OWETransitionInterface?"
+    2>&1); C2=$(printf '%s\n' "$OUT2" | grep -c '^WiFi\.AccessPoint\.2\.Security\.OWETransitionInterface=');
+    V2=$(printf '%s\n' "$OUT2" | sed -n 's/^WiFi\.AccessPoint\.2\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); OUT3=$(ubus-cli "WiFi.AccessPoint.3.Security.OWETransitionInterface?"
+    2>&1); C3=$(printf '%s\n' "$OUT3" | grep -c '^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface=');
+    V3=$(printf '%s\n' "$OUT3" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); OUT4=$(ubus-cli "WiFi.AccessPoint.4.Security.OWETransitionInterface?"
+    2>&1); C4=$(printf '%s\n' "$OUT4" | grep -c '^WiFi\.AccessPoint\.4\.Security\.OWETransitionInterface=');
+    V4=$(printf '%s\n' "$OUT4" | sed -n 's/^WiFi\.AccessPoint\.4\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); OUT5=$(ubus-cli "WiFi.AccessPoint.5.Security.OWETransitionInterface?"
+    2>&1); C5=$(printf '%s\n' "$OUT5" | grep -c '^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface=');
+    V5=$(printf '%s\n' "$OUT5" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); OUT6=$(ubus-cli "WiFi.AccessPoint.6.Security.OWETransitionInterface?"
+    2>&1); C6=$(printf '%s\n' "$OUT6" | grep -c '^WiFi\.AccessPoint\.6\.Security\.OWETransitionInterface=');
+    V6=$(printf '%s\n' "$OUT6" | sed -n 's/^WiFi\.AccessPoint\.6\.Security\.OWETransitionInterface="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ "$C1" -gt 0 ]; then printf 'AfterResetOweTransitionAp1="%s"\n'
+    "$V1"; else echo 'AfterResetOweTransitionAp1=ABSENT'; fi; if [ "$C2" -gt 0 ];
+    then printf 'AfterResetOweTransitionAp2="%s"\n' "$V2"; else echo 'AfterResetOweTransitionAp2=ABSENT';
+    fi; if [ "$C3" -gt 0 ]; then printf 'AfterResetOweTransitionAp3="%s"\n' "$V3";
+    else echo 'AfterResetOweTransitionAp3=ABSENT'; fi; if [ "$C4" -gt 0 ]; then printf
+    'AfterResetOweTransitionAp4="%s"\n' "$V4"; else echo 'AfterResetOweTransitionAp4=ABSENT';
+    fi; if [ "$C5" -gt 0 ]; then printf 'AfterResetOweTransitionAp5="%s"\n' "$V5";
+    else echo 'AfterResetOweTransitionAp5=ABSENT'; fi; if [ "$C6" -gt 0 ]; then printf
+    'AfterResetOweTransitionAp6="%s"\n' "$V6"; else echo 'AfterResetOweTransitionAp6=ABSENT';
+    fi
   depends_on: step7_owe_transition_reset_all
   capture: owe_transition_after_reset_all
 
@@ -195,7 +314,8 @@ pass_criteria:
 - field: owe_transition_after_set_all.AfterSetOweTransitionAp1
   operator: equals
   value: '"DEFAULT_WL1_1"'
-  description: AP1 getter should read back the configured 5G transition interface.
+  description: AP1 getter should read back the configured 5G transition 
+    interface.
 - field: owe_transition_after_set_all.AfterSetOweTransitionAp2
   operator: equals
   value: '""'
@@ -203,7 +323,8 @@ pass_criteria:
 - field: owe_transition_after_set_all.AfterSetOweTransitionAp3
   operator: equals
   value: '"DEFAULT_WL0_1"'
-  description: AP3 getter should read back the configured 6G transition interface.
+  description: AP3 getter should read back the configured 6G transition 
+    interface.
 - field: owe_transition_after_set_all.AfterSetOweTransitionAp4
   operator: equals
   value: '""'
@@ -211,7 +332,8 @@ pass_criteria:
 - field: owe_transition_after_set_all.AfterSetOweTransitionAp5
   operator: equals
   value: '"DEFAULT_WL0_1"'
-  description: AP5 getter should read back the configured 2.4G transition interface.
+  description: AP5 getter should read back the configured 2.4G transition 
+    interface.
 - field: owe_transition_after_set_all.AfterSetOweTransitionAp6
   operator: equals
   value: '""'
@@ -227,47 +349,58 @@ pass_criteria:
 - field: owe_transition_5g_mode_probe.AfterModeOweTransitionAp1
   operator: equals
   value: '"DEFAULT_WL1_1"'
-  description: AP1 should still read back the configured transition interface during the 5G mode probe.
+  description: AP1 should still read back the configured transition interface 
+    during the 5G mode probe.
 - field: owe_transition_5g_mode_probe.HostapdOweTransitionIfname5g
   operator: equals
   value: ABSENT
-  description: wl0 hostapd should still expose no owe_transition_ifname after the 5G workbook probe.
+  description: wl0 hostapd should still expose no owe_transition_ifname after 
+    the 5G workbook probe.
 - field: owe_transition_5g_mode_probe.AfterModeOweTransitionAp1
   operator: not_equals
   reference: owe_transition_5g_mode_probe.HostapdOweTransitionIfname5g
-  description: AP1 getter accepts the transition interface even though wl0 hostapd stays absent.
+  description: AP1 getter accepts the transition interface even though wl0 
+    hostapd stays absent.
 - field: owe_transition_5g_mode_probe.AfterRestoreModeEnabledAp1
   operator: equals
   reference: owe_transition_baseline_all.BaselineModeEnabledAp1
-  description: AP1 mode should restore to the baseline value after the workbook probe.
+  description: AP1 mode should restore to the baseline value after the workbook 
+    probe.
 - field: owe_transition_5g_mode_probe.AfterRestoreModeEnabledAp2
   operator: equals
   reference: owe_transition_baseline_all.BaselineModeEnabledAp2
-  description: AP2 mode should restore to the baseline value after the workbook probe.
+  description: AP2 mode should restore to the baseline value after the workbook 
+    probe.
 - field: owe_transition_conf_6g.AfterConfOweTransitionAp3
   operator: equals
   value: '"DEFAULT_WL0_1"'
-  description: AP3 getter should still read back the configured 6G transition interface.
+  description: AP3 getter should still read back the configured 6G transition 
+    interface.
 - field: owe_transition_conf_6g.HostapdOweTransitionIfname6g
   operator: equals
   value: ABSENT
-  description: wl1 hostapd should expose no owe_transition_ifname after the 6G setter.
+  description: wl1 hostapd should expose no owe_transition_ifname after the 6G 
+    setter.
 - field: owe_transition_conf_6g.AfterConfOweTransitionAp3
   operator: not_equals
   reference: owe_transition_conf_6g.HostapdOweTransitionIfname6g
-  description: AP3 getter accepts the transition interface even though wl1 hostapd stays absent.
+  description: AP3 getter accepts the transition interface even though wl1 
+    hostapd stays absent.
 - field: owe_transition_conf_24g.AfterConfOweTransitionAp5
   operator: equals
   value: '"DEFAULT_WL0_1"'
-  description: AP5 getter should still read back the configured 2.4G transition interface.
+  description: AP5 getter should still read back the configured 2.4G transition 
+    interface.
 - field: owe_transition_conf_24g.HostapdOweTransitionIfname24g
   operator: equals
   value: ABSENT
-  description: wl2 hostapd should expose no owe_transition_ifname after the 2.4G setter.
+  description: wl2 hostapd should expose no owe_transition_ifname after the 2.4G
+    setter.
 - field: owe_transition_conf_24g.AfterConfOweTransitionAp5
   operator: not_equals
   reference: owe_transition_conf_24g.HostapdOweTransitionIfname24g
-  description: AP5 getter accepts the transition interface even though wl2 hostapd stays absent.
+  description: AP5 getter accepts the transition interface even though wl2 
+    hostapd stays absent.
 - field: owe_transition_after_reset_all.AfterResetOweTransitionAp1
   operator: equals
   value: '""'
@@ -294,21 +427,15 @@ pass_criteria:
   description: AP6 should stay empty after the restore path.
 
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.Security.OWETransitionInterface?"'
-  - 'ubus-cli "WiFi.AccessPoint.2.Security.OWETransitionInterface?"'
-  - 'ubus-cli "WiFi.AccessPoint.3.Security.OWETransitionInterface?"'
-  - 'ubus-cli "WiFi.AccessPoint.4.Security.OWETransitionInterface?"'
-  - 'ubus-cli "WiFi.AccessPoint.5.Security.OWETransitionInterface?"'
-  - 'ubus-cli "WiFi.AccessPoint.6.Security.OWETransitionInterface?"'
-  - 'ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"'
-  - 'ubus-cli "WiFi.AccessPoint.2.Security.ModeEnabled?"'
-  - 'grep -m1 ''^owe_transition_ifname='' /tmp/wl0_hapd.conf || true'
-  - 'grep -m1 ''^owe_transition_ifname='' /tmp/wl1_hapd.conf || true'
-  - 'grep -m1 ''^owe_transition_ifname='' /tmp/wl2_hapd.conf || true'
+- 'ubus-cli "WiFi.AccessPoint.1.Security.OWETransitionInterface?"'
+- 'ubus-cli "WiFi.AccessPoint.2.Security.OWETransitionInterface?"'
+- 'ubus-cli "WiFi.AccessPoint.3.Security.OWETransitionInterface?"'
+- 'ubus-cli "WiFi.AccessPoint.4.Security.OWETransitionInterface?"'
+- 'ubus-cli "WiFi.AccessPoint.5.Security.OWETransitionInterface?"'
+- 'ubus-cli "WiFi.AccessPoint.6.Security.OWETransitionInterface?"'
+- 'ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"'
+- 'ubus-cli "WiFi.AccessPoint.2.Security.ModeEnabled?"'
+- 'grep -m1 ''^owe_transition_ifname='' /tmp/wl0_hapd.conf || true'
+- 'grep -m1 ''^owe_transition_ifname='' /tmp/wl1_hapd.conf || true'
+- 'grep -m1 ''^owe_transition_ifname='' /tmp/wl2_hapd.conf || true'
 
-results_reference:
-  v4.0.3:
-    5g: Not Supported
-    6g: Not Supported
-    2.4g: Not Supported
-    comment: '2026-04-15 row-436 replay showed AP1/AP3/AP5 accept and read back `OWETransitionInterface`; wl1 and wl2 still expose no `owe_transition_ifname`, while wl0 now projects `wl1` during the 5G OWE/None pair step. The case stays workbook-faithful and therefore fails against the current DUT, preserving the row-436 `Not Supported` expectation.'

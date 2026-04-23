@@ -2,12 +2,9 @@ id: wifi-llapi-D098-wdsenable
 name: WDSEnable — WiFi.AccessPoint.{i}.
 version: '1.0'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 98
   object: WiFi.AccessPoint.{i}.
   api: WDSEnable
-  baseline: 0310-BGW720-300
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -55,47 +52,56 @@ steps:
   action: exec
   target: DUT
   command:
-    - echo "Baseline5g=$(ubus-cli 'WiFi.AccessPoint.1.WDSEnable?' 2>/dev/null | grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
-    - echo "DriverBaseline5g=$(wl -i wl0 dwds 2>/dev/null)"
-    - ubus-cli WiFi.AccessPoint.1.WDSEnable=1
-    - sleep 15
-    - echo "AfterSet5g=$(ubus-cli 'WiFi.AccessPoint.1.WDSEnable?' 2>/dev/null | grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
-    - echo "DriverAfterSet5g=$(wl -i wl0 dwds 2>/dev/null)"
-    - ubus-cli WiFi.AccessPoint.1.WDSEnable=0
-    - sleep 15
-    - echo "AfterRestore5g=$(ubus-cli 'WiFi.AccessPoint.1.WDSEnable?' 2>/dev/null | grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
-    - echo "DriverAfterRestore5g=$(wl -i wl0 dwds 2>/dev/null)"
+  - echo "Baseline5g=$(ubus-cli 'WiFi.AccessPoint.1.WDSEnable?' 2>/dev/null | 
+    grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
+  - echo "DriverBaseline5g=$(wl -i wl0 dwds 2>/dev/null)"
+  - ubus-cli WiFi.AccessPoint.1.WDSEnable=1
+  - sleep 15
+  - echo "AfterSet5g=$(ubus-cli 'WiFi.AccessPoint.1.WDSEnable?' 2>/dev/null | 
+    grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
+  - echo "DriverAfterSet5g=$(wl -i wl0 dwds 2>/dev/null)"
+  - ubus-cli WiFi.AccessPoint.1.WDSEnable=0
+  - sleep 15
+  - echo "AfterRestore5g=$(ubus-cli 'WiFi.AccessPoint.1.WDSEnable?' 2>/dev/null 
+    | grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
+  - echo "DriverAfterRestore5g=$(wl -i wl0 dwds 2>/dev/null)"
   capture: wds_5g
 - id: step_6g_setter_roundtrip
   action: exec
   target: DUT
   command:
-    - echo "Baseline6g=$(ubus-cli 'WiFi.AccessPoint.3.WDSEnable?' 2>/dev/null | grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
-    - echo "DriverBaseline6g=$(wl -i wl1 dwds 2>/dev/null)"
-    - ubus-cli WiFi.AccessPoint.3.WDSEnable=1
-    - sleep 15
-    - echo "AfterSet6g=$(ubus-cli 'WiFi.AccessPoint.3.WDSEnable?' 2>/dev/null | grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
-    - echo "DriverAfterSet6g=$(wl -i wl1 dwds 2>/dev/null)"
-    - ubus-cli WiFi.AccessPoint.3.WDSEnable=0
-    - sleep 15
-    - echo "AfterRestore6g=$(ubus-cli 'WiFi.AccessPoint.3.WDSEnable?' 2>/dev/null | grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
-    - echo "DriverAfterRestore6g=$(wl -i wl1 dwds 2>/dev/null)"
+  - echo "Baseline6g=$(ubus-cli 'WiFi.AccessPoint.3.WDSEnable?' 2>/dev/null | 
+    grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
+  - echo "DriverBaseline6g=$(wl -i wl1 dwds 2>/dev/null)"
+  - ubus-cli WiFi.AccessPoint.3.WDSEnable=1
+  - sleep 15
+  - echo "AfterSet6g=$(ubus-cli 'WiFi.AccessPoint.3.WDSEnable?' 2>/dev/null | 
+    grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
+  - echo "DriverAfterSet6g=$(wl -i wl1 dwds 2>/dev/null)"
+  - ubus-cli WiFi.AccessPoint.3.WDSEnable=0
+  - sleep 15
+  - echo "AfterRestore6g=$(ubus-cli 'WiFi.AccessPoint.3.WDSEnable?' 2>/dev/null 
+    | grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
+  - echo "DriverAfterRestore6g=$(wl -i wl1 dwds 2>/dev/null)"
   capture: wds_6g
   depends_on: step_5g_setter_roundtrip
 - id: step_24g_setter_roundtrip
   action: exec
   target: DUT
   command:
-    - echo "Baseline24g=$(ubus-cli 'WiFi.AccessPoint.5.WDSEnable?' 2>/dev/null | grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
-    - echo "DriverBaseline24g=$(wl -i wl2 dwds 2>/dev/null)"
-    - ubus-cli WiFi.AccessPoint.5.WDSEnable=1
-    - sleep 15
-    - echo "AfterSet24g=$(ubus-cli 'WiFi.AccessPoint.5.WDSEnable?' 2>/dev/null | grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
-    - echo "DriverAfterSet24g=$(wl -i wl2 dwds 2>/dev/null)"
-    - ubus-cli WiFi.AccessPoint.5.WDSEnable=0
-    - sleep 15
-    - echo "AfterRestore24g=$(ubus-cli 'WiFi.AccessPoint.5.WDSEnable?' 2>/dev/null | grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
-    - echo "DriverAfterRestore24g=$(wl -i wl2 dwds 2>/dev/null)"
+  - echo "Baseline24g=$(ubus-cli 'WiFi.AccessPoint.5.WDSEnable?' 2>/dev/null | 
+    grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
+  - echo "DriverBaseline24g=$(wl -i wl2 dwds 2>/dev/null)"
+  - ubus-cli WiFi.AccessPoint.5.WDSEnable=1
+  - sleep 15
+  - echo "AfterSet24g=$(ubus-cli 'WiFi.AccessPoint.5.WDSEnable?' 2>/dev/null | 
+    grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
+  - echo "DriverAfterSet24g=$(wl -i wl2 dwds 2>/dev/null)"
+  - ubus-cli WiFi.AccessPoint.5.WDSEnable=0
+  - sleep 15
+  - echo "AfterRestore24g=$(ubus-cli 'WiFi.AccessPoint.5.WDSEnable?' 2>/dev/null
+    | grep -o 'WDSEnable=[0-9]*' | cut -d= -f2)"
+  - echo "DriverAfterRestore24g=$(wl -i wl2 dwds 2>/dev/null)"
   capture: wds_24g
   depends_on: step_6g_setter_roundtrip
 pass_criteria:
@@ -172,13 +178,6 @@ pass_criteria:
   value: '0'
   description: 2.4G driver dwds=0 after restore
 verification_command:
-  - 'wl -i wl0 dwds   # 5G driver WDS flag'
-  - 'wl -i wl1 dwds   # 6G driver WDS flag'
-  - 'wl -i wl2 dwds   # 2.4G driver WDS flag'
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'All 3 bands: setter WDSEnable=1 accepted, getter reads 1, driver dwds=1; restore WDSEnable=0 returns to baseline
-      0/dwds=0. BSS restart noise (wds0.x.1, dhd_flow_rings) is expected during toggle.'
+- 'wl -i wl0 dwds   # 5G driver WDS flag'
+- 'wl -i wl1 dwds   # 6G driver WDS flag'
+- 'wl -i wl2 dwds   # 2.4G driver WDS flag'

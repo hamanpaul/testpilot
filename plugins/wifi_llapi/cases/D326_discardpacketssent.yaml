@@ -2,8 +2,6 @@ id: wifi-llapi-d326-discardpacketssent
 name: "DiscardPacketsSent — WiFi.SSID.{i}.Stats."
 version: '1.0'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 326
   object: WiFi.SSID.{i}.Stats.
   api: DiscardPacketsSent
@@ -24,28 +22,28 @@ topology:
       transport: serial
       selector: COM0
       config:
-        - iface: 5g
-          mode: sta
-          ssid: TestPilot_BTM
-          key: testpilot6g
-        - iface: 6g
-          mode: sta
-          ssid: TestPilot_BTM
-          key: testpilot6g
-        - iface: 2.4g
-          mode: sta
-          ssid: TestPilot_24G
-          key: ''
+      - iface: 5g
+        mode: sta
+        ssid: TestPilot_BTM
+        key: testpilot6g
+      - iface: 6g
+        mode: sta
+        ssid: TestPilot_BTM
+        key: testpilot6g
+      - iface: 2.4g
+        mode: sta
+        ssid: TestPilot_24G
+        key: ''
   links:
-    - from: STA
-      to: DUT
-      band: 5g
-    - from: STA
-      to: DUT
-      band: 6g
-    - from: STA
-      to: DUT
-      band: 2.4g
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: STA
+    to: DUT
+    band: 6g
+  - from: STA
+    to: DUT
+    band: 2.4g
 test_environment: |
   Topology:
   - DUT: COM1 (AP role)
@@ -125,7 +123,8 @@ steps:
 - id: assoc_5g
   action: exec
   target: DUT
-  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac5g=\1/p'
   capture: assoc_5g
 - id: direct_5g
   action: exec
@@ -136,19 +135,23 @@ steps:
 - id: getssid_5g
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n 's/.*DiscardPacketsSent = \([0-9][0-9]*\).*/GetSSIDStatsDiscardPacketsSent5g=\1/p'
+  command: ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n 
+    's/.*DiscardPacketsSent = 
+    \([0-9][0-9]*\).*/GetSSIDStatsDiscardPacketsSent5g=\1/p'
   depends_on: direct_5g
   capture: getssid_5g
 - id: driver_5g
   action: exec
   target: DUT
-  command: wl -i wl0 if_counters | sed -n 's/.*txdiscard \([0-9][0-9]*\).*/DriverDiscardPacketsSent5g=\1/p'
+  command: wl -i wl0 if_counters | sed -n 's/.*txdiscard 
+    \([0-9][0-9]*\).*/DriverDiscardPacketsSent5g=\1/p'
   depends_on: getssid_5g
   capture: driver_5g
 - id: assoc_6g
   action: exec
   target: DUT
-  command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+  command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac6g=\1/p'
   capture: assoc_6g
 - id: direct_6g
   action: exec
@@ -159,19 +162,23 @@ steps:
 - id: getssid_6g
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n 's/.*DiscardPacketsSent = \([0-9][0-9]*\).*/GetSSIDStatsDiscardPacketsSent6g=\1/p'
+  command: ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n 
+    's/.*DiscardPacketsSent = 
+    \([0-9][0-9]*\).*/GetSSIDStatsDiscardPacketsSent6g=\1/p'
   depends_on: direct_6g
   capture: getssid_6g
 - id: driver_6g
   action: exec
   target: DUT
-  command: wl -i wl1 if_counters | sed -n 's/.*txdiscard \([0-9][0-9]*\).*/DriverDiscardPacketsSent6g=\1/p'
+  command: wl -i wl1 if_counters | sed -n 's/.*txdiscard 
+    \([0-9][0-9]*\).*/DriverDiscardPacketsSent6g=\1/p'
   depends_on: getssid_6g
   capture: driver_6g
 - id: assoc_24g
   action: exec
   target: DUT
-  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac24g=\1/p'
   capture: assoc_24g
 - id: direct_24g
   action: exec
@@ -182,78 +189,82 @@ steps:
 - id: getssid_24g
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n 's/.*DiscardPacketsSent = \([0-9][0-9]*\).*/GetSSIDStatsDiscardPacketsSent24g=\1/p'
+  command: ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n 
+    's/.*DiscardPacketsSent = 
+    \([0-9][0-9]*\).*/GetSSIDStatsDiscardPacketsSent24g=\1/p'
   depends_on: direct_24g
   capture: getssid_24g
 - id: driver_24g
   action: exec
   target: DUT
-  command: wl -i wl2 if_counters | sed -n 's/.*txdiscard \([0-9][0-9]*\).*/DriverDiscardPacketsSent24g=\1/p'
+  command: wl -i wl2 if_counters | sed -n 's/.*txdiscard 
+    \([0-9][0-9]*\).*/DriverDiscardPacketsSent24g=\1/p'
   depends_on: getssid_24g
   capture: driver_24g
 pass_criteria:
 - field: assoc_5g.AssocMac5g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: 5g DUT assoclist must resolve the expected STA MAC 2c:59:17:00:04:85.
+  description: 5g DUT assoclist must resolve the expected STA MAC 
+    2c:59:17:00:04:85.
 - field: direct_5g.DiscardPacketsSent
   operator: equals
   reference: getssid_5g.GetSSIDStatsDiscardPacketsSent5g
-  description: 5g direct Stats.DiscardPacketsSent must match getSSIDStats().DiscardPacketsSent.
+  description: 5g direct Stats.DiscardPacketsSent must match 
+    getSSIDStats().DiscardPacketsSent.
 - field: direct_5g.DiscardPacketsSent
   operator: equals
   reference: driver_5g.DriverDiscardPacketsSent5g
-  description: 5g direct Stats.DiscardPacketsSent must match wl0 if_counters txdiscard.
+  description: 5g direct Stats.DiscardPacketsSent must match wl0 if_counters 
+    txdiscard.
 - field: assoc_6g.AssocMac6g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: 6g DUT assoclist must resolve the expected STA MAC 2c:59:17:00:04:86.
+  description: 6g DUT assoclist must resolve the expected STA MAC 
+    2c:59:17:00:04:86.
 - field: direct_6g.DiscardPacketsSent
   operator: equals
   reference: getssid_6g.GetSSIDStatsDiscardPacketsSent6g
-  description: 6g direct Stats.DiscardPacketsSent must match getSSIDStats().DiscardPacketsSent.
+  description: 6g direct Stats.DiscardPacketsSent must match 
+    getSSIDStats().DiscardPacketsSent.
 - field: direct_6g.DiscardPacketsSent
   operator: equals
   reference: driver_6g.DriverDiscardPacketsSent6g
-  description: 6g direct Stats.DiscardPacketsSent must match wl1 if_counters txdiscard.
+  description: 6g direct Stats.DiscardPacketsSent must match wl1 if_counters 
+    txdiscard.
 - field: assoc_24g.AssocMac24g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: 2.4g DUT assoclist must resolve the expected STA MAC 2c:59:17:00:04:97.
+  description: 2.4g DUT assoclist must resolve the expected STA MAC 
+    2c:59:17:00:04:97.
 - field: direct_24g.DiscardPacketsSent
   operator: equals
   reference: getssid_24g.GetSSIDStatsDiscardPacketsSent24g
-  description: 2.4g direct Stats.DiscardPacketsSent must match getSSIDStats().DiscardPacketsSent.
+  description: 2.4g direct Stats.DiscardPacketsSent must match 
+    getSSIDStats().DiscardPacketsSent.
 - field: direct_24g.DiscardPacketsSent
   operator: equals
   reference: driver_24g.DriverDiscardPacketsSent24g
-  description: 2.4g direct Stats.DiscardPacketsSent must match wl2 if_counters txdiscard.
-verification_command: 
-  - '# 5g'
-  - wl -i wl0 assoclist
-  - ubus-cli "WiFi.SSID.4.Stats.DiscardPacketsSent?"
-  - 'ubus-cli "WiFi.SSID.4.getSSIDStats()" | grep "DiscardPacketsSent"'
-  - "wl -i wl0 if_counters | sed -n 's/.*txdiscard \\([0-9][0-9]*\\).*/DriverDiscardPacketsSent5g=\\1/p'"
-  - ''
-  - '# 6g'
-  - wl -i wl1 assoclist
-  - ubus-cli "WiFi.SSID.6.Stats.DiscardPacketsSent?"
-  - 'ubus-cli "WiFi.SSID.6.getSSIDStats()" | grep "DiscardPacketsSent"'
-  - "wl -i wl1 if_counters | sed -n 's/.*txdiscard \\([0-9][0-9]*\\).*/DriverDiscardPacketsSent6g=\\1/p'"
-  - ''
-  - '# 2.4g'
-  - wl -i wl2 assoclist
-  - ubus-cli "WiFi.SSID.8.Stats.DiscardPacketsSent?"
-  - 'ubus-cli "WiFi.SSID.8.getSSIDStats()" | grep "DiscardPacketsSent"'
-  - "wl -i wl2 if_counters | sed -n 's/.*txdiscard \\([0-9][0-9]*\\).*/DriverDiscardPacketsSent24g=\\1/p'"
-results_reference:
-  v4.0.1:
-    5g: To be tested
-    6g: To be tested
-    2.4g: To be tested
-    comment: 'ARC'
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'Multiband serialwrap/source-backed retest: workbook /proc field $13 proved stale in run 20260411T012137925510, but direct Stats matched getSSIDStats() and wl if_counters txdiscard on SSID.4/6/8 (manual probe 5g=0, 6g=0, 2.4g=0).'
+  description: 2.4g direct Stats.DiscardPacketsSent must match wl2 if_counters 
+    txdiscard.
+verification_command:
+- '# 5g'
+- wl -i wl0 assoclist
+- ubus-cli "WiFi.SSID.4.Stats.DiscardPacketsSent?"
+- 'ubus-cli "WiFi.SSID.4.getSSIDStats()" | grep "DiscardPacketsSent"'
+- "wl -i wl0 if_counters | sed -n 's/.*txdiscard \\([0-9][0-9]*\\).*/DriverDiscardPacketsSent5g=\\\
+  1/p'"
+- ''
+- '# 6g'
+- wl -i wl1 assoclist
+- ubus-cli "WiFi.SSID.6.Stats.DiscardPacketsSent?"
+- 'ubus-cli "WiFi.SSID.6.getSSIDStats()" | grep "DiscardPacketsSent"'
+- "wl -i wl1 if_counters | sed -n 's/.*txdiscard \\([0-9][0-9]*\\).*/DriverDiscardPacketsSent6g=\\\
+  1/p'"
+- ''
+- '# 2.4g'
+- wl -i wl2 assoclist
+- ubus-cli "WiFi.SSID.8.Stats.DiscardPacketsSent?"
+- 'ubus-cli "WiFi.SSID.8.getSSIDStats()" | grep "DiscardPacketsSent"'
+- "wl -i wl2 if_counters | sed -n 's/.*txdiscard \\([0-9][0-9]*\\).*/DriverDiscardPacketsSent24g=\\\
+  1/p'"

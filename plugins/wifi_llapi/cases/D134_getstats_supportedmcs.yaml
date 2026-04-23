@@ -2,12 +2,9 @@ id: wifi-llapi-D134-getstats-supportedmcs
 name: getStats() SupportedMCS — WiFi.AccessPoint.{i}.
 version: '1.0'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 136
   object: WiFi.AccessPoint.{i}.
   api: getStats()
-  baseline: 0310-BGW720-300
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -49,13 +46,7 @@ pass_criteria:
   operator: contains
   value: function not found
   description: getStats() should return function not found error
-verification_command: 
-  - 'ubus-cli "WiFi.AccessPoint.1.getStats()" 2>&1'
-  - 'ubus-cli "WiFi.AccessPoint.3.getStats()" 2>&1'
-  - 'ubus-cli "WiFi.AccessPoint.5.getStats()" 2>&1'
-results_reference:
-  v4.0.3:
-    5g: Not Supported
-    6g: Not Supported
-    2.4g: Not Supported
-    comment: getStats() method not implemented on BGW720 (status 3 function not found)
+verification_command:
+- 'ubus-cli "WiFi.AccessPoint.1.getStats()" 2>&1'
+- 'ubus-cli "WiFi.AccessPoint.3.getStats()" 2>&1'
+- 'ubus-cli "WiFi.AccessPoint.5.getStats()" 2>&1'

@@ -7,8 +7,6 @@ name: "Example test case"
 version: "1.0"
 
 source:
-  report: "6.3.0GA_prplware_v403_LLAPI_Test_Report.xlsx"
-  sheet: "Wifi_LLAPI"
   row: 0                             # 對應 xlsx 的行號
 
 platform:
@@ -18,12 +16,12 @@ platform:
 # --- 拓撲與連線 ---
 topology:
   links:
-    - from: STA
-      to: DUT
-      band: "5g"                     # 2.4g / 5g / 6g
-    - from: DUT
-      to: EndpointPC
-      interface: eth1
+  - from: STA
+    to: DUT
+    band: "5g"                       # 2.4g / 5g / 6g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
 
   devices:
     DUT:
@@ -31,41 +29,41 @@ topology:
       transport: serial
       selector: COM0
       config:
-        - iface: "5g"
-          mode: ap
-          ssid: "{{SSID_5G}}"
-          key: "{{KEY_5G}}"
-          mlo: false
-        - iface: wan
-          type: ethernet
-          port: eth0
-        - iface: lan
-          type: ethernet
-          port: eth1
+      - iface: "5g"
+        mode: ap
+        ssid: "{{SSID_5G}}"
+        key: "{{KEY_5G}}"
+        mlo: false
+      - iface: wan
+        type: ethernet
+        port: eth0
+      - iface: lan
+        type: ethernet
+        port: eth1
 
     STA:
       role: sta
       transport: serial
       selector: COM1
       config:
-        - iface: "5g"
-          mode: sta
-          ssid: "{{SSID_5G}}"
-          key: "{{KEY_5G}}"
+      - iface: "5g"
+        mode: sta
+        ssid: "{{SSID_5G}}"
+        key: "{{KEY_5G}}"
 
     EndpointPC:
       role: endpoint
       transport: ssh
       config:
-        - iface: eth0
-          speed: "1G"
+      - iface: eth0
+        speed: "1G"
 
 # --- 環境驗證 ---
 env_verify:
-  - action: ping
-    from: STA
-    to: DUT
-    expect: pass
+- action: ping
+  from: STA
+  to: DUT
+  expect: pass
 
 # --- 測試步驟 ---
 
@@ -144,27 +142,27 @@ test_procedure: |
   5) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
 
 steps:
-  - id: step1
-    action: exec
-    target: DUT
-    command: |
-      echo "replace with actual test command"
-    capture: result1
+- id: step1
+  action: exec
+  target: DUT
+  command: |
+    echo "replace with actual test command"
+  capture: result1
 
-  - id: step2
-    action: exec
-    target: DUT
-    command: |
-      echo "replace with verification command"
-    capture: result2
-    depends_on: step1
+- id: step2
+  action: exec
+  target: DUT
+  command: |
+    echo "replace with verification command"
+  capture: result2
+  depends_on: step1
 
 # --- 通過條件 ---
 pass_criteria:
-  - field: result2
-    operator: "contains"
-    value: "expected output"
-    description: "描述此條件驗證的目的"
+- field: result2
+  operator: "contains"
+  value: "expected output"
+  description: "描述此條件驗證的目的"
 
 # --- 測試頻段（可選，指定需要重複測試的頻段）---
 

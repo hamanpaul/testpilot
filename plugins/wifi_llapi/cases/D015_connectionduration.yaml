@@ -2,12 +2,9 @@ id: wifi-llapi-D015-connectionduration
 name: "ConnectionDuration — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: "1.1"
 source:
-  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-  sheet: Wifi_LLAPI
   row: 15
   object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
   api: "ConnectionDuration"
-  baseline: "BCM v4.0.3"
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -25,15 +22,15 @@ topology:
       transport: serial
       selector: COM0
   links:
-    - from: STA
-      to: DUT
-      band: 5g
-    - from: STA
-      to: DUT
-      band: 6g
-    - from: STA
-      to: DUT
-      band: 2.4g
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: STA
+    to: DUT
+    band: 6g
+  - from: STA
+    to: DUT
+    band: 2.4g
 
 test_environment: |
   Topology:
@@ -92,201 +89,201 @@ test_procedure: |
   - Driver `in network` age is greater than or equal to the later ConnectionDuration value.
 
 steps:
-  - id: step1_5g_sta_join
-    action: exec
-    target: STA
-    band: 5g
-    command:
-      - iw dev wl0 link
-      - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
-  - id: step2_5g_assoc
-    action: exec
-    target: DUT
-    band: 5g
-    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
-    depends_on: step1_5g_sta_join
-    capture: assoc_5g
-  - id: step3_5g_get
-    action: exec
-    target: DUT
-    band: 5g
-    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"'
-    depends_on: step2_5g_assoc
-    capture: result_5g
-  - id: step4_5g_get_after_wait
-    action: exec
-    target: DUT
-    band: 5g
-    command:
-      - sleep 3
-      - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"'
-    depends_on: step3_5g_get
-    capture: result_after_wait_5g
-  - id: step5_5g_driver_age
-    action: exec
-    target: DUT
-    band: 5g
-    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds5g=\1/p'''
-    depends_on: step4_5g_get_after_wait
-    capture: driver_duration_5g
-  - id: step6_6g_sta_join
-    action: exec
-    target: STA
-    band: 6g
-    command:
-      - iw dev wl1 link
-      - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-      - wl -i wl1 status
-  - id: step7_6g_assoc
-    action: exec
-    target: DUT
-    band: 6g
-    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
-    depends_on: step6_6g_sta_join
-    capture: assoc_6g
-  - id: step8_6g_get
-    action: exec
-    target: DUT
-    band: 6g
-    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ConnectionDuration?"'
-    depends_on: step7_6g_assoc
-    capture: result_6g
-  - id: step9_6g_get_after_wait
-    action: exec
-    target: DUT
-    band: 6g
-    command:
-      - sleep 3
-      - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ConnectionDuration?"'
-    depends_on: step8_6g_get
-    capture: result_after_wait_6g
-  - id: step10_6g_driver_age
-    action: exec
-    target: DUT
-    band: 6g
-    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl1 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds6g=\1/p'''
-    depends_on: step9_6g_get_after_wait
-    capture: driver_duration_6g
-  - id: step11_24g_sta_join
-    action: exec
-    target: STA
-    band: 2.4g
-    command:
-      - iw dev wl2 link
-      - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
-  - id: step12_24g_assoc
-    action: exec
-    target: DUT
-    band: 2.4g
-    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
-    depends_on: step11_24g_sta_join
-    capture: assoc_24g
-  - id: step13_24g_get
-    action: exec
-    target: DUT
-    band: 2.4g
-    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.ConnectionDuration?"'
-    depends_on: step12_24g_assoc
-    capture: result_24g
-  - id: step14_24g_get_after_wait
-    action: exec
-    target: DUT
-    band: 2.4g
-    command:
-      - sleep 3
-      - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.ConnectionDuration?"'
-    depends_on: step13_24g_get
-    capture: result_after_wait_24g
-  - id: step15_24g_driver_age
-    action: exec
-    target: DUT
-    band: 2.4g
-    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl2 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds24g=\1/p'''
-    depends_on: step14_24g_get_after_wait
-    capture: driver_duration_24g
+- id: step1_5g_sta_join
+  action: exec
+  target: STA
+  band: 5g
+  command:
+  - iw dev wl0 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+- id: step2_5g_assoc
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
+  depends_on: step1_5g_sta_join
+  capture: assoc_5g
+- id: step3_5g_get
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"'
+  depends_on: step2_5g_assoc
+  capture: result_5g
+- id: step4_5g_get_after_wait
+  action: exec
+  target: DUT
+  band: 5g
+  command:
+  - sleep 3
+  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"'
+  depends_on: step3_5g_get
+  capture: result_after_wait_5g
+- id: step5_5g_driver_age
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+    | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl0
+    sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds5g=\1/p'''
+  depends_on: step4_5g_get_after_wait
+  capture: driver_duration_5g
+- id: step6_6g_sta_join
+  action: exec
+  target: STA
+  band: 6g
+  command:
+  - iw dev wl1 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+  - wl -i wl1 status
+- id: step7_6g_assoc
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
+  depends_on: step6_6g_sta_join
+  capture: assoc_6g
+- id: step8_6g_get
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ConnectionDuration?"'
+  depends_on: step7_6g_assoc
+  capture: result_6g
+- id: step9_6g_get_after_wait
+  action: exec
+  target: DUT
+  band: 6g
+  command:
+  - sleep 3
+  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ConnectionDuration?"'
+  depends_on: step8_6g_get
+  capture: result_after_wait_6g
+- id: step10_6g_driver_age
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"
+    | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl1
+    sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds6g=\1/p'''
+  depends_on: step9_6g_get_after_wait
+  capture: driver_duration_6g
+- id: step11_24g_sta_join
+  action: exec
+  target: STA
+  band: 2.4g
+  command:
+  - iw dev wl2 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+- id: step12_24g_assoc
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
+  depends_on: step11_24g_sta_join
+  capture: assoc_24g
+- id: step13_24g_get
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.ConnectionDuration?"'
+  depends_on: step12_24g_assoc
+  capture: result_24g
+- id: step14_24g_get_after_wait
+  action: exec
+  target: DUT
+  band: 2.4g
+  command:
+  - sleep 3
+  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.ConnectionDuration?"'
+  depends_on: step13_24g_get
+  capture: result_after_wait_24g
+- id: step15_24g_driver_age
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"
+    | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl2
+    sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/DriverConnectionSeconds24g=\1/p'''
+  depends_on: step14_24g_get_after_wait
+  capture: driver_duration_24g
 
 pass_criteria:
-  - field: assoc_5g.MACAddress
-    operator: regex
-    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
-    description: "5G: AP1 AssociatedDevice.1 must resolve to a live station MAC."
-  - field: result_5g.ConnectionDuration
-    operator: regex
-    value: '^[0-9]+$'
-    description: "5G: first ConnectionDuration read must be an integer counter."
-  - field: result_after_wait_5g.ConnectionDuration
-    operator: '>'
-    reference: result_5g.ConnectionDuration
-    description: "5G: second ConnectionDuration read must increase beyond the first read."
-  - field: driver_duration_5g.DriverConnectionSeconds5g
-    operator: '>='
-    reference: result_after_wait_5g.ConnectionDuration
-    description: "5G: driver in-network seconds must be at least the later LLAPI ConnectionDuration value."
-  - field: assoc_6g.MACAddress
-    operator: regex
-    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
-    description: "6G: AP3 AssociatedDevice.1 must resolve to a live station MAC."
-  - field: result_6g.ConnectionDuration
-    operator: regex
-    value: '^[0-9]+$'
-    description: "6G: first ConnectionDuration read must be an integer counter."
-  - field: result_after_wait_6g.ConnectionDuration
-    operator: '>'
-    reference: result_6g.ConnectionDuration
-    description: "6G: second ConnectionDuration read must increase beyond the first read."
-  - field: driver_duration_6g.DriverConnectionSeconds6g
-    operator: '>='
-    reference: result_after_wait_6g.ConnectionDuration
-    description: "6G: driver in-network seconds must be at least the later LLAPI ConnectionDuration value."
-  - field: assoc_24g.MACAddress
-    operator: regex
-    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
-    description: "2.4G: AP5 AssociatedDevice.1 must resolve to a live station MAC."
-  - field: result_24g.ConnectionDuration
-    operator: regex
-    value: '^[0-9]+$'
-    description: "2.4G: first ConnectionDuration read must be an integer counter."
-  - field: result_after_wait_24g.ConnectionDuration
-    operator: '>'
-    reference: result_24g.ConnectionDuration
-    description: "2.4G: second ConnectionDuration read must increase beyond the first read."
-  - field: driver_duration_24g.DriverConnectionSeconds24g
-    operator: '>='
-    reference: result_after_wait_24g.ConnectionDuration
-    description: "2.4G: driver in-network seconds must be at least the later LLAPI ConnectionDuration value."
+- field: assoc_5g.MACAddress
+  operator: regex
+  value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+  description: "5G: AP1 AssociatedDevice.1 must resolve to a live station MAC."
+- field: result_5g.ConnectionDuration
+  operator: regex
+  value: '^[0-9]+$'
+  description: "5G: first ConnectionDuration read must be an integer counter."
+- field: result_after_wait_5g.ConnectionDuration
+  operator: '>'
+  reference: result_5g.ConnectionDuration
+  description: "5G: second ConnectionDuration read must increase beyond the first
+    read."
+- field: driver_duration_5g.DriverConnectionSeconds5g
+  operator: '>='
+  reference: result_after_wait_5g.ConnectionDuration
+  description: "5G: driver in-network seconds must be at least the later LLAPI ConnectionDuration
+    value."
+- field: assoc_6g.MACAddress
+  operator: regex
+  value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+  description: "6G: AP3 AssociatedDevice.1 must resolve to a live station MAC."
+- field: result_6g.ConnectionDuration
+  operator: regex
+  value: '^[0-9]+$'
+  description: "6G: first ConnectionDuration read must be an integer counter."
+- field: result_after_wait_6g.ConnectionDuration
+  operator: '>'
+  reference: result_6g.ConnectionDuration
+  description: "6G: second ConnectionDuration read must increase beyond the first
+    read."
+- field: driver_duration_6g.DriverConnectionSeconds6g
+  operator: '>='
+  reference: result_after_wait_6g.ConnectionDuration
+  description: "6G: driver in-network seconds must be at least the later LLAPI ConnectionDuration
+    value."
+- field: assoc_24g.MACAddress
+  operator: regex
+  value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+  description: "2.4G: AP5 AssociatedDevice.1 must resolve to a live station MAC."
+- field: result_24g.ConnectionDuration
+  operator: regex
+  value: '^[0-9]+$'
+  description: "2.4G: first ConnectionDuration read must be an integer counter."
+- field: result_after_wait_24g.ConnectionDuration
+  operator: '>'
+  reference: result_24g.ConnectionDuration
+  description: "2.4G: second ConnectionDuration read must increase beyond the first
+    read."
+- field: driver_duration_24g.DriverConnectionSeconds24g
+  operator: '>='
+  reference: result_after_wait_24g.ConnectionDuration
+  description: "2.4G: driver in-network seconds must be at least the later LLAPI ConnectionDuration
+    value."
 
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"'
-  - sleep 3
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"'
-  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
-  - 'wl -i wl0 sta_info $STA_MAC | grep "in network"'
-  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
-  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ConnectionDuration?"'
-  - sleep 3
-  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ConnectionDuration?"'
-  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
-  - 'wl -i wl1 sta_info $STA_MAC | grep "in network"'
-  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
-  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.ConnectionDuration?"'
-  - sleep 3
-  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.ConnectionDuration?"'
-  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
-  - 'wl -i wl2 sta_info $STA_MAC | grep "in network"'
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"'
+- sleep 3
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ConnectionDuration?"'
+- 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
+  ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+- 'wl -i wl0 sta_info $STA_MAC | grep "in network"'
+- 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
+- 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ConnectionDuration?"'
+- sleep 3
+- 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ConnectionDuration?"'
+- 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?" | sed -n
+  ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+- 'wl -i wl1 sta_info $STA_MAC | grep "in network"'
+- 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
+- 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.ConnectionDuration?"'
+- sleep 3
+- 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.ConnectionDuration?"'
+- 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?" | sed -n
+  ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+- 'wl -i wl2 sta_info $STA_MAC | grep "in network"'
 
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ""
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: >
-      0401 workbook row 15 expects Pass/Pass/Pass. ConnectionDuration is validated as a live,
-      monotonic AssociatedDevice counter on AP1/AP3/AP5 by reading the getter twice per band and
-      cross-checking the same STA against `wl sta_info ... in network` seconds on the deterministic
-      5G/6G/2.4G baseline.

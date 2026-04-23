@@ -2,12 +2,9 @@ id: wifi-llapi-D078-entry-accesspoint-macfiltering
 name: Entry — WiFi.AccessPoint.{i}.MACFiltering.Entry
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 78
   object: WiFi.AccessPoint.{i}.MACFiltering.Entry
   api: Entry
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -54,13 +51,13 @@ test_environment: 'Topology:
   itself and leaves mode/hostapd ACL semantics to D081
 
   '
-setup_steps: "1) DUT baseline:\n   - keep AP1 / AP3 / AP5 enabled on the documented\
-  \ non-open baseline\n   - remove the band-specific probe MAC from AP1 / AP3 / AP5\
-  \ before starting the entry-tree check\n   - confirm `MACFiltering.Entry.?` returns\
-  \ no data before adding a test MAC\n2) Per-band MACFiltering.Entry probe:\n   -\
-  \ add one band-specific MAC with `MACFiltering.addEntry(mac=...)` on the same AP\n\
-  \   - re-read `MACFiltering.Entry.?` and capture the exposed `EntryCount`, `EntryAlias`,\
-  \ and `EntryMac`\n   - delete the same MAC with `MACFiltering.delEntry(mac=...)`\n\
+setup_steps: "1) DUT baseline:\n   - keep AP1 / AP3 / AP5 enabled on the documented
+  non-open baseline\n   - remove the band-specific probe MAC from AP1 / AP3 / AP5
+  before starting the entry-tree check\n   - confirm `MACFiltering.Entry.?` returns
+  no data before adding a test MAC\n2) Per-band MACFiltering.Entry probe:\n   - add
+  one band-specific MAC with `MACFiltering.addEntry(mac=...)` on the same AP\n   -
+  re-read `MACFiltering.Entry.?` and capture the exposed `EntryCount`, `EntryAlias`,
+  and `EntryMac`\n   - delete the same MAC with `MACFiltering.delEntry(mac=...)`\n\
   \   - confirm `MACFiltering.Entry.?` returns to the empty baseline on the same band\n"
 sta_env_setup: "DUT:\n  ubus-cli WiFi.AccessPoint.1.Enable=1\n  ubus-cli WiFi.AccessPoint.3.Enable=1\n\
   \  ubus-cli WiFi.AccessPoint.5.Enable=1\n  ubus-cli \"WiFi.AccessPoint.1.MACFiltering.delEntry(mac=62:2F:B8:66:BB:82)\"\
@@ -89,186 +86,225 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Entry.?" 2>&1); if printf
-    '%s\n' "$OUT" | grep -q '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.'; then printf
-    '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress='
-    | sed 's/^/EntryCount5g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias5g=%s\n' "$ALIAS"; else
-    echo 'EntryAlias5g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]'
-    '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 'EntryMac5g=EMPTY';
-    fi; else echo 'EntryCount5g=0'; echo 'EntryAlias5g=EMPTY'; echo 'EntryMac5g=EMPTY';
-    fi
+  command: OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Entry.?" 2>&1); if 
+    printf '%s\n' "$OUT" | grep -q 
+    '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.'; then printf '%s\n' "$OUT" | 
+    grep -c 
+    '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed
+    's/^/EntryCount5g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias5g=%s\n' "$ALIAS"; 
+    else echo 'EntryAlias5g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr 
+    '[:lower:]' '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 
+    'EntryMac5g=EMPTY'; fi; else echo 'EntryCount5g=0'; echo 
+    'EntryAlias5g=EMPTY'; echo 'EntryMac5g=EMPTY'; fi
   capture: entry_baseline_5g
 - id: step2_add_entry_5g
   action: exec
   target: DUT
   band: 5g
-  command: MAC='62:2F:B8:66:BB:82'; printf 'RequestedMac5g=%s\n' "$MAC"; ubus-cli
-    "WiFi.AccessPoint.1.MACFiltering.addEntry(mac=$MAC)"
+  command: MAC='62:2F:B8:66:BB:82'; printf 'RequestedMac5g=%s\n' "$MAC"; 
+    ubus-cli "WiFi.AccessPoint.1.MACFiltering.addEntry(mac=$MAC)"
   depends_on: step1_entry_baseline_5g
   capture: add_entry_5g
 - id: step3_entry_add_5g
   action: exec
   target: DUT
   band: 5g
-  command: OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Entry.?" 2>&1); if printf
-    '%s\n' "$OUT" | grep -q '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.'; then printf
-    '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress='
-    | sed 's/^/EntryCount5g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias5g=%s\n' "$ALIAS"; else
-    echo 'EntryAlias5g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]'
-    '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 'EntryMac5g=EMPTY';
-    fi; else echo 'EntryCount5g=0'; echo 'EntryAlias5g=EMPTY'; echo 'EntryMac5g=EMPTY';
-    fi
+  command: OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Entry.?" 2>&1); if 
+    printf '%s\n' "$OUT" | grep -q 
+    '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.'; then printf '%s\n' "$OUT" | 
+    grep -c 
+    '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed
+    's/^/EntryCount5g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias5g=%s\n' "$ALIAS"; 
+    else echo 'EntryAlias5g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr 
+    '[:lower:]' '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 
+    'EntryMac5g=EMPTY'; fi; else echo 'EntryCount5g=0'; echo 
+    'EntryAlias5g=EMPTY'; echo 'EntryMac5g=EMPTY'; fi
   depends_on: step2_add_entry_5g
   capture: entry_add_5g
 - id: step4_delete_entry_5g
   action: exec
   target: DUT
   band: 5g
-  command: MAC='62:2F:B8:66:BB:82'; printf 'DeletedMac5g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.1.MACFiltering.delEntry(mac=$MAC)"
+  command: MAC='62:2F:B8:66:BB:82'; printf 'DeletedMac5g=%s\n' "$MAC"; ubus-cli 
+    "WiFi.AccessPoint.1.MACFiltering.delEntry(mac=$MAC)"
   depends_on: step3_entry_add_5g
   capture: delete_entry_5g
 - id: step5_entry_delete_5g
   action: exec
   target: DUT
   band: 5g
-  command: OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Entry.?" 2>&1); if printf
-    '%s\n' "$OUT" | grep -q '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.'; then printf
-    '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress='
-    | sed 's/^/EntryCount5g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias5g=%s\n' "$ALIAS"; else
-    echo 'EntryAlias5g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]'
-    '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 'EntryMac5g=EMPTY';
-    fi; else echo 'EntryCount5g=0'; echo 'EntryAlias5g=EMPTY'; echo 'EntryMac5g=EMPTY';
-    fi
+  command: OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Entry.?" 2>&1); if 
+    printf '%s\n' "$OUT" | grep -q 
+    '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.'; then printf '%s\n' "$OUT" | 
+    grep -c 
+    '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed
+    's/^/EntryCount5g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias5g=%s\n' "$ALIAS"; 
+    else echo 'EntryAlias5g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr 
+    '[:lower:]' '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 
+    'EntryMac5g=EMPTY'; fi; else echo 'EntryCount5g=0'; echo 
+    'EntryAlias5g=EMPTY'; echo 'EntryMac5g=EMPTY'; fi
   depends_on: step4_delete_entry_5g
   capture: entry_delete_5g
 - id: step6_entry_baseline_6g
   action: exec
   target: DUT
   band: 6g
-  command: OUT=$(ubus-cli "WiFi.AccessPoint.3.MACFiltering.Entry.?" 2>&1); if printf
-    '%s\n' "$OUT" | grep -q '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.'; then printf
-    '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress='
-    | sed 's/^/EntryCount6g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias6g=%s\n' "$ALIAS"; else
-    echo 'EntryAlias6g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]'
-    '[:upper:]'); printf 'EntryMac6g=%s\n' "$VALUE"; else echo 'EntryMac6g=EMPTY';
-    fi; else echo 'EntryCount6g=0'; echo 'EntryAlias6g=EMPTY'; echo 'EntryMac6g=EMPTY';
-    fi
+  command: OUT=$(ubus-cli "WiFi.AccessPoint.3.MACFiltering.Entry.?" 2>&1); if 
+    printf '%s\n' "$OUT" | grep -q 
+    '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.'; then printf '%s\n' "$OUT" | 
+    grep -c 
+    '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed
+    's/^/EntryCount6g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias6g=%s\n' "$ALIAS"; 
+    else echo 'EntryAlias6g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr 
+    '[:lower:]' '[:upper:]'); printf 'EntryMac6g=%s\n' "$VALUE"; else echo 
+    'EntryMac6g=EMPTY'; fi; else echo 'EntryCount6g=0'; echo 
+    'EntryAlias6g=EMPTY'; echo 'EntryMac6g=EMPTY'; fi
   capture: entry_baseline_6g
 - id: step7_add_entry_6g
   action: exec
   target: DUT
   band: 6g
-  command: MAC='FA:DD:AC:24:5A:B4'; printf 'RequestedMac6g=%s\n' "$MAC"; ubus-cli
-    "WiFi.AccessPoint.3.MACFiltering.addEntry(mac=$MAC)"
+  command: MAC='FA:DD:AC:24:5A:B4'; printf 'RequestedMac6g=%s\n' "$MAC"; 
+    ubus-cli "WiFi.AccessPoint.3.MACFiltering.addEntry(mac=$MAC)"
   depends_on: step6_entry_baseline_6g
   capture: add_entry_6g
 - id: step8_entry_add_6g
   action: exec
   target: DUT
   band: 6g
-  command: OUT=$(ubus-cli "WiFi.AccessPoint.3.MACFiltering.Entry.?" 2>&1); if printf
-    '%s\n' "$OUT" | grep -q '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.'; then printf
-    '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress='
-    | sed 's/^/EntryCount6g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias6g=%s\n' "$ALIAS"; else
-    echo 'EntryAlias6g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]'
-    '[:upper:]'); printf 'EntryMac6g=%s\n' "$VALUE"; else echo 'EntryMac6g=EMPTY';
-    fi; else echo 'EntryCount6g=0'; echo 'EntryAlias6g=EMPTY'; echo 'EntryMac6g=EMPTY';
-    fi
+  command: OUT=$(ubus-cli "WiFi.AccessPoint.3.MACFiltering.Entry.?" 2>&1); if 
+    printf '%s\n' "$OUT" | grep -q 
+    '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.'; then printf '%s\n' "$OUT" | 
+    grep -c 
+    '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed
+    's/^/EntryCount6g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias6g=%s\n' "$ALIAS"; 
+    else echo 'EntryAlias6g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr 
+    '[:lower:]' '[:upper:]'); printf 'EntryMac6g=%s\n' "$VALUE"; else echo 
+    'EntryMac6g=EMPTY'; fi; else echo 'EntryCount6g=0'; echo 
+    'EntryAlias6g=EMPTY'; echo 'EntryMac6g=EMPTY'; fi
   depends_on: step7_add_entry_6g
   capture: entry_add_6g
 - id: step9_delete_entry_6g
   action: exec
   target: DUT
   band: 6g
-  command: MAC='FA:DD:AC:24:5A:B4'; printf 'DeletedMac6g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.3.MACFiltering.delEntry(mac=$MAC)"
+  command: MAC='FA:DD:AC:24:5A:B4'; printf 'DeletedMac6g=%s\n' "$MAC"; ubus-cli 
+    "WiFi.AccessPoint.3.MACFiltering.delEntry(mac=$MAC)"
   depends_on: step8_entry_add_6g
   capture: delete_entry_6g
 - id: step10_entry_delete_6g
   action: exec
   target: DUT
   band: 6g
-  command: OUT=$(ubus-cli "WiFi.AccessPoint.3.MACFiltering.Entry.?" 2>&1); if printf
-    '%s\n' "$OUT" | grep -q '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.'; then printf
-    '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress='
-    | sed 's/^/EntryCount6g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias6g=%s\n' "$ALIAS"; else
-    echo 'EntryAlias6g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]'
-    '[:upper:]'); printf 'EntryMac6g=%s\n' "$VALUE"; else echo 'EntryMac6g=EMPTY';
-    fi; else echo 'EntryCount6g=0'; echo 'EntryAlias6g=EMPTY'; echo 'EntryMac6g=EMPTY';
-    fi
+  command: OUT=$(ubus-cli "WiFi.AccessPoint.3.MACFiltering.Entry.?" 2>&1); if 
+    printf '%s\n' "$OUT" | grep -q 
+    '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.'; then printf '%s\n' "$OUT" | 
+    grep -c 
+    '^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed
+    's/^/EntryCount6g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias6g=%s\n' "$ALIAS"; 
+    else echo 'EntryAlias6g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.3\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr 
+    '[:lower:]' '[:upper:]'); printf 'EntryMac6g=%s\n' "$VALUE"; else echo 
+    'EntryMac6g=EMPTY'; fi; else echo 'EntryCount6g=0'; echo 
+    'EntryAlias6g=EMPTY'; echo 'EntryMac6g=EMPTY'; fi
   depends_on: step9_delete_entry_6g
   capture: entry_delete_6g
 - id: step11_entry_baseline_24g
   action: exec
   target: DUT
   band: 2.4g
-  command: OUT=$(ubus-cli "WiFi.AccessPoint.5.MACFiltering.Entry.?" 2>&1); if printf
-    '%s\n' "$OUT" | grep -q '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.'; then printf
-    '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress='
-    | sed 's/^/EntryCount24g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias24g=%s\n' "$ALIAS"; else
-    echo 'EntryAlias24g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]'
-    '[:upper:]'); printf 'EntryMac24g=%s\n' "$VALUE"; else echo 'EntryMac24g=EMPTY';
-    fi; else echo 'EntryCount24g=0'; echo 'EntryAlias24g=EMPTY'; echo 'EntryMac24g=EMPTY';
-    fi
+  command: OUT=$(ubus-cli "WiFi.AccessPoint.5.MACFiltering.Entry.?" 2>&1); if 
+    printf '%s\n' "$OUT" | grep -q 
+    '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.'; then printf '%s\n' "$OUT" | 
+    grep -c 
+    '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed
+    's/^/EntryCount24g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias24g=%s\n' "$ALIAS";
+    else echo 'EntryAlias24g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr 
+    '[:lower:]' '[:upper:]'); printf 'EntryMac24g=%s\n' "$VALUE"; else echo 
+    'EntryMac24g=EMPTY'; fi; else echo 'EntryCount24g=0'; echo 
+    'EntryAlias24g=EMPTY'; echo 'EntryMac24g=EMPTY'; fi
   capture: entry_baseline_24g
 - id: step12_add_entry_24g
   action: exec
   target: DUT
   band: 2.4g
-  command: MAC='FA:A0:DF:91:47:7C'; printf 'RequestedMac24g=%s\n' "$MAC"; ubus-cli
-    "WiFi.AccessPoint.5.MACFiltering.addEntry(mac=$MAC)"
+  command: MAC='FA:A0:DF:91:47:7C'; printf 'RequestedMac24g=%s\n' "$MAC"; 
+    ubus-cli "WiFi.AccessPoint.5.MACFiltering.addEntry(mac=$MAC)"
   depends_on: step11_entry_baseline_24g
   capture: add_entry_24g
 - id: step13_entry_add_24g
   action: exec
   target: DUT
   band: 2.4g
-  command: OUT=$(ubus-cli "WiFi.AccessPoint.5.MACFiltering.Entry.?" 2>&1); if printf
-    '%s\n' "$OUT" | grep -q '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.'; then printf
-    '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress='
-    | sed 's/^/EntryCount24g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias24g=%s\n' "$ALIAS"; else
-    echo 'EntryAlias24g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]'
-    '[:upper:]'); printf 'EntryMac24g=%s\n' "$VALUE"; else echo 'EntryMac24g=EMPTY';
-    fi; else echo 'EntryCount24g=0'; echo 'EntryAlias24g=EMPTY'; echo 'EntryMac24g=EMPTY';
-    fi
+  command: OUT=$(ubus-cli "WiFi.AccessPoint.5.MACFiltering.Entry.?" 2>&1); if 
+    printf '%s\n' "$OUT" | grep -q 
+    '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.'; then printf '%s\n' "$OUT" | 
+    grep -c 
+    '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed
+    's/^/EntryCount24g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias24g=%s\n' "$ALIAS";
+    else echo 'EntryAlias24g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr 
+    '[:lower:]' '[:upper:]'); printf 'EntryMac24g=%s\n' "$VALUE"; else echo 
+    'EntryMac24g=EMPTY'; fi; else echo 'EntryCount24g=0'; echo 
+    'EntryAlias24g=EMPTY'; echo 'EntryMac24g=EMPTY'; fi
   depends_on: step12_add_entry_24g
   capture: entry_add_24g
 - id: step14_delete_entry_24g
   action: exec
   target: DUT
   band: 2.4g
-  command: MAC='FA:A0:DF:91:47:7C'; printf 'DeletedMac24g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.5.MACFiltering.delEntry(mac=$MAC)"
+  command: MAC='FA:A0:DF:91:47:7C'; printf 'DeletedMac24g=%s\n' "$MAC"; ubus-cli
+    "WiFi.AccessPoint.5.MACFiltering.delEntry(mac=$MAC)"
   depends_on: step13_entry_add_24g
   capture: delete_entry_24g
 - id: step15_entry_delete_24g
   action: exec
   target: DUT
   band: 2.4g
-  command: OUT=$(ubus-cli "WiFi.AccessPoint.5.MACFiltering.Entry.?" 2>&1); if printf
-    '%s\n' "$OUT" | grep -q '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.'; then printf
-    '%s\n' "$OUT" | grep -c '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress='
-    | sed 's/^/EntryCount24g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias24g=%s\n' "$ALIAS"; else
-    echo 'EntryAlias24g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
-    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]'
-    '[:upper:]'); printf 'EntryMac24g=%s\n' "$VALUE"; else echo 'EntryMac24g=EMPTY';
-    fi; else echo 'EntryCount24g=0'; echo 'EntryAlias24g=EMPTY'; echo 'EntryMac24g=EMPTY';
-    fi
+  command: OUT=$(ubus-cli "WiFi.AccessPoint.5.MACFiltering.Entry.?" 2>&1); if 
+    printf '%s\n' "$OUT" | grep -q 
+    '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.'; then printf '%s\n' "$OUT" | 
+    grep -c 
+    '^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed
+    's/^/EntryCount24g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias24g=%s\n' "$ALIAS";
+    else echo 'EntryAlias24g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 
+    's/^WiFi\.AccessPoint\.5\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr 
+    '[:lower:]' '[:upper:]'); printf 'EntryMac24g=%s\n' "$VALUE"; else echo 
+    'EntryMac24g=EMPTY'; fi; else echo 'EntryCount24g=0'; echo 
+    'EntryAlias24g=EMPTY'; echo 'EntryMac24g=EMPTY'; fi
   depends_on: step14_delete_entry_24g
   capture: entry_delete_24g
 pass_criteria:
@@ -295,7 +331,8 @@ pass_criteria:
 - field: entry_add_5g.EntryAlias5g
   operator: contains
   value: cpe-Entry-
-  description: 5G AP1 / wl0 should expose a concrete cpe entry alias after addEntry.
+  description: 5G AP1 / wl0 should expose a concrete cpe entry alias after 
+    addEntry.
 - field: entry_add_5g.EntryMac5g
   operator: equals
   value: 62:2F:B8:66:BB:82
@@ -335,7 +372,8 @@ pass_criteria:
 - field: entry_add_6g.EntryAlias6g
   operator: contains
   value: cpe-Entry-
-  description: 6G AP3 / wl1 should expose a concrete cpe entry alias after addEntry.
+  description: 6G AP3 / wl1 should expose a concrete cpe entry alias after 
+    addEntry.
 - field: entry_add_6g.EntryMac6g
   operator: equals
   value: FA:DD:AC:24:5A:B4
@@ -375,7 +413,8 @@ pass_criteria:
 - field: entry_add_24g.EntryAlias24g
   operator: contains
   value: cpe-Entry-
-  description: 2.4G AP5 / wl2 should expose a concrete cpe entry alias after addEntry.
+  description: 2.4G AP5 / wl2 should expose a concrete cpe entry alias after 
+    addEntry.
 - field: entry_add_24g.EntryMac24g
   operator: equals
   value: FA:A0:DF:91:47:7C
@@ -393,46 +432,46 @@ pass_criteria:
   value: EMPTY
   description: 2.4G AP5 / wl2 should expose no entry MAC after delEntry.
 verification_command:
-- OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Entry.?" 2>&1); if printf '%s\n'
-  "$OUT" | grep -q '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.'; then printf '%s\n'
-  "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress='
-  | sed 's/^/EntryCount5g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
-  | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias5g=%s\n' "$ALIAS"; else
-  echo 'EntryAlias5g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
-  | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]'
-  '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 'EntryMac5g=EMPTY'; fi;
-  else echo 'EntryCount5g=0'; echo 'EntryAlias5g=EMPTY'; echo 'EntryMac5g=EMPTY';
-  fi
-- MAC='62:2F:B8:66:BB:82'; printf 'RequestedMac5g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.1.MACFiltering.addEntry(mac=$MAC)"
-- OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Entry.?" 2>&1); if printf '%s\n'
-  "$OUT" | grep -q '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.'; then printf '%s\n'
-  "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress='
-  | sed 's/^/EntryCount5g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
-  | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias5g=%s\n' "$ALIAS"; else
-  echo 'EntryAlias5g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
-  | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]'
-  '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 'EntryMac5g=EMPTY'; fi;
-  else echo 'EntryCount5g=0'; echo 'EntryAlias5g=EMPTY'; echo 'EntryMac5g=EMPTY';
-  fi
-- MAC='62:2F:B8:66:BB:82'; printf 'DeletedMac5g=%s\n' "$MAC"; ubus-cli "WiFi.AccessPoint.1.MACFiltering.delEntry(mac=$MAC)"
-- OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Entry.?" 2>&1); if printf '%s\n'
-  "$OUT" | grep -q '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.'; then printf '%s\n'
-  "$OUT" | grep -c '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress='
-  | sed 's/^/EntryCount5g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
-  | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias5g=%s\n' "$ALIAS"; else
-  echo 'EntryAlias5g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
-  | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr '[:lower:]'
-  '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 'EntryMac5g=EMPTY'; fi;
-  else echo 'EntryCount5g=0'; echo 'EntryAlias5g=EMPTY'; echo 'EntryMac5g=EMPTY';
-  fi
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 0319 serialwrap live probe on AP1/AP3/AP5 showed MACFiltering.Entry.?
-      converges No data found -> one Entry.Alias/MACAddress node after addEntry ->
-      No data found after delEntry on all three bands. ACL file side effects were
-      mode-dependent (AP1 updated /tmp/hostap_wl0.acl, AP3/AP5 stayed Off), so D080
-      is calibrated against the entry table object itself and leaves mode/hostapd
-      ACL semantics to D081.
+- OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Entry.?" 2>&1); if printf 
+  '%s\n' "$OUT" | grep -q '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.'; then 
+  printf '%s\n' "$OUT" | grep -c 
+  '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 
+  's/^/EntryCount5g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 
+  's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
+  | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias5g=%s\n' "$ALIAS"; 
+  else echo 'EntryAlias5g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 
+  's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
+  | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr 
+  '[:lower:]' '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 
+  'EntryMac5g=EMPTY'; fi; else echo 'EntryCount5g=0'; echo 'EntryAlias5g=EMPTY';
+  echo 'EntryMac5g=EMPTY'; fi
+- MAC='62:2F:B8:66:BB:82'; printf 'RequestedMac5g=%s\n' "$MAC"; ubus-cli 
+  "WiFi.AccessPoint.1.MACFiltering.addEntry(mac=$MAC)"
+- OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Entry.?" 2>&1); if printf 
+  '%s\n' "$OUT" | grep -q '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.'; then 
+  printf '%s\n' "$OUT" | grep -c 
+  '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 
+  's/^/EntryCount5g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 
+  's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
+  | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias5g=%s\n' "$ALIAS"; 
+  else echo 'EntryAlias5g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 
+  's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
+  | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr 
+  '[:lower:]' '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 
+  'EntryMac5g=EMPTY'; fi; else echo 'EntryCount5g=0'; echo 'EntryAlias5g=EMPTY';
+  echo 'EntryMac5g=EMPTY'; fi
+- MAC='62:2F:B8:66:BB:82'; printf 'DeletedMac5g=%s\n' "$MAC"; ubus-cli 
+  "WiFi.AccessPoint.1.MACFiltering.delEntry(mac=$MAC)"
+- OUT=$(ubus-cli "WiFi.AccessPoint.1.MACFiltering.Entry.?" 2>&1); if printf 
+  '%s\n' "$OUT" | grep -q '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.'; then 
+  printf '%s\n' "$OUT" | grep -c 
+  '^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress=' | sed 
+  's/^/EntryCount5g=/'; ALIAS=$(printf '%s\n' "$OUT" | sed -n 
+  's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.Alias="\([^"]*\)".*/\1/p'
+  | head -n 1); if [ -n "$ALIAS" ]; then printf 'EntryAlias5g=%s\n' "$ALIAS"; 
+  else echo 'EntryAlias5g=EMPTY'; fi; VALUE=$(printf '%s\n' "$OUT" | sed -n 
+  's/^WiFi\.AccessPoint\.1\.MACFiltering\.Entry\.[0-9][0-9]*\.MACAddress="\([^"]*\)".*/\1/p'
+  | head -n 1); if [ -n "$VALUE" ]; then VALUE=$(printf '%s' "$VALUE" | tr 
+  '[:lower:]' '[:upper:]'); printf 'EntryMac5g=%s\n' "$VALUE"; else echo 
+  'EntryMac5g=EMPTY'; fi; else echo 'EntryCount5g=0'; echo 'EntryAlias5g=EMPTY';
+  echo 'EntryMac5g=EMPTY'; fi

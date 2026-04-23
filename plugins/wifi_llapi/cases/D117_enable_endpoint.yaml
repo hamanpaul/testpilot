@@ -2,12 +2,9 @@ id: wifi-llapi-D117-enable-endpoint
 name: Enable — WiFi.EndPoint.{i}.
 version: '1.0'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 117
   object: WiFi.EndPoint.{i}.
   api: Enable
-  baseline: 0310-BGW720-300
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -61,8 +58,3 @@ pass_criteria:
   description: WiFi.EndPoint tree should not exist on BGW720
 verification_command:
 - ubus-cli "WiFi.EndPoint.?"
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Fail
-    2.4g: Pass

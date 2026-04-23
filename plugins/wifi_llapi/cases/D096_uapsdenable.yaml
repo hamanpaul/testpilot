@@ -2,12 +2,9 @@ id: wifi-llapi-D096-uapsdenable
 name: "UAPSDEnable — WiFi.AccessPoint.{i}."
 version: '1.0'
 source:
-  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-  sheet: Wifi_LLAPI
   row: 96
   object: "WiFi.AccessPoint.{i}."
   api: "UAPSDEnable"
-  baseline: "0310-BGW720-300"
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -15,9 +12,9 @@ hlapi_command: ubus-cli WiFi.AccessPoint.{i}.UAPSDEnable=0
 llapi_support: Not Support
 implemented_by: Vendor Module
 bands:
-  - 5g
-  - 6g
-  - 2.4g
+- 5g
+- 6g
+- 2.4g
 topology:
   devices:
     DUT:
@@ -40,133 +37,137 @@ test_environment: |
   - this case therefore preserves the live round-trip evidence, but `results_reference` is aligned back to workbook row 96 authority
 steps:
   # ---------- 5G ----------
-  - id: step1_5g_setter_roundtrip
-    action: exec
-    target: DUT
-    command:
-      - echo "Baseline5g=$(ubus-cli 'WiFi.AccessPoint.1.UAPSDEnable?' 2>/dev/null | grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
-      - ubus-cli WiFi.AccessPoint.1.UAPSDEnable=1
-      - sleep 3
-      - echo "AfterSet5g=$(ubus-cli 'WiFi.AccessPoint.1.UAPSDEnable?' 2>/dev/null | grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
-      - echo "HapdAfterSet5g=$(grep 'uapsd_advertisement_enabled=' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-      - echo "DriverAfterSet5g=$(wl -i wl0 wme_apsd 2>/dev/null)"
-      - ubus-cli WiFi.AccessPoint.1.UAPSDEnable=0
-      - sleep 3
-      - echo "AfterRestore5g=$(ubus-cli 'WiFi.AccessPoint.1.UAPSDEnable?' 2>/dev/null | grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
-      - echo "HapdAfterRestore5g=$(grep 'uapsd_advertisement_enabled=' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-    capture: uapsd_en_5g
+- id: step1_5g_setter_roundtrip
+  action: exec
+  target: DUT
+  command:
+  - echo "Baseline5g=$(ubus-cli 'WiFi.AccessPoint.1.UAPSDEnable?' 2>/dev/null | 
+    grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
+  - ubus-cli WiFi.AccessPoint.1.UAPSDEnable=1
+  - sleep 3
+  - echo "AfterSet5g=$(ubus-cli 'WiFi.AccessPoint.1.UAPSDEnable?' 2>/dev/null | 
+    grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
+  - echo "HapdAfterSet5g=$(grep 'uapsd_advertisement_enabled=' 
+    /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+  - echo "DriverAfterSet5g=$(wl -i wl0 wme_apsd 2>/dev/null)"
+  - ubus-cli WiFi.AccessPoint.1.UAPSDEnable=0
+  - sleep 3
+  - echo "AfterRestore5g=$(ubus-cli 'WiFi.AccessPoint.1.UAPSDEnable?' 
+    2>/dev/null | grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
+  - echo "HapdAfterRestore5g=$(grep 'uapsd_advertisement_enabled=' 
+    /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+  capture: uapsd_en_5g
 
   # ---------- 6G ----------
-  - id: step2_6g_setter_roundtrip
-    action: exec
-    target: DUT
-    depends_on: step1_5g_setter_roundtrip
-    command:
-      - echo "Baseline6g=$(ubus-cli 'WiFi.AccessPoint.3.UAPSDEnable?' 2>/dev/null | grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
-      - ubus-cli WiFi.AccessPoint.3.UAPSDEnable=1
-      - sleep 3
-      - echo "AfterSet6g=$(ubus-cli 'WiFi.AccessPoint.3.UAPSDEnable?' 2>/dev/null | grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
-      - echo "HapdAfterSet6g=$(grep 'uapsd_advertisement_enabled=' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-      - echo "DriverAfterSet6g=$(wl -i wl1 wme_apsd 2>/dev/null)"
-      - ubus-cli WiFi.AccessPoint.3.UAPSDEnable=0
-      - sleep 3
-      - echo "AfterRestore6g=$(ubus-cli 'WiFi.AccessPoint.3.UAPSDEnable?' 2>/dev/null | grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
-      - echo "HapdAfterRestore6g=$(grep 'uapsd_advertisement_enabled=' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-    capture: uapsd_en_6g
+- id: step2_6g_setter_roundtrip
+  action: exec
+  target: DUT
+  depends_on: step1_5g_setter_roundtrip
+  command:
+  - echo "Baseline6g=$(ubus-cli 'WiFi.AccessPoint.3.UAPSDEnable?' 2>/dev/null | 
+    grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
+  - ubus-cli WiFi.AccessPoint.3.UAPSDEnable=1
+  - sleep 3
+  - echo "AfterSet6g=$(ubus-cli 'WiFi.AccessPoint.3.UAPSDEnable?' 2>/dev/null | 
+    grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
+  - echo "HapdAfterSet6g=$(grep 'uapsd_advertisement_enabled=' 
+    /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+  - echo "DriverAfterSet6g=$(wl -i wl1 wme_apsd 2>/dev/null)"
+  - ubus-cli WiFi.AccessPoint.3.UAPSDEnable=0
+  - sleep 3
+  - echo "AfterRestore6g=$(ubus-cli 'WiFi.AccessPoint.3.UAPSDEnable?' 
+    2>/dev/null | grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
+  - echo "HapdAfterRestore6g=$(grep 'uapsd_advertisement_enabled=' 
+    /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+  capture: uapsd_en_6g
 
   # ---------- 2.4G ----------
-  - id: step3_24g_setter_roundtrip
-    action: exec
-    target: DUT
-    depends_on: step2_6g_setter_roundtrip
-    command:
-      - echo "Baseline24g=$(ubus-cli 'WiFi.AccessPoint.5.UAPSDEnable?' 2>/dev/null | grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
-      - ubus-cli WiFi.AccessPoint.5.UAPSDEnable=1
-      - sleep 3
-      - echo "AfterSet24g=$(ubus-cli 'WiFi.AccessPoint.5.UAPSDEnable?' 2>/dev/null | grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
-      - echo "HapdAfterSet24g=$(grep 'uapsd_advertisement_enabled=' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-      - echo "DriverAfterSet24g=$(wl -i wl2 wme_apsd 2>/dev/null)"
-      - ubus-cli WiFi.AccessPoint.5.UAPSDEnable=0
-      - sleep 3
-      - echo "AfterRestore24g=$(ubus-cli 'WiFi.AccessPoint.5.UAPSDEnable?' 2>/dev/null | grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
-      - echo "HapdAfterRestore24g=$(grep 'uapsd_advertisement_enabled=' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-    capture: uapsd_en_24g
+- id: step3_24g_setter_roundtrip
+  action: exec
+  target: DUT
+  depends_on: step2_6g_setter_roundtrip
+  command:
+  - echo "Baseline24g=$(ubus-cli 'WiFi.AccessPoint.5.UAPSDEnable?' 2>/dev/null |
+    grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
+  - ubus-cli WiFi.AccessPoint.5.UAPSDEnable=1
+  - sleep 3
+  - echo "AfterSet24g=$(ubus-cli 'WiFi.AccessPoint.5.UAPSDEnable?' 2>/dev/null |
+    grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
+  - echo "HapdAfterSet24g=$(grep 'uapsd_advertisement_enabled=' 
+    /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+  - echo "DriverAfterSet24g=$(wl -i wl2 wme_apsd 2>/dev/null)"
+  - ubus-cli WiFi.AccessPoint.5.UAPSDEnable=0
+  - sleep 3
+  - echo "AfterRestore24g=$(ubus-cli 'WiFi.AccessPoint.5.UAPSDEnable?' 
+    2>/dev/null | grep -o 'UAPSDEnable=[0-9]*' | cut -d= -f2)"
+  - echo "HapdAfterRestore24g=$(grep 'uapsd_advertisement_enabled=' 
+    /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+  capture: uapsd_en_24g
 
 pass_criteria:
-  - field: uapsd_en_5g.Baseline5g
-    operator: equals
-    value: '0'
-    description: '5G baseline UAPSDEnable should be 0'
-  - field: uapsd_en_5g.AfterSet5g
-    operator: equals
-    value: '1'
-    description: '5G after set=1, getter should read 1'
-  - field: uapsd_en_5g.HapdAfterSet5g
-    operator: equals
-    value: '1'
-    description: '5G hostapd uapsd_advertisement_enabled should flip to 1'
-  - field: uapsd_en_5g.DriverAfterSet5g
-    operator: equals
-    value: '1'
-    description: '5G driver wme_apsd should be 1'
-  - field: uapsd_en_5g.AfterRestore5g
-    operator: equals
-    value: '0'
-    description: '5G after restore=0, getter should read 0'
-  - field: uapsd_en_6g.Baseline6g
-    operator: equals
-    value: '0'
-    description: '6G baseline UAPSDEnable should be 0'
-  - field: uapsd_en_6g.AfterSet6g
-    operator: equals
-    value: '1'
-    description: '6G after set=1, getter should read 1'
-  - field: uapsd_en_6g.HapdAfterSet6g
-    operator: equals
-    value: '1'
-    description: '6G hostapd uapsd_advertisement_enabled should flip to 1'
-  - field: uapsd_en_6g.DriverAfterSet6g
-    operator: equals
-    value: '1'
-    description: '6G driver wme_apsd should be 1'
-  - field: uapsd_en_6g.AfterRestore6g
-    operator: equals
-    value: '0'
-    description: '6G after restore=0, getter should read 0'
-  - field: uapsd_en_24g.Baseline24g
-    operator: equals
-    value: '0'
-    description: '2.4G baseline UAPSDEnable should be 0'
-  - field: uapsd_en_24g.AfterSet24g
-    operator: equals
-    value: '1'
-    description: '2.4G after set=1, getter should read 1'
-  - field: uapsd_en_24g.HapdAfterSet24g
-    operator: equals
-    value: '1'
-    description: '2.4G hostapd uapsd_advertisement_enabled should flip to 1'
-  - field: uapsd_en_24g.DriverAfterSet24g
-    operator: equals
-    value: '1'
-    description: '2.4G driver wme_apsd should be 1'
-  - field: uapsd_en_24g.AfterRestore24g
-    operator: equals
-    value: '0'
-    description: '2.4G after restore=0, getter should read 0'
+- field: uapsd_en_5g.Baseline5g
+  operator: equals
+  value: '0'
+  description: '5G baseline UAPSDEnable should be 0'
+- field: uapsd_en_5g.AfterSet5g
+  operator: equals
+  value: '1'
+  description: '5G after set=1, getter should read 1'
+- field: uapsd_en_5g.HapdAfterSet5g
+  operator: equals
+  value: '1'
+  description: '5G hostapd uapsd_advertisement_enabled should flip to 1'
+- field: uapsd_en_5g.DriverAfterSet5g
+  operator: equals
+  value: '1'
+  description: '5G driver wme_apsd should be 1'
+- field: uapsd_en_5g.AfterRestore5g
+  operator: equals
+  value: '0'
+  description: '5G after restore=0, getter should read 0'
+- field: uapsd_en_6g.Baseline6g
+  operator: equals
+  value: '0'
+  description: '6G baseline UAPSDEnable should be 0'
+- field: uapsd_en_6g.AfterSet6g
+  operator: equals
+  value: '1'
+  description: '6G after set=1, getter should read 1'
+- field: uapsd_en_6g.HapdAfterSet6g
+  operator: equals
+  value: '1'
+  description: '6G hostapd uapsd_advertisement_enabled should flip to 1'
+- field: uapsd_en_6g.DriverAfterSet6g
+  operator: equals
+  value: '1'
+  description: '6G driver wme_apsd should be 1'
+- field: uapsd_en_6g.AfterRestore6g
+  operator: equals
+  value: '0'
+  description: '6G after restore=0, getter should read 0'
+- field: uapsd_en_24g.Baseline24g
+  operator: equals
+  value: '0'
+  description: '2.4G baseline UAPSDEnable should be 0'
+- field: uapsd_en_24g.AfterSet24g
+  operator: equals
+  value: '1'
+  description: '2.4G after set=1, getter should read 1'
+- field: uapsd_en_24g.HapdAfterSet24g
+  operator: equals
+  value: '1'
+  description: '2.4G hostapd uapsd_advertisement_enabled should flip to 1'
+- field: uapsd_en_24g.DriverAfterSet24g
+  operator: equals
+  value: '1'
+  description: '2.4G driver wme_apsd should be 1'
+- field: uapsd_en_24g.AfterRestore24g
+  operator: equals
+  value: '0'
+  description: '2.4G after restore=0, getter should read 0'
 
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.UAPSDEnable?"'
-  - 'ubus-cli "WiFi.AccessPoint.3.UAPSDEnable?"'
-  - 'ubus-cli "WiFi.AccessPoint.5.UAPSDEnable?"'
+- 'ubus-cli "WiFi.AccessPoint.1.UAPSDEnable?"'
+- 'ubus-cli "WiFi.AccessPoint.3.UAPSDEnable?"'
+- 'ubus-cli "WiFi.AccessPoint.5.UAPSDEnable?"'
 
-results_reference:
-  v4.0.3:
-    5g: Not Supported
-    6g: Not Supported
-    2.4g: Not Supported
-    comment: >-
-      Workbook row 96 keeps v4.0.3 at `Not Supported / Not Supported / Not Supported`.
-      Active 0403 still exposes a real tri-band setter round-trip (`0 -> 1 -> 0`
-      with hostapd `uapsd_advertisement_enabled` and driver `wme_apsd` convergence),
-      but the workbook verdict remains Not Supported, so the live evidence is retained
-      while `results_reference` is aligned back to row-96 authority.

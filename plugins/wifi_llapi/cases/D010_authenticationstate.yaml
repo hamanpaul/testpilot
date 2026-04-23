@@ -2,8 +2,6 @@ id: wifi-llapi-D010-authenticationstate
 name: "AuthenticationState — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 10
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: AuthenticationState
@@ -88,20 +86,23 @@ steps:
   target: STA
   band: 5g
   command:
-    - iw dev wl0 link
-    - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  - iw dev wl0 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
 - id: step2_5g_assoc
   action: exec
   target: DUT
   band: 5g
-  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac5g=\1/p'
   depends_on: step1_5g_sta_join
   capture: assoc_5g
 - id: step3_5g_driver_state
   action: exec
   target: DUT
   band: 5g
-  command: 'STA_MAC=$(wl -i wl0 assoclist | awk ''NR==1{print $2}''); if [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | grep -q ''state: AUTHENTICATED ASSOCIATED AUTHORIZED''; then echo ''DriverAuthState5g=1''; else echo ''DriverAuthState5g=0''; fi'
+  command: 'STA_MAC=$(wl -i wl0 assoclist | awk ''NR==1{print $2}''); if [ -n "$STA_MAC"
+    ] && wl -i wl0 sta_info $STA_MAC | grep -q ''state: AUTHENTICATED ASSOCIATED AUTHORIZED'';
+    then echo ''DriverAuthState5g=1''; else echo ''DriverAuthState5g=0''; fi'
   depends_on: step2_5g_assoc
   capture: driver_state_5g
 - id: step4_5g_get
@@ -116,21 +117,24 @@ steps:
   target: STA
   band: 6g
   command:
-    - iw dev wl1 link
-    - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-    - wl -i wl1 status
+  - iw dev wl1 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+  - wl -i wl1 status
 - id: step6_6g_assoc
   action: exec
   target: DUT
   band: 6g
-  command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+  command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac6g=\1/p'
   depends_on: step5_6g_sta_join
   capture: assoc_6g
 - id: step7_6g_driver_state
   action: exec
   target: DUT
   band: 6g
-  command: 'STA_MAC=$(wl -i wl1 assoclist | awk ''NR==1{print $2}''); if [ -n "$STA_MAC" ] && wl -i wl1 sta_info $STA_MAC | grep -q ''state: AUTHENTICATED ASSOCIATED AUTHORIZED''; then echo ''DriverAuthState6g=1''; else echo ''DriverAuthState6g=0''; fi'
+  command: 'STA_MAC=$(wl -i wl1 assoclist | awk ''NR==1{print $2}''); if [ -n "$STA_MAC"
+    ] && wl -i wl1 sta_info $STA_MAC | grep -q ''state: AUTHENTICATED ASSOCIATED AUTHORIZED'';
+    then echo ''DriverAuthState6g=1''; else echo ''DriverAuthState6g=0''; fi'
   depends_on: step6_6g_assoc
   capture: driver_state_6g
 - id: step8_6g_get
@@ -145,20 +149,23 @@ steps:
   target: STA
   band: 2.4g
   command:
-    - iw dev wl2 link
-    - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  - iw dev wl2 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
 - id: step10_24g_assoc
   action: exec
   target: DUT
   band: 2.4g
-  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac24g=\1/p'
   depends_on: step9_24g_sta_join
   capture: assoc_24g
 - id: step11_24g_driver_state
   action: exec
   target: DUT
   band: 2.4g
-  command: 'STA_MAC=$(wl -i wl2 assoclist | awk ''NR==1{print $2}''); if [ -n "$STA_MAC" ] && wl -i wl2 sta_info $STA_MAC | grep -q ''state: AUTHENTICATED ASSOCIATED AUTHORIZED''; then echo ''DriverAuthState24g=1''; else echo ''DriverAuthState24g=0''; fi'
+  command: 'STA_MAC=$(wl -i wl2 assoclist | awk ''NR==1{print $2}''); if [ -n "$STA_MAC"
+    ] && wl -i wl2 sta_info $STA_MAC | grep -q ''state: AUTHENTICATED ASSOCIATED AUTHORIZED'';
+    then echo ''DriverAuthState24g=1''; else echo ''DriverAuthState24g=0''; fi'
   depends_on: step10_24g_assoc
   capture: driver_state_24g
 - id: step12_24g_get
@@ -173,64 +180,59 @@ pass_criteria:
 - field: assoc_5g.AssocMac5g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: "5G: AP1 must expose one live STA MAC from wl0 assoclist before AuthenticationState is read."
+  description: "5G: AP1 must expose one live STA MAC from wl0 assoclist before AuthenticationState
+    is read."
 - field: driver_state_5g.DriverAuthState5g
   operator: equals
   value: '1'
-  description: "5G: wl0 sta_info must show AUTHENTICATED ASSOCIATED AUTHORIZED for the same STA."
+  description: "5G: wl0 sta_info must show AUTHENTICATED ASSOCIATED AUTHORIZED for
+    the same STA."
 - field: result_5g.AuthenticationState
   operator: equals
   reference: driver_state_5g.DriverAuthState5g
-  description: "5G: AuthenticationState must match the normalized wl0 driver auth state."
+  description: "5G: AuthenticationState must match the normalized wl0 driver auth
+    state."
 - field: assoc_6g.AssocMac6g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: "6G: AP3 must expose one live STA MAC from wl1 assoclist before AuthenticationState is read."
+  description: "6G: AP3 must expose one live STA MAC from wl1 assoclist before AuthenticationState
+    is read."
 - field: driver_state_6g.DriverAuthState6g
   operator: equals
   value: '1'
-  description: "6G: wl1 sta_info must show AUTHENTICATED ASSOCIATED AUTHORIZED for the same STA."
+  description: "6G: wl1 sta_info must show AUTHENTICATED ASSOCIATED AUTHORIZED for
+    the same STA."
 - field: result_6g.AuthenticationState
   operator: equals
   reference: driver_state_6g.DriverAuthState6g
-  description: "6G: AuthenticationState must match the normalized wl1 driver auth state."
+  description: "6G: AuthenticationState must match the normalized wl1 driver auth
+    state."
 - field: assoc_24g.AssocMac24g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: "2.4G: AP5 must expose one live STA MAC from wl2 assoclist before AuthenticationState is read."
+  description: "2.4G: AP5 must expose one live STA MAC from wl2 assoclist before AuthenticationState
+    is read."
 - field: driver_state_24g.DriverAuthState24g
   operator: equals
   value: '1'
-  description: "2.4G: wl2 sta_info must show AUTHENTICATED ASSOCIATED AUTHORIZED for the same STA."
+  description: "2.4G: wl2 sta_info must show AUTHENTICATED ASSOCIATED AUTHORIZED for
+    the same STA."
 - field: result_24g.AuthenticationState
   operator: equals
   reference: driver_state_24g.DriverAuthState24g
-  description: "2.4G: AuthenticationState must match the normalized wl2 driver auth state."
+  description: "2.4G: AuthenticationState must match the normalized wl2 driver auth
+    state."
 
 verification_command:
-  - 'wl -i wl0 assoclist'
-  - 'STA_MAC=$(wl -i wl0 assoclist | awk ''NR==1{print $2}'')'
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.AuthenticationState?"'
-  - 'wl -i wl0 sta_info $STA_MAC | grep "state:"'
-  - 'wl -i wl1 assoclist'
-  - 'STA_MAC=$(wl -i wl1 assoclist | awk ''NR==1{print $2}'')'
-  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.AuthenticationState?"'
-  - 'wl -i wl1 sta_info $STA_MAC | grep "state:"'
-  - 'wl -i wl2 assoclist'
-  - 'STA_MAC=$(wl -i wl2 assoclist | awk ''NR==1{print $2}'')'
-  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.AuthenticationState?"'
-  - 'wl -i wl2 sta_info $STA_MAC | grep "state:"'
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: >
-      5G/6G/2.4G should all be validated live against the workbook Pass/Pass/Pass baseline.
-      AuthenticationState must match wl sta_info state normalized from
-      AUTHENTICATED ASSOCIATED AUTHORIZED on AP1/AP3/AP5.
+- 'wl -i wl0 assoclist'
+- 'STA_MAC=$(wl -i wl0 assoclist | awk ''NR==1{print $2}'')'
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.AuthenticationState?"'
+- 'wl -i wl0 sta_info $STA_MAC | grep "state:"'
+- 'wl -i wl1 assoclist'
+- 'STA_MAC=$(wl -i wl1 assoclist | awk ''NR==1{print $2}'')'
+- 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.AuthenticationState?"'
+- 'wl -i wl1 sta_info $STA_MAC | grep "state:"'
+- 'wl -i wl2 assoclist'
+- 'STA_MAC=$(wl -i wl2 assoclist | awk ''NR==1{print $2}'')'
+- 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.AuthenticationState?"'
+- 'wl -i wl2 sta_info $STA_MAC | grep "state:"'

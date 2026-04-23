@@ -2,12 +2,9 @@ id: wifi-llapi-D108-uuid
 name: UUID — WiFi.AccessPoint.{i}.WPS.
 version: '1.0'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 108
   object: WiFi.AccessPoint.{i}.WPS.
   api: UUID
-  baseline: 0310-BGW720-300
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -43,22 +40,28 @@ steps:
   action: exec
   target: DUT
   command:
-    - 'echo "UUID5g=$(ubus-cli ''WiFi.AccessPoint.1.WPS.UUID?'' 2>/dev/null | grep -oE ''[0-9a-fA-F-]{36}'' | head -1)"'
-    - 'echo "HostapdUuid5g=$(grep ''^uuid='' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"'
+  - 'echo "UUID5g=$(ubus-cli ''WiFi.AccessPoint.1.WPS.UUID?'' 2>/dev/null | grep -oE
+    ''[0-9a-fA-F-]{36}'' | head -1)"'
+  - 'echo "HostapdUuid5g=$(grep ''^uuid='' /tmp/wl0_hapd.conf 2>/dev/null | head -1
+    | cut -d= -f2)"'
   capture: llapi_5g
 - id: step2_6g
   action: exec
   target: DUT
   command:
-    - 'echo "UUID6g=$(ubus-cli ''WiFi.AccessPoint.3.WPS.UUID?'' 2>/dev/null | grep -oE ''[0-9a-fA-F-]{36}'' | head -1)"'
-    - 'echo "HostapdUuid6g=$(grep ''^uuid='' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"'
+  - 'echo "UUID6g=$(ubus-cli ''WiFi.AccessPoint.3.WPS.UUID?'' 2>/dev/null | grep -oE
+    ''[0-9a-fA-F-]{36}'' | head -1)"'
+  - 'echo "HostapdUuid6g=$(grep ''^uuid='' /tmp/wl1_hapd.conf 2>/dev/null | head -1
+    | cut -d= -f2)"'
   capture: llapi_6g
 - id: step3_24g
   action: exec
   target: DUT
   command:
-    - 'echo "UUID24g=$(ubus-cli ''WiFi.AccessPoint.5.WPS.UUID?'' 2>/dev/null | grep -oE ''[0-9a-fA-F-]{36}'' | head -1)"'
-    - 'echo "HostapdUuid24g=$(grep ''^uuid='' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"'
+  - 'echo "UUID24g=$(ubus-cli ''WiFi.AccessPoint.5.WPS.UUID?'' 2>/dev/null | grep
+    -oE ''[0-9a-fA-F-]{36}'' | head -1)"'
+  - 'echo "HostapdUuid24g=$(grep ''^uuid='' /tmp/wl2_hapd.conf 2>/dev/null | head
+    -1 | cut -d= -f2)"'
   capture: llapi_24g
 pass_criteria:
 - field: llapi_5g.UUID5g
@@ -92,12 +95,6 @@ pass_criteria:
   band: 2.4g
   description: 2.4G hostapd uuid= should be present
 verification_command:
-  - 'cat /tmp/wl0_hapd.conf | grep uuid'
-  - 'cat /tmp/wl1_hapd.conf | grep uuid'
-  - 'cat /tmp/wl2_hapd.conf | grep uuid'
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Not Supported
-    2.4g: Pass
-    comment: Getter returns a valid UUID on all bands, but workbook row 108 keeps 6G Not Supported because wl1 hostapd has no uuid= projection while wl0/wl2 do.
+- 'cat /tmp/wl0_hapd.conf | grep uuid'
+- 'cat /tmp/wl1_hapd.conf | grep uuid'
+- 'cat /tmp/wl2_hapd.conf | grep uuid'

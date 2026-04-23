@@ -4,13 +4,9 @@ source:
   row: 373
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: DisassociationTime
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Fail
 topology:
   devices:
     DUT:

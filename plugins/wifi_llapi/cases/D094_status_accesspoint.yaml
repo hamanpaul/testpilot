@@ -2,8 +2,6 @@ id: wifi-llapi-D094-status-accesspoint
 name: "Status — WiFi.AccessPoint.{i}."
 version: '1.0'
 source:
-  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-  sheet: Wifi_LLAPI
   row: 94
   object: "WiFi.AccessPoint.{i}."
   api: "Status"
@@ -14,9 +12,9 @@ hlapi_command: ubus-cli "WiFi.AccessPoint.{i}.Status?"
 llapi_support: Support
 implemented_by: pWHM
 bands:
-  - 5g
-  - 6g
-  - 2.4g
+- 5g
+- 6g
+- 2.4g
 topology:
   devices:
     DUT:
@@ -39,75 +37,65 @@ test_environment: |
   - Cross-check with driver `wl -i wlX bss` (up/down)
 steps:
   # ---------- 5G ----------
-  - id: step1_status_5g
-    action: exec
-    target: DUT
-    command:
-      - echo "Status5g=$(ubus-cli 'WiFi.AccessPoint.1.Status?' 2>/dev/null | grep -o 'Status="[^"]*"' | cut -d'"' -f2)"
-      - echo "DriverBss5g=$(wl -i wl0 bss 2>/dev/null)"
-    capture: status_5g
+- id: step1_status_5g
+  action: exec
+  target: DUT
+  command:
+  - echo "Status5g=$(ubus-cli 'WiFi.AccessPoint.1.Status?' 2>/dev/null | grep -o
+    'Status="[^"]*"' | cut -d'"' -f2)"
+  - echo "DriverBss5g=$(wl -i wl0 bss 2>/dev/null)"
+  capture: status_5g
 
   # ---------- 6G ----------
-  - id: step2_status_6g
-    action: exec
-    target: DUT
-    depends_on: step1_status_5g
-    command:
-      - echo "Status6g=$(ubus-cli 'WiFi.AccessPoint.3.Status?' 2>/dev/null | grep -o 'Status="[^"]*"' | cut -d'"' -f2)"
-      - echo "DriverBss6g=$(wl -i wl1 bss 2>/dev/null)"
-    capture: status_6g
+- id: step2_status_6g
+  action: exec
+  target: DUT
+  depends_on: step1_status_5g
+  command:
+  - echo "Status6g=$(ubus-cli 'WiFi.AccessPoint.3.Status?' 2>/dev/null | grep -o
+    'Status="[^"]*"' | cut -d'"' -f2)"
+  - echo "DriverBss6g=$(wl -i wl1 bss 2>/dev/null)"
+  capture: status_6g
 
   # ---------- 2.4G ----------
-  - id: step3_status_24g
-    action: exec
-    target: DUT
-    depends_on: step2_status_6g
-    command:
-      - echo "Status24g=$(ubus-cli 'WiFi.AccessPoint.5.Status?' 2>/dev/null | grep -o 'Status="[^"]*"' | cut -d'"' -f2)"
-      - echo "DriverBss24g=$(wl -i wl2 bss 2>/dev/null)"
-    capture: status_24g
+- id: step3_status_24g
+  action: exec
+  target: DUT
+  depends_on: step2_status_6g
+  command:
+  - echo "Status24g=$(ubus-cli 'WiFi.AccessPoint.5.Status?' 2>/dev/null | grep 
+    -o 'Status="[^"]*"' | cut -d'"' -f2)"
+  - echo "DriverBss24g=$(wl -i wl2 bss 2>/dev/null)"
+  capture: status_24g
 
 pass_criteria:
-  - field: status_5g.Status5g
-    operator: equals
-    value: 'Enabled'
-    description: '5G Status should be Enabled'
-  - field: status_5g.DriverBss5g
-    operator: equals
-    value: 'up'
-    description: '5G driver bss should be up'
-  - field: status_6g.Status6g
-    operator: equals
-    value: 'Enabled'
-    description: '6G Status should be Enabled'
-  - field: status_6g.DriverBss6g
-    operator: equals
-    value: 'up'
-    description: '6G driver bss should be up'
-  - field: status_24g.Status24g
-    operator: equals
-    value: 'Enabled'
-    description: '2.4G Status should be Enabled'
-  - field: status_24g.DriverBss24g
-    operator: equals
-    value: 'up'
-    description: '2.4G driver bss should be up'
+- field: status_5g.Status5g
+  operator: equals
+  value: 'Enabled'
+  description: '5G Status should be Enabled'
+- field: status_5g.DriverBss5g
+  operator: equals
+  value: 'up'
+  description: '5G driver bss should be up'
+- field: status_6g.Status6g
+  operator: equals
+  value: 'Enabled'
+  description: '6G Status should be Enabled'
+- field: status_6g.DriverBss6g
+  operator: equals
+  value: 'up'
+  description: '6G driver bss should be up'
+- field: status_24g.Status24g
+  operator: equals
+  value: 'Enabled'
+  description: '2.4G Status should be Enabled'
+- field: status_24g.DriverBss24g
+  operator: equals
+  value: 'up'
+  description: '2.4G driver bss should be up'
 
 verification_command:
-  - 'wl -i wl0 bss'
-  - 'wl -i wl1 bss'
-  - 'wl -i wl2 bss'
+- 'wl -i wl0 bss'
+- 'wl -i wl1 bss'
+- 'wl -i wl2 bss'
 
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: >-
-      Active reruns show AP1/AP3/AP5 all return `Status="Enabled"` while
-      direct driver `wl -i wl{0,1,2} bss` stays `up`, so the read-only getter
-      correctly reflects the enabled AccessPoint state on all three bands.

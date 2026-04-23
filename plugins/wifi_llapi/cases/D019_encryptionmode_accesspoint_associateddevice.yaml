@@ -1,9 +1,7 @@
 id: wifi-llapi-D019-encryptionmode-accesspoint-associateddevice
-name: "EncryptionMode \u2014 WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+name: "EncryptionMode — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: '1.0'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 19
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: EncryptionMode
@@ -134,7 +132,8 @@ steps:
 - id: step2
   action: exec
   target: DUT
-  command: wl -i wl1 assoclist | sed -n 's/^assoclist \([0-9A-Fa-f:]*\).*/AssocMAC=\1/p'
+  command: wl -i wl1 assoclist | sed -n 's/^assoclist 
+    \([0-9A-Fa-f:]*\).*/AssocMAC=\1/p'
   depends_on: step1
   capture: assoc_driver
 - id: step3
@@ -151,25 +150,16 @@ pass_criteria:
 - field: assoc_driver.AssocMAC
   operator: regex
   value: ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$
-  description: AP3 should first expose a single live 6G STA MAC from wl1 assoclist.
+  description: AP3 should first expose a single live 6G STA MAC from wl1 
+    assoclist.
 - field: result.EncryptionMode
   operator: equals
   value: Default
-  description: EncryptionMode should stay Default; do not replace it with driver auth/crypto strings.
+  description: EncryptionMode should stay Default; do not replace it with driver
+    auth/crypto strings.
 verification_command:
-  - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-  - wl -i wl1 assoclist
-  - STA_MAC=$(wl -i wl1 assoclist | awk 'NR==1{print $2}')
-  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.EncryptionMode?"'
-  - 'wl -i wl1 sta_info $STA_MAC | grep -E "auth:|crypto:"'
-results_reference:
-  v4.0.1:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
-    comment: 'ARC: wld_ap_hostapd_getStaInfo doesn''t support cipher paser'
-  v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
-    comment: Workbook row 19 is fail-shaped; the getter still returns EncryptionMode="Default" while the same STA still shows SAE / CCMP security context.
+- wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+- wl -i wl1 assoclist
+- STA_MAC=$(wl -i wl1 assoclist | awk 'NR==1{print $2}')
+- 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.EncryptionMode?"'
+- 'wl -i wl1 sta_info $STA_MAC | grep -E "auth:|crypto:"'

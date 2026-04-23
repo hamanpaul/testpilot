@@ -4,18 +4,11 @@ source:
   row: 179
   object: WiFi.Radio.{i}.DriverConfig.
   api: Ampdu
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: workbook pass intent is setter-backed 1 -> 0 -> -1 replay under active STA baseline; 5g/2.4g use wl ampdu readback after reload settle, 6g uses BSS effect oracle under current 0403 reload path
 topology:
   devices:
     DUT:
@@ -37,198 +30,211 @@ topology:
     to: DUT
     band: 2.4g
 steps:
- - id: step1_ampdu_set_5g
-   target: DUT
-   action: exec
-   capture: set_5g
-   command:
-     - printf 'RequestedAmpdu5g=1\n'
-     - ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=1
-     - /etc/init.d/wld_gen start
-   expected: 5g setter 應接受 1 並觸發 reload
-   description: Radio.1 (5g) 將 Ampdu 設為 1，重載 wld 讓 driver 套用。
- - id: step2_ampdu_after_set_5g
-   target: DUT
-   action: exec
-   capture: after_set_5g
-   command:
-     - sleep 20
-     - ubus-cli "WiFi.Radio.1.DriverConfig.Ampdu?" | sed -n 's/^WiFi\.Radio\.1\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterSetGetterAmpdu5g=\1/p'
-     - wl -i wl0 ampdu | sed -n 's/^\([01]\)$/AfterSetDriverAmpdu5g=\1/p'
-   expected: 5g getter 與 wl ampdu readback 應同時收斂到 1
-   depends_on: step1_ampdu_set_5g
-   description: Radio.1 (5g) setter=1 後驗證 northbound getter 與 driver readback 都為 1。
- - id: step3_ampdu_set0_5g
-   target: DUT
-   action: exec
-   capture: set0_5g
-   command:
-     - printf 'RequestedAmpdu5g=0\n'
-     - ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=0
-     - /etc/init.d/wld_gen start
-   expected: 5g setter 應接受 0 並觸發 reload
-   depends_on: step2_ampdu_after_set_5g
-   description: Radio.1 (5g) 將 Ampdu 設為 0。
- - id: step4_ampdu_after_set0_5g
-   target: DUT
-   action: exec
-   capture: after_set0_5g
-   command:
-     - sleep 20
-     - ubus-cli "WiFi.Radio.1.DriverConfig.Ampdu?" | sed -n 's/^WiFi\.Radio\.1\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterSet0GetterAmpdu5g=\1/p'
-     - wl -i wl0 ampdu | sed -n 's/^\([01]\)$/AfterSet0DriverAmpdu5g=\1/p'
-   expected: 5g getter 與 wl ampdu readback 應同時收斂到 0
-   depends_on: step3_ampdu_set0_5g
-   description: Radio.1 (5g) setter=0 後驗證 northbound getter 與 driver readback 都為 0。
- - id: step5_ampdu_restore_5g
-   target: DUT
-   action: exec
-   capture: restore_5g
-   command:
-     - printf 'RestoreAmpdu5g=-1\n'
-     - ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=-1
-     - /etc/init.d/wld_gen start
-   expected: 5g restore 應接受 -1 並回到 driver default
-   depends_on: step4_ampdu_after_set0_5g
-   description: Radio.1 (5g) restore 回 driver default (-1)。
- - id: step6_ampdu_after_restore_5g
-   target: DUT
-   action: exec
-   capture: after_restore_5g
-   command:
-     - sleep 10
-     - ubus-cli "WiFi.Radio.1.DriverConfig.Ampdu?" | sed -n 's/^WiFi\.Radio\.1\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterRestoreGetterAmpdu5g=\1/p'
-   expected: 5g getter 應回到 -1
-   depends_on: step5_ampdu_restore_5g
-   description: Radio.1 (5g) restore 後 getter 應回到 -1。
- - id: step7_ampdu_set_6g
-   target: DUT
-   action: exec
-   capture: set_6g
-   command:
-     - printf 'RequestedAmpdu6g=1\n'
-     - ubus-cli WiFi.Radio.2.DriverConfig.Ampdu=1
-     - /etc/init.d/wld_gen start
-   expected: 6g setter 應接受 1 並觸發 reload
-   description: Radio.2 (6g) 將 Ampdu 設為 1，重載 wld 讓 driver 套用。
- - id: step8_ampdu_after_set_6g
-   target: DUT
-   action: exec
-   capture: after_set_6g
-   command:
-     - sleep 20
-     - ubus-cli "WiFi.Radio.2.DriverConfig.Ampdu?" | sed -n 's/^WiFi\.Radio\.2\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterSetGetterAmpdu6g=\1/p'
-     - wl -i wl1 bss | sed -n 's/^\(up\|down\)$/AfterSetBss6g=\1/p'
-   expected: 6g setter=1 後 getter 應為 1，且 BSS 應維持 up
-   depends_on: step7_ampdu_set_6g
-   description: Radio.2 (6g) setter=1 後以 getter 與 BSS state 驗證 Ampdu enable 效果。
- - id: step9_ampdu_set0_6g
-   target: DUT
-   action: exec
-   capture: set0_6g
-   command:
-     - printf 'RequestedAmpdu6g=0\n'
-     - ubus-cli WiFi.Radio.2.DriverConfig.Ampdu=0
-     - /etc/init.d/wld_gen start
-   expected: 6g setter 應接受 0 並觸發 reload
-   depends_on: step8_ampdu_after_set_6g
-   description: Radio.2 (6g) 將 Ampdu 設為 0。
- - id: step10_ampdu_after_set0_6g
-   target: DUT
-   action: exec
-   capture: after_set0_6g
-   command:
-     - sleep 20
-     - ubus-cli "WiFi.Radio.2.DriverConfig.Ampdu?" | sed -n 's/^WiFi\.Radio\.2\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterSet0GetterAmpdu6g=\1/p'
-     - wl -i wl1 bss | sed -n 's/^\(up\|down\)$/AfterSet0Bss6g=\1/p'
-   expected: 6g setter=0 後 getter 應為 0，且 BSS 應下線
-   depends_on: step9_ampdu_set0_6g
-   description: Radio.2 (6g) setter=0 後以 getter 與 BSS state 驗證 disable 效果。
- - id: step11_ampdu_restore_6g
-   target: DUT
-   action: exec
-   capture: restore_6g
-   command:
-     - printf 'RestoreAmpdu6g=-1\n'
-     - ubus-cli WiFi.Radio.2.DriverConfig.Ampdu=-1
-     - /etc/init.d/wld_gen start
-   expected: 6g restore 應接受 -1 並回到 driver default
-   depends_on: step10_ampdu_after_set0_6g
-   description: Radio.2 (6g) restore 回 driver default (-1)。
- - id: step12_ampdu_after_restore_6g
-   target: DUT
-   action: exec
-   capture: after_restore_6g
-   command:
-     - sleep 15
-     - ubus-cli "WiFi.Radio.2.DriverConfig.Ampdu?" | sed -n 's/^WiFi\.Radio\.2\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterRestoreGetterAmpdu6g=\1/p'
-   expected: 6g getter 應回到 -1
-   depends_on: step11_ampdu_restore_6g
-   description: Radio.2 (6g) restore 後 getter 應回到 -1。
- - id: step13_ampdu_set_24g
-   target: DUT
-   action: exec
-   capture: set_24g
-   command:
-     - printf 'RequestedAmpdu24g=1\n'
-     - ubus-cli WiFi.Radio.3.DriverConfig.Ampdu=1
-     - /etc/init.d/wld_gen start
-   expected: 2.4g setter 應接受 1 並觸發 reload
-   description: Radio.3 (2.4g) 將 Ampdu 設為 1，重載 wld 讓 driver 套用。
- - id: step14_ampdu_after_set_24g
-   target: DUT
-   action: exec
-   capture: after_set_24g
-   command:
-     - sleep 20
-     - ubus-cli "WiFi.Radio.3.DriverConfig.Ampdu?" | sed -n 's/^WiFi\.Radio\.3\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterSetGetterAmpdu24g=\1/p'
-     - wl -i wl2 ampdu | sed -n 's/^\([01]\)$/AfterSetDriverAmpdu24g=\1/p'
-   expected: 2.4g getter 與 wl ampdu readback 應同時收斂到 1
-   depends_on: step13_ampdu_set_24g
-   description: Radio.3 (2.4g) setter=1 後驗證 northbound getter 與 driver readback 都為 1。
- - id: step15_ampdu_set0_24g
-   target: DUT
-   action: exec
-   capture: set0_24g
-   command:
-     - printf 'RequestedAmpdu24g=0\n'
-     - ubus-cli WiFi.Radio.3.DriverConfig.Ampdu=0
-     - /etc/init.d/wld_gen start
-   expected: 2.4g setter 應接受 0 並觸發 reload
-   depends_on: step14_ampdu_after_set_24g
-   description: Radio.3 (2.4g) 將 Ampdu 設為 0。
- - id: step16_ampdu_after_set0_24g
-   target: DUT
-   action: exec
-   capture: after_set0_24g
-   command:
-     - sleep 20
-     - ubus-cli "WiFi.Radio.3.DriverConfig.Ampdu?" | sed -n 's/^WiFi\.Radio\.3\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterSet0GetterAmpdu24g=\1/p'
-     - wl -i wl2 ampdu | sed -n 's/^\([01]\)$/AfterSet0DriverAmpdu24g=\1/p'
-   expected: 2.4g getter 與 wl ampdu readback 應同時收斂到 0
-   depends_on: step15_ampdu_set0_24g
-   description: Radio.3 (2.4g) setter=0 後驗證 northbound getter 與 driver readback 都為 0。
- - id: step17_ampdu_restore_24g
-   target: DUT
-   action: exec
-   capture: restore_24g
-   command:
-     - printf 'RestoreAmpdu24g=-1\n'
-     - ubus-cli WiFi.Radio.3.DriverConfig.Ampdu=-1
-     - /etc/init.d/wld_gen start
-   expected: 2.4g restore 應接受 -1 並回到 driver default
-   depends_on: step16_ampdu_after_set0_24g
-   description: Radio.3 (2.4g) restore 回 driver default (-1)。
- - id: step18_ampdu_after_restore_24g
-   target: DUT
-   action: exec
-   capture: after_restore_24g
-   command:
-     - sleep 10
-     - ubus-cli "WiFi.Radio.3.DriverConfig.Ampdu?" | sed -n 's/^WiFi\.Radio\.3\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterRestoreGetterAmpdu24g=\1/p'
-   expected: 2.4g getter 應回到 -1
-   depends_on: step17_ampdu_restore_24g
-   description: Radio.3 (2.4g) restore 後 getter 應回到 -1。
+- id: step1_ampdu_set_5g
+  target: DUT
+  action: exec
+  capture: set_5g
+  command:
+  - printf 'RequestedAmpdu5g=1\n'
+  - ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=1
+  - /etc/init.d/wld_gen start
+  expected: 5g setter 應接受 1 並觸發 reload
+  description: Radio.1 (5g) 將 Ampdu 設為 1，重載 wld 讓 driver 套用。
+- id: step2_ampdu_after_set_5g
+  target: DUT
+  action: exec
+  capture: after_set_5g
+  command:
+  - sleep 20
+  - ubus-cli "WiFi.Radio.1.DriverConfig.Ampdu?" | sed -n 
+    's/^WiFi\.Radio\.1\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterSetGetterAmpdu5g=\1/p'
+  - wl -i wl0 ampdu | sed -n 's/^\([01]\)$/AfterSetDriverAmpdu5g=\1/p'
+  expected: 5g getter 與 wl ampdu readback 應同時收斂到 1
+  depends_on: step1_ampdu_set_5g
+  description: Radio.1 (5g) setter=1 後驗證 northbound getter 與 driver readback 都為 
+    1。
+- id: step3_ampdu_set0_5g
+  target: DUT
+  action: exec
+  capture: set0_5g
+  command:
+  - printf 'RequestedAmpdu5g=0\n'
+  - ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=0
+  - /etc/init.d/wld_gen start
+  expected: 5g setter 應接受 0 並觸發 reload
+  depends_on: step2_ampdu_after_set_5g
+  description: Radio.1 (5g) 將 Ampdu 設為 0。
+- id: step4_ampdu_after_set0_5g
+  target: DUT
+  action: exec
+  capture: after_set0_5g
+  command:
+  - sleep 20
+  - ubus-cli "WiFi.Radio.1.DriverConfig.Ampdu?" | sed -n 
+    's/^WiFi\.Radio\.1\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterSet0GetterAmpdu5g=\1/p'
+  - wl -i wl0 ampdu | sed -n 's/^\([01]\)$/AfterSet0DriverAmpdu5g=\1/p'
+  expected: 5g getter 與 wl ampdu readback 應同時收斂到 0
+  depends_on: step3_ampdu_set0_5g
+  description: Radio.1 (5g) setter=0 後驗證 northbound getter 與 driver readback 都為 
+    0。
+- id: step5_ampdu_restore_5g
+  target: DUT
+  action: exec
+  capture: restore_5g
+  command:
+  - printf 'RestoreAmpdu5g=-1\n'
+  - ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=-1
+  - /etc/init.d/wld_gen start
+  expected: 5g restore 應接受 -1 並回到 driver default
+  depends_on: step4_ampdu_after_set0_5g
+  description: Radio.1 (5g) restore 回 driver default (-1)。
+- id: step6_ampdu_after_restore_5g
+  target: DUT
+  action: exec
+  capture: after_restore_5g
+  command:
+  - sleep 10
+  - ubus-cli "WiFi.Radio.1.DriverConfig.Ampdu?" | sed -n 
+    's/^WiFi\.Radio\.1\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterRestoreGetterAmpdu5g=\1/p'
+  expected: 5g getter 應回到 -1
+  depends_on: step5_ampdu_restore_5g
+  description: Radio.1 (5g) restore 後 getter 應回到 -1。
+- id: step7_ampdu_set_6g
+  target: DUT
+  action: exec
+  capture: set_6g
+  command:
+  - printf 'RequestedAmpdu6g=1\n'
+  - ubus-cli WiFi.Radio.2.DriverConfig.Ampdu=1
+  - /etc/init.d/wld_gen start
+  expected: 6g setter 應接受 1 並觸發 reload
+  description: Radio.2 (6g) 將 Ampdu 設為 1，重載 wld 讓 driver 套用。
+- id: step8_ampdu_after_set_6g
+  target: DUT
+  action: exec
+  capture: after_set_6g
+  command:
+  - sleep 20
+  - ubus-cli "WiFi.Radio.2.DriverConfig.Ampdu?" | sed -n 
+    's/^WiFi\.Radio\.2\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterSetGetterAmpdu6g=\1/p'
+  - wl -i wl1 bss | sed -n 's/^\(up\|down\)$/AfterSetBss6g=\1/p'
+  expected: 6g setter=1 後 getter 應為 1，且 BSS 應維持 up
+  depends_on: step7_ampdu_set_6g
+  description: Radio.2 (6g) setter=1 後以 getter 與 BSS state 驗證 Ampdu enable 效果。
+- id: step9_ampdu_set0_6g
+  target: DUT
+  action: exec
+  capture: set0_6g
+  command:
+  - printf 'RequestedAmpdu6g=0\n'
+  - ubus-cli WiFi.Radio.2.DriverConfig.Ampdu=0
+  - /etc/init.d/wld_gen start
+  expected: 6g setter 應接受 0 並觸發 reload
+  depends_on: step8_ampdu_after_set_6g
+  description: Radio.2 (6g) 將 Ampdu 設為 0。
+- id: step10_ampdu_after_set0_6g
+  target: DUT
+  action: exec
+  capture: after_set0_6g
+  command:
+  - sleep 20
+  - ubus-cli "WiFi.Radio.2.DriverConfig.Ampdu?" | sed -n 
+    's/^WiFi\.Radio\.2\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterSet0GetterAmpdu6g=\1/p'
+  - wl -i wl1 bss | sed -n 's/^\(up\|down\)$/AfterSet0Bss6g=\1/p'
+  expected: 6g setter=0 後 getter 應為 0，且 BSS 應下線
+  depends_on: step9_ampdu_set0_6g
+  description: Radio.2 (6g) setter=0 後以 getter 與 BSS state 驗證 disable 效果。
+- id: step11_ampdu_restore_6g
+  target: DUT
+  action: exec
+  capture: restore_6g
+  command:
+  - printf 'RestoreAmpdu6g=-1\n'
+  - ubus-cli WiFi.Radio.2.DriverConfig.Ampdu=-1
+  - /etc/init.d/wld_gen start
+  expected: 6g restore 應接受 -1 並回到 driver default
+  depends_on: step10_ampdu_after_set0_6g
+  description: Radio.2 (6g) restore 回 driver default (-1)。
+- id: step12_ampdu_after_restore_6g
+  target: DUT
+  action: exec
+  capture: after_restore_6g
+  command:
+  - sleep 15
+  - ubus-cli "WiFi.Radio.2.DriverConfig.Ampdu?" | sed -n 
+    's/^WiFi\.Radio\.2\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterRestoreGetterAmpdu6g=\1/p'
+  expected: 6g getter 應回到 -1
+  depends_on: step11_ampdu_restore_6g
+  description: Radio.2 (6g) restore 後 getter 應回到 -1。
+- id: step13_ampdu_set_24g
+  target: DUT
+  action: exec
+  capture: set_24g
+  command:
+  - printf 'RequestedAmpdu24g=1\n'
+  - ubus-cli WiFi.Radio.3.DriverConfig.Ampdu=1
+  - /etc/init.d/wld_gen start
+  expected: 2.4g setter 應接受 1 並觸發 reload
+  description: Radio.3 (2.4g) 將 Ampdu 設為 1，重載 wld 讓 driver 套用。
+- id: step14_ampdu_after_set_24g
+  target: DUT
+  action: exec
+  capture: after_set_24g
+  command:
+  - sleep 20
+  - ubus-cli "WiFi.Radio.3.DriverConfig.Ampdu?" | sed -n 
+    's/^WiFi\.Radio\.3\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterSetGetterAmpdu24g=\1/p'
+  - wl -i wl2 ampdu | sed -n 's/^\([01]\)$/AfterSetDriverAmpdu24g=\1/p'
+  expected: 2.4g getter 與 wl ampdu readback 應同時收斂到 1
+  depends_on: step13_ampdu_set_24g
+  description: Radio.3 (2.4g) setter=1 後驗證 northbound getter 與 driver readback 
+    都為 1。
+- id: step15_ampdu_set0_24g
+  target: DUT
+  action: exec
+  capture: set0_24g
+  command:
+  - printf 'RequestedAmpdu24g=0\n'
+  - ubus-cli WiFi.Radio.3.DriverConfig.Ampdu=0
+  - /etc/init.d/wld_gen start
+  expected: 2.4g setter 應接受 0 並觸發 reload
+  depends_on: step14_ampdu_after_set_24g
+  description: Radio.3 (2.4g) 將 Ampdu 設為 0。
+- id: step16_ampdu_after_set0_24g
+  target: DUT
+  action: exec
+  capture: after_set0_24g
+  command:
+  - sleep 20
+  - ubus-cli "WiFi.Radio.3.DriverConfig.Ampdu?" | sed -n 
+    's/^WiFi\.Radio\.3\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterSet0GetterAmpdu24g=\1/p'
+  - wl -i wl2 ampdu | sed -n 's/^\([01]\)$/AfterSet0DriverAmpdu24g=\1/p'
+  expected: 2.4g getter 與 wl ampdu readback 應同時收斂到 0
+  depends_on: step15_ampdu_set0_24g
+  description: Radio.3 (2.4g) setter=0 後驗證 northbound getter 與 driver readback 
+    都為 0。
+- id: step17_ampdu_restore_24g
+  target: DUT
+  action: exec
+  capture: restore_24g
+  command:
+  - printf 'RestoreAmpdu24g=-1\n'
+  - ubus-cli WiFi.Radio.3.DriverConfig.Ampdu=-1
+  - /etc/init.d/wld_gen start
+  expected: 2.4g restore 應接受 -1 並回到 driver default
+  depends_on: step16_ampdu_after_set0_24g
+  description: Radio.3 (2.4g) restore 回 driver default (-1)。
+- id: step18_ampdu_after_restore_24g
+  target: DUT
+  action: exec
+  capture: after_restore_24g
+  command:
+  - sleep 10
+  - ubus-cli "WiFi.Radio.3.DriverConfig.Ampdu?" | sed -n 
+    's/^WiFi\.Radio\.3\.DriverConfig\.Ampdu=\(-\?[0-9][0-9]*\)$/AfterRestoreGetterAmpdu24g=\1/p'
+  expected: 2.4g getter 應回到 -1
+  depends_on: step17_ampdu_restore_24g
+  description: Radio.3 (2.4g) restore 後 getter 應回到 -1。
 pass_criteria:
 - field: after_set_5g.AfterSetGetterAmpdu5g
   operator: equals

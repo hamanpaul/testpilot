@@ -4,15 +4,9 @@ source:
   row: 414
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: MaxUplinkRateSupported
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
 topology:
   devices:
     DUT:
@@ -35,7 +29,8 @@ steps:
   target: dut
   action: read
   capture: getter_5g
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MaxUplinkRateSupported?"
+  command: ubus-cli 
+    "WiFi.AccessPoint.1.AssociatedDevice.1.MaxUplinkRateSupported?"
   expected: MaxUplinkRateSupported 回傳有效值
   description: AP1 AssociatedDevice.1 MaxUplinkRateSupported getter
   depends_on: step_5g_assoc_check

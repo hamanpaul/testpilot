@@ -2,12 +2,9 @@ id: wifi-llapi-D087-modeenabled-accesspoint-security
 name: "ModeEnabled — WiFi.AccessPoint.{i}.Security"
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 87
   object: WiFi.AccessPoint.{i}.Security
   api: ModeEnabled
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -68,7 +65,11 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: 'MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" | sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p''); KM=$(grep -m1 ''^wpa_key_mgmt='' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); W=$(grep -m1 ''^ieee80211w='' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d ''[:space:]'' || true); printf ''BaselineModeEnabled5g=%s\nBaselineKeyMgmt5g=%s\nBaselineIeee80211w5g=%s\n'' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
+  command: 'MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" | sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p'');
+    KM=$(grep -m1 ''^wpa_key_mgmt='' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2-
+    | xargs || true); W=$(grep -m1 ''^ieee80211w='' /tmp/wl0_hapd.conf 2>/dev/null
+    | cut -d= -f2- | tr -d ''[:space:]'' || true); printf ''BaselineModeEnabled5g=%s\nBaselineKeyMgmt5g=%s\nBaselineIeee80211w5g=%s\n''
+    "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
   capture: baseline_5g
 
 # --- 5G setter ---
@@ -77,8 +78,8 @@ steps:
   target: DUT
   band: 5g
   command:
-    - ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
-    - printf 'SetterRequest5g=WPA3-Personal\n'
+  - ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
+  - printf 'SetterRequest5g=WPA3-Personal\n'
   depends_on: step1_baseline_5g
   capture: set_5g
 
@@ -87,7 +88,12 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: 'sleep 5; MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" | sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p''); KM=$(grep -m1 ''^wpa_key_mgmt='' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); W=$(grep -m1 ''^ieee80211w='' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d ''[:space:]'' || true); printf ''GetterModeEnabled5g=%s\nHostapdKeyMgmt5g=%s\nHostapdIeee80211w5g=%s\n'' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
+  command: 'sleep 5; MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" |
+    sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p''); KM=$(grep -m1 ''^wpa_key_mgmt=''
+    /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); W=$(grep -m1 ''^ieee80211w=''
+    /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d ''[:space:]'' || true);
+    printf ''GetterModeEnabled5g=%s\nHostapdKeyMgmt5g=%s\nHostapdIeee80211w5g=%s\n''
+    "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
   depends_on: step2_set_5g
   capture: readback_5g
 
@@ -96,7 +102,12 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: 'ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal; sleep 5; MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" | sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p''); KM=$(grep -m1 ''^wpa_key_mgmt='' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); W=$(grep -m1 ''^ieee80211w='' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d ''[:space:]'' || true); printf ''RestoredModeEnabled5g=%s\nRestoredKeyMgmt5g=%s\nRestoredIeee80211w5g=%s\n'' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
+  command: 'ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal; sleep
+    5; MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" | sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p'');
+    KM=$(grep -m1 ''^wpa_key_mgmt='' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2-
+    | xargs || true); W=$(grep -m1 ''^ieee80211w='' /tmp/wl0_hapd.conf 2>/dev/null
+    | cut -d= -f2- | tr -d ''[:space:]'' || true); printf ''RestoredModeEnabled5g=%s\nRestoredKeyMgmt5g=%s\nRestoredIeee80211w5g=%s\n''
+    "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
   depends_on: step3_readback_5g
   capture: restore_5g
 
@@ -105,7 +116,11 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: 'MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" | sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p''); KM=$(grep -m1 ''^wpa_key_mgmt='' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); W=$(grep -m1 ''^ieee80211w='' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d ''[:space:]'' || true); printf ''BaselineModeEnabled6g=%s\nBaselineKeyMgmt6g=%s\nBaselineIeee80211w6g=%s\n'' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
+  command: 'MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" | sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p'');
+    KM=$(grep -m1 ''^wpa_key_mgmt='' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2-
+    | xargs || true); W=$(grep -m1 ''^ieee80211w='' /tmp/wl1_hapd.conf 2>/dev/null
+    | cut -d= -f2- | tr -d ''[:space:]'' || true); printf ''BaselineModeEnabled6g=%s\nBaselineKeyMgmt6g=%s\nBaselineIeee80211w6g=%s\n''
+    "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
   capture: baseline_6g
 
 # --- 6G setter ---
@@ -114,8 +129,8 @@ steps:
   target: DUT
   band: 6g
   command:
-    - ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
-    - printf 'SetterRequest6g=WPA3-Personal\n'
+  - ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
+  - printf 'SetterRequest6g=WPA3-Personal\n'
   depends_on: step5_baseline_6g
   capture: set_6g
 
@@ -124,7 +139,12 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: 'sleep 5; MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" | sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p''); KM=$(grep -m1 ''^wpa_key_mgmt='' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); W=$(grep -m1 ''^ieee80211w='' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d ''[:space:]'' || true); printf ''GetterModeEnabled6g=%s\nHostapdKeyMgmt6g=%s\nHostapdIeee80211w6g=%s\n'' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
+  command: 'sleep 5; MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" |
+    sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p''); KM=$(grep -m1 ''^wpa_key_mgmt=''
+    /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); W=$(grep -m1 ''^ieee80211w=''
+    /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d ''[:space:]'' || true);
+    printf ''GetterModeEnabled6g=%s\nHostapdKeyMgmt6g=%s\nHostapdIeee80211w6g=%s\n''
+    "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
   depends_on: step6_set_6g
   capture: readback_6g
 
@@ -133,7 +153,12 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: 'ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal; sleep 5; MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" | sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p''); KM=$(grep -m1 ''^wpa_key_mgmt='' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); W=$(grep -m1 ''^ieee80211w='' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d ''[:space:]'' || true); printf ''RestoredModeEnabled6g=%s\nRestoredKeyMgmt6g=%s\nRestoredIeee80211w6g=%s\n'' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
+  command: 'ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal; sleep
+    5; MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" | sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p'');
+    KM=$(grep -m1 ''^wpa_key_mgmt='' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2-
+    | xargs || true); W=$(grep -m1 ''^ieee80211w='' /tmp/wl1_hapd.conf 2>/dev/null
+    | cut -d= -f2- | tr -d ''[:space:]'' || true); printf ''RestoredModeEnabled6g=%s\nRestoredKeyMgmt6g=%s\nRestoredIeee80211w6g=%s\n''
+    "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
   depends_on: step7_readback_6g
   capture: restore_6g
 
@@ -142,7 +167,11 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: 'MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" | sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p''); KM=$(grep -m1 ''^wpa_key_mgmt='' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); W=$(grep -m1 ''^ieee80211w='' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d ''[:space:]'' || true); printf ''BaselineModeEnabled24g=%s\nBaselineKeyMgmt24g=%s\nBaselineIeee80211w24g=%s\n'' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
+  command: 'MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" | sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p'');
+    KM=$(grep -m1 ''^wpa_key_mgmt='' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2-
+    | xargs || true); W=$(grep -m1 ''^ieee80211w='' /tmp/wl2_hapd.conf 2>/dev/null
+    | cut -d= -f2- | tr -d ''[:space:]'' || true); printf ''BaselineModeEnabled24g=%s\nBaselineKeyMgmt24g=%s\nBaselineIeee80211w24g=%s\n''
+    "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
   capture: baseline_24g
 
 # --- 2.4G setter ---
@@ -151,8 +180,8 @@ steps:
   target: DUT
   band: 2.4g
   command:
-    - ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA3-Personal
-    - printf 'SetterRequest24g=WPA3-Personal\n'
+  - ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA3-Personal
+  - printf 'SetterRequest24g=WPA3-Personal\n'
   depends_on: step9_baseline_24g
   capture: set_24g
 
@@ -161,7 +190,12 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: 'sleep 5; MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" | sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p''); KM=$(grep -m1 ''^wpa_key_mgmt='' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); W=$(grep -m1 ''^ieee80211w='' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d ''[:space:]'' || true); printf ''GetterModeEnabled24g=%s\nHostapdKeyMgmt24g=%s\nHostapdIeee80211w24g=%s\n'' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
+  command: 'sleep 5; MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" |
+    sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p''); KM=$(grep -m1 ''^wpa_key_mgmt=''
+    /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); W=$(grep -m1 ''^ieee80211w=''
+    /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d ''[:space:]'' || true);
+    printf ''GetterModeEnabled24g=%s\nHostapdKeyMgmt24g=%s\nHostapdIeee80211w24g=%s\n''
+    "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
   depends_on: step10_set_24g
   capture: readback_24g
 
@@ -170,7 +204,12 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: 'ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal; sleep 5; MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" | sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p''); KM=$(grep -m1 ''^wpa_key_mgmt='' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); W=$(grep -m1 ''^ieee80211w='' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d ''[:space:]'' || true); printf ''RestoredModeEnabled24g=%s\nRestoredKeyMgmt24g=%s\nRestoredIeee80211w24g=%s\n'' "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
+  command: 'ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal; sleep
+    5; MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" | sed -n ''s/.*ModeEnabled="\([^"]*\)".*/\1/p'');
+    KM=$(grep -m1 ''^wpa_key_mgmt='' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2-
+    | xargs || true); W=$(grep -m1 ''^ieee80211w='' /tmp/wl2_hapd.conf 2>/dev/null
+    | cut -d= -f2- | tr -d ''[:space:]'' || true); printf ''RestoredModeEnabled24g=%s\nRestoredKeyMgmt24g=%s\nRestoredIeee80211w24g=%s\n''
+    "$MODE" "${KM:-ABSENT}" "${W:-ABSENT}"'
   depends_on: step11_readback_24g
   capture: restore_24g
 
@@ -196,7 +235,8 @@ pass_criteria:
 - field: readback_5g.HostapdIeee80211w5g
   operator: equals
   value: '2'
-  description: 5G wl0 hostapd ieee80211w should converge to 2 (Required) after WPA3.
+  description: 5G wl0 hostapd ieee80211w should converge to 2 (Required) after 
+    WPA3.
 # 6G baseline
 - field: baseline_6g.BaselineModeEnabled6g
   operator: equals
@@ -240,38 +280,28 @@ pass_criteria:
 - field: readback_24g.HostapdIeee80211w24g
   operator: equals
   value: '2'
-  description: 2.4G wl2 hostapd ieee80211w should converge to 2 (Required) after WPA3.
+  description: 2.4G wl2 hostapd ieee80211w should converge to 2 (Required) after
+    WPA3.
 verification_command:
-  - '# 5G'
-  - 'ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"'
-  - ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
-  - sleep 5
-  - 'ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"'
-  - 'grep -E ''^(wpa_key_mgmt|ieee80211w)='' /tmp/wl0_hapd.conf || true'
-  - ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
-  - '# 6G'
-  - 'ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"'
-  - ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
-  - sleep 5
-  - 'ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"'
-  - 'grep -E ''^(wpa_key_mgmt|ieee80211w)='' /tmp/wl1_hapd.conf || true'
-  - ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
-  - '# 2.4G'
-  - 'ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"'
-  - ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA3-Personal
-  - sleep 5
-  - 'ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"'
-  - 'grep -E ''^(wpa_key_mgmt|ieee80211w)='' /tmp/wl2_hapd.conf || true'
-  - ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal
+- '# 5G'
+- 'ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"'
+- ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
+- sleep 5
+- 'ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"'
+- 'grep -E ''^(wpa_key_mgmt|ieee80211w)='' /tmp/wl0_hapd.conf || true'
+- ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+- '# 6G'
+- 'ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"'
+- ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
+- sleep 5
+- 'ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"'
+- 'grep -E ''^(wpa_key_mgmt|ieee80211w)='' /tmp/wl1_hapd.conf || true'
+- ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
+- '# 2.4G'
+- 'ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"'
+- ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA3-Personal
+- sleep 5
+- 'ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"'
+- 'grep -E ''^(wpa_key_mgmt|ieee80211w)='' /tmp/wl2_hapd.conf || true'
+- ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal
 
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'workbook row 87 is a tri-band Pass case: setter `ModeEnabled=WPA3-Personal` is accepted on AP1/AP3/AP5, getter reads back `WPA3-Personal`, and hostapd converges to the WPA3/SAE family with `ieee80211w=2`; cleanup restore is kept for lab hygiene but is not the workbook pass gate.'

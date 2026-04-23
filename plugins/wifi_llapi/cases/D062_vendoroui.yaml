@@ -2,12 +2,9 @@ id: wifi-llapi-D062-vendoroui
 name: "VendorOUI — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 62
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: VendorOUI
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -130,7 +127,8 @@ steps:
   action: exec
   target: DUT
   command: >-
-    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f' | sed 's/^/MACAddress=/'
+    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'
+    | tr 'A-F' 'a-f' | sed 's/^/MACAddress=/'
   depends_on: step1
   capture: assoc_entry
 - id: step3
@@ -143,21 +141,29 @@ steps:
   action: exec
   target: DUT
   command: >-
-    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= '/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.VendorOUI=/ {gsub(/"/, "", $2); print "AssocVendorOUI=" $2}'
+    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= '/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/
+    {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.VendorOUI=/
+    {gsub(/"/, "", $2); print "AssocVendorOUI=" $2}'
   depends_on: step3
   capture: assoc_snapshot
 - id: step5
   action: exec
   target: DUT
   command: >-
-    STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f'); [ -n "$STA_MAC" ] && echo DriverAssocMac="$STA_MAC" && wl -i wl0 sta_info "$STA_MAC" | awk '/^[[:space:]]*VENDOR OUI VALUE\[[0-9]+\]/ {oui[++n]=$NF} END {if (n) {print "DriverVendorOUICount=" n; list=""; for (i=1;i<=n;i++) list = list (i>1 ? "," : "") oui[i]; print "DriverVendorOUIList=" list}}'
+    STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
+    's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f'); [ -n "$STA_MAC" ] && echo
+    DriverAssocMac="$STA_MAC" && wl -i wl0 sta_info "$STA_MAC" | awk '/^[[:space:]]*VENDOR
+    OUI VALUE\[[0-9]+\]/ {oui[++n]=$NF} END {if (n) {print "DriverVendorOUICount="
+    n; list=""; for (i=1;i<=n;i++) list = list (i>1 ? "," : "") oui[i]; print "DriverVendorOUIList="
+    list}}'
   depends_on: step4
   capture: driver_capture
 pass_criteria:
 - field: sta_identity.StaMac
   operator: regex
   value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: COM1 wl0 must resolve to a concrete live STA MAC before DUT-side validation.
+  description: COM1 wl0 must resolve to a concrete live STA MAC before DUT-side 
+    validation.
 - field: assoc_entry.MACAddress
   operator: regex
   value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -165,43 +171,54 @@ pass_criteria:
 - field: assoc_entry.MACAddress
   operator: equals
   reference: sta_identity.StaMac
-  description: AP1 AssociatedDevice.1 must correspond to the same COM1 wl0 station used for this manual checkpoint.
+  description: AP1 AssociatedDevice.1 must correspond to the same COM1 wl0 
+    station used for this manual checkpoint.
 - field: result.VendorOUI
   operator: regex
-  value: ^([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2}(,([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2})*$
-  description: The direct getter must expose a concrete comma-separated VendorOUI list for the same STA.
+  value: 
+    ^([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2}(,([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2})*$
+  description: The direct getter must expose a concrete comma-separated 
+    VendorOUI list for the same STA.
 - field: assoc_snapshot.AssocMAC
   operator: equals
   reference: assoc_entry.MACAddress
-  description: AssociatedDevice snapshot evidence must come from the same AP1 station entry.
+  description: AssociatedDevice snapshot evidence must come from the same AP1 
+    station entry.
 - field: result.VendorOUI
   operator: equals
   reference: assoc_snapshot.AssocVendorOUI
-  description: Direct getter VendorOUI must match the same AssociatedDevice snapshot value.
+  description: Direct getter VendorOUI must match the same AssociatedDevice 
+    snapshot value.
 - field: driver_capture.DriverAssocMac
   operator: equals
   reference: assoc_entry.MACAddress
-  description: Driver evidence must target the same AssociatedDevice MAC resolved in step2.
+  description: Driver evidence must target the same AssociatedDevice MAC 
+    resolved in step2.
 - field: driver_capture.DriverVendorOUICount
   operator: '>'
   value: '0'
-  description: wl0 sta_info must expose at least one driver-side vendor OUI for the same STA.
+  description: wl0 sta_info must expose at least one driver-side vendor OUI for 
+    the same STA.
 - field: driver_capture.DriverVendorOUIList
   operator: regex
-  value: ^([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2}(,([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2})*$
-  description: The driver-side vendor OUI evidence must stay a concrete comma-separated OUI list.
+  value: 
+    ^([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2}(,([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2})*$
+  description: The driver-side vendor OUI evidence must stay a concrete 
+    comma-separated OUI list.
 - field: driver_capture.DriverVendorOUIList
   operator: equals
   reference: result.VendorOUI
-  description: The driver-side vendor OUI list must match the direct LLAPI VendorOUI value for the same STA.
+  description: The driver-side vendor OUI list must match the direct LLAPI 
+    VendorOUI value for the same STA.
 verification_command:
-  - 'cat /sys/class/net/wl0/address | tr ''A-F'' ''a-f'' | sed ''s/^/StaMac=/'''
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI?"'
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= ''/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.VendorOUI=/ {gsub(/"/, "", $2); print "AssocVendorOUI=" $2}'''
-  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'' | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ] && echo DriverAssocMac="$STA_MAC" && wl -i wl0 sta_info "$STA_MAC" | awk ''/^[[:space:]]*VENDOR OUI VALUE\[[0-9]+\]/ {oui[++n]=$NF} END {if (n) {print "DriverVendorOUICount=" n; list=""; for (i=1;i<=n;i++) list = list (i>1 ? "," : "") oui[i]; print "DriverVendorOUIList=" list}}'''
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'Authoritative same-STA retest resolved AP1 AssociatedDevice.1.VendorOUI as the concrete list 00:90:4C,00:10:18,00:50:F2,50:6F:9A; the same value exact-closed through the direct getter, the same-entry AssociatedDevice snapshot, and wl0 sta_info driver capture for the associated 5G STA.'
+- 'cat /sys/class/net/wl0/address | tr ''A-F'' ''a-f'' | sed ''s/^/StaMac=/'''
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI?"'
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= ''/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/
+  {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.VendorOUI=/
+  {gsub(/"/, "", $2); print "AssocVendorOUI=" $2}'''
+- 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
+  ''s/.*MACAddress="\([^"]*\)".*/\1/p'' | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ] &&
+  echo DriverAssocMac="$STA_MAC" && wl -i wl0 sta_info "$STA_MAC" | awk ''/^[[:space:]]*VENDOR
+  OUI VALUE\[[0-9]+\]/ {oui[++n]=$NF} END {if (n) {print "DriverVendorOUICount=" n;
+  list=""; for (i=1;i<=n;i++) list = list (i>1 ? "," : "") oui[i]; print "DriverVendorOUIList="
+  list}}'''

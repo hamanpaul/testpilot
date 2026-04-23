@@ -4,17 +4,11 @@ source:
   row: 527
   object: WiFi.SSID.{i}.Stats.WmmPacketsSent.
   api: AC_VO
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
 topology:
   devices:
     DUT:
@@ -26,7 +20,9 @@ steps:
   target: dut
   action: exec
   capture: refresh_5g
-  command: ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n '/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent5g=\1/p'
+  command: ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n '/WmmPacketsSent = 
+    {/,/}/s/^[[:space:]]*AC_VO = 
+    \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent5g=\1/p'
   expected: getSSIDStats() 匯出 WmmPacketsSent.AC_VO
   description: SSID.4 (5g) getSSIDStats() WmmPacketsSent.AC_VO refresh
 - id: step_5g_direct
@@ -40,14 +36,17 @@ steps:
   target: dut
   action: exec
   capture: driver_5g
-  command: wl -i wl0 wme_counters | grep '^AC_VO:' | awk '{print "DriverWmmPacketsSent5g="$4}'
+  command: wl -i wl0 wme_counters | grep '^AC_VO:' | awk '{print 
+    "DriverWmmPacketsSent5g="$4}'
   expected: wl0 wme_counters 匯出 AC_VO tx frames
   description: SSID.4 (5g) driver AC_VO tx frames
 - id: step_6g_refresh
   target: dut
   action: exec
   capture: refresh_6g
-  command: ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n '/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent6g=\1/p'
+  command: ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n '/WmmPacketsSent = 
+    {/,/}/s/^[[:space:]]*AC_VO = 
+    \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent6g=\1/p'
   expected: getSSIDStats() 匯出 WmmPacketsSent.AC_VO
   description: SSID.6 (6g) getSSIDStats() WmmPacketsSent.AC_VO refresh
 - id: step_6g_direct
@@ -61,14 +60,17 @@ steps:
   target: dut
   action: exec
   capture: driver_6g
-  command: wl -i wl1 wme_counters | grep '^AC_VO:' | awk '{print "DriverWmmPacketsSent6g="$4}'
+  command: wl -i wl1 wme_counters | grep '^AC_VO:' | awk '{print 
+    "DriverWmmPacketsSent6g="$4}'
   expected: wl1 wme_counters 匯出 AC_VO tx frames
   description: SSID.6 (6g) driver AC_VO tx frames
 - id: step_24g_refresh
   target: dut
   action: exec
   capture: refresh_24g
-  command: ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n '/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent24g=\1/p'
+  command: ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n '/WmmPacketsSent = 
+    {/,/}/s/^[[:space:]]*AC_VO = 
+    \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent24g=\1/p'
   expected: getSSIDStats() 匯出 WmmPacketsSent.AC_VO
   description: SSID.8 (2.4g) getSSIDStats() WmmPacketsSent.AC_VO refresh
 - id: step_24g_direct
@@ -82,41 +84,51 @@ steps:
   target: dut
   action: exec
   capture: driver_24g
-  command: wl -i wl2 wme_counters | grep '^AC_VO:' | awk '{print "DriverWmmPacketsSent24g="$4}'
+  command: wl -i wl2 wme_counters | grep '^AC_VO:' | awk '{print 
+    "DriverWmmPacketsSent24g="$4}'
   expected: wl2 wme_counters 匯出 AC_VO tx frames
   description: SSID.8 (2.4g) driver AC_VO tx frames
 pass_criteria:
 - field: direct_5g.AC_VO
   operator: equals
   reference: refresh_5g.GetSSIDStatsWmmPacketsSent5g
-  description: 5g direct Stats.WmmPacketsSent.AC_VO must match getSSIDStats().WmmPacketsSent.AC_VO after refresh.
+  description: 5g direct Stats.WmmPacketsSent.AC_VO must match 
+    getSSIDStats().WmmPacketsSent.AC_VO after refresh.
 - field: direct_5g.AC_VO
   operator: equals
   reference: driver_5g.DriverWmmPacketsSent5g
-  description: 5g direct Stats.WmmPacketsSent.AC_VO must match wl0 wme_counters AC_VO tx frames.
+  description: 5g direct Stats.WmmPacketsSent.AC_VO must match wl0 wme_counters 
+    AC_VO tx frames.
 - field: direct_6g.AC_VO
   operator: equals
   reference: refresh_6g.GetSSIDStatsWmmPacketsSent6g
-  description: 6g direct Stats.WmmPacketsSent.AC_VO must match getSSIDStats().WmmPacketsSent.AC_VO after refresh.
+  description: 6g direct Stats.WmmPacketsSent.AC_VO must match 
+    getSSIDStats().WmmPacketsSent.AC_VO after refresh.
 - field: direct_6g.AC_VO
   operator: equals
   reference: driver_6g.DriverWmmPacketsSent6g
-  description: 6g direct Stats.WmmPacketsSent.AC_VO must match wl1 wme_counters AC_VO tx frames.
+  description: 6g direct Stats.WmmPacketsSent.AC_VO must match wl1 wme_counters 
+    AC_VO tx frames.
 - field: direct_24g.AC_VO
   operator: equals
   reference: refresh_24g.GetSSIDStatsWmmPacketsSent24g
-  description: 2.4g direct Stats.WmmPacketsSent.AC_VO must match getSSIDStats().WmmPacketsSent.AC_VO after refresh.
+  description: 2.4g direct Stats.WmmPacketsSent.AC_VO must match 
+    getSSIDStats().WmmPacketsSent.AC_VO after refresh.
 - field: direct_24g.AC_VO
   operator: equals
   reference: driver_24g.DriverWmmPacketsSent24g
-  description: 2.4g direct Stats.WmmPacketsSent.AC_VO must match wl2 wme_counters AC_VO tx frames.
+  description: 2.4g direct Stats.WmmPacketsSent.AC_VO must match wl2 
+    wme_counters AC_VO tx frames.
 verification_command:
-  - 'ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n ''/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent5g=\1/p'''
-  - 'ubus-cli "WiFi.SSID.4.Stats.WmmPacketsSent.AC_VO?"'
-  - 'wl -i wl0 wme_counters | grep ''^AC_VO:'' | awk ''{print "DriverWmmPacketsSent5g="$4}'''
-  - 'ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n ''/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent6g=\1/p'''
-  - 'ubus-cli "WiFi.SSID.6.Stats.WmmPacketsSent.AC_VO?"'
-  - 'wl -i wl1 wme_counters | grep ''^AC_VO:'' | awk ''{print "DriverWmmPacketsSent6g="$4}'''
-  - 'ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n ''/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent24g=\1/p'''
-  - 'ubus-cli "WiFi.SSID.8.Stats.WmmPacketsSent.AC_VO?"'
-  - 'wl -i wl2 wme_counters | grep ''^AC_VO:'' | awk ''{print "DriverWmmPacketsSent24g="$4}'''
+- 'ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n ''/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_VO
+  = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent5g=\1/p'''
+- 'ubus-cli "WiFi.SSID.4.Stats.WmmPacketsSent.AC_VO?"'
+- 'wl -i wl0 wme_counters | grep ''^AC_VO:'' | awk ''{print "DriverWmmPacketsSent5g="$4}'''
+- 'ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n ''/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_VO
+  = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent6g=\1/p'''
+- 'ubus-cli "WiFi.SSID.6.Stats.WmmPacketsSent.AC_VO?"'
+- 'wl -i wl1 wme_counters | grep ''^AC_VO:'' | awk ''{print "DriverWmmPacketsSent6g="$4}'''
+- 'ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n ''/WmmPacketsSent = {/,/}/s/^[[:space:]]*AC_VO
+  = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsSent24g=\1/p'''
+- 'ubus-cli "WiFi.SSID.8.Stats.WmmPacketsSent.AC_VO?"'
+- 'wl -i wl2 wme_counters | grep ''^AC_VO:'' | awk ''{print "DriverWmmPacketsSent24g="$4}'''

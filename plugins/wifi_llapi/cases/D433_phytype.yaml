@@ -2,12 +2,9 @@ id: d433-skip-neighbour-phytype
 name: "D433 Neighbour PhyType"
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 433
   object: WiFi.AccessPoint.{i}.Neighbour.{i}.
   api: PhyType
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -68,16 +65,27 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    TREE=$(ubus-cli WiFi.AccessPoint.1.? | grep 'Neighbour.' || true); BSSID=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p' | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p' | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p' | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID='); CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf 'BaselineBssidCount5g=%s\n' "$BC"; printf 'BaselineChannelCount5g=%s\n' "$CC"; if [ -n "$BSSID" ]; then printf 'BaselineBssid5g=%s\n' "$BSSID"; else echo 'BaselineBssid5g=ABSENT'; fi; if [ -n "$CH" ]; then printf 'BaselineChannel5g=%s\n' "$CH"; else echo 'BaselineChannel5g=ABSENT'; fi; if [ -n "$PHYTYPE" ]; then printf 'BaselinePhyType5g=%s\n' "$PHYTYPE"; else echo 'BaselinePhyType5g=ABSENT'; fi
+    TREE=$(ubus-cli WiFi.AccessPoint.1.? | grep 'Neighbour.' || true); BSSID=$(printf
+    '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p'
+    | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p'
+    | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p'
+    | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID=');
+    CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf
+    'BaselineBssidCount5g=%s\n' "$BC"; printf 'BaselineChannelCount5g=%s\n' "$CC";
+    if [ -n "$BSSID" ]; then printf 'BaselineBssid5g=%s\n' "$BSSID"; else echo 'BaselineBssid5g=ABSENT';
+    fi; if [ -n "$CH" ]; then printf 'BaselineChannel5g=%s\n' "$CH"; else echo 'BaselineChannel5g=ABSENT';
+    fi; if [ -n "$PHYTYPE" ]; then printf 'BaselinePhyType5g=%s\n' "$PHYTYPE"; else
+    echo 'BaselinePhyType5g=ABSENT'; fi
   capture: neighbour_baseline_5g
 - id: step2_neighbour_add_5g
   action: exec
   target: DUT
   band: 5g
   command:
-    - printf 'RequestedBssid5g=11:22:33:44:55:66\n'
-    - printf 'RequestedChannel5g=36\n'
-    - ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
+  - printf 'RequestedBssid5g=11:22:33:44:55:66\n'
+  - printf 'RequestedChannel5g=36\n'
+  - ubus-cli 
+    "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
   depends_on: step1_neighbour_baseline_5g
   capture: neighbour_add_5g
 - id: step3_neighbour_after_add_5g
@@ -85,7 +93,17 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    TREE=$(ubus-cli WiFi.AccessPoint.1.? | grep 'Neighbour.' || true); BSSID=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p' | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p' | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p' | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID='); CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf 'AfterAddBssidCount5g=%s\n' "$BC"; printf 'AfterAddChannelCount5g=%s\n' "$CC"; if [ -n "$BSSID" ]; then printf 'AfterAddBssid5g=%s\n' "$BSSID"; else echo 'AfterAddBssid5g=ABSENT'; fi; if [ -n "$CH" ]; then printf 'AfterAddChannel5g=%s\n' "$CH"; else echo 'AfterAddChannel5g=ABSENT'; fi; if [ -n "$PHYTYPE" ]; then printf 'AfterAddPhyType5g=%s\n' "$PHYTYPE"; else echo 'AfterAddPhyType5g=ABSENT'; fi
+    TREE=$(ubus-cli WiFi.AccessPoint.1.? | grep 'Neighbour.' || true); BSSID=$(printf
+    '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p'
+    | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p'
+    | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p'
+    | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID=');
+    CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf
+    'AfterAddBssidCount5g=%s\n' "$BC"; printf 'AfterAddChannelCount5g=%s\n' "$CC";
+    if [ -n "$BSSID" ]; then printf 'AfterAddBssid5g=%s\n' "$BSSID"; else echo 'AfterAddBssid5g=ABSENT';
+    fi; if [ -n "$CH" ]; then printf 'AfterAddChannel5g=%s\n' "$CH"; else echo 'AfterAddChannel5g=ABSENT';
+    fi; if [ -n "$PHYTYPE" ]; then printf 'AfterAddPhyType5g=%s\n' "$PHYTYPE"; else
+    echo 'AfterAddPhyType5g=ABSENT'; fi
   depends_on: step2_neighbour_add_5g
   capture: neighbour_after_add_5g
 - id: step4_neighbour_delete_5g
@@ -93,8 +111,8 @@ steps:
   target: DUT
   band: 5g
   command:
-    - printf 'DeleteBssid5g=11:22:33:44:55:66\n'
-    - ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
+  - printf 'DeleteBssid5g=11:22:33:44:55:66\n'
+  - ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
   depends_on: step3_neighbour_after_add_5g
   capture: neighbour_delete_5g
 - id: step5_neighbour_after_delete_5g
@@ -102,7 +120,18 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    TREE=$(ubus-cli WiFi.AccessPoint.1.? | grep 'Neighbour.' || true); BSSID=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p' | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p' | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p' | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID='); CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf 'AfterDeleteBssidCount5g=%s\n' "$BC"; printf 'AfterDeleteChannelCount5g=%s\n' "$CC"; if [ -n "$BSSID" ]; then printf 'AfterDeleteBssid5g=%s\n' "$BSSID"; else echo 'AfterDeleteBssid5g=ABSENT'; fi; if [ -n "$CH" ]; then printf 'AfterDeleteChannel5g=%s\n' "$CH"; else echo 'AfterDeleteChannel5g=ABSENT'; fi; if [ -n "$PHYTYPE" ]; then printf 'AfterDeletePhyType5g=%s\n' "$PHYTYPE"; else echo 'AfterDeletePhyType5g=ABSENT'; fi
+    TREE=$(ubus-cli WiFi.AccessPoint.1.? | grep 'Neighbour.' || true); BSSID=$(printf
+    '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p'
+    | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p'
+    | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p'
+    | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID=');
+    CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf
+    'AfterDeleteBssidCount5g=%s\n' "$BC"; printf 'AfterDeleteChannelCount5g=%s\n'
+    "$CC"; if [ -n "$BSSID" ]; then printf 'AfterDeleteBssid5g=%s\n' "$BSSID"; else
+    echo 'AfterDeleteBssid5g=ABSENT'; fi; if [ -n "$CH" ]; then printf 'AfterDeleteChannel5g=%s\n'
+    "$CH"; else echo 'AfterDeleteChannel5g=ABSENT'; fi; if [ -n "$PHYTYPE" ]; then
+    printf 'AfterDeletePhyType5g=%s\n' "$PHYTYPE"; else echo 'AfterDeletePhyType5g=ABSENT';
+    fi
   depends_on: step4_neighbour_delete_5g
   capture: neighbour_after_delete_5g
 - id: step6_neighbour_baseline_6g
@@ -110,16 +139,27 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    TREE=$(ubus-cli WiFi.AccessPoint.3.? | grep 'Neighbour.' || true); BSSID=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p' | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p' | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p' | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID='); CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf 'BaselineBssidCount6g=%s\n' "$BC"; printf 'BaselineChannelCount6g=%s\n' "$CC"; if [ -n "$BSSID" ]; then printf 'BaselineBssid6g=%s\n' "$BSSID"; else echo 'BaselineBssid6g=ABSENT'; fi; if [ -n "$CH" ]; then printf 'BaselineChannel6g=%s\n' "$CH"; else echo 'BaselineChannel6g=ABSENT'; fi; if [ -n "$PHYTYPE" ]; then printf 'BaselinePhyType6g=%s\n' "$PHYTYPE"; else echo 'BaselinePhyType6g=ABSENT'; fi
+    TREE=$(ubus-cli WiFi.AccessPoint.3.? | grep 'Neighbour.' || true); BSSID=$(printf
+    '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p'
+    | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p'
+    | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p'
+    | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID=');
+    CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf
+    'BaselineBssidCount6g=%s\n' "$BC"; printf 'BaselineChannelCount6g=%s\n' "$CC";
+    if [ -n "$BSSID" ]; then printf 'BaselineBssid6g=%s\n' "$BSSID"; else echo 'BaselineBssid6g=ABSENT';
+    fi; if [ -n "$CH" ]; then printf 'BaselineChannel6g=%s\n' "$CH"; else echo 'BaselineChannel6g=ABSENT';
+    fi; if [ -n "$PHYTYPE" ]; then printf 'BaselinePhyType6g=%s\n' "$PHYTYPE"; else
+    echo 'BaselinePhyType6g=ABSENT'; fi
   capture: neighbour_baseline_6g
 - id: step7_neighbour_add_6g
   action: exec
   target: DUT
   band: 6g
   command:
-    - printf 'RequestedBssid6g=11:22:33:44:55:77\n'
-    - printf 'RequestedChannel6g=1\n'
-    - ubus-cli "WiFi.AccessPoint.3.setNeighbourAP(BSSID=11:22:33:44:55:77,Channel=1)"
+  - printf 'RequestedBssid6g=11:22:33:44:55:77\n'
+  - printf 'RequestedChannel6g=1\n'
+  - ubus-cli 
+    "WiFi.AccessPoint.3.setNeighbourAP(BSSID=11:22:33:44:55:77,Channel=1)"
   depends_on: step6_neighbour_baseline_6g
   capture: neighbour_add_6g
 - id: step8_neighbour_after_add_6g
@@ -127,7 +167,17 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    TREE=$(ubus-cli WiFi.AccessPoint.3.? | grep 'Neighbour.' || true); BSSID=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p' | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p' | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p' | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID='); CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf 'AfterAddBssidCount6g=%s\n' "$BC"; printf 'AfterAddChannelCount6g=%s\n' "$CC"; if [ -n "$BSSID" ]; then printf 'AfterAddBssid6g=%s\n' "$BSSID"; else echo 'AfterAddBssid6g=ABSENT'; fi; if [ -n "$CH" ]; then printf 'AfterAddChannel6g=%s\n' "$CH"; else echo 'AfterAddChannel6g=ABSENT'; fi; if [ -n "$PHYTYPE" ]; then printf 'AfterAddPhyType6g=%s\n' "$PHYTYPE"; else echo 'AfterAddPhyType6g=ABSENT'; fi
+    TREE=$(ubus-cli WiFi.AccessPoint.3.? | grep 'Neighbour.' || true); BSSID=$(printf
+    '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p'
+    | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p'
+    | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p'
+    | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID=');
+    CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf
+    'AfterAddBssidCount6g=%s\n' "$BC"; printf 'AfterAddChannelCount6g=%s\n' "$CC";
+    if [ -n "$BSSID" ]; then printf 'AfterAddBssid6g=%s\n' "$BSSID"; else echo 'AfterAddBssid6g=ABSENT';
+    fi; if [ -n "$CH" ]; then printf 'AfterAddChannel6g=%s\n' "$CH"; else echo 'AfterAddChannel6g=ABSENT';
+    fi; if [ -n "$PHYTYPE" ]; then printf 'AfterAddPhyType6g=%s\n' "$PHYTYPE"; else
+    echo 'AfterAddPhyType6g=ABSENT'; fi
   depends_on: step7_neighbour_add_6g
   capture: neighbour_after_add_6g
 - id: step9_neighbour_delete_6g
@@ -135,8 +185,8 @@ steps:
   target: DUT
   band: 6g
   command:
-    - printf 'DeleteBssid6g=11:22:33:44:55:77\n'
-    - ubus-cli "WiFi.AccessPoint.3.delNeighbourAP(BSSID=11:22:33:44:55:77)"
+  - printf 'DeleteBssid6g=11:22:33:44:55:77\n'
+  - ubus-cli "WiFi.AccessPoint.3.delNeighbourAP(BSSID=11:22:33:44:55:77)"
   depends_on: step8_neighbour_after_add_6g
   capture: neighbour_delete_6g
 - id: step10_neighbour_after_delete_6g
@@ -144,7 +194,18 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    TREE=$(ubus-cli WiFi.AccessPoint.3.? | grep 'Neighbour.' || true); BSSID=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p' | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p' | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p' | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID='); CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf 'AfterDeleteBssidCount6g=%s\n' "$BC"; printf 'AfterDeleteChannelCount6g=%s\n' "$CC"; if [ -n "$BSSID" ]; then printf 'AfterDeleteBssid6g=%s\n' "$BSSID"; else echo 'AfterDeleteBssid6g=ABSENT'; fi; if [ -n "$CH" ]; then printf 'AfterDeleteChannel6g=%s\n' "$CH"; else echo 'AfterDeleteChannel6g=ABSENT'; fi; if [ -n "$PHYTYPE" ]; then printf 'AfterDeletePhyType6g=%s\n' "$PHYTYPE"; else echo 'AfterDeletePhyType6g=ABSENT'; fi
+    TREE=$(ubus-cli WiFi.AccessPoint.3.? | grep 'Neighbour.' || true); BSSID=$(printf
+    '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p'
+    | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p'
+    | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p'
+    | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID=');
+    CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf
+    'AfterDeleteBssidCount6g=%s\n' "$BC"; printf 'AfterDeleteChannelCount6g=%s\n'
+    "$CC"; if [ -n "$BSSID" ]; then printf 'AfterDeleteBssid6g=%s\n' "$BSSID"; else
+    echo 'AfterDeleteBssid6g=ABSENT'; fi; if [ -n "$CH" ]; then printf 'AfterDeleteChannel6g=%s\n'
+    "$CH"; else echo 'AfterDeleteChannel6g=ABSENT'; fi; if [ -n "$PHYTYPE" ]; then
+    printf 'AfterDeletePhyType6g=%s\n' "$PHYTYPE"; else echo 'AfterDeletePhyType6g=ABSENT';
+    fi
   depends_on: step9_neighbour_delete_6g
   capture: neighbour_after_delete_6g
 - id: step11_neighbour_baseline_24g
@@ -152,16 +213,27 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    TREE=$(ubus-cli WiFi.AccessPoint.5.? | grep 'Neighbour.' || true); BSSID=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p' | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p' | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p' | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID='); CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf 'BaselineBssidCount24g=%s\n' "$BC"; printf 'BaselineChannelCount24g=%s\n' "$CC"; if [ -n "$BSSID" ]; then printf 'BaselineBssid24g=%s\n' "$BSSID"; else echo 'BaselineBssid24g=ABSENT'; fi; if [ -n "$CH" ]; then printf 'BaselineChannel24g=%s\n' "$CH"; else echo 'BaselineChannel24g=ABSENT'; fi; if [ -n "$PHYTYPE" ]; then printf 'BaselinePhyType24g=%s\n' "$PHYTYPE"; else echo 'BaselinePhyType24g=ABSENT'; fi
+    TREE=$(ubus-cli WiFi.AccessPoint.5.? | grep 'Neighbour.' || true); BSSID=$(printf
+    '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p'
+    | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p'
+    | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p'
+    | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID=');
+    CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf
+    'BaselineBssidCount24g=%s\n' "$BC"; printf 'BaselineChannelCount24g=%s\n' "$CC";
+    if [ -n "$BSSID" ]; then printf 'BaselineBssid24g=%s\n' "$BSSID"; else echo 'BaselineBssid24g=ABSENT';
+    fi; if [ -n "$CH" ]; then printf 'BaselineChannel24g=%s\n' "$CH"; else echo 'BaselineChannel24g=ABSENT';
+    fi; if [ -n "$PHYTYPE" ]; then printf 'BaselinePhyType24g=%s\n' "$PHYTYPE"; else
+    echo 'BaselinePhyType24g=ABSENT'; fi
   capture: neighbour_baseline_24g
 - id: step12_neighbour_add_24g
   action: exec
   target: DUT
   band: 2.4g
   command:
-    - printf 'RequestedBssid24g=11:22:33:44:55:88\n'
-    - printf 'RequestedChannel24g=11\n'
-    - ubus-cli "WiFi.AccessPoint.5.setNeighbourAP(BSSID=11:22:33:44:55:88,Channel=11)"
+  - printf 'RequestedBssid24g=11:22:33:44:55:88\n'
+  - printf 'RequestedChannel24g=11\n'
+  - ubus-cli 
+    "WiFi.AccessPoint.5.setNeighbourAP(BSSID=11:22:33:44:55:88,Channel=11)"
   depends_on: step11_neighbour_baseline_24g
   capture: neighbour_add_24g
 - id: step13_neighbour_after_add_24g
@@ -169,7 +241,17 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    TREE=$(ubus-cli WiFi.AccessPoint.5.? | grep 'Neighbour.' || true); BSSID=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p' | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p' | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p' | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID='); CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf 'AfterAddBssidCount24g=%s\n' "$BC"; printf 'AfterAddChannelCount24g=%s\n' "$CC"; if [ -n "$BSSID" ]; then printf 'AfterAddBssid24g=%s\n' "$BSSID"; else echo 'AfterAddBssid24g=ABSENT'; fi; if [ -n "$CH" ]; then printf 'AfterAddChannel24g=%s\n' "$CH"; else echo 'AfterAddChannel24g=ABSENT'; fi; if [ -n "$PHYTYPE" ]; then printf 'AfterAddPhyType24g=%s\n' "$PHYTYPE"; else echo 'AfterAddPhyType24g=ABSENT'; fi
+    TREE=$(ubus-cli WiFi.AccessPoint.5.? | grep 'Neighbour.' || true); BSSID=$(printf
+    '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p'
+    | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p'
+    | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p'
+    | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID=');
+    CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf
+    'AfterAddBssidCount24g=%s\n' "$BC"; printf 'AfterAddChannelCount24g=%s\n' "$CC";
+    if [ -n "$BSSID" ]; then printf 'AfterAddBssid24g=%s\n' "$BSSID"; else echo 'AfterAddBssid24g=ABSENT';
+    fi; if [ -n "$CH" ]; then printf 'AfterAddChannel24g=%s\n' "$CH"; else echo 'AfterAddChannel24g=ABSENT';
+    fi; if [ -n "$PHYTYPE" ]; then printf 'AfterAddPhyType24g=%s\n' "$PHYTYPE"; else
+    echo 'AfterAddPhyType24g=ABSENT'; fi
   depends_on: step12_neighbour_add_24g
   capture: neighbour_after_add_24g
 - id: step14_neighbour_delete_24g
@@ -177,8 +259,8 @@ steps:
   target: DUT
   band: 2.4g
   command:
-    - printf 'DeleteBssid24g=11:22:33:44:55:88\n'
-    - ubus-cli "WiFi.AccessPoint.5.delNeighbourAP(BSSID=11:22:33:44:55:88)"
+  - printf 'DeleteBssid24g=11:22:33:44:55:88\n'
+  - ubus-cli "WiFi.AccessPoint.5.delNeighbourAP(BSSID=11:22:33:44:55:88)"
   depends_on: step13_neighbour_after_add_24g
   capture: neighbour_delete_24g
 - id: step15_neighbour_after_delete_24g
@@ -186,7 +268,18 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    TREE=$(ubus-cli WiFi.AccessPoint.5.? | grep 'Neighbour.' || true); BSSID=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p' | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p' | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p' | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID='); CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf 'AfterDeleteBssidCount24g=%s\n' "$BC"; printf 'AfterDeleteChannelCount24g=%s\n' "$CC"; if [ -n "$BSSID" ]; then printf 'AfterDeleteBssid24g=%s\n' "$BSSID"; else echo 'AfterDeleteBssid24g=ABSENT'; fi; if [ -n "$CH" ]; then printf 'AfterDeleteChannel24g=%s\n' "$CH"; else echo 'AfterDeleteChannel24g=ABSENT'; fi; if [ -n "$PHYTYPE" ]; then printf 'AfterDeletePhyType24g=%s\n' "$PHYTYPE"; else echo 'AfterDeletePhyType24g=ABSENT'; fi
+    TREE=$(ubus-cli WiFi.AccessPoint.5.? | grep 'Neighbour.' || true); BSSID=$(printf
+    '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.BSSID="\([^"]*\)".*/\1/p'
+    | tail -n 1); CH=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.Channel=\([0-9][0-9]*\).*/\1/p'
+    | tail -n 1); PHYTYPE=$(printf '%s\n' "$TREE" | sed -n 's/.*Neighbour\.[0-9][0-9]*\.PhyType=\([^[:space:]]*\).*/\1/p'
+    | tail -n 1); BC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.BSSID=');
+    CC=$(printf '%s\n' "$TREE" | grep -c 'Neighbour\.[0-9][0-9]*\.Channel='); printf
+    'AfterDeleteBssidCount24g=%s\n' "$BC"; printf 'AfterDeleteChannelCount24g=%s\n'
+    "$CC"; if [ -n "$BSSID" ]; then printf 'AfterDeleteBssid24g=%s\n' "$BSSID"; else
+    echo 'AfterDeleteBssid24g=ABSENT'; fi; if [ -n "$CH" ]; then printf 'AfterDeleteChannel24g=%s\n'
+    "$CH"; else echo 'AfterDeleteChannel24g=ABSENT'; fi; if [ -n "$PHYTYPE" ]; then
+    printf 'AfterDeletePhyType24g=%s\n' "$PHYTYPE"; else echo 'AfterDeletePhyType24g=ABSENT';
+    fi
   depends_on: step14_neighbour_delete_24g
   capture: neighbour_after_delete_24g
 
@@ -242,15 +335,18 @@ pass_criteria:
 - field: neighbour_delete_5g.DeleteBssid5g
   operator: equals
   value: '11:22:33:44:55:66'
-  description: 5G AP1 / wl0 should delete the same neighbour BSSID that was added.
+  description: 5G AP1 / wl0 should delete the same neighbour BSSID that was 
+    added.
 - field: neighbour_after_delete_5g.AfterDeleteBssidCount5g
   operator: equals
   value: '0'
-  description: 5G AP1 / wl0 should return to an empty neighbour BSSID list after delete.
+  description: 5G AP1 / wl0 should return to an empty neighbour BSSID list after
+    delete.
 - field: neighbour_after_delete_5g.AfterDeleteChannelCount5g
   operator: equals
   value: '0'
-  description: 5G AP1 / wl0 should return to an empty neighbour channel list after delete.
+  description: 5G AP1 / wl0 should return to an empty neighbour channel list 
+    after delete.
 - field: neighbour_after_delete_5g.AfterDeleteBssid5g
   operator: equals
   value: ABSENT
@@ -314,15 +410,18 @@ pass_criteria:
 - field: neighbour_delete_6g.DeleteBssid6g
   operator: equals
   value: '11:22:33:44:55:77'
-  description: 6G AP3 / wl1 should delete the same neighbour BSSID that was added.
+  description: 6G AP3 / wl1 should delete the same neighbour BSSID that was 
+    added.
 - field: neighbour_after_delete_6g.AfterDeleteBssidCount6g
   operator: equals
   value: '0'
-  description: 6G AP3 / wl1 should return to an empty neighbour BSSID list after delete.
+  description: 6G AP3 / wl1 should return to an empty neighbour BSSID list after
+    delete.
 - field: neighbour_after_delete_6g.AfterDeleteChannelCount6g
   operator: equals
   value: '0'
-  description: 6G AP3 / wl1 should return to an empty neighbour channel list after delete.
+  description: 6G AP3 / wl1 should return to an empty neighbour channel list 
+    after delete.
 - field: neighbour_after_delete_6g.AfterDeleteBssid6g
   operator: equals
   value: ABSENT
@@ -354,7 +453,8 @@ pass_criteria:
 - field: neighbour_baseline_24g.BaselinePhyType24g
   operator: equals
   value: ABSENT
-  description: 2.4G AP5 / wl2 should have no neighbour PhyType value at baseline.
+  description: 2.4G AP5 / wl2 should have no neighbour PhyType value at 
+    baseline.
 - field: neighbour_add_24g.RequestedBssid24g
   operator: equals
   value: '11:22:33:44:55:88'
@@ -386,15 +486,18 @@ pass_criteria:
 - field: neighbour_delete_24g.DeleteBssid24g
   operator: equals
   value: '11:22:33:44:55:88'
-  description: 2.4G AP5 / wl2 should delete the same neighbour BSSID that was added.
+  description: 2.4G AP5 / wl2 should delete the same neighbour BSSID that was 
+    added.
 - field: neighbour_after_delete_24g.AfterDeleteBssidCount24g
   operator: equals
   value: '0'
-  description: 2.4G AP5 / wl2 should return to an empty neighbour BSSID list after delete.
+  description: 2.4G AP5 / wl2 should return to an empty neighbour BSSID list 
+    after delete.
 - field: neighbour_after_delete_24g.AfterDeleteChannelCount24g
   operator: equals
   value: '0'
-  description: 2.4G AP5 / wl2 should return to an empty neighbour channel list after delete.
+  description: 2.4G AP5 / wl2 should return to an empty neighbour channel list 
+    after delete.
 - field: neighbour_after_delete_24g.AfterDeleteBssid24g
   operator: equals
   value: ABSENT
@@ -406,23 +509,13 @@ pass_criteria:
 - field: neighbour_after_delete_24g.AfterDeletePhyType24g
   operator: equals
   value: ABSENT
-  description: 2.4G AP5 / wl2 should have no neighbour PhyType value after delete.
+  description: 2.4G AP5 / wl2 should have no neighbour PhyType value after 
+    delete.
 
 verification_command:
-  - 'ubus-cli WiFi.AccessPoint.1.? | grep ''Neighbour.'' || true'
-  - 'ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"'
-  - 'ubus-cli WiFi.AccessPoint.1.? | grep ''Neighbour.'' || true'
-  - 'ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"'
-  - 'ubus-cli WiFi.AccessPoint.1.? | grep ''Neighbour.'' || true'
+- 'ubus-cli WiFi.AccessPoint.1.? | grep ''Neighbour.'' || true'
+- 'ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"'
+- 'ubus-cli WiFi.AccessPoint.1.? | grep ''Neighbour.'' || true'
+- 'ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"'
+- 'ubus-cli WiFi.AccessPoint.1.? | grep ''Neighbour.'' || true'
 
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: '2026-04-15 live probe showed AP1/AP3/AP5 neighbour entries expose `PhyType=0` after `setNeighbourAP(BSSID=...,Channel=...)` and return to the empty baseline after delete.'

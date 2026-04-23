@@ -4,18 +4,11 @@ source:
   row: 297
   object: WiFi.Radio.{i}.
   api: startAutoChannelSelection()
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'official rerun 20260414T235120551775 exact-closed after refreshing stale row 222 to workbook row 297 and honoring workbook note V: set AutoChannelEnable=1 before startAutoChannelSelection(), then confirm iw dev wl0/wl1/wl2 info stays readable.'
 topology:
   devices:
     DUT:
@@ -45,7 +38,8 @@ steps:
   - ubus-cli WiFi.Radio.1.AutoChannelEnable=1
   - ubus-cli "WiFi.Radio.1.startAutoChannelSelection()"
   - iw dev wl0 info
-  expected: AutoChannelEnable=1 後，startAutoChannelSelection() 無 error，且 wl0 info 可讀
+  expected: AutoChannelEnable=1 後，startAutoChannelSelection() 無 error，且 wl0 info
+    可讀
   description: Radio.1 (5g) enable ACS + startAutoChannelSelection() + iw info
 - id: step_6g
   target: dut
@@ -55,7 +49,8 @@ steps:
   - ubus-cli WiFi.Radio.2.AutoChannelEnable=1
   - ubus-cli "WiFi.Radio.2.startAutoChannelSelection()"
   - iw dev wl1 info
-  expected: AutoChannelEnable=1 後，startAutoChannelSelection() 無 error，且 wl1 info 可讀
+  expected: AutoChannelEnable=1 後，startAutoChannelSelection() 無 error，且 wl1 info
+    可讀
   description: Radio.2 (6g) enable ACS + startAutoChannelSelection() + iw info
 - id: step_24g
   target: dut
@@ -65,7 +60,8 @@ steps:
   - ubus-cli WiFi.Radio.3.AutoChannelEnable=1
   - ubus-cli "WiFi.Radio.3.startAutoChannelSelection()"
   - iw dev wl2 info
-  expected: AutoChannelEnable=1 後，startAutoChannelSelection() 無 error，且 wl2 info 可讀
+  expected: AutoChannelEnable=1 後，startAutoChannelSelection() 無 error，且 wl2 info
+    可讀
   description: Radio.3 (2.4g) enable ACS + startAutoChannelSelection() + iw info
 pass_criteria:
 - field: result_5g

@@ -2,12 +2,9 @@ id: wifi-llapi-D089-presharedkey-accesspoint-security
 name: "PreSharedKey — WiFi.AccessPoint.{i}.Security"
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 83
   object: WiFi.AccessPoint.{i}.Security
   api: PreSharedKey
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -44,165 +41,175 @@ setup_steps: |
 
 steps:
   # ── 5G: AP1 baseline + setter + readback + restore ──
-  - id: step1_baseline_5g
-    action: exec
-    target: DUT
-    command:
-      - echo "BaselinePreSharedKey5g=$(ubus-cli 'WiFi.AccessPoint.1.Security.PreSharedKey?' 2>/dev/null | grep -o 'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
-      - echo "BaselineWpaPsk5g=$(grep '^wpa_psk=' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-    capture: baseline_5g
+- id: step1_baseline_5g
+  action: exec
+  target: DUT
+  command:
+  - echo "BaselinePreSharedKey5g=$(ubus-cli 
+    'WiFi.AccessPoint.1.Security.PreSharedKey?' 2>/dev/null | grep -o 
+    'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
+  - echo "BaselineWpaPsk5g=$(grep '^wpa_psk=' /tmp/wl0_hapd.conf 2>/dev/null | 
+    head -1 | cut -d= -f2)"
+  capture: baseline_5g
 
-  - id: step2_set_5g
-    action: exec
-    target: DUT
-    depends_on: step1_baseline_5g
-    command: 'ubus-cli WiFi.AccessPoint.1.Security.PreSharedKey="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"'
-    capture: set_5g
+- id: step2_set_5g
+  action: exec
+  target: DUT
+  depends_on: step1_baseline_5g
+  command: 'ubus-cli WiFi.AccessPoint.1.Security.PreSharedKey="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"'
+  capture: set_5g
 
-  - id: step3_readback_5g
-    action: exec
-    target: DUT
-    depends_on: step2_set_5g
-    command:
-      - sleep 3
-      - echo "GetterPreSharedKey5g=$(ubus-cli 'WiFi.AccessPoint.1.Security.PreSharedKey?' 2>/dev/null | grep -o 'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
-    capture: readback_5g
+- id: step3_readback_5g
+  action: exec
+  target: DUT
+  depends_on: step2_set_5g
+  command:
+  - sleep 3
+  - echo "GetterPreSharedKey5g=$(ubus-cli 
+    'WiFi.AccessPoint.1.Security.PreSharedKey?' 2>/dev/null | grep -o 
+    'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
+  capture: readback_5g
 
-  - id: step4_restore_5g
-    action: exec
-    target: DUT
-    depends_on: step3_readback_5g
-    command:
-      - ubus-cli 'WiFi.AccessPoint.1.Security.PreSharedKey=""'
-      - sleep 2
-      - echo "RestoredPreSharedKey5g=$(ubus-cli 'WiFi.AccessPoint.1.Security.PreSharedKey?' 2>/dev/null | grep -o 'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
-    capture: restore_5g
+- id: step4_restore_5g
+  action: exec
+  target: DUT
+  depends_on: step3_readback_5g
+  command:
+  - ubus-cli 'WiFi.AccessPoint.1.Security.PreSharedKey=""'
+  - sleep 2
+  - echo "RestoredPreSharedKey5g=$(ubus-cli 
+    'WiFi.AccessPoint.1.Security.PreSharedKey?' 2>/dev/null | grep -o 
+    'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
+  capture: restore_5g
 
   # ── 6G: AP3 baseline + setter + readback + restore ──
-  - id: step5_baseline_6g
-    action: exec
-    target: DUT
-    depends_on: step4_restore_5g
-    command: 'echo "BaselinePreSharedKey6g=$(ubus-cli ''WiFi.AccessPoint.3.Security.PreSharedKey?'' 2>/dev/null | grep -o ''PreSharedKey="[^"]*"'' | head -1 | cut -d''"'' -f2)"'
-    capture: baseline_6g
+- id: step5_baseline_6g
+  action: exec
+  target: DUT
+  depends_on: step4_restore_5g
+  command: 'echo "BaselinePreSharedKey6g=$(ubus-cli ''WiFi.AccessPoint.3.Security.PreSharedKey?''
+    2>/dev/null | grep -o ''PreSharedKey="[^"]*"'' | head -1 | cut -d''"'' -f2)"'
+  capture: baseline_6g
 
-  - id: step6_set_6g
-    action: exec
-    target: DUT
-    depends_on: step5_baseline_6g
-    command: 'ubus-cli WiFi.AccessPoint.3.Security.PreSharedKey="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"'
-    capture: set_6g
+- id: step6_set_6g
+  action: exec
+  target: DUT
+  depends_on: step5_baseline_6g
+  command: 'ubus-cli WiFi.AccessPoint.3.Security.PreSharedKey="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"'
+  capture: set_6g
 
-  - id: step7_readback_6g
-    action: exec
-    target: DUT
-    depends_on: step6_set_6g
-    command:
-      - sleep 3
-      - echo "GetterPreSharedKey6g=$(ubus-cli 'WiFi.AccessPoint.3.Security.PreSharedKey?' 2>/dev/null | grep -o 'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
-    capture: readback_6g
+- id: step7_readback_6g
+  action: exec
+  target: DUT
+  depends_on: step6_set_6g
+  command:
+  - sleep 3
+  - echo "GetterPreSharedKey6g=$(ubus-cli 
+    'WiFi.AccessPoint.3.Security.PreSharedKey?' 2>/dev/null | grep -o 
+    'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
+  capture: readback_6g
 
-  - id: step8_restore_6g
-    action: exec
-    target: DUT
-    depends_on: step7_readback_6g
-    command:
-      - ubus-cli 'WiFi.AccessPoint.3.Security.PreSharedKey=""'
-      - sleep 2
-      - echo "RestoredPreSharedKey6g=$(ubus-cli 'WiFi.AccessPoint.3.Security.PreSharedKey?' 2>/dev/null | grep -o 'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
-    capture: restore_6g
+- id: step8_restore_6g
+  action: exec
+  target: DUT
+  depends_on: step7_readback_6g
+  command:
+  - ubus-cli 'WiFi.AccessPoint.3.Security.PreSharedKey=""'
+  - sleep 2
+  - echo "RestoredPreSharedKey6g=$(ubus-cli 
+    'WiFi.AccessPoint.3.Security.PreSharedKey?' 2>/dev/null | grep -o 
+    'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
+  capture: restore_6g
 
   # ── 2.4G: AP5 baseline + setter + readback + restore ──
-  - id: step9_baseline_24g
-    action: exec
-    target: DUT
-    depends_on: step8_restore_6g
-    command:
-      - echo "BaselinePreSharedKey24g=$(ubus-cli 'WiFi.AccessPoint.5.Security.PreSharedKey?' 2>/dev/null | grep -o 'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
-      - echo "BaselineWpaPsk24g=$(grep '^wpa_psk=' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-    capture: baseline_24g
+- id: step9_baseline_24g
+  action: exec
+  target: DUT
+  depends_on: step8_restore_6g
+  command:
+  - echo "BaselinePreSharedKey24g=$(ubus-cli 
+    'WiFi.AccessPoint.5.Security.PreSharedKey?' 2>/dev/null | grep -o 
+    'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
+  - echo "BaselineWpaPsk24g=$(grep '^wpa_psk=' /tmp/wl2_hapd.conf 2>/dev/null | 
+    head -1 | cut -d= -f2)"
+  capture: baseline_24g
 
-  - id: step10_set_24g
-    action: exec
-    target: DUT
-    depends_on: step9_baseline_24g
-    command: 'ubus-cli WiFi.AccessPoint.5.Security.PreSharedKey="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"'
-    capture: set_24g
+- id: step10_set_24g
+  action: exec
+  target: DUT
+  depends_on: step9_baseline_24g
+  command: 'ubus-cli WiFi.AccessPoint.5.Security.PreSharedKey="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"'
+  capture: set_24g
 
-  - id: step11_readback_24g
-    action: exec
-    target: DUT
-    depends_on: step10_set_24g
-    command:
-      - sleep 3
-      - echo "GetterPreSharedKey24g=$(ubus-cli 'WiFi.AccessPoint.5.Security.PreSharedKey?' 2>/dev/null | grep -o 'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
-    capture: readback_24g
+- id: step11_readback_24g
+  action: exec
+  target: DUT
+  depends_on: step10_set_24g
+  command:
+  - sleep 3
+  - echo "GetterPreSharedKey24g=$(ubus-cli 
+    'WiFi.AccessPoint.5.Security.PreSharedKey?' 2>/dev/null | grep -o 
+    'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
+  capture: readback_24g
 
-  - id: step12_restore_24g
-    action: exec
-    target: DUT
-    depends_on: step11_readback_24g
-    command:
-      - ubus-cli 'WiFi.AccessPoint.5.Security.PreSharedKey=""'
-      - sleep 2
-      - echo "RestoredPreSharedKey24g=$(ubus-cli 'WiFi.AccessPoint.5.Security.PreSharedKey?' 2>/dev/null | grep -o 'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
-    capture: restore_24g
+- id: step12_restore_24g
+  action: exec
+  target: DUT
+  depends_on: step11_readback_24g
+  command:
+  - ubus-cli 'WiFi.AccessPoint.5.Security.PreSharedKey=""'
+  - sleep 2
+  - echo "RestoredPreSharedKey24g=$(ubus-cli 
+    'WiFi.AccessPoint.5.Security.PreSharedKey?' 2>/dev/null | grep -o 
+    'PreSharedKey="[^"]*"' | head -1 | cut -d'"' -f2)"
+  capture: restore_24g
 
 pass_criteria:
   # ── 5G: setter accepted and getter reads back ──
-  - field: baseline_5g.BaselinePreSharedKey5g
-    operator: equals
-    value: ""
-    description: "5G baseline PreSharedKey 應為空字串"
-  - field: readback_5g.GetterPreSharedKey5g
-    operator: equals
-    value: "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
-    description: "5G getter 應讀回設定的 64-char hex PSK"
-  - field: restore_5g.RestoredPreSharedKey5g
-    operator: equals
-    value: ""
-    description: "5G restore 後 PreSharedKey 應回空字串"
+- field: baseline_5g.BaselinePreSharedKey5g
+  operator: equals
+  value: ""
+  description: "5G baseline PreSharedKey 應為空字串"
+- field: readback_5g.GetterPreSharedKey5g
+  operator: equals
+  value: "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+  description: "5G getter 應讀回設定的 64-char hex PSK"
+- field: restore_5g.RestoredPreSharedKey5g
+  operator: equals
+  value: ""
+  description: "5G restore 後 PreSharedKey 應回空字串"
   # ── 6G: setter accepted but Not Supported (WPA3-only band) ──
-  - field: baseline_6g.BaselinePreSharedKey6g
-    operator: equals
-    value: ""
-    description: "6G baseline PreSharedKey 應為空字串"
-  - field: readback_6g.GetterPreSharedKey6g
-    operator: equals
-    value: "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
-    description: "6G getter 讀回 64-char hex（northbound accepted, but Not Supported per workbook）"
-  - field: restore_6g.RestoredPreSharedKey6g
-    operator: equals
-    value: ""
-    description: "6G restore 後 PreSharedKey 應回空字串"
+- field: baseline_6g.BaselinePreSharedKey6g
+  operator: equals
+  value: ""
+  description: "6G baseline PreSharedKey 應為空字串"
+- field: readback_6g.GetterPreSharedKey6g
+  operator: equals
+  value: "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+  description: "6G getter 讀回 64-char hex（northbound accepted, but Not Supported per
+    workbook）"
+- field: restore_6g.RestoredPreSharedKey6g
+  operator: equals
+  value: ""
+  description: "6G restore 後 PreSharedKey 應回空字串"
   # ── 2.4G: setter accepted and getter reads back ──
-  - field: baseline_24g.BaselinePreSharedKey24g
-    operator: equals
-    value: ""
-    description: "2.4G baseline PreSharedKey 應為空字串"
-  - field: readback_24g.GetterPreSharedKey24g
-    operator: equals
-    value: "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
-    description: "2.4G getter 應讀回設定的 64-char hex PSK"
-  - field: restore_24g.RestoredPreSharedKey24g
-    operator: equals
-    value: ""
-    description: "2.4G restore 後 PreSharedKey 應回空字串"
+- field: baseline_24g.BaselinePreSharedKey24g
+  operator: equals
+  value: ""
+  description: "2.4G baseline PreSharedKey 應為空字串"
+- field: readback_24g.GetterPreSharedKey24g
+  operator: equals
+  value: "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+  description: "2.4G getter 應讀回設定的 64-char hex PSK"
+- field: restore_24g.RestoredPreSharedKey24g
+  operator: equals
+  value: ""
+  description: "2.4G restore 後 PreSharedKey 應回空字串"
 
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.Security.PreSharedKey?"'
-  - 'ubus-cli "WiFi.AccessPoint.3.Security.PreSharedKey?"'
-  - 'ubus-cli "WiFi.AccessPoint.5.Security.PreSharedKey?"'
-  - 'grep "wpa_psk" /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf 2>/dev/null || echo "no wpa_psk in any hostapd conf"'
+- 'ubus-cli "WiFi.AccessPoint.1.Security.PreSharedKey?"'
+- 'ubus-cli "WiFi.AccessPoint.3.Security.PreSharedKey?"'
+- 'ubus-cli "WiFi.AccessPoint.5.Security.PreSharedKey?"'
+- 'grep "wpa_psk" /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf 2>/dev/null
+  || echo "no wpa_psk in any hostapd conf"'
 
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Not Supported
-    2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'PreSharedKey setter/getter accepted on 5G/2.4G; 6G Not Supported (WPA3-only). hostapd wpa_psk= only appears via KeyPassPhrase 64-char route, not via PreSharedKey API directly.'

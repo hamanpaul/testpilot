@@ -4,16 +4,9 @@ source:
   row: 14
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: ChargeableUserId
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Skip
-    6g: Skip
-    2.4g: Skip
-    comment: ChargeableUserId remains workbook-gated because RadiusChargeableUserId is only applicable for Enterprise/RADIUS mode and the current lab baseline has no validated Enterprise path.
 topology:
   devices:
     DUT:
@@ -38,7 +31,8 @@ steps:
   capture: getter_5g
   command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ChargeableUserId?"
   expected: ChargeableUserId 於 current non-Enterprise baseline 維持空字串
-  description: AP1 AssociatedDevice.1 ChargeableUserId getter remains empty without Enterprise/RADIUS context
+  description: AP1 AssociatedDevice.1 ChargeableUserId getter remains empty 
+    without Enterprise/RADIUS context
   depends_on: step_5g_assoc_check
 pass_criteria:
 - field: assoc_check

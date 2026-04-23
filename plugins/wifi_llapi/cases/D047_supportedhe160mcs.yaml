@@ -2,12 +2,9 @@ id: wifi-llapi-D047-supportedhe160mcs
 name: "SupportedHe160MCS — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 47
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: SupportedHe160MCS
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -78,28 +75,39 @@ steps:
   action: exec
   target: DUT
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHe160MCS?" 2>&1 || true); printf '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p'; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
+    OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHe160MCS?" 2>&1
+    || true); printf '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\)
+    - \(.*\))/error=\1/p'; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\)
+    - \(.*\))/message=\2/p'
   depends_on: step2
   capture: result
 - id: step4
   action: exec
   target: DUT
   command: >-
-    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/SiblingAssocMac=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.RxSupportedHe160MCS="\([^"]*\)".*/DriverRxSupportedHe160MCS=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxSupportedHe160MCS="\([^"]*\)".*/DriverTxSupportedHe160MCS=\1/p'
+    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/SiblingAssocMac=\1/p;
+    s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.RxSupportedHe160MCS="\([^"]*\)".*/DriverRxSupportedHe160MCS=\1/p;
+    s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxSupportedHe160MCS="\([^"]*\)".*/DriverTxSupportedHe160MCS=\1/p'
   depends_on: step3
   capture: sibling_support
 - id: step5
   action: exec
   target: DUT
   command: >-
-    STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'); STA_MAC_LOWER=$(echo "$STA_MAC" | tr 'A-F' 'a-f'); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC_LOWER | awk '/HE caps/ {he=1} /MCS SET/ {mcs=1} /HE SET/ {heset=1} END {if (he) print "DriverHeCapsPresent=1"; if (mcs) print "DriverMCSSetPresent=1"; if (heset) print "DriverHeSetPresent=1"}'
+    STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
+    's/.*MACAddress="\([^"]*\)".*/\1/p'); STA_MAC_LOWER=$(echo "$STA_MAC" | tr 'A-F'
+    'a-f'); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info
+    $STA_MAC_LOWER | awk '/HE caps/ {he=1} /MCS SET/ {mcs=1} /HE SET/ {heset=1} END
+    {if (he) print "DriverHeCapsPresent=1"; if (mcs) print "DriverMCSSetPresent=1";
+    if (heset) print "DriverHeSetPresent=1"}'
   depends_on: step4
   capture: driver_capability
 pass_criteria:
 - field: sta_identity.StaMac
   operator: regex
   value: ^([0-9A-F]{2}:){5}[0-9A-F]{2}$
-  description: COM0 wl0 must resolve to a concrete live STA MAC before DUT-side validation.
+  description: COM0 wl0 must resolve to a concrete live STA MAC before DUT-side 
+    validation.
 - field: assoc_entry.MACAddress
   operator: regex
   value: ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$
@@ -107,35 +115,43 @@ pass_criteria:
 - field: assoc_entry.MACAddress
   operator: equals
   reference: sta_identity.StaMac
-  description: AP1 AssociatedDevice.1 must correspond to the same COM0 wl0 station used for this manual checkpoint.
+  description: AP1 AssociatedDevice.1 must correspond to the same COM0 wl0 
+    station used for this manual checkpoint.
 - field: result.error
   operator: equals
   value: '4'
-  description: Standalone SupportedHe160MCS should fail with error 4 because the parameter is not exposed.
+  description: Standalone SupportedHe160MCS should fail with error 4 because the
+    parameter is not exposed.
 - field: result.message
   operator: contains
   value: parameter not found
-  description: The not-supported readback should explicitly report parameter not found.
+  description: The not-supported readback should explicitly report parameter not
+    found.
 - field: sibling_support.SiblingAssocMac
   operator: equals
   reference: assoc_entry.MACAddress
-  description: Sibling field evidence must come from the same AssociatedDevice entry.
+  description: Sibling field evidence must come from the same AssociatedDevice 
+    entry.
 - field: sibling_support.DriverRxSupportedHe160MCS
   operator: regex
   value: ^[0-9]+(,[0-9]+)*$
-  description: RxSupportedHe160MCS should still expose a concrete HE160 MCS list for the same STA.
+  description: RxSupportedHe160MCS should still expose a concrete HE160 MCS list
+    for the same STA.
 - field: sibling_support.DriverTxSupportedHe160MCS
   operator: regex
   value: ^[0-9]+(,[0-9]+)*$
-  description: TxSupportedHe160MCS should still expose a concrete HE160 MCS list for the same STA.
+  description: TxSupportedHe160MCS should still expose a concrete HE160 MCS list
+    for the same STA.
 - field: driver_capability.DriverAssocMac
   operator: equals
   reference: assoc_entry.MACAddress
-  description: Driver capability evidence must target the same AssociatedDevice MAC resolved in step2.
+  description: Driver capability evidence must target the same AssociatedDevice 
+    MAC resolved in step2.
 - field: driver_capability.DriverHeCapsPresent
   operator: equals
   value: '1'
-  description: wl0 sta_info must still expose HE capability data for the same STA.
+  description: wl0 sta_info must still expose HE capability data for the same 
+    STA.
 - field: driver_capability.DriverMCSSetPresent
   operator: equals
   value: '1'
@@ -145,13 +161,17 @@ pass_criteria:
   value: '1'
   description: wl0 sta_info must still expose an HE SET line for the same STA.
 verification_command:
-  - 'cat /sys/class/net/wl0/address | tr ''a-f'' ''A-F'' | sed ''s/^/StaMac=/'''
-  - 'OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHe160MCS?" 2>&1 || true); printf ''%s\n'' "$OUT"; printf ''%s\n'' "$OUT" | sed -n ''s/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p''; printf ''%s\n'' "$OUT" | sed -n ''s/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'''
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n ''s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/SiblingAssocMac=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.RxSupportedHe160MCS="\([^"]*\)".*/DriverRxSupportedHe160MCS=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxSupportedHe160MCS="\([^"]*\)".*/DriverTxSupportedHe160MCS=\1/p'''
-  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC" | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC_LOWER | awk ''/HE caps/ {he=1} /MCS SET/ {mcs=1} /HE SET/ {heset=1} END {if (he) print "DriverHeCapsPresent=1"; if (mcs) print "DriverMCSSetPresent=1"; if (heset) print "DriverHeSetPresent=1"}'''
-results_reference:
-  v4.0.3:
-    5g: Not Supported
-    6g: N/A
-    2.4g: N/A
-    comment: '5G serialwrap retest returned error 4 / parameter not found for SupportedHe160MCS, while the same AssociatedDevice entry still exposed RxSupportedHe160MCS="11,11,11,11" and TxSupportedHe160MCS="11,11,11,11", and wl0 sta_info for the same STA still exposed HE caps, MCS SET, and HE SET. Non-executed bands remain N/A until separately calibrated.'
+- 'cat /sys/class/net/wl0/address | tr ''a-f'' ''A-F'' | sed ''s/^/StaMac=/'''
+- 'OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHe160MCS?" 2>&1
+  || true); printf ''%s\n'' "$OUT"; printf ''%s\n'' "$OUT" | sed -n ''s/.*failed (\([0-9][0-9]*\)
+  - \(.*\))/error=\1/p''; printf ''%s\n'' "$OUT" | sed -n ''s/.*failed (\([0-9][0-9]*\)
+  - \(.*\))/message=\2/p'''
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n ''s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/SiblingAssocMac=\1/p;
+  s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.RxSupportedHe160MCS="\([^"]*\)".*/DriverRxSupportedHe160MCS=\1/p;
+  s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxSupportedHe160MCS="\([^"]*\)".*/DriverTxSupportedHe160MCS=\1/p'''
+- 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
+  ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC" | tr ''A-F''
+  ''a-f''); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info
+  $STA_MAC_LOWER | awk ''/HE caps/ {he=1} /MCS SET/ {mcs=1} /HE SET/ {heset=1} END
+  {if (he) print "DriverHeCapsPresent=1"; if (mcs) print "DriverMCSSetPresent=1";
+  if (heset) print "DriverHeSetPresent=1"}'''

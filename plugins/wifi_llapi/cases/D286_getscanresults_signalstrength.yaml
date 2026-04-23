@@ -4,17 +4,11 @@ source:
   row: 286
   object: WiFi.Radio.{i}.
   api: getScanResults()
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
 topology:
   devices:
     DUT:
@@ -26,23 +20,41 @@ steps:
   target: dut
   action: exec
   capture: scan_5g
-  command: 'BLOCK=$(ubus-cli "WiFi.Radio.1.getScanResults()" | head -60 | sed -n "/BSSID = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n "s/.*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); RSSI=$(printf "%s\n" "$BLOCK" | sed -n "s/.*RSSI = \(-\?[0-9][0-9]*\).*/\1/p" | head -n1); SIG=$(printf "%s\n" "$BLOCK" | sed -n "s/.*SignalStrength = \(-\?[0-9][0-9]*\).*/\1/p" | head -n1); LBSSID=$(printf "%s" "$BSSID" | tr "A-F" "a-f"); printf "LlapiBssid5g=%s\nLlapiRSSI5g=%s\nLlapiSignalStrength5g=%s\n" "$LBSSID" "$RSSI" "$SIG"'
+  command: 'BLOCK=$(ubus-cli "WiFi.Radio.1.getScanResults()" | head -60 | sed -n "/BSSID
+    = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n "s/.*BSSID = \"\([^\"]*\)\".*/\1/p"
+    | head -n1); RSSI=$(printf "%s\n" "$BLOCK" | sed -n "s/.*RSSI = \(-\?[0-9][0-9]*\).*/\1/p"
+    | head -n1); SIG=$(printf "%s\n" "$BLOCK" | sed -n "s/.*SignalStrength = \(-\?[0-9][0-9]*\).*/\1/p"
+    | head -n1); LBSSID=$(printf "%s" "$BSSID" | tr "A-F" "a-f"); printf "LlapiBssid5g=%s\nLlapiRSSI5g=%s\nLlapiSignalStrength5g=%s\n"
+    "$LBSSID" "$RSSI" "$SIG"'
   expected: 5G 第一個 scan object 應同時提供可解析的 BSSID、RSSI 與 SignalStrength
-  description: Radio.1 (5g) 以 first-object capture 驗證 public SignalStrength 與 RSSI 同源
+  description: Radio.1 (5g) 以 first-object capture 驗證 public SignalStrength 與 
+    RSSI 同源
 - id: step_6g_scan
   target: dut
   action: exec
   capture: scan_6g
-  command: 'BLOCK=$(ubus-cli "WiFi.Radio.2.getScanResults()" | head -60 | sed -n "/BSSID = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n "s/.*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); RSSI=$(printf "%s\n" "$BLOCK" | sed -n "s/.*RSSI = \(-\?[0-9][0-9]*\).*/\1/p" | head -n1); SIG=$(printf "%s\n" "$BLOCK" | sed -n "s/.*SignalStrength = \(-\?[0-9][0-9]*\).*/\1/p" | head -n1); LBSSID=$(printf "%s" "$BSSID" | tr "A-F" "a-f"); printf "LlapiBssid6g=%s\nLlapiRSSI6g=%s\nLlapiSignalStrength6g=%s\n" "$LBSSID" "$RSSI" "$SIG"'
+  command: 'BLOCK=$(ubus-cli "WiFi.Radio.2.getScanResults()" | head -60 | sed -n "/BSSID
+    = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n "s/.*BSSID = \"\([^\"]*\)\".*/\1/p"
+    | head -n1); RSSI=$(printf "%s\n" "$BLOCK" | sed -n "s/.*RSSI = \(-\?[0-9][0-9]*\).*/\1/p"
+    | head -n1); SIG=$(printf "%s\n" "$BLOCK" | sed -n "s/.*SignalStrength = \(-\?[0-9][0-9]*\).*/\1/p"
+    | head -n1); LBSSID=$(printf "%s" "$BSSID" | tr "A-F" "a-f"); printf "LlapiBssid6g=%s\nLlapiRSSI6g=%s\nLlapiSignalStrength6g=%s\n"
+    "$LBSSID" "$RSSI" "$SIG"'
   expected: 6G 第一個 scan object 應同時提供可解析的 BSSID、RSSI 與 SignalStrength
-  description: Radio.2 (6g) 以 first-object capture 驗證 public SignalStrength 與 RSSI 同源
+  description: Radio.2 (6g) 以 first-object capture 驗證 public SignalStrength 與 
+    RSSI 同源
 - id: step_24g_scan
   target: dut
   action: exec
   capture: scan_24g
-  command: 'BLOCK=$(ubus-cli "WiFi.Radio.3.getScanResults()" | head -60 | sed -n "/BSSID = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n "s/.*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); RSSI=$(printf "%s\n" "$BLOCK" | sed -n "s/.*RSSI = \(-\?[0-9][0-9]*\).*/\1/p" | head -n1); SIG=$(printf "%s\n" "$BLOCK" | sed -n "s/.*SignalStrength = \(-\?[0-9][0-9]*\).*/\1/p" | head -n1); LBSSID=$(printf "%s" "$BSSID" | tr "A-F" "a-f"); printf "LlapiBssid24g=%s\nLlapiRSSI24g=%s\nLlapiSignalStrength24g=%s\n" "$LBSSID" "$RSSI" "$SIG"'
+  command: 'BLOCK=$(ubus-cli "WiFi.Radio.3.getScanResults()" | head -60 | sed -n "/BSSID
+    = /,/^        },/p"); BSSID=$(printf "%s\n" "$BLOCK" | sed -n "s/.*BSSID = \"\([^\"]*\)\".*/\1/p"
+    | head -n1); RSSI=$(printf "%s\n" "$BLOCK" | sed -n "s/.*RSSI = \(-\?[0-9][0-9]*\).*/\1/p"
+    | head -n1); SIG=$(printf "%s\n" "$BLOCK" | sed -n "s/.*SignalStrength = \(-\?[0-9][0-9]*\).*/\1/p"
+    | head -n1); LBSSID=$(printf "%s" "$BSSID" | tr "A-F" "a-f"); printf "LlapiBssid24g=%s\nLlapiRSSI24g=%s\nLlapiSignalStrength24g=%s\n"
+    "$LBSSID" "$RSSI" "$SIG"'
   expected: 2.4G 第一個 scan object 應同時提供可解析的 BSSID、RSSI 與 SignalStrength
-  description: Radio.3 (2.4g) 以 first-object capture 驗證 public SignalStrength 與 RSSI 同源
+  description: Radio.3 (2.4g) 以 first-object capture 驗證 public SignalStrength 與 
+    RSSI 同源
 pass_criteria:
 - field: scan_5g.LlapiBssid5g
   operator: regex

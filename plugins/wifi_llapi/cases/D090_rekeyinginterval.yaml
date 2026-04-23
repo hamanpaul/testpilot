@@ -2,8 +2,6 @@ id: wifi-llapi-D090-rekeyinginterval
 name: RekeyingInterval — WiFi.AccessPoint.{i}.Security
 version: '1.0'
 source:
-  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-  sheet: Wifi_LLAPI
   row: 90
   object: "WiFi.AccessPoint.{i}.Security"
   api: "RekeyingInterval"
@@ -14,9 +12,9 @@ hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Security.RekeyingInterval=0
 llapi_support: Support
 implemented_by: pWHM
 bands:
-  - 5g
-  - 6g
-  - 2.4g
+- 5g
+- 6g
+- 2.4g
 topology:
   devices:
     DUT:
@@ -50,188 +48,201 @@ test_procedure: |
   hostapd `wpa_group_rekey=0`.
 
 steps:
-  - id: step1_baseline_5g
-    action: exec
-    target: DUT
-    command:
-      - echo "BaselineRekeyingInterval5g=$(ubus-cli 'WiFi.AccessPoint.1.Security.RekeyingInterval?' 2>/dev/null | grep -o 'RekeyingInterval=[0-9]*' | cut -d= -f2)"
-      - echo "BaselineHostapdRekey5g=$(grep '^wpa_group_rekey=' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-    capture: baseline_5g
+- id: step1_baseline_5g
+  action: exec
+  target: DUT
+  command:
+  - echo "BaselineRekeyingInterval5g=$(ubus-cli 
+    'WiFi.AccessPoint.1.Security.RekeyingInterval?' 2>/dev/null | grep -o 
+    'RekeyingInterval=[0-9]*' | cut -d= -f2)"
+  - echo "BaselineHostapdRekey5g=$(grep '^wpa_group_rekey=' /tmp/wl0_hapd.conf 
+    2>/dev/null | head -1 | cut -d= -f2)"
+  capture: baseline_5g
 
-  - id: step2_set_5g
-    action: exec
-    target: DUT
-    depends_on: step1_baseline_5g
-    command: 'ubus-cli WiFi.AccessPoint.1.Security.RekeyingInterval=0'
-    capture: set_5g
+- id: step2_set_5g
+  action: exec
+  target: DUT
+  depends_on: step1_baseline_5g
+  command: 'ubus-cli WiFi.AccessPoint.1.Security.RekeyingInterval=0'
+  capture: set_5g
 
-  - id: step3_readback_5g
-    action: exec
-    target: DUT
-    depends_on: step2_set_5g
-    command:
-      - sleep 3
-      - echo "GetterRekeyingInterval5g=$(ubus-cli 'WiFi.AccessPoint.1.Security.RekeyingInterval?' 2>/dev/null | grep -o 'RekeyingInterval=[0-9]*' | cut -d= -f2)"
-      - echo "HostapdRekey5g=$(grep '^wpa_group_rekey=' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-    capture: readback_5g
+- id: step3_readback_5g
+  action: exec
+  target: DUT
+  depends_on: step2_set_5g
+  command:
+  - sleep 3
+  - echo "GetterRekeyingInterval5g=$(ubus-cli 
+    'WiFi.AccessPoint.1.Security.RekeyingInterval?' 2>/dev/null | grep -o 
+    'RekeyingInterval=[0-9]*' | cut -d= -f2)"
+  - echo "HostapdRekey5g=$(grep '^wpa_group_rekey=' /tmp/wl0_hapd.conf 
+    2>/dev/null | head -1 | cut -d= -f2)"
+  capture: readback_5g
 
-  - id: step4_restore_5g
-    action: exec
-    target: DUT
-    depends_on: step3_readback_5g
-    command:
-      - ubus-cli WiFi.AccessPoint.1.Security.RekeyingInterval=0
-      - sleep 2
-      - echo "RestoredRekeyingInterval5g=$(ubus-cli 'WiFi.AccessPoint.1.Security.RekeyingInterval?' 2>/dev/null | grep -o 'RekeyingInterval=[0-9]*' | cut -d= -f2)"
-    capture: restore_5g
+- id: step4_restore_5g
+  action: exec
+  target: DUT
+  depends_on: step3_readback_5g
+  command:
+  - ubus-cli WiFi.AccessPoint.1.Security.RekeyingInterval=0
+  - sleep 2
+  - echo "RestoredRekeyingInterval5g=$(ubus-cli 
+    'WiFi.AccessPoint.1.Security.RekeyingInterval?' 2>/dev/null | grep -o 
+    'RekeyingInterval=[0-9]*' | cut -d= -f2)"
+  capture: restore_5g
 
-  - id: step5_baseline_6g
-    action: exec
-    target: DUT
-    depends_on: step4_restore_5g
-    command:
-      - echo "BaselineRekeyingInterval6g=$(ubus-cli 'WiFi.AccessPoint.3.Security.RekeyingInterval?' 2>/dev/null | grep -o 'RekeyingInterval=[0-9]*' | cut -d= -f2)"
-      - echo "BaselineHostapdRekey6g=$(grep '^wpa_group_rekey=' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-    capture: baseline_6g
+- id: step5_baseline_6g
+  action: exec
+  target: DUT
+  depends_on: step4_restore_5g
+  command:
+  - echo "BaselineRekeyingInterval6g=$(ubus-cli 
+    'WiFi.AccessPoint.3.Security.RekeyingInterval?' 2>/dev/null | grep -o 
+    'RekeyingInterval=[0-9]*' | cut -d= -f2)"
+  - echo "BaselineHostapdRekey6g=$(grep '^wpa_group_rekey=' /tmp/wl1_hapd.conf 
+    2>/dev/null | head -1 | cut -d= -f2)"
+  capture: baseline_6g
 
-  - id: step6_set_6g
-    action: exec
-    target: DUT
-    depends_on: step5_baseline_6g
-    command: 'ubus-cli WiFi.AccessPoint.3.Security.RekeyingInterval=0'
-    capture: set_6g
+- id: step6_set_6g
+  action: exec
+  target: DUT
+  depends_on: step5_baseline_6g
+  command: 'ubus-cli WiFi.AccessPoint.3.Security.RekeyingInterval=0'
+  capture: set_6g
 
-  - id: step7_readback_6g
-    action: exec
-    target: DUT
-    depends_on: step6_set_6g
-    command:
-      - sleep 3
-      - echo "GetterRekeyingInterval6g=$(ubus-cli 'WiFi.AccessPoint.3.Security.RekeyingInterval?' 2>/dev/null | grep -o 'RekeyingInterval=[0-9]*' | cut -d= -f2)"
-      - echo "HostapdRekey6g=$(grep '^wpa_group_rekey=' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-    capture: readback_6g
+- id: step7_readback_6g
+  action: exec
+  target: DUT
+  depends_on: step6_set_6g
+  command:
+  - sleep 3
+  - echo "GetterRekeyingInterval6g=$(ubus-cli 
+    'WiFi.AccessPoint.3.Security.RekeyingInterval?' 2>/dev/null | grep -o 
+    'RekeyingInterval=[0-9]*' | cut -d= -f2)"
+  - echo "HostapdRekey6g=$(grep '^wpa_group_rekey=' /tmp/wl1_hapd.conf 
+    2>/dev/null | head -1 | cut -d= -f2)"
+  capture: readback_6g
 
-  - id: step8_restore_6g
-    action: exec
-    target: DUT
-    depends_on: step7_readback_6g
-    command:
-      - ubus-cli WiFi.AccessPoint.3.Security.RekeyingInterval=0
-      - sleep 2
-      - echo "RestoredRekeyingInterval6g=$(ubus-cli 'WiFi.AccessPoint.3.Security.RekeyingInterval?' 2>/dev/null | grep -o 'RekeyingInterval=[0-9]*' | cut -d= -f2)"
-    capture: restore_6g
+- id: step8_restore_6g
+  action: exec
+  target: DUT
+  depends_on: step7_readback_6g
+  command:
+  - ubus-cli WiFi.AccessPoint.3.Security.RekeyingInterval=0
+  - sleep 2
+  - echo "RestoredRekeyingInterval6g=$(ubus-cli 
+    'WiFi.AccessPoint.3.Security.RekeyingInterval?' 2>/dev/null | grep -o 
+    'RekeyingInterval=[0-9]*' | cut -d= -f2)"
+  capture: restore_6g
 
-  - id: step9_baseline_24g
-    action: exec
-    target: DUT
-    depends_on: step8_restore_6g
-    command:
-      - echo "BaselineRekeyingInterval24g=$(ubus-cli 'WiFi.AccessPoint.5.Security.RekeyingInterval?' 2>/dev/null | grep -o 'RekeyingInterval=[0-9]*' | cut -d= -f2)"
-      - echo "BaselineHostapdRekey24g=$(grep '^wpa_group_rekey=' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-    capture: baseline_24g
+- id: step9_baseline_24g
+  action: exec
+  target: DUT
+  depends_on: step8_restore_6g
+  command:
+  - echo "BaselineRekeyingInterval24g=$(ubus-cli 
+    'WiFi.AccessPoint.5.Security.RekeyingInterval?' 2>/dev/null | grep -o 
+    'RekeyingInterval=[0-9]*' | cut -d= -f2)"
+  - echo "BaselineHostapdRekey24g=$(grep '^wpa_group_rekey=' /tmp/wl2_hapd.conf 
+    2>/dev/null | head -1 | cut -d= -f2)"
+  capture: baseline_24g
 
-  - id: step10_set_24g
-    action: exec
-    target: DUT
-    depends_on: step9_baseline_24g
-    command: 'ubus-cli WiFi.AccessPoint.5.Security.RekeyingInterval=0'
-    capture: set_24g
+- id: step10_set_24g
+  action: exec
+  target: DUT
+  depends_on: step9_baseline_24g
+  command: 'ubus-cli WiFi.AccessPoint.5.Security.RekeyingInterval=0'
+  capture: set_24g
 
-  - id: step11_readback_24g
-    action: exec
-    target: DUT
-    depends_on: step10_set_24g
-    command:
-      - sleep 3
-      - echo "GetterRekeyingInterval24g=$(ubus-cli 'WiFi.AccessPoint.5.Security.RekeyingInterval?' 2>/dev/null | grep -o 'RekeyingInterval=[0-9]*' | cut -d= -f2)"
-      - echo "HostapdRekey24g=$(grep '^wpa_group_rekey=' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
-    capture: readback_24g
+- id: step11_readback_24g
+  action: exec
+  target: DUT
+  depends_on: step10_set_24g
+  command:
+  - sleep 3
+  - echo "GetterRekeyingInterval24g=$(ubus-cli 
+    'WiFi.AccessPoint.5.Security.RekeyingInterval?' 2>/dev/null | grep -o 
+    'RekeyingInterval=[0-9]*' | cut -d= -f2)"
+  - echo "HostapdRekey24g=$(grep '^wpa_group_rekey=' /tmp/wl2_hapd.conf 
+    2>/dev/null | head -1 | cut -d= -f2)"
+  capture: readback_24g
 
-  - id: step12_restore_24g
-    action: exec
-    target: DUT
-    depends_on: step11_readback_24g
-    command:
-      - ubus-cli WiFi.AccessPoint.5.Security.RekeyingInterval=0
-      - sleep 2
-      - echo "RestoredRekeyingInterval24g=$(ubus-cli 'WiFi.AccessPoint.5.Security.RekeyingInterval?' 2>/dev/null | grep -o 'RekeyingInterval=[0-9]*' | cut -d= -f2)"
-    capture: restore_24g
+- id: step12_restore_24g
+  action: exec
+  target: DUT
+  depends_on: step11_readback_24g
+  command:
+  - ubus-cli WiFi.AccessPoint.5.Security.RekeyingInterval=0
+  - sleep 2
+  - echo "RestoredRekeyingInterval24g=$(ubus-cli 
+    'WiFi.AccessPoint.5.Security.RekeyingInterval?' 2>/dev/null | grep -o 
+    'RekeyingInterval=[0-9]*' | cut -d= -f2)"
+  capture: restore_24g
 
 pass_criteria:
-  - field: baseline_5g.BaselineRekeyingInterval5g
-    operator: equals
-    value: '0'
-    description: '5G baseline RekeyingInterval should be 0'
-  - field: baseline_5g.BaselineHostapdRekey5g
-    operator: equals
-    value: '0'
-    description: '5G wl0 hostapd wpa_group_rekey should already be 0'
-  - field: readback_5g.GetterRekeyingInterval5g
-    operator: equals
-    value: '0'
-    description: '5G getter reads back 0 after the workbook row-90 setter'
-  - field: readback_5g.HostapdRekey5g
-    operator: equals
-    value: '0'
-    description: '5G wl0 hostapd wpa_group_rekey should stay 0 after setter'
-  - field: restore_5g.RestoredRekeyingInterval5g
-    operator: equals
-    value: '0'
-    description: '5G RekeyingInterval restored to 0'
-  - field: baseline_6g.BaselineRekeyingInterval6g
-    operator: equals
-    value: '0'
-    description: '6G baseline RekeyingInterval should be 0'
-  - field: baseline_6g.BaselineHostapdRekey6g
-    operator: equals
-    value: '0'
-    description: '6G wl1 hostapd wpa_group_rekey should already be 0'
-  - field: readback_6g.GetterRekeyingInterval6g
-    operator: equals
-    value: '0'
-    description: '6G getter reads back 0 after the workbook row-90 setter'
-  - field: readback_6g.HostapdRekey6g
-    operator: equals
-    value: '0'
-    description: '6G wl1 hostapd wpa_group_rekey should stay 0 after setter'
-  - field: restore_6g.RestoredRekeyingInterval6g
-    operator: equals
-    value: '0'
-    description: '6G RekeyingInterval restored to 0'
-  - field: baseline_24g.BaselineRekeyingInterval24g
-    operator: equals
-    value: '0'
-    description: '2.4G baseline RekeyingInterval should be 0'
-  - field: baseline_24g.BaselineHostapdRekey24g
-    operator: equals
-    value: '0'
-    description: '2.4G wl2 hostapd wpa_group_rekey should already be 0'
-  - field: readback_24g.GetterRekeyingInterval24g
-    operator: equals
-    value: '0'
-    description: '2.4G getter reads back 0 after the workbook row-90 setter'
-  - field: readback_24g.HostapdRekey24g
-    operator: equals
-    value: '0'
-    description: '2.4G wl2 hostapd wpa_group_rekey should stay 0 after setter'
-  - field: restore_24g.RestoredRekeyingInterval24g
-    operator: equals
-    value: '0'
-    description: '2.4G RekeyingInterval restored to 0'
+- field: baseline_5g.BaselineRekeyingInterval5g
+  operator: equals
+  value: '0'
+  description: '5G baseline RekeyingInterval should be 0'
+- field: baseline_5g.BaselineHostapdRekey5g
+  operator: equals
+  value: '0'
+  description: '5G wl0 hostapd wpa_group_rekey should already be 0'
+- field: readback_5g.GetterRekeyingInterval5g
+  operator: equals
+  value: '0'
+  description: '5G getter reads back 0 after the workbook row-90 setter'
+- field: readback_5g.HostapdRekey5g
+  operator: equals
+  value: '0'
+  description: '5G wl0 hostapd wpa_group_rekey should stay 0 after setter'
+- field: restore_5g.RestoredRekeyingInterval5g
+  operator: equals
+  value: '0'
+  description: '5G RekeyingInterval restored to 0'
+- field: baseline_6g.BaselineRekeyingInterval6g
+  operator: equals
+  value: '0'
+  description: '6G baseline RekeyingInterval should be 0'
+- field: baseline_6g.BaselineHostapdRekey6g
+  operator: equals
+  value: '0'
+  description: '6G wl1 hostapd wpa_group_rekey should already be 0'
+- field: readback_6g.GetterRekeyingInterval6g
+  operator: equals
+  value: '0'
+  description: '6G getter reads back 0 after the workbook row-90 setter'
+- field: readback_6g.HostapdRekey6g
+  operator: equals
+  value: '0'
+  description: '6G wl1 hostapd wpa_group_rekey should stay 0 after setter'
+- field: restore_6g.RestoredRekeyingInterval6g
+  operator: equals
+  value: '0'
+  description: '6G RekeyingInterval restored to 0'
+- field: baseline_24g.BaselineRekeyingInterval24g
+  operator: equals
+  value: '0'
+  description: '2.4G baseline RekeyingInterval should be 0'
+- field: baseline_24g.BaselineHostapdRekey24g
+  operator: equals
+  value: '0'
+  description: '2.4G wl2 hostapd wpa_group_rekey should already be 0'
+- field: readback_24g.GetterRekeyingInterval24g
+  operator: equals
+  value: '0'
+  description: '2.4G getter reads back 0 after the workbook row-90 setter'
+- field: readback_24g.HostapdRekey24g
+  operator: equals
+  value: '0'
+  description: '2.4G wl2 hostapd wpa_group_rekey should stay 0 after setter'
+- field: restore_24g.RestoredRekeyingInterval24g
+  operator: equals
+  value: '0'
+  description: '2.4G RekeyingInterval restored to 0'
 
 verification_command:
-  - 'grep ''^wpa_group_rekey='' /tmp/wl0_hapd.conf'
-  - 'grep ''^wpa_group_rekey='' /tmp/wl1_hapd.conf'
-  - 'grep ''^wpa_group_rekey='' /tmp/wl2_hapd.conf'
+- 'grep ''^wpa_group_rekey='' /tmp/wl0_hapd.conf'
+- 'grep ''^wpa_group_rekey='' /tmp/wl1_hapd.conf'
+- 'grep ''^wpa_group_rekey='' /tmp/wl2_hapd.conf'
 
-results_reference:
-  v4.0.1:
-    5g: Fail
-    6g: Not Supported
-    2.4g: Fail
-    comment: 'ARC: Cannot capture EAPOL packets on Wireshark'
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'workbook row 90 uses `RekeyingInterval=0`; active tagged TR-181 data-model maps `RekeyingInterval` to `wpa_gtk_rekey` with default `0`, and live 0403 traces show getter plus hostapd `wpa_group_rekey=0` staying aligned on AP1/AP3/AP5.'
