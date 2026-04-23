@@ -756,9 +756,16 @@ testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
 - `STA.log`
 - `agent_trace/`
 - `blocked_cases.md` — `(source.object, source.api)` 或 `name` 無法與
-  template workbook 對齊的 cases；這些案例不會被執行
+  template workbook 對齊的 cases；這些案例不會被執行。若同一個
+  `(source.object, source.api)` 對應到多個 template rows，runtime 會
+  將該 family 視為 blocked，而不是猜測自動對齊；報告中也會列出
+  candidate template rows 供後續清理
 - `skipped_cases.md` — 對齊到已被較早 filename-sorted case 佔用之
   template row 的重複案例；它們會在報告中標記並跳過執行
+
+JSON runtime artifact 也會帶出 `meta.alignment_summary.blocked_details`，
+其中包含每個 blocked case 的 reason，以及在 ambiguous template family
+情境下的 `candidate_template_rows`。
 
 > [!IMPORTANT]
 > 在拉入新的 case metadata 後，第一次執行 `testpilot run wifi_llapi`
