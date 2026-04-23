@@ -514,7 +514,7 @@ def test_run_with_mixed_alignment(tmp_path: Path, monkeypatch):
     assert "wifi-llapi-D030-duplicate" in skipped_report.read_text(encoding="utf-8")
 
 
-def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
+def test_realistic_runtime_uses_verdict_only_band_statuses(
     tmp_path: Path,
     monkeypatch,
 ):
@@ -533,7 +533,6 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
                 "row": 4,
                 "object": "WiFi.AccessPoint.{i}.",
                 "api": "kickStation()",
-                "baseline": "BCM v4.0.3",
             },
             "steps": [
                 {
@@ -550,13 +549,6 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
                 }
             ],
             "emit_pass_token": True,
-            "results_reference": {
-                "v4.0.3": {
-                    "5g": "Not Supported",
-                    "6g": "Skip",
-                    "2.4g": "Not Supported",
-                }
-            },
         },
         {
             "id": "wifi-llapi-D005-inactive-reference-fail",
@@ -565,7 +557,6 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
                 "row": 5,
                 "object": "WiFi.Radio.{i}.",
                 "api": "getRadioStats()",
-                "baseline": "BCM v4.0.3",
             },
             "steps": [
                 {
@@ -582,13 +573,6 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
                 }
             ],
             "emit_pass_token": False,
-            "results_reference": {
-                "v4.0.3": {
-                    "5g": "Pass",
-                    "6g": "Skip",
-                    "2.4g": "Pass",
-                }
-            },
         },
         {
             "id": "wifi-llapi-D006-noise-reference-single-band",
@@ -598,7 +582,6 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
                 "row": 6,
                 "object": "WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
                 "api": "Noise",
-                "baseline": "BCM v4.0.3",
             },
             "steps": [
                 {
@@ -614,14 +597,7 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
                     "value": PASS_TOKEN,
                 }
             ],
-            "emit_pass_token": True,
-            "results_reference": {
-                "v4.0.3": {
-                    "5g": "Fail",
-                    "6g": "N/A",
-                    "2.4g": "N/A",
-                }
-            },
+            "emit_pass_token": False,
         },
     ]
     _patch_runtime_hooks(monkeypatch, plugin=plugin, cases=cases)
@@ -638,11 +614,11 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
 
     wb = load_workbook(Path(result["report_path"]))
     ws = wb["Wifi_LLAPI"]
-    assert ws["I4"].value == "Not Supported"
-    assert ws["J4"].value == "Skip"
-    assert ws["K4"].value == "Not Supported"
+    assert ws["I4"].value == "Pass"
+    assert ws["J4"].value == "Pass"
+    assert ws["K4"].value == "Pass"
     assert ws["I5"].value == "Fail"
-    assert ws["J5"].value == "Skip"
+    assert ws["J5"].value == "Fail"
     assert ws["K5"].value == "Fail"
     assert ws["I6"].value == "Fail"
     assert ws["J6"].value == "N/A"
@@ -652,9 +628,9 @@ def test_realistic_runtime_uses_results_reference_for_band_specific_statuses(
     traces = _load_case_traces(Path(result["agent_trace_dir"]))
     single_band_trace = traces["wifi-llapi-D006-noise-reference-single-band"]
     assert single_band_trace["final"]["status"] == "Fail"
-    assert single_band_trace["final"]["evaluation_verdict"] == "Pass"
+    assert single_band_trace["final"]["evaluation_verdict"] == "Fail"
     assert single_band_trace["attempts"][0]["status"] == "Fail"
-    assert single_band_trace["attempts"][0]["evaluation_verdict"] == "Pass"
+    assert single_band_trace["attempts"][0]["evaluation_verdict"] == "Fail"
 
 
 def test_realistic_runtime_covers_hooks_and_report_outputs(tmp_path: Path, monkeypatch):

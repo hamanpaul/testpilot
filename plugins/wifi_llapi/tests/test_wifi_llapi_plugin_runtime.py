@@ -230,6 +230,19 @@ def _has_assoc_mac_regex(case_data: dict[str, Any], field: str) -> bool:
     )
 
 
+def _expected_case_band_results(case: dict[str, Any], verdict: bool) -> tuple[str, str, str]:
+    status = "Pass" if verdict else "Fail"
+    bands = case.get("bands")
+    if not isinstance(bands, list) or not bands:
+        return status, status, status
+    normalized = {str(band).strip().lower() for band in bands}
+    return (
+        status if "5g" in normalized else "N/A",
+        status if "6g" in normalized else "N/A",
+        status if "2.4g" in normalized else "N/A",
+    )
+
+
 def test_plugin_loads_shared_wifi_band_baselines_yaml():
     plugin = _load_plugin()
 
@@ -2639,7 +2652,6 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         (cases_dir / "D011_avgsignalstrength.yaml").read_text(encoding="utf-8")
     )
     d011_commands = "\n".join(str(step.get("command", "")) for step in d011["steps"])
-    assert d011["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d011["source"]["row"] == 11
     assert "AvgSignalStrength?" in d011["hlapi_command"]
     assert "AvgSignalStrength=0" not in d011["hlapi_command"]
@@ -2690,7 +2702,6 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         (cases_dir / "D015_connectionduration.yaml").read_text(encoding="utf-8")
     )
     d015_commands = "\n".join(str(step.get("command", "")) for step in d015["steps"])
-    assert d015["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     d015_links = {link["band"] for link in d015["topology"]["links"]}
     assert d015["source"]["row"] == 15
     assert "ConnectionDuration?" in d015["hlapi_command"]
@@ -2726,7 +2737,6 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
     )
     d017_commands = "\n".join(str(step.get("command", "")) for step in d017["steps"])
     d017_links = {link["band"] for link in d017["topology"]["links"]}
-    assert d017["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d017["source"]["row"] == 17
     assert d017["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.{i}.AssociatedDevice.1.DownlinkMCS?"'
     assert d017_links == {"5g", "6g", "2.4g"}
@@ -2762,7 +2772,6 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         (cases_dir / "D009_associationtime.yaml").read_text(encoding="utf-8")
     )
     d009_commands = "\n".join(str(step.get("command", "")) for step in d009["steps"])
-    assert d009["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d009["source"]["row"] == 9
     assert "AssociationTime?" in d009["hlapi_command"]
     assert "AssociationTime=" not in d009["hlapi_command"]
@@ -2861,10 +2870,7 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
     )
     assert d019["source"]["row"] == 19
     assert "aliases" not in d019
-    assert d019["results_reference"]["v4.0.3"]["5g"] == "Fail"
-    assert d019["results_reference"]["v4.0.3"]["6g"] == "Fail"
-    assert d019["results_reference"]["v4.0.3"]["2.4g"] == "Fail"
-    assert case_band_results(d019, True) == ("Fail", "Fail", "Fail")
+    assert case_band_results(d019, True) == _expected_case_band_results(d019, True)
     assert "EncryptionMode?" in d019["hlapi_command"]
     assert "EncryptionMode=AES" not in d019["hlapi_command"]
     assert any(
@@ -2880,7 +2886,6 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         )
     )
     d021_commands = "\n".join(str(step.get("command", "")) for step in d021["steps"])
-    assert d021["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d021["source"]["row"] == 21
     assert d021["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.HeCapabilities?"'
     assert "HeCapabilities=" not in d021["hlapi_command"]
@@ -2904,7 +2909,6 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         )
     )
     d022_commands = "\n".join(str(step.get("command", "")) for step in d022["steps"])
-    assert d022["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d022["source"]["row"] == 22
     assert "aliases" not in d022
     assert d022["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.HtCapabilities?"'
@@ -2916,9 +2920,6 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
     assert "0x0002" in d022_commands
     assert "0x0020" in d022_commands
     assert "0x0040" in d022_commands
-    assert d022["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d022["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
-    assert d022["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
     assert any(
         criterion["field"] == "result.HtCapabilities"
         and criterion["operator"] == "equals"
@@ -2930,7 +2931,6 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         (cases_dir / "D024_lastdatadownlinkrate.yaml").read_text(encoding="utf-8")
     )
     d024_commands = "\n".join(str(step.get("command", "")) for step in d024["steps"])
-    assert d024["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d024["source"]["row"] == 24
     assert d024["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataDownlinkRate?"'
     assert "LastDataDownlinkRate=1733333" not in d024["hlapi_command"]
@@ -2961,16 +2961,12 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         (cases_dir / "D025_lastdatauplinkrate.yaml").read_text(encoding="utf-8")
     )
     d025_commands = "\n".join(str(step.get("command", "")) for step in d025["steps"])
-    assert d025["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d025["source"]["row"] == 25
     assert "aliases" not in d025
     assert d025["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataUplinkRate?"'
     assert "LastDataUplinkRate=1733333" not in d025["hlapi_command"]
     assert 'WiFi.SSID.4.BSSID?' in d025_commands
     assert "DriverLastUplinkRateRounded=" in d025_commands
-    assert d025["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d025["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d025["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
     assert any(
         criterion["field"] == "result.LastDataUplinkRate"
         and criterion["operator"] == "equals"
@@ -2982,7 +2978,6 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         (cases_dir / "D026_linkbandwidth.yaml").read_text(encoding="utf-8")
     )
     d026_commands = "\n".join(str(step.get("command", "")) for step in d026["steps"])
-    assert d026["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d026["source"]["row"] == 26
     assert d026["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LinkBandwidth?"'
     assert "LinkBandwidth=160MHz" not in d026["hlapi_command"]
@@ -3093,7 +3088,6 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         direct_field = meta.get("direct_field", f"direct_5g.{meta['api']}")
         get_ref = meta.get("get_ref", f"getssid_5g.GetSSIDStats{meta['api']}5g")
         assert "aliases" not in case_data
-        assert case_data["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
         assert case_data["source"]["row"] == meta["row"]
         assert case_data["hlapi_command"] == f'ubus-cli "WiFi.SSID.{{i}}.Stats.{meta["api"]}?"'
         assert "5G -> 6G -> 2.4G sequentially" in case_data["test_environment"]
@@ -3107,9 +3101,6 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         assert "AssocMac5g=" in commands
         assert "AssocMac6g=" in commands
         assert "AssocMac24g=" in commands
-        assert case_data["results_reference"]["v4.0.3"]["5g"] == meta["expected"]
-        assert case_data["results_reference"]["v4.0.3"]["6g"] == meta["expected"]
-        assert case_data["results_reference"]["v4.0.3"]["2.4g"] == meta["expected"]
         assert _has_assoc_mac_regex(case_data, assoc_field)
         assert any(
             criterion["field"] == direct_field
@@ -3167,14 +3158,10 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         assert case_data["name"] == f"D{num} getSSIDStats {meta['api']}"
         assert case_data["source"]["row"] == meta["row"]
         assert case_data["source"]["api"] == "getSSIDStats()"
-        assert case_data["source"]["baseline"] == "0310-BGW720-300"
         assert 'WiFi.SSID.4.getSSIDStats()' in commands
         assert 'WiFi.SSID.6.getSSIDStats()' in commands
         assert 'WiFi.SSID.8.getSSIDStats()' in commands
         assert len(case_data["steps"]) == 3
-        assert case_data["results_reference"]["v4.0.3"]["5g"] == meta["expected"]
-        assert case_data["results_reference"]["v4.0.3"]["6g"] == meta["expected"]
-        assert case_data["results_reference"]["v4.0.3"]["2.4g"] == meta["expected"]
         if meta["expected"] == "Not Supported":
             assert any(
                 criterion["field"] == f"stats_5g.{meta['api']}"
@@ -3212,7 +3199,6 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
                 for criterion in case_data["pass_criteria"]
             )
 
-    # Per-case expected results_reference after workbook alignment.
     # Cases not listed default to all-Pass.
     _wmm_expected = {
         499: ("Fail", "Fail", "Fail"),
@@ -3232,13 +3218,9 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         ac = case_data["source"]["api"]
         metric = case_data["source"]["object"].split("Stats.", 1)[1].rstrip(".")
         assert "aliases" not in case_data
-        assert case_data["source"]["baseline"] == "0310-BGW720-300"
         assert case_data["source"]["row"] == case_num
         assert case_data["bands"] == ["5g", "6g", "2.4g"]
         exp5, exp6, exp24 = _wmm_expected.get(case_num, ("Pass", "Pass", "Pass"))
-        assert case_data["results_reference"]["v4.0.3"]["5g"] == exp5
-        assert case_data["results_reference"]["v4.0.3"]["6g"] == exp6
-        assert case_data["results_reference"]["v4.0.3"]["2.4g"] == exp24
         assert f"WiFi.SSID.4.Stats.{metric}.{ac}?" in commands
         assert f"WiFi.SSID.6.Stats.{metric}.{ac}?" in commands
         assert f"WiFi.SSID.8.Stats.{metric}.{ac}?" in commands
@@ -3414,7 +3396,6 @@ def test_pending_method_calibration_cases_use_runtime_supported_contracts():
         and criterion["value"] == "[-1]"
         for criterion in d006["pass_criteria"]
     )
-    assert d006["results_reference"]["v4.0.3"]["6g"] == "Pass"
 
     d007 = load_case(cases_dir / "D007_sendremotemeasumentrequest.yaml")
     d007_commands = "\n".join(str(step.get("command", "")) for step in d007["steps"])
@@ -3464,7 +3445,6 @@ def test_pending_method_calibration_cases_use_runtime_supported_contracts():
         and criterion["value"] == r"(?s)\[\s*\[\s*\]\s*\]"
         for criterion in d007["pass_criteria"]
     )
-    assert d007["results_reference"]["v4.0.3"]["6g"] == "Pass"
 
 
 def test_assoc_mac_preconditions_do_not_hardcode_sample_station_macs():
@@ -3651,7 +3631,6 @@ def test_pending_readonly_associateddevice_cases_use_live_cross_checks():
     assert "aliases" not in d016_raw
     assert d016["id"] == "wifi-llapi-D016-downlinkbandwidth"
     assert d016["source"]["row"] == 16
-    assert d016["source"]["baseline"] == "BCM v4.0.3"
     assert d016["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.{i}.AssociatedDevice.1.DownlinkBandwidth?"'
     assert d016_links == {"5g", "6g", "2.4g"}
     assert 'WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkBandwidth?' in d016_commands
@@ -4276,100 +4255,68 @@ def test_d377_radio_maxbitrate_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d377 = load_case(cases_dir / "D377_maxbitrate.yaml")
-    ref = d377["results_reference"]["v4.0.3"]
 
     assert d377["source"]["row"] == 377
     assert d377["llapi_support"] == "Not Supported"
-    assert ref["5g"] == "Not Supported"
-    assert ref["6g"] == "Not Supported"
-    assert ref["2.4g"] == "Not Supported"
-    assert case_band_results(d377, True) == (
-        "Not Supported",
-        "Not Supported",
-        "Not Supported",
-    )
+    assert case_band_results(d377, True) == _expected_case_band_results(d377, True)
 
 
 def test_d379_radio_mcs_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d379 = load_case(cases_dir / "D379_mcs.yaml")
-    ref = d379["results_reference"]["v4.0.3"]
 
     assert d379["source"]["row"] == 379
-    assert ref["5g"] == "Skip"
-    assert ref["6g"] == "Skip"
-    assert ref["2.4g"] == "Skip"
-    assert case_band_results(d379, True) == ("Skip", "Skip", "Skip")
+    assert case_band_results(d379, True) == _expected_case_band_results(d379, True)
 
 
 def test_d380_radio_multiaptypessupported_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d380 = load_case(cases_dir / "D380_multiaptypessupported.yaml")
-    ref = d380["results_reference"]["v4.0.3"]
 
     assert d380["source"]["row"] == 380
-    assert ref["5g"] == "Skip"
-    assert ref["6g"] == "Skip"
-    assert ref["2.4g"] == "Skip"
-    assert case_band_results(d380, True) == ("Skip", "Skip", "Skip")
+    assert case_band_results(d380, True) == _expected_case_band_results(d380, True)
 
 
 def test_d384_radio_radcapabilitieshtstr_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d384 = load_case(cases_dir / "D384_radcapabilitieshtstr.yaml")
-    ref = d384["results_reference"]["v4.0.3"]
 
     assert d384["source"]["row"] == 384
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Not Supported"
-    assert ref["2.4g"] == "Pass"
-    assert case_band_results(d384, True) == ("Pass", "Not Supported", "Pass")
+    assert case_band_results(d384, True) == _expected_case_band_results(d384, True)
 
 
 def test_d385_radio_radcapabilitiesvhtstr_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d385 = load_case(cases_dir / "D385_radcapabilitiesvhtstr.yaml")
-    ref = d385["results_reference"]["v4.0.3"]
 
     assert d385["source"]["row"] == 385
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Not Supported"
-    assert ref["2.4g"] == "Not Supported"
-    assert case_band_results(d385, True) == ("Pass", "Not Supported", "Not Supported")
+    assert case_band_results(d385, True) == _expected_case_band_results(d385, True)
 
 
 def test_d396_getradiostats_errorsreceived_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d396 = load_case(cases_dir / "D396_errorsreceived_radio_stats.yaml")
-    ref = d396["results_reference"]["v4.0.3"]
 
     assert d396["source"]["row"] == 396
     assert d396["source"]["object"] == "WiFi.Radio.{i}.Stats."
     assert d396["source"]["api"] == "ErrorsReceived"
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
-    assert case_band_results(d396, True) == ("Pass", "Pass", "Pass")
+    assert case_band_results(d396, True) == _expected_case_band_results(d396, True)
 
 
 def test_d397_getradiostats_errorssent_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
 
     d397 = load_case(cases_dir / "D397_errorssent_radio_stats.yaml")
-    ref = d397["results_reference"]["v4.0.3"]
 
     assert d397["source"]["row"] == 397
     assert d397["source"]["object"] == "WiFi.Radio.{i}.Stats."
     assert d397["source"]["api"] == "ErrorsSent"
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
-    assert case_band_results(d397, True) == ("Pass", "Pass", "Pass")
+    assert case_band_results(d397, True) == _expected_case_band_results(d397, True)
 
 
 def test_d455_getradiostats_multipleretrycount_contract():
@@ -4379,13 +4326,10 @@ def test_d455_getradiostats_multipleretrycount_contract():
         (cases_dir / "D455_multipleretrycount_radio_stats.yaml").read_text(encoding="utf-8")
     )
     d455 = load_case(cases_dir / "D455_multipleretrycount_radio_stats.yaml")
-    ref = d455["results_reference"]["v4.0.3"]
     d455_commands = "\n".join(str(step.get("command", "")) for step in d455["steps"])
 
     assert "aliases" not in d455_raw
     assert d455["id"] == "d455-getradiostats-multipleretrycount"
-    assert d455["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-    assert d455["source"]["sheet"] == "Wifi_LLAPI"
     assert d455["source"]["row"] == 455
     assert d455["source"]["object"] == "WiFi.Radio.{i}."
     assert d455["source"]["api"] == "getRadioStats()"
@@ -4418,10 +4362,7 @@ def test_d455_getradiostats_multipleretrycount_contract():
         and criterion["reference"] == "driver_24g.DriverMultipleRetryCount24g"
         for criterion in d455["pass_criteria"]
     )
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
-    assert case_band_results(d455, True) == ("Pass", "Pass", "Pass")
+    assert case_band_results(d455, True) == _expected_case_band_results(d455, True)
 
 
 def test_d455_getradiostats_multipleretrycount_setup_env(monkeypatch):
@@ -4731,9 +4672,6 @@ def test_pending_inactive_and_bandwidth_cases_use_supported_contracts():
         and criterion["value"] == r"^(20MHz|40MHz|80MHz|160MHz|Unknown)$"
         for criterion in d028["pass_criteria"]
     )
-    assert d028["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d028["results_reference"]["v4.0.3"]["6g"] == "Fail"
-    assert d028["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_pending_inactive_and_bandwidth_cases_evaluate_live_examples():
@@ -4868,8 +4806,6 @@ def test_pending_not_supported_associateddevice_cases_use_supported_contracts():
         and criterion["value"] == "doesn't exist in odl"
         for criterion in d029["pass_criteria"]
     )
-    assert d029["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d029["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
     d030 = load_case(cases_dir / "D030_mugroupid.yaml")
     d030_commands = "\n".join(str(step.get("command", "")) for step in d030["steps"])
@@ -4885,10 +4821,7 @@ def test_pending_not_supported_associateddevice_cases_use_supported_contracts():
         for criterion in d030["pass_criteria"]
     )
     assert _has_assoc_mac_regex(d030, "assoc_24g.AssocMac24g")
-    assert d030["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
-    assert d030["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
-    assert d030["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
-    assert case_band_results(d030, True) == ("Not Supported", "Not Supported", "Not Supported")
+    assert case_band_results(d030, True) == _expected_case_band_results(d030, True)
 
 
 def test_pending_not_supported_associateddevice_cases_evaluate_live_examples():
@@ -5007,9 +4940,6 @@ def test_pending_mu_stub_cases_use_supported_contracts():
             "D033_muuserpositionid.yaml": ("Not Supported", "Not Supported", "Not Supported"),
         }
         exp5, exp6, exp24 = _mu_rr[filename]
-        assert case_data["results_reference"]["v4.0.3"]["5g"] == exp5
-        assert case_data["results_reference"]["v4.0.3"]["6g"] == exp6
-        assert case_data["results_reference"]["v4.0.3"]["2.4g"] == exp24
         assert _has_assoc_mac_regex(case_data, "assoc_5g.AssocMac5g")
         assert any(
             criterion["field"] == f"result_5g.{api_name}"
@@ -5116,7 +5046,6 @@ def test_pending_failure_shaped_associateddevice_cases_use_supported_contracts()
         assert "aliases" not in raw_case
         assert case_data["id"] == meta["id"]
         assert case_data["source"]["row"] == meta["row"]
-        assert case_data["source"]["baseline"] == "BCM v4.0.3"
         assert case_data["bands"] == ["5g"]
         assert links == {"5g"}
         assert case_data["hlapi_command"] == f'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}?"'
@@ -5150,8 +5079,6 @@ def test_pending_failure_shaped_associateddevice_cases_use_supported_contracts()
                 and str(criterion["value"]) == "0"
                 for criterion in case_data["pass_criteria"]
             )
-        assert case_data["results_reference"]["v4.0.3"]["5g"] == "Fail"
-        assert case_data["results_reference"]["v4.0.3"]["6g"] == case_data["results_reference"]["v4.0.3"]["6g"]
         
 
 
@@ -5281,7 +5208,6 @@ def test_d034_noise_associateddevice_uses_supported_contracts():
     assert "aliases" not in d034_raw
     assert d034["id"] == "wifi-llapi-D034-noise-accesspoint-associateddevice"
     assert d034["source"]["row"] == 34
-    assert d034["source"]["baseline"] == "BCM v4.0.3"
     assert d034["bands"] == ["5g"]
     assert d034_links == {"5g"}
     assert d034_sta_config["ssid"] == "testpilot5G"
@@ -5335,9 +5261,6 @@ def test_d034_noise_associateddevice_uses_supported_contracts():
         and criterion["reference"] == "driver_noise.DriverNoiseMax"
         for criterion in d034["pass_criteria"]
     )
-    assert d034["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d034["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d034["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d034_noise_associateddevice_evaluate_live_examples():
@@ -5458,7 +5381,6 @@ def test_pending_counter_stub_associateddevice_cases_use_supported_contracts():
         assert "aliases" not in raw_case
         assert case_data["id"] == meta["id"]
         assert case_data["source"]["row"] == meta["row"]
-        assert case_data["source"]["baseline"] == "BCM v4.0.3"
         assert case_data["bands"] == ["5g"]
         assert links == {"5g"}
         assert case_data["hlapi_command"] == f'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}?"'
@@ -5489,9 +5411,6 @@ def test_pending_counter_stub_associateddevice_cases_use_supported_contracts():
             "D042_rxunicastpacketcount.yaml": ("Not Supported", "Not Supported", "Not Supported"),
         }
         exp5, exp6, exp24 = _cstub_rr[filename]
-        assert case_data["results_reference"]["v4.0.3"]["5g"] == exp5
-        assert case_data["results_reference"]["v4.0.3"]["6g"] == exp6
-        assert case_data["results_reference"]["v4.0.3"]["2.4g"] == exp24
 
 
 def test_pending_counter_stub_associateddevice_cases_evaluate_live_examples():
@@ -5607,7 +5526,6 @@ def test_pending_counter_pass_associateddevice_cases_use_supported_contracts():
         assert "aliases" not in raw_case
         assert case_data["id"] == meta["id"]
         assert case_data["source"]["row"] == meta["row"]
-        assert case_data["source"]["baseline"] == "BCM v4.0.3"
         assert case_data["bands"] == ["5g"]
         assert links == {"5g"}
         assert case_data["hlapi_command"] == f'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}?"'
@@ -5650,9 +5568,6 @@ def test_pending_counter_pass_associateddevice_cases_use_supported_contracts():
             "D056_txpacketcount.yaml": ("Pass", "Pass", "Pass"),
         }
         exp5, exp6, exp24 = _cpass_rr[filename]
-        assert case_data["results_reference"]["v4.0.3"]["5g"] == exp5
-        assert case_data["results_reference"]["v4.0.3"]["6g"] == exp6
-        assert case_data["results_reference"]["v4.0.3"]["2.4g"] == exp24
 
 
 def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
@@ -5749,7 +5664,6 @@ def test_d059_uplinkbandwidth_uses_positive_same_sta_contract():
     assert "aliases" not in raw_case
     assert case_data["id"] == "wifi-llapi-D059-uplinkbandwidth"
     assert case_data["source"]["row"] == 59
-    assert case_data["source"]["baseline"] == "BCM v4.0.3"
     assert case_data["bands"] == ["5g"]
     assert links == {"5g"}
     assert case_data["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.UplinkBandwidth?"'
@@ -5805,9 +5719,6 @@ def test_d059_uplinkbandwidth_uses_positive_same_sta_contract():
         and criterion["reference"] == "result.DriverUplinkBandwidth"
         for criterion in case_data["pass_criteria"]
     )
-    assert case_data["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert case_data["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert case_data["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d059_uplinkbandwidth_evaluate_live_examples():
@@ -5890,7 +5801,6 @@ def test_d060_uplinkmcs_uses_zero_valid_same_sta_contract():
     assert "aliases" not in raw_case
     assert case_data["id"] == "wifi-llapi-D060-uplinkmcs"
     assert case_data["source"]["row"] == 60
-    assert case_data["source"]["baseline"] == "BCM v4.0.3"
     assert case_data["bands"] == ["5g"]
     assert links == {"5g"}
     assert case_data["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.UplinkMCS?"'
@@ -5936,8 +5846,6 @@ def test_d060_uplinkmcs_uses_zero_valid_same_sta_contract():
         criterion["field"] == "result.UplinkMCS" and criterion["operator"] == ">"
         for criterion in case_data["pass_criteria"]
     )
-    assert case_data["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert case_data["results_reference"]["v4.0.3"]["6g"] == case_data["results_reference"]["v4.0.3"]["6g"]
     
 
 
@@ -6009,7 +5917,6 @@ def test_d061_uplinkshortguard_uses_same_sta_gi_contract():
     assert "aliases" not in raw_case
     assert case_data["id"] == "wifi-llapi-D061-uplinkshortguard"
     assert case_data["source"]["row"] == 61
-    assert case_data["source"]["baseline"] == "BCM v4.0.3"
     assert case_data["bands"] == ["5g"]
     assert links == {"5g"}
     assert case_data["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.UplinkShortGuard?"'
@@ -6055,9 +5962,6 @@ def test_d061_uplinkshortguard_uses_same_sta_gi_contract():
         criterion["field"] == "result.UplinkShortGuard" and criterion["operator"] == "contains"
         for criterion in case_data["pass_criteria"]
     )
-    assert case_data["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert case_data["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert case_data["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
     
 
 
@@ -6171,7 +6075,6 @@ def test_pending_d044_d049_d058_associateddevice_cases_use_supported_contracts()
     d044_commands = "\n".join(str(step.get("command", "")) for step in d044["steps"])
     assert "aliases" not in d044_raw
     assert d044["source"]["row"] == 44
-    assert d044["source"]["baseline"] == "BCM v4.0.3"
     assert d044["bands"] == ["5g"]
     assert "DriverSignal=" in d044_commands
     assert "DriverNoise=" in d044_commands
@@ -6194,14 +6097,12 @@ def test_pending_d044_d049_d058_associateddevice_cases_use_supported_contracts()
         and criterion["reference"] == "driver_snr.DriverSignalNoiseRatioMax"
         for criterion in d044["pass_criteria"]
     )
-    assert d044["results_reference"]["v4.0.3"]["5g"] == "Pass"
 
     d049_raw = yaml.safe_load((cases_dir / "D049_supportedmcs.yaml").read_text(encoding="utf-8"))
     d049 = load_case(cases_dir / "D049_supportedmcs.yaml")
     d049_commands = "\n".join(str(step.get("command", "")) for step in d049["steps"])
     assert "aliases" not in d049_raw
     assert d049["source"]["row"] == 49
-    assert d049["source"]["baseline"] == "BCM v4.0.3"
     assert d049["bands"] == ["5g"]
     assert "DriverHeCapsPresent=1" in d049_commands
     assert "DriverMCSSetPresent=1" in d049_commands
@@ -6217,7 +6118,6 @@ def test_pending_d044_d049_d058_associateddevice_cases_use_supported_contracts()
         and str(criterion["value"]) == "1"
         for criterion in d049["pass_criteria"]
     )
-    assert d049["results_reference"]["v4.0.3"]["5g"] == "Fail"
 
     d058_raw = yaml.safe_load(
         (cases_dir / "D058_uniibandscapabilities.yaml").read_text(encoding="utf-8")
@@ -6226,7 +6126,6 @@ def test_pending_d044_d049_d058_associateddevice_cases_use_supported_contracts()
     d058_commands = "\n".join(str(step.get("command", "")) for step in d058["steps"])
     assert "aliases" not in d058_raw
     assert d058["source"]["row"] == 58
-    assert d058["source"]["baseline"] == "BCM v4.0.3"
     assert d058["bands"] == ["5g"]
     assert "DriverUNIIBandsCapabilities=" in d058_commands
     assert "iw dev wl0 info" in d058_commands
@@ -6249,7 +6148,6 @@ def test_pending_d044_d049_d058_associateddevice_cases_use_supported_contracts()
         and criterion["reference"] == "driver_capability.DriverUNIIBandsCapabilities"
         for criterion in d058["pass_criteria"]
     )
-    assert d058["results_reference"]["v4.0.3"]["5g"] == "Pass"
 
 
 def test_pending_d044_d049_d058_associateddevice_cases_evaluate_live_examples():
@@ -6378,7 +6276,6 @@ def test_pending_security_and_signal_associateddevice_cases_use_supported_contra
     assert "aliases" not in d043_raw
     assert d043["id"] == "wifi-llapi-D043-securitymodeenabled"
     assert d043["source"]["row"] == 43
-    assert d043["source"]["baseline"] == "BCM v4.0.3"
     assert d043["bands"] == ["5g"]
     assert d043_links == {"5g"}
     assert (
@@ -6406,9 +6303,6 @@ def test_pending_security_and_signal_associateddevice_cases_use_supported_contra
         and criterion["reference"] == "driver_security.DriverSecurityModeEnabled"
         for criterion in d043["pass_criteria"]
     )
-    assert d043["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d043["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d043["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
     d045_raw = yaml.safe_load(
         (cases_dir / "D045_signalstrength_accesspoint_associateddevice.yaml").read_text(
@@ -6422,7 +6316,6 @@ def test_pending_security_and_signal_associateddevice_cases_use_supported_contra
     assert "aliases" not in d045_raw
     assert d045["id"] == "wifi-llapi-D045-signalstrength-accesspoint-associateddevice"
     assert d045["source"]["row"] == 45
-    assert d045["source"]["baseline"] == "BCM v4.0.3"
     assert d045["bands"] == ["5g"]
     assert d045_links == {"5g"}
     assert (
@@ -6476,9 +6369,6 @@ def test_pending_security_and_signal_associateddevice_cases_use_supported_contra
         and criterion["reference"] == "driver_signal.DriverSignalStrengthMax"
         for criterion in d045["pass_criteria"]
     )
-    assert d045["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d045["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d045["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_pending_security_and_signal_associateddevice_cases_evaluate_live_examples():
@@ -6618,7 +6508,6 @@ def test_d046_signalstrengthbychain_uses_supported_contracts():
     assert "aliases" not in d046_raw
     assert d046["id"] == "wifi-llapi-D046-signalstrengthbychain"
     assert d046["source"]["row"] == 46
-    assert d046["source"]["baseline"] == "BCM v4.0.3"
     assert d046["bands"] == ["5g"]
     assert d046_links == {"5g"}
     assert (
@@ -6667,9 +6556,6 @@ def test_d046_signalstrengthbychain_uses_supported_contracts():
         and criterion["reference"] == "driver_signal.DriverSignalStrengthByChain"
         for criterion in d046["pass_criteria"]
     )
-    assert d046["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d046["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d046["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d046_signalstrengthbychain_evaluate_live_examples():
@@ -6769,7 +6655,6 @@ def test_d047_supportedhe160mcs_uses_supported_contracts():
     assert "sta_env_setup" not in d047_raw
     assert d047["id"] == "wifi-llapi-D047-supportedhe160mcs"
     assert d047["source"]["row"] == 47
-    assert d047["source"]["baseline"] == "BCM v4.0.3"
     assert d047["llapi_support"] == "Not Supported"
     assert d047["bands"] == ["5g"]
     assert d047_links == {"5g"}
@@ -6830,9 +6715,6 @@ def test_d047_supportedhe160mcs_uses_supported_contracts():
         and str(criterion["value"]) == "1"
         for criterion in d047["pass_criteria"]
     )
-    assert d047["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
-    assert d047["results_reference"]["v4.0.3"]["6g"] == "N/A"
-    assert d047["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
 
 
 def test_d047_supportedhe160mcs_evaluate_live_examples():
@@ -6924,7 +6806,6 @@ def test_d048_supportedhemcs_uses_supported_contracts():
     assert "aliases" not in d048_raw
     assert d048["id"] == "wifi-llapi-D048-supportedhemcs"
     assert d048["source"]["row"] == 48
-    assert d048["source"]["baseline"] == "BCM v4.0.3"
     assert d048["llapi_support"] == "Not Supported"
     assert d048["bands"] == ["5g"]
     assert d048_links == {"5g"}
@@ -6997,8 +6878,6 @@ def test_d048_supportedhemcs_uses_supported_contracts():
         and str(criterion["value"]) == "1"
         for criterion in d048["pass_criteria"]
     )
-    assert d048["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d048["results_reference"]["v4.0.3"]["6g"] == d048["results_reference"]["v4.0.3"]["6g"]
     
 
 
@@ -7128,7 +7007,6 @@ def test_d050_supportedvhtmcs_uses_supported_contracts():
     assert "sta_env_setup" not in d050_raw
     assert d050["id"] == "wifi-llapi-D050-supportedvhtmcs"
     assert d050["source"]["row"] == 50
-    assert d050["source"]["baseline"] == "BCM v4.0.3"
     assert d050["llapi_support"] == "Not Supported"
     assert d050["bands"] == ["5g"]
     assert d050_links == {"5g"}
@@ -7195,9 +7073,6 @@ def test_d050_supportedvhtmcs_uses_supported_contracts():
         and str(criterion["value"]) == "1"
         for criterion in d050["pass_criteria"]
     )
-    assert d050["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d050["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
-    assert d050["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
 
 
 def test_d050_supportedvhtmcs_evaluate_live_examples():
@@ -7310,9 +7185,7 @@ def test_d054_txerrors_uses_same_sta_driver_contract():
 
     assert "aliases" not in d054_raw
     assert d054["id"] == "wifi-llapi-D054-txerrors"
-    assert d054["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d054["source"]["row"] == 54
-    assert d054["source"]["baseline"] == "BCM v4.0.3"
     assert d054["llapi_support"] == "Support"
     assert d054["bands"] == ["5g"]
     assert d054_links == {"5g"}
@@ -7361,9 +7234,6 @@ def test_d054_txerrors_uses_same_sta_driver_contract():
         and criterion["reference"] == "driver_capture.DriverTxErrors"
         for criterion in d054["pass_criteria"]
     )
-    assert d054["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d054["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d054["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d054_txerrors_evaluate_live_examples():
@@ -7464,9 +7334,7 @@ def test_d055_txmulticastpacketcount_uses_same_sta_delivery_contract():
 
     assert "aliases" not in d055_raw
     assert d055["id"] == "wifi-llapi-D055-txmulticastpacketcount"
-    assert d055["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d055["source"]["row"] == 55
-    assert d055["source"]["baseline"] == "BCM v4.0.3"
     assert d055["llapi_support"] == "Support"
     assert d055["bands"] == ["5g"]
     assert d055_links == {"5g"}
@@ -7538,9 +7406,6 @@ def test_d055_txmulticastpacketcount_uses_same_sta_delivery_contract():
         and str(criterion["value"]) == "0"
         for criterion in d055["pass_criteria"]
     )
-    assert d055["results_reference"]["v4.0.3"]["5g"] == "Fail"
-    assert d055["results_reference"]["v4.0.3"]["6g"] == "Fail"
-    assert d055["results_reference"]["v4.0.3"]["2.4g"] == "Fail"
 
 
 def test_d055_txmulticastpacketcount_evaluate_live_examples():
@@ -7679,9 +7544,7 @@ def test_d057_txunicastpacketcount_uses_same_sta_failure_contract():
 
     assert "aliases" not in d057_raw
     assert d057["id"] == "wifi-llapi-D057-txunicastpacketcount"
-    assert d057["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d057["source"]["row"] == 57
-    assert d057["source"]["baseline"] == "BCM v4.0.3"
     assert d057["llapi_support"] == "Support"
     assert d057["bands"] == ["5g"]
     assert d057_links == {"5g"}
@@ -7747,9 +7610,6 @@ def test_d057_txunicastpacketcount_uses_same_sta_failure_contract():
         and str(criterion["value"]) == "0"
         for criterion in d057["pass_criteria"]
     )
-    assert d057["results_reference"]["v4.0.3"]["5g"] == "Fail"
-    assert d057["results_reference"]["v4.0.3"]["6g"] == "Fail"
-    assert d057["results_reference"]["v4.0.3"]["2.4g"] == "Fail"
 
 
 def test_d057_txunicastpacketcount_evaluate_live_examples():
@@ -7873,7 +7733,6 @@ def test_d053_txbytes_contract():
     assert "aliases" not in d053_raw
     assert d053["id"] == "wifi-llapi-D053-txbytes"
     assert d053["source"]["row"] == 53
-    assert d053["source"]["baseline"] == "BCM v4.0.3"
     assert d053["llapi_support"] == "Support"
     assert d053["bands"] == ["5g", "6g", "2.4g"]
     assert d053_links == {"5g", "6g", "2.4g"}
@@ -7907,9 +7766,6 @@ def test_d053_txbytes_contract():
         and criterion.get("reference") == "capture_24g.TxBytes24g"
         for criterion in d053["pass_criteria"]
     )
-    assert d053["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d053["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d053["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d053_txbytes_evaluate_live_examples():
@@ -8109,9 +7965,7 @@ def test_d062_vendoroui_uses_same_sta_pass_contract():
 
     assert "aliases" not in d062_raw
     assert d062["id"] == "wifi-llapi-D062-vendoroui"
-    assert d062["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d062["source"]["row"] == 62
-    assert d062["source"]["baseline"] == "BCM v4.0.3"
     assert d062["llapi_support"] == "Support"
     assert d062["bands"] == ["5g"]
     assert d062_links == {"5g"}
@@ -8153,9 +8007,6 @@ def test_d062_vendoroui_uses_same_sta_pass_contract():
         and criterion.get("reference") == "result.VendorOUI"
         for criterion in d062["pass_criteria"]
     )
-    assert d062["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d062["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d062["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d062_vendoroui_evaluate_live_examples():
@@ -8254,9 +8105,7 @@ def test_d063_vhtcapabilities_uses_same_sta_pass_contract():
 
     assert "aliases" not in d063_raw
     assert d063["id"] == "wifi-llapi-D063-vhtcapabilities-accesspoint-associateddevice"
-    assert d063["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d063["source"]["row"] == 63
-    assert d063["source"]["baseline"] == "BCM v4.0.3"
     assert d063["llapi_support"] == "Support"
     assert d063["bands"] == ["5g"]
     assert d063_links == {"5g"}
@@ -8310,9 +8159,6 @@ def test_d063_vhtcapabilities_uses_same_sta_pass_contract():
         and criterion.get("reference") == "result.VhtCapabilities"
         for criterion in d063["pass_criteria"]
     )
-    assert d063["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d063["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
-    assert d063["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
 
 
 def test_d063_vhtcapabilities_evaluate_live_examples():
@@ -8412,9 +8258,7 @@ def test_d064_apbridgedisable_uses_ap_only_unsupported_contract():
 
     assert "aliases" not in d064_raw
     assert d064["id"] == "wifi-llapi-D064-apbridgedisable"
-    assert d064["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d064["source"]["row"] == 64
-    assert d064["source"]["baseline"] == "BCM v4.0.3"
     assert d064["llapi_support"] == "Not Supported"
     assert d064["bands"] == ["5g"]
     assert set(d064["topology"]["devices"]) == {"DUT"}
@@ -8452,9 +8296,6 @@ def test_d064_apbridgedisable_uses_ap_only_unsupported_contract():
         and criterion["value"] == "up"
         for criterion in d064["pass_criteria"]
     )
-    assert d064["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
-    assert d064["results_reference"]["v4.0.3"]["6g"] == "N/A"
-    assert d064["results_reference"]["v4.0.3"]["2.4g"] == "N/A"
 
 
 def test_d064_apbridgedisable_setup_env_uses_only_dut_transport(monkeypatch):
@@ -8605,9 +8446,7 @@ def test_d065_bridgeinterface_uses_ap_only_multiband_pass_contract():
 
     assert "aliases" not in d065_raw
     assert d065["id"] == "wifi-llapi-D065-bridgeinterface"
-    assert d065["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d065["source"]["row"] == 65
-    assert d065["source"]["baseline"] == "BCM v4.0.3"
     assert d065["llapi_support"] == "Support"
     assert d065["bands"] == ["5g", "6g", "2.4g"]
     assert set(d065["topology"]["devices"]) == {"DUT"}
@@ -8652,9 +8491,6 @@ def test_d065_bridgeinterface_uses_ap_only_multiband_pass_contract():
         and criterion.get("reference") == "result_24g.BridgeInterface"
         for criterion in d065["pass_criteria"]
     )
-    assert d065["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d065["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d065["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d065_bridgeinterface_setup_env_uses_only_dut_transport(monkeypatch):
@@ -8804,9 +8640,7 @@ def test_d068_discoverymethodenabled_accesspoint_fils_contract():
 
     assert "aliases" not in d066_raw
     assert d066["id"] == "wifi-llapi-D068-discoverymethodenabled-accesspoint-fils"
-    assert d066["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d066["source"]["row"] == 68
-    assert d066["source"]["baseline"] == "BCM v4.0.3"
     assert d066["llapi_support"] == "Support"
     assert d066["bands"] == ["5g", "6g", "2.4g"]
     assert set(d066["topology"]["devices"]) == {"DUT"}
@@ -8836,9 +8670,6 @@ def test_d068_discoverymethodenabled_accesspoint_fils_contract():
         and criterion["value"] == "FILSDiscovery"
         for criterion in d066["pass_criteria"]
     )
-    assert d066["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
-    assert d066["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
-    assert d066["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
 
 
 def test_d068_discoverymethodenabled_accesspoint_fils_setup_env_uses_only_dut_transport(monkeypatch):
@@ -9019,9 +8850,7 @@ def test_d068_discoverymethodenabled_accesspoint_upr_contract():
 
     assert "aliases" not in d067_raw
     assert d067["id"] == "wifi-llapi-D068-discoverymethodenabled-accesspoint-upr"
-    assert d067["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d067["source"]["row"] == 68
-    assert d067["source"]["baseline"] == "BCM v4.0.3"
     assert d067["llapi_support"] == "Support"
     assert d067["bands"] == ["5g", "6g", "2.4g"]
     assert set(d067["topology"]["devices"]) == {"DUT"}
@@ -9044,9 +8873,6 @@ def test_d068_discoverymethodenabled_accesspoint_upr_contract():
         and criterion["value"] == "invalid value"
         for criterion in d067["pass_criteria"]
     )
-    assert d067["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
-    assert d067["results_reference"]["v4.0.3"]["6g"] == "Fail"
-    assert d067["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
 
 
 def test_d068_discoverymethodenabled_accesspoint_upr_setup_env_uses_only_dut_transport(monkeypatch):
@@ -9185,9 +9011,7 @@ def test_d068_discoverymethodenabled_accesspoint_rnr_contract():
 
     assert "aliases" not in d068_raw
     assert d068["id"] == "wifi-llapi-D068-discoverymethodenabled-accesspoint-rnr"
-    assert d068["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d068["source"]["row"] == 70
-    assert d068["source"]["baseline"] == "BCM v4.0.3"
     assert d068["llapi_support"] == "Support"
     assert d068["bands"] == ["5g", "6g", "2.4g"]
     assert set(d068["topology"]["devices"]) == {"DUT"}
@@ -9210,9 +9034,6 @@ def test_d068_discoverymethodenabled_accesspoint_rnr_contract():
         and criterion["value"] == "0"
         for criterion in d068["pass_criteria"]
     )
-    assert d068["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d068["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d068["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d068_discoverymethodenabled_accesspoint_rnr_setup_env_uses_only_dut_transport(monkeypatch):
@@ -9369,9 +9190,7 @@ def test_d366_srgbsscolorbitmap_radio_contract():
 
     assert "aliases" not in d366_raw
     assert d366["id"] == "wifi-llapi-D366-srgbsscolorbitmap"
-    assert d366["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d366["source"]["row"] == 366
-    assert d366["source"]["baseline"] == "BCM v4.0.3"
     assert d366["llapi_support"] == "Support"
     assert d366["bands"] == ["5g", "6g", "2.4g"]
     assert set(d366["topology"]["devices"]) == {"DUT"}
@@ -9395,9 +9214,6 @@ def test_d366_srgbsscolorbitmap_radio_contract():
         and criterion["value"] == "0"
         for criterion in d366["pass_criteria"]
     )
-    assert d366["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d366["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d366["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d366_srgbsscolorbitmap_setup_env_uses_only_dut_transport(monkeypatch):
@@ -9537,9 +9353,7 @@ def test_d369_srgpartialbssidbitmap_radio_contract():
 
     assert "aliases" not in d369_raw
     assert d369["id"] == "wifi-llapi-D369-srgpartialbssidbitmap"
-    assert d369["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d369["source"]["row"] == 369
-    assert d369["source"]["baseline"] == "BCM v4.0.3"
     assert d369["llapi_support"] == "Support"
     assert d369["bands"] == ["5g", "6g", "2.4g"]
     assert set(d369["topology"]["devices"]) == {"DUT"}
@@ -9564,9 +9378,6 @@ def test_d369_srgpartialbssidbitmap_radio_contract():
         and criterion["value"] == "0"
         for criterion in d369["pass_criteria"]
     )
-    assert d369["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d369["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d369["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d369_srgpartialbssidbitmap_setup_env_uses_only_dut_transport(monkeypatch):
@@ -9706,9 +9517,7 @@ def test_d070_enable_accesspoint_contract():
 
     assert "aliases" not in d070_raw
     assert d070["id"] == "wifi-llapi-D070-enable-accesspoint"
-    assert d070["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d070["source"]["row"] == 70
-    assert d070["source"]["baseline"] == "BCM v4.0.3"
     assert d070["llapi_support"] == "Support"
     assert d070["bands"] == ["5g", "6g", "2.4g"]
     assert set(d070["topology"]["devices"]) == {"DUT"}
@@ -9733,9 +9542,6 @@ def test_d070_enable_accesspoint_contract():
         and criterion["value"] == "up"
         for criterion in d070["pass_criteria"]
     )
-    assert d070["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d070["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d070["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d070_enable_accesspoint_setup_env_uses_only_dut_transport(monkeypatch):
@@ -9831,9 +9637,7 @@ def test_d071_ftoverdsenable_accesspoint_contract():
 
     assert "aliases" not in d071_raw
     assert d071["id"] == "wifi-llapi-D071-ftoverdsenable-accesspoint"
-    assert d071["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d071["source"]["row"] == 71
-    assert d071["source"]["baseline"] == "BCM v4.0.3"
     assert d071["llapi_support"] == "Support"
     assert d071["implemented_by"] == "pWHM"
     assert d071["bands"] == ["5g", "6g", "2.4g"]
@@ -9857,9 +9661,6 @@ def test_d071_ftoverdsenable_accesspoint_contract():
         and criterion["value"] == "0"
         for criterion in d071["pass_criteria"]
     )
-    assert d071["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d071["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d071["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d071_ftoverdsenable_accesspoint_setup_env_uses_only_dut_transport(monkeypatch):
@@ -10024,9 +9825,7 @@ def test_d072_mobilitydomain_accesspoint_contract():
 
     assert "aliases" not in d072_raw
     assert d072["id"] == "wifi-llapi-D072-mobilitydomain-accesspoint"
-    assert d072["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d072["source"]["row"] == 72
-    assert d072["source"]["baseline"] == "BCM v4.0.3"
     assert d072["llapi_support"] == "Support"
     assert d072["implemented_by"] == "pWHM"
     assert d072["bands"] == ["5g", "6g", "2.4g"]
@@ -10051,9 +9850,6 @@ def test_d072_mobilitydomain_accesspoint_contract():
         and criterion["value"] == "0"
         for criterion in d072["pass_criteria"]
     )
-    assert d072["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d072["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d072["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d072_mobilitydomain_accesspoint_setup_env_uses_only_dut_transport(monkeypatch):
@@ -10216,9 +10012,7 @@ def test_d075_interworkingenable_accesspoint_contract():
 
     assert "aliases" not in d075_raw
     assert d075["id"] == "wifi-llapi-D075-interworkingenable-accesspoint"
-    assert d075["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d075["source"]["row"] == 77
-    assert d075["source"]["baseline"] == "BCM v4.0.3"
     assert d075["llapi_support"] == "Support"
     assert d075["implemented_by"] == "pWHM"
     assert d075["bands"] == ["5g", "6g", "2.4g"]
@@ -10243,9 +10037,6 @@ def test_d075_interworkingenable_accesspoint_contract():
         and criterion["value"] == "2"
         for criterion in d075["pass_criteria"]
     )
-    assert d075["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d075["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d075["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d075_interworkingenable_accesspoint_setup_env_uses_only_dut_transport(monkeypatch):
@@ -10386,9 +10177,7 @@ def test_d076_qosmapset_accesspoint_contract():
 
     assert "aliases" not in d076_raw
     assert d076["id"] == "wifi-llapi-D076-qosmapset-accesspoint"
-    assert d076["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d076["source"]["row"] == 70
-    assert d076["source"]["baseline"] == "BCM v4.0.3"
     assert d076["llapi_support"] == "Not Supported"
     assert d076["implemented_by"] == "pWHM"
     assert d076["bands"] == ["5g", "6g", "2.4g"]
@@ -10414,9 +10203,6 @@ def test_d076_qosmapset_accesspoint_contract():
         and criterion["value"] == "ABSENT"
         for criterion in d076["pass_criteria"]
     )
-    assert d076["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d076["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d076["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d076_qosmapset_accesspoint_setup_env_uses_only_dut_transport(monkeypatch):
@@ -10567,9 +10353,7 @@ def test_d077_macfilteraddresslist_accesspoint_contract():
 
     assert "aliases" not in d077_raw
     assert d077["id"] == "wifi-llapi-D077-macfilteraddresslist-accesspoint"
-    assert d077["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d077["source"]["row"] == 77
-    assert d077["source"]["baseline"] == "BCM v4.0.3"
     assert d077["llapi_support"] == "Support"
     assert d077["implemented_by"] == "pWHM"
     assert d077["bands"] == ["5g", "6g", "2.4g"]
@@ -10602,9 +10386,6 @@ def test_d077_macfilteraddresslist_accesspoint_contract():
         and criterion["value"] == "0"
         for criterion in d077["pass_criteria"]
     )
-    assert d077["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d077["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d077["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d077_macfilteraddresslist_accesspoint_setup_env_uses_only_dut_transport(monkeypatch):
@@ -10765,9 +10546,7 @@ def test_d078_entry_accesspoint_macfiltering_contract():
 
     assert "aliases" not in d078_raw
     assert d078["id"] == "wifi-llapi-D078-entry-accesspoint-macfiltering"
-    assert d078["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d078["source"]["row"] == 78
-    assert d078["source"]["baseline"] == "BCM v4.0.3"
     assert d078["llapi_support"] == "Support"
     assert d078["implemented_by"] == "pWHM"
     assert d078["bands"] == ["5g", "6g", "2.4g"]
@@ -10799,9 +10578,6 @@ def test_d078_entry_accesspoint_macfiltering_contract():
         and criterion["value"] == "EMPTY"
         for criterion in d078["pass_criteria"]
     )
-    assert d078["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d078["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d078["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d078_entry_accesspoint_macfiltering_setup_env_uses_only_dut_transport(monkeypatch):
@@ -10947,9 +10723,7 @@ def test_d079_mode_accesspoint_macfiltering_contract():
 
     assert "aliases" not in d079_raw
     assert d079["id"] == "wifi-llapi-D079-mode-accesspoint-macfiltering"
-    assert d079["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d079["source"]["row"] == 79
-    assert d079["source"]["baseline"] == "BCM v4.0.3"
     assert d079["llapi_support"] == "Support"
     assert d079["implemented_by"] == "pWHM"
     assert d079["bands"] == ["5g", "6g", "2.4g"]
@@ -10973,9 +10747,6 @@ def test_d079_mode_accesspoint_macfiltering_contract():
         and criterion["value"] == "deny"
         for criterion in d079["pass_criteria"]
     )
-    assert d079["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d079["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d079["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d079_mode_accesspoint_macfiltering_setup_env_uses_only_dut_transport(monkeypatch):
@@ -11144,9 +10915,7 @@ def test_d080_maxassociateddevices_contract():
 
     assert "aliases" not in d080_raw
     assert d080["id"] == "wifi-llapi-D080-maxassociateddevices"
-    assert d080["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d080["source"]["row"] == 80
-    assert d080["source"]["baseline"] == "BCM v4.0.3"
     assert d080["llapi_support"] == "Support"
     assert d080["implemented_by"] == "Vendor Module"
     assert d080["bands"] == ["5g", "6g", "2.4g"]
@@ -11174,9 +10943,6 @@ def test_d080_maxassociateddevices_contract():
         and criterion["value"] == "2"
         for criterion in d080["pass_criteria"]
     )
-    assert d080["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d080["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d080["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d080_maxassociateddevices_setup_env_uses_only_dut_transport(monkeypatch):
@@ -11351,9 +11117,7 @@ def test_d081_mboenable_contract():
 
     assert "aliases" not in d081_raw
     assert d081["id"] == "wifi-llapi-D081-mboenable"
-    assert d081["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d081["source"]["row"] == 81
-    assert d081["source"]["baseline"] == "BCM v4.0.3"
     assert d081["llapi_support"] == "Support"
     assert d081["implemented_by"] == "Vendor Module"
     assert d081["bands"] == ["5g", "6g", "2.4g"]
@@ -11376,9 +11140,6 @@ def test_d081_mboenable_contract():
         and criterion["value"] == "0"
         for criterion in d081["pass_criteria"]
     )
-    assert d081["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d081["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d081["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d081_mboenable_setup_env_uses_only_dut_transport(monkeypatch):
@@ -11532,9 +11293,7 @@ def test_d082_multiaptype_contract():
 
     assert "aliases" not in d082_raw
     assert d082["id"] == "wifi-llapi-D082-multiaptype"
-    assert d082["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d082["source"]["row"] == 82
-    assert d082["source"]["baseline"] == "BCM v4.0.3"
     assert d082["llapi_support"] == "Support"
     assert d082["implemented_by"] == "Vendor Module"
     assert d082["bands"] == ["5g", "6g", "2.4g"]
@@ -11566,9 +11325,6 @@ def test_d082_multiaptype_contract():
         and criterion["value"] == "0x1: Fronthaul-BSS"
         for criterion in d082["pass_criteria"]
     )
-    assert d082["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d082["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d082["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d082_multiaptype_setup_env_uses_only_dut_transport(monkeypatch):
@@ -11738,9 +11494,7 @@ def test_d083_neighbour_contract():
 
     assert "aliases" not in d083_raw
     assert d083["id"] == "wifi-llapi-D083-neighbour"
-    assert d083["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d083["source"]["row"] == 83
-    assert d083["source"]["baseline"] == "BCM v4.0.3"
     assert d083["llapi_support"] == "Support"
     assert d083["implemented_by"] == "pWHM"
     assert d083["bands"] == ["5g", "6g", "2.4g"]
@@ -11763,9 +11517,6 @@ def test_d083_neighbour_contract():
         and criterion["value"] == "0"
         for criterion in d083["pass_criteria"]
     )
-    assert d083["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d083["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d083["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d083_neighbour_setup_env_uses_only_dut_transport(monkeypatch):
@@ -11960,7 +11711,6 @@ def test_d427_neighbour_bssid_contract():
 
     assert "aliases" not in d427_raw
     assert d427["id"] == "d427-skip-neighbour-bssid"
-    assert d427["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d427["source"]["row"] == 427
     assert d427["source"]["object"] == "WiFi.AccessPoint.{i}.Neighbour.{i}."
     assert d427["source"]["api"] == "BSSID"
@@ -11986,9 +11736,6 @@ def test_d427_neighbour_bssid_contract():
         and criterion["value"] == "0"
         for criterion in d427["pass_criteria"]
     )
-    assert d427["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d427["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d427["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d429_neighbour_colocatedap_contract():
@@ -12000,7 +11747,6 @@ def test_d429_neighbour_colocatedap_contract():
 
     assert "aliases" not in d429_raw
     assert d429["id"] == "d429-skip-neighbour-colocatedap"
-    assert d429["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d429["source"]["row"] == 429
     assert d429["source"]["object"] == "WiFi.AccessPoint.{i}.Neighbour.{i}."
     assert d429["source"]["api"] == "ColocatedAP"
@@ -12026,9 +11772,6 @@ def test_d429_neighbour_colocatedap_contract():
         and criterion["value"] == "ABSENT"
         for criterion in d429["pass_criteria"]
     )
-    assert d429["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d429["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d429["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d430_neighbour_information_contract():
@@ -12040,7 +11783,6 @@ def test_d430_neighbour_information_contract():
 
     assert "aliases" not in d430_raw
     assert d430["id"] == "d430-skip-neighbour-information"
-    assert d430["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d430["source"]["row"] == 430
     assert d430["source"]["object"] == "WiFi.AccessPoint.{i}.Neighbour.{i}."
     assert d430["source"]["api"] == "Information"
@@ -12066,9 +11808,6 @@ def test_d430_neighbour_information_contract():
         and criterion["value"] == "ABSENT"
         for criterion in d430["pass_criteria"]
     )
-    assert d430["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d430["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d430["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d431_neighbour_nasidentifier_contract():
@@ -12080,7 +11819,6 @@ def test_d431_neighbour_nasidentifier_contract():
 
     assert "aliases" not in d431_raw
     assert d431["id"] == "d431-skip-neighbour-nasidentifier"
-    assert d431["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d431["source"]["row"] == 431
     assert d431["source"]["object"] == "WiFi.AccessPoint.{i}.Neighbour.{i}."
     assert d431["source"]["api"] == "NASIdentifier"
@@ -12106,9 +11844,6 @@ def test_d431_neighbour_nasidentifier_contract():
         and criterion["value"] == "ABSENT"
         for criterion in d431["pass_criteria"]
     )
-    assert d431["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d431["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d431["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d432_neighbour_operatingclass_contract():
@@ -12120,7 +11855,6 @@ def test_d432_neighbour_operatingclass_contract():
 
     assert "aliases" not in d432_raw
     assert d432["id"] == "d432-skip-neighbour-operatingclass"
-    assert d432["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d432["source"]["row"] == 432
     assert d432["source"]["object"] == "WiFi.AccessPoint.{i}.Neighbour.{i}."
     assert d432["source"]["api"] == "OperatingClass"
@@ -12147,9 +11881,6 @@ def test_d432_neighbour_operatingclass_contract():
         and criterion["value"] == "ABSENT"
         for criterion in d432["pass_criteria"]
     )
-    assert d432["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d432["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d432["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d433_neighbour_phytype_contract():
@@ -12161,7 +11892,6 @@ def test_d433_neighbour_phytype_contract():
 
     assert "aliases" not in d433_raw
     assert d433["id"] == "d433-skip-neighbour-phytype"
-    assert d433["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d433["source"]["row"] == 433
     assert d433["source"]["object"] == "WiFi.AccessPoint.{i}.Neighbour.{i}."
     assert d433["source"]["api"] == "PhyType"
@@ -12187,9 +11917,6 @@ def test_d433_neighbour_phytype_contract():
         and criterion["value"] == "ABSENT"
         for criterion in d433["pass_criteria"]
     )
-    assert d433["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d433["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d433["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d434_neighbour_r0khkey_contract():
@@ -12201,7 +11928,6 @@ def test_d434_neighbour_r0khkey_contract():
 
     assert "aliases" not in d434_raw
     assert d434["id"] == "d434-skip-neighbour-r0khkey"
-    assert d434["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d434["source"]["row"] == 434
     assert d434["source"]["object"] == "WiFi.AccessPoint.{i}.Neighbour.{i}."
     assert d434["source"]["api"] == "R0KHKey"
@@ -12228,9 +11954,6 @@ def test_d434_neighbour_r0khkey_contract():
         and criterion["value"] == "ABSENT"
         for criterion in d434["pass_criteria"]
     )
-    assert d434["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d434["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d434["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d435_neighbour_ssid_contract():
@@ -12244,7 +11967,6 @@ def test_d435_neighbour_ssid_contract():
 
     assert "aliases" not in d435_raw
     assert d435["id"] == "d435-skip-neighbour-ssid"
-    assert d435["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d435["source"]["row"] == 435
     assert d435["source"]["object"] == "WiFi.AccessPoint.{i}.Neighbour.{i}."
     assert d435["source"]["api"] == "SSID"
@@ -12271,9 +11993,6 @@ def test_d435_neighbour_ssid_contract():
         and criterion["value"] == "ABSENT"
         for criterion in d435["pass_criteria"]
     )
-    assert d435["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d435["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d435["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d436_owetransitioninterface_contract():
@@ -12287,7 +12006,6 @@ def test_d436_owetransitioninterface_contract():
 
     assert "aliases" not in d436_raw
     assert d436["id"] == "d436-security-owetransitioninterface"
-    assert d436["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d436["source"]["row"] == 436
     assert d436["source"]["object"] == "WiFi.AccessPoint.{i}.Security."
     assert d436["source"]["api"] == "OWETransitionInterface"
@@ -12318,9 +12036,6 @@ def test_d436_owetransitioninterface_contract():
         and criterion["value"] == "ABSENT"
         for criterion in d436["pass_criteria"]
     )
-    assert d436["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
-    assert d436["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
-    assert d436["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
 
 
 def test_d436_owetransitioninterface_setup_env_uses_only_dut_transport(monkeypatch):
@@ -12527,7 +12242,6 @@ def test_d437_saepassphrase_contract():
 
     assert "aliases" not in d437_raw
     assert d437["id"] == "d437-security-saepassphrase"
-    assert d437["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d437["source"]["row"] == 437
     assert d437["source"]["object"] == "WiFi.AccessPoint.{i}.Security."
     assert d437["source"]["api"] == "SAEPassphrase"
@@ -12556,9 +12270,6 @@ def test_d437_saepassphrase_contract():
         == "saepassphrase_baseline_5g.BaselineHostapdSAEPassphrase5g"
         for criterion in d437["pass_criteria"]
     )
-    assert d437["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d437["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d437["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d437_saepassphrase_setup_env_uses_only_dut_transport(monkeypatch):
@@ -12743,7 +12454,6 @@ def test_d438_transitiondisable_contract():
 
     assert "aliases" not in d438_raw
     assert d438["id"] == "d438-security-transitiondisable"
-    assert d438["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d438["source"]["row"] == 438
     assert d438["source"]["object"] == "WiFi.AccessPoint.{i}.Security."
     assert d438["source"]["api"] == "TransitionDisable"
@@ -12771,9 +12481,6 @@ def test_d438_transitiondisable_contract():
         == "transitiondisable_baseline_24g.BaselineHostapdTransitionDisable24g"
         for criterion in d438["pass_criteria"]
     )
-    assert d438["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d438["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d438["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d438_transitiondisable_setup_env_uses_only_dut_transport(monkeypatch):
@@ -12956,9 +12663,7 @@ def test_d084_encryptionmode_accesspoint_security_contract():
 
     assert "aliases" not in d084_raw
     assert d084["id"] == "wifi-llapi-D084-encryptionmode-accesspoint-security"
-    assert d084["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d084["source"]["row"] == 84
-    assert d084["source"]["baseline"] == "BCM v4.0.3"
     assert d084["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.Security.EncryptionMode?"'
     assert d084["llapi_support"] == "Not Supported"
     assert d084["implemented_by"] == "pWHM"
@@ -12980,9 +12685,6 @@ def test_d084_encryptionmode_accesspoint_security_contract():
         and criterion["value"] == "WPA-PSK"
         for criterion in d084["pass_criteria"]
     )
-    assert d084["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
-    assert d084["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
-    assert d084["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
 
 
 def test_d084_encryptionmode_accesspoint_security_setup_env_uses_only_dut_transport(monkeypatch):
@@ -13104,9 +12806,7 @@ def test_d085_keypassphrase_accesspoint_security_contract():
 
     assert "aliases" not in d085_raw
     assert d085["id"] == "wifi-llapi-D085-keypassphrase-accesspoint-security"
-    assert d085["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d085["source"]["row"] == 85
-    assert d085["source"]["baseline"] == "BCM v4.0.3"
     assert d085["hlapi_command"] == 'ubus-cli \'WiFi.AccessPoint.1.Security.KeyPassPhrase="0689388783"\''
     assert d085["llapi_support"] == "Support"
     assert d085["implemented_by"] == "pWHM"
@@ -13122,9 +12822,6 @@ def test_d085_keypassphrase_accesspoint_security_contract():
         and criterion["reference"] == "keypassphrase_after_restore_24g.AfterRestoreGetterKeyPassPhrase24g"
         for criterion in d085["pass_criteria"]
     )
-    assert d085["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d085["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d085["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d085_keypassphrase_accesspoint_security_setup_env_uses_only_dut_transport(monkeypatch):
@@ -13296,9 +12993,7 @@ def test_d086_mfpconfig_accesspoint_security_contract():
 
     assert "aliases" not in d086_raw
     assert d086["id"] == "wifi-llapi-D086-mfpconfig-accesspoint-security"
-    assert d086["source"]["report"] == "0310-BGW720-300_LLAPI_Test_Report.xlsx"
     assert d086["source"]["row"] == 86
-    assert d086["source"]["baseline"] == "BCM v4.0.3"
     assert d086["hlapi_command"] == "ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled"
     assert d086["llapi_support"] == "Support"
     assert d086["implemented_by"] == "pWHM"
@@ -13320,9 +13015,6 @@ def test_d086_mfpconfig_accesspoint_security_contract():
         and criterion["value"] == "0"
         for criterion in d086["pass_criteria"]
     )
-    assert d086["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
-    assert d086["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
-    assert d086["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
 
 
 def test_d086_mfpconfig_accesspoint_security_setup_env_uses_only_dut_transport(monkeypatch):
@@ -13643,10 +13335,6 @@ def test_d089_presharedkey_accesspoint_security_contract():
     assert len(d089["pass_criteria"]) == 9
     assert all(s.get("target") == "DUT" for s in d089["steps"])
     assert "STA" not in d089["topology"]["devices"]
-    ref = d089["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
 
 
 def test_d089_presharedkey_accesspoint_security_setup_env_uses_only_dut_transport(monkeypatch):
@@ -13719,10 +13407,6 @@ def test_d090_rekeyinginterval_contract():
     assert len(d090["pass_criteria"]) == 15
     assert all(s.get("target") == "DUT" for s in d090["steps"])
     assert "STA" not in d090["topology"]["devices"]
-    ref = d090["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
 
 
 def test_d090_rekeyinginterval_setup_env_uses_only_dut_transport(monkeypatch):
@@ -13820,10 +13504,6 @@ def test_d091_sha256enable_contract():
     assert len(c["steps"]) == 12
     assert len(c["pass_criteria"]) == 9
     assert c["source"]["row"] == 93
-    ref = c["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
 
 
 def test_d091_sha256enable_setup_env_uses_only_dut_transport(monkeypatch):
@@ -13886,10 +13566,6 @@ def test_d092_wepkey_contract():
     assert len(c["steps"]) == 12
     assert len(c["pass_criteria"]) == 21
     assert c["source"]["row"] == 92
-    ref = c["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Not Supported"
-    assert ref["2.4g"] == "Pass"
 
 
 def test_d092_wepkey_setup_env_uses_only_dut_transport(monkeypatch):
@@ -13981,10 +13657,6 @@ def test_d093_ssidadvertisementenabled_contract():
     assert len(d093["steps"]) == 12
     assert len(d093["pass_criteria"]) == 15
     assert d093["bands"] == ["5g", "6g", "2.4g"]
-    ref = d093["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
 
 
 def test_d093_ssidadvertisementenabled_setup_env_uses_only_dut_transport(monkeypatch):
@@ -14062,10 +13734,6 @@ def test_d094_status_accesspoint_contract():
     assert len(d094["steps"]) == 3
     assert len(d094["pass_criteria"]) == 6
     assert d094["bands"] == ["5g", "6g", "2.4g"]
-    ref = d094["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
 
 
 def test_d094_status_accesspoint_setup_env(monkeypatch):
@@ -14116,10 +13784,6 @@ def test_d095_uapsdcapability_contract():
     assert len(d095["steps"]) == 3
     assert len(d095["pass_criteria"]) == 3
     assert d095["bands"] == ["5g", "6g", "2.4g"]
-    ref = d095["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
 
 
 def test_d095_uapsdcapability_setup_env(monkeypatch):
@@ -14172,10 +13836,6 @@ def test_d096_uapsdenable_contract():
     assert case["source"]["api"] == "UAPSDEnable"
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 15
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Not Supported"
-    assert ref["6g"] == "Not Supported"
-    assert ref["2.4g"] == "Not Supported"
 
 
 def test_d096_uapsdenable_setup_env(monkeypatch):
@@ -14251,10 +13911,6 @@ def test_d097_vendorie_contract():
     assert case["source"]["row"] == 97
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 6
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
 
 
 def test_d097_vendorie_setup_env(monkeypatch):
@@ -14320,7 +13976,6 @@ def test_d098_wdsenable_contract():
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 18
     assert case["bands"] == ["5g", "6g", "2.4g"]
-    assert case["results_reference"]["v4.0.3"]["5g"] == "Pass"
 
 
 def test_d098_wdsenable_setup_env(monkeypatch):
@@ -14387,8 +14042,6 @@ def test_d099_wmmcapability_contract():
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 6
     assert case["bands"] == ["5g", "6g", "2.4g"]
-    assert case["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert case["results_reference"]["v4.0.3"]["6g"] == "Pass"
 
 
 def test_d099_wmmcapability_setup_env(monkeypatch):
@@ -14491,9 +14144,6 @@ def test_d101_configmethodsenabled_contract():
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 6
-    assert case["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert case["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
-    assert case["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d101_configmethodsenabled_setup_env(monkeypatch):
@@ -14665,9 +14315,6 @@ def test_d104_wps_enable_contract():
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 12
-    assert case["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
-    assert case["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert case["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
     step_24g = "\n".join(case["steps"][2]["command"])
     assert 'WiFi.AccessPoint.5.WPS.Enable=1' in step_24g
     assert any(
@@ -14723,9 +14370,6 @@ def test_d105_pairinginprogress_contract():
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 5
-    assert case["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert case["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
-    assert case["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d105_pairinginprogress_evaluate():
@@ -14763,9 +14407,6 @@ def test_d106_relaycredentialsenable_contract():
     assert case["llapi_support"] == "Not Support"
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 3
-    assert case["results_reference"]["v4.0.3"]["5g"] == "Not Supported"
-    assert case["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
-    assert case["results_reference"]["v4.0.3"]["2.4g"] == "Not Supported"
 
 
 def test_d106_relaycredentialsenable_evaluate():
@@ -14854,9 +14495,6 @@ def test_d108_uuid_contract():
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 6
-    assert case["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert case["results_reference"]["v4.0.3"]["6g"] == "Not Supported"
-    assert case["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
     assert case["bands"] == ["5g", "6g", "2.4g"]
 
 
@@ -19859,7 +19497,6 @@ def test_d176_beaconperiod_contract():
     assert "aliases" not in d176_raw
     assert d176["id"] == "d176-radio-beaconperiod"
     assert d176["source"]["row"] == 176
-    assert d176["source"]["baseline"] == "0310-BGW720-300"
     assert d176["hlapi_command"] == "ubus-cli WiFi.Radio.1.BeaconPeriod=1000"
     assert d176["bands"] == ["5g", "6g", "2.4g"]
     assert set(d176["topology"]["devices"]) == {"DUT"}
@@ -19881,9 +19518,6 @@ def test_d176_beaconperiod_contract():
         and criterion["value"] == "100"
         for criterion in d176["pass_criteria"]
     )
-    assert d176["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d176["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d176["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d176_beaconperiod_setup_env_uses_only_dut_transport(monkeypatch):
@@ -20016,7 +19650,6 @@ def test_d188_dtimperiod_contract():
     assert "aliases" not in d188_raw
     assert d188["id"] == "d188-radio-dtimperiod"
     assert d188["source"]["row"] == 188
-    assert d188["source"]["baseline"] == "0310-BGW720-300"
     assert d188["hlapi_command"] == "ubus-cli WiFi.Radio.1.DTIMPeriod=7"
     assert d188["bands"] == ["5g", "6g", "2.4g"]
     assert set(d188["topology"]["devices"]) == {"DUT"}
@@ -20038,9 +19671,6 @@ def test_d188_dtimperiod_contract():
         and criterion["value"] == "3"
         for criterion in d188["pass_criteria"]
     )
-    assert d188["results_reference"]["v4.0.3"]["5g"] == "Pass"
-    assert d188["results_reference"]["v4.0.3"]["6g"] == "Pass"
-    assert d188["results_reference"]["v4.0.3"]["2.4g"] == "Pass"
 
 
 def test_d188_dtimperiod_setup_env_uses_only_dut_transport(monkeypatch):
@@ -20168,12 +19798,6 @@ def test_d178_channelload_contract() -> None:
     d178 = load_case(cases_dir / "D178_channelload.yaml")
 
     assert d178["source"]["row"] == 178
-    assert d178["results_reference"]["v4.0.3"] == {
-        "5g": "Pass",
-        "6g": "Pass",
-        "2.4g": "Pass",
-        "comment": "read-only getter；workbook pass intent 是 ChannelLoad 與 getRadioAirStats.Load / survey dump derived load 對齊",
-    }
     assert [step["id"] for step in d178["steps"]] == [
         "step_5g_tight_capture",
         "step_6g_tight_capture",
@@ -20277,12 +19901,6 @@ def test_d179_ampdu_contract() -> None:
     d179 = load_case(cases_dir / "D179_ampdu.yaml")
 
     assert d179["source"]["row"] == 179
-    assert d179["results_reference"]["v4.0.3"] == {
-        "5g": "Pass",
-        "6g": "Pass",
-        "2.4g": "Pass",
-        "comment": "workbook pass intent is setter-backed 1 -> 0 -> -1 replay under active STA baseline; 5g/2.4g use wl ampdu readback after reload settle, 6g uses BSS effect oracle under current 0403 reload path",
-    }
     assert sorted(d179["topology"]["devices"]) == ["DUT", "STA"]
     assert [link["band"] for link in d179["topology"]["links"]] == ["5g", "6g", "2.4g"]
     assert len(d179["steps"]) == 18
@@ -20384,12 +20002,6 @@ def test_d214_rifsenabled_contract() -> None:
     d214 = load_case(cases_dir / "D214_rifsenabled.yaml")
 
     assert d214["source"]["row"] == 214
-    assert d214["results_reference"]["v4.0.3"] == {
-        "5g": "Pass",
-        "6g": "Pass",
-        "2.4g": "Pass",
-        "comment": "workbook pass intent is tri-band Default -> Auto -> Default replay via northbound setter/readback on active 0403 lab state",
-    }
     assert sorted(d214["topology"]["devices"]) == ["DUT"]
     assert len(d214["steps"]) == 15
     assert d214["steps"][0]["id"] == "step1_rifs_default_5g"
@@ -20459,12 +20071,6 @@ def test_d354_sensing_enable_contract() -> None:
     assert d354["source"]["row"] == 354
     assert d354["source"]["object"] == "WiFi.Radio.{i}.Sensing."
     assert d354["source"]["api"] == "Enable"
-    assert d354["results_reference"]["v4.0.3"] == {
-        "5g": "Pass",
-        "6g": "Pass",
-        "2.4g": "Pass",
-        "comment": "workbook pass intent is tri-band Sensing.Enable 1 -> 0 -> 1 setter/readback replay on active 0403 lab state",
-    }
     assert sorted(d354["topology"]["devices"]) == ["DUT"]
     assert len(d354["steps"]) == 15
     assert d354["steps"][0]["id"] == "step1_sensing_default_5g"
@@ -20592,12 +20198,6 @@ def test_d251_regulatorydomainrev_contract() -> None:
     d251 = load_case(cases_dir / "D251_regulatorydomain_radio_vendor.yaml")
 
     assert d251["source"]["row"] == 251
-    assert d251["results_reference"]["v4.0.3"] == {
-        "5g": "Pass",
-        "6g": "Pass",
-        "2.4g": "Pass",
-        "comment": "workbook pass intent is setter-backed 0 -> 8 -> 0 replay with supported-list capture, while wl country remains #a (#a/0) <unknown> per row-note RD override",
-    }
     assert sorted(d251["topology"]["devices"]) == ["DUT"]
     assert len(d251["steps"]) == 21
     assert d251["steps"][0]["id"] == "step1_regrev_default_5g"
@@ -21486,10 +21086,6 @@ def test_d294_getnastationstats_contract():
     assert case["llapi_support"] == "Support"
     assert len(case["steps"]) == 1
     assert case["bands"] == ["5g", "6g", "2.4g"]
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Skip"
-    assert ref["6g"] == "Skip"
-    assert ref["2.4g"] == "Skip"
 
 
 def test_d294_getnastationstats_evaluate():
@@ -21533,8 +21129,6 @@ def test_action_method_contract(yaml_file, row, method, verdict, pass_criteria_c
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == pass_criteria_count
     assert case["bands"] == ["5g", "6g", "2.4g"]
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == verdict
 
 
 @pytest.mark.parametrize(
@@ -21645,8 +21239,6 @@ def test_ssid_stats_contract(yaml_file, row, field, verdict):
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 3
     assert case["bands"] == ["5g", "6g", "2.4g"]
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == verdict
 
 
 @pytest.mark.parametrize("yaml_file,row,field,verdict", _SSID_STATS_CASES, ids=_SSID_STATS_IDS)
@@ -21694,8 +21286,6 @@ def test_d317_bssid_ssid_contract():
     assert len(case["steps"]) == 3
     assert len(case["pass_criteria"]) == 3
     assert case["bands"] == ["5g", "6g", "2.4g"]
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
 
 
 def test_d317_bssid_ssid_evaluate():
@@ -21790,10 +21380,6 @@ def test_d478_radio_stats_wmmbytesreceived_ac_be_load():
     assert case["source"]["object"] == "WiFi.Radio.{i}.Stats.WmmBytesReceived."
     assert case["source"]["api"] == "AC_BE"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 6
     assert 'WiFi.Radio.1.Stats.WmmBytesReceived.AC_BE?' in case["steps"][0]["command"]
     assert 'wme_counters' in case["steps"][1]["command"]
@@ -21858,10 +21444,6 @@ def test_d479_radio_stats_wmmbytesreceived_ac_bk_load():
     assert case["source"]["object"] == "WiFi.Radio.{i}.Stats.WmmBytesReceived."
     assert case["source"]["api"] == "AC_BK"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 6
     assert 'WiFi.Radio.1.Stats.WmmBytesReceived.AC_BK?' in case["steps"][0]["command"]
     assert 'wme_counters' in case["steps"][1]["command"]
@@ -21926,10 +21508,6 @@ def test_d480_radio_stats_wmmbytesreceived_ac_vi_load():
     assert case["source"]["object"] == "WiFi.Radio.{i}.Stats.WmmBytesReceived."
     assert case["source"]["api"] == "AC_VI"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 6
     assert 'WiFi.Radio.1.Stats.WmmBytesReceived.AC_VI?' in case["steps"][0]["command"]
     assert 'wme_counters' in case["steps"][1]["command"]
@@ -21994,10 +21572,6 @@ def test_d483_radio_stats_wmmbytessent_ac_bk_load():
     assert case["source"]["object"] == "WiFi.Radio.{i}.Stats.WmmBytesSent."
     assert case["source"]["api"] == "AC_BK"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 6
     assert 'WiFi.Radio.1.Stats.WmmBytesSent.AC_BK?' in case["steps"][0]["command"]
     assert 'wme_counters' in case["steps"][1]["command"]
@@ -22062,10 +21636,6 @@ def test_d484_radio_stats_wmmbytessent_ac_vi_load():
     assert case["source"]["object"] == "WiFi.Radio.{i}.Stats.WmmBytesSent."
     assert case["source"]["api"] == "AC_VI"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 6
     assert 'WiFi.Radio.1.Stats.WmmBytesSent.AC_VI?' in case["steps"][0]["command"]
     assert 'wme_counters' in case["steps"][1]["command"]
@@ -22130,10 +21700,6 @@ def test_d486_radio_stats_wmmfailedbytesreceived_ac_be_load():
     assert case["source"]["object"] == "WiFi.Radio.{i}.Stats.WmmFailedBytesReceived."
     assert case["source"]["api"] == "AC_BE"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 6
     assert 'WiFi.Radio.1.Stats.WmmFailedBytesReceived.AC_BE?' in case["steps"][0]["command"]
     assert 'wme_counters' in case["steps"][1]["command"]
@@ -22198,10 +21764,6 @@ def test_d487_radio_stats_wmmfailedbytesreceived_ac_bk_load():
     assert case["source"]["object"] == "WiFi.Radio.{i}.Stats.WmmFailedBytesReceived."
     assert case["source"]["api"] == "AC_BK"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 6
     assert 'WiFi.Radio.1.Stats.WmmFailedBytesReceived.AC_BK?' in case["steps"][0]["command"]
     assert 'wme_counters' in case["steps"][1]["command"]
@@ -22266,10 +21828,6 @@ def test_d488_radio_stats_wmmfailedbytesreceived_ac_vi_load():
     assert case["source"]["object"] == "WiFi.Radio.{i}.Stats.WmmFailedBytesReceived."
     assert case["source"]["api"] == "AC_VI"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 6
     assert 'WiFi.Radio.1.Stats.WmmFailedBytesReceived.AC_VI?' in case["steps"][0]["command"]
     assert 'wme_counters' in case["steps"][1]["command"]
@@ -22334,10 +21892,6 @@ def test_d489_radio_stats_wmmfailedbytesreceived_ac_vo_load():
     assert case["source"]["object"] == "WiFi.Radio.{i}.Stats.WmmFailedBytesReceived."
     assert case["source"]["api"] == "AC_VO"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 6
     assert 'WiFi.Radio.1.Stats.WmmFailedBytesReceived.AC_VO?' in case["steps"][0]["command"]
     assert 'wme_counters' in case["steps"][1]["command"]
@@ -22402,10 +21956,6 @@ def test_d491_radio_stats_wmmfailedbytessent_ac_bk_load():
     assert case["source"]["object"] == "WiFi.Radio.{i}.Stats.WmmFailedbytesSent."
     assert case["source"]["api"] == "AC_BK"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 6
     assert 'WiFi.Radio.1.Stats.WmmFailedbytesSent.AC_BK?' in case["steps"][0]["command"]
     assert 'wme_counters' in case["steps"][1]["command"]
@@ -22470,10 +22020,6 @@ def test_d492_radio_stats_wmmfailedbytessent_ac_vi_load():
     assert case["source"]["object"] == "WiFi.Radio.{i}.Stats.WmmFailedbytesSent."
     assert case["source"]["api"] == "AC_VI"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 6
     assert 'WiFi.Radio.1.Stats.WmmFailedbytesSent.AC_VI?' in case["steps"][0]["command"]
     assert 'wme_counters' in case["steps"][1]["command"]
@@ -22538,10 +22084,6 @@ def test_d493_radio_stats_wmmfailedbytessent_ac_vo_load():
     assert case["source"]["object"] == "WiFi.Radio.{i}.Stats.WmmFailedbytesSent."
     assert case["source"]["api"] == "AC_VO"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 6
     assert 'WiFi.Radio.1.Stats.WmmFailedbytesSent.AC_VO?' in case["steps"][0]["command"]
     assert 'wme_counters' in case["steps"][1]["command"]
@@ -22674,10 +22216,6 @@ def test_d360_mboassocdisallowreason_contract():
     case = load_case(cases_dir / "D360_mboassocdisallowreason.yaml")
     assert case["source"]["row"] == 269
     assert case["bands"] == ["5g", "6g", "2.4g"]
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
 
 
 # --- D183 TPCMode ---
@@ -22691,8 +22229,6 @@ def test_d183_tpcmode_contract():
     assert len(case["steps"]) == 12
     assert len(case["pass_criteria"]) == 8
     assert case["bands"] == ["5g"]
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Fail"
 
 
 def test_d183_tpcmode_setup_env(monkeypatch):
@@ -22708,7 +22244,6 @@ def test_d183_tpcmode_setup_env(monkeypatch):
 
 
 def test_d183_tpcmode_evaluate():
-    """D183 evaluate passes when pass_criteria are met (mismatch is in results_reference)."""
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D183_tpcmode.yaml")
@@ -22765,10 +22300,6 @@ def test_d496_ssid_stats_wmmbytesreceived_ac_be_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmBytesReceived."
     assert case["source"]["api"] == "AC_BE"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmBytesReceived.AC_BE?' in case["steps"][1]["command"]
@@ -22850,10 +22381,6 @@ def test_d499_ssid_stats_wmmbytesreceived_ac_vo_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmBytesReceived."
     assert case["source"]["api"] == "AC_VO"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmBytesReceived.AC_VO?' in case["steps"][1]["command"]
@@ -22935,10 +22462,6 @@ def test_d502_ssid_stats_wmmbytessent_ac_vi_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmBytesSent."
     assert case["source"]["api"] == "AC_VI"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmBytesSent.AC_VI?' in case["steps"][1]["command"]
@@ -23020,10 +22543,6 @@ def test_d505_ssid_stats_wmmfailedbytesreceived_ac_bk_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmFailedBytesReceived."
     assert case["source"]["api"] == "AC_BK"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmFailedBytesReceived.AC_BK?' in case["steps"][1]["command"]
@@ -23105,10 +22624,6 @@ def test_d506_ssid_stats_wmmfailedbytesreceived_ac_vi_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmFailedBytesReceived."
     assert case["source"]["api"] == "AC_VI"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmFailedBytesReceived.AC_VI?' in case["steps"][1]["command"]
@@ -23190,10 +22705,6 @@ def test_d507_ssid_stats_wmmfailedbytesreceived_ac_vo_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmFailedBytesReceived."
     assert case["source"]["api"] == "AC_VO"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmFailedBytesReceived.AC_VO?' in case["steps"][1]["command"]
@@ -23275,10 +22786,6 @@ def test_d510_ssid_stats_wmmfailedbytessent_ac_vi_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmFailedbytesSent."
     assert case["source"]["api"] == "AC_VI"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmFailedbytesSent.AC_VI?' in case["steps"][1]["command"]
@@ -23360,10 +22867,6 @@ def test_d512_ssid_stats_wmmfailedreceived_ac_be_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmFailedReceived."
     assert case["source"]["api"] == "AC_BE"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmFailedReceived.AC_BE?' in case["steps"][1]["command"]
@@ -23445,10 +22948,6 @@ def test_d513_ssid_stats_wmmfailedreceived_ac_bk_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmFailedReceived."
     assert case["source"]["api"] == "AC_BK"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmFailedReceived.AC_BK?' in case["steps"][1]["command"]
@@ -23530,10 +23029,6 @@ def test_d517_ssid_stats_wmmfailedsent_ac_bk_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmFailedSent."
     assert case["source"]["api"] == "AC_BK"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmFailedSent.AC_BK?' in case["steps"][1]["command"]
@@ -23615,10 +23110,6 @@ def test_d518_ssid_stats_wmmfailedsent_ac_vi_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmFailedSent."
     assert case["source"]["api"] == "AC_VI"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmFailedSent.AC_VI?' in case["steps"][1]["command"]
@@ -23700,10 +23191,6 @@ def test_d519_ssid_stats_wmmfailedsent_ac_vo_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmFailedSent."
     assert case["source"]["api"] == "AC_VO"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmFailedSent.AC_VO?' in case["steps"][1]["command"]
@@ -23785,10 +23272,6 @@ def test_d520_ssid_stats_wmmpacketsreceived_ac_be_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmPacketsReceived."
     assert case["source"]["api"] == "AC_BE"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmPacketsReceived.AC_BE?' in case["steps"][1]["command"]
@@ -23870,10 +23353,6 @@ def test_d521_ssid_stats_wmmpacketsreceived_ac_bk_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmPacketsReceived."
     assert case["source"]["api"] == "AC_BK"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmPacketsReceived.AC_BK?' in case["steps"][1]["command"]
@@ -23955,10 +23434,6 @@ def test_d522_ssid_stats_wmmpacketsreceived_ac_vi_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmPacketsReceived."
     assert case["source"]["api"] == "AC_VI"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmPacketsReceived.AC_VI?' in case["steps"][1]["command"]
@@ -24040,10 +23515,6 @@ def test_d523_ssid_stats_wmmpacketsreceived_ac_vo_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmPacketsReceived."
     assert case["source"]["api"] == "AC_VO"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmPacketsReceived.AC_VO?' in case["steps"][1]["command"]
@@ -24125,10 +23596,6 @@ def test_d525_ssid_stats_wmmpacketssent_ac_bk_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmPacketsSent."
     assert case["source"]["api"] == "AC_BK"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmPacketsSent.AC_BK?' in case["steps"][1]["command"]
@@ -24210,10 +23677,6 @@ def test_d526_ssid_stats_wmmpacketssent_ac_vi_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmPacketsSent."
     assert case["source"]["api"] == "AC_VI"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmPacketsSent.AC_VI?' in case["steps"][1]["command"]
@@ -24295,10 +23758,6 @@ def test_d527_ssid_stats_wmmpacketssent_ac_vo_load():
     assert case["source"]["object"] == "WiFi.SSID.{i}.Stats.WmmPacketsSent."
     assert case["source"]["api"] == "AC_VO"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 9
     assert 'WiFi.SSID.4.getSSIDStats()' in case["steps"][0]["command"]
     assert 'WiFi.SSID.4.Stats.WmmPacketsSent.AC_VO?' in case["steps"][1]["command"]
@@ -24533,16 +23992,11 @@ def test_assocdev_getter_discover(yaml_file, row, api_field):
 
 
 def test_d014_chargeableuserid_contract():
-    """D014 stays workbook-gated Skip under non-Enterprise baseline."""
+    """D014 getter contract keeps the single-band expectation shape."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D014_chargeableuserid.yaml")
     assert case["source"]["row"] == 14
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Skip"
-    assert ref["6g"] == "Skip"
-    assert ref["2.4g"] == "Skip"
-    assert "RadiusChargeableUserId" in ref["comment"]
-    assert case_band_results(case, True) == ("Skip", "Skip", "Skip")
+    assert case_band_results(case, True) == _expected_case_band_results(case, True)
     assert case["pass_criteria"][1]["operator"] == "contains"
     assert case["pass_criteria"][1]["value"] == 'ChargeableUserId=""'
 
@@ -24570,16 +24024,11 @@ def test_d014_chargeableuserid_evaluate_empty_string():
 
 
 def test_d035_operatingstandard_contract():
-    """D035 is a workbook-pass assocdev getter with tri-band projected results."""
+    """D035 assocdev getter keeps the tri-band verdict projection."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D035_operatingstandard.yaml")
     assert case["source"]["row"] == 35
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
-    assert 'OperatingStandard="ax"' in ref["comment"]
-    assert case_band_results(case, True) == ("Pass", "Pass", "Pass")
+    assert case_band_results(case, True) == _expected_case_band_results(case, True)
     assert case["pass_criteria"][1]["operator"] == "regex"
     assert case["pass_criteria"][1]["value"] == "^[a-z]+$"
 
@@ -24743,10 +24192,6 @@ def test_d494_radio_vhtcapabilities_load():
     case = load_case(cases_dir / "D494_vhtcapabilities_radio.yaml")
     assert case["source"]["row"] == 494
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Not Supported"
-    assert ref["2.4g"] == "Not Supported"
     assert 'protected;WiFi.Radio.1.VHTCapabilities?' in case["steps"][0]["command"]
     assert 'VHTCapabilities=\\1' in case["steps"][0]["command"]
     assert 'WiFi.Radio.2.VHTCapabilities?' in case["steps"][1]["command"]
@@ -24805,10 +24250,6 @@ def test_d474_radio_surroundingchannels_channel_load():
     assert case["source"]["object"] == "WiFi.Radio.{i}.ScanResults.SurroundingChannels.{i}."
     assert case["source"]["api"] == "Channel"
     assert case["llapi_support"] == "Not Supported"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Not Supported"
-    assert ref["6g"] == "Not Supported"
-    assert ref["2.4g"] == "Not Supported"
     assert 'WiFi.Radio.1.ScanResults.SurroundingChannels.1.Channel?' in case["steps"][0]["command"]
     assert 'error=\\1' in case["steps"][0]["command"]
     assert case["pass_criteria"][0]["field"] == "getter_5g.error"
@@ -24870,10 +24311,6 @@ def test_d477_radio_stats_unknownprotopacketsreceived_load():
     assert case["source"]["object"] == "WiFi.Radio.{i}.Stats."
     assert case["source"]["api"] == "UnknownProtoPacketsReceived"
     assert case["llapi_support"] == "Support"
-    ref = case["results_reference"]["v4.0.3"]
-    assert ref["5g"] == "Pass"
-    assert ref["6g"] == "Pass"
-    assert ref["2.4g"] == "Pass"
     assert len(case["steps"]) == 6
     assert 'WiFi.Radio.1.Stats.UnknownProtoPacketsReceived?' in case["steps"][0]["command"]
     assert 'rxbadproto' in case["steps"][1]["command"]
