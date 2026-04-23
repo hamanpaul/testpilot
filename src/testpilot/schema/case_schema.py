@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 import logging
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,8 @@ REQUIRED_TOPOLOGY_KEYS = {"devices"}
 # step 必要欄位
 REQUIRED_STEP_KEYS = {"id", "action", "target"}
 ALLOWED_BRCM_SUCCESS_OPERATORS = {"equals", "one_of", "contains", "regex"}
+_WIFI_LLAPI_FORBIDDEN_TOP_KEYS = {"results_reference"}
+_WIFI_LLAPI_FORBIDDEN_SOURCE_KEYS = {"baseline", "report", "sheet"}
 
 REQUIRED_WIFI_BAND_BASELINE_BANDS = ("5g", "6g", "2.4g")
 REQUIRED_BRCM_PROFILE_COMMAND_KEYS = ("proc_version", "image_state", "flash", "reboot")
@@ -221,7 +224,11 @@ def _validate_wifi_band_baseline_profile(
     return profile
 
 
-def load_case(path: Path | str) -> dict[str, Any]:
+def load_case(
+    path: Path | str,
+    *,
+    validator: Callable[[dict[str, Any], Path | str], None] | None = None,
+) -> dict[str, Any]:
     """載入並驗證單一 test case YAML 檔。"""
     path = Path(path)
     if not path.exists():
@@ -233,7 +240,7 @@ def load_case(path: Path | str) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise CaseValidationError(f"case must be a YAML mapping: {path}")
 
-    validate_case(data, path)
+    (validator or validate_case)(data, path)
     return data
 
 
@@ -533,7 +540,29 @@ def validate_case(case: dict[str, Any], source: Path | str = "<unknown>") -> Non
         raise CaseValidationError(f"{source}: pass_criteria must be a non-empty list")
 
 
-def load_cases_dir(cases_dir: Path | str) -> list[dict[str, Any]]:
+def validate_wifi_llapi_case(case: dict[str, Any], source: Path | str = "<unknown>") -> None:
+    validate_case(case, source)
+
+    forbidden_top_keys = sorted(_WIFI_LLAPI_FORBIDDEN_TOP_KEYS & set(case.keys()))
+    if forbidden_top_keys:
+        joined = ", ".join(forbidden_top_keys)
+        raise CaseValidationError(f"{source}: #31 cleanup forbids top-level fields: {joined}")
+
+    raw_source = case.get("source")
+    if not isinstance(raw_source, dict):
+        return
+
+    forbidden_source_keys = sorted(_WIFI_LLAPI_FORBIDDEN_SOURCE_KEYS & set(raw_source.keys()))
+    if forbidden_source_keys:
+        joined = ", ".join(f"source.{key}" for key in forbidden_source_keys)
+        raise CaseValidationError(f"{source}: #31 cleanup forbids source fields: {joined}")
+
+
+def load_cases_dir(
+    cases_dir: Path | str,
+    *,
+    validator: Callable[[dict[str, Any], Path | str], None] | None = None,
+) -> list[dict[str, Any]]:
     """載入 cases/ 目錄下所有 .yaml/.yml 檔（排除 _template）。"""
     cases_dir = Path(cases_dir)
     cases: list[dict[str, Any]] = []
@@ -543,7 +572,7 @@ def load_cases_dir(cases_dir: Path | str) -> list[dict[str, Any]]:
         if p.stem.startswith("_"):
             continue
         try:
-            cases.append(load_case(p))
+            cases.append(load_case(p, validator=validator))
         except Exception:
             log.exception("failed to load case: %s", p)
     return cases

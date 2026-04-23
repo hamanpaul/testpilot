@@ -36,7 +36,6 @@ except Exception:  # pragma: no cover - optional during incremental rollout
 
 from testpilot.core.case_utils import (
     band_results as _band_results,
-    baseline_results_reference as _baseline_results_reference,
     case_aliases as _case_aliases,
     case_band_results as _case_band_results,
     case_matches_requested_ids as _case_matches_requested_ids,
@@ -225,10 +224,6 @@ class Orchestrator:
     @staticmethod
     def _band_results(status: str, bands: list[str] | None) -> tuple[str, str, str]:
         return _band_results(status, bands)
-
-    @staticmethod
-    def _baseline_results_reference(case: dict[str, Any]) -> dict[str, Any] | None:
-        return _baseline_results_reference(case)
 
     @classmethod
     def _case_band_results(cls, case: dict[str, Any], verdict: bool) -> tuple[str, str, str]:

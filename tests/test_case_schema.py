@@ -12,6 +12,7 @@ from testpilot.schema.case_schema import (
     load_wifi_band_baselines,
     validate_brcm_fw_upgrade_case,
     validate_case,
+    validate_wifi_llapi_case,
 )
 
 _PLUGIN_PATH = Path(__file__).resolve().parents[1] / "plugins" / "brcm_fw_upgrade" / "plugin.py"
@@ -69,6 +70,54 @@ def _minimal_brcm_case(**overrides):
 
 def test_valid_case():
     validate_case(_minimal_case())
+
+
+def test_validate_wifi_llapi_rejects_results_reference():
+    case = _minimal_case(results_reference={"v4.0.3": {"5g": "Pass"}})
+
+    with pytest.raises(CaseValidationError, match=r"#31 cleanup.*results_reference"):
+        validate_wifi_llapi_case(case)
+
+
+def test_validate_wifi_llapi_rejects_source_baseline():
+    case = _minimal_case(
+        source={
+            "row": 4,
+            "object": "WiFi.AccessPoint.{i}.",
+            "api": "kickStation()",
+            "baseline": "BCM v4.0.3",
+        }
+    )
+
+    with pytest.raises(CaseValidationError, match=r"#31 cleanup.*source\.baseline"):
+        validate_wifi_llapi_case(case)
+
+
+def test_validate_wifi_llapi_rejects_source_report_and_sheet():
+    case = _minimal_case(
+        source={
+            "row": 4,
+            "object": "WiFi.AccessPoint.{i}.",
+            "api": "kickStation()",
+            "report": "report.xlsx",
+            "sheet": "Wifi_LLAPI",
+        }
+    )
+
+    with pytest.raises(CaseValidationError, match=r"#31 cleanup.*source\.report.*source\.sheet"):
+        validate_wifi_llapi_case(case)
+
+
+def test_validate_wifi_llapi_passes_clean_case():
+    case = _minimal_case(
+        source={
+            "row": 4,
+            "object": "WiFi.AccessPoint.{i}.",
+            "api": "kickStation()",
+        }
+    )
+
+    validate_wifi_llapi_case(case)
 
 
 def test_missing_top_key():

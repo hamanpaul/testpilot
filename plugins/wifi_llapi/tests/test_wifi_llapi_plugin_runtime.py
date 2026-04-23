@@ -15,7 +15,7 @@ import yaml
 
 from testpilot.core.case_utils import case_band_results
 from testpilot.core.plugin_loader import PluginLoader
-from testpilot.schema.case_schema import load_case
+from testpilot.schema.case_schema import load_case, validate_wifi_llapi_case
 
 
 class _FakeTopology:
@@ -264,6 +264,22 @@ def test_plugin_loads_shared_wifi_band_baselines_yaml():
         "ifconfig {{iface}} up",
     ]
     assert plugin.DEFAULT_BAND_BASELINES["2.4g"]["ssid"] == "testpilot2G"
+
+
+def test_discover_cases_uses_wifi_llapi_validator(monkeypatch):
+    plugin = _load_plugin()
+    captured: dict[str, Any] = {}
+
+    def fake_load_cases_dir(cases_dir: Path, *, validator=None) -> list[dict[str, Any]]:
+        captured["cases_dir"] = cases_dir
+        captured["validator"] = validator
+        return []
+
+    monkeypatch.setitem(plugin.discover_cases.__globals__, "load_cases_dir", fake_load_cases_dir)
+
+    assert plugin.discover_cases() == []
+    assert captured["cases_dir"] == plugin.cases_dir
+    assert captured["validator"] is validate_wifi_llapi_case
 
 
 def _install_fake_factory(monkeypatch, recorder: _FactoryRecorder) -> None:
