@@ -2,12 +2,9 @@ id: wifi-llapi-D036-powersave
 name: PowerSave — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 36
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: PowerSave
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -60,17 +57,16 @@ test_environment: 'Topology:
   - use the validated 5G single-band WPA3 baseline for this case
 
   '
-setup_steps: "1) DUT 5G baseline:\n   - enable Radio.1 / SSID.4 / AP1\n   - configure\
-  \ AP1 as WPA3-Personal with MFP required\n   - keep the validated live SSID/credential\
-  \ pair as TestPilot_BTM / testpilot6g\n2) STA 5G preparation:\n   - disable local\
-  \ AP1/AP2 on COM1\n   - move COM1 br-lan off 192.168.1.0/24 to avoid bridge self-hit\
-  \ side effects\n   - reset wl0 and its wpa_supplicant control socket\n   - connect\
-  \ wl0 to TestPilot_BTM with SAE\n3) Association evidence:\n   - COM1: iw dev wl0\
-  \ link ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status\n   - COM0: wl -i wl0\
-  \ assoclist\n"
-sta_env_setup: "DUT 5G AP baseline:\n  ubus-cli WiFi.Radio.1.Enable=1\n  ubus-cli\
-  \ WiFi.Radio.1.BeaconPeriod=100\n  ubus-cli WiFi.Radio.1.DTIMPeriod=3\n  ubus-cli\
-  \ WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1\n  ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1\n\
+setup_steps: "1) DUT 5G baseline:\n   - enable Radio.1 / SSID.4 / AP1\n   - configure
+  AP1 as WPA3-Personal with MFP required\n   - keep the validated live SSID/credential
+  pair as TestPilot_BTM / testpilot6g\n2) STA 5G preparation:\n   - disable local
+  AP1/AP2 on COM1\n   - move COM1 br-lan off 192.168.1.0/24 to avoid bridge self-hit
+  side effects\n   - reset wl0 and its wpa_supplicant control socket\n   - connect
+  wl0 to TestPilot_BTM with SAE\n3) Association evidence:\n   - COM1: iw dev wl0 link
+  ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status\n   - COM0: wl -i wl0 assoclist\n"
+sta_env_setup: "DUT 5G AP baseline:\n  ubus-cli WiFi.Radio.1.Enable=1\n  ubus-cli
+  WiFi.Radio.1.BeaconPeriod=100\n  ubus-cli WiFi.Radio.1.DTIMPeriod=3\n  ubus-cli
+  WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1\n  ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1\n\
   \  ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto\n  ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1\n\
   \  ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1\n  ubus-cli WiFi.Radio.1.OfdmaEnable=1\n\
   \  ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0\n  ubus-cli WiFi.Radio.1.OperatingStandards=ax\n\
@@ -83,20 +79,19 @@ sta_env_setup: "DUT 5G AP baseline:\n  ubus-cli WiFi.Radio.1.Enable=1\n  ubus-cl
   \  ubus-cli WiFi.SSID.4.SSID=TestPilot_BTM\n  ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=\n\
   \  ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=\n  ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal\n\
   \  ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=testpilot6g\n  ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Required\n\
-  \  ubus-cli WiFi.AccessPoint.1.Enable=1\nSTA 5G preparation:\n  ifconfig br-lan\
-  \ 192.168.88.1 netmask 255.255.255.0 up\n  ubus-cli WiFi.AccessPoint.1.Enable=0\n\
+  \  ubus-cli WiFi.AccessPoint.1.Enable=1\nSTA 5G preparation:\n  ifconfig br-lan
+  192.168.88.1 netmask 255.255.255.0 up\n  ubus-cli WiFi.AccessPoint.1.Enable=0\n\
   \  ubus-cli WiFi.AccessPoint.2.Enable=0\n  wpa_cli terminate 2>/dev/null || true\n\
-  \  rm -f /var/run/wpa_supplicant/wl0 2>/dev/null || true\n  iw dev wl0.1 del 2>/dev/null\
-  \ || true\n  iw dev wl0 disconnect 2>/dev/null || true\n  iw dev wl1 disconnect\
-  \ 2>/dev/null || true\n  iw dev wl2 disconnect 2>/dev/null || true\n  iw dev wl0\
-  \ set type managed\n  ifconfig wl0 up\n  mkdir -p /var/run/wpa_supplicant\n  printf\
-  \ 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\nnetwork={\n\
-  ssid=\"TestPilot_BTM\"\nkey_mgmt=SAE\nsae_password=\"testpilot6g\"\nieee80211w=2\n\
-  scan_ssid=1\n}\n' > /tmp/wpa_wl0.conf\n  wpa_supplicant -B -D nl80211 -i wl0 -c\
-  \ /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant\n  sleep 3\nSTA 5G connect verify:\n\
-  \  wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect\n  sleep 10\n  iw dev wl0\
-  \ link\n  wpa_cli -p /var/run/wpa_supplicant -i wl0 status\nDUT association evidence:\n\
-  \  wl -i wl0 assoclist\n"
+  \  rm -f /var/run/wpa_supplicant/wl0 2>/dev/null || true\n  iw dev wl0.1 del 2>/dev/null
+  || true\n  iw dev wl0 disconnect 2>/dev/null || true\n  iw dev wl1 disconnect 2>/dev/null
+  || true\n  iw dev wl2 disconnect 2>/dev/null || true\n  iw dev wl0 set type managed\n\
+  \  ifconfig wl0 up\n  mkdir -p /var/run/wpa_supplicant\n  printf 'ctrl_interface=/var/run/wpa_supplicant\n\
+  update_config=1\nsae_pwe=2\nnetwork={\nssid=\"TestPilot_BTM\"\nkey_mgmt=SAE\nsae_password=\"\
+  testpilot6g\"\nieee80211w=2\nscan_ssid=1\n}\n' > /tmp/wpa_wl0.conf\n  wpa_supplicant
+  -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant\n  sleep 3\n\
+  STA 5G connect verify:\n  wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect\n\
+  \  sleep 10\n  iw dev wl0 link\n  wpa_cli -p /var/run/wpa_supplicant -i wl0 status\n\
+  DUT association evidence:\n  wl -i wl0 assoclist\n"
 test_procedure: '1) Confirm the 5G STA is associated to AP1 and resolve its live MAC
   address.
 
@@ -123,10 +118,11 @@ steps:
 - id: step3
   action: exec
   target: DUT
-  command: STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
-    | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC;
-    [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | grep -o 'APSD_[A-Z][A-Z]' |
-    paste -sd, - | sed 's/^/DriverPowerSaveFlags=/'
+  command: STA_MAC=$(ubus-cli 
+    "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 
+    's/.*MACAddress="\([^"]*\)".*/\1/p'); [ -n "$STA_MAC" ] && echo 
+    DriverAssocMac=$STA_MAC; [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | 
+    grep -o 'APSD_[A-Z][A-Z]' | paste -sd, - | sed 's/^/DriverPowerSaveFlags=/'
   depends_on: step2
   capture: driver_flags
 pass_criteria:
@@ -142,25 +138,17 @@ pass_criteria:
 - field: driver_flags.DriverAssocMac
   operator: equals
   reference: assoc_entry.MACAddress
-  description: Driver cross-check must use the same live AssociatedDevice MAC resolved
-    in step1.
+  description: Driver cross-check must use the same live AssociatedDevice MAC 
+    resolved in step1.
 - field: driver_flags.DriverPowerSaveFlags
   operator: contains
   value: APSD_BE
-  description: Driver flags must still expose APSD on the same STA, proving the LLAPI
-    value is stale.
+  description: Driver flags must still expose APSD on the same STA, proving the 
+    LLAPI value is stale.
 verification_command:
 - ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.PowerSave?"
-- STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
-  's/.*MACAddress="\([^"]*\)".*/\1/p')
+- STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed 
+  -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
 - '[ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC'
 - '[ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | grep -o ''APSD_[A-Z][A-Z]''
   | paste -sd, - | sed ''s/^/DriverPowerSaveFlags=/'''
-results_reference:
-  v4.0.3:
-    5g: Fail
-    6g: N/A
-    2.4g: N/A
-    comment: '5G serialwrap retest only: PowerSave stayed 0 while wl0 sta_info flags
-      still exposed APSD_BE/APSD_BK/APSD_VI/APSD_VO. Non-executed bands remain N/A
-      until separately calibrated.'

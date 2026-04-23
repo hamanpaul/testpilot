@@ -2,12 +2,9 @@ id: wifi-llapi-D082-multiaptype
 name: "MultiAPType — WiFi.AccessPoint.{i}."
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 82
   object: WiFi.AccessPoint.{i}.
   api: MultiAPType
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -79,16 +76,26 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.1.MultiAPType?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MultiAPType="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMultiAp5g=%s\n' "$VALUE"; else echo 'BaselineGetterMultiAp5g=EMPTY'; fi; CFG=$(grep -n '^multi_ap=' /tmp/wl0_hapd.conf 2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2'); C3=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'BaselineHostapdFronthaulCount5g=%s\n' "$C2"; printf 'BaselineHostapdBothCount5g=%s\n' "$C3"; printf 'BaselineHostapdTotalCount5g=%s\n' "$TOT"; MAP=$(wl -i wl0 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs); if [ -n "$MAP" ]; then printf 'BaselineDriverMap5g=%s\n' "$MAP"; else echo 'BaselineDriverMap5g=EMPTY'; fi
+    OUT=$(ubus-cli "WiFi.AccessPoint.1.MultiAPType?" 2>&1); VALUE=$(printf '%s\n'
+    "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MultiAPType="\([^"]*\)".*/\1/p' | head
+    -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMultiAp5g=%s\n' "$VALUE";
+    else echo 'BaselineGetterMultiAp5g=EMPTY'; fi; CFG=$(grep -n '^multi_ap=' /tmp/wl0_hapd.conf
+    2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2'); C3=$(printf
+    '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG" | sed '/^$/d'
+    | wc -l | tr -d ' '); printf 'BaselineHostapdFronthaulCount5g=%s\n' "$C2"; printf
+    'BaselineHostapdBothCount5g=%s\n' "$C3"; printf 'BaselineHostapdTotalCount5g=%s\n'
+    "$TOT"; MAP=$(wl -i wl0 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs);
+    if [ -n "$MAP" ]; then printf 'BaselineDriverMap5g=%s\n' "$MAP"; else echo 'BaselineDriverMap5g=EMPTY';
+    fi
   capture: multiap_baseline_5g
 - id: step2_multiap_set_fronthaul_5g
   action: exec
   target: DUT
   band: 5g
   command:
-    - printf 'RequestedMultiApType5g=FronthaulBSS\n'
-    - ubus-cli WiFi.AccessPoint.1.MultiAPType=FronthaulBSS
-    - ubus-cli WiFi.AccessPoint.2.MultiAPType=FronthaulBSS
+  - printf 'RequestedMultiApType5g=FronthaulBSS\n'
+  - ubus-cli WiFi.AccessPoint.1.MultiAPType=FronthaulBSS
+  - ubus-cli WiFi.AccessPoint.2.MultiAPType=FronthaulBSS
   depends_on: step1_multiap_baseline_5g
   capture: multiap_set_fronthaul_5g
 - id: step3_multiap_after_set_5g
@@ -96,7 +103,17 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.MultiAPType?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MultiAPType="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterSetGetterMultiAp5g=%s\n' "$VALUE"; else echo 'AfterSetGetterMultiAp5g=EMPTY'; fi; CFG=$(grep -n '^multi_ap=' /tmp/wl0_hapd.conf 2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2'); C3=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterSetHostapdFronthaulCount5g=%s\n' "$C2"; printf 'AfterSetHostapdBothCount5g=%s\n' "$C3"; printf 'AfterSetHostapdTotalCount5g=%s\n' "$TOT"; MAP=$(wl -i wl0 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs); if [ -n "$MAP" ]; then printf 'AfterSetDriverMap5g=%s\n' "$MAP"; else echo 'AfterSetDriverMap5g=EMPTY'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.MultiAPType?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MultiAPType="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterSetGetterMultiAp5g=%s\n' "$VALUE";
+    else echo 'AfterSetGetterMultiAp5g=EMPTY'; fi; CFG=$(grep -n '^multi_ap=' /tmp/wl0_hapd.conf
+    2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2'); C3=$(printf
+    '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG" | sed '/^$/d'
+    | wc -l | tr -d ' '); printf 'AfterSetHostapdFronthaulCount5g=%s\n' "$C2"; printf
+    'AfterSetHostapdBothCount5g=%s\n' "$C3"; printf 'AfterSetHostapdTotalCount5g=%s\n'
+    "$TOT"; MAP=$(wl -i wl0 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs);
+    if [ -n "$MAP" ]; then printf 'AfterSetDriverMap5g=%s\n' "$MAP"; else echo 'AfterSetDriverMap5g=EMPTY';
+    fi
   depends_on: step2_multiap_set_fronthaul_5g
   capture: multiap_after_set_5g
 - id: step4_multiap_restore_5g
@@ -104,9 +121,9 @@ steps:
   target: DUT
   band: 5g
   command:
-    - printf 'RestoreMultiApType5g=FronthaulBSS,BackhaulBSS\n'
-    - ubus-cli 'WiFi.AccessPoint.1.MultiAPType="FronthaulBSS,BackhaulBSS"'
-    - ubus-cli 'WiFi.AccessPoint.2.MultiAPType="FronthaulBSS,BackhaulBSS"'
+  - printf 'RestoreMultiApType5g=FronthaulBSS,BackhaulBSS\n'
+  - ubus-cli 'WiFi.AccessPoint.1.MultiAPType="FronthaulBSS,BackhaulBSS"'
+  - ubus-cli 'WiFi.AccessPoint.2.MultiAPType="FronthaulBSS,BackhaulBSS"'
   depends_on: step3_multiap_after_set_5g
   capture: multiap_restore_5g
 - id: step5_multiap_after_restore_5g
@@ -114,7 +131,17 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.MultiAPType?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MultiAPType="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMultiAp5g=%s\n' "$VALUE"; else echo 'AfterRestoreGetterMultiAp5g=EMPTY'; fi; CFG=$(grep -n '^multi_ap=' /tmp/wl0_hapd.conf 2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2'); C3=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterRestoreHostapdFronthaulCount5g=%s\n' "$C2"; printf 'AfterRestoreHostapdBothCount5g=%s\n' "$C3"; printf 'AfterRestoreHostapdTotalCount5g=%s\n' "$TOT"; MAP=$(wl -i wl0 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs); if [ -n "$MAP" ]; then printf 'AfterRestoreDriverMap5g=%s\n' "$MAP"; else echo 'AfterRestoreDriverMap5g=EMPTY'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.MultiAPType?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MultiAPType="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMultiAp5g=%s\n'
+    "$VALUE"; else echo 'AfterRestoreGetterMultiAp5g=EMPTY'; fi; CFG=$(grep -n '^multi_ap='
+    /tmp/wl0_hapd.conf 2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2');
+    C3=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG"
+    | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterRestoreHostapdFronthaulCount5g=%s\n'
+    "$C2"; printf 'AfterRestoreHostapdBothCount5g=%s\n' "$C3"; printf 'AfterRestoreHostapdTotalCount5g=%s\n'
+    "$TOT"; MAP=$(wl -i wl0 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs);
+    if [ -n "$MAP" ]; then printf 'AfterRestoreDriverMap5g=%s\n' "$MAP"; else echo
+    'AfterRestoreDriverMap5g=EMPTY'; fi
   depends_on: step4_multiap_restore_5g
   capture: multiap_after_restore_5g
 - id: step6_multiap_baseline_6g
@@ -122,16 +149,26 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.3.MultiAPType?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MultiAPType="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMultiAp6g=%s\n' "$VALUE"; else echo 'BaselineGetterMultiAp6g=EMPTY'; fi; CFG=$(grep -n '^multi_ap=' /tmp/wl1_hapd.conf 2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2'); C3=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'BaselineHostapdFronthaulCount6g=%s\n' "$C2"; printf 'BaselineHostapdBothCount6g=%s\n' "$C3"; printf 'BaselineHostapdTotalCount6g=%s\n' "$TOT"; MAP=$(wl -i wl1 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs); if [ -n "$MAP" ]; then printf 'BaselineDriverMap6g=%s\n' "$MAP"; else echo 'BaselineDriverMap6g=EMPTY'; fi
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.MultiAPType?" 2>&1); VALUE=$(printf '%s\n'
+    "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MultiAPType="\([^"]*\)".*/\1/p' | head
+    -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMultiAp6g=%s\n' "$VALUE";
+    else echo 'BaselineGetterMultiAp6g=EMPTY'; fi; CFG=$(grep -n '^multi_ap=' /tmp/wl1_hapd.conf
+    2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2'); C3=$(printf
+    '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG" | sed '/^$/d'
+    | wc -l | tr -d ' '); printf 'BaselineHostapdFronthaulCount6g=%s\n' "$C2"; printf
+    'BaselineHostapdBothCount6g=%s\n' "$C3"; printf 'BaselineHostapdTotalCount6g=%s\n'
+    "$TOT"; MAP=$(wl -i wl1 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs);
+    if [ -n "$MAP" ]; then printf 'BaselineDriverMap6g=%s\n' "$MAP"; else echo 'BaselineDriverMap6g=EMPTY';
+    fi
   capture: multiap_baseline_6g
 - id: step7_multiap_set_fronthaul_6g
   action: exec
   target: DUT
   band: 6g
   command:
-    - printf 'RequestedMultiApType6g=FronthaulBSS\n'
-    - ubus-cli WiFi.AccessPoint.3.MultiAPType=FronthaulBSS
-    - ubus-cli WiFi.AccessPoint.4.MultiAPType=FronthaulBSS
+  - printf 'RequestedMultiApType6g=FronthaulBSS\n'
+  - ubus-cli WiFi.AccessPoint.3.MultiAPType=FronthaulBSS
+  - ubus-cli WiFi.AccessPoint.4.MultiAPType=FronthaulBSS
   depends_on: step6_multiap_baseline_6g
   capture: multiap_set_fronthaul_6g
 - id: step8_multiap_after_set_6g
@@ -139,7 +176,17 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.MultiAPType?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MultiAPType="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterSetGetterMultiAp6g=%s\n' "$VALUE"; else echo 'AfterSetGetterMultiAp6g=EMPTY'; fi; CFG=$(grep -n '^multi_ap=' /tmp/wl1_hapd.conf 2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2'); C3=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterSetHostapdFronthaulCount6g=%s\n' "$C2"; printf 'AfterSetHostapdBothCount6g=%s\n' "$C3"; printf 'AfterSetHostapdTotalCount6g=%s\n' "$TOT"; MAP=$(wl -i wl1 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs); if [ -n "$MAP" ]; then printf 'AfterSetDriverMap6g=%s\n' "$MAP"; else echo 'AfterSetDriverMap6g=EMPTY'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.MultiAPType?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MultiAPType="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterSetGetterMultiAp6g=%s\n' "$VALUE";
+    else echo 'AfterSetGetterMultiAp6g=EMPTY'; fi; CFG=$(grep -n '^multi_ap=' /tmp/wl1_hapd.conf
+    2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2'); C3=$(printf
+    '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG" | sed '/^$/d'
+    | wc -l | tr -d ' '); printf 'AfterSetHostapdFronthaulCount6g=%s\n' "$C2"; printf
+    'AfterSetHostapdBothCount6g=%s\n' "$C3"; printf 'AfterSetHostapdTotalCount6g=%s\n'
+    "$TOT"; MAP=$(wl -i wl1 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs);
+    if [ -n "$MAP" ]; then printf 'AfterSetDriverMap6g=%s\n' "$MAP"; else echo 'AfterSetDriverMap6g=EMPTY';
+    fi
   depends_on: step7_multiap_set_fronthaul_6g
   capture: multiap_after_set_6g
 - id: step9_multiap_restore_6g
@@ -147,9 +194,9 @@ steps:
   target: DUT
   band: 6g
   command:
-    - printf 'RestoreMultiApType6g=FronthaulBSS,BackhaulBSS\n'
-    - ubus-cli 'WiFi.AccessPoint.3.MultiAPType="FronthaulBSS,BackhaulBSS"'
-    - ubus-cli 'WiFi.AccessPoint.4.MultiAPType="FronthaulBSS,BackhaulBSS"'
+  - printf 'RestoreMultiApType6g=FronthaulBSS,BackhaulBSS\n'
+  - ubus-cli 'WiFi.AccessPoint.3.MultiAPType="FronthaulBSS,BackhaulBSS"'
+  - ubus-cli 'WiFi.AccessPoint.4.MultiAPType="FronthaulBSS,BackhaulBSS"'
   depends_on: step8_multiap_after_set_6g
   capture: multiap_restore_6g
 - id: step10_multiap_after_restore_6g
@@ -157,7 +204,17 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.MultiAPType?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MultiAPType="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMultiAp6g=%s\n' "$VALUE"; else echo 'AfterRestoreGetterMultiAp6g=EMPTY'; fi; CFG=$(grep -n '^multi_ap=' /tmp/wl1_hapd.conf 2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2'); C3=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterRestoreHostapdFronthaulCount6g=%s\n' "$C2"; printf 'AfterRestoreHostapdBothCount6g=%s\n' "$C3"; printf 'AfterRestoreHostapdTotalCount6g=%s\n' "$TOT"; MAP=$(wl -i wl1 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs); if [ -n "$MAP" ]; then printf 'AfterRestoreDriverMap6g=%s\n' "$MAP"; else echo 'AfterRestoreDriverMap6g=EMPTY'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.MultiAPType?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MultiAPType="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMultiAp6g=%s\n'
+    "$VALUE"; else echo 'AfterRestoreGetterMultiAp6g=EMPTY'; fi; CFG=$(grep -n '^multi_ap='
+    /tmp/wl1_hapd.conf 2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2');
+    C3=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG"
+    | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterRestoreHostapdFronthaulCount6g=%s\n'
+    "$C2"; printf 'AfterRestoreHostapdBothCount6g=%s\n' "$C3"; printf 'AfterRestoreHostapdTotalCount6g=%s\n'
+    "$TOT"; MAP=$(wl -i wl1 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs);
+    if [ -n "$MAP" ]; then printf 'AfterRestoreDriverMap6g=%s\n' "$MAP"; else echo
+    'AfterRestoreDriverMap6g=EMPTY'; fi
   depends_on: step9_multiap_restore_6g
   capture: multiap_after_restore_6g
 - id: step11_multiap_baseline_24g
@@ -165,16 +222,26 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.5.MultiAPType?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MultiAPType="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMultiAp24g=%s\n' "$VALUE"; else echo 'BaselineGetterMultiAp24g=EMPTY'; fi; CFG=$(grep -n '^multi_ap=' /tmp/wl2_hapd.conf 2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2'); C3=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'BaselineHostapdFronthaulCount24g=%s\n' "$C2"; printf 'BaselineHostapdBothCount24g=%s\n' "$C3"; printf 'BaselineHostapdTotalCount24g=%s\n' "$TOT"; MAP=$(wl -i wl2 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs); if [ -n "$MAP" ]; then printf 'BaselineDriverMap24g=%s\n' "$MAP"; else echo 'BaselineDriverMap24g=EMPTY'; fi
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.MultiAPType?" 2>&1); VALUE=$(printf '%s\n'
+    "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MultiAPType="\([^"]*\)".*/\1/p' | head
+    -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMultiAp24g=%s\n' "$VALUE";
+    else echo 'BaselineGetterMultiAp24g=EMPTY'; fi; CFG=$(grep -n '^multi_ap=' /tmp/wl2_hapd.conf
+    2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2'); C3=$(printf
+    '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG" | sed '/^$/d'
+    | wc -l | tr -d ' '); printf 'BaselineHostapdFronthaulCount24g=%s\n' "$C2"; printf
+    'BaselineHostapdBothCount24g=%s\n' "$C3"; printf 'BaselineHostapdTotalCount24g=%s\n'
+    "$TOT"; MAP=$(wl -i wl2 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs);
+    if [ -n "$MAP" ]; then printf 'BaselineDriverMap24g=%s\n' "$MAP"; else echo 'BaselineDriverMap24g=EMPTY';
+    fi
   capture: multiap_baseline_24g
 - id: step12_multiap_set_fronthaul_24g
   action: exec
   target: DUT
   band: 2.4g
   command:
-    - printf 'RequestedMultiApType24g=FronthaulBSS\n'
-    - ubus-cli WiFi.AccessPoint.5.MultiAPType=FronthaulBSS
-    - ubus-cli WiFi.AccessPoint.6.MultiAPType=FronthaulBSS
+  - printf 'RequestedMultiApType24g=FronthaulBSS\n'
+  - ubus-cli WiFi.AccessPoint.5.MultiAPType=FronthaulBSS
+  - ubus-cli WiFi.AccessPoint.6.MultiAPType=FronthaulBSS
   depends_on: step11_multiap_baseline_24g
   capture: multiap_set_fronthaul_24g
 - id: step13_multiap_after_set_24g
@@ -182,7 +249,17 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.MultiAPType?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MultiAPType="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterSetGetterMultiAp24g=%s\n' "$VALUE"; else echo 'AfterSetGetterMultiAp24g=EMPTY'; fi; CFG=$(grep -n '^multi_ap=' /tmp/wl2_hapd.conf 2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2'); C3=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterSetHostapdFronthaulCount24g=%s\n' "$C2"; printf 'AfterSetHostapdBothCount24g=%s\n' "$C3"; printf 'AfterSetHostapdTotalCount24g=%s\n' "$TOT"; MAP=$(wl -i wl2 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs); if [ -n "$MAP" ]; then printf 'AfterSetDriverMap24g=%s\n' "$MAP"; else echo 'AfterSetDriverMap24g=EMPTY'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.MultiAPType?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MultiAPType="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterSetGetterMultiAp24g=%s\n'
+    "$VALUE"; else echo 'AfterSetGetterMultiAp24g=EMPTY'; fi; CFG=$(grep -n '^multi_ap='
+    /tmp/wl2_hapd.conf 2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2');
+    C3=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG"
+    | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterSetHostapdFronthaulCount24g=%s\n'
+    "$C2"; printf 'AfterSetHostapdBothCount24g=%s\n' "$C3"; printf 'AfterSetHostapdTotalCount24g=%s\n'
+    "$TOT"; MAP=$(wl -i wl2 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs);
+    if [ -n "$MAP" ]; then printf 'AfterSetDriverMap24g=%s\n' "$MAP"; else echo 'AfterSetDriverMap24g=EMPTY';
+    fi
   depends_on: step12_multiap_set_fronthaul_24g
   capture: multiap_after_set_24g
 - id: step14_multiap_restore_24g
@@ -190,9 +267,9 @@ steps:
   target: DUT
   band: 2.4g
   command:
-    - printf 'RestoreMultiApType24g=FronthaulBSS,BackhaulBSS\n'
-    - ubus-cli 'WiFi.AccessPoint.5.MultiAPType="FronthaulBSS,BackhaulBSS"'
-    - ubus-cli 'WiFi.AccessPoint.6.MultiAPType="FronthaulBSS,BackhaulBSS"'
+  - printf 'RestoreMultiApType24g=FronthaulBSS,BackhaulBSS\n'
+  - ubus-cli 'WiFi.AccessPoint.5.MultiAPType="FronthaulBSS,BackhaulBSS"'
+  - ubus-cli 'WiFi.AccessPoint.6.MultiAPType="FronthaulBSS,BackhaulBSS"'
   depends_on: step13_multiap_after_set_24g
   capture: multiap_restore_24g
 - id: step15_multiap_after_restore_24g
@@ -200,7 +277,17 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.MultiAPType?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MultiAPType="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMultiAp24g=%s\n' "$VALUE"; else echo 'AfterRestoreGetterMultiAp24g=EMPTY'; fi; CFG=$(grep -n '^multi_ap=' /tmp/wl2_hapd.conf 2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2'); C3=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG" | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterRestoreHostapdFronthaulCount24g=%s\n' "$C2"; printf 'AfterRestoreHostapdBothCount24g=%s\n' "$C3"; printf 'AfterRestoreHostapdTotalCount24g=%s\n' "$TOT"; MAP=$(wl -i wl2 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs); if [ -n "$MAP" ]; then printf 'AfterRestoreDriverMap24g=%s\n' "$MAP"; else echo 'AfterRestoreDriverMap24g=EMPTY'; fi
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.MultiAPType?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MultiAPType="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMultiAp24g=%s\n'
+    "$VALUE"; else echo 'AfterRestoreGetterMultiAp24g=EMPTY'; fi; CFG=$(grep -n '^multi_ap='
+    /tmp/wl2_hapd.conf 2>/dev/null || true); C2=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=2');
+    C3=$(printf '%s\n' "$CFG" | grep -c 'multi_ap=3'); TOT=$(printf '%s\n' "$CFG"
+    | sed '/^$/d' | wc -l | tr -d ' '); printf 'AfterRestoreHostapdFronthaulCount24g=%s\n'
+    "$C2"; printf 'AfterRestoreHostapdBothCount24g=%s\n' "$C3"; printf 'AfterRestoreHostapdTotalCount24g=%s\n'
+    "$TOT"; MAP=$(wl -i wl2 map 2>&1 | sed -n '/^0x/p' | head -n 1 | tr -s ' ' | xargs);
+    if [ -n "$MAP" ]; then printf 'AfterRestoreDriverMap24g=%s\n' "$MAP"; else echo
+    'AfterRestoreDriverMap24g=EMPTY'; fi
   depends_on: step14_multiap_restore_24g
   capture: multiap_after_restore_24g
 
@@ -236,31 +323,38 @@ pass_criteria:
 - field: multiap_after_set_5g.AfterSetHostapdFronthaulCount5g
   operator: equals
   value: '2'
-  description: 5G AP1 / wl0 hostapd should fully flip to fronthaul-only after the setter.
+  description: 5G AP1 / wl0 hostapd should fully flip to fronthaul-only after 
+    the setter.
 - field: multiap_after_set_5g.AfterSetHostapdBothCount5g
   operator: equals
   value: '0'
-  description: 5G AP1 / wl0 hostapd should clear dual-role lines after the setter.
+  description: 5G AP1 / wl0 hostapd should clear dual-role lines after the 
+    setter.
 - field: multiap_after_set_5g.AfterSetHostapdTotalCount5g
   operator: equals
   value: '2'
-  description: 5G AP1 / wl0 hostapd still has two total multi_ap lines after the setter.
+  description: 5G AP1 / wl0 hostapd still has two total multi_ap lines after the
+    setter.
 - field: multiap_after_set_5g.AfterSetDriverMap5g
   operator: equals
   value: '0x1: Fronthaul-BSS'
-  description: 5G AP1 / wl0 driver map should follow the setter to fronthaul-only.
+  description: 5G AP1 / wl0 driver map should follow the setter to 
+    fronthaul-only.
 - field: multiap_restore_5g.RestoreMultiApType5g
   operator: equals
   value: FronthaulBSS,BackhaulBSS
-  description: 5G AP1 / wl0 should request restore back to the dual-role baseline.
+  description: 5G AP1 / wl0 should request restore back to the dual-role 
+    baseline.
 - field: multiap_after_restore_5g.AfterRestoreGetterMultiAp5g
   operator: equals
   value: FronthaulBSS,BackhaulBSS
-  description: 5G AP1 / wl0 getter should return to the dual-role baseline after restore.
+  description: 5G AP1 / wl0 getter should return to the dual-role baseline after
+    restore.
 - field: multiap_after_restore_5g.AfterRestoreHostapdFronthaulCount5g
   operator: equals
   value: '0'
-  description: 5G AP1 / wl0 hostapd should clear fronthaul-only lines after restore.
+  description: 5G AP1 / wl0 hostapd should clear fronthaul-only lines after 
+    restore.
 - field: multiap_after_restore_5g.AfterRestoreHostapdBothCount5g
   operator: equals
   value: '2'
@@ -272,7 +366,8 @@ pass_criteria:
 - field: multiap_after_restore_5g.AfterRestoreDriverMap5g
   operator: equals
   value: '0x3: Fronthaul-BSS Backhaul-BSS'
-  description: 5G AP1 / wl0 driver map should return to dual-role mode after restore.
+  description: 5G AP1 / wl0 driver map should return to dual-role mode after 
+    restore.
 - field: multiap_baseline_6g.BaselineGetterMultiAp6g
   operator: equals
   value: FronthaulBSS,BackhaulBSS
@@ -304,31 +399,38 @@ pass_criteria:
 - field: multiap_after_set_6g.AfterSetHostapdFronthaulCount6g
   operator: equals
   value: '2'
-  description: 6G AP3 / wl1 hostapd should fully flip to fronthaul-only after the setter.
+  description: 6G AP3 / wl1 hostapd should fully flip to fronthaul-only after 
+    the setter.
 - field: multiap_after_set_6g.AfterSetHostapdBothCount6g
   operator: equals
   value: '0'
-  description: 6G AP3 / wl1 hostapd should clear dual-role lines after the setter.
+  description: 6G AP3 / wl1 hostapd should clear dual-role lines after the 
+    setter.
 - field: multiap_after_set_6g.AfterSetHostapdTotalCount6g
   operator: equals
   value: '2'
-  description: 6G AP3 / wl1 hostapd still has two total multi_ap lines after the setter.
+  description: 6G AP3 / wl1 hostapd still has two total multi_ap lines after the
+    setter.
 - field: multiap_after_set_6g.AfterSetDriverMap6g
   operator: equals
   value: '0x1: Fronthaul-BSS'
-  description: 6G AP3 / wl1 driver map should follow the setter to fronthaul-only.
+  description: 6G AP3 / wl1 driver map should follow the setter to 
+    fronthaul-only.
 - field: multiap_restore_6g.RestoreMultiApType6g
   operator: equals
   value: FronthaulBSS,BackhaulBSS
-  description: 6G AP3 / wl1 should request restore back to the dual-role baseline.
+  description: 6G AP3 / wl1 should request restore back to the dual-role 
+    baseline.
 - field: multiap_after_restore_6g.AfterRestoreGetterMultiAp6g
   operator: equals
   value: FronthaulBSS,BackhaulBSS
-  description: 6G AP3 / wl1 getter should return to the dual-role baseline after restore.
+  description: 6G AP3 / wl1 getter should return to the dual-role baseline after
+    restore.
 - field: multiap_after_restore_6g.AfterRestoreHostapdFronthaulCount6g
   operator: equals
   value: '0'
-  description: 6G AP3 / wl1 hostapd should clear fronthaul-only lines after restore.
+  description: 6G AP3 / wl1 hostapd should clear fronthaul-only lines after 
+    restore.
 - field: multiap_after_restore_6g.AfterRestoreHostapdBothCount6g
   operator: equals
   value: '2'
@@ -340,7 +442,8 @@ pass_criteria:
 - field: multiap_after_restore_6g.AfterRestoreDriverMap6g
   operator: equals
   value: '0x3: Fronthaul-BSS Backhaul-BSS'
-  description: 6G AP3 / wl1 driver map should return to dual-role mode after restore.
+  description: 6G AP3 / wl1 driver map should return to dual-role mode after 
+    restore.
 - field: multiap_baseline_24g.BaselineGetterMultiAp24g
   operator: equals
   value: FronthaulBSS,BackhaulBSS
@@ -348,7 +451,8 @@ pass_criteria:
 - field: multiap_baseline_24g.BaselineHostapdFronthaulCount24g
   operator: equals
   value: '0'
-  description: 2.4G AP5 / wl2 hostapd should start with zero fronthaul-only lines.
+  description: 2.4G AP5 / wl2 hostapd should start with zero fronthaul-only 
+    lines.
 - field: multiap_baseline_24g.BaselineHostapdBothCount24g
   operator: equals
   value: '2'
@@ -356,7 +460,8 @@ pass_criteria:
 - field: multiap_baseline_24g.BaselineHostapdTotalCount24g
   operator: equals
   value: '2'
-  description: 2.4G AP5 / wl2 hostapd should start with two total multi_ap lines.
+  description: 2.4G AP5 / wl2 hostapd should start with two total multi_ap 
+    lines.
 - field: multiap_baseline_24g.BaselineDriverMap24g
   operator: equals
   value: '0x3: Fronthaul-BSS Backhaul-BSS'
@@ -372,31 +477,38 @@ pass_criteria:
 - field: multiap_after_set_24g.AfterSetHostapdFronthaulCount24g
   operator: equals
   value: '2'
-  description: 2.4G AP5 / wl2 hostapd should fully flip to fronthaul-only after the setter.
+  description: 2.4G AP5 / wl2 hostapd should fully flip to fronthaul-only after 
+    the setter.
 - field: multiap_after_set_24g.AfterSetHostapdBothCount24g
   operator: equals
   value: '0'
-  description: 2.4G AP5 / wl2 hostapd should clear dual-role lines after the setter.
+  description: 2.4G AP5 / wl2 hostapd should clear dual-role lines after the 
+    setter.
 - field: multiap_after_set_24g.AfterSetHostapdTotalCount24g
   operator: equals
   value: '2'
-  description: 2.4G AP5 / wl2 hostapd still has two total multi_ap lines after the setter.
+  description: 2.4G AP5 / wl2 hostapd still has two total multi_ap lines after 
+    the setter.
 - field: multiap_after_set_24g.AfterSetDriverMap24g
   operator: equals
   value: '0x1: Fronthaul-BSS'
-  description: 2.4G AP5 / wl2 driver map should follow the setter to fronthaul-only.
+  description: 2.4G AP5 / wl2 driver map should follow the setter to 
+    fronthaul-only.
 - field: multiap_restore_24g.RestoreMultiApType24g
   operator: equals
   value: FronthaulBSS,BackhaulBSS
-  description: 2.4G AP5 / wl2 should request restore back to the dual-role baseline.
+  description: 2.4G AP5 / wl2 should request restore back to the dual-role 
+    baseline.
 - field: multiap_after_restore_24g.AfterRestoreGetterMultiAp24g
   operator: equals
   value: FronthaulBSS,BackhaulBSS
-  description: 2.4G AP5 / wl2 getter should return to the dual-role baseline after restore.
+  description: 2.4G AP5 / wl2 getter should return to the dual-role baseline 
+    after restore.
 - field: multiap_after_restore_24g.AfterRestoreHostapdFronthaulCount24g
   operator: equals
   value: '0'
-  description: 2.4G AP5 / wl2 hostapd should clear fronthaul-only lines after restore.
+  description: 2.4G AP5 / wl2 hostapd should clear fronthaul-only lines after 
+    restore.
 - field: multiap_after_restore_24g.AfterRestoreHostapdBothCount24g
   operator: equals
   value: '2'
@@ -408,33 +520,23 @@ pass_criteria:
 - field: multiap_after_restore_24g.AfterRestoreDriverMap24g
   operator: equals
   value: '0x3: Fronthaul-BSS Backhaul-BSS'
-  description: 2.4G AP5 / wl2 driver map should return to dual-role mode after restore.
+  description: 2.4G AP5 / wl2 driver map should return to dual-role mode after 
+    restore.
 
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.MultiAPType?"'
-  - 'grep -n ''^multi_ap='' /tmp/wl0_hapd.conf 2>/dev/null || true'
-  - wl -i wl0 map
-  - ubus-cli WiFi.AccessPoint.1.MultiAPType=FronthaulBSS
-  - ubus-cli WiFi.AccessPoint.2.MultiAPType=FronthaulBSS
-  - sleep 5
-  - 'ubus-cli "WiFi.AccessPoint.1.MultiAPType?"'
-  - 'grep -n ''^multi_ap='' /tmp/wl0_hapd.conf 2>/dev/null || true'
-  - wl -i wl0 map
-  - 'ubus-cli ''WiFi.AccessPoint.1.MultiAPType="FronthaulBSS,BackhaulBSS"'''
-  - 'ubus-cli ''WiFi.AccessPoint.2.MultiAPType="FronthaulBSS,BackhaulBSS"'''
-  - sleep 5
-  - 'ubus-cli "WiFi.AccessPoint.1.MultiAPType?"'
-  - 'grep -n ''^multi_ap='' /tmp/wl0_hapd.conf 2>/dev/null || true'
-  - wl -i wl0 map
+- 'ubus-cli "WiFi.AccessPoint.1.MultiAPType?"'
+- 'grep -n ''^multi_ap='' /tmp/wl0_hapd.conf 2>/dev/null || true'
+- wl -i wl0 map
+- ubus-cli WiFi.AccessPoint.1.MultiAPType=FronthaulBSS
+- ubus-cli WiFi.AccessPoint.2.MultiAPType=FronthaulBSS
+- sleep 5
+- 'ubus-cli "WiFi.AccessPoint.1.MultiAPType?"'
+- 'grep -n ''^multi_ap='' /tmp/wl0_hapd.conf 2>/dev/null || true'
+- wl -i wl0 map
+- 'ubus-cli ''WiFi.AccessPoint.1.MultiAPType="FronthaulBSS,BackhaulBSS"'''
+- 'ubus-cli ''WiFi.AccessPoint.2.MultiAPType="FronthaulBSS,BackhaulBSS"'''
+- sleep 5
+- 'ubus-cli "WiFi.AccessPoint.1.MultiAPType?"'
+- 'grep -n ''^multi_ap='' /tmp/wl0_hapd.conf 2>/dev/null || true'
+- wl -i wl0 map
 
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: '-Test only FronthaulBSS. -Will test the BH when MESH are ready'
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'Workbook row 82 expects the fronthaul-only path. After reconstructing the dual-role baseline explicitly in setup, AP1/AP3/AP5 all exact-close `MultiAPType=FronthaulBSS`, hostapd `multi_ap=2`, and driver `wl -i wlX map = 0x1: Fronthaul-BSS`, then restore cleanly back to `FronthaulBSS,BackhaulBSS` / `multi_ap=3` / `0x3`.'

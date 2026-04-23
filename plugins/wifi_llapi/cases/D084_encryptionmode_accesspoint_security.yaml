@@ -2,12 +2,9 @@ id: wifi-llapi-D084-encryptionmode-accesspoint-security
 name: "EncryptionMode — WiFi.AccessPoint.{i}.Security"
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 84
   object: WiFi.AccessPoint.{i}.Security
   api: EncryptionMode
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -66,14 +63,16 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p'); printf 'ModeEnabled5g=%s\n' "$MODE"
+    MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p');
+    printf 'ModeEnabled5g=%s\n' "$MODE"
   capture: security_mode_5g
 - id: step2_encryption_mode_5g
   action: exec
   target: DUT
   band: 5g
   command: >-
-    ENC=$(ubus-cli "WiFi.AccessPoint.1.Security.EncryptionMode?" | sed -n 's/.*EncryptionMode="\([^"]*\)".*/\1/p'); printf 'EncryptionMode5g=%s\n' "$ENC"
+    ENC=$(ubus-cli "WiFi.AccessPoint.1.Security.EncryptionMode?" | sed -n 's/.*EncryptionMode="\([^"]*\)".*/\1/p');
+    printf 'EncryptionMode5g=%s\n' "$ENC"
   depends_on: step1_security_mode_5g
   capture: encryption_mode_5g
 - id: step3_security_hostapd_5g
@@ -81,7 +80,11 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl0_hapd.conf | cut -d= -f2- | xargs || true); PW=$(grep -m1 '^wpa_pairwise=' /tmp/wl0_hapd.conf | cut -d= -f2- | xargs || true); RSN=$(grep -m1 '^rsn_pairwise=' /tmp/wl0_hapd.conf | cut -d= -f2- | xargs || true); printf 'HostapdKeyMgmt5g=%s\n' "${KM:-ABSENT}"; printf 'HostapdPairwise5g=%s\n' "${PW:-ABSENT}"; printf 'HostapdRsnPairwise5g=%s\n' "${RSN:-ABSENT}"
+    KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl0_hapd.conf | cut -d= -f2- | xargs || true);
+    PW=$(grep -m1 '^wpa_pairwise=' /tmp/wl0_hapd.conf | cut -d= -f2- | xargs || true);
+    RSN=$(grep -m1 '^rsn_pairwise=' /tmp/wl0_hapd.conf | cut -d= -f2- | xargs || true);
+    printf 'HostapdKeyMgmt5g=%s\n' "${KM:-ABSENT}"; printf 'HostapdPairwise5g=%s\n'
+    "${PW:-ABSENT}"; printf 'HostapdRsnPairwise5g=%s\n' "${RSN:-ABSENT}"
   depends_on: step2_encryption_mode_5g
   capture: security_hostapd_5g
 - id: step4_security_mode_6g
@@ -89,14 +92,16 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p'); printf 'ModeEnabled6g=%s\n' "$MODE"
+    MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p');
+    printf 'ModeEnabled6g=%s\n' "$MODE"
   capture: security_mode_6g
 - id: step5_encryption_mode_6g
   action: exec
   target: DUT
   band: 6g
   command: >-
-    ENC=$(ubus-cli "WiFi.AccessPoint.3.Security.EncryptionMode?" | sed -n 's/.*EncryptionMode="\([^"]*\)".*/\1/p'); printf 'EncryptionMode6g=%s\n' "$ENC"
+    ENC=$(ubus-cli "WiFi.AccessPoint.3.Security.EncryptionMode?" | sed -n 's/.*EncryptionMode="\([^"]*\)".*/\1/p');
+    printf 'EncryptionMode6g=%s\n' "$ENC"
   depends_on: step4_security_mode_6g
   capture: encryption_mode_6g
 - id: step6_security_hostapd_6g
@@ -104,7 +109,11 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl1_hapd.conf | cut -d= -f2- | xargs || true); PW=$(grep -m1 '^wpa_pairwise=' /tmp/wl1_hapd.conf | cut -d= -f2- | xargs || true); RSN=$(grep -m1 '^rsn_pairwise=' /tmp/wl1_hapd.conf | cut -d= -f2- | xargs || true); printf 'HostapdKeyMgmt6g=%s\n' "${KM:-ABSENT}"; printf 'HostapdPairwise6g=%s\n' "${PW:-ABSENT}"; printf 'HostapdRsnPairwise6g=%s\n' "${RSN:-ABSENT}"
+    KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl1_hapd.conf | cut -d= -f2- | xargs || true);
+    PW=$(grep -m1 '^wpa_pairwise=' /tmp/wl1_hapd.conf | cut -d= -f2- | xargs || true);
+    RSN=$(grep -m1 '^rsn_pairwise=' /tmp/wl1_hapd.conf | cut -d= -f2- | xargs || true);
+    printf 'HostapdKeyMgmt6g=%s\n' "${KM:-ABSENT}"; printf 'HostapdPairwise6g=%s\n'
+    "${PW:-ABSENT}"; printf 'HostapdRsnPairwise6g=%s\n' "${RSN:-ABSENT}"
   depends_on: step5_encryption_mode_6g
   capture: security_hostapd_6g
 - id: step7_security_mode_24g
@@ -112,14 +121,16 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p'); printf 'ModeEnabled24g=%s\n' "$MODE"
+    MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p');
+    printf 'ModeEnabled24g=%s\n' "$MODE"
   capture: security_mode_24g
 - id: step8_encryption_mode_24g
   action: exec
   target: DUT
   band: 2.4g
   command: >-
-    ENC=$(ubus-cli "WiFi.AccessPoint.5.Security.EncryptionMode?" | sed -n 's/.*EncryptionMode="\([^"]*\)".*/\1/p'); printf 'EncryptionMode24g=%s\n' "$ENC"
+    ENC=$(ubus-cli "WiFi.AccessPoint.5.Security.EncryptionMode?" | sed -n 's/.*EncryptionMode="\([^"]*\)".*/\1/p');
+    printf 'EncryptionMode24g=%s\n' "$ENC"
   depends_on: step7_security_mode_24g
   capture: encryption_mode_24g
 - id: step9_security_hostapd_24g
@@ -127,7 +138,11 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl2_hapd.conf | cut -d= -f2- | xargs || true); PW=$(grep -m1 '^wpa_pairwise=' /tmp/wl2_hapd.conf | cut -d= -f2- | xargs || true); RSN=$(grep -m1 '^rsn_pairwise=' /tmp/wl2_hapd.conf | cut -d= -f2- | xargs || true); printf 'HostapdKeyMgmt24g=%s\n' "${KM:-ABSENT}"; printf 'HostapdPairwise24g=%s\n' "${PW:-ABSENT}"; printf 'HostapdRsnPairwise24g=%s\n' "${RSN:-ABSENT}"
+    KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl2_hapd.conf | cut -d= -f2- | xargs || true);
+    PW=$(grep -m1 '^wpa_pairwise=' /tmp/wl2_hapd.conf | cut -d= -f2- | xargs || true);
+    RSN=$(grep -m1 '^rsn_pairwise=' /tmp/wl2_hapd.conf | cut -d= -f2- | xargs || true);
+    printf 'HostapdKeyMgmt24g=%s\n' "${KM:-ABSENT}"; printf 'HostapdPairwise24g=%s\n'
+    "${PW:-ABSENT}"; printf 'HostapdRsnPairwise24g=%s\n' "${RSN:-ABSENT}"
   depends_on: step8_encryption_mode_24g
   capture: security_hostapd_24g
 
@@ -143,7 +158,8 @@ pass_criteria:
 - field: security_hostapd_5g.HostapdKeyMgmt5g
   operator: equals
   value: WPA-PSK
-  description: 5G AP1 / wl0 hostapd still exposes a real WPA-PSK key management mode.
+  description: 5G AP1 / wl0 hostapd still exposes a real WPA-PSK key management 
+    mode.
 - field: security_hostapd_5g.HostapdPairwise5g
   operator: equals
   value: CCMP
@@ -155,7 +171,8 @@ pass_criteria:
 - field: encryption_mode_5g.EncryptionMode5g
   operator: not_equals
   reference: security_hostapd_5g.HostapdPairwise5g
-  description: 5G AP1 / wl0 hardcodes EncryptionMode to Default instead of exposing the live CCMP cipher.
+  description: 5G AP1 / wl0 hardcodes EncryptionMode to Default instead of 
+    exposing the live CCMP cipher.
 - field: security_mode_6g.ModeEnabled6g
   operator: equals
   value: WPA3-Personal
@@ -167,7 +184,8 @@ pass_criteria:
 - field: security_hostapd_6g.HostapdKeyMgmt6g
   operator: equals
   value: SAE
-  description: 6G AP3 / wl1 hostapd still exposes a real SAE key management mode.
+  description: 6G AP3 / wl1 hostapd still exposes a real SAE key management 
+    mode.
 - field: security_hostapd_6g.HostapdPairwise6g
   operator: equals
   value: CCMP
@@ -179,7 +197,8 @@ pass_criteria:
 - field: encryption_mode_6g.EncryptionMode6g
   operator: not_equals
   reference: security_hostapd_6g.HostapdPairwise6g
-  description: 6G AP3 / wl1 hardcodes EncryptionMode to Default instead of exposing the live CCMP cipher.
+  description: 6G AP3 / wl1 hardcodes EncryptionMode to Default instead of 
+    exposing the live CCMP cipher.
 - field: security_mode_24g.ModeEnabled24g
   operator: equals
   value: WPA2-Personal
@@ -191,7 +210,8 @@ pass_criteria:
 - field: security_hostapd_24g.HostapdKeyMgmt24g
   operator: equals
   value: WPA-PSK
-  description: 2.4G AP5 / wl2 hostapd still exposes a real WPA-PSK key management mode.
+  description: 2.4G AP5 / wl2 hostapd still exposes a real WPA-PSK key 
+    management mode.
 - field: security_hostapd_24g.HostapdPairwise24g
   operator: equals
   value: CCMP
@@ -203,27 +223,20 @@ pass_criteria:
 - field: encryption_mode_24g.EncryptionMode24g
   operator: not_equals
   reference: security_hostapd_24g.HostapdPairwise24g
-  description: 2.4G AP5 / wl2 hardcodes EncryptionMode to Default instead of exposing the live CCMP cipher.
+  description: 2.4G AP5 / wl2 hardcodes EncryptionMode to Default instead of 
+    exposing the live CCMP cipher.
 
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"'
-  - 'ubus-cli "WiFi.AccessPoint.1.Security.EncryptionMode?"'
-  - 'grep -Ei ''^(wpa_key_mgmt|wpa_pairwise|rsn_pairwise|sae_password|wep_key)'' /tmp/wl0_hapd.conf || true'
-  - 'ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"'
-  - 'ubus-cli "WiFi.AccessPoint.3.Security.EncryptionMode?"'
-  - 'grep -Ei ''^(wpa_key_mgmt|wpa_pairwise|rsn_pairwise|sae_password|wep_key)'' /tmp/wl1_hapd.conf || true'
-  - 'ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"'
-  - 'ubus-cli "WiFi.AccessPoint.5.Security.EncryptionMode?"'
-  - 'grep -Ei ''^(wpa_key_mgmt|wpa_pairwise|rsn_pairwise|sae_password|wep_key)'' /tmp/wl2_hapd.conf || true'
+- 'ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"'
+- 'ubus-cli "WiFi.AccessPoint.1.Security.EncryptionMode?"'
+- 'grep -Ei ''^(wpa_key_mgmt|wpa_pairwise|rsn_pairwise|sae_password|wep_key)'' /tmp/wl0_hapd.conf
+  || true'
+- 'ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"'
+- 'ubus-cli "WiFi.AccessPoint.3.Security.EncryptionMode?"'
+- 'grep -Ei ''^(wpa_key_mgmt|wpa_pairwise|rsn_pairwise|sae_password|wep_key)'' /tmp/wl1_hapd.conf
+  || true'
+- 'ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"'
+- 'ubus-cli "WiFi.AccessPoint.5.Security.EncryptionMode?"'
+- 'grep -Ei ''^(wpa_key_mgmt|wpa_pairwise|rsn_pairwise|sae_password|wep_key)'' /tmp/wl2_hapd.conf
+  || true'
 
-results_reference:
-  v4.0.1:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
-    comment: 'ARC: API return "Default"'
-  v4.0.3:
-    5g: Not Supported
-    6g: Not Supported
-    2.4g: Not Supported
-    comment: '0401 workbook row 84 keeps `EncryptionMode` at `Not Supported / Not Supported / Not Supported` with comment `hardcode in pwhm`; live probe still shows AP1/AP3/AP5 return `EncryptionMode="Default"` while hostapd exposes active WPA/SAE + CCMP lines.'

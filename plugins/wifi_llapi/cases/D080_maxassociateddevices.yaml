@@ -2,12 +2,9 @@ id: wifi-llapi-D080-maxassociateddevices
 name: "MaxAssociatedDevices — WiFi.AccessPoint.{i}."
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 80
   object: WiFi.AccessPoint.{i}.
   api: MaxAssociatedDevices
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -67,14 +64,25 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.1.MaxAssociatedDevices?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMax5g=%s\n' "$VALUE"; else echo 'BaselineGetterMax5g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl0_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'BaselineHostapdMax5g=%s\n' "$HAPD"; else echo 'BaselineHostapdMax5g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | grep -c 'max_num_sta='); printf 'BaselineHostapdCount5g=%s\n' "$COUNT"
+    OUT=$(ubus-cli "WiFi.AccessPoint.1.MaxAssociatedDevices?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMax5g=%s\n' "$VALUE";
+    else echo 'BaselineGetterMax5g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl0_hapd.conf
+    2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$HAPD" ]; then printf 'BaselineHostapdMax5g=%s\n' "$HAPD";
+    else echo 'BaselineHostapdMax5g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | grep
+    -c 'max_num_sta='); printf 'BaselineHostapdCount5g=%s\n' "$COUNT"
   capture: max_baseline_5g
 - id: step2_set_temp_5g
   action: exec
   target: DUT
   band: 5g
   command: >-
-    TEMP='31'; OUT=$(ubus-cli WiFi.AccessPoint.1.MaxAssociatedDevices=$TEMP 2>&1); printf 'RequestedTempMax5g=%s\n' "$TEMP"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'SetterEchoMax5g=%s\n' "$VALUE"; else echo 'SetterEchoMax5g=EMPTY'; fi
+    TEMP='31'; OUT=$(ubus-cli WiFi.AccessPoint.1.MaxAssociatedDevices=$TEMP 2>&1);
+    printf 'RequestedTempMax5g=%s\n' "$TEMP"; VALUE=$(printf '%s\n' "$OUT" | sed -n
+    's/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head
+    -n 1); if [ -n "$VALUE" ]; then printf 'SetterEchoMax5g=%s\n' "$VALUE"; else echo
+    'SetterEchoMax5g=EMPTY'; fi
   depends_on: step1_max_baseline_5g
   capture: set_temp_5g
 - id: step3_max_after_temp_5g
@@ -82,7 +90,14 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.1.MaxAssociatedDevices?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterTempGetterMax5g=%s\n' "$VALUE"; else echo 'AfterTempGetterMax5g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl0_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterTempHostapdMax5g=%s\n' "$HAPD"; else echo 'AfterTempHostapdMax5g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | grep -c 'max_num_sta='); printf 'AfterTempHostapdCount5g=%s\n' "$COUNT"
+    OUT=$(ubus-cli "WiFi.AccessPoint.1.MaxAssociatedDevices?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterTempGetterMax5g=%s\n' "$VALUE";
+    else echo 'AfterTempGetterMax5g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl0_hapd.conf
+    2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterTempHostapdMax5g=%s\n' "$HAPD";
+    else echo 'AfterTempHostapdMax5g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | grep
+    -c 'max_num_sta='); printf 'AfterTempHostapdCount5g=%s\n' "$COUNT"
   depends_on: step2_set_temp_5g
   capture: max_after_temp_5g
 - id: step4_restore_5g
@@ -90,7 +105,11 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    RESTORE='32'; OUT=$(ubus-cli WiFi.AccessPoint.1.MaxAssociatedDevices=$RESTORE 2>&1); printf 'RestoreMax5g=%s\n' "$RESTORE"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'RestoreEchoMax5g=%s\n' "$VALUE"; else echo 'RestoreEchoMax5g=EMPTY'; fi
+    RESTORE='32'; OUT=$(ubus-cli WiFi.AccessPoint.1.MaxAssociatedDevices=$RESTORE
+    2>&1); printf 'RestoreMax5g=%s\n' "$RESTORE"; VALUE=$(printf '%s\n' "$OUT" | sed
+    -n 's/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head
+    -n 1); if [ -n "$VALUE" ]; then printf 'RestoreEchoMax5g=%s\n' "$VALUE"; else
+    echo 'RestoreEchoMax5g=EMPTY'; fi
   depends_on: step3_max_after_temp_5g
   capture: restore_5g
 - id: step5_max_after_restore_5g
@@ -98,7 +117,14 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.1.MaxAssociatedDevices?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMax5g=%s\n' "$VALUE"; else echo 'AfterRestoreGetterMax5g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl0_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdMax5g=%s\n' "$HAPD"; else echo 'AfterRestoreHostapdMax5g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | grep -c 'max_num_sta='); printf 'AfterRestoreHostapdCount5g=%s\n' "$COUNT"
+    OUT=$(ubus-cli "WiFi.AccessPoint.1.MaxAssociatedDevices?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMax5g=%s\n' "$VALUE";
+    else echo 'AfterRestoreGetterMax5g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl0_hapd.conf
+    2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdMax5g=%s\n' "$HAPD";
+    else echo 'AfterRestoreHostapdMax5g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG"
+    | grep -c 'max_num_sta='); printf 'AfterRestoreHostapdCount5g=%s\n' "$COUNT"
   depends_on: step4_restore_5g
   capture: max_after_restore_5g
 - id: step6_max_baseline_6g
@@ -106,14 +132,25 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.3.MaxAssociatedDevices?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMax6g=%s\n' "$VALUE"; else echo 'BaselineGetterMax6g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl1_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'BaselineHostapdMax6g=%s\n' "$HAPD"; else echo 'BaselineHostapdMax6g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | grep -c 'max_num_sta='); printf 'BaselineHostapdCount6g=%s\n' "$COUNT"
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.MaxAssociatedDevices?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMax6g=%s\n' "$VALUE";
+    else echo 'BaselineGetterMax6g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl1_hapd.conf
+    2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$HAPD" ]; then printf 'BaselineHostapdMax6g=%s\n' "$HAPD";
+    else echo 'BaselineHostapdMax6g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | grep
+    -c 'max_num_sta='); printf 'BaselineHostapdCount6g=%s\n' "$COUNT"
   capture: max_baseline_6g
 - id: step7_set_temp_6g
   action: exec
   target: DUT
   band: 6g
   command: >-
-    TEMP='31'; OUT=$(ubus-cli WiFi.AccessPoint.3.MaxAssociatedDevices=$TEMP 2>&1); printf 'RequestedTempMax6g=%s\n' "$TEMP"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'SetterEchoMax6g=%s\n' "$VALUE"; else echo 'SetterEchoMax6g=EMPTY'; fi
+    TEMP='31'; OUT=$(ubus-cli WiFi.AccessPoint.3.MaxAssociatedDevices=$TEMP 2>&1);
+    printf 'RequestedTempMax6g=%s\n' "$TEMP"; VALUE=$(printf '%s\n' "$OUT" | sed -n
+    's/^WiFi\.AccessPoint\.3\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head
+    -n 1); if [ -n "$VALUE" ]; then printf 'SetterEchoMax6g=%s\n' "$VALUE"; else echo
+    'SetterEchoMax6g=EMPTY'; fi
   depends_on: step6_max_baseline_6g
   capture: set_temp_6g
 - id: step8_max_after_temp_6g
@@ -121,7 +158,14 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.3.MaxAssociatedDevices?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterTempGetterMax6g=%s\n' "$VALUE"; else echo 'AfterTempGetterMax6g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl1_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterTempHostapdMax6g=%s\n' "$HAPD"; else echo 'AfterTempHostapdMax6g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | grep -c 'max_num_sta='); printf 'AfterTempHostapdCount6g=%s\n' "$COUNT"
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.MaxAssociatedDevices?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterTempGetterMax6g=%s\n' "$VALUE";
+    else echo 'AfterTempGetterMax6g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl1_hapd.conf
+    2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterTempHostapdMax6g=%s\n' "$HAPD";
+    else echo 'AfterTempHostapdMax6g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | grep
+    -c 'max_num_sta='); printf 'AfterTempHostapdCount6g=%s\n' "$COUNT"
   depends_on: step7_set_temp_6g
   capture: max_after_temp_6g
 - id: step9_restore_6g
@@ -129,7 +173,11 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    RESTORE='32'; OUT=$(ubus-cli WiFi.AccessPoint.3.MaxAssociatedDevices=$RESTORE 2>&1); printf 'RestoreMax6g=%s\n' "$RESTORE"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'RestoreEchoMax6g=%s\n' "$VALUE"; else echo 'RestoreEchoMax6g=EMPTY'; fi
+    RESTORE='32'; OUT=$(ubus-cli WiFi.AccessPoint.3.MaxAssociatedDevices=$RESTORE
+    2>&1); printf 'RestoreMax6g=%s\n' "$RESTORE"; VALUE=$(printf '%s\n' "$OUT" | sed
+    -n 's/^WiFi\.AccessPoint\.3\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head
+    -n 1); if [ -n "$VALUE" ]; then printf 'RestoreEchoMax6g=%s\n' "$VALUE"; else
+    echo 'RestoreEchoMax6g=EMPTY'; fi
   depends_on: step8_max_after_temp_6g
   capture: restore_6g
 - id: step10_max_after_restore_6g
@@ -137,7 +185,14 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.3.MaxAssociatedDevices?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMax6g=%s\n' "$VALUE"; else echo 'AfterRestoreGetterMax6g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl1_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdMax6g=%s\n' "$HAPD"; else echo 'AfterRestoreHostapdMax6g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | grep -c 'max_num_sta='); printf 'AfterRestoreHostapdCount6g=%s\n' "$COUNT"
+    OUT=$(ubus-cli "WiFi.AccessPoint.3.MaxAssociatedDevices?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMax6g=%s\n' "$VALUE";
+    else echo 'AfterRestoreGetterMax6g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl1_hapd.conf
+    2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdMax6g=%s\n' "$HAPD";
+    else echo 'AfterRestoreHostapdMax6g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG"
+    | grep -c 'max_num_sta='); printf 'AfterRestoreHostapdCount6g=%s\n' "$COUNT"
   depends_on: step9_restore_6g
   capture: max_after_restore_6g
 - id: step11_max_baseline_24g
@@ -145,14 +200,25 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.5.MaxAssociatedDevices?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMax24g=%s\n' "$VALUE"; else echo 'BaselineGetterMax24g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl2_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'BaselineHostapdMax24g=%s\n' "$HAPD"; else echo 'BaselineHostapdMax24g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | grep -c 'max_num_sta='); printf 'BaselineHostapdCount24g=%s\n' "$COUNT"
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.MaxAssociatedDevices?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'BaselineGetterMax24g=%s\n' "$VALUE";
+    else echo 'BaselineGetterMax24g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl2_hapd.conf
+    2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$HAPD" ]; then printf 'BaselineHostapdMax24g=%s\n' "$HAPD";
+    else echo 'BaselineHostapdMax24g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | grep
+    -c 'max_num_sta='); printf 'BaselineHostapdCount24g=%s\n' "$COUNT"
   capture: max_baseline_24g
 - id: step12_set_temp_24g
   action: exec
   target: DUT
   band: 2.4g
   command: >-
-    TEMP='31'; OUT=$(ubus-cli WiFi.AccessPoint.5.MaxAssociatedDevices=$TEMP 2>&1); printf 'RequestedTempMax24g=%s\n' "$TEMP"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'SetterEchoMax24g=%s\n' "$VALUE"; else echo 'SetterEchoMax24g=EMPTY'; fi
+    TEMP='31'; OUT=$(ubus-cli WiFi.AccessPoint.5.MaxAssociatedDevices=$TEMP 2>&1);
+    printf 'RequestedTempMax24g=%s\n' "$TEMP"; VALUE=$(printf '%s\n' "$OUT" | sed
+    -n 's/^WiFi\.AccessPoint\.5\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head
+    -n 1); if [ -n "$VALUE" ]; then printf 'SetterEchoMax24g=%s\n' "$VALUE"; else
+    echo 'SetterEchoMax24g=EMPTY'; fi
   depends_on: step11_max_baseline_24g
   capture: set_temp_24g
 - id: step13_max_after_temp_24g
@@ -160,7 +226,14 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.5.MaxAssociatedDevices?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterTempGetterMax24g=%s\n' "$VALUE"; else echo 'AfterTempGetterMax24g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl2_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterTempHostapdMax24g=%s\n' "$HAPD"; else echo 'AfterTempHostapdMax24g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | grep -c 'max_num_sta='); printf 'AfterTempHostapdCount24g=%s\n' "$COUNT"
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.MaxAssociatedDevices?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterTempGetterMax24g=%s\n' "$VALUE";
+    else echo 'AfterTempGetterMax24g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl2_hapd.conf
+    2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterTempHostapdMax24g=%s\n' "$HAPD";
+    else echo 'AfterTempHostapdMax24g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" |
+    grep -c 'max_num_sta='); printf 'AfterTempHostapdCount24g=%s\n' "$COUNT"
   depends_on: step12_set_temp_24g
   capture: max_after_temp_24g
 - id: step14_restore_24g
@@ -168,7 +241,11 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    RESTORE='32'; OUT=$(ubus-cli WiFi.AccessPoint.5.MaxAssociatedDevices=$RESTORE 2>&1); printf 'RestoreMax24g=%s\n' "$RESTORE"; VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'RestoreEchoMax24g=%s\n' "$VALUE"; else echo 'RestoreEchoMax24g=EMPTY'; fi
+    RESTORE='32'; OUT=$(ubus-cli WiFi.AccessPoint.5.MaxAssociatedDevices=$RESTORE
+    2>&1); printf 'RestoreMax24g=%s\n' "$RESTORE"; VALUE=$(printf '%s\n' "$OUT" |
+    sed -n 's/^WiFi\.AccessPoint\.5\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'RestoreEchoMax24g=%s\n' "$VALUE";
+    else echo 'RestoreEchoMax24g=EMPTY'; fi
   depends_on: step13_max_after_temp_24g
   capture: restore_24g
 - id: step15_max_after_restore_24g
@@ -176,7 +253,15 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    OUT=$(ubus-cli "WiFi.AccessPoint.5.MaxAssociatedDevices?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMax24g=%s\n' "$VALUE"; else echo 'AfterRestoreGetterMax24g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta=' /tmp/wl2_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n 's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD" ]; then printf 'AfterRestoreHostapdMax24g=%s\n' "$HAPD"; else echo 'AfterRestoreHostapdMax24g=ABSENT'; fi; COUNT=$(printf '%s\n' "$CFG" | grep -c 'max_num_sta='); printf 'AfterRestoreHostapdCount24g=%s\n' "$COUNT"
+    OUT=$(ubus-cli "WiFi.AccessPoint.5.MaxAssociatedDevices?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'AfterRestoreGetterMax24g=%s\n'
+    "$VALUE"; else echo 'AfterRestoreGetterMax24g=EMPTY'; fi; CFG=$(grep -n 'max_num_sta='
+    /tmp/wl2_hapd.conf 2>/dev/null || true); HAPD=$(printf '%s\n' "$CFG" | sed -n
+    's/^[0-9][0-9]*:max_num_sta=\([0-9][0-9]*\).*/\1/p' | head -n 1); if [ -n "$HAPD"
+    ]; then printf 'AfterRestoreHostapdMax24g=%s\n' "$HAPD"; else echo 'AfterRestoreHostapdMax24g=ABSENT';
+    fi; COUNT=$(printf '%s\n' "$CFG" | grep -c 'max_num_sta='); printf 'AfterRestoreHostapdCount24g=%s\n'
+    "$COUNT"
   depends_on: step14_restore_24g
   capture: max_after_restore_24g
 
@@ -192,7 +277,8 @@ pass_criteria:
 - field: max_baseline_5g.BaselineHostapdCount5g
   operator: equals
   value: '2'
-  description: 5G AP1 / wl0 hostapd should expose two max_num_sta lines at baseline.
+  description: 5G AP1 / wl0 hostapd should expose two max_num_sta lines at 
+    baseline.
 - field: set_temp_5g.RequestedTempMax5g
   operator: equals
   value: '31'
@@ -208,15 +294,18 @@ pass_criteria:
 - field: max_after_temp_5g.AfterTempHostapdMax5g
   operator: equals
   value: '31'
-  description: 5G AP1 / wl0 hostapd should also converge to max_num_sta=31 after the temporary setter.
+  description: 5G AP1 / wl0 hostapd should also converge to max_num_sta=31 after
+    the temporary setter.
 - field: max_after_temp_5g.AfterTempHostapdCount5g
   operator: equals
   value: '2'
-  description: 5G AP1 / wl0 hostapd keeps the same two max_num_sta lines after the temporary setter.
+  description: 5G AP1 / wl0 hostapd keeps the same two max_num_sta lines after 
+    the temporary setter.
 - field: max_after_temp_5g.AfterTempHostapdMax5g
   operator: equals
   reference: max_after_temp_5g.AfterTempGetterMax5g
-  description: 5G AP1 / wl0 hostapd should match the northbound getter on the temporary setter path.
+  description: 5G AP1 / wl0 hostapd should match the northbound getter on the 
+    temporary setter path.
 - field: restore_5g.RestoreMax5g
   operator: equals
   value: '32'
@@ -236,7 +325,8 @@ pass_criteria:
 - field: max_after_restore_5g.AfterRestoreHostapdCount5g
   operator: equals
   value: '2'
-  description: 5G AP1 / wl0 hostapd still keeps two max_num_sta lines after restore.
+  description: 5G AP1 / wl0 hostapd still keeps two max_num_sta lines after 
+    restore.
 - field: max_baseline_6g.BaselineGetterMax6g
   operator: equals
   value: '32'
@@ -248,7 +338,8 @@ pass_criteria:
 - field: max_baseline_6g.BaselineHostapdCount6g
   operator: equals
   value: '2'
-  description: 6G AP3 / wl1 hostapd should expose two max_num_sta lines at baseline.
+  description: 6G AP3 / wl1 hostapd should expose two max_num_sta lines at 
+    baseline.
 - field: set_temp_6g.RequestedTempMax6g
   operator: equals
   value: '31'
@@ -264,15 +355,18 @@ pass_criteria:
 - field: max_after_temp_6g.AfterTempHostapdMax6g
   operator: equals
   value: '31'
-  description: 6G AP3 / wl1 hostapd should also converge to max_num_sta=31 after the temporary setter.
+  description: 6G AP3 / wl1 hostapd should also converge to max_num_sta=31 after
+    the temporary setter.
 - field: max_after_temp_6g.AfterTempHostapdCount6g
   operator: equals
   value: '2'
-  description: 6G AP3 / wl1 hostapd keeps the same two max_num_sta lines after the temporary setter.
+  description: 6G AP3 / wl1 hostapd keeps the same two max_num_sta lines after 
+    the temporary setter.
 - field: max_after_temp_6g.AfterTempHostapdMax6g
   operator: equals
   reference: max_after_temp_6g.AfterTempGetterMax6g
-  description: 6G AP3 / wl1 hostapd should match the northbound getter on the temporary setter path.
+  description: 6G AP3 / wl1 hostapd should match the northbound getter on the 
+    temporary setter path.
 - field: restore_6g.RestoreMax6g
   operator: equals
   value: '32'
@@ -292,11 +386,13 @@ pass_criteria:
 - field: max_after_restore_6g.AfterRestoreHostapdCount6g
   operator: equals
   value: '2'
-  description: 6G AP3 / wl1 hostapd still keeps two max_num_sta lines after restore.
+  description: 6G AP3 / wl1 hostapd still keeps two max_num_sta lines after 
+    restore.
 - field: max_baseline_24g.BaselineGetterMax24g
   operator: equals
   value: '32'
-  description: 2.4G AP5 / wl2 getter should start from the live baseline value 32.
+  description: 2.4G AP5 / wl2 getter should start from the live baseline value 
+    32.
 - field: max_baseline_24g.BaselineHostapdMax24g
   operator: equals
   value: '32'
@@ -304,7 +400,8 @@ pass_criteria:
 - field: max_baseline_24g.BaselineHostapdCount24g
   operator: equals
   value: '2'
-  description: 2.4G AP5 / wl2 hostapd should expose two max_num_sta lines at baseline.
+  description: 2.4G AP5 / wl2 hostapd should expose two max_num_sta lines at 
+    baseline.
 - field: set_temp_24g.RequestedTempMax24g
   operator: equals
   value: '31'
@@ -320,15 +417,18 @@ pass_criteria:
 - field: max_after_temp_24g.AfterTempHostapdMax24g
   operator: equals
   value: '31'
-  description: 2.4G AP5 / wl2 hostapd should also converge to max_num_sta=31 after the temporary setter.
+  description: 2.4G AP5 / wl2 hostapd should also converge to max_num_sta=31 
+    after the temporary setter.
 - field: max_after_temp_24g.AfterTempHostapdCount24g
   operator: equals
   value: '2'
-  description: 2.4G AP5 / wl2 hostapd keeps the same two max_num_sta lines after the temporary setter.
+  description: 2.4G AP5 / wl2 hostapd keeps the same two max_num_sta lines after
+    the temporary setter.
 - field: max_after_temp_24g.AfterTempHostapdMax24g
   operator: equals
   reference: max_after_temp_24g.AfterTempGetterMax24g
-  description: 2.4G AP5 / wl2 hostapd should match the northbound getter on the temporary setter path.
+  description: 2.4G AP5 / wl2 hostapd should match the northbound getter on the 
+    temporary setter path.
 - field: restore_24g.RestoreMax24g
   operator: equals
   value: '32'
@@ -348,23 +448,30 @@ pass_criteria:
 - field: max_after_restore_24g.AfterRestoreHostapdCount24g
   operator: equals
   value: '2'
-  description: 2.4G AP5 / wl2 hostapd still keeps two max_num_sta lines after restore.
+  description: 2.4G AP5 / wl2 hostapd still keeps two max_num_sta lines after 
+    restore.
 
 verification_command:
-  - 'OUT=$(ubus-cli "WiFi.AccessPoint.1.MaxAssociatedDevices?" 2>&1); VALUE=$(printf ''%s\n'' "$OUT" | sed -n ''s/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p'' | head -n 1); if [ -n "$VALUE" ]; then printf ''BaselineGetterMax5g=%s\n'' "$VALUE"; else echo ''BaselineGetterMax5g=EMPTY''; fi; grep -n ''max_num_sta='' /tmp/wl0_hapd.conf 2>/dev/null || true'
-  - 'TEMP=''31''; OUT=$(ubus-cli WiFi.AccessPoint.1.MaxAssociatedDevices=$TEMP 2>&1); printf ''RequestedTempMax5g=%s\n'' "$TEMP"; printf ''%s\n'' "$OUT" | sed -n ''s/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/SetterEchoMax5g=\1/p'' | head -n 1'
-  - 'OUT=$(ubus-cli "WiFi.AccessPoint.1.MaxAssociatedDevices?" 2>&1); VALUE=$(printf ''%s\n'' "$OUT" | sed -n ''s/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p'' | head -n 1); if [ -n "$VALUE" ]; then printf ''AfterTempGetterMax5g=%s\n'' "$VALUE"; else echo ''AfterTempGetterMax5g=EMPTY''; fi; grep -n ''max_num_sta='' /tmp/wl0_hapd.conf 2>/dev/null || true'
-  - 'RESTORE=''32''; OUT=$(ubus-cli WiFi.AccessPoint.1.MaxAssociatedDevices=$RESTORE 2>&1); printf ''RestoreMax5g=%s\n'' "$RESTORE"; printf ''%s\n'' "$OUT" | sed -n ''s/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/RestoreEchoMax5g=\1/p'' | head -n 1'
-  - 'OUT=$(ubus-cli "WiFi.AccessPoint.1.MaxAssociatedDevices?" 2>&1); VALUE=$(printf ''%s\n'' "$OUT" | sed -n ''s/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p'' | head -n 1); if [ -n "$VALUE" ]; then printf ''AfterRestoreGetterMax5g=%s\n'' "$VALUE"; else echo ''AfterRestoreGetterMax5g=EMPTY''; fi; grep -n ''max_num_sta='' /tmp/wl0_hapd.conf 2>/dev/null || true'
+- 'OUT=$(ubus-cli "WiFi.AccessPoint.1.MaxAssociatedDevices?" 2>&1); VALUE=$(printf
+  ''%s\n'' "$OUT" | sed -n ''s/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p''
+  | head -n 1); if [ -n "$VALUE" ]; then printf ''BaselineGetterMax5g=%s\n'' "$VALUE";
+  else echo ''BaselineGetterMax5g=EMPTY''; fi; grep -n ''max_num_sta='' /tmp/wl0_hapd.conf
+  2>/dev/null || true'
+- 'TEMP=''31''; OUT=$(ubus-cli WiFi.AccessPoint.1.MaxAssociatedDevices=$TEMP 2>&1);
+  printf ''RequestedTempMax5g=%s\n'' "$TEMP"; printf ''%s\n'' "$OUT" | sed -n ''s/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/SetterEchoMax5g=\1/p''
+  | head -n 1'
+- 'OUT=$(ubus-cli "WiFi.AccessPoint.1.MaxAssociatedDevices?" 2>&1); VALUE=$(printf
+  ''%s\n'' "$OUT" | sed -n ''s/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p''
+  | head -n 1); if [ -n "$VALUE" ]; then printf ''AfterTempGetterMax5g=%s\n'' "$VALUE";
+  else echo ''AfterTempGetterMax5g=EMPTY''; fi; grep -n ''max_num_sta='' /tmp/wl0_hapd.conf
+  2>/dev/null || true'
+- 'RESTORE=''32''; OUT=$(ubus-cli WiFi.AccessPoint.1.MaxAssociatedDevices=$RESTORE
+  2>&1); printf ''RestoreMax5g=%s\n'' "$RESTORE"; printf ''%s\n'' "$OUT" | sed -n
+  ''s/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/RestoreEchoMax5g=\1/p''
+  | head -n 1'
+- 'OUT=$(ubus-cli "WiFi.AccessPoint.1.MaxAssociatedDevices?" 2>&1); VALUE=$(printf
+  ''%s\n'' "$OUT" | sed -n ''s/^WiFi\.AccessPoint\.1\.MaxAssociatedDevices=\([0-9][0-9]*\).*/\1/p''
+  | head -n 1); if [ -n "$VALUE" ]; then printf ''AfterRestoreGetterMax5g=%s\n'' "$VALUE";
+  else echo ''AfterRestoreGetterMax5g=EMPTY''; fi; grep -n ''max_num_sta='' /tmp/wl0_hapd.conf
+  2>/dev/null || true'
 
-results_reference:
-  v4.0.1:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
-    comment: '0302 workbook comment references BRCM CSP CS00012439197 and records Fail on all three bands.'
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: '20260412 authoritative full-run trace shows AP1/AP3/AP5 all exact-close the workbook pass path: getter and `/tmp/wl{0,1,2}_hapd.conf` `max_num_sta` both converge `32 -> 31 -> 32` while each hostapd file keeps two `max_num_sta` lines. The old fail-shaped checkpoint came from stale row `74` metadata plus a setter capture polluted by bare ubus object lines.'

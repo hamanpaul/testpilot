@@ -2,12 +2,9 @@ id: wifi-llapi-D048-supportedhemcs
 name: SupportedHeMCS — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 48
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: SupportedHeMCS
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -60,17 +57,16 @@ test_environment: 'Topology:
   - use the validated 5G single-band WPA3 baseline for this case
 
   '
-setup_steps: "1) DUT 5G baseline:\n   - enable Radio.1 / SSID.4 / AP1\n   - configure\
-  \ AP1 as WPA3-Personal with MFP required\n   - keep the validated live SSID/credential\
-  \ pair as TestPilot_BTM / testpilot6g\n2) STA 5G preparation:\n   - disable local\
-  \ AP1/AP2 on COM1\n   - move COM1 br-lan off 192.168.1.0/24 to avoid bridge self-hit\
-  \ side effects\n   - reset wl0 and its wpa_supplicant control socket\n   - connect\
-  \ wl0 to TestPilot_BTM with SAE\n3) Association evidence:\n   - COM1: iw dev wl0\
-  \ link ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status\n   - COM0: wl -i wl0\
-  \ assoclist\n"
-sta_env_setup: "DUT 5G AP baseline:\n  ubus-cli WiFi.Radio.1.Enable=1\n  ubus-cli\
-  \ WiFi.Radio.1.BeaconPeriod=100\n  ubus-cli WiFi.Radio.1.DTIMPeriod=3\n  ubus-cli\
-  \ WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1\n  ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1\n\
+setup_steps: "1) DUT 5G baseline:\n   - enable Radio.1 / SSID.4 / AP1\n   - configure
+  AP1 as WPA3-Personal with MFP required\n   - keep the validated live SSID/credential
+  pair as TestPilot_BTM / testpilot6g\n2) STA 5G preparation:\n   - disable local
+  AP1/AP2 on COM1\n   - move COM1 br-lan off 192.168.1.0/24 to avoid bridge self-hit
+  side effects\n   - reset wl0 and its wpa_supplicant control socket\n   - connect
+  wl0 to TestPilot_BTM with SAE\n3) Association evidence:\n   - COM1: iw dev wl0 link
+  ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status\n   - COM0: wl -i wl0 assoclist\n"
+sta_env_setup: "DUT 5G AP baseline:\n  ubus-cli WiFi.Radio.1.Enable=1\n  ubus-cli
+  WiFi.Radio.1.BeaconPeriod=100\n  ubus-cli WiFi.Radio.1.DTIMPeriod=3\n  ubus-cli
+  WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1\n  ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1\n\
   \  ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto\n  ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1\n\
   \  ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1\n  ubus-cli WiFi.Radio.1.OfdmaEnable=1\n\
   \  ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0\n  ubus-cli WiFi.Radio.1.OperatingStandards=ax\n\
@@ -83,20 +79,19 @@ sta_env_setup: "DUT 5G AP baseline:\n  ubus-cli WiFi.Radio.1.Enable=1\n  ubus-cl
   \  ubus-cli WiFi.SSID.4.SSID=TestPilot_BTM\n  ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=\n\
   \  ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=\n  ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal\n\
   \  ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=testpilot6g\n  ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Required\n\
-  \  ubus-cli WiFi.AccessPoint.1.Enable=1\nSTA 5G preparation:\n  ifconfig br-lan\
-  \ 192.168.88.1 netmask 255.255.255.0 up\n  ubus-cli WiFi.AccessPoint.1.Enable=0\n\
+  \  ubus-cli WiFi.AccessPoint.1.Enable=1\nSTA 5G preparation:\n  ifconfig br-lan
+  192.168.88.1 netmask 255.255.255.0 up\n  ubus-cli WiFi.AccessPoint.1.Enable=0\n\
   \  ubus-cli WiFi.AccessPoint.2.Enable=0\n  wpa_cli terminate 2>/dev/null || true\n\
-  \  rm -f /var/run/wpa_supplicant/wl0 2>/dev/null || true\n  iw dev wl0.1 del 2>/dev/null\
-  \ || true\n  iw dev wl0 disconnect 2>/dev/null || true\n  iw dev wl1 disconnect\
-  \ 2>/dev/null || true\n  iw dev wl2 disconnect 2>/dev/null || true\n  iw dev wl0\
-  \ set type managed\n  ifconfig wl0 up\n  mkdir -p /var/run/wpa_supplicant\n  printf\
-  \ 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nsae_pwe=2\\nnetwork={\\\
-  nssid=\"TestPilot_BTM\"\\nkey_mgmt=SAE\\nsae_password=\"testpilot6g\"\\nieee80211w=2\\\
-  nscan_ssid=1\\n}\\n' > /tmp/wpa_wl0.conf\n  wpa_supplicant -B -D nl80211 -i wl0\
-  \ -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant\n  sleep 3\nSTA 5G connect verify:\n\
-  \  wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect\n  sleep 10\n  iw dev wl0\
-  \ link\n  wpa_cli -p /var/run/wpa_supplicant -i wl0 status\nDUT association evidence:\n\
-  \  wl -i wl0 assoclist\n"
+  \  rm -f /var/run/wpa_supplicant/wl0 2>/dev/null || true\n  iw dev wl0.1 del 2>/dev/null
+  || true\n  iw dev wl0 disconnect 2>/dev/null || true\n  iw dev wl1 disconnect 2>/dev/null
+  || true\n  iw dev wl2 disconnect 2>/dev/null || true\n  iw dev wl0 set type managed\n\
+  \  ifconfig wl0 up\n  mkdir -p /var/run/wpa_supplicant\n  printf 'ctrl_interface=/var/run/wpa_supplicant\\\
+  nupdate_config=1\\nsae_pwe=2\\nnetwork={\\nssid=\"TestPilot_BTM\"\\nkey_mgmt=SAE\\\
+  nsae_password=\"testpilot6g\"\\nieee80211w=2\\nscan_ssid=1\\n}\\n' > /tmp/wpa_wl0.conf\n\
+  \  wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant\n\
+  \  sleep 3\nSTA 5G connect verify:\n  wpa_cli -p /var/run/wpa_supplicant -i wl0
+  reconnect\n  sleep 10\n  iw dev wl0 link\n  wpa_cli -p /var/run/wpa_supplicant -i
+  wl0 status\nDUT association evidence:\n  wl -i wl0 assoclist\n"
 test_procedure: '1) Resolve COM1 wl0''s live STA MAC and require AP1 AssociatedDevice.1
   to point to that same station.
 
@@ -125,16 +120,18 @@ steps:
 - id: step3
   action: exec
   target: DUT
-  command: OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHeMCS?"
-    2>&1); printf '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\)
-    - \(.*\))/error=\1/p'; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\)
-    - \(.*\))/message=\2/p'
+  command: OUT=$(ubus-cli 
+    "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHeMCS?" 2>&1); printf '%s\n'
+    "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - 
+    \(.*\))/error=\1/p'; printf '%s\n' "$OUT" | sed -n 's/.*failed 
+    (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
   depends_on: step2
   capture: result
 - id: step4
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/SiblingAssocMac=\1/p;
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 
+    's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/SiblingAssocMac=\1/p;
     s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.RxSupportedHeMCS="\([^"]*\)".*/DriverRxSupportedHeMCS=\1/p;
     s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxSupportedHeMCS="\([^"]*\)".*/DriverTxSupportedHeMCS=\1/p'
   depends_on: step3
@@ -142,20 +139,22 @@ steps:
 - id: step5
   action: exec
   target: DUT
-  command: STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
-    | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'); STA_MAC_LOWER=$(echo "$STA_MAC"
-    | tr 'A-F' 'a-f'); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i
-    wl0 sta_info $STA_MAC_LOWER | awk '/HE caps/ {he=1} /MCS SET/ {mcs=1} /HE SET/
-    {heset=1} /he mcs/ {hemcs=1} END {if (he) print "DriverHeCapsPresent=1"; if (mcs)
-    print "DriverMCSSetPresent=1"; if (heset) print "DriverHeSetPresent=1"; if (hemcs)
-    print "DriverHeMcsLinePresent=1"}'
+  command: STA_MAC=$(ubus-cli 
+    "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 
+    's/.*MACAddress="\([^"]*\)".*/\1/p'); STA_MAC_LOWER=$(echo "$STA_MAC" | tr 
+    'A-F' 'a-f'); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0
+    sta_info $STA_MAC_LOWER | awk '/HE caps/ {he=1} /MCS SET/ {mcs=1} /HE SET/ 
+    {heset=1} /he mcs/ {hemcs=1} END {if (he) print "DriverHeCapsPresent=1"; if 
+    (mcs) print "DriverMCSSetPresent=1"; if (heset) print 
+    "DriverHeSetPresent=1"; if (hemcs) print "DriverHeMcsLinePresent=1"}'
   depends_on: step4
   capture: driver_capability
 pass_criteria:
 - field: sta_identity.StaMac
   operator: regex
   value: ^([0-9A-F]{2}:){5}[0-9A-F]{2}$
-  description: COM1 wl0 must resolve to a concrete live STA MAC before DUT-side validation.
+  description: COM1 wl0 must resolve to a concrete live STA MAC before DUT-side 
+    validation.
 - field: assoc_entry.MACAddress
   operator: regex
   value: ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$
@@ -163,40 +162,43 @@ pass_criteria:
 - field: assoc_entry.MACAddress
   operator: equals
   reference: sta_identity.StaMac
-  description: AP1 AssociatedDevice.1 must correspond to the same COM1 wl0 station
-    used for this manual checkpoint.
+  description: AP1 AssociatedDevice.1 must correspond to the same COM1 wl0 
+    station used for this manual checkpoint.
 - field: result.error
   operator: equals
   value: '4'
-  description: Standalone SupportedHeMCS should fail with error 4 because the parameter
-    is not exposed.
+  description: Standalone SupportedHeMCS should fail with error 4 because the 
+    parameter is not exposed.
 - field: result.message
   operator: contains
   value: parameter not found
-  description: The not-supported readback should explicitly report parameter not found.
+  description: The not-supported readback should explicitly report parameter not
+    found.
 - field: sibling_support.SiblingAssocMac
   operator: equals
   reference: assoc_entry.MACAddress
-  description: Sibling field evidence must come from the same AssociatedDevice entry.
+  description: Sibling field evidence must come from the same AssociatedDevice 
+    entry.
 - field: sibling_support.DriverRxSupportedHeMCS
   operator: regex
   value: ^[0-9]+(,[0-9]+)*$
-  description: RxSupportedHeMCS should still expose a concrete HE MCS list for the
-    same STA.
+  description: RxSupportedHeMCS should still expose a concrete HE MCS list for 
+    the same STA.
 - field: sibling_support.DriverTxSupportedHeMCS
   operator: regex
   value: ^[0-9]+(,[0-9]+)*$
-  description: TxSupportedHeMCS should still expose a concrete HE MCS list for the
-    same STA.
+  description: TxSupportedHeMCS should still expose a concrete HE MCS list for 
+    the same STA.
 - field: driver_capability.DriverAssocMac
   operator: equals
   reference: assoc_entry.MACAddress
-  description: Driver capability evidence must target the same AssociatedDevice MAC
-    resolved in step2.
+  description: Driver capability evidence must target the same AssociatedDevice 
+    MAC resolved in step2.
 - field: driver_capability.DriverHeCapsPresent
   operator: equals
   value: '1'
-  description: wl0 sta_info must still expose HE capability data for the same STA.
+  description: wl0 sta_info must still expose HE capability data for the same 
+    STA.
 - field: driver_capability.DriverMCSSetPresent
   operator: equals
   value: '1'
@@ -208,23 +210,22 @@ pass_criteria:
 - field: driver_capability.DriverHeMcsLinePresent
   operator: equals
   value: '1'
-  description: wl0 sta_info must still expose a driver he mcs line for the same STA.
+  description: wl0 sta_info must still expose a driver he mcs line for the same 
+    STA.
 verification_command:
 - cat /sys/class/net/wl0/address | tr 'a-f' 'A-F' | sed 's/^/StaMac=/'
-- OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHeMCS?" 2>&1); printf
-  '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p';
-  printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
-- ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/SiblingAssocMac=\1/p;
+- OUT=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHeMCS?" 2>&1); 
+  printf '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed 
+  (\([0-9][0-9]*\) - \(.*\))/error=\1/p'; printf '%s\n' "$OUT" | sed -n 
+  's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
+- ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 
+  's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress="\([^"]*\)".*/SiblingAssocMac=\1/p;
   s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.RxSupportedHeMCS="\([^"]*\)".*/DriverRxSupportedHeMCS=\1/p;
   s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxSupportedHeMCS="\([^"]*\)".*/DriverTxSupportedHeMCS=\1/p'
-- STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
-  's/.*MACAddress="\([^"]*\)".*/\1/p'); STA_MAC_LOWER=$(echo "$STA_MAC" | tr 'A-F'
-  'a-f'); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info
-  $STA_MAC_LOWER | awk '/HE caps/ {he=1} /MCS SET/ {mcs=1} /HE SET/ {heset=1} /he
-  mcs/ {hemcs=1} END {if (he) print "DriverHeCapsPresent=1"; if (mcs) print "DriverMCSSetPresent=1";
-  if (heset) print "DriverHeSetPresent=1"; if (hemcs) print "DriverHeMcsLinePresent=1"}'
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Fail
-    2.4g: Fail
+- STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed 
+  -n 's/.*MACAddress="\([^"]*\)".*/\1/p'); STA_MAC_LOWER=$(echo "$STA_MAC" | tr 
+  'A-F' 'a-f'); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 
+  sta_info $STA_MAC_LOWER | awk '/HE caps/ {he=1} /MCS SET/ {mcs=1} /HE SET/ 
+  {heset=1} /he mcs/ {hemcs=1} END {if (he) print "DriverHeCapsPresent=1"; if 
+  (mcs) print "DriverMCSSetPresent=1"; if (heset) print "DriverHeSetPresent=1"; 
+  if (hemcs) print "DriverHeMcsLinePresent=1"}'

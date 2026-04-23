@@ -2,12 +2,9 @@ id: d370-assocdev-active
 name: "D370 AssociatedDevice Active"
 version: "1.0"
 source:
-  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-  sheet: Wifi_LLAPI
   row: 370
   object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
   api: "Active"
-  baseline: "BCM v4.0.3"
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -25,15 +22,15 @@ topology:
       transport: serial
       selector: COM0
   links:
-    - from: STA
-      to: DUT
-      band: 5g
-    - from: STA
-      to: DUT
-      band: 6g
-    - from: STA
-      to: DUT
-      band: 2.4g
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: STA
+    to: DUT
+    band: 6g
+  - from: STA
+    to: DUT
+    band: 2.4g
 
 test_environment: |
   Topology:
@@ -87,148 +84,138 @@ test_procedure: |
   - `Active` remains a concrete associated-state boolean `1`.
 
 steps:
-  - id: step1_5g_sta_join
-    action: exec
-    target: STA
-    band: 5g
-    command:
-      - iw dev wl0 link
-      - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
-  - id: step2_5g_assoc
-    action: exec
-    target: DUT
-    band: 5g
-    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
-    depends_on: step1_5g_sta_join
-    capture: assoc_5g
-  - id: step3_5g_driver_assoc
-    action: exec
-    target: DUT
-    band: 5g
-    command: 'wl -i wl0 assoclist | grep -iq "{{assoc_5g.MACAddress}}" && echo DriverAssocMac5g={{assoc_5g.MACAddress}}'
-    depends_on: step2_5g_assoc
-    capture: driver_assoc_5g
-  - id: step4_5g_get
-    action: exec
-    target: DUT
-    band: 5g
-    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Active?"'
-    depends_on: step3_5g_driver_assoc
-    capture: result_5g
-  - id: step5_6g_sta_join
-    action: exec
-    target: STA
-    band: 6g
-    command:
-      - iw dev wl1 link
-      - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-      - wl -i wl1 status
-  - id: step6_6g_assoc
-    action: exec
-    target: DUT
-    band: 6g
-    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
-    depends_on: step5_6g_sta_join
-    capture: assoc_6g
-  - id: step7_6g_driver_assoc
-    action: exec
-    target: DUT
-    band: 6g
-    command: 'wl -i wl1 assoclist | grep -iq "{{assoc_6g.MACAddress}}" && echo DriverAssocMac6g={{assoc_6g.MACAddress}}'
-    depends_on: step6_6g_assoc
-    capture: driver_assoc_6g
-  - id: step8_6g_get
-    action: exec
-    target: DUT
-    band: 6g
-    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.Active?"'
-    depends_on: step7_6g_driver_assoc
-    capture: result_6g
-  - id: step9_24g_sta_join
-    action: exec
-    target: STA
-    band: 2.4g
-    command:
-      - iw dev wl2 link
-      - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
-  - id: step10_24g_assoc
-    action: exec
-    target: DUT
-    band: 2.4g
-    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
-    depends_on: step9_24g_sta_join
-    capture: assoc_24g
-  - id: step11_24g_driver_assoc
-    action: exec
-    target: DUT
-    band: 2.4g
-    command: 'wl -i wl2 assoclist | grep -iq "{{assoc_24g.MACAddress}}" && echo DriverAssocMac24g={{assoc_24g.MACAddress}}'
-    depends_on: step10_24g_assoc
-    capture: driver_assoc_24g
-  - id: step12_24g_get
-    action: exec
-    target: DUT
-    band: 2.4g
-    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Active?"'
-    depends_on: step11_24g_driver_assoc
-    capture: result_24g
+- id: step1_5g_sta_join
+  action: exec
+  target: STA
+  band: 5g
+  command:
+  - iw dev wl0 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+- id: step2_5g_assoc
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
+  depends_on: step1_5g_sta_join
+  capture: assoc_5g
+- id: step3_5g_driver_assoc
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'wl -i wl0 assoclist | grep -iq "{{assoc_5g.MACAddress}}" && echo DriverAssocMac5g={{assoc_5g.MACAddress}}'
+  depends_on: step2_5g_assoc
+  capture: driver_assoc_5g
+- id: step4_5g_get
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Active?"'
+  depends_on: step3_5g_driver_assoc
+  capture: result_5g
+- id: step5_6g_sta_join
+  action: exec
+  target: STA
+  band: 6g
+  command:
+  - iw dev wl1 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+  - wl -i wl1 status
+- id: step6_6g_assoc
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
+  depends_on: step5_6g_sta_join
+  capture: assoc_6g
+- id: step7_6g_driver_assoc
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'wl -i wl1 assoclist | grep -iq "{{assoc_6g.MACAddress}}" && echo DriverAssocMac6g={{assoc_6g.MACAddress}}'
+  depends_on: step6_6g_assoc
+  capture: driver_assoc_6g
+- id: step8_6g_get
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.Active?"'
+  depends_on: step7_6g_driver_assoc
+  capture: result_6g
+- id: step9_24g_sta_join
+  action: exec
+  target: STA
+  band: 2.4g
+  command:
+  - iw dev wl2 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+- id: step10_24g_assoc
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
+  depends_on: step9_24g_sta_join
+  capture: assoc_24g
+- id: step11_24g_driver_assoc
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'wl -i wl2 assoclist | grep -iq "{{assoc_24g.MACAddress}}" && echo DriverAssocMac24g={{assoc_24g.MACAddress}}'
+  depends_on: step10_24g_assoc
+  capture: driver_assoc_24g
+- id: step12_24g_get
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Active?"'
+  depends_on: step11_24g_driver_assoc
+  capture: result_24g
 
 pass_criteria:
-  - field: assoc_5g.MACAddress
-    operator: regex
-    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
-    description: "5G: AP1 AssociatedDevice.1 must resolve to a live station MAC."
-  - field: driver_assoc_5g.DriverAssocMac5g
-    operator: equals
-    reference: assoc_5g.MACAddress
-    description: "5G: DUT wl0 assoclist must still contain the same STA as AssociatedDevice.1."
-  - field: result_5g.Active
-    operator: equals
-    value: '1'
-    description: "5G: Active must remain asserted for the live associated STA."
-  - field: assoc_6g.MACAddress
-    operator: regex
-    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
-    description: "6G: AP3 AssociatedDevice.1 must resolve to a live station MAC."
-  - field: driver_assoc_6g.DriverAssocMac6g
-    operator: equals
-    reference: assoc_6g.MACAddress
-    description: "6G: DUT wl1 assoclist must still contain the same STA as AssociatedDevice.1."
-  - field: result_6g.Active
-    operator: equals
-    value: '1'
-    description: "6G: Active must remain asserted for the live associated STA."
-  - field: assoc_24g.MACAddress
-    operator: regex
-    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
-    description: "2.4G: AP5 AssociatedDevice.1 must resolve to a live station MAC."
-  - field: driver_assoc_24g.DriverAssocMac24g
-    operator: equals
-    reference: assoc_24g.MACAddress
-    description: "2.4G: DUT wl2 assoclist must still contain the same STA as AssociatedDevice.1."
-  - field: result_24g.Active
-    operator: equals
-    value: '1'
-    description: "2.4G: Active must remain asserted for the live associated STA."
+- field: assoc_5g.MACAddress
+  operator: regex
+  value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+  description: "5G: AP1 AssociatedDevice.1 must resolve to a live station MAC."
+- field: driver_assoc_5g.DriverAssocMac5g
+  operator: equals
+  reference: assoc_5g.MACAddress
+  description: "5G: DUT wl0 assoclist must still contain the same STA as AssociatedDevice.1."
+- field: result_5g.Active
+  operator: equals
+  value: '1'
+  description: "5G: Active must remain asserted for the live associated STA."
+- field: assoc_6g.MACAddress
+  operator: regex
+  value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+  description: "6G: AP3 AssociatedDevice.1 must resolve to a live station MAC."
+- field: driver_assoc_6g.DriverAssocMac6g
+  operator: equals
+  reference: assoc_6g.MACAddress
+  description: "6G: DUT wl1 assoclist must still contain the same STA as AssociatedDevice.1."
+- field: result_6g.Active
+  operator: equals
+  value: '1'
+  description: "6G: Active must remain asserted for the live associated STA."
+- field: assoc_24g.MACAddress
+  operator: regex
+  value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+  description: "2.4G: AP5 AssociatedDevice.1 must resolve to a live station MAC."
+- field: driver_assoc_24g.DriverAssocMac24g
+  operator: equals
+  reference: assoc_24g.MACAddress
+  description: "2.4G: DUT wl2 assoclist must still contain the same STA as AssociatedDevice.1."
+- field: result_24g.Active
+  operator: equals
+  value: '1'
+  description: "2.4G: Active must remain asserted for the live associated STA."
 
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Active?"'
-  - 'wl -i wl0 assoclist'
-  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
-  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.Active?"'
-  - 'wl -i wl1 assoclist'
-  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
-  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Active?"'
-  - 'wl -i wl2 assoclist'
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Active?"'
+- 'wl -i wl0 assoclist'
+- 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
+- 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.Active?"'
+- 'wl -i wl1 assoclist'
+- 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
+- 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Active?"'
+- 'wl -i wl2 assoclist'
 
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: |
-      Live tri-band closure on current firmware:
-      - 5G  : AP1 AssociatedDevice.1 resolves to a live STA MAC, wl0 assoclist contains the same MAC, Active=1
-      - 6G  : AP3 AssociatedDevice.1 resolves to a live STA MAC, wl1 assoclist contains the same MAC, Active=1
-      - 2.4G: AP5 AssociatedDevice.1 resolves to a live STA MAC, wl2 assoclist contains the same MAC, Active=1

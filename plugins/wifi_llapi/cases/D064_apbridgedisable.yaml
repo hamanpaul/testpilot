@@ -2,12 +2,9 @@ id: wifi-llapi-D064-apbridgedisable
 name: APBridgeDisable — WiFi.AccessPoint.{i}.
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 64
   object: WiFi.AccessPoint.{i}.
   api: APBridgeDisable
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -42,11 +39,11 @@ test_environment: 'Topology:
   - this case records an unsupported mismatch, not a pass-path bridge-isolation validation
 
   '
-setup_steps: "1) DUT 5G baseline:\n   - enable Radio.1 / SSID.4 / AP1\n   - keep SSID\
-  \ testpilot5G with WPA2-Personal / 00000000\n2) AP-only toggle evidence:\n   - set\
-  \ APBridgeDisable to 1 and read back the getter\n   - cross-check wl0 driver ap_isolate\
-  \ and /tmp/wl0_hapd.conf\n   - set APBridgeDisable back to 0, wait for settle, and\
-  \ re-read getter / driver state\n"
+setup_steps: "1) DUT 5G baseline:\n   - enable Radio.1 / SSID.4 / AP1\n   - keep SSID
+  testpilot5G with WPA2-Personal / 00000000\n2) AP-only toggle evidence:\n   - set
+  APBridgeDisable to 1 and read back the getter\n   - cross-check wl0 driver ap_isolate
+  and /tmp/wl0_hapd.conf\n   - set APBridgeDisable back to 0, wait for settle, and
+  re-read getter / driver state\n"
 sta_env_setup: "DUT:\n  ubus-cli WiFi.Radio.1.Enable=1\n  ubus-cli WiFi.SSID.4.SSID=testpilot5G\n\
   \  ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal\n  ubus-cli WiFi.AccessPoint.1.Security.KeyPassPhrase=00000000\n\
   \  ubus-cli WiFi.AccessPoint.1.Enable=1\n  ubus-cli WiFi.AccessPoint.1.APBridgeDisable=0\n\
@@ -87,9 +84,9 @@ steps:
 - id: step4
   action: exec
   target: DUT
-  command: grep '^ap_isolate=' /tmp/wl0_hapd.conf | awk -F= '/^ap_isolate=/ {print
-    "HostapdApIsolate=" $2; if ($2 == 0) zeros++} END {print "HostapdApIsolateZeroCount="
-    zeros}'
+  command: grep '^ap_isolate=' /tmp/wl0_hapd.conf | awk -F= '/^ap_isolate=/ 
+    {print "HostapdApIsolate=" $2; if ($2 == 0) zeros++} END {print 
+    "HostapdApIsolateZeroCount=" zeros}'
   depends_on: step3
   capture: hostapd_after_on
 - id: step5
@@ -124,62 +121,57 @@ pass_criteria:
 - field: result_on.APBridgeDisable
   operator: equals
   value: '1'
-  description: After enabling APBridgeDisable, the LLAPI getter must read back 1 on
-    AP1.
+  description: After enabling APBridgeDisable, the LLAPI getter must read back 1
+    on AP1.
 - field: driver_on.DriverApIsolateOn
   operator: equals
   value: '1'
-  description: The wl0 driver-side ap_isolate flag rises to 1 after the enable toggle.
+  description: The wl0 driver-side ap_isolate flag rises to 1 after the enable 
+    toggle.
 - field: hostapd_after_on.HostapdApIsolate
   operator: equals
   value: '0'
-  description: Even after APBridgeDisable=1, /tmp/wl0_hapd.conf still records ap_isolate=0.
+  description: Even after APBridgeDisable=1, /tmp/wl0_hapd.conf still records 
+    ap_isolate=0.
 - field: hostapd_after_on.HostapdApIsolateZeroCount
   operator: equals
   value: '2'
-  description: Both hostapd config entries remain ap_isolate=0 on the 5G AP config
-    file.
+  description: Both hostapd config entries remain ap_isolate=0 on the 5G AP 
+    config file.
 - field: hostapd_after_on.HostapdApIsolate
   operator: not_equals
   reference: result_on.APBridgeDisable
-  description: The hostapd config view diverges from the northbound getter on the
-    enable path.
+  description: The hostapd config view diverges from the northbound getter on 
+    the enable path.
 - field: result_off.APBridgeDisable
   operator: equals
   value: '0'
-  description: After disabling APBridgeDisable again, the LLAPI getter returns 0.
+  description: After disabling APBridgeDisable again, the LLAPI getter returns 
+    0.
 - field: driver_off.DriverApIsolateOff
   operator: equals
   value: '1'
-  description: wl0 ap_isolate stays latched at 1 even after the getter returns APBridgeDisable=0.
+  description: wl0 ap_isolate stays latched at 1 even after the getter returns 
+    APBridgeDisable=0.
 - field: driver_off.DriverApIsolateOff
   operator: not_equals
   reference: result_off.APBridgeDisable
-  description: The driver readback remains mismatched versus the final northbound
-    getter state.
+  description: The driver readback remains mismatched versus the final 
+    northbound getter state.
 - field: bss_status.DriverBssState
   operator: equals
   value: up
-  description: AP1 should remain up after the unsupported toggle sequence so the mismatch
-    is not due to the AP being down.
+  description: AP1 should remain up after the unsupported toggle sequence so the
+    mismatch is not due to the AP being down.
 verification_command:
 - ubus-cli WiFi.AccessPoint.1.APBridgeDisable=1
 - ubus-cli "WiFi.AccessPoint.1.APBridgeDisable?"
 - wl -i wl0 ap_isolate | sed -n 's/^/DriverApIsolateOn=/p'
-- grep '^ap_isolate=' /tmp/wl0_hapd.conf | awk -F= '/^ap_isolate=/ {print "HostapdApIsolate="
-  $2; if ($2 == 0) zeros++} END {print "HostapdApIsolateZeroCount=" zeros}'
+- grep '^ap_isolate=' /tmp/wl0_hapd.conf | awk -F= '/^ap_isolate=/ {print 
+  "HostapdApIsolate=" $2; if ($2 == 0) zeros++} END {print 
+  "HostapdApIsolateZeroCount=" zeros}'
 - ubus-cli WiFi.AccessPoint.1.APBridgeDisable=0
 - sleep 5
 - ubus-cli "WiFi.AccessPoint.1.APBridgeDisable?"
 - wl -i wl0 ap_isolate | sed -n 's/^/DriverApIsolateOff=/p'
 - wl -i wl0 bss | sed -n 's/^/DriverBssState=/p'
-results_reference:
-  v4.0.3:
-    5g: Not Supported
-    6g: N/A
-    2.4g: N/A
-    comment: 5G serialwrap retest showed APBridgeDisable getter toggled 1 -> 0, /tmp/wl0_hapd.conf
-      stayed at ap_isolate=0, and wl -i wl0 ap_isolate remained 1 even after setting
-      APBridgeDisable back to 0. The northbound toggle does not converge to a coherent
-      hostapd/driver state, so this 5G checkpoint is recorded as Not Supported; non-executed
-      bands remain N/A until separately calibrated.

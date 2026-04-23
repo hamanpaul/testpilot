@@ -2,12 +2,9 @@ id: wifi-llapi-D063-vhtcapabilities-accesspoint-associateddevice
 name: "VhtCapabilities — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 63
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: VhtCapabilities
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -130,7 +127,8 @@ steps:
   action: exec
   target: DUT
   command: >-
-    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f' | sed 's/^/MACAddress=/'
+    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'
+    | tr 'A-F' 'a-f' | sed 's/^/MACAddress=/'
   depends_on: step1
   capture: assoc_entry
 - id: step3
@@ -143,21 +141,30 @@ steps:
   action: exec
   target: DUT
   command: >-
-    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= '/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.VhtCapabilities=/ {gsub(/"/, "", $2); print "AssocVhtCapabilities=" $2}'
+    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= '/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/
+    {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.VhtCapabilities=/
+    {gsub(/"/, "", $2); print "AssocVhtCapabilities=" $2}'
   depends_on: step3
   capture: assoc_snapshot
 - id: step5
   action: exec
   target: DUT
   command: >-
-    STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f'); [ -n "$STA_MAC" ] && echo DriverAssocMac="$STA_MAC" && wl -i wl0 sta_info "$STA_MAC" | awk '/^[[:space:]]*VHT caps / {line=substr($0, index($0, ":")+2); print "DriverVhtCapsLine=" line; for (i=1;i<=NF;i++) if ($i ~ /^(SGI80|SGI160|SU-BFR|SU-BFE|MU-BFR|MU-BFE)$/) caps[++n]=$i} END {if (n) {out=""; for (i=1;i<=n;i++) out = out (i>1 ? "," : "") caps[i]; print "DriverVhtCapabilities=" out}}'
+    STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
+    's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f'); [ -n "$STA_MAC" ] && echo
+    DriverAssocMac="$STA_MAC" && wl -i wl0 sta_info "$STA_MAC" | awk '/^[[:space:]]*VHT
+    caps / {line=substr($0, index($0, ":")+2); print "DriverVhtCapsLine=" line; for
+    (i=1;i<=NF;i++) if ($i ~ /^(SGI80|SGI160|SU-BFR|SU-BFE|MU-BFR|MU-BFE)$/) caps[++n]=$i}
+    END {if (n) {out=""; for (i=1;i<=n;i++) out = out (i>1 ? "," : "") caps[i]; print
+    "DriverVhtCapabilities=" out}}'
   depends_on: step4
   capture: driver_capture
 pass_criteria:
 - field: sta_identity.StaMac
   operator: regex
   value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: COM1 wl0 must resolve to a concrete live STA MAC before DUT-side validation.
+  description: COM1 wl0 must resolve to a concrete live STA MAC before DUT-side 
+    validation.
 - field: assoc_entry.MACAddress
   operator: regex
   value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -165,46 +172,58 @@ pass_criteria:
 - field: assoc_entry.MACAddress
   operator: equals
   reference: sta_identity.StaMac
-  description: AP1 AssociatedDevice.1 must correspond to the same COM1 wl0 station used for this manual checkpoint.
+  description: AP1 AssociatedDevice.1 must correspond to the same COM1 wl0 
+    station used for this manual checkpoint.
 - field: result.VhtCapabilities
   operator: regex
   value: ^[A-Z0-9-]+(,[A-Z0-9-]+)*$
-  description: The direct getter must expose a concrete comma-separated VHT capability list for the same STA.
+  description: The direct getter must expose a concrete comma-separated VHT 
+    capability list for the same STA.
 - field: assoc_snapshot.AssocMAC
   operator: equals
   reference: assoc_entry.MACAddress
-  description: AssociatedDevice snapshot evidence must come from the same AP1 station entry.
+  description: AssociatedDevice snapshot evidence must come from the same AP1 
+    station entry.
 - field: result.VhtCapabilities
   operator: equals
   reference: assoc_snapshot.AssocVhtCapabilities
-  description: Direct getter VhtCapabilities must match the same AssociatedDevice snapshot value.
+  description: Direct getter VhtCapabilities must match the same 
+    AssociatedDevice snapshot value.
 - field: driver_capture.DriverAssocMac
   operator: equals
   reference: assoc_entry.MACAddress
-  description: Driver evidence must target the same AssociatedDevice MAC resolved in step2.
+  description: Driver evidence must target the same AssociatedDevice MAC 
+    resolved in step2.
 - field: driver_capture.DriverVhtCapabilities
   operator: regex
   value: ^[A-Z0-9-]+(,[A-Z0-9-]+)*$
-  description: The driver-side VHT capability evidence must stay a concrete comma-separated token list.
+  description: The driver-side VHT capability evidence must stay a concrete 
+    comma-separated token list.
 - field: driver_capture.DriverVhtCapabilities
   operator: contains
   value: SGI80
-  description: wl0 sta_info must still expose SGI80 in the VHT capability line for the same STA.
+  description: wl0 sta_info must still expose SGI80 in the VHT capability line 
+    for the same STA.
 - field: driver_capture.DriverVhtCapabilities
   operator: contains
   value: SGI160
-  description: wl0 sta_info must still expose SGI160 in the VHT capability line for the same STA.
+  description: wl0 sta_info must still expose SGI160 in the VHT capability line 
+    for the same STA.
 - field: driver_capture.DriverVhtCapabilities
   operator: contains
   value: SU-BFE
-  description: wl0 sta_info must still expose SU-BFE in the VHT capability line for the same STA.
+  description: wl0 sta_info must still expose SU-BFE in the VHT capability line 
+    for the same STA.
 verification_command:
-  - 'cat /sys/class/net/wl0/address | tr ''A-F'' ''a-f'' | sed ''s/^/StaMac=/'''
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.VhtCapabilities?"'
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= ''/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.VhtCapabilities=/ {gsub(/"/, "", $2); print "AssocVhtCapabilities=" $2}'''
-  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'' | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ] && echo DriverAssocMac="$STA_MAC" && wl -i wl0 sta_info "$STA_MAC" | awk ''/^[[:space:]]*VHT caps / {line=substr($0, index($0, ":")+2); print "DriverVhtCapsLine=" line; for (i=1;i<=NF;i++) if ($i ~ /^(SGI80|SGI160|SU-BFR|SU-BFE|MU-BFR|MU-BFE)$/) caps[++n]=$i} END {if (n) {out=""; for (i=1;i<=n;i++) out = out (i>1 ? "," : "") caps[i]; print "DriverVhtCapabilities=" out}}'''
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Not Supported
-    2.4g: Not Supported
+- 'cat /sys/class/net/wl0/address | tr ''A-F'' ''a-f'' | sed ''s/^/StaMac=/'''
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.VhtCapabilities?"'
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= ''/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/
+  {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.VhtCapabilities=/
+  {gsub(/"/, "", $2); print "AssocVhtCapabilities=" $2}'''
+- 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
+  ''s/.*MACAddress="\([^"]*\)".*/\1/p'' | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ] &&
+  echo DriverAssocMac="$STA_MAC" && wl -i wl0 sta_info "$STA_MAC" | awk ''/^[[:space:]]*VHT
+  caps / {line=substr($0, index($0, ":")+2); print "DriverVhtCapsLine=" line; for
+  (i=1;i<=NF;i++) if ($i ~ /^(SGI80|SGI160|SU-BFR|SU-BFE|MU-BFR|MU-BFE)$/) caps[++n]=$i}
+  END {if (n) {out=""; for (i=1;i<=n;i++) out = out (i>1 ? "," : "") caps[i]; print
+  "DriverVhtCapabilities=" out}}'''

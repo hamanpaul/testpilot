@@ -2,8 +2,6 @@ id: wifi-llapi-D009-associationtime
 name: "AssociationTime — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: '1.1'
 source:
-  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-  sheet: Wifi_LLAPI
   row: 9
   object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
   api: "AssociationTime"
@@ -88,20 +86,22 @@ steps:
   target: STA
   band: 5g
   command:
-    - iw dev wl0 link
-    - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  - iw dev wl0 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
 - id: step2_5g_assoc
   action: exec
   target: DUT
   band: 5g
-  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac5g=\1/p'
   depends_on: step1_5g_sta_join
   capture: assoc_5g
 - id: step3_5g_driver_age
   action: exec
   target: DUT
   band: 5g
-  command: 'STA_MAC=$(wl -i wl0 assoclist | awk ''NR==1{print $2}''); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/ConnectionSeconds5g=\1/p'''
+  command: 'STA_MAC=$(wl -i wl0 assoclist | awk ''NR==1{print $2}''); [ -n "$STA_MAC"
+    ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/ConnectionSeconds5g=\1/p'''
   depends_on: step2_5g_assoc
   capture: driver_assoc_age_5g
 - id: step4_5g_get
@@ -116,21 +116,23 @@ steps:
   target: STA
   band: 6g
   command:
-    - iw dev wl1 link
-    - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-    - wl -i wl1 status
+  - iw dev wl1 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+  - wl -i wl1 status
 - id: step6_6g_assoc
   action: exec
   target: DUT
   band: 6g
-  command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+  command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac6g=\1/p'
   depends_on: step5_6g_sta_join
   capture: assoc_6g
 - id: step7_6g_driver_age
   action: exec
   target: DUT
   band: 6g
-  command: 'STA_MAC=$(wl -i wl1 assoclist | awk ''NR==1{print $2}''); [ -n "$STA_MAC" ] && wl -i wl1 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/ConnectionSeconds6g=\1/p'''
+  command: 'STA_MAC=$(wl -i wl1 assoclist | awk ''NR==1{print $2}''); [ -n "$STA_MAC"
+    ] && wl -i wl1 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/ConnectionSeconds6g=\1/p'''
   depends_on: step6_6g_assoc
   capture: driver_assoc_age_6g
 - id: step8_6g_get
@@ -145,20 +147,22 @@ steps:
   target: STA
   band: 2.4g
   command:
-    - iw dev wl2 link
-    - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  - iw dev wl2 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
 - id: step10_24g_assoc
   action: exec
   target: DUT
   band: 2.4g
-  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac24g=\1/p'
   depends_on: step9_24g_sta_join
   capture: assoc_24g
 - id: step11_24g_driver_age
   action: exec
   target: DUT
   band: 2.4g
-  command: 'STA_MAC=$(wl -i wl2 assoclist | awk ''NR==1{print $2}''); [ -n "$STA_MAC" ] && wl -i wl2 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/ConnectionSeconds24g=\1/p'''
+  command: 'STA_MAC=$(wl -i wl2 assoclist | awk ''NR==1{print $2}''); [ -n "$STA_MAC"
+    ] && wl -i wl2 sta_info $STA_MAC | sed -n ''s/.*in network \([0-9][0-9]*\) seconds.*/ConnectionSeconds24g=\1/p'''
   depends_on: step10_24g_assoc
   capture: driver_assoc_age_24g
 - id: step12_24g_get
@@ -173,11 +177,13 @@ pass_criteria:
 - field: assoc_5g.AssocMac5g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: "5G: AP1 must expose one live STA MAC from wl0 assoclist before AssociationTime is read."
+  description: "5G: AP1 must expose one live STA MAC from wl0 assoclist before AssociationTime
+    is read."
 - field: driver_assoc_age_5g.ConnectionSeconds5g
   operator: '>'
   value: '0'
-  description: "5G: wl0 sta_info must report a positive in-network duration for the same STA."
+  description: "5G: wl0 sta_info must report a positive in-network duration for the
+    same STA."
 - field: result_5g.AssociationTime
   operator: regex
   value: ^20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$
@@ -185,11 +191,13 @@ pass_criteria:
 - field: assoc_6g.AssocMac6g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: "6G: AP3 must expose one live STA MAC from wl1 assoclist before AssociationTime is read."
+  description: "6G: AP3 must expose one live STA MAC from wl1 assoclist before AssociationTime
+    is read."
 - field: driver_assoc_age_6g.ConnectionSeconds6g
   operator: '>'
   value: '0'
-  description: "6G: wl1 sta_info must report a positive in-network duration for the same STA."
+  description: "6G: wl1 sta_info must report a positive in-network duration for the
+    same STA."
 - field: result_6g.AssociationTime
   operator: regex
   value: ^20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$
@@ -197,40 +205,28 @@ pass_criteria:
 - field: assoc_24g.AssocMac24g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: "2.4G: AP5 must expose one live STA MAC from wl2 assoclist before AssociationTime is read."
+  description: "2.4G: AP5 must expose one live STA MAC from wl2 assoclist before AssociationTime
+    is read."
 - field: driver_assoc_age_24g.ConnectionSeconds24g
   operator: '>'
   value: '0'
-  description: "2.4G: wl2 sta_info must report a positive in-network duration for the same STA."
+  description: "2.4G: wl2 sta_info must report a positive in-network duration for
+    the same STA."
 - field: result_24g.AssociationTime
   operator: regex
   value: ^20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$
   description: "2.4G: AssociationTime must be reported as an ISO-8601 UTC timestamp."
 
 verification_command:
-  - 'wl -i wl0 assoclist'
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.AssociationTime?"'
-  - 'STA_MAC=$(wl -i wl0 assoclist | awk ''NR==1{print $2}'')'
-  - 'wl -i wl0 sta_info $STA_MAC | grep "in network"'
-  - 'wl -i wl1 assoclist'
-  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.AssociationTime?"'
-  - 'STA_MAC=$(wl -i wl1 assoclist | awk ''NR==1{print $2}'')'
-  - 'wl -i wl1 sta_info $STA_MAC | grep "in network"'
-  - 'wl -i wl2 assoclist'
-  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.AssociationTime?"'
-  - 'STA_MAC=$(wl -i wl2 assoclist | awk ''NR==1{print $2}'')'
-  - 'wl -i wl2 sta_info $STA_MAC | grep "in network"'
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: >
-      5G/6G/2.4G should all be validated live against the workbook Pass/Pass/Pass baseline.
-      5G/2.4G verify deterministic WPA2-Personal baseline associations
-      (testpilot5G/testpilot2G), while 6G uses the validated WPA3/SAE baseline.
+- 'wl -i wl0 assoclist'
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.AssociationTime?"'
+- 'STA_MAC=$(wl -i wl0 assoclist | awk ''NR==1{print $2}'')'
+- 'wl -i wl0 sta_info $STA_MAC | grep "in network"'
+- 'wl -i wl1 assoclist'
+- 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.AssociationTime?"'
+- 'STA_MAC=$(wl -i wl1 assoclist | awk ''NR==1{print $2}'')'
+- 'wl -i wl1 sta_info $STA_MAC | grep "in network"'
+- 'wl -i wl2 assoclist'
+- 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.AssociationTime?"'
+- 'STA_MAC=$(wl -i wl2 assoclist | awk ''NR==1{print $2}'')'
+- 'wl -i wl2 sta_info $STA_MAC | grep "in network"'

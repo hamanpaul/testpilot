@@ -4,17 +4,11 @@ source:
   row: 487
   object: WiFi.Radio.{i}.Stats.WmmFailedBytesReceived.
   api: AC_BK
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
 topology:
   devices:
     DUT:
@@ -33,7 +27,8 @@ steps:
   target: dut
   action: exec
   capture: driver_5g
-  command: wl -i wl0 wme_counters | grep -A2 '^AC_BK:' | awk '/rx frames:/ {print "DriverWmmFailedBytesReceived5g="$11}'
+  command: wl -i wl0 wme_counters | grep -A2 '^AC_BK:' | awk '/rx frames:/ 
+    {print "DriverWmmFailedBytesReceived5g="$11}'
   expected: wl0 wme_counters 匯出 AC_BK rx failed bytes
   description: Radio.1 (5g) driver AC_BK rx failed bytes
 - id: step_6g_direct
@@ -47,7 +42,8 @@ steps:
   target: dut
   action: exec
   capture: driver_6g
-  command: wl -i wl1 wme_counters | grep -A2 '^AC_BK:' | awk '/rx frames:/ {print "DriverWmmFailedBytesReceived6g="$11}'
+  command: wl -i wl1 wme_counters | grep -A2 '^AC_BK:' | awk '/rx frames:/ 
+    {print "DriverWmmFailedBytesReceived6g="$11}'
   expected: wl1 wme_counters 匯出 AC_BK rx failed bytes
   description: Radio.2 (6g) driver AC_BK rx failed bytes
 - id: step_24g_direct
@@ -61,26 +57,30 @@ steps:
   target: dut
   action: exec
   capture: driver_24g
-  command: wl -i wl2 wme_counters | grep -A2 '^AC_BK:' | awk '/rx frames:/ {print "DriverWmmFailedBytesReceived24g="$11}'
+  command: wl -i wl2 wme_counters | grep -A2 '^AC_BK:' | awk '/rx frames:/ 
+    {print "DriverWmmFailedBytesReceived24g="$11}'
   expected: wl2 wme_counters 匯出 AC_BK rx failed bytes
   description: Radio.3 (2.4g) driver AC_BK rx failed bytes
 pass_criteria:
 - field: direct_5g.AC_BK
   operator: equals
   reference: driver_5g.DriverWmmFailedBytesReceived5g
-  description: 5g direct Stats.WmmFailedBytesReceived.AC_BK must match wl0 wme_counters AC_BK rx failed bytes.
+  description: 5g direct Stats.WmmFailedBytesReceived.AC_BK must match wl0 
+    wme_counters AC_BK rx failed bytes.
 - field: direct_6g.AC_BK
   operator: equals
   reference: driver_6g.DriverWmmFailedBytesReceived6g
-  description: 6g direct Stats.WmmFailedBytesReceived.AC_BK must match wl1 wme_counters AC_BK rx failed bytes.
+  description: 6g direct Stats.WmmFailedBytesReceived.AC_BK must match wl1 
+    wme_counters AC_BK rx failed bytes.
 - field: direct_24g.AC_BK
   operator: equals
   reference: driver_24g.DriverWmmFailedBytesReceived24g
-  description: 2.4g direct Stats.WmmFailedBytesReceived.AC_BK must match wl2 wme_counters AC_BK rx failed bytes.
+  description: 2.4g direct Stats.WmmFailedBytesReceived.AC_BK must match wl2 
+    wme_counters AC_BK rx failed bytes.
 verification_command:
-  - 'ubus-cli "WiFi.Radio.1.Stats.WmmFailedBytesReceived.AC_BK?"'
-  - 'wl -i wl0 wme_counters | grep -A2 ''^AC_BK:'' | awk ''/rx frames:/ {print "DriverWmmFailedBytesReceived5g="$11}'''
-  - 'ubus-cli "WiFi.Radio.2.Stats.WmmFailedBytesReceived.AC_BK?"'
-  - 'wl -i wl1 wme_counters | grep -A2 ''^AC_BK:'' | awk ''/rx frames:/ {print "DriverWmmFailedBytesReceived6g="$11}'''
-  - 'ubus-cli "WiFi.Radio.3.Stats.WmmFailedBytesReceived.AC_BK?"'
-  - 'wl -i wl2 wme_counters | grep -A2 ''^AC_BK:'' | awk ''/rx frames:/ {print "DriverWmmFailedBytesReceived24g="$11}'''
+- 'ubus-cli "WiFi.Radio.1.Stats.WmmFailedBytesReceived.AC_BK?"'
+- 'wl -i wl0 wme_counters | grep -A2 ''^AC_BK:'' | awk ''/rx frames:/ {print "DriverWmmFailedBytesReceived5g="$11}'''
+- 'ubus-cli "WiFi.Radio.2.Stats.WmmFailedBytesReceived.AC_BK?"'
+- 'wl -i wl1 wme_counters | grep -A2 ''^AC_BK:'' | awk ''/rx frames:/ {print "DriverWmmFailedBytesReceived6g="$11}'''
+- 'ubus-cli "WiFi.Radio.3.Stats.WmmFailedBytesReceived.AC_BK?"'
+- 'wl -i wl2 wme_counters | grep -A2 ''^AC_BK:'' | awk ''/rx frames:/ {print "DriverWmmFailedBytesReceived24g="$11}'''

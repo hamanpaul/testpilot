@@ -4,13 +4,9 @@ source:
   row: 358
   object: WiFi.Radio.{i}.Sensing.
   api: delClient()
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 llapi_support: Skip
-results_reference:
-  v4.0.3:
-    5g: Skip
 topology:
   devices:
     DUT:

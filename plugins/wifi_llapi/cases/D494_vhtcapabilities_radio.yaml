@@ -4,17 +4,11 @@ source:
   row: 494
   object: WiFi.Radio.{i}.
   api: VHTCapabilities
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Not Supported
-    2.4g: Not Supported
 topology:
   devices:
     DUT:
@@ -27,7 +21,8 @@ steps:
   action: exec
   capture: getter_5g
   command: >-
-    OUT=$(ubus-cli "protected;WiFi.Radio.1.VHTCapabilities?" 2>&1 || true); printf '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*WiFi.Radio.1.VHTCapabilities="\([^"]*\)"/VHTCapabilities=\1/p'
+    OUT=$(ubus-cli "protected;WiFi.Radio.1.VHTCapabilities?" 2>&1 || true); printf
+    '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*WiFi.Radio.1.VHTCapabilities="\([^"]*\)"/VHTCapabilities=\1/p'
   expected: base64 value via protected ubus access
   description: "Radio.1 (5g) VHTCapabilities protected getter - live=dliDDw=="
 - id: step_6g_getter
@@ -35,7 +30,9 @@ steps:
   action: exec
   capture: getter_6g
   command: >-
-    OUT=$(ubus-cli "WiFi.Radio.2.VHTCapabilities?" 2>&1 || true); printf '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p'; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
+    OUT=$(ubus-cli "WiFi.Radio.2.VHTCapabilities?" 2>&1 || true); printf '%s\n' "$OUT";
+    printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p';
+    printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
   expected: error 4 / parameter not found
   description: "Radio.2 (6g) VHTCapabilities getter - Not Supported"
 - id: step_24g_getter
@@ -43,7 +40,9 @@ steps:
   action: exec
   capture: getter_24g
   command: >-
-    OUT=$(ubus-cli "WiFi.Radio.3.VHTCapabilities?" 2>&1 || true); printf '%s\n' "$OUT"; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p'; printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
+    OUT=$(ubus-cli "WiFi.Radio.3.VHTCapabilities?" 2>&1 || true); printf '%s\n' "$OUT";
+    printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p';
+    printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
   expected: error 4 / parameter not found
   description: "Radio.3 (2.4g) VHTCapabilities getter - Not Supported"
 pass_criteria:

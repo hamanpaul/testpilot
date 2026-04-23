@@ -4,13 +4,9 @@ source:
   row: 416
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: RrmOffChannelMaxDuration
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Fail
 topology:
   devices:
     DUT:
@@ -33,7 +29,8 @@ steps:
   target: dut
   action: read
   capture: getter_5g
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RrmOffChannelMaxDuration?"
+  command: ubus-cli 
+    "WiFi.AccessPoint.1.AssociatedDevice.1.RrmOffChannelMaxDuration?"
   expected: RrmOffChannelMaxDuration 回傳有效值
   description: AP1 AssociatedDevice.1 RrmOffChannelMaxDuration getter
   depends_on: step_5g_assoc_check

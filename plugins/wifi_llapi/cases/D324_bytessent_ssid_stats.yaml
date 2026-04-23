@@ -2,8 +2,6 @@ id: wifi-llapi-d324-bytessent
 name: "BytesSent — WiFi.SSID.{i}.Stats."
 version: '1.0'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 324
   object: WiFi.SSID.{i}.Stats.
   api: BytesSent
@@ -24,28 +22,28 @@ topology:
       transport: serial
       selector: COM0
       config:
-        - iface: 5g
-          mode: sta
-          ssid: TestPilot_BTM
-          key: testpilot6g
-        - iface: 6g
-          mode: sta
-          ssid: TestPilot_BTM
-          key: testpilot6g
-        - iface: 2.4g
-          mode: sta
-          ssid: TestPilot_24G
-          key: ''
+      - iface: 5g
+        mode: sta
+        ssid: TestPilot_BTM
+        key: testpilot6g
+      - iface: 6g
+        mode: sta
+        ssid: TestPilot_BTM
+        key: testpilot6g
+      - iface: 2.4g
+        mode: sta
+        ssid: TestPilot_24G
+        key: ''
   links:
-    - from: STA
-      to: DUT
-      band: 5g
-    - from: STA
-      to: DUT
-      band: 6g
-    - from: STA
-      to: DUT
-      band: 2.4g
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: STA
+    to: DUT
+    band: 6g
+  - from: STA
+    to: DUT
+    band: 2.4g
 test_environment: |
   Topology:
   - DUT: COM1 (AP role)
@@ -131,25 +129,53 @@ steps:
   action: exec
   target: DUT
   depends_on: stabilize_after_env
-  command: 'ap=wl0; a=$(wl -i "$ap" assoclist | tr ''A-F'' ''a-f'' | sed -n ''s/^assoclist \([^ ]*\).*$/\1/p''); w=0; tx=$(wl -i "$ap" if_counters | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p''); for i in $(ls /sys/class/net | grep -E ''^wds0\.0\.[0-9]+$'' || true); do v=$(wl -i "$i" if_counters 2>/dev/null | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p''); w=$((w+${v:-0})); done; s=$(ubus-cli "WiFi.SSID.4.getSSIDStats()"); d=$(ubus-cli "WiFi.SSID.4.Stats.BytesSent?" | sed -n ''s/.*=\([0-9][0-9]*\).*/\1/p''); g=$(printf ''%s\n'' "$s" | sed -n ''s/^[[:space:]]*BytesSent = \([0-9][0-9]*\).*/\1/p''); r=$(( ${tx:-0}+w )); printf ''AssocMac5g=%s\n'' "${a:-}"; printf ''DirectBytesSent5g=%s\n'' "${d:-}"; printf ''GetSSIDStatsBytesSent5g=%s\n'' "${g:-}"; printf ''DriverBytesSent5g=%s\n'' "$r"'
+  command: 'ap=wl0; a=$(wl -i "$ap" assoclist | tr ''A-F'' ''a-f'' | sed -n ''s/^assoclist
+    \([^ ]*\).*$/\1/p''); w=0; tx=$(wl -i "$ap" if_counters | sed -n ''s/.*txbyte
+    \([0-9][0-9]*\).*/\1/p''); for i in $(ls /sys/class/net | grep -E ''^wds0\.0\.[0-9]+$''
+    || true); do v=$(wl -i "$i" if_counters 2>/dev/null | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p'');
+    w=$((w+${v:-0})); done; s=$(ubus-cli "WiFi.SSID.4.getSSIDStats()"); d=$(ubus-cli
+    "WiFi.SSID.4.Stats.BytesSent?" | sed -n ''s/.*=\([0-9][0-9]*\).*/\1/p''); g=$(printf
+    ''%s\n'' "$s" | sed -n ''s/^[[:space:]]*BytesSent = \([0-9][0-9]*\).*/\1/p'');
+    r=$(( ${tx:-0}+w )); printf ''AssocMac5g=%s\n'' "${a:-}"; printf ''DirectBytesSent5g=%s\n''
+    "${d:-}"; printf ''GetSSIDStatsBytesSent5g=%s\n'' "${g:-}"; printf ''DriverBytesSent5g=%s\n''
+    "$r"'
   capture: snapshot_5g
 - id: snapshot_6g
   action: exec
   target: DUT
   depends_on: snapshot_5g
-  command: 'ap=wl1; a=$(wl -i "$ap" assoclist | tr ''A-F'' ''a-f'' | sed -n ''s/^assoclist \([^ ]*\).*$/\1/p''); w=0; tx=$(wl -i "$ap" if_counters | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p''); for i in $(ls /sys/class/net | grep -E ''^wds1\.0\.[0-9]+$'' || true); do v=$(wl -i "$i" if_counters 2>/dev/null | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p''); w=$((w+${v:-0})); done; s=$(ubus-cli "WiFi.SSID.6.getSSIDStats()"); d=$(ubus-cli "WiFi.SSID.6.Stats.BytesSent?" | sed -n ''s/.*=\([0-9][0-9]*\).*/\1/p''); g=$(printf ''%s\n'' "$s" | sed -n ''s/^[[:space:]]*BytesSent = \([0-9][0-9]*\).*/\1/p''); r=$(( ${tx:-0}+w )); printf ''AssocMac6g=%s\n'' "${a:-}"; printf ''DirectBytesSent6g=%s\n'' "${d:-}"; printf ''GetSSIDStatsBytesSent6g=%s\n'' "${g:-}"; printf ''DriverBytesSent6g=%s\n'' "$r"'
+  command: 'ap=wl1; a=$(wl -i "$ap" assoclist | tr ''A-F'' ''a-f'' | sed -n ''s/^assoclist
+    \([^ ]*\).*$/\1/p''); w=0; tx=$(wl -i "$ap" if_counters | sed -n ''s/.*txbyte
+    \([0-9][0-9]*\).*/\1/p''); for i in $(ls /sys/class/net | grep -E ''^wds1\.0\.[0-9]+$''
+    || true); do v=$(wl -i "$i" if_counters 2>/dev/null | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p'');
+    w=$((w+${v:-0})); done; s=$(ubus-cli "WiFi.SSID.6.getSSIDStats()"); d=$(ubus-cli
+    "WiFi.SSID.6.Stats.BytesSent?" | sed -n ''s/.*=\([0-9][0-9]*\).*/\1/p''); g=$(printf
+    ''%s\n'' "$s" | sed -n ''s/^[[:space:]]*BytesSent = \([0-9][0-9]*\).*/\1/p'');
+    r=$(( ${tx:-0}+w )); printf ''AssocMac6g=%s\n'' "${a:-}"; printf ''DirectBytesSent6g=%s\n''
+    "${d:-}"; printf ''GetSSIDStatsBytesSent6g=%s\n'' "${g:-}"; printf ''DriverBytesSent6g=%s\n''
+    "$r"'
   capture: snapshot_6g
 - id: snapshot_24g
   action: exec
   target: DUT
   depends_on: snapshot_6g
-  command: 'ap=wl2; a=$(wl -i "$ap" assoclist | tr ''A-F'' ''a-f'' | sed -n ''s/^assoclist \([^ ]*\).*$/\1/p''); w=0; tx=$(wl -i "$ap" if_counters | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p''); for i in $(ls /sys/class/net | grep -E ''^wds2\.0\.[0-9]+$'' || true); do v=$(wl -i "$i" if_counters 2>/dev/null | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p''); w=$((w+${v:-0})); done; s=$(ubus-cli "WiFi.SSID.8.getSSIDStats()"); d=$(ubus-cli "WiFi.SSID.8.Stats.BytesSent?" | sed -n ''s/.*=\([0-9][0-9]*\).*/\1/p''); g=$(printf ''%s\n'' "$s" | sed -n ''s/^[[:space:]]*BytesSent = \([0-9][0-9]*\).*/\1/p''); r=$(( ${tx:-0}+w )); printf ''AssocMac24g=%s\n'' "${a:-}"; printf ''DirectBytesSent24g=%s\n'' "${d:-}"; printf ''GetSSIDStatsBytesSent24g=%s\n'' "${g:-}"; printf ''DriverBytesSent24g=%s\n'' "$r"'
+  command: 'ap=wl2; a=$(wl -i "$ap" assoclist | tr ''A-F'' ''a-f'' | sed -n ''s/^assoclist
+    \([^ ]*\).*$/\1/p''); w=0; tx=$(wl -i "$ap" if_counters | sed -n ''s/.*txbyte
+    \([0-9][0-9]*\).*/\1/p''); for i in $(ls /sys/class/net | grep -E ''^wds2\.0\.[0-9]+$''
+    || true); do v=$(wl -i "$i" if_counters 2>/dev/null | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p'');
+    w=$((w+${v:-0})); done; s=$(ubus-cli "WiFi.SSID.8.getSSIDStats()"); d=$(ubus-cli
+    "WiFi.SSID.8.Stats.BytesSent?" | sed -n ''s/.*=\([0-9][0-9]*\).*/\1/p''); g=$(printf
+    ''%s\n'' "$s" | sed -n ''s/^[[:space:]]*BytesSent = \([0-9][0-9]*\).*/\1/p'');
+    r=$(( ${tx:-0}+w )); printf ''AssocMac24g=%s\n'' "${a:-}"; printf ''DirectBytesSent24g=%s\n''
+    "${d:-}"; printf ''GetSSIDStatsBytesSent24g=%s\n'' "${g:-}"; printf ''DriverBytesSent24g=%s\n''
+    "$r"'
   capture: snapshot_24g
 pass_criteria:
 - field: snapshot_5g.AssocMac5g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: 5g DUT assoclist must resolve the expected STA MAC 2c:59:17:00:04:85.
+  description: 5g DUT assoclist must resolve the expected STA MAC 
+    2c:59:17:00:04:85.
 - field: snapshot_5g.DirectBytesSent5g
   operator: equals
   reference: snapshot_5g.GetSSIDStatsBytesSent5g
@@ -157,11 +183,13 @@ pass_criteria:
 - field: snapshot_5g.DirectBytesSent5g
   operator: equals
   reference: snapshot_5g.DriverBytesSent5g
-  description: 5g direct Stats.BytesSent must match the source-backed wl0 txbyte plus matching wds txbyte formula.
+  description: 5g direct Stats.BytesSent must match the source-backed wl0 txbyte
+    plus matching wds txbyte formula.
 - field: snapshot_6g.AssocMac6g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: 6g DUT assoclist must resolve the expected STA MAC 2c:59:17:00:04:86.
+  description: 6g DUT assoclist must resolve the expected STA MAC 
+    2c:59:17:00:04:86.
 - field: snapshot_6g.DirectBytesSent6g
   operator: equals
   reference: snapshot_6g.GetSSIDStatsBytesSent6g
@@ -169,11 +197,13 @@ pass_criteria:
 - field: snapshot_6g.DirectBytesSent6g
   operator: equals
   reference: snapshot_6g.DriverBytesSent6g
-  description: 6g direct Stats.BytesSent must match the source-backed wl1 txbyte plus matching wds txbyte formula.
+  description: 6g direct Stats.BytesSent must match the source-backed wl1 txbyte
+    plus matching wds txbyte formula.
 - field: snapshot_24g.AssocMac24g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: 2.4g DUT assoclist must resolve the expected STA MAC 2c:59:17:00:04:97.
+  description: 2.4g DUT assoclist must resolve the expected STA MAC 
+    2c:59:17:00:04:97.
 - field: snapshot_24g.DirectBytesSent24g
   operator: equals
   reference: snapshot_24g.GetSSIDStatsBytesSent24g
@@ -181,25 +211,42 @@ pass_criteria:
 - field: snapshot_24g.DirectBytesSent24g
   operator: equals
   reference: snapshot_24g.DriverBytesSent24g
-  description: 2.4g direct Stats.BytesSent must match the source-backed wl2 txbyte plus matching wds txbyte formula.
-verification_command: 
-  - sleep 2
-  - '# 5g'
-  - 'ap=wl0; a=$(wl -i "$ap" assoclist | tr ''A-F'' ''a-f'' | sed -n ''s/^assoclist \([^ ]*\).*$/\1/p''); w=0; tx=$(wl -i "$ap" if_counters | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p''); for i in $(ls /sys/class/net | grep -E ''^wds0\.0\.[0-9]+$'' || true); do v=$(wl -i "$i" if_counters 2>/dev/null | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p''); w=$((w+${v:-0})); done; s=$(ubus-cli "WiFi.SSID.4.getSSIDStats()"); d=$(ubus-cli "WiFi.SSID.4.Stats.BytesSent?" | sed -n ''s/.*=\([0-9][0-9]*\).*/\1/p''); g=$(printf ''%s\n'' "$s" | sed -n ''s/^[[:space:]]*BytesSent = \([0-9][0-9]*\).*/\1/p''); r=$(( ${tx:-0}+w )); printf ''AssocMac5g=%s\n'' "${a:-}"; printf ''DirectBytesSent5g=%s\n'' "${d:-}"; printf ''GetSSIDStatsBytesSent5g=%s\n'' "${g:-}"; printf ''DriverBytesSent5g=%s\n'' "$r"'
-  - ''
-  - '# 6g'
-  - 'ap=wl1; a=$(wl -i "$ap" assoclist | tr ''A-F'' ''a-f'' | sed -n ''s/^assoclist \([^ ]*\).*$/\1/p''); w=0; tx=$(wl -i "$ap" if_counters | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p''); for i in $(ls /sys/class/net | grep -E ''^wds1\.0\.[0-9]+$'' || true); do v=$(wl -i "$i" if_counters 2>/dev/null | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p''); w=$((w+${v:-0})); done; s=$(ubus-cli "WiFi.SSID.6.getSSIDStats()"); d=$(ubus-cli "WiFi.SSID.6.Stats.BytesSent?" | sed -n ''s/.*=\([0-9][0-9]*\).*/\1/p''); g=$(printf ''%s\n'' "$s" | sed -n ''s/^[[:space:]]*BytesSent = \([0-9][0-9]*\).*/\1/p''); r=$(( ${tx:-0}+w )); printf ''AssocMac6g=%s\n'' "${a:-}"; printf ''DirectBytesSent6g=%s\n'' "${d:-}"; printf ''GetSSIDStatsBytesSent6g=%s\n'' "${g:-}"; printf ''DriverBytesSent6g=%s\n'' "$r"'
-  - ''
-  - '# 2.4g'
-  - 'ap=wl2; a=$(wl -i "$ap" assoclist | tr ''A-F'' ''a-f'' | sed -n ''s/^assoclist \([^ ]*\).*$/\1/p''); w=0; tx=$(wl -i "$ap" if_counters | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p''); for i in $(ls /sys/class/net | grep -E ''^wds2\.0\.[0-9]+$'' || true); do v=$(wl -i "$i" if_counters 2>/dev/null | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p''); w=$((w+${v:-0})); done; s=$(ubus-cli "WiFi.SSID.8.getSSIDStats()"); d=$(ubus-cli "WiFi.SSID.8.Stats.BytesSent?" | sed -n ''s/.*=\([0-9][0-9]*\).*/\1/p''); g=$(printf ''%s\n'' "$s" | sed -n ''s/^[[:space:]]*BytesSent = \([0-9][0-9]*\).*/\1/p''); r=$(( ${tx:-0}+w )); printf ''AssocMac24g=%s\n'' "${a:-}"; printf ''DirectBytesSent24g=%s\n'' "${d:-}"; printf ''GetSSIDStatsBytesSent24g=%s\n'' "${g:-}"; printf ''DriverBytesSent24g=%s\n'' "$r"'
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'Official rerun 20260412T060612008433 exact-closed the raw-first source-backed snapshot rewrite on all three bands: 5g=1141986, 6g=1113827, 2.4g=1186105; direct Stats matched getSSIDStats() and wl if_counters txbyte plus matching wds txbyte on SSID.4/6/8.'
+  description: 2.4g direct Stats.BytesSent must match the source-backed wl2 
+    txbyte plus matching wds txbyte formula.
+verification_command:
+- sleep 2
+- '# 5g'
+- 'ap=wl0; a=$(wl -i "$ap" assoclist | tr ''A-F'' ''a-f'' | sed -n ''s/^assoclist
+  \([^ ]*\).*$/\1/p''); w=0; tx=$(wl -i "$ap" if_counters | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p'');
+  for i in $(ls /sys/class/net | grep -E ''^wds0\.0\.[0-9]+$'' || true); do v=$(wl
+  -i "$i" if_counters 2>/dev/null | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p'');
+  w=$((w+${v:-0})); done; s=$(ubus-cli "WiFi.SSID.4.getSSIDStats()"); d=$(ubus-cli
+  "WiFi.SSID.4.Stats.BytesSent?" | sed -n ''s/.*=\([0-9][0-9]*\).*/\1/p''); g=$(printf
+  ''%s\n'' "$s" | sed -n ''s/^[[:space:]]*BytesSent = \([0-9][0-9]*\).*/\1/p''); r=$((
+  ${tx:-0}+w )); printf ''AssocMac5g=%s\n'' "${a:-}"; printf ''DirectBytesSent5g=%s\n''
+  "${d:-}"; printf ''GetSSIDStatsBytesSent5g=%s\n'' "${g:-}"; printf ''DriverBytesSent5g=%s\n''
+  "$r"'
+- ''
+- '# 6g'
+- 'ap=wl1; a=$(wl -i "$ap" assoclist | tr ''A-F'' ''a-f'' | sed -n ''s/^assoclist
+  \([^ ]*\).*$/\1/p''); w=0; tx=$(wl -i "$ap" if_counters | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p'');
+  for i in $(ls /sys/class/net | grep -E ''^wds1\.0\.[0-9]+$'' || true); do v=$(wl
+  -i "$i" if_counters 2>/dev/null | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p'');
+  w=$((w+${v:-0})); done; s=$(ubus-cli "WiFi.SSID.6.getSSIDStats()"); d=$(ubus-cli
+  "WiFi.SSID.6.Stats.BytesSent?" | sed -n ''s/.*=\([0-9][0-9]*\).*/\1/p''); g=$(printf
+  ''%s\n'' "$s" | sed -n ''s/^[[:space:]]*BytesSent = \([0-9][0-9]*\).*/\1/p''); r=$((
+  ${tx:-0}+w )); printf ''AssocMac6g=%s\n'' "${a:-}"; printf ''DirectBytesSent6g=%s\n''
+  "${d:-}"; printf ''GetSSIDStatsBytesSent6g=%s\n'' "${g:-}"; printf ''DriverBytesSent6g=%s\n''
+  "$r"'
+- ''
+- '# 2.4g'
+- 'ap=wl2; a=$(wl -i "$ap" assoclist | tr ''A-F'' ''a-f'' | sed -n ''s/^assoclist
+  \([^ ]*\).*$/\1/p''); w=0; tx=$(wl -i "$ap" if_counters | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p'');
+  for i in $(ls /sys/class/net | grep -E ''^wds2\.0\.[0-9]+$'' || true); do v=$(wl
+  -i "$i" if_counters 2>/dev/null | sed -n ''s/.*txbyte \([0-9][0-9]*\).*/\1/p'');
+  w=$((w+${v:-0})); done; s=$(ubus-cli "WiFi.SSID.8.getSSIDStats()"); d=$(ubus-cli
+  "WiFi.SSID.8.Stats.BytesSent?" | sed -n ''s/.*=\([0-9][0-9]*\).*/\1/p''); g=$(printf
+  ''%s\n'' "$s" | sed -n ''s/^[[:space:]]*BytesSent = \([0-9][0-9]*\).*/\1/p''); r=$((
+  ${tx:-0}+w )); printf ''AssocMac24g=%s\n'' "${a:-}"; printf ''DirectBytesSent24g=%s\n''
+  "${d:-}"; printf ''GetSSIDStatsBytesSent24g=%s\n'' "${g:-}"; printf ''DriverBytesSent24g=%s\n''
+  "$r"'

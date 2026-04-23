@@ -4,18 +4,11 @@ source:
   row: 295
   object: WiFi.Radio.{i}.
   api: scan()
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: 'official rerun 20260412T064317622551 exact-closed with prepared STA topology plus same-target driver-cache presence oracle: 5G 62:15:db:9e:31:f1, 6G 86:82:fe:58:ac:a6, 2.4G 6a:d7:aa:02:d7:bf. Earlier first-driver-BSSID equality was rejected by rerun 20260412T063939977577 as non-durable ordering noise.'
 topology:
   devices:
     DUT:
@@ -27,28 +20,28 @@ topology:
       transport: serial
       selector: COM0
       config:
-        - iface: 5g
-          mode: sta
-          ssid: TestPilot_BTM
-          key: testpilot6g
-        - iface: 6g
-          mode: sta
-          ssid: TestPilot_BTM
-          key: testpilot6g
-        - iface: 2.4g
-          mode: sta
-          ssid: TestPilot_24G
-          key: ''
+      - iface: 5g
+        mode: sta
+        ssid: TestPilot_BTM
+        key: testpilot6g
+      - iface: 6g
+        mode: sta
+        ssid: TestPilot_BTM
+        key: testpilot6g
+      - iface: 2.4g
+        mode: sta
+        ssid: TestPilot_24G
+        key: ''
   links:
-    - from: STA
-      to: DUT
-      band: 5g
-    - from: STA
-      to: DUT
-      band: 6g
-    - from: STA
-      to: DUT
-      band: 2.4g
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: STA
+    to: DUT
+    band: 6g
+  - from: STA
+    to: DUT
+    band: 2.4g
 test_environment: |
   Topology:
   - DUT: COM1 (AP role)
@@ -120,8 +113,13 @@ steps:
   action: exec
   capture: result_5g
   command:
-    - "out=$(ubus-cli \"WiFi.Radio.1.scan()\"); printf \"%s\\n\" \"$out\" | grep -qi \"error\" && exit 1; b=$(printf \"%s\\n\" \"$out\" | sed -n 's/.*BSSID = \"\\([^\"]*\\)\".*/\\1/p' | head -n1 | tr 'A-F' 'a-f'); [ -n \"$b\" ] || exit 1; ub=$(printf \"%s\\n\" \"$b\" | tr 'a-f' 'A-F'); wl -i wl0 escanresults | grep -iq \"^BSSID: ${ub}\\([[:space:]]\\|$\\)\" || exit 1; printf 'ScanCheck5g=ok\\n'; printf 'ScanBSSID5g=%s\\n' \"$b\"; printf 'DriverMatch5g=%s\\n' \"$b\""
-    - ":"
+  - "out=$(ubus-cli \"WiFi.Radio.1.scan()\"); printf \"%s\\n\" \"$out\" | grep -qi
+    \"error\" && exit 1; b=$(printf \"%s\\n\" \"$out\" | sed -n 's/.*BSSID = \"\\\
+    ([^\"]*\\)\".*/\\1/p' | head -n1 | tr 'A-F' 'a-f'); [ -n \"$b\" ] || exit 1; ub=$(printf
+    \"%s\\n\" \"$b\" | tr 'a-f' 'A-F'); wl -i wl0 escanresults | grep -iq \"^BSSID:
+    ${ub}\\([[:space:]]\\|$\\)\" || exit 1; printf 'ScanCheck5g=ok\\n'; printf 'ScanBSSID5g=%s\\\
+    n' \"$b\"; printf 'DriverMatch5g=%s\\n' \"$b\""
+  - ":"
   expected: 第一個 scan BSSID 應存在於同 band driver escanresults
   description: Radio.1 (5g) scan() + same-target driver-cache presence
 - id: step_6g
@@ -129,8 +127,13 @@ steps:
   action: exec
   capture: result_6g
   command:
-    - "out=$(ubus-cli \"WiFi.Radio.2.scan()\"); printf \"%s\\n\" \"$out\" | grep -qi \"error\" && exit 1; b=$(printf \"%s\\n\" \"$out\" | sed -n 's/.*BSSID = \"\\([^\"]*\\)\".*/\\1/p' | head -n1 | tr 'A-F' 'a-f'); [ -n \"$b\" ] || exit 1; ub=$(printf \"%s\\n\" \"$b\" | tr 'a-f' 'A-F'); wl -i wl1 escanresults | grep -iq \"^BSSID: ${ub}\\([[:space:]]\\|$\\)\" || exit 1; printf 'ScanCheck6g=ok\\n'; printf 'ScanBSSID6g=%s\\n' \"$b\"; printf 'DriverMatch6g=%s\\n' \"$b\""
-    - ":"
+  - "out=$(ubus-cli \"WiFi.Radio.2.scan()\"); printf \"%s\\n\" \"$out\" | grep -qi
+    \"error\" && exit 1; b=$(printf \"%s\\n\" \"$out\" | sed -n 's/.*BSSID = \"\\\
+    ([^\"]*\\)\".*/\\1/p' | head -n1 | tr 'A-F' 'a-f'); [ -n \"$b\" ] || exit 1; ub=$(printf
+    \"%s\\n\" \"$b\" | tr 'a-f' 'A-F'); wl -i wl1 escanresults | grep -iq \"^BSSID:
+    ${ub}\\([[:space:]]\\|$\\)\" || exit 1; printf 'ScanCheck6g=ok\\n'; printf 'ScanBSSID6g=%s\\\
+    n' \"$b\"; printf 'DriverMatch6g=%s\\n' \"$b\""
+  - ":"
   expected: 第一個 scan BSSID 應存在於同 band driver escanresults
   description: Radio.2 (6g) scan() + same-target driver-cache presence
 - id: step_24g
@@ -138,8 +141,13 @@ steps:
   action: exec
   capture: result_24g
   command:
-    - "out=$(ubus-cli \"WiFi.Radio.3.scan()\"); printf \"%s\\n\" \"$out\" | grep -qi \"error\" && exit 1; b=$(printf \"%s\\n\" \"$out\" | sed -n 's/.*BSSID = \"\\([^\"]*\\)\".*/\\1/p' | head -n1 | tr 'A-F' 'a-f'); [ -n \"$b\" ] || exit 1; ub=$(printf \"%s\\n\" \"$b\" | tr 'a-f' 'A-F'); wl -i wl2 escanresults | grep -iq \"^BSSID: ${ub}\\([[:space:]]\\|$\\)\" || exit 1; printf 'ScanCheck24g=ok\\n'; printf 'ScanBSSID24g=%s\\n' \"$b\"; printf 'DriverMatch24g=%s\\n' \"$b\""
-    - ":"
+  - "out=$(ubus-cli \"WiFi.Radio.3.scan()\"); printf \"%s\\n\" \"$out\" | grep -qi
+    \"error\" && exit 1; b=$(printf \"%s\\n\" \"$out\" | sed -n 's/.*BSSID = \"\\\
+    ([^\"]*\\)\".*/\\1/p' | head -n1 | tr 'A-F' 'a-f'); [ -n \"$b\" ] || exit 1; ub=$(printf
+    \"%s\\n\" \"$b\" | tr 'a-f' 'A-F'); wl -i wl2 escanresults | grep -iq \"^BSSID:
+    ${ub}\\([[:space:]]\\|$\\)\" || exit 1; printf 'ScanCheck24g=ok\\n'; printf 'ScanBSSID24g=%s\\\
+    n' \"$b\"; printf 'DriverMatch24g=%s\\n' \"$b\""
+  - ":"
   expected: 第一個 scan BSSID 應存在於同 band driver escanresults
   description: Radio.3 (2.4g) scan() + same-target driver-cache presence
 pass_criteria:

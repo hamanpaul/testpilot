@@ -2,12 +2,9 @@ id: wifi-llapi-D068-discoverymethodenabled-accesspoint-fils
 name: DiscoveryMethodEnabled — WiFi.AccessPoint.{i}.
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 68
   object: WiFi.AccessPoint.{i}.
   api: DiscoveryMethodEnabled
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -48,14 +45,13 @@ test_environment: 'Topology:
   recorded as Not Supported for the standard FILS value
 
   '
-setup_steps: "1) DUT baseline:\n   - keep AP1 / AP3 / AP5 enabled on the default non-open\
-  \ baseline\n   - confirm wl0 / wl1 / wl2 BSS instances are up before changing DiscoveryMethodEnabled\n\
+setup_steps: "1) DUT baseline:\n   - keep AP1 / AP3 / AP5 enabled on the default non-open
+  baseline\n   - confirm wl0 / wl1 / wl2 BSS instances are up before changing DiscoveryMethodEnabled\n\
   2) Standard FILS probe:\n   - read DiscoveryMethodEnabled on AP1, AP3, and AP5\n\
-  \   - try to set each band to FILS and capture the invalid value error\n   - confirm\
-  \ each getter remains Default after the rejected FILS write\n3) Alternate-value\
-  \ cross-check:\n   - set each band to FILSDiscovery and confirm getter readback\
-  \ changes to FILSDiscovery\n   - restore each band to Default before ending the\
-  \ case\n"
+  \   - try to set each band to FILS and capture the invalid value error\n   - confirm
+  each getter remains Default after the rejected FILS write\n3) Alternate-value cross-check:\n\
+  \   - set each band to FILSDiscovery and confirm getter readback changes to FILSDiscovery\n\
+  \   - restore each band to Default before ending the case\n"
 sta_env_setup: "DUT:\n  wl -i wl0 bss\n  wl -i wl1 bss\n  wl -i wl2 bss\n"
 test_procedure: '1) Read WiFi.AccessPoint.1/3/5.DiscoveryMethodEnabled directly from
   the DUT.
@@ -209,7 +205,8 @@ pass_criteria:
 - field: default_24g.DiscoveryMethodEnabled
   operator: equals
   value: Default
-  description: 2.4G AP5 should start at the default DiscoveryMethodEnabled value.
+  description: 2.4G AP5 should start at the default DiscoveryMethodEnabled 
+    value.
 - field: invalid_5g
   operator: contains
   value: invalid value
@@ -237,30 +234,33 @@ pass_criteria:
 - field: set_alt_5g.DiscoveryMethodEnabled
   operator: equals
   value: FILSDiscovery
-  description: 5G AP1 should explicitly acknowledge the accepted FILSDiscovery setter.
+  description: 5G AP1 should explicitly acknowledge the accepted FILSDiscovery 
+    setter.
 - field: set_alt_6g.DiscoveryMethodEnabled
   operator: equals
   value: FILSDiscovery
-  description: 6G AP3 should explicitly acknowledge the accepted FILSDiscovery setter.
+  description: 6G AP3 should explicitly acknowledge the accepted FILSDiscovery 
+    setter.
 - field: set_alt_24g.DiscoveryMethodEnabled
   operator: equals
   value: FILSDiscovery
-  description: 2.4G AP5 should explicitly acknowledge the accepted FILSDiscovery setter.
+  description: 2.4G AP5 should explicitly acknowledge the accepted FILSDiscovery
+    setter.
 - field: after_alt_5g.DiscoveryMethodEnabled
   operator: equals
   value: FILSDiscovery
-  description: 5G AP1 should read back FILSDiscovery after the alternate value is
-    accepted.
+  description: 5G AP1 should read back FILSDiscovery after the alternate value 
+    is accepted.
 - field: after_alt_6g.DiscoveryMethodEnabled
   operator: equals
   value: FILSDiscovery
-  description: 6G AP3 should read back FILSDiscovery after the alternate value is
-    accepted.
+  description: 6G AP3 should read back FILSDiscovery after the alternate value 
+    is accepted.
 - field: after_alt_24g.DiscoveryMethodEnabled
   operator: equals
   value: FILSDiscovery
-  description: 2.4G AP5 should read back FILSDiscovery after the alternate value is
-    accepted.
+  description: 2.4G AP5 should read back FILSDiscovery after the alternate value
+    is accepted.
 - field: restore_5g.DiscoveryMethodEnabled
   operator: equals
   value: Default
@@ -293,12 +293,3 @@ verification_command:
 - ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=Default
 - ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=Default
 - ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?"
-results_reference:
-  v4.0.3:
-    5g: Not Supported
-    6g: Not Supported
-    2.4g: Not Supported
-    comment: AP1/AP3/AP5 all defaulted to DiscoveryMethodEnabled="Default"; setting
-      FILS failed with error 10/invalid value on all three bands; setting FILSDiscovery
-      was accepted and read back as FILSDiscovery; each band was then restored to
-      Default. This case is calibrated as Not Supported for the standard FILS value.

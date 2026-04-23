@@ -4,17 +4,11 @@ source:
   row: 282
   object: WiFi.Radio.{i}.
   api: getScanResults()
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
 topology:
   devices:
     DUT:
@@ -26,44 +20,74 @@ steps:
   target: dut
   action: exec
   capture: combined_5g
-  command: 'OUT=$(ubus-cli "WiFi.Radio.1.scanCombinedData(channels=36,minRssi=-127,scanReason=Ssid)"); BSSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); STD=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*OperatingStandards = \"\([^\"]*\)\".*/\1/p" | head -n1); [ -n "$BSSID" ] && printf "CombinedBssid5g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; printf "CombinedOperatingStandards5g=%s\n" "$STD"'
+  command: 'OUT=$(ubus-cli "WiFi.Radio.1.scanCombinedData(channels=36,minRssi=-127,scanReason=Ssid)");
+    BSSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*BSSID = \"\([^\"]*\)\".*/\1/p"
+    | head -n1); STD=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*OperatingStandards
+    = \"\([^\"]*\)\".*/\1/p" | head -n1); [ -n "$BSSID" ] && printf "CombinedBssid5g=%s\n"
+    "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; printf "CombinedOperatingStandards5g=%s\n"
+    "$STD"'
   expected: 5G scanCombinedData 應回傳可解析的第一個 BSS target 與 OperatingStandards
-  description: Radio.1 (5g) 先用 same-scan public family 取回 target 的 OperatingStandards
+  description: Radio.1 (5g) 先用 same-scan public family 取回 target 的 
+    OperatingStandards
 - id: step_5g_scan
   target: dut
   action: exec
   capture: scan_5g
-  command: 'TARGET="{{combined_5g.CombinedBssid5g}}"; OUT=$(ubus-cli "WiFi.Radio.1.getScanResults(minRssi=-127)"); BLOCK=$(printf "%s\n" "$OUT" | grep -A20 -im1 "^[[:space:]]*BSSID = \"$TARGET\""); STD=$(printf "%s\n" "$BLOCK" | sed -n "s/^[[:space:]]*OperatingStandards = \"\([^\"]*\)\".*/\1/p" | head -n1); printf "LlapiOperatingStandards5g=%s\n" "$STD"'
+  command: 'TARGET="{{combined_5g.CombinedBssid5g}}"; OUT=$(ubus-cli "WiFi.Radio.1.getScanResults(minRssi=-127)");
+    BLOCK=$(printf "%s\n" "$OUT" | grep -A20 -im1 "^[[:space:]]*BSSID = \"$TARGET\"");
+    STD=$(printf "%s\n" "$BLOCK" | sed -n "s/^[[:space:]]*OperatingStandards = \"\([^\"]*\)\".*/\1/p"
+    | head -n1); printf "LlapiOperatingStandards5g=%s\n" "$STD"'
   expected: 5G getScanResults 應能回放同一個 same-scan target 的 OperatingStandards
-  description: Radio.1 (5g) 以相同 BSSID 驗證 getScanResults().OperatingStandards 與 paired same-scan cache 一致
+  description: Radio.1 (5g) 以相同 BSSID 驗證 getScanResults().OperatingStandards 與 
+    paired same-scan cache 一致
 - id: step_6g_combined
   target: dut
   action: exec
   capture: combined_6g
-  command: 'OUT=$(ubus-cli "WiFi.Radio.2.scanCombinedData(channels=5,minRssi=-127,scanReason=Ssid)"); BSSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); STD=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*OperatingStandards = \"\([^\"]*\)\".*/\1/p" | head -n1); [ -n "$BSSID" ] && printf "CombinedBssid6g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; printf "CombinedOperatingStandards6g=%s\n" "$STD"'
+  command: 'OUT=$(ubus-cli "WiFi.Radio.2.scanCombinedData(channels=5,minRssi=-127,scanReason=Ssid)");
+    BSSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*BSSID = \"\([^\"]*\)\".*/\1/p"
+    | head -n1); STD=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*OperatingStandards
+    = \"\([^\"]*\)\".*/\1/p" | head -n1); [ -n "$BSSID" ] && printf "CombinedBssid6g=%s\n"
+    "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; printf "CombinedOperatingStandards6g=%s\n"
+    "$STD"'
   expected: 6G scanCombinedData 應回傳可解析的第一個 BSS target 與 OperatingStandards
-  description: Radio.2 (6g) 先用 same-scan public family 取回 target 的 OperatingStandards
+  description: Radio.2 (6g) 先用 same-scan public family 取回 target 的 
+    OperatingStandards
 - id: step_6g_scan
   target: dut
   action: exec
   capture: scan_6g
-  command: 'TARGET="{{combined_6g.CombinedBssid6g}}"; OUT=$(ubus-cli "WiFi.Radio.2.getScanResults(minRssi=-127)"); BLOCK=$(printf "%s\n" "$OUT" | grep -A20 -im1 "^[[:space:]]*BSSID = \"$TARGET\""); STD=$(printf "%s\n" "$BLOCK" | sed -n "s/^[[:space:]]*OperatingStandards = \"\([^\"]*\)\".*/\1/p" | head -n1); printf "LlapiOperatingStandards6g=%s\n" "$STD"'
+  command: 'TARGET="{{combined_6g.CombinedBssid6g}}"; OUT=$(ubus-cli "WiFi.Radio.2.getScanResults(minRssi=-127)");
+    BLOCK=$(printf "%s\n" "$OUT" | grep -A20 -im1 "^[[:space:]]*BSSID = \"$TARGET\"");
+    STD=$(printf "%s\n" "$BLOCK" | sed -n "s/^[[:space:]]*OperatingStandards = \"\([^\"]*\)\".*/\1/p"
+    | head -n1); printf "LlapiOperatingStandards6g=%s\n" "$STD"'
   expected: 6G getScanResults 應能回放同一個 same-scan target 的 OperatingStandards
-  description: Radio.2 (6g) 以相同 BSSID 驗證 getScanResults().OperatingStandards 與 paired same-scan cache 一致
+  description: Radio.2 (6g) 以相同 BSSID 驗證 getScanResults().OperatingStandards 與 
+    paired same-scan cache 一致
 - id: step_24g_combined
   target: dut
   action: exec
   capture: combined_24g
-  command: 'OUT=$(ubus-cli "WiFi.Radio.3.scanCombinedData(channels=1,minRssi=-127,scanReason=Ssid)"); BSSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); STD=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*OperatingStandards = \"\([^\"]*\)\".*/\1/p" | head -n1); [ -n "$BSSID" ] && printf "CombinedBssid24g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; printf "CombinedOperatingStandards24g=%s\n" "$STD"'
+  command: 'OUT=$(ubus-cli "WiFi.Radio.3.scanCombinedData(channels=1,minRssi=-127,scanReason=Ssid)");
+    BSSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*BSSID = \"\([^\"]*\)\".*/\1/p"
+    | head -n1); STD=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*OperatingStandards
+    = \"\([^\"]*\)\".*/\1/p" | head -n1); [ -n "$BSSID" ] && printf "CombinedBssid24g=%s\n"
+    "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; printf "CombinedOperatingStandards24g=%s\n"
+    "$STD"'
   expected: 2.4G scanCombinedData 應回傳可解析的第一個 BSS target 與 OperatingStandards
-  description: Radio.3 (2.4g) 先用 same-scan public family 取回 target 的 OperatingStandards
+  description: Radio.3 (2.4g) 先用 same-scan public family 取回 target 的 
+    OperatingStandards
 - id: step_24g_scan
   target: dut
   action: exec
   capture: scan_24g
-  command: 'TARGET="{{combined_24g.CombinedBssid24g}}"; OUT=$(ubus-cli "WiFi.Radio.3.getScanResults(minRssi=-127)"); BLOCK=$(printf "%s\n" "$OUT" | grep -A20 -im1 "^[[:space:]]*BSSID = \"$TARGET\""); STD=$(printf "%s\n" "$BLOCK" | sed -n "s/^[[:space:]]*OperatingStandards = \"\([^\"]*\)\".*/\1/p" | head -n1); printf "LlapiOperatingStandards24g=%s\n" "$STD"'
+  command: 'TARGET="{{combined_24g.CombinedBssid24g}}"; OUT=$(ubus-cli "WiFi.Radio.3.getScanResults(minRssi=-127)");
+    BLOCK=$(printf "%s\n" "$OUT" | grep -A20 -im1 "^[[:space:]]*BSSID = \"$TARGET\"");
+    STD=$(printf "%s\n" "$BLOCK" | sed -n "s/^[[:space:]]*OperatingStandards = \"\([^\"]*\)\".*/\1/p"
+    | head -n1); printf "LlapiOperatingStandards24g=%s\n" "$STD"'
   expected: 2.4G getScanResults 應能回放同一個 same-scan target 的 OperatingStandards
-  description: Radio.3 (2.4g) 以相同 BSSID 驗證 getScanResults().OperatingStandards 與 paired same-scan cache 一致
+  description: Radio.3 (2.4g) 以相同 BSSID 驗證 getScanResults().OperatingStandards 與
+    paired same-scan cache 一致
 pass_criteria:
 - field: combined_5g.CombinedBssid5g
   operator: regex
@@ -76,7 +100,8 @@ pass_criteria:
 - field: scan_5g.LlapiOperatingStandards5g
   operator: equals
   reference: combined_5g.CombinedOperatingStandards5g
-  description: 5G getScanResults().OperatingStandards 必須與同次 combined scan 的 BSS 值相同
+  description: 5G getScanResults().OperatingStandards 必須與同次 combined scan 的 BSS 
+    值相同
 - field: combined_6g.CombinedBssid6g
   operator: regex
   value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -88,7 +113,8 @@ pass_criteria:
 - field: scan_6g.LlapiOperatingStandards6g
   operator: equals
   reference: combined_6g.CombinedOperatingStandards6g
-  description: 6G getScanResults().OperatingStandards 必須與同次 combined scan 的 BSS 值相同
+  description: 6G getScanResults().OperatingStandards 必須與同次 combined scan 的 BSS 
+    值相同
 - field: combined_24g.CombinedBssid24g
   operator: regex
   value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -100,4 +126,5 @@ pass_criteria:
 - field: scan_24g.LlapiOperatingStandards24g
   operator: equals
   reference: combined_24g.CombinedOperatingStandards24g
-  description: 2.4G getScanResults().OperatingStandards 必須與同次 combined scan 的 BSS 值相同
+  description: 2.4G getScanResults().OperatingStandards 必須與同次 combined scan 的 
+    BSS 值相同

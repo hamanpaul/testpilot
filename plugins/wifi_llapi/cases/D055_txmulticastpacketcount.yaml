@@ -2,16 +2,14 @@ id: wifi-llapi-D055-txmulticastpacketcount
 name: TxMulticastPacketCount — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 55
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: TxMulticastPacketCount
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount?"
+hlapi_command: ubus-cli 
+  "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount?"
 llapi_support: Support
 implemented_by: pWHM
 bands:
@@ -63,17 +61,16 @@ test_environment: 'Topology:
   is re-verified on separately calibrated bands
 
   '
-setup_steps: "1) DUT 5G baseline:\n   - enable Radio.1 / SSID.4 / AP1\n   - configure\
-  \ AP1 as WPA3-Personal with MFP required\n   - keep the validated live SSID/credential\
-  \ pair as TestPilot_BTM / testpilot6g\n2) STA 5G preparation:\n   - disable local\
-  \ AP1/AP2 on COM1\n   - move COM1 br-lan off 192.168.1.0/24 to avoid bridge self-hit\
-  \ side effects\n   - reset wl0 and its wpa_supplicant control socket\n   - connect\
-  \ wl0 to TestPilot_BTM with SAE\n3) Association evidence:\n   - COM1: iw dev wl0\
-  \ link ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status\n   - COM0: wl -i wl0\
-  \ assoclist\n"
-sta_env_setup: "DUT 5G AP baseline:\n  ubus-cli WiFi.Radio.1.Enable=1\n  ubus-cli\
-  \ WiFi.Radio.1.BeaconPeriod=100\n  ubus-cli WiFi.Radio.1.DTIMPeriod=3\n  ubus-cli\
-  \ WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1\n  ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1\n\
+setup_steps: "1) DUT 5G baseline:\n   - enable Radio.1 / SSID.4 / AP1\n   - configure
+  AP1 as WPA3-Personal with MFP required\n   - keep the validated live SSID/credential
+  pair as TestPilot_BTM / testpilot6g\n2) STA 5G preparation:\n   - disable local
+  AP1/AP2 on COM1\n   - move COM1 br-lan off 192.168.1.0/24 to avoid bridge self-hit
+  side effects\n   - reset wl0 and its wpa_supplicant control socket\n   - connect
+  wl0 to TestPilot_BTM with SAE\n3) Association evidence:\n   - COM1: iw dev wl0 link
+  ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status\n   - COM0: wl -i wl0 assoclist\n"
+sta_env_setup: "DUT 5G AP baseline:\n  ubus-cli WiFi.Radio.1.Enable=1\n  ubus-cli
+  WiFi.Radio.1.BeaconPeriod=100\n  ubus-cli WiFi.Radio.1.DTIMPeriod=3\n  ubus-cli
+  WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1\n  ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1\n\
   \  ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto\n  ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1\n\
   \  ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1\n  ubus-cli WiFi.Radio.1.OfdmaEnable=1\n\
   \  ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0\n  ubus-cli WiFi.Radio.1.OperatingStandards=ax\n\
@@ -86,20 +83,19 @@ sta_env_setup: "DUT 5G AP baseline:\n  ubus-cli WiFi.Radio.1.Enable=1\n  ubus-cl
   \  ubus-cli WiFi.SSID.4.SSID=TestPilot_BTM\n  ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=\n\
   \  ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=\n  ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal\n\
   \  ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=testpilot6g\n  ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Required\n\
-  \  ubus-cli WiFi.AccessPoint.1.Enable=1\nSTA 5G preparation:\n  ifconfig br-lan\
-  \ 192.168.88.1 netmask 255.255.255.0 up\n  ubus-cli WiFi.AccessPoint.1.Enable=0\n\
+  \  ubus-cli WiFi.AccessPoint.1.Enable=1\nSTA 5G preparation:\n  ifconfig br-lan
+  192.168.88.1 netmask 255.255.255.0 up\n  ubus-cli WiFi.AccessPoint.1.Enable=0\n\
   \  ubus-cli WiFi.AccessPoint.2.Enable=0\n  wpa_cli terminate 2>/dev/null || true\n\
-  \  rm -f /var/run/wpa_supplicant/wl0 2>/dev/null || true\n  iw dev wl0.1 del 2>/dev/null\
-  \ || true\n  iw dev wl0 disconnect 2>/dev/null || true\n  iw dev wl1 disconnect\
-  \ 2>/dev/null || true\n  iw dev wl2 disconnect 2>/dev/null || true\n  iw dev wl0\
-  \ set type managed\n  ifconfig wl0 up\n  mkdir -p /var/run/wpa_supplicant\n  printf\
-  \ 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nsae_pwe=2\\nnetwork={\\\
-  nssid=\"TestPilot_BTM\"\\nkey_mgmt=SAE\\nsae_password=\"testpilot6g\"\\nieee80211w=2\\\
-  nscan_ssid=1\\n}\\n' > /tmp/wpa_wl0.conf\n  wpa_supplicant -B -D nl80211 -i wl0\
-  \ -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant\n  sleep 3\nSTA 5G connect verify:\n\
-  \  wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect\n  sleep 10\n  iw dev wl0\
-  \ link\n  wpa_cli -p /var/run/wpa_supplicant -i wl0 status\nDUT association evidence:\n\
-  \  wl -i wl0 assoclist\n"
+  \  rm -f /var/run/wpa_supplicant/wl0 2>/dev/null || true\n  iw dev wl0.1 del 2>/dev/null
+  || true\n  iw dev wl0 disconnect 2>/dev/null || true\n  iw dev wl1 disconnect 2>/dev/null
+  || true\n  iw dev wl2 disconnect 2>/dev/null || true\n  iw dev wl0 set type managed\n\
+  \  ifconfig wl0 up\n  mkdir -p /var/run/wpa_supplicant\n  printf 'ctrl_interface=/var/run/wpa_supplicant\\\
+  nupdate_config=1\\nsae_pwe=2\\nnetwork={\\nssid=\"TestPilot_BTM\"\\nkey_mgmt=SAE\\\
+  nsae_password=\"testpilot6g\"\\nieee80211w=2\\nscan_ssid=1\\n}\\n' > /tmp/wpa_wl0.conf\n\
+  \  wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant\n\
+  \  sleep 3\nSTA 5G connect verify:\n  wpa_cli -p /var/run/wpa_supplicant -i wl0
+  reconnect\n  sleep 10\n  iw dev wl0 link\n  wpa_cli -p /var/run/wpa_supplicant -i
+  wl0 status\nDUT association evidence:\n  wl -i wl0 assoclist\n"
 test_procedure: '1) Resolve COM1 wl0''s live STA MAC and baseline RX counters, then
   require AP1 AssociatedDevice.1 to point to that same station.
 
@@ -121,43 +117,49 @@ steps:
   target: STA
   command:
   - cat /sys/class/net/wl0/address | tr 'A-F' 'a-f' | sed 's/^/StaMac=/'
-  - ifconfig wl0 | sed -n 's/.*RX packets:\([0-9][0-9]*\).*/StaRxPacketsBefore=\1/p;
-    s/.*RX bytes:\([0-9][0-9]*\).*/StaRxBytesBefore=\1/p'
+  - ifconfig wl0 | sed -n 's/.*RX 
+    packets:\([0-9][0-9]*\).*/StaRxPacketsBefore=\1/p; s/.*RX 
+    bytes:\([0-9][0-9]*\).*/StaRxBytesBefore=\1/p'
   capture: sta_identity
 - id: step2
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'
-    | tr 'A-F' 'a-f' | sed 's/^/MACAddress=/'
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
+    's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f' | sed 
+    's/^/MACAddress=/'
   depends_on: step1
   capture: assoc_entry
 - id: step3
   action: exec
   target: DUT
-  command: OUT=$(ping -b -I br-lan -c 10 -W 1 192.168.1.255 2>&1); printf '%s\n' "$OUT";
-    printf '%s\n' "$OUT" | awk '/packets transmitted/ {print "ProbeTxPackets=" $1;
-    exit}'
+  command: OUT=$(ping -b -I br-lan -c 10 -W 1 192.168.1.255 2>&1); printf '%s\n'
+    "$OUT"; printf '%s\n' "$OUT" | awk '/packets transmitted/ {print 
+    "ProbeTxPackets=" $1; exit}'
   depends_on: step2
   capture: probe
 - id: step4
   action: exec
   target: STA
-  command: ifconfig wl0 | sed -n 's/.*RX packets:\([0-9][0-9]*\).*/StaRxPacketsAfter=\1/p;
-    s/.*RX bytes:\([0-9][0-9]*\).*/StaRxBytesAfter=\1/p'
+  command: ifconfig wl0 | sed -n 's/.*RX 
+    packets:\([0-9][0-9]*\).*/StaRxPacketsAfter=\1/p; s/.*RX 
+    bytes:\([0-9][0-9]*\).*/StaRxBytesAfter=\1/p'
   depends_on: step3
   capture: sta_after
 - id: step5
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount?"
+  command: ubus-cli 
+    "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount?"
   depends_on: step4
   capture: result
 - id: step6
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= '/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/
-    {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxMulticastPacketCount=/
-    {print "AssocTxMulticastPacketCount=" $2}'
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= 
+    '/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", 
+    $2); print "AssocMAC=" tolower($2)} 
+    /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxMulticastPacketCount=/ {print
+    "AssocTxMulticastPacketCount=" $2}'
   depends_on: step5
   capture: assoc_snapshot
 - id: step7
@@ -174,7 +176,8 @@ pass_criteria:
 - field: sta_identity.StaMac
   operator: regex
   value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: COM1 wl0 must resolve to a concrete live STA MAC before DUT-side validation.
+  description: COM1 wl0 must resolve to a concrete live STA MAC before DUT-side 
+    validation.
 - field: assoc_entry.MACAddress
   operator: regex
   value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -182,16 +185,18 @@ pass_criteria:
 - field: assoc_entry.MACAddress
   operator: equals
   reference: sta_identity.StaMac
-  description: AP1 AssociatedDevice.1 must correspond to the same COM1 wl0 station
-    used for this manual checkpoint.
+  description: AP1 AssociatedDevice.1 must correspond to the same COM1 wl0 
+    station used for this manual checkpoint.
 - field: probe.ProbeTxPackets
   operator: '>'
   value: '0'
-  description: DUT broadcast probe must actually transmit packets during this checkpoint.
+  description: DUT broadcast probe must actually transmit packets during this 
+    checkpoint.
 - field: sta_after.StaRxPacketsAfter
   operator: '>'
   reference: sta_identity.StaRxPacketsBefore
-  description: COM1 wl0 must receive additional packets after the DUT broadcast probe.
+  description: COM1 wl0 must receive additional packets after the DUT broadcast 
+    probe.
 - field: sta_after.StaRxBytesAfter
   operator: '>'
   reference: sta_identity.StaRxBytesBefore
@@ -199,57 +204,52 @@ pass_criteria:
 - field: result.TxMulticastPacketCount
   operator: equals
   value: '0'
-  description: LLAPI TxMulticastPacketCount still reads 0 during this checkpoint.
+  description: LLAPI TxMulticastPacketCount still reads 0 during this 
+    checkpoint.
 - field: assoc_snapshot.AssocMAC
   operator: equals
   reference: assoc_entry.MACAddress
-  description: AssociatedDevice snapshot evidence must come from the same AP1 station
-    entry.
+  description: AssociatedDevice snapshot evidence must come from the same AP1 
+    station entry.
 - field: result.TxMulticastPacketCount
   operator: equals
   reference: assoc_snapshot.AssocTxMulticastPacketCount
-  description: Direct getter TxMulticastPacketCount must match the same AssociatedDevice
-    snapshot value.
+  description: Direct getter TxMulticastPacketCount must match the same 
+    AssociatedDevice snapshot value.
 - field: driver_counter.DriverAssocMac
   operator: equals
   reference: assoc_entry.MACAddress
-  description: Driver evidence must target the same AssociatedDevice MAC resolved
-    in step2.
+  description: Driver evidence must target the same AssociatedDevice MAC 
+    resolved in step2.
 - field: driver_counter.DriverTxMulticastPacketCount
   operator: equals
   value: '0'
-  description: wl0 sta_info tx mcast/bcast pkts still reads 0 for the same STA even
-    after the broadcast probe.
+  description: wl0 sta_info tx mcast/bcast pkts still reads 0 for the same STA 
+    even after the broadcast probe.
 - field: driver_counter.DriverTxMulticastBytes
   operator: equals
   value: '0'
-  description: wl0 sta_info tx mcast/bcast bytes still reads 0 for the same STA even
-    after the broadcast probe.
+  description: wl0 sta_info tx mcast/bcast bytes still reads 0 for the same STA 
+    even after the broadcast probe.
 verification_command:
 - cat /sys/class/net/wl0/address | tr 'A-F' 'a-f' | sed 's/^/StaMac=/'
-- ifconfig wl0 | sed -n 's/.*RX packets:\([0-9][0-9]*\).*/StaRxPacketsBefore=\1/p;
-  s/.*RX bytes:\([0-9][0-9]*\).*/StaRxBytesBefore=\1/p'
-- OUT=$(ping -b -I br-lan -c 10 -W 1 192.168.1.255 2>&1); printf '%s\n' "$OUT"; printf
-  '%s\n' "$OUT" | awk '/packets transmitted/ {print "ProbeTxPackets=" $1; exit}'
-- ifconfig wl0 | sed -n 's/.*RX packets:\([0-9][0-9]*\).*/StaRxPacketsAfter=\1/p;
-  s/.*RX bytes:\([0-9][0-9]*\).*/StaRxBytesAfter=\1/p'
+- ifconfig wl0 | sed -n 's/.*RX 
+  packets:\([0-9][0-9]*\).*/StaRxPacketsBefore=\1/p; s/.*RX 
+  bytes:\([0-9][0-9]*\).*/StaRxBytesBefore=\1/p'
+- OUT=$(ping -b -I br-lan -c 10 -W 1 192.168.1.255 2>&1); printf '%s\n' "$OUT"; 
+  printf '%s\n' "$OUT" | awk '/packets transmitted/ {print "ProbeTxPackets=" $1;
+  exit}'
+- ifconfig wl0 | sed -n 's/.*RX 
+  packets:\([0-9][0-9]*\).*/StaRxPacketsAfter=\1/p; s/.*RX 
+  bytes:\([0-9][0-9]*\).*/StaRxBytesAfter=\1/p'
 - ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount?"
-- ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= '/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/
-  {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxMulticastPacketCount=/
-  {print "AssocTxMulticastPacketCount=" $2}'
+- ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= 
+  '/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2);
+  print "AssocMAC=" tolower($2)} 
+  /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxMulticastPacketCount=/ {print 
+  "AssocTxMulticastPacketCount=" $2}'
 - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
   ''s/.*MACAddress="\([^"]*\)".*/\1/p'' | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ] &&
   echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n ''s/^[[:space:]]*tx
   mcast\/bcast pkts: \([0-9][0-9]*\).*/DriverTxMulticastPacketCount=\1/p; s/^[[:space:]]*tx
   mcast\/bcast bytes: \([0-9][0-9]*\).*/DriverTxMulticastBytes=\1/p'''
-results_reference:
-  v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
-    comment: 5G serialwrap retest resolved the same COM1 wl0 STA MAC on AP1, sent
-      10 DUT broadcast packets on br-lan, and observed COM1 wl0 RX packets/bytes increase,
-      yet both WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount and wl0
-      sta_info tx mcast/bcast counters for that same STA remained 0. The workbook
-      verdict stays To be tested until this behavior is re-verified across separately
-      calibrated bands.

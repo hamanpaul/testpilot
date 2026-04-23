@@ -4,18 +4,11 @@ source:
   row: 219
   object: WiFi.Radio.{i}.NaStaMonitor.
   api: getNaStationStats()
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Skip
-    6g: Skip
-    2.4g: Skip
-    comment: WiFi.EndPoint not supported on this platform; getNaStationStats() returns 'object not found'
 topology:
   devices:
     DUT:

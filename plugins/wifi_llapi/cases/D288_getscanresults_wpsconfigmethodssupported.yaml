@@ -4,17 +4,11 @@ source:
   row: 288
   object: WiFi.Radio.{i}.
   api: getScanResults()
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
 topology:
   devices:
     DUT:
@@ -26,33 +20,43 @@ steps:
   target: dut
   action: exec
   capture: scan_5g
-  command: 'VAL=$(ubus-cli "WiFi.Radio.1.getScanResults()" | sed -n ''s/^[[:space:]]*WPSConfigMethodsSupported = "\([^"]*\)".*/\1/p'' | head -n1); printf "WPSConfigMethodsSupported=%s\n" "$VAL"'
+  command: 'VAL=$(ubus-cli "WiFi.Radio.1.getScanResults()" | sed -n ''s/^[[:space:]]*WPSConfigMethodsSupported
+    = "\([^"]*\)".*/\1/p'' | head -n1); printf "WPSConfigMethodsSupported=%s\n" "$VAL"'
   expected: 5G getScanResults() 的 WPSConfigMethodsSupported 需可萃取為空字串 fail shape
-  description: Radio.1 (5g) 擷取 neighboring scan 的 WPSConfigMethodsSupported live shape
+  description: Radio.1 (5g) 擷取 neighboring scan 的 WPSConfigMethodsSupported live
+    shape
 - id: step_6g_scan
   target: dut
   action: exec
   capture: scan_6g
-  command: 'VAL=$(ubus-cli "WiFi.Radio.2.getScanResults()" | sed -n ''s/^[[:space:]]*WPSConfigMethodsSupported = "\([^"]*\)".*/\1/p'' | head -n1); printf "WPSConfigMethodsSupported=%s\n" "$VAL"'
+  command: 'VAL=$(ubus-cli "WiFi.Radio.2.getScanResults()" | sed -n ''s/^[[:space:]]*WPSConfigMethodsSupported
+    = "\([^"]*\)".*/\1/p'' | head -n1); printf "WPSConfigMethodsSupported=%s\n" "$VAL"'
   expected: 6G getScanResults() 的 WPSConfigMethodsSupported 需可萃取為空字串 fail shape
-  description: Radio.2 (6g) 擷取 neighboring scan 的 WPSConfigMethodsSupported live shape
+  description: Radio.2 (6g) 擷取 neighboring scan 的 WPSConfigMethodsSupported live
+    shape
 - id: step_24g_scan
   target: dut
   action: exec
   capture: scan_24g
-  command: 'VAL=$(ubus-cli "WiFi.Radio.3.getScanResults()" | sed -n ''s/^[[:space:]]*WPSConfigMethodsSupported = "\([^"]*\)".*/\1/p'' | head -n1); printf "WPSConfigMethodsSupported=%s\n" "$VAL"'
-  expected: 2.4G getScanResults() 的 WPSConfigMethodsSupported 需可萃取為空字串 fail shape
-  description: Radio.3 (2.4g) 擷取 neighboring scan 的 WPSConfigMethodsSupported live shape
+  command: 'VAL=$(ubus-cli "WiFi.Radio.3.getScanResults()" | sed -n ''s/^[[:space:]]*WPSConfigMethodsSupported
+    = "\([^"]*\)".*/\1/p'' | head -n1); printf "WPSConfigMethodsSupported=%s\n" "$VAL"'
+  expected: 2.4G getScanResults() 的 WPSConfigMethodsSupported 需可萃取為空字串 fail 
+    shape
+  description: Radio.3 (2.4g) 擷取 neighboring scan 的 WPSConfigMethodsSupported 
+    live shape
 pass_criteria:
 - field: scan_5g.WPSConfigMethodsSupported
   operator: equals
   value: ''
-  description: 5G neighboring scan 未提供 WPSConfigMethodsSupported，live shape 應維持空字串
+  description: 5G neighboring scan 未提供 WPSConfigMethodsSupported，live shape 
+    應維持空字串
 - field: scan_6g.WPSConfigMethodsSupported
   operator: equals
   value: ''
-  description: 6G neighboring scan 未提供 WPSConfigMethodsSupported，live shape 應維持空字串
+  description: 6G neighboring scan 未提供 WPSConfigMethodsSupported，live shape 
+    應維持空字串
 - field: scan_24g.WPSConfigMethodsSupported
   operator: equals
   value: ''
-  description: 2.4G neighboring scan 未提供 WPSConfigMethodsSupported，live shape 應維持空字串
+  description: 2.4G neighboring scan 未提供 WPSConfigMethodsSupported，live shape 
+    應維持空字串

@@ -1,9 +1,7 @@
 id: wifi-llapi-D092-wepkey-accesspoint-security
-name: "WEPKey \u2014 WiFi.AccessPoint.{i}.Security"
+name: "WEPKey — WiFi.AccessPoint.{i}.Security"
 version: '1.0'
 source:
-  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-  sheet: Wifi_LLAPI
   row: 92
   object: "WiFi.AccessPoint.{i}.Security"
   api: "WEPKey"
@@ -14,9 +12,9 @@ hlapi_command: ubus-cli WiFi.AccessPoint.{i}.Security.WEPKey=AABBCCDDEEFF0
 llapi_support: Support
 implemented_by: pWHM
 bands:
-  - 5g
-  - 6g
-  - 2.4g
+- 5g
+- 6g
+- 2.4g
 topology:
   devices:
     DUT:
@@ -50,226 +48,252 @@ test_procedure: |
   Expected: 5G / 2.4G align with workbook WEP-128 path; 6G remains Not Supported.
 
 steps:
-  - id: step1_baseline_5g
-    action: exec
-    target: DUT
-    command:
-      - echo "ModesSupported5g=$(ubus-cli WiFi.AccessPoint.1.Security.ModesSupported? 2>/dev/null | grep ModesSupported= | cut -d\" -f2)"
-      - echo "BaselineModeEnabled5g=$(ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | cut -d\" -f2)"
-      - line=$(grep -im1 "^wep_key" /tmp/wl0_hapd.conf 2>/dev/null); echo "HostapdWep5g=${line:-ABSENT}"
-    capture: baseline_5g
+- id: step1_baseline_5g
+  action: exec
+  target: DUT
+  command:
+  - echo "ModesSupported5g=$(ubus-cli 
+    WiFi.AccessPoint.1.Security.ModesSupported? 2>/dev/null | grep 
+    ModesSupported= | cut -d\" -f2)"
+  - echo "BaselineModeEnabled5g=$(ubus-cli 
+    WiFi.AccessPoint.1.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | 
+    cut -d\" -f2)"
+  - line=$(grep -im1 "^wep_key" /tmp/wl0_hapd.conf 2>/dev/null); echo 
+    "HostapdWep5g=${line:-ABSENT}"
+  capture: baseline_5g
 
-  - id: step2_set_5g
-    action: exec
-    target: DUT
-    depends_on: step1_baseline_5g
-    command:
-      - 'ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WEP-128'
-      - sleep 2
-      - 'ubus-cli WiFi.AccessPoint.1.Security.WEPKey=AABBCCDDEEFF0'
-    capture: set_5g
+- id: step2_set_5g
+  action: exec
+  target: DUT
+  depends_on: step1_baseline_5g
+  command:
+  - 'ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WEP-128'
+  - sleep 2
+  - 'ubus-cli WiFi.AccessPoint.1.Security.WEPKey=AABBCCDDEEFF0'
+  capture: set_5g
 
-  - id: step3_readback_5g
-    action: exec
-    target: DUT
-    depends_on: step2_set_5g
-    command:
-      - sleep 2
-      - echo "GetterModeEnabled5g=$(ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | cut -d\" -f2)"
-      - echo "GetterWEPKey5g=$(ubus-cli WiFi.AccessPoint.1.Security.WEPKey? 2>/dev/null | grep WEPKey= | cut -d\" -f2)"
-      - line=$(grep -im1 "^wep_key" /tmp/wl0_hapd.conf 2>/dev/null); echo "HostapdWepAfter5g=${line:-ABSENT}"
-    capture: readback_5g
+- id: step3_readback_5g
+  action: exec
+  target: DUT
+  depends_on: step2_set_5g
+  command:
+  - sleep 2
+  - echo "GetterModeEnabled5g=$(ubus-cli 
+    WiFi.AccessPoint.1.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | 
+    cut -d\" -f2)"
+  - echo "GetterWEPKey5g=$(ubus-cli WiFi.AccessPoint.1.Security.WEPKey? 
+    2>/dev/null | grep WEPKey= | cut -d\" -f2)"
+  - line=$(grep -im1 "^wep_key" /tmp/wl0_hapd.conf 2>/dev/null); echo 
+    "HostapdWepAfter5g=${line:-ABSENT}"
+  capture: readback_5g
 
-  - id: step4_restore_5g
-    action: exec
-    target: DUT
-    depends_on: step3_readback_5g
-    command:
-      - ubus-cli WiFi.AccessPoint.1.Security.WEPKey=123456789ABCD
-      - ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
-      - sleep 2
-      - echo "RestoredModeEnabled5g=$(ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | cut -d\" -f2)"
-      - line=$(grep -im1 "^wep_key" /tmp/wl0_hapd.conf 2>/dev/null); echo "RestoredHostapdWep5g=${line:-ABSENT}"
-    capture: restore_5g
+- id: step4_restore_5g
+  action: exec
+  target: DUT
+  depends_on: step3_readback_5g
+  command:
+  - ubus-cli WiFi.AccessPoint.1.Security.WEPKey=123456789ABCD
+  - ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+  - sleep 2
+  - echo "RestoredModeEnabled5g=$(ubus-cli 
+    WiFi.AccessPoint.1.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | 
+    cut -d\" -f2)"
+  - line=$(grep -im1 "^wep_key" /tmp/wl0_hapd.conf 2>/dev/null); echo 
+    "RestoredHostapdWep5g=${line:-ABSENT}"
+  capture: restore_5g
 
-  - id: step5_baseline_6g
-    action: exec
-    target: DUT
-    depends_on: step4_restore_5g
-    command:
-      - echo "ModesSupported6g=$(ubus-cli WiFi.AccessPoint.3.Security.ModesSupported? 2>/dev/null | grep ModesSupported= | cut -d\" -f2)"
-      - echo "BaselineModeEnabled6g=$(ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | cut -d\" -f2)"
-      - line=$(grep -im1 "^wep_key" /tmp/wl1_hapd.conf 2>/dev/null); echo "HostapdWep6g=${line:-ABSENT}"
-    capture: baseline_6g
+- id: step5_baseline_6g
+  action: exec
+  target: DUT
+  depends_on: step4_restore_5g
+  command:
+  - echo "ModesSupported6g=$(ubus-cli 
+    WiFi.AccessPoint.3.Security.ModesSupported? 2>/dev/null | grep 
+    ModesSupported= | cut -d\" -f2)"
+  - echo "BaselineModeEnabled6g=$(ubus-cli 
+    WiFi.AccessPoint.3.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | 
+    cut -d\" -f2)"
+  - line=$(grep -im1 "^wep_key" /tmp/wl1_hapd.conf 2>/dev/null); echo 
+    "HostapdWep6g=${line:-ABSENT}"
+  capture: baseline_6g
 
-  - id: step6_set_6g
-    action: exec
-    target: DUT
-    depends_on: step5_baseline_6g
-    command: 'echo "SkippedSet6g=unsupported_by_modes_supported"'
-    capture: set_6g
+- id: step6_set_6g
+  action: exec
+  target: DUT
+  depends_on: step5_baseline_6g
+  command: 'echo "SkippedSet6g=unsupported_by_modes_supported"'
+  capture: set_6g
 
-  - id: step7_readback_6g
-    action: exec
-    target: DUT
-    depends_on: step6_set_6g
-    command:
-      - echo "ModesSupportedAfter6g=$(ubus-cli WiFi.AccessPoint.3.Security.ModesSupported? 2>/dev/null | grep ModesSupported= | cut -d\" -f2)"
-      - echo "GetterModeEnabled6g=$(ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | cut -d\" -f2)"
-      - line=$(grep -im1 "^wep_key" /tmp/wl1_hapd.conf 2>/dev/null); echo "HostapdWepAfter6g=${line:-ABSENT}"
-    capture: readback_6g
+- id: step7_readback_6g
+  action: exec
+  target: DUT
+  depends_on: step6_set_6g
+  command:
+  - echo "ModesSupportedAfter6g=$(ubus-cli 
+    WiFi.AccessPoint.3.Security.ModesSupported? 2>/dev/null | grep 
+    ModesSupported= | cut -d\" -f2)"
+  - echo "GetterModeEnabled6g=$(ubus-cli 
+    WiFi.AccessPoint.3.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | 
+    cut -d\" -f2)"
+  - line=$(grep -im1 "^wep_key" /tmp/wl1_hapd.conf 2>/dev/null); echo 
+    "HostapdWepAfter6g=${line:-ABSENT}"
+  capture: readback_6g
 
-  - id: step8_restore_6g
-    action: exec
-    target: DUT
-    depends_on: step7_readback_6g
-    command:
-      - echo "RestoredModeEnabled6g=$(ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | cut -d\" -f2)"
-      - line=$(grep -im1 "^wep_key" /tmp/wl1_hapd.conf 2>/dev/null); echo "RestoredHostapdWep6g=${line:-ABSENT}"
-    capture: restore_6g
+- id: step8_restore_6g
+  action: exec
+  target: DUT
+  depends_on: step7_readback_6g
+  command:
+  - echo "RestoredModeEnabled6g=$(ubus-cli 
+    WiFi.AccessPoint.3.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | 
+    cut -d\" -f2)"
+  - line=$(grep -im1 "^wep_key" /tmp/wl1_hapd.conf 2>/dev/null); echo 
+    "RestoredHostapdWep6g=${line:-ABSENT}"
+  capture: restore_6g
 
-  - id: step9_baseline_24g
-    action: exec
-    target: DUT
-    depends_on: step8_restore_6g
-    command:
-      - echo "ModesSupported24g=$(ubus-cli WiFi.AccessPoint.5.Security.ModesSupported? 2>/dev/null | grep ModesSupported= | cut -d\" -f2)"
-      - echo "BaselineModeEnabled24g=$(ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | cut -d\" -f2)"
-      - line=$(grep -im1 "^wep_key" /tmp/wl2_hapd.conf 2>/dev/null); echo "HostapdWep24g=${line:-ABSENT}"
-    capture: baseline_24g
+- id: step9_baseline_24g
+  action: exec
+  target: DUT
+  depends_on: step8_restore_6g
+  command:
+  - echo "ModesSupported24g=$(ubus-cli 
+    WiFi.AccessPoint.5.Security.ModesSupported? 2>/dev/null | grep 
+    ModesSupported= | cut -d\" -f2)"
+  - echo "BaselineModeEnabled24g=$(ubus-cli 
+    WiFi.AccessPoint.5.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | 
+    cut -d\" -f2)"
+  - line=$(grep -im1 "^wep_key" /tmp/wl2_hapd.conf 2>/dev/null); echo 
+    "HostapdWep24g=${line:-ABSENT}"
+  capture: baseline_24g
 
-  - id: step10_set_24g
-    action: exec
-    target: DUT
-    depends_on: step9_baseline_24g
-    command:
-      - 'ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WEP-128'
-      - sleep 2
-      - 'ubus-cli WiFi.AccessPoint.5.Security.WEPKey=AABBCCDDEEFF0'
-    capture: set_24g
+- id: step10_set_24g
+  action: exec
+  target: DUT
+  depends_on: step9_baseline_24g
+  command:
+  - 'ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WEP-128'
+  - sleep 2
+  - 'ubus-cli WiFi.AccessPoint.5.Security.WEPKey=AABBCCDDEEFF0'
+  capture: set_24g
 
-  - id: step11_readback_24g
-    action: exec
-    target: DUT
-    depends_on: step10_set_24g
-    command:
-      - sleep 2
-      - echo "GetterModeEnabled24g=$(ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | cut -d\" -f2)"
-      - echo "GetterWEPKey24g=$(ubus-cli WiFi.AccessPoint.5.Security.WEPKey? 2>/dev/null | grep WEPKey= | cut -d\" -f2)"
-      - line=$(grep -im1 "^wep_key" /tmp/wl2_hapd.conf 2>/dev/null); echo "HostapdWepAfter24g=${line:-ABSENT}"
-    capture: readback_24g
+- id: step11_readback_24g
+  action: exec
+  target: DUT
+  depends_on: step10_set_24g
+  command:
+  - sleep 2
+  - echo "GetterModeEnabled24g=$(ubus-cli 
+    WiFi.AccessPoint.5.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | 
+    cut -d\" -f2)"
+  - echo "GetterWEPKey24g=$(ubus-cli WiFi.AccessPoint.5.Security.WEPKey? 
+    2>/dev/null | grep WEPKey= | cut -d\" -f2)"
+  - line=$(grep -im1 "^wep_key" /tmp/wl2_hapd.conf 2>/dev/null); echo 
+    "HostapdWepAfter24g=${line:-ABSENT}"
+  capture: readback_24g
 
-  - id: step12_restore_24g
-    action: exec
-    target: DUT
-    depends_on: step11_readback_24g
-    command:
-      - ubus-cli WiFi.AccessPoint.5.Security.WEPKey=123456789ABCD
-      - ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal
-      - sleep 2
-      - echo "RestoredModeEnabled24g=$(ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | cut -d\" -f2)"
-      - line=$(grep -im1 "^wep_key" /tmp/wl2_hapd.conf 2>/dev/null); echo "RestoredHostapdWep24g=${line:-ABSENT}"
-    capture: restore_24g
+- id: step12_restore_24g
+  action: exec
+  target: DUT
+  depends_on: step11_readback_24g
+  command:
+  - ubus-cli WiFi.AccessPoint.5.Security.WEPKey=123456789ABCD
+  - ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal
+  - sleep 2
+  - echo "RestoredModeEnabled24g=$(ubus-cli 
+    WiFi.AccessPoint.5.Security.ModeEnabled? 2>/dev/null | grep ModeEnabled= | 
+    cut -d\" -f2)"
+  - line=$(grep -im1 "^wep_key" /tmp/wl2_hapd.conf 2>/dev/null); echo 
+    "RestoredHostapdWep24g=${line:-ABSENT}"
+  capture: restore_24g
 
 pass_criteria:
-  - field: baseline_5g.ModesSupported5g
-    operator: contains
-    value: 'WEP-128'
-    description: '5G ModesSupported should advertise WEP-128'
-  - field: baseline_5g.HostapdWep5g
-    operator: equals
-    value: 'ABSENT'
-    description: '5G WPA baseline should not expose hostapd wep_key lines'
-  - field: readback_5g.GetterModeEnabled5g
-    operator: equals
-    value: 'WEP-128'
-    description: '5G ModeEnabled should switch to WEP-128 before validating WEPKey'
-  - field: readback_5g.GetterWEPKey5g
-    operator: equals
-    value: 'AABBCCDDEEFF0'
-    description: '5G getter should read back the new WEP key under WEP-128'
-  - field: readback_5g.HostapdWepAfter5g
-    operator: contains
-    value: 'wep_key'
-    description: '5G hostapd should expose wep_key lines after switching to WEP-128'
-  - field: restore_5g.RestoredModeEnabled5g
-    operator: equals
-    value: 'WPA2-Personal'
-    description: '5G should return to WPA2-Personal baseline after cleanup'
-  - field: restore_5g.RestoredHostapdWep5g
-    operator: equals
-    value: 'ABSENT'
-    description: '5G hostapd should no longer expose wep_key lines after cleanup'
-  - field: baseline_6g.ModesSupported6g
-    operator: contains
-    value: 'WPA3-Personal'
-    description: '6G ModesSupported should still advertise WPA3-Personal'
-  - field: baseline_6g.ModesSupported6g
-    operator: not_contains
-    value: 'WEP-128'
-    description: '6G ModesSupported should not advertise WEP-128'
-  - field: baseline_6g.BaselineModeEnabled6g
-    operator: equals
-    value: 'WPA3-Personal'
-    description: '6G should remain on the WPA3 baseline'
-  - field: baseline_6g.HostapdWep6g
-    operator: equals
-    value: 'ABSENT'
-    description: '6G hostapd should not expose any wep_key line on baseline'
-  - field: readback_6g.GetterModeEnabled6g
-    operator: equals
-    value: 'WPA3-Personal'
-    description: '6G should stay on WPA3 after the unsupported WEP branch is skipped'
-  - field: readback_6g.ModesSupportedAfter6g
-    operator: not_contains
-    value: 'WEP-128'
-    description: '6G readback should still show no WEP-128 capability'
-  - field: readback_6g.HostapdWepAfter6g
-    operator: equals
-    value: 'ABSENT'
-    description: '6G hostapd should still have no wep_key line'
-  - field: baseline_24g.ModesSupported24g
-    operator: contains
-    value: 'WEP-128'
-    description: '2.4G ModesSupported should advertise WEP-128'
-  - field: baseline_24g.HostapdWep24g
-    operator: equals
-    value: 'ABSENT'
-    description: '2.4G WPA baseline should not expose hostapd wep_key lines'
-  - field: readback_24g.GetterModeEnabled24g
-    operator: equals
-    value: 'WEP-128'
-    description: '2.4G ModeEnabled should switch to WEP-128 before validating WEPKey'
-  - field: readback_24g.GetterWEPKey24g
-    operator: equals
-    value: 'AABBCCDDEEFF0'
-    description: '2.4G getter should read back the new WEP key under WEP-128'
-  - field: readback_24g.HostapdWepAfter24g
-    operator: contains
-    value: 'wep_key'
-    description: '2.4G hostapd should expose wep_key lines after switching to WEP-128'
-  - field: restore_24g.RestoredModeEnabled24g
-    operator: equals
-    value: 'WPA2-Personal'
-    description: '2.4G should return to WPA2-Personal baseline after cleanup'
-  - field: restore_24g.RestoredHostapdWep24g
-    operator: equals
-    value: 'ABSENT'
-    description: '2.4G hostapd should no longer expose wep_key lines after cleanup'
+- field: baseline_5g.ModesSupported5g
+  operator: contains
+  value: 'WEP-128'
+  description: '5G ModesSupported should advertise WEP-128'
+- field: baseline_5g.HostapdWep5g
+  operator: equals
+  value: 'ABSENT'
+  description: '5G WPA baseline should not expose hostapd wep_key lines'
+- field: readback_5g.GetterModeEnabled5g
+  operator: equals
+  value: 'WEP-128'
+  description: '5G ModeEnabled should switch to WEP-128 before validating WEPKey'
+- field: readback_5g.GetterWEPKey5g
+  operator: equals
+  value: 'AABBCCDDEEFF0'
+  description: '5G getter should read back the new WEP key under WEP-128'
+- field: readback_5g.HostapdWepAfter5g
+  operator: contains
+  value: 'wep_key'
+  description: '5G hostapd should expose wep_key lines after switching to WEP-128'
+- field: restore_5g.RestoredModeEnabled5g
+  operator: equals
+  value: 'WPA2-Personal'
+  description: '5G should return to WPA2-Personal baseline after cleanup'
+- field: restore_5g.RestoredHostapdWep5g
+  operator: equals
+  value: 'ABSENT'
+  description: '5G hostapd should no longer expose wep_key lines after cleanup'
+- field: baseline_6g.ModesSupported6g
+  operator: contains
+  value: 'WPA3-Personal'
+  description: '6G ModesSupported should still advertise WPA3-Personal'
+- field: baseline_6g.ModesSupported6g
+  operator: not_contains
+  value: 'WEP-128'
+  description: '6G ModesSupported should not advertise WEP-128'
+- field: baseline_6g.BaselineModeEnabled6g
+  operator: equals
+  value: 'WPA3-Personal'
+  description: '6G should remain on the WPA3 baseline'
+- field: baseline_6g.HostapdWep6g
+  operator: equals
+  value: 'ABSENT'
+  description: '6G hostapd should not expose any wep_key line on baseline'
+- field: readback_6g.GetterModeEnabled6g
+  operator: equals
+  value: 'WPA3-Personal'
+  description: '6G should stay on WPA3 after the unsupported WEP branch is skipped'
+- field: readback_6g.ModesSupportedAfter6g
+  operator: not_contains
+  value: 'WEP-128'
+  description: '6G readback should still show no WEP-128 capability'
+- field: readback_6g.HostapdWepAfter6g
+  operator: equals
+  value: 'ABSENT'
+  description: '6G hostapd should still have no wep_key line'
+- field: baseline_24g.ModesSupported24g
+  operator: contains
+  value: 'WEP-128'
+  description: '2.4G ModesSupported should advertise WEP-128'
+- field: baseline_24g.HostapdWep24g
+  operator: equals
+  value: 'ABSENT'
+  description: '2.4G WPA baseline should not expose hostapd wep_key lines'
+- field: readback_24g.GetterModeEnabled24g
+  operator: equals
+  value: 'WEP-128'
+  description: '2.4G ModeEnabled should switch to WEP-128 before validating WEPKey'
+- field: readback_24g.GetterWEPKey24g
+  operator: equals
+  value: 'AABBCCDDEEFF0'
+  description: '2.4G getter should read back the new WEP key under WEP-128'
+- field: readback_24g.HostapdWepAfter24g
+  operator: contains
+  value: 'wep_key'
+  description: '2.4G hostapd should expose wep_key lines after switching to WEP-128'
+- field: restore_24g.RestoredModeEnabled24g
+  operator: equals
+  value: 'WPA2-Personal'
+  description: '2.4G should return to WPA2-Personal baseline after cleanup'
+- field: restore_24g.RestoredHostapdWep24g
+  operator: equals
+  value: 'ABSENT'
+  description: '2.4G hostapd should no longer expose wep_key lines after cleanup'
 
 verification_command:
-  - 'grep -i wep /tmp/wl0_hapd.conf 2>/dev/null || echo NO_WEP_LINES_5G'
-  - 'grep -i wep /tmp/wl1_hapd.conf 2>/dev/null || echo NO_WEP_LINES_6G'
-  - 'grep -i wep /tmp/wl2_hapd.conf 2>/dev/null || echo NO_WEP_LINES_24G'
+- 'grep -i wep /tmp/wl0_hapd.conf 2>/dev/null || echo NO_WEP_LINES_5G'
+- 'grep -i wep /tmp/wl1_hapd.conf 2>/dev/null || echo NO_WEP_LINES_6G'
+- 'grep -i wep /tmp/wl2_hapd.conf 2>/dev/null || echo NO_WEP_LINES_24G'
 
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Not Supported
-    2.4g: Pass
-    comment: 'v4.0.1 treated 5G/2.4G as WEP-capable and 6G as Not Supported.'
-  v4.0.3:
-    5g: Pass
-    6g: Not Supported
-    2.4g: Pass
-    comment: 'workbook row 92 first switches `ModeEnabled` to `WEP-128`, then validates `WEPKey` with hostapd `wep_key`; 5G/2.4G remain Pass-shaped on the WEP path, while 6G stays Not Supported because aligned D088 runtime evidence shows AP3 `ModesSupported` lacks WEP.'

@@ -2,12 +2,9 @@ id: wifi-llapi-D086-mfpconfig-accesspoint-security
 name: "MFPConfig — WiFi.AccessPoint.{i}.Security"
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 86
   object: WiFi.AccessPoint.{i}.Security
   api: MFPConfig
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -68,15 +65,16 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p'); printf 'ModeEnabled5g=%s\n' "$MODE"
+    MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p');
+    printf 'ModeEnabled5g=%s\n' "$MODE"
   capture: security_mode_5g
 - id: step2_mfp_disable_5g
   action: exec
   target: DUT
   band: 5g
   command:
-    - printf 'RequestedMfpConfig5g=Disabled\n'
-    - ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+  - printf 'RequestedMfpConfig5g=Disabled\n'
+  - ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
   depends_on: step1_security_mode_5g
   capture: mfp_disable_5g
 - id: step3_mfp_after_disable_5g
@@ -84,7 +82,15 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.Security.MFPConfig?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.MFPConfig="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'GetterMfpConfig5g=%s\n' "$VALUE"; else echo 'GetterMfpConfig5g=EMPTY'; fi; KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); RAW=$(grep -m1 '^ieee80211w=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true); case "$RAW" in 0) MFP=Disabled ;; 1) MFP=Optional ;; 2) MFP=Required ;; '') MFP=ABSENT ;; *) MFP="UNKNOWN:$RAW" ;; esac; printf 'HostapdKeyMgmt5g=%s\n' "${KM:-ABSENT}"; printf 'HostapdMfpConfig5g=%s\n' "$MFP"; printf 'HostapdMfpRaw5g=%s\n' "${RAW:-ABSENT}"
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.1.Security.MFPConfig?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.MFPConfig="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'GetterMfpConfig5g=%s\n' "$VALUE";
+    else echo 'GetterMfpConfig5g=EMPTY'; fi; KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl0_hapd.conf
+    2>/dev/null | cut -d= -f2- | xargs || true); RAW=$(grep -m1 '^ieee80211w=' /tmp/wl0_hapd.conf
+    2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true); case "$RAW" in 0) MFP=Disabled
+    ;; 1) MFP=Optional ;; 2) MFP=Required ;; '') MFP=ABSENT ;; *) MFP="UNKNOWN:$RAW"
+    ;; esac; printf 'HostapdKeyMgmt5g=%s\n' "${KM:-ABSENT}"; printf 'HostapdMfpConfig5g=%s\n'
+    "$MFP"; printf 'HostapdMfpRaw5g=%s\n' "${RAW:-ABSENT}"
   depends_on: step2_mfp_disable_5g
   capture: mfp_after_disable_5g
 - id: step4_security_mode_6g
@@ -92,15 +98,16 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p'); printf 'ModeEnabled6g=%s\n' "$MODE"
+    MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p');
+    printf 'ModeEnabled6g=%s\n' "$MODE"
   capture: security_mode_6g
 - id: step5_mfp_disable_6g
   action: exec
   target: DUT
   band: 6g
   command:
-    - printf 'RequestedMfpConfig6g=Disabled\n'
-    - ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Disabled
+  - printf 'RequestedMfpConfig6g=Disabled\n'
+  - ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Disabled
   depends_on: step4_security_mode_6g
   capture: mfp_disable_6g
 - id: step6_mfp_after_disable_6g
@@ -108,7 +115,15 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.MFPConfig?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.MFPConfig="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'GetterMfpConfig6g=%s\n' "$VALUE"; else echo 'GetterMfpConfig6g=EMPTY'; fi; KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); RAW=$(grep -m1 '^ieee80211w=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true); case "$RAW" in 0) MFP=Disabled ;; 1) MFP=Optional ;; 2) MFP=Required ;; '') MFP=ABSENT ;; *) MFP="UNKNOWN:$RAW" ;; esac; printf 'HostapdKeyMgmt6g=%s\n' "${KM:-ABSENT}"; printf 'HostapdMfpConfig6g=%s\n' "$MFP"; printf 'HostapdMfpRaw6g=%s\n' "${RAW:-ABSENT}"
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.3.Security.MFPConfig?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.MFPConfig="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'GetterMfpConfig6g=%s\n' "$VALUE";
+    else echo 'GetterMfpConfig6g=EMPTY'; fi; KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl1_hapd.conf
+    2>/dev/null | cut -d= -f2- | xargs || true); RAW=$(grep -m1 '^ieee80211w=' /tmp/wl1_hapd.conf
+    2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true); case "$RAW" in 0) MFP=Disabled
+    ;; 1) MFP=Optional ;; 2) MFP=Required ;; '') MFP=ABSENT ;; *) MFP="UNKNOWN:$RAW"
+    ;; esac; printf 'HostapdKeyMgmt6g=%s\n' "${KM:-ABSENT}"; printf 'HostapdMfpConfig6g=%s\n'
+    "$MFP"; printf 'HostapdMfpRaw6g=%s\n' "${RAW:-ABSENT}"
   depends_on: step5_mfp_disable_6g
   capture: mfp_after_disable_6g
 - id: step7_security_mode_24g
@@ -116,15 +131,16 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p'); printf 'ModeEnabled24g=%s\n' "$MODE"
+    MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" | sed -n 's/.*ModeEnabled="\([^"]*\)".*/\1/p');
+    printf 'ModeEnabled24g=%s\n' "$MODE"
   capture: security_mode_24g
 - id: step8_mfp_disable_24g
   action: exec
   target: DUT
   band: 2.4g
   command:
-    - printf 'RequestedMfpConfig24g=Disabled\n'
-    - ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled
+  - printf 'RequestedMfpConfig24g=Disabled\n'
+  - ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled
   depends_on: step7_security_mode_24g
   capture: mfp_disable_24g
 - id: step9_mfp_after_disable_24g
@@ -132,7 +148,15 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.MFPConfig?" 2>&1); VALUE=$(printf '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.MFPConfig="\([^"]*\)".*/\1/p' | head -n 1); if [ -n "$VALUE" ]; then printf 'GetterMfpConfig24g=%s\n' "$VALUE"; else echo 'GetterMfpConfig24g=EMPTY'; fi; KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); RAW=$(grep -m1 '^ieee80211w=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true); case "$RAW" in 0) MFP=Disabled ;; 1) MFP=Optional ;; 2) MFP=Required ;; '') MFP=ABSENT ;; *) MFP="UNKNOWN:$RAW" ;; esac; printf 'HostapdKeyMgmt24g=%s\n' "${KM:-ABSENT}"; printf 'HostapdMfpConfig24g=%s\n' "$MFP"; printf 'HostapdMfpRaw24g=%s\n' "${RAW:-ABSENT}"
+    sleep 5; OUT=$(ubus-cli "WiFi.AccessPoint.5.Security.MFPConfig?" 2>&1); VALUE=$(printf
+    '%s\n' "$OUT" | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.MFPConfig="\([^"]*\)".*/\1/p'
+    | head -n 1); if [ -n "$VALUE" ]; then printf 'GetterMfpConfig24g=%s\n' "$VALUE";
+    else echo 'GetterMfpConfig24g=EMPTY'; fi; KM=$(grep -m1 '^wpa_key_mgmt=' /tmp/wl2_hapd.conf
+    2>/dev/null | cut -d= -f2- | xargs || true); RAW=$(grep -m1 '^ieee80211w=' /tmp/wl2_hapd.conf
+    2>/dev/null | cut -d= -f2- | tr -d '[:space:]' || true); case "$RAW" in 0) MFP=Disabled
+    ;; 1) MFP=Optional ;; 2) MFP=Required ;; '') MFP=ABSENT ;; *) MFP="UNKNOWN:$RAW"
+    ;; esac; printf 'HostapdKeyMgmt24g=%s\n' "${KM:-ABSENT}"; printf 'HostapdMfpConfig24g=%s\n'
+    "$MFP"; printf 'HostapdMfpRaw24g=%s\n' "${RAW:-ABSENT}"
   depends_on: step8_mfp_disable_24g
   capture: mfp_after_disable_24g
 
@@ -184,7 +208,8 @@ pass_criteria:
 - field: mfp_after_disable_6g.HostapdMfpConfig6g
   operator: equals
   value: Required
-  description: 6G AP3 / wl1 hostapd semantic MFP state should stay Required under SAE.
+  description: 6G AP3 / wl1 hostapd semantic MFP state should stay Required 
+    under SAE.
 - field: mfp_after_disable_6g.HostapdMfpRaw6g
   operator: equals
   value: '2'
@@ -192,7 +217,8 @@ pass_criteria:
 - field: mfp_after_disable_6g.GetterMfpConfig6g
   operator: not_equals
   reference: mfp_after_disable_6g.HostapdMfpConfig6g
-  description: 6G AP3 / wl1 getter remains hardcoded at Disabled instead of exposing the live Required hostapd state.
+  description: 6G AP3 / wl1 getter remains hardcoded at Disabled instead of 
+    exposing the live Required hostapd state.
 - field: security_mode_24g.ModeEnabled24g
   operator: equals
   value: WPA2-Personal
@@ -223,27 +249,16 @@ pass_criteria:
   description: 2.4G AP5 / wl2 getter and hostapd should converge on Disabled.
 
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"'
-  - ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
-  - 'ubus-cli "WiFi.AccessPoint.1.Security.MFPConfig?"'
-  - 'grep -E ''^(wpa_key_mgmt|ieee80211w)'' /tmp/wl0_hapd.conf || true'
-  - 'ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"'
-  - ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Disabled
-  - 'ubus-cli "WiFi.AccessPoint.3.Security.MFPConfig?"'
-  - 'grep -E ''^(wpa_key_mgmt|ieee80211w)'' /tmp/wl1_hapd.conf || true'
-  - 'ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"'
-  - ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled
-  - 'ubus-cli "WiFi.AccessPoint.5.Security.MFPConfig?"'
-  - 'grep -E ''^(wpa_key_mgmt|ieee80211w)'' /tmp/wl2_hapd.conf || true'
+- 'ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"'
+- ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+- 'ubus-cli "WiFi.AccessPoint.1.Security.MFPConfig?"'
+- 'grep -E ''^(wpa_key_mgmt|ieee80211w)'' /tmp/wl0_hapd.conf || true'
+- 'ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"'
+- ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Disabled
+- 'ubus-cli "WiFi.AccessPoint.3.Security.MFPConfig?"'
+- 'grep -E ''^(wpa_key_mgmt|ieee80211w)'' /tmp/wl1_hapd.conf || true'
+- 'ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"'
+- ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled
+- 'ubus-cli "WiFi.AccessPoint.5.Security.MFPConfig?"'
+- 'grep -E ''^(wpa_key_mgmt|ieee80211w)'' /tmp/wl2_hapd.conf || true'
 
-results_reference:
-  v4.0.1:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
-    comment: 'ARC : API always return "Disabled"'
-  v4.0.3:
-    5g: Not Supported
-    6g: Not Supported
-    2.4g: Not Supported
-    comment: 'workbook row 86 is explicitly `Not Supported / Not Supported / Not Supported` with comment `hardcode in pwhm`. Active 0403 still reads back `MFPConfig=Disabled` on AP1/AP3/AP5, but the object remains default-biased while hostapd enforcement follows live security mode (`ieee80211w=0` on WPA2 5G/2.4G, `ieee80211w=2` on WPA3 6G).'

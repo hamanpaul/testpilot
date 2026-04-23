@@ -2,8 +2,6 @@ id: wifi-llapi-D005-kickstationreason
 name: kickStationReason() — WiFi.AccessPoint.{i}.
 version: '1.1'
 source:
-  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-  sheet: Wifi_LLAPI
   row: 5
   object: "WiFi.AccessPoint.{i}."
   api: "kickStationReason()"
@@ -92,13 +90,14 @@ steps:
   target: STA
   band: 5g
   command:
-    - iw dev wl0 link
-    - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  - iw dev wl0 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
 - id: step2_5g_record_time
   action: exec
   target: DUT
   band: 5g
-  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac5g=\1/p'
   depends_on: step1_5g_sta_join
   capture: assoc_5g
 - id: step3_5g_record_time
@@ -126,14 +125,15 @@ steps:
   target: STA
   band: 6g
   command:
-    - iw dev wl1 link
-    - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-    - wl -i wl1 status
+  - iw dev wl1 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+  - wl -i wl1 status
 - id: step7_6g_assoc
   action: exec
   target: DUT
   band: 6g
-  command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+  command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac6g=\1/p'
   depends_on: step6_6g_sta_join
   capture: assoc_6g
 - id: step8_6g_record_time
@@ -161,13 +161,14 @@ steps:
   target: STA
   band: 2.4g
   command:
-    - iw dev wl2 link
-    - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  - iw dev wl2 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
 - id: step12_24g_assoc
   action: exec
   target: DUT
   band: 2.4g
-  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac24g=\1/p'
   depends_on: step11_24g_sta_join
   capture: assoc_24g
 - id: step13_24g_record_time
@@ -199,7 +200,8 @@ pass_criteria:
 - field: after_5g.DisassociationTime
   operator: not_equals
   reference: before_5g.DisassociationTime
-  description: "5G: DisassociationTime must change after kickStationReason — STA was deauthenticated"
+  description: "5G: DisassociationTime must change after kickStationReason — STA was
+    deauthenticated"
 - field: assoc_6g.AssocMac6g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -207,7 +209,8 @@ pass_criteria:
 - field: after_6g.DisassociationTime
   operator: not_equals
   reference: before_6g.DisassociationTime
-  description: "6G: DisassociationTime must change after kickStationReason — STA was deauthenticated"
+  description: "6G: DisassociationTime must change after kickStationReason — STA was
+    deauthenticated"
 - field: assoc_24g.AssocMac24g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -215,26 +218,13 @@ pass_criteria:
 - field: after_24g.DisassociationTime
   operator: not_equals
   reference: before_24g.DisassociationTime
-  description: "2.4G: DisassociationTime must change after kickStationReason — STA was deauthenticated"
+  description: "2.4G: DisassociationTime must change after kickStationReason — STA
+    was deauthenticated"
 
 verification_command:
-  - '# DUT log after kick (check for hostapd disassociation events):'
-  - 'logread | grep -E "wl0|wl1|wl2|kickStation|disassociated|Disassoc" | tail -30'
-  - '# DUT object readback:'
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DisassociationTime?"'
-  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DisassociationTime?"'
-  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DisassociationTime?"'
-results_reference:
-  v4.0.1:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: ''
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: >
-      5G/6G/2.4G should all be validated live against the workbook Pass/Pass/Pass baseline.
-      5G/2.4G verify deterministic WPA2-Personal baseline associations
-      (testpilot5G/testpilot2G), while 6G uses the validated WPA3/SAE single-band baseline.
+- '# DUT log after kick (check for hostapd disassociation events):'
+- 'logread | grep -E "wl0|wl1|wl2|kickStation|disassociated|Disassoc" | tail -30'
+- '# DUT object readback:'
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DisassociationTime?"'
+- 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DisassociationTime?"'
+- 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DisassociationTime?"'

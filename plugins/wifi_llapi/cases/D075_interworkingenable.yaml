@@ -2,12 +2,9 @@ id: wifi-llapi-D075-interworkingenable-accesspoint
 name: "InterworkingEnable — WiFi.AccessPoint.{i}.IEEE80211u"
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 77
   object: WiFi.AccessPoint.{i}.IEEE80211u
   api: InterworkingEnable
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -72,9 +69,12 @@ steps:
   target: DUT
   band: 5g
   command:
-    - grep -c '^interworking=1$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gOneCount=/'
-    - grep -c '^interworking=0$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gZeroCount=/'
-    - grep -c '^interworking=' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gTotalCount=/'
+  - grep -c '^interworking=1$' /tmp/wl0_hapd.conf | sed 
+    's/^/Interworking5gOneCount=/'
+  - grep -c '^interworking=0$' /tmp/wl0_hapd.conf | sed 
+    's/^/Interworking5gZeroCount=/'
+  - grep -c '^interworking=' /tmp/wl0_hapd.conf | sed 
+    's/^/Interworking5gTotalCount=/'
   depends_on: step1_state_baseline_5g
   capture: cfg_baseline_5g
 - id: step3_set_interworking_5g
@@ -97,9 +97,12 @@ steps:
   target: DUT
   band: 5g
   command:
-    - grep -c '^interworking=1$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gOneCount=/'
-    - grep -c '^interworking=0$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gZeroCount=/'
-    - grep -c '^interworking=' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gTotalCount=/'
+  - grep -c '^interworking=1$' /tmp/wl0_hapd.conf | sed 
+    's/^/Interworking5gOneCount=/'
+  - grep -c '^interworking=0$' /tmp/wl0_hapd.conf | sed 
+    's/^/Interworking5gZeroCount=/'
+  - grep -c '^interworking=' /tmp/wl0_hapd.conf | sed 
+    's/^/Interworking5gTotalCount=/'
   depends_on: step4_state_set_interworking_5g
   capture: cfg_set_interworking_5g
 - id: step6_restore_interworking_5g
@@ -122,9 +125,12 @@ steps:
   target: DUT
   band: 5g
   command:
-    - grep -c '^interworking=1$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gOneCount=/'
-    - grep -c '^interworking=0$' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gZeroCount=/'
-    - grep -c '^interworking=' /tmp/wl0_hapd.conf | sed 's/^/Interworking5gTotalCount=/'
+  - grep -c '^interworking=1$' /tmp/wl0_hapd.conf | sed 
+    's/^/Interworking5gOneCount=/'
+  - grep -c '^interworking=0$' /tmp/wl0_hapd.conf | sed 
+    's/^/Interworking5gZeroCount=/'
+  - grep -c '^interworking=' /tmp/wl0_hapd.conf | sed 
+    's/^/Interworking5gTotalCount=/'
   depends_on: step7_state_restore_interworking_5g
   capture: cfg_restore_interworking_5g
 - id: step9_state_baseline_6g
@@ -140,9 +146,12 @@ steps:
   target: DUT
   band: 6g
   command:
-    - grep -c '^interworking=1$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gOneCount=/'
-    - grep -c '^interworking=0$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gZeroCount=/'
-    - grep -c '^interworking=' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gTotalCount=/'
+  - grep -c '^interworking=1$' /tmp/wl1_hapd.conf | sed 
+    's/^/Interworking6gOneCount=/'
+  - grep -c '^interworking=0$' /tmp/wl1_hapd.conf | sed 
+    's/^/Interworking6gZeroCount=/'
+  - grep -c '^interworking=' /tmp/wl1_hapd.conf | sed 
+    's/^/Interworking6gTotalCount=/'
   depends_on: step9_state_baseline_6g
   capture: cfg_baseline_6g
 - id: step11_set_interworking_6g
@@ -165,9 +174,12 @@ steps:
   target: DUT
   band: 6g
   command:
-    - grep -c '^interworking=1$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gOneCount=/'
-    - grep -c '^interworking=0$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gZeroCount=/'
-    - grep -c '^interworking=' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gTotalCount=/'
+  - grep -c '^interworking=1$' /tmp/wl1_hapd.conf | sed 
+    's/^/Interworking6gOneCount=/'
+  - grep -c '^interworking=0$' /tmp/wl1_hapd.conf | sed 
+    's/^/Interworking6gZeroCount=/'
+  - grep -c '^interworking=' /tmp/wl1_hapd.conf | sed 
+    's/^/Interworking6gTotalCount=/'
   depends_on: step12_state_set_interworking_6g
   capture: cfg_set_interworking_6g
 - id: step14_restore_interworking_6g
@@ -190,9 +202,12 @@ steps:
   target: DUT
   band: 6g
   command:
-    - grep -c '^interworking=1$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gOneCount=/'
-    - grep -c '^interworking=0$' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gZeroCount=/'
-    - grep -c '^interworking=' /tmp/wl1_hapd.conf | sed 's/^/Interworking6gTotalCount=/'
+  - grep -c '^interworking=1$' /tmp/wl1_hapd.conf | sed 
+    's/^/Interworking6gOneCount=/'
+  - grep -c '^interworking=0$' /tmp/wl1_hapd.conf | sed 
+    's/^/Interworking6gZeroCount=/'
+  - grep -c '^interworking=' /tmp/wl1_hapd.conf | sed 
+    's/^/Interworking6gTotalCount=/'
   depends_on: step15_state_restore_interworking_6g
   capture: cfg_restore_interworking_6g
 - id: step17_state_baseline_24g
@@ -208,9 +223,12 @@ steps:
   target: DUT
   band: 2.4g
   command:
-    - grep -c '^interworking=1$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gOneCount=/'
-    - grep -c '^interworking=0$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gZeroCount=/'
-    - grep -c '^interworking=' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gTotalCount=/'
+  - grep -c '^interworking=1$' /tmp/wl2_hapd.conf | sed 
+    's/^/Interworking24gOneCount=/'
+  - grep -c '^interworking=0$' /tmp/wl2_hapd.conf | sed 
+    's/^/Interworking24gZeroCount=/'
+  - grep -c '^interworking=' /tmp/wl2_hapd.conf | sed 
+    's/^/Interworking24gTotalCount=/'
   depends_on: step17_state_baseline_24g
   capture: cfg_baseline_24g
 - id: step19_set_interworking_24g
@@ -233,9 +251,12 @@ steps:
   target: DUT
   band: 2.4g
   command:
-    - grep -c '^interworking=1$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gOneCount=/'
-    - grep -c '^interworking=0$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gZeroCount=/'
-    - grep -c '^interworking=' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gTotalCount=/'
+  - grep -c '^interworking=1$' /tmp/wl2_hapd.conf | sed 
+    's/^/Interworking24gOneCount=/'
+  - grep -c '^interworking=0$' /tmp/wl2_hapd.conf | sed 
+    's/^/Interworking24gZeroCount=/'
+  - grep -c '^interworking=' /tmp/wl2_hapd.conf | sed 
+    's/^/Interworking24gTotalCount=/'
   depends_on: step20_state_set_interworking_24g
   capture: cfg_set_interworking_24g
 - id: step22_restore_interworking_24g
@@ -258,9 +279,12 @@ steps:
   target: DUT
   band: 2.4g
   command:
-    - grep -c '^interworking=1$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gOneCount=/'
-    - grep -c '^interworking=0$' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gZeroCount=/'
-    - grep -c '^interworking=' /tmp/wl2_hapd.conf | sed 's/^/Interworking24gTotalCount=/'
+  - grep -c '^interworking=1$' /tmp/wl2_hapd.conf | sed 
+    's/^/Interworking24gOneCount=/'
+  - grep -c '^interworking=0$' /tmp/wl2_hapd.conf | sed 
+    's/^/Interworking24gZeroCount=/'
+  - grep -c '^interworking=' /tmp/wl2_hapd.conf | sed 
+    's/^/Interworking24gTotalCount=/'
   depends_on: step23_state_restore_interworking_24g
   capture: cfg_restore_interworking_24g
 pass_criteria:
@@ -271,15 +295,18 @@ pass_criteria:
 - field: cfg_baseline_5g.Interworking5gOneCount
   operator: equals
   value: '0'
-  description: 5G wl0 hostapd file should not expose interworking=1 before the setter write.
+  description: 5G wl0 hostapd file should not expose interworking=1 before the 
+    setter write.
 - field: cfg_baseline_5g.Interworking5gZeroCount
   operator: equals
   value: '2'
-  description: 5G wl0 hostapd file should expose two interworking=0 lines before the setter write.
+  description: 5G wl0 hostapd file should expose two interworking=0 lines before
+    the setter write.
 - field: cfg_baseline_5g.Interworking5gTotalCount
   operator: equals
   value: '2'
-  description: 5G wl0 hostapd file should expose exactly two interworking lines before the setter write.
+  description: 5G wl0 hostapd file should expose exactly two interworking lines 
+    before the setter write.
 - field: set_interworking_5g.InterworkingEnable
   operator: equals
   value: '1'
@@ -287,7 +314,8 @@ pass_criteria:
 - field: state_set_interworking_5g.Interworking5g
   operator: equals
   value: '1'
-  description: 5G AP1 getter should read back InterworkingEnable=1 after the setter write.
+  description: 5G AP1 getter should read back InterworkingEnable=1 after the 
+    setter write.
 - field: cfg_set_interworking_5g.Interworking5gOneCount
   operator: equals
   value: '1'
@@ -295,11 +323,13 @@ pass_criteria:
 - field: cfg_set_interworking_5g.Interworking5gZeroCount
   operator: equals
   value: '1'
-  description: 5G wl0 hostapd file should keep one interworking line at 0 after the setter write.
+  description: 5G wl0 hostapd file should keep one interworking line at 0 after 
+    the setter write.
 - field: cfg_set_interworking_5g.Interworking5gTotalCount
   operator: equals
   value: '2'
-  description: 5G wl0 hostapd file should still expose exactly two interworking lines after the setter write.
+  description: 5G wl0 hostapd file should still expose exactly two interworking 
+    lines after the setter write.
 - field: restore_interworking_5g.InterworkingEnable
   operator: equals
   value: '0'
@@ -307,19 +337,23 @@ pass_criteria:
 - field: state_restore_interworking_5g.Interworking5g
   operator: equals
   value: '0'
-  description: 5G AP1 getter should return to InterworkingEnable=0 after restore.
+  description: 5G AP1 getter should return to InterworkingEnable=0 after 
+    restore.
 - field: cfg_restore_interworking_5g.Interworking5gOneCount
   operator: equals
   value: '0'
-  description: 5G wl0 hostapd file should clear all interworking=1 lines after restore.
+  description: 5G wl0 hostapd file should clear all interworking=1 lines after 
+    restore.
 - field: cfg_restore_interworking_5g.Interworking5gZeroCount
   operator: equals
   value: '2'
-  description: 5G wl0 hostapd file should return to two interworking=0 lines after restore.
+  description: 5G wl0 hostapd file should return to two interworking=0 lines 
+    after restore.
 - field: cfg_restore_interworking_5g.Interworking5gTotalCount
   operator: equals
   value: '2'
-  description: 5G wl0 hostapd file should still expose exactly two interworking lines after restore.
+  description: 5G wl0 hostapd file should still expose exactly two interworking 
+    lines after restore.
 - field: state_baseline_6g.Interworking6g
   operator: equals
   value: '0'
@@ -327,15 +361,18 @@ pass_criteria:
 - field: cfg_baseline_6g.Interworking6gOneCount
   operator: equals
   value: '0'
-  description: 6G wl1 hostapd file should not expose interworking=1 before the setter write.
+  description: 6G wl1 hostapd file should not expose interworking=1 before the 
+    setter write.
 - field: cfg_baseline_6g.Interworking6gZeroCount
   operator: equals
   value: '2'
-  description: 6G wl1 hostapd file should expose two interworking=0 lines before the setter write.
+  description: 6G wl1 hostapd file should expose two interworking=0 lines before
+    the setter write.
 - field: cfg_baseline_6g.Interworking6gTotalCount
   operator: equals
   value: '2'
-  description: 6G wl1 hostapd file should expose exactly two interworking lines before the setter write.
+  description: 6G wl1 hostapd file should expose exactly two interworking lines 
+    before the setter write.
 - field: set_interworking_6g.InterworkingEnable
   operator: equals
   value: '1'
@@ -343,7 +380,8 @@ pass_criteria:
 - field: state_set_interworking_6g.Interworking6g
   operator: equals
   value: '1'
-  description: 6G AP3 getter should read back InterworkingEnable=1 after the setter write.
+  description: 6G AP3 getter should read back InterworkingEnable=1 after the 
+    setter write.
 - field: cfg_set_interworking_6g.Interworking6gOneCount
   operator: equals
   value: '1'
@@ -351,11 +389,13 @@ pass_criteria:
 - field: cfg_set_interworking_6g.Interworking6gZeroCount
   operator: equals
   value: '1'
-  description: 6G wl1 hostapd file should keep one interworking line at 0 after the setter write.
+  description: 6G wl1 hostapd file should keep one interworking line at 0 after 
+    the setter write.
 - field: cfg_set_interworking_6g.Interworking6gTotalCount
   operator: equals
   value: '2'
-  description: 6G wl1 hostapd file should still expose exactly two interworking lines after the setter write.
+  description: 6G wl1 hostapd file should still expose exactly two interworking 
+    lines after the setter write.
 - field: restore_interworking_6g.InterworkingEnable
   operator: equals
   value: '0'
@@ -363,19 +403,23 @@ pass_criteria:
 - field: state_restore_interworking_6g.Interworking6g
   operator: equals
   value: '0'
-  description: 6G AP3 getter should return to InterworkingEnable=0 after restore.
+  description: 6G AP3 getter should return to InterworkingEnable=0 after 
+    restore.
 - field: cfg_restore_interworking_6g.Interworking6gOneCount
   operator: equals
   value: '0'
-  description: 6G wl1 hostapd file should clear all interworking=1 lines after restore.
+  description: 6G wl1 hostapd file should clear all interworking=1 lines after 
+    restore.
 - field: cfg_restore_interworking_6g.Interworking6gZeroCount
   operator: equals
   value: '2'
-  description: 6G wl1 hostapd file should return to two interworking=0 lines after restore.
+  description: 6G wl1 hostapd file should return to two interworking=0 lines 
+    after restore.
 - field: cfg_restore_interworking_6g.Interworking6gTotalCount
   operator: equals
   value: '2'
-  description: 6G wl1 hostapd file should still expose exactly two interworking lines after restore.
+  description: 6G wl1 hostapd file should still expose exactly two interworking 
+    lines after restore.
 - field: state_baseline_24g.Interworking24g
   operator: equals
   value: '0'
@@ -383,15 +427,18 @@ pass_criteria:
 - field: cfg_baseline_24g.Interworking24gOneCount
   operator: equals
   value: '0'
-  description: 2.4G wl2 hostapd file should not expose interworking=1 before the setter write.
+  description: 2.4G wl2 hostapd file should not expose interworking=1 before the
+    setter write.
 - field: cfg_baseline_24g.Interworking24gZeroCount
   operator: equals
   value: '2'
-  description: 2.4G wl2 hostapd file should expose two interworking=0 lines before the setter write.
+  description: 2.4G wl2 hostapd file should expose two interworking=0 lines 
+    before the setter write.
 - field: cfg_baseline_24g.Interworking24gTotalCount
   operator: equals
   value: '2'
-  description: 2.4G wl2 hostapd file should expose exactly two interworking lines before the setter write.
+  description: 2.4G wl2 hostapd file should expose exactly two interworking 
+    lines before the setter write.
 - field: set_interworking_24g.InterworkingEnable
   operator: equals
   value: '1'
@@ -399,7 +446,8 @@ pass_criteria:
 - field: state_set_interworking_24g.Interworking24g
   operator: equals
   value: '1'
-  description: 2.4G AP5 getter should read back InterworkingEnable=1 after the setter write.
+  description: 2.4G AP5 getter should read back InterworkingEnable=1 after the 
+    setter write.
 - field: cfg_set_interworking_24g.Interworking24gOneCount
   operator: equals
   value: '1'
@@ -407,11 +455,13 @@ pass_criteria:
 - field: cfg_set_interworking_24g.Interworking24gZeroCount
   operator: equals
   value: '1'
-  description: 2.4G wl2 hostapd file should keep one interworking line at 0 after the setter write.
+  description: 2.4G wl2 hostapd file should keep one interworking line at 0 
+    after the setter write.
 - field: cfg_set_interworking_24g.Interworking24gTotalCount
   operator: equals
   value: '2'
-  description: 2.4G wl2 hostapd file should still expose exactly two interworking lines after the setter write.
+  description: 2.4G wl2 hostapd file should still expose exactly two 
+    interworking lines after the setter write.
 - field: restore_interworking_24g.InterworkingEnable
   operator: equals
   value: '0'
@@ -419,64 +469,87 @@ pass_criteria:
 - field: state_restore_interworking_24g.Interworking24g
   operator: equals
   value: '0'
-  description: 2.4G AP5 getter should return to InterworkingEnable=0 after restore.
+  description: 2.4G AP5 getter should return to InterworkingEnable=0 after 
+    restore.
 - field: cfg_restore_interworking_24g.Interworking24gOneCount
   operator: equals
   value: '0'
-  description: 2.4G wl2 hostapd file should clear all interworking=1 lines after restore.
+  description: 2.4G wl2 hostapd file should clear all interworking=1 lines after
+    restore.
 - field: cfg_restore_interworking_24g.Interworking24gZeroCount
   operator: equals
   value: '2'
-  description: 2.4G wl2 hostapd file should return to two interworking=0 lines after restore.
+  description: 2.4G wl2 hostapd file should return to two interworking=0 lines 
+    after restore.
 - field: cfg_restore_interworking_24g.Interworking24gTotalCount
   operator: equals
   value: '2'
-  description: 2.4G wl2 hostapd file should still expose exactly two interworking lines after restore.
+  description: 2.4G wl2 hostapd file should still expose exactly two 
+    interworking lines after restore.
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.1\.IEEE80211u\.InterworkingEnable=/Interworking5g=/p'''
-  - 'grep -c ''^interworking=1$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gOneCount=/'''
-  - 'grep -c ''^interworking=0$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gZeroCount=/'''
-  - 'grep -c ''^interworking='' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gTotalCount=/'''
-  - ubus-cli WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable=1
-  - 'ubus-cli "WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.1\.IEEE80211u\.InterworkingEnable=/Interworking5g=/p'' | sed -n ''1,20p'''
-  - 'grep -c ''^interworking=1$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gOneCount=/'' | sed -n ''1,20p'''
-  - 'grep -c ''^interworking=0$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gZeroCount=/'' | sed -n ''1,20p'''
-  - 'grep -c ''^interworking='' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gTotalCount=/'' | sed -n ''1,20p'''
-  - ubus-cli WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable=0
-  - 'ubus-cli "WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.1\.IEEE80211u\.InterworkingEnable=/Interworking5g=/p'' | sed -n ''1,21p'''
-  - 'grep -c ''^interworking=1$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gOneCount=/'' | sed -n ''1,21p'''
-  - 'grep -c ''^interworking=0$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gZeroCount=/'' | sed -n ''1,21p'''
-  - 'grep -c ''^interworking='' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gTotalCount=/'' | sed -n ''1,21p'''
-  - 'ubus-cli "WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.3\.IEEE80211u\.InterworkingEnable=/Interworking6g=/p'''
-  - 'grep -c ''^interworking=1$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gOneCount=/'''
-  - 'grep -c ''^interworking=0$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gZeroCount=/'''
-  - 'grep -c ''^interworking='' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gTotalCount=/'''
-  - ubus-cli WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable=1
-  - 'ubus-cli "WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.3\.IEEE80211u\.InterworkingEnable=/Interworking6g=/p'' | sed -n ''1,20p'''
-  - 'grep -c ''^interworking=1$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gOneCount=/'' | sed -n ''1,20p'''
-  - 'grep -c ''^interworking=0$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gZeroCount=/'' | sed -n ''1,20p'''
-  - 'grep -c ''^interworking='' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gTotalCount=/'' | sed -n ''1,20p'''
-  - ubus-cli WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable=0
-  - 'ubus-cli "WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.3\.IEEE80211u\.InterworkingEnable=/Interworking6g=/p'' | sed -n ''1,21p'''
-  - 'grep -c ''^interworking=1$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gOneCount=/'' | sed -n ''1,21p'''
-  - 'grep -c ''^interworking=0$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gZeroCount=/'' | sed -n ''1,21p'''
-  - 'grep -c ''^interworking='' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gTotalCount=/'' | sed -n ''1,21p'''
-  - 'ubus-cli "WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.5\.IEEE80211u\.InterworkingEnable=/Interworking24g=/p'''
-  - 'grep -c ''^interworking=1$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gOneCount=/'''
-  - 'grep -c ''^interworking=0$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gZeroCount=/'''
-  - 'grep -c ''^interworking='' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gTotalCount=/'''
-  - ubus-cli WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable=1
-  - 'ubus-cli "WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.5\.IEEE80211u\.InterworkingEnable=/Interworking24g=/p'' | sed -n ''1,20p'''
-  - 'grep -c ''^interworking=1$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gOneCount=/'' | sed -n ''1,20p'''
-  - 'grep -c ''^interworking=0$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gZeroCount=/'' | sed -n ''1,20p'''
-  - 'grep -c ''^interworking='' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gTotalCount=/'' | sed -n ''1,20p'''
-  - ubus-cli WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable=0
-  - 'ubus-cli "WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.5\.IEEE80211u\.InterworkingEnable=/Interworking24g=/p'' | sed -n ''1,21p'''
-  - 'grep -c ''^interworking=1$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gOneCount=/'' | sed -n ''1,21p'''
-  - 'grep -c ''^interworking=0$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gZeroCount=/'' | sed -n ''1,21p'''
-  - 'grep -c ''^interworking='' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gTotalCount=/'' | sed -n ''1,21p'''
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
+- 'ubus-cli "WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.1\.IEEE80211u\.InterworkingEnable=/Interworking5g=/p'''
+- 'grep -c ''^interworking=1$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gOneCount=/'''
+- 'grep -c ''^interworking=0$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gZeroCount=/'''
+- 'grep -c ''^interworking='' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gTotalCount=/'''
+- ubus-cli WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable=1
+- 'ubus-cli "WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.1\.IEEE80211u\.InterworkingEnable=/Interworking5g=/p''
+  | sed -n ''1,20p'''
+- 'grep -c ''^interworking=1$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gOneCount=/''
+  | sed -n ''1,20p'''
+- 'grep -c ''^interworking=0$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gZeroCount=/''
+  | sed -n ''1,20p'''
+- 'grep -c ''^interworking='' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gTotalCount=/''
+  | sed -n ''1,20p'''
+- ubus-cli WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable=0
+- 'ubus-cli "WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.1\.IEEE80211u\.InterworkingEnable=/Interworking5g=/p''
+  | sed -n ''1,21p'''
+- 'grep -c ''^interworking=1$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gOneCount=/''
+  | sed -n ''1,21p'''
+- 'grep -c ''^interworking=0$'' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gZeroCount=/''
+  | sed -n ''1,21p'''
+- 'grep -c ''^interworking='' /tmp/wl0_hapd.conf | sed ''s/^/Interworking5gTotalCount=/''
+  | sed -n ''1,21p'''
+- 'ubus-cli "WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.3\.IEEE80211u\.InterworkingEnable=/Interworking6g=/p'''
+- 'grep -c ''^interworking=1$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gOneCount=/'''
+- 'grep -c ''^interworking=0$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gZeroCount=/'''
+- 'grep -c ''^interworking='' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gTotalCount=/'''
+- ubus-cli WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable=1
+- 'ubus-cli "WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.3\.IEEE80211u\.InterworkingEnable=/Interworking6g=/p''
+  | sed -n ''1,20p'''
+- 'grep -c ''^interworking=1$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gOneCount=/''
+  | sed -n ''1,20p'''
+- 'grep -c ''^interworking=0$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gZeroCount=/''
+  | sed -n ''1,20p'''
+- 'grep -c ''^interworking='' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gTotalCount=/''
+  | sed -n ''1,20p'''
+- ubus-cli WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable=0
+- 'ubus-cli "WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.3\.IEEE80211u\.InterworkingEnable=/Interworking6g=/p''
+  | sed -n ''1,21p'''
+- 'grep -c ''^interworking=1$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gOneCount=/''
+  | sed -n ''1,21p'''
+- 'grep -c ''^interworking=0$'' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gZeroCount=/''
+  | sed -n ''1,21p'''
+- 'grep -c ''^interworking='' /tmp/wl1_hapd.conf | sed ''s/^/Interworking6gTotalCount=/''
+  | sed -n ''1,21p'''
+- 'ubus-cli "WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.5\.IEEE80211u\.InterworkingEnable=/Interworking24g=/p'''
+- 'grep -c ''^interworking=1$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gOneCount=/'''
+- 'grep -c ''^interworking=0$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gZeroCount=/'''
+- 'grep -c ''^interworking='' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gTotalCount=/'''
+- ubus-cli WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable=1
+- 'ubus-cli "WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.5\.IEEE80211u\.InterworkingEnable=/Interworking24g=/p''
+  | sed -n ''1,20p'''
+- 'grep -c ''^interworking=1$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gOneCount=/''
+  | sed -n ''1,20p'''
+- 'grep -c ''^interworking=0$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gZeroCount=/''
+  | sed -n ''1,20p'''
+- 'grep -c ''^interworking='' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gTotalCount=/''
+  | sed -n ''1,20p'''
+- ubus-cli WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable=0
+- 'ubus-cli "WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable?" | sed -n ''s/^WiFi\.AccessPoint\.5\.IEEE80211u\.InterworkingEnable=/Interworking24g=/p''
+  | sed -n ''1,21p'''
+- 'grep -c ''^interworking=1$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gOneCount=/''
+  | sed -n ''1,21p'''
+- 'grep -c ''^interworking=0$'' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gZeroCount=/''
+  | sed -n ''1,21p'''
+- 'grep -c ''^interworking='' /tmp/wl2_hapd.conf | sed ''s/^/Interworking24gTotalCount=/''
+  | sed -n ''1,21p'''

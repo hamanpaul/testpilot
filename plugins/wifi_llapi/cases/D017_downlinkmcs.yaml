@@ -2,12 +2,9 @@ id: wifi-llapi-D017-downlinkmcs
 name: "DownlinkMCS — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: "1.1"
 source:
-  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-  sheet: Wifi_LLAPI
   row: 17
   object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
   api: "DownlinkMCS"
-  baseline: "BCM v4.0.3"
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -25,15 +22,15 @@ topology:
       transport: serial
       selector: COM0
   links:
-    - from: STA
-      to: DUT
-      band: 5g
-    - from: STA
-      to: DUT
-      band: 6g
-    - from: STA
-      to: DUT
-      band: 2.4g
+  - from: STA
+    to: DUT
+    band: 5g
+  - from: STA
+    to: DUT
+    band: 6g
+  - from: STA
+    to: DUT
+    band: 2.4g
 
 test_environment: |
   Topology:
@@ -92,159 +89,165 @@ test_procedure: |
   - LLAPI `DownlinkMCS` equals the driver MCS for the same band.
 
 steps:
-  - id: step1_5g_sta_join
-    action: exec
-    target: STA
-    band: 5g
-    command:
-      - iw dev wl0 link
-      - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
-  - id: step2_5g_assoc
-    action: exec
-    target: DUT
-    band: 5g
-    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
-    depends_on: step1_5g_sta_join
-    capture: assoc_5g
-  - id: step3_5g_get
-    action: exec
-    target: DUT
-    band: 5g
-    command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkMCS?"'
-    depends_on: step2_5g_assoc
-    capture: result_5g
-  - id: step4_5g_driver_mcs
-    action: exec
-    target: DUT
-    band: 5g
-    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''/tx nrate/{n;s/.*mcs \([0-9][0-9]*\).*/DriverDownlinkMCS5g=\1/p;}'''
-    depends_on: step3_5g_get
-    capture: driver_mcs_5g
-  - id: step5_6g_sta_join
-    action: exec
-    target: STA
-    band: 6g
-    command:
-      - iw dev wl1 link
-      - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-      - wl -i wl1 status
-  - id: step6_6g_assoc
-    action: exec
-    target: DUT
-    band: 6g
-    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
-    depends_on: step5_6g_sta_join
-    capture: assoc_6g
-  - id: step7_6g_get
-    action: exec
-    target: DUT
-    band: 6g
-    command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DownlinkMCS?"'
-    depends_on: step6_6g_assoc
-    capture: result_6g
-  - id: step8_6g_driver_mcs
-    action: exec
-    target: DUT
-    band: 6g
-    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl1 sta_info $STA_MAC | sed -n ''/tx nrate/{n;s/.*mcs \([0-9][0-9]*\).*/DriverDownlinkMCS6g=\1/p;}'''
-    depends_on: step7_6g_get
-    capture: driver_mcs_6g
-  - id: step9_24g_sta_join
-    action: exec
-    target: STA
-    band: 2.4g
-    command:
-      - iw dev wl2 link
-      - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
-  - id: step10_24g_assoc
-    action: exec
-    target: DUT
-    band: 2.4g
-    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
-    depends_on: step9_24g_sta_join
-    capture: assoc_24g
-  - id: step11_24g_get
-    action: exec
-    target: DUT
-    band: 2.4g
-    command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkMCS?"'
-    depends_on: step10_24g_assoc
-    capture: result_24g
-  - id: step12_24g_driver_mcs
-    action: exec
-    target: DUT
-    band: 2.4g
-    command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl2 sta_info $STA_MAC | sed -n ''/tx nrate/{n;s/.*mcs \([0-9][0-9]*\).*/DriverDownlinkMCS24g=\1/p;}'''
-    depends_on: step11_24g_get
-    capture: driver_mcs_24g
+- id: step1_5g_sta_join
+  action: exec
+  target: STA
+  band: 5g
+  command:
+  - iw dev wl0 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+- id: step2_5g_assoc
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
+  depends_on: step1_5g_sta_join
+  capture: assoc_5g
+- id: step3_5g_get
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkMCS?"'
+  depends_on: step2_5g_assoc
+  capture: result_5g
+- id: step4_5g_driver_mcs
+  action: exec
+  target: DUT
+  band: 5g
+  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+    | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl0
+    sta_info $STA_MAC | sed -n ''/tx nrate/{n;s/.*mcs \([0-9][0-9]*\).*/DriverDownlinkMCS5g=\1/p;}'''
+  depends_on: step3_5g_get
+  capture: driver_mcs_5g
+- id: step5_6g_sta_join
+  action: exec
+  target: STA
+  band: 6g
+  command:
+  - iw dev wl1 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+  - wl -i wl1 status
+- id: step6_6g_assoc
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
+  depends_on: step5_6g_sta_join
+  capture: assoc_6g
+- id: step7_6g_get
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DownlinkMCS?"'
+  depends_on: step6_6g_assoc
+  capture: result_6g
+- id: step8_6g_driver_mcs
+  action: exec
+  target: DUT
+  band: 6g
+  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"
+    | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl1
+    sta_info $STA_MAC | sed -n ''/tx nrate/{n;s/.*mcs \([0-9][0-9]*\).*/DriverDownlinkMCS6g=\1/p;}'''
+  depends_on: step7_6g_get
+  capture: driver_mcs_6g
+- id: step9_24g_sta_join
+  action: exec
+  target: STA
+  band: 2.4g
+  command:
+  - iw dev wl2 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+- id: step10_24g_assoc
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
+  depends_on: step9_24g_sta_join
+  capture: assoc_24g
+- id: step11_24g_get
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkMCS?"'
+  depends_on: step10_24g_assoc
+  capture: result_24g
+- id: step12_24g_driver_mcs
+  action: exec
+  target: DUT
+  band: 2.4g
+  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"
+    | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl2
+    sta_info $STA_MAC | sed -n ''/tx nrate/{n;s/.*mcs \([0-9][0-9]*\).*/DriverDownlinkMCS24g=\1/p;}'''
+  depends_on: step11_24g_get
+  capture: driver_mcs_24g
 
 pass_criteria:
-  - field: assoc_5g.MACAddress
-    operator: regex
-    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
-    description: "5G: AP1 AssociatedDevice.1 must resolve to a live station MAC."
-  - field: result_5g.DownlinkMCS
-    operator: regex
-    value: '^[0-9]+$'
-    description: "5G: DownlinkMCS must normalize to an integer."
-  - field: driver_mcs_5g.DriverDownlinkMCS5g
-    operator: '>'
-    value: '0'
-    description: "5G: wl0 sta_info tx nrate must emit a positive downlink MCS for the same STA."
-  - field: result_5g.DownlinkMCS
-    operator: equals
-    reference: driver_mcs_5g.DriverDownlinkMCS5g
-    description: "5G: LLAPI DownlinkMCS must match wl0 sta_info tx nrate MCS."
-  - field: assoc_6g.MACAddress
-    operator: regex
-    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
-    description: "6G: AP3 AssociatedDevice.1 must resolve to a live station MAC."
-  - field: result_6g.DownlinkMCS
-    operator: regex
-    value: '^[0-9]+$'
-    description: "6G: DownlinkMCS must normalize to an integer."
-  - field: driver_mcs_6g.DriverDownlinkMCS6g
-    operator: '>'
-    value: '0'
-    description: "6G: wl1 sta_info tx nrate must emit a positive downlink MCS for the same STA."
-  - field: result_6g.DownlinkMCS
-    operator: equals
-    reference: driver_mcs_6g.DriverDownlinkMCS6g
-    description: "6G: LLAPI DownlinkMCS must match wl1 sta_info tx nrate MCS."
-  - field: assoc_24g.MACAddress
-    operator: regex
-    value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
-    description: "2.4G: AP5 AssociatedDevice.1 must resolve to a live station MAC."
-  - field: result_24g.DownlinkMCS
-    operator: regex
-    value: '^[0-9]+$'
-    description: "2.4G: DownlinkMCS must normalize to an integer."
-  - field: driver_mcs_24g.DriverDownlinkMCS24g
-    operator: '>'
-    value: '0'
-    description: "2.4G: wl2 sta_info tx nrate must emit a positive downlink MCS for the same STA."
-  - field: result_24g.DownlinkMCS
-    operator: equals
-    reference: driver_mcs_24g.DriverDownlinkMCS24g
-    description: "2.4G: LLAPI DownlinkMCS must match wl2 sta_info tx nrate MCS."
+- field: assoc_5g.MACAddress
+  operator: regex
+  value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+  description: "5G: AP1 AssociatedDevice.1 must resolve to a live station MAC."
+- field: result_5g.DownlinkMCS
+  operator: regex
+  value: '^[0-9]+$'
+  description: "5G: DownlinkMCS must normalize to an integer."
+- field: driver_mcs_5g.DriverDownlinkMCS5g
+  operator: '>'
+  value: '0'
+  description: "5G: wl0 sta_info tx nrate must emit a positive downlink MCS for the
+    same STA."
+- field: result_5g.DownlinkMCS
+  operator: equals
+  reference: driver_mcs_5g.DriverDownlinkMCS5g
+  description: "5G: LLAPI DownlinkMCS must match wl0 sta_info tx nrate MCS."
+- field: assoc_6g.MACAddress
+  operator: regex
+  value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+  description: "6G: AP3 AssociatedDevice.1 must resolve to a live station MAC."
+- field: result_6g.DownlinkMCS
+  operator: regex
+  value: '^[0-9]+$'
+  description: "6G: DownlinkMCS must normalize to an integer."
+- field: driver_mcs_6g.DriverDownlinkMCS6g
+  operator: '>'
+  value: '0'
+  description: "6G: wl1 sta_info tx nrate must emit a positive downlink MCS for the
+    same STA."
+- field: result_6g.DownlinkMCS
+  operator: equals
+  reference: driver_mcs_6g.DriverDownlinkMCS6g
+  description: "6G: LLAPI DownlinkMCS must match wl1 sta_info tx nrate MCS."
+- field: assoc_24g.MACAddress
+  operator: regex
+  value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
+  description: "2.4G: AP5 AssociatedDevice.1 must resolve to a live station MAC."
+- field: result_24g.DownlinkMCS
+  operator: regex
+  value: '^[0-9]+$'
+  description: "2.4G: DownlinkMCS must normalize to an integer."
+- field: driver_mcs_24g.DriverDownlinkMCS24g
+  operator: '>'
+  value: '0'
+  description: "2.4G: wl2 sta_info tx nrate must emit a positive downlink MCS for
+    the same STA."
+- field: result_24g.DownlinkMCS
+  operator: equals
+  reference: driver_mcs_24g.DriverDownlinkMCS24g
+  description: "2.4G: LLAPI DownlinkMCS must match wl2 sta_info tx nrate MCS."
 
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkMCS?"'
-  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
-  - 'wl -i wl0 sta_info $STA_MAC | grep -A 1 "tx nrate"'
-  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
-  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DownlinkMCS?"'
-  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
-  - 'wl -i wl1 sta_info $STA_MAC | grep -A 1 "tx nrate"'
-  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
-  - 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkMCS?"'
-  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
-  - 'wl -i wl2 sta_info $STA_MAC | grep -A 1 "tx nrate"'
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"'
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkMCS?"'
+- 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
+  ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+- 'wl -i wl0 sta_info $STA_MAC | grep -A 1 "tx nrate"'
+- 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
+- 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DownlinkMCS?"'
+- 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?" | sed -n
+  ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+- 'wl -i wl1 sta_info $STA_MAC | grep -A 1 "tx nrate"'
+- 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"'
+- 'ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkMCS?"'
+- 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?" | sed -n
+  ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
+- 'wl -i wl2 sta_info $STA_MAC | grep -A 1 "tx nrate"'
 
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: "0401 row 17 expects Pass on all three bands; live verification must match each band's wl sta_info tx nrate MCS sample."

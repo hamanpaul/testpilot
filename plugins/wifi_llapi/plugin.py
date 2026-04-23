@@ -15,7 +15,11 @@ from typing import Any, Sequence
 from testpilot.core.case_utils import stringify_step_command, step_command_lines
 from testpilot.core.plugin_base import PluginBase
 from testpilot.serialwrap_binary import resolve_serialwrap_binary
-from testpilot.schema.case_schema import load_cases_dir, load_wifi_band_baselines
+from testpilot.schema.case_schema import (
+    load_cases_dir,
+    load_wifi_band_baselines,
+    validate_wifi_llapi_case,
+)
 from testpilot.transport.base import StubTransport
 from testpilot.yaml_command_audit import looks_like_shell_command
 
@@ -125,7 +129,7 @@ class Plugin(PluginBase):
         return Path(__file__).parent / "cases"
 
     def discover_cases(self) -> list[dict[str, Any]]:
-        return load_cases_dir(self.cases_dir)
+        return load_cases_dir(self.cases_dir, validator=validate_wifi_llapi_case)
 
     # -- reporter overrides ----------------------------------------------------
 

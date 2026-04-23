@@ -2,12 +2,9 @@ id: wifi-llapi-D366-srgbsscolorbitmap
 name: SRGBSSColorBitmap — WiFi.Radio.{i}.IEEE80211ax.
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 366
   object: WiFi.Radio.{i}.IEEE80211ax.
   api: SRGBSSColorBitmap
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -49,14 +46,14 @@ test_environment: 'Topology:
   line
 
   '
-setup_steps: "1) DUT baseline:\n   - keep wl0 / wl1 / wl2 BSS instances up on the\
-  \ default non-open baseline\n   - confirm `/tmp/wl0_hapd.conf`, `/tmp/wl1_hapd.conf`,\
-  \ and `/tmp/wl2_hapd.conf` exist before the bitmap probe\n2) Setter / getter probe:\n\
+setup_steps: "1) DUT baseline:\n   - keep wl0 / wl1 / wl2 BSS instances up on the
+  default non-open baseline\n   - confirm `/tmp/wl0_hapd.conf`, `/tmp/wl1_hapd.conf`,
+  and `/tmp/wl2_hapd.conf` exist before the bitmap probe\n2) Setter / getter probe:\n\
   \   - read the default SRGBSSColorBitmap getter on Radio.1 / Radio.2 / Radio.3\n\
-  \   - write `SRGBSSColorBitmap=\"1\"` on each band and confirm northbound readback\
-  \ changes to `\"1\"`\n3) hostapd cross-check:\n   - inspect `/tmp/wl[0-2]_hapd.conf`\
-  \ for `he_spr_srg_bss_colors=`\n   - every band should keep the line count at `0`,\
-  \ proving the accepted getter value never reaches Broadcom hostapd/runtime config\n\
+  \   - write `SRGBSSColorBitmap=\"1\"` on each band and confirm northbound readback
+  changes to `\"1\"`\n3) hostapd cross-check:\n   - inspect `/tmp/wl[0-2]_hapd.conf`
+  for `he_spr_srg_bss_colors=`\n   - every band should keep the line count at `0`,
+  proving the accepted getter value never reaches Broadcom hostapd/runtime config\n\
   4) Cleanup:\n   - restore Radio.1 / Radio.2 / Radio.3 back to `SRGBSSColorBitmap=\"\
   \"`\n"
 sta_env_setup: "DUT:\n  wl -i wl0 bss\n  wl -i wl1 bss\n  wl -i wl2 bss\n"
@@ -142,21 +139,24 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: grep -c '^he_spr_srg_bss_colors=' /tmp/wl0_hapd.conf | sed 's/^/HostapdSrgBssColorLines=/'
+  command: grep -c '^he_spr_srg_bss_colors=' /tmp/wl0_hapd.conf | sed 
+    's/^/HostapdSrgBssColorLines=/'
   depends_on: step9_after_24g
   capture: cfg_5g_after
 - id: step11_cfg_6g_after
   action: exec
   target: DUT
   band: 6g
-  command: grep -c '^he_spr_srg_bss_colors=' /tmp/wl1_hapd.conf | sed 's/^/HostapdSrgBssColorLines=/'
+  command: grep -c '^he_spr_srg_bss_colors=' /tmp/wl1_hapd.conf | sed 
+    's/^/HostapdSrgBssColorLines=/'
   depends_on: step10_cfg_5g_after
   capture: cfg_6g_after
 - id: step12_cfg_24g_after
   action: exec
   target: DUT
   band: 2.4g
-  command: grep -c '^he_spr_srg_bss_colors=' /tmp/wl2_hapd.conf | sed 's/^/HostapdSrgBssColorLines=/'
+  command: grep -c '^he_spr_srg_bss_colors=' /tmp/wl2_hapd.conf | sed 
+    's/^/HostapdSrgBssColorLines=/'
   depends_on: step11_cfg_6g_after
   capture: cfg_24g_after
 - id: step13_restore_5g
@@ -196,15 +196,18 @@ pass_criteria:
 - field: set_5g.SRGBSSColorBitmap
   operator: equals
   value: '1'
-  description: 5G Radio.1 should acknowledge the accepted SRGBSSColorBitmap setter.
+  description: 5G Radio.1 should acknowledge the accepted SRGBSSColorBitmap 
+    setter.
 - field: set_6g.SRGBSSColorBitmap
   operator: equals
   value: '1'
-  description: 6G Radio.2 should acknowledge the accepted SRGBSSColorBitmap setter.
+  description: 6G Radio.2 should acknowledge the accepted SRGBSSColorBitmap 
+    setter.
 - field: set_24g.SRGBSSColorBitmap
   operator: equals
   value: '1'
-  description: 2.4G Radio.3 should acknowledge the accepted SRGBSSColorBitmap setter.
+  description: 2.4G Radio.3 should acknowledge the accepted SRGBSSColorBitmap 
+    setter.
 - field: after_5g.SRGBSSColorBitmap
   operator: equals
   value: '1'
@@ -220,48 +223,49 @@ pass_criteria:
 - field: cfg_5g_after.HostapdSrgBssColorLines
   operator: equals
   value: '0'
-  description: wl0 hostapd config should still expose no he_spr_srg_bss_colors line
-    after the 5G setter write.
+  description: wl0 hostapd config should still expose no he_spr_srg_bss_colors 
+    line after the 5G setter write.
 - field: cfg_6g_after.HostapdSrgBssColorLines
   operator: equals
   value: '0'
-  description: wl1 hostapd config should still expose no he_spr_srg_bss_colors line
-    after the 6G setter write.
+  description: wl1 hostapd config should still expose no he_spr_srg_bss_colors 
+    line after the 6G setter write.
 - field: cfg_24g_after.HostapdSrgBssColorLines
   operator: equals
   value: '0'
-  description: wl2 hostapd config should still expose no he_spr_srg_bss_colors line
-    after the 2.4G setter write.
+  description: wl2 hostapd config should still expose no he_spr_srg_bss_colors 
+    line after the 2.4G setter write.
 - field: restore_5g.SRGBSSColorBitmap
   operator: equals
   value: ''
-  description: 5G Radio.1 should restore back to an empty SRGBSSColorBitmap value.
+  description: 5G Radio.1 should restore back to an empty SRGBSSColorBitmap 
+    value.
 - field: restore_6g.SRGBSSColorBitmap
   operator: equals
   value: ''
-  description: 6G Radio.2 should restore back to an empty SRGBSSColorBitmap value.
+  description: 6G Radio.2 should restore back to an empty SRGBSSColorBitmap 
+    value.
 - field: restore_24g.SRGBSSColorBitmap
   operator: equals
   value: ''
-  description: 2.4G Radio.3 should restore back to an empty SRGBSSColorBitmap value.
+  description: 2.4G Radio.3 should restore back to an empty SRGBSSColorBitmap 
+    value.
 verification_command:
 - ubus-cli "WiFi.Radio.1.IEEE80211ax.SRGBSSColorBitmap?"
 - ubus-cli WiFi.Radio.1.IEEE80211ax.SRGBSSColorBitmap="1"
 - ubus-cli "WiFi.Radio.1.IEEE80211ax.SRGBSSColorBitmap?"
-- grep -c '^he_spr_srg_bss_colors=' /tmp/wl0_hapd.conf | sed 's/^/HostapdSrgBssColorLines=/'
+- grep -c '^he_spr_srg_bss_colors=' /tmp/wl0_hapd.conf | sed 
+  's/^/HostapdSrgBssColorLines=/'
 - ubus-cli WiFi.Radio.1.IEEE80211ax.SRGBSSColorBitmap=""
 - ubus-cli "WiFi.Radio.2.IEEE80211ax.SRGBSSColorBitmap?"
 - ubus-cli WiFi.Radio.2.IEEE80211ax.SRGBSSColorBitmap="1"
 - ubus-cli "WiFi.Radio.2.IEEE80211ax.SRGBSSColorBitmap?"
-- grep -c '^he_spr_srg_bss_colors=' /tmp/wl1_hapd.conf | sed 's/^/HostapdSrgBssColorLines=/'
+- grep -c '^he_spr_srg_bss_colors=' /tmp/wl1_hapd.conf | sed 
+  's/^/HostapdSrgBssColorLines=/'
 - ubus-cli WiFi.Radio.2.IEEE80211ax.SRGBSSColorBitmap=""
 - ubus-cli "WiFi.Radio.3.IEEE80211ax.SRGBSSColorBitmap?"
 - ubus-cli WiFi.Radio.3.IEEE80211ax.SRGBSSColorBitmap="1"
 - ubus-cli "WiFi.Radio.3.IEEE80211ax.SRGBSSColorBitmap?"
-- grep -c '^he_spr_srg_bss_colors=' /tmp/wl2_hapd.conf | sed 's/^/HostapdSrgBssColorLines=/'
+- grep -c '^he_spr_srg_bss_colors=' /tmp/wl2_hapd.conf | sed 
+  's/^/HostapdSrgBssColorLines=/'
 - ubus-cli WiFi.Radio.3.IEEE80211ax.SRGBSSColorBitmap=""
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass

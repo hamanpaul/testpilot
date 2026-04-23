@@ -4,17 +4,11 @@ source:
   row: 129
   object: WiFi.EndPoint.{i}.Profile.WPS.
   api: ForceBSSID
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Not Supported
-results_reference:
-  v4.0.3:
-    5g: Not Supported
-    6g: Not Supported
-    2.4g: Not Supported
 topology:
   devices:
     DUT:

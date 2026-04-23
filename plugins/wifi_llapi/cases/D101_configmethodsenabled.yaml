@@ -2,9 +2,6 @@ id: wifi-llapi-D101-configmethodsenabled
 name: ConfigMethodsEnabled — WiFi.AccessPoint.{i}.WPS.
 version: '1.0'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
-  baseline: 0310-BGW720-300
   row: 101
   object: WiFi.AccessPoint.{i}.WPS.
   api: ConfigMethodsEnabled
@@ -25,30 +22,47 @@ topology:
       transport: serial
       selector: COM1
   links: []
-test_environment: "Topology:\n  - DUT: COM1 (B0, AP role)\n  Transport:\n  - DUT via serialwrap COM0\n  Baseline:\n  - 5G  = AP1 / wl0 / testpilot5G / WPA2-Personal\n  - 6G  = AP3 / wl1 / testpilot6G / WPA3-Personal / SAE\n  - 2.4G = AP5 / wl2 / testpilot2G / WPA2-Personal\n  Notes:\n  - workbook row 101 is a getter + hostapd projection check, not a setter replay\n  - 5G/2.4G: getter returns PhysicalPushButton,VirtualPushButton and hostapd projects physical_push_button virtual_push_button → workbook Pass\n  - workbook row-101 note explicitly marks 6G as Not Supported because WPA3 does not support WPS; current 0403 runtime aligns by returning CfgEnabled6g=None and emitting no hostapd config_methods line"
+test_environment: "Topology:\n  - DUT: COM1 (B0, AP role)\n  Transport:\n  - DUT via
+  serialwrap COM0\n  Baseline:\n  - 5G  = AP1 / wl0 / testpilot5G / WPA2-Personal\n\
+  \  - 6G  = AP3 / wl1 / testpilot6G / WPA3-Personal / SAE\n  - 2.4G = AP5 / wl2 /
+  testpilot2G / WPA2-Personal\n  Notes:\n  - workbook row 101 is a getter + hostapd
+  projection check, not a setter replay\n  - 5G/2.4G: getter returns PhysicalPushButton,VirtualPushButton
+  and hostapd projects physical_push_button virtual_push_button → workbook Pass\n\
+  \  - workbook row-101 note explicitly marks 6G as Not Supported because WPA3 does
+  not support WPS; current 0403 runtime aligns by returning CfgEnabled6g=None and
+  emitting no hostapd config_methods line"
 steps:
 - id: step_5g_getter
   action: exec
   target: DUT
   command:
-  - echo "CfgEnabled5g=$(ubus-cli 'WiFi.AccessPoint.1.WPS.ConfigMethodsEnabled?' 2>/dev/null | grep 'ConfigMethodsEnabled=' | head -1 | tr -d '\"' | cut -d= -f2)"
-  - echo "HapdCfg5g=$(grep 'config_methods=' /tmp/wl0_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+  - echo "CfgEnabled5g=$(ubus-cli 'WiFi.AccessPoint.1.WPS.ConfigMethodsEnabled?'
+    2>/dev/null | grep 'ConfigMethodsEnabled=' | head -1 | tr -d '\"' | cut -d= 
+    -f2)"
+  - echo "HapdCfg5g=$(grep 'config_methods=' /tmp/wl0_hapd.conf 2>/dev/null | 
+    head -1 | cut -d= -f2)"
   capture: cfg_5g
 - id: step_6g_getter
   action: exec
   target: DUT
   depends_on: step_5g_getter
   command:
-  - echo "CfgEnabled6g=$(ubus-cli 'WiFi.AccessPoint.3.WPS.ConfigMethodsEnabled?' 2>/dev/null | grep 'ConfigMethodsEnabled=' | head -1 | tr -d '\"' | cut -d= -f2)"
-  - echo "HapdCfg6g=$(grep 'config_methods=' /tmp/wl1_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+  - echo "CfgEnabled6g=$(ubus-cli 'WiFi.AccessPoint.3.WPS.ConfigMethodsEnabled?'
+    2>/dev/null | grep 'ConfigMethodsEnabled=' | head -1 | tr -d '\"' | cut -d= 
+    -f2)"
+  - echo "HapdCfg6g=$(grep 'config_methods=' /tmp/wl1_hapd.conf 2>/dev/null | 
+    head -1 | cut -d= -f2)"
   capture: cfg_6g
 - id: step_24g_getter
   action: exec
   target: DUT
   depends_on: step_6g_getter
   command:
-  - echo "CfgEnabled24g=$(ubus-cli 'WiFi.AccessPoint.5.WPS.ConfigMethodsEnabled?' 2>/dev/null | grep 'ConfigMethodsEnabled=' | head -1 | tr -d '\"' | cut -d= -f2)"
-  - echo "HapdCfg24g=$(grep 'config_methods=' /tmp/wl2_hapd.conf 2>/dev/null | head -1 | cut -d= -f2)"
+  - echo "CfgEnabled24g=$(ubus-cli 
+    'WiFi.AccessPoint.5.WPS.ConfigMethodsEnabled?' 2>/dev/null | grep 
+    'ConfigMethodsEnabled=' | head -1 | tr -d '\"' | cut -d= -f2)"
+  - echo "HapdCfg24g=$(grep 'config_methods=' /tmp/wl2_hapd.conf 2>/dev/null | 
+    head -1 | cut -d= -f2)"
   capture: cfg_24g
 pass_criteria:
 - field: cfg_5g.CfgEnabled5g
@@ -66,7 +80,8 @@ pass_criteria:
 - field: cfg_6g.CfgEnabled6g
   operator: equals
   value: None
-  description: 6G getter normalizes to None under WPA3 / WPS-not-supported baseline
+  description: 6G getter normalizes to None under WPA3 / WPS-not-supported 
+    baseline
 - field: cfg_24g.CfgEnabled24g
   operator: equals
   value: PhysicalPushButton,VirtualPushButton
@@ -76,13 +91,7 @@ pass_criteria:
   value: physical_push_button virtual_push_button
   description: 2.4G hostapd projects physical/virtual push button
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.WPS.ConfigMethodsEnabled?"'
-  - 'ubus-cli "WiFi.AccessPoint.3.WPS.ConfigMethodsEnabled?"'
-  - 'ubus-cli "WiFi.AccessPoint.5.WPS.ConfigMethodsEnabled?"'
-  - 'grep ''^config_methods='' /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf'
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Not Supported
-    2.4g: Pass
-    comment: 'workbook row 101 is getter + hostapd projection: 5G/2.4G expose PhysicalPushButton,VirtualPushButton and hostapd config_methods, while 6G WPA3 returns None and leaves hostapd config_methods absent, matching the workbook''s Not Supported note.'
+- 'ubus-cli "WiFi.AccessPoint.1.WPS.ConfigMethodsEnabled?"'
+- 'ubus-cli "WiFi.AccessPoint.3.WPS.ConfigMethodsEnabled?"'
+- 'ubus-cli "WiFi.AccessPoint.5.WPS.ConfigMethodsEnabled?"'
+- 'grep ''^config_methods='' /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf'

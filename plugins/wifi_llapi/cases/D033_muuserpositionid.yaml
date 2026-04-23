@@ -2,12 +2,9 @@ id: wifi-llapi-D033-muuserpositionid
 name: "MUUserPositionId — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 33
   object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
   api: MUUserPositionId
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -51,7 +48,8 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac5g=\1/p'
   capture: assoc_5g
 - id: step2_5g
   action: exec
@@ -69,7 +67,8 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac24g=\1/p'
   capture: assoc_24g
 - id: step5_24g
   action: exec
@@ -86,7 +85,8 @@ pass_criteria:
 - field: result_5g.MUUserPositionId
   operator: equals
   value: 0
-  description: "5G -- stub returns 0; MU user position is not hardware-backed on this platform"
+  description: "5G -- stub returns 0; MU user position is not hardware-backed on this
+    platform"
 - field: assoc_24g.AssocMac24g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -94,21 +94,10 @@ pass_criteria:
 - field: result_24g.MUUserPositionId
   operator: equals
   value: 0
-  description: "2.4G -- stub returns 0; MU user position is not hardware-backed on this platform"
+  description: "2.4G -- stub returns 0; MU user position is not hardware-backed on
+    this platform"
 verification_command:
-  - DUT# wl -i wl0 assoclist
-  - 'DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MUUserPositionId?"'
-  - DUT# wl -i wl2 assoclist
-  - 'DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MUUserPositionId?"'
-results_reference:
-  v4.0.3:
-    5g: Not Supported
-    6g: Not Supported
-    2.4g: Not Supported
-    comment: |
-      MUUserPositionId — workbook row 33 remains Not Supported.
-      Current 0403 source survey only finds the read-only ODL declaration for this field and no
-      active tr181-wifi implementation; the live getter still returns a stub 0.
-      Source-cross-check family evidence aligns with D032/D033 stub semantics:
-      5G: WiFi.AccessPoint.1.AssociatedDevice.1.MUUserPositionId=0 (stub)
-      2.4G: WiFi.AccessPoint.5.AssociatedDevice.1.MUUserPositionId=0 (stub)
+- DUT# wl -i wl0 assoclist
+- 'DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MUUserPositionId?"'
+- DUT# wl -i wl2 assoclist
+- 'DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MUUserPositionId?"'

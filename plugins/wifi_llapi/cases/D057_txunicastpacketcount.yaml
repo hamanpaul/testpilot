@@ -2,12 +2,9 @@ id: wifi-llapi-D057-txunicastpacketcount
 name: "TxUnicastPacketCount — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 57
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: TxUnicastPacketCount
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -69,7 +66,8 @@ steps:
   action: exec
   target: DUT
   command: >-
-    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f' | sed 's/^/MACAddress=/'
+    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'
+    | tr 'A-F' 'a-f' | sed 's/^/MACAddress=/'
   depends_on: step1
   capture: assoc_entry
 - id: step3
@@ -82,21 +80,30 @@ steps:
   action: exec
   target: DUT
   command: >-
-    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= '/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxUnicastPacketCount=/ {print "AssocTxUnicastPacketCount=" $2} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxPacketCount=/ {print "AssocTxPacketCount=" $2}'
+    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= '/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/
+    {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxUnicastPacketCount=/
+    {print "AssocTxUnicastPacketCount=" $2} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxPacketCount=/
+    {print "AssocTxPacketCount=" $2}'
   depends_on: step3
   capture: assoc_snapshot
 - id: step5
   action: exec
   target: DUT
   command: >-
-    STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f'); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n 's/^[[:space:]]*tx total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount=\1/p; s/^[[:space:]]*tx ucast pkts: \([0-9][0-9]*\).*/DriverTxUnicastPacketCount=\1/p; s/^[[:space:]]*tx total bytes: \([0-9][0-9]*\).*/DriverTxBytes=\1/p; s/^[[:space:]]*tx ucast bytes: \([0-9][0-9]*\).*/DriverTxUnicastBytes=\1/p'
+    STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
+    's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f'); [ -n "$STA_MAC" ] && echo
+    DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n 's/^[[:space:]]*tx
+    total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount=\1/p; s/^[[:space:]]*tx ucast
+    pkts: \([0-9][0-9]*\).*/DriverTxUnicastPacketCount=\1/p; s/^[[:space:]]*tx total
+    bytes: \([0-9][0-9]*\).*/DriverTxBytes=\1/p; s/^[[:space:]]*tx ucast bytes: \([0-9][0-9]*\).*/DriverTxUnicastBytes=\1/p'
   depends_on: step4
   capture: driver_capture
 pass_criteria:
 - field: sta_identity.StaMac
   operator: regex
   value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: COM1 wl0 must resolve to a concrete live STA MAC before DUT-side validation.
+  description: COM1 wl0 must resolve to a concrete live STA MAC before DUT-side 
+    validation.
 - field: assoc_entry.MACAddress
   operator: regex
   value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
@@ -104,58 +111,73 @@ pass_criteria:
 - field: assoc_entry.MACAddress
   operator: equals
   reference: sta_identity.StaMac
-  description: AP1 AssociatedDevice.1 must correspond to the same COM1 wl0 station used for this manual checkpoint.
+  description: AP1 AssociatedDevice.1 must correspond to the same COM1 wl0 
+    station used for this manual checkpoint.
 - field: result.TxUnicastPacketCount
   operator: regex
   value: ^[0-9]+$
-  description: TxUnicastPacketCount direct getter must produce a numeric counter for the live AssociatedDevice entry.
+  description: TxUnicastPacketCount direct getter must produce a numeric counter
+    for the live AssociatedDevice entry.
 - field: result.TxUnicastPacketCount
   operator: equals
   value: '0'
-  description: The current 5G live retest shows TxUnicastPacketCount still reads 0 for the same AssociatedDevice entry.
+  description: The current 5G live retest shows TxUnicastPacketCount still reads
+    0 for the same AssociatedDevice entry.
 - field: assoc_snapshot.AssocMAC
   operator: equals
   reference: assoc_entry.MACAddress
-  description: AssociatedDevice snapshot evidence must come from the same AP1 station entry.
+  description: AssociatedDevice snapshot evidence must come from the same AP1 
+    station entry.
 - field: result.TxUnicastPacketCount
   operator: equals
   reference: assoc_snapshot.AssocTxUnicastPacketCount
-  description: Direct getter TxUnicastPacketCount must match the same AssociatedDevice snapshot value.
+  description: Direct getter TxUnicastPacketCount must match the same 
+    AssociatedDevice snapshot value.
 - field: assoc_snapshot.AssocTxPacketCount
   operator: '>'
   value: '0'
-  description: The sibling TxPacketCount on the same AssociatedDevice entry must remain positive during this checkpoint.
+  description: The sibling TxPacketCount on the same AssociatedDevice entry must
+    remain positive during this checkpoint.
 - field: driver_capture.DriverAssocMac
   operator: equals
   reference: assoc_entry.MACAddress
-  description: Driver evidence must target the same AssociatedDevice MAC resolved in step2.
+  description: Driver evidence must target the same AssociatedDevice MAC 
+    resolved in step2.
 - field: driver_capture.DriverTxPacketCount
   operator: '>'
   value: '0'
-  description: wl0 sta_info must report a positive tx total packet count for the same STA.
+  description: wl0 sta_info must report a positive tx total packet count for the
+    same STA.
 - field: assoc_snapshot.AssocTxPacketCount
   operator: equals
   reference: driver_capture.DriverTxPacketCount
-  description: The sibling TxPacketCount on the same AssociatedDevice entry must match wl0 sta_info tx total pkts.
+  description: The sibling TxPacketCount on the same AssociatedDevice entry must
+    match wl0 sta_info tx total pkts.
 - field: driver_capture.DriverTxUnicastPacketCount
   operator: '>'
   value: '0'
-  description: wl0 sta_info must report a positive tx ucast packet count for the same STA.
+  description: wl0 sta_info must report a positive tx ucast packet count for the
+    same STA.
 - field: driver_capture.DriverTxBytes
   operator: regex
   value: ^[0-9]+$
-  description: wl0 sta_info must still expose tx total bytes as supporting context for the same STA.
+  description: wl0 sta_info must still expose tx total bytes as supporting 
+    context for the same STA.
 - field: driver_capture.DriverTxUnicastBytes
   operator: regex
   value: ^[0-9]+$
-  description: wl0 sta_info must still expose tx ucast bytes as supporting context for the same STA.
+  description: wl0 sta_info must still expose tx ucast bytes as supporting 
+    context for the same STA.
 verification_command:
-  - 'cat /sys/class/net/wl0/address | tr ''A-F'' ''a-f'' | sed ''s/^/StaMac=/'''
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount?"'
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= ''/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/ {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxUnicastPacketCount=/ {print "AssocTxUnicastPacketCount=" $2} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxPacketCount=/ {print "AssocTxPacketCount=" $2}'''
-  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'' | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n ''s/^[[:space:]]*tx total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount=\1/p; s/^[[:space:]]*tx ucast pkts: \([0-9][0-9]*\).*/DriverTxUnicastPacketCount=\1/p; s/^[[:space:]]*tx total bytes: \([0-9][0-9]*\).*/DriverTxBytes=\1/p; s/^[[:space:]]*tx ucast bytes: \([0-9][0-9]*\).*/DriverTxUnicastBytes=\1/p'''
-results_reference:
-  v4.0.3:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
+- 'cat /sys/class/net/wl0/address | tr ''A-F'' ''a-f'' | sed ''s/^/StaMac=/'''
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount?"'
+- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= ''/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/
+  {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxUnicastPacketCount=/
+  {print "AssocTxUnicastPacketCount=" $2} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxPacketCount=/
+  {print "AssocTxPacketCount=" $2}'''
+- 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
+  ''s/.*MACAddress="\([^"]*\)".*/\1/p'' | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ] &&
+  echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n ''s/^[[:space:]]*tx
+  total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount=\1/p; s/^[[:space:]]*tx ucast
+  pkts: \([0-9][0-9]*\).*/DriverTxUnicastPacketCount=\1/p; s/^[[:space:]]*tx total
+  bytes: \([0-9][0-9]*\).*/DriverTxBytes=\1/p; s/^[[:space:]]*tx ucast bytes: \([0-9][0-9]*\).*/DriverTxUnicastBytes=\1/p'''

@@ -2,12 +2,9 @@ id: d437-security-saepassphrase
 name: "D437 Security SAEPassphrase"
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 437
   object: WiFi.AccessPoint.{i}.Security.
   api: SAEPassphrase
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -85,29 +82,48 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.1.Security.SAEPassphrase?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); printf 'BaselineModeEnabled5g=%s\n' "${MODE:-EMPTY}"; printf 'BaselineGetterSAEPassphrase5g=%s\n' "${SAE:-EMPTY}"; printf 'BaselineHostapdSAEPassphrase5g=%s\n' "${HAPD:-ABSENT}"
+    MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.ModeEnabled="\([^"]*\)".*/\1/p'
+    | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.1.Security.SAEPassphrase?" 2>&1
+    | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p'
+    | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl0_hapd.conf 2>/dev/null
+    | cut -d= -f2- | xargs || true); printf 'BaselineModeEnabled5g=%s\n' "${MODE:-EMPTY}";
+    printf 'BaselineGetterSAEPassphrase5g=%s\n' "${SAE:-EMPTY}"; printf 'BaselineHostapdSAEPassphrase5g=%s\n'
+    "${HAPD:-ABSENT}"
   capture: saepassphrase_baseline_5g
 - id: step2_saepassphrase_baseline_6g
   action: exec
   target: DUT
   band: 6g
   command: >-
-    MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.3.Security.SAEPassphrase?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); printf 'BaselineModeEnabled6g=%s\n' "${MODE:-EMPTY}"; printf 'BaselineGetterSAEPassphrase6g=%s\n' "${SAE:-EMPTY}"; printf 'BaselineHostapdSAEPassphrase6g=%s\n' "${HAPD:-ABSENT}"
+    MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.ModeEnabled="\([^"]*\)".*/\1/p'
+    | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.3.Security.SAEPassphrase?" 2>&1
+    | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p'
+    | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl1_hapd.conf 2>/dev/null
+    | cut -d= -f2- | xargs || true); printf 'BaselineModeEnabled6g=%s\n' "${MODE:-EMPTY}";
+    printf 'BaselineGetterSAEPassphrase6g=%s\n' "${SAE:-EMPTY}"; printf 'BaselineHostapdSAEPassphrase6g=%s\n'
+    "${HAPD:-ABSENT}"
   capture: saepassphrase_baseline_6g
 - id: step3_saepassphrase_baseline_24g
   action: exec
   target: DUT
   band: 2.4g
   command: >-
-    MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.5.Security.SAEPassphrase?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); printf 'BaselineModeEnabled24g=%s\n' "${MODE:-EMPTY}"; printf 'BaselineGetterSAEPassphrase24g=%s\n' "${SAE:-EMPTY}"; printf 'BaselineHostapdSAEPassphrase24g=%s\n' "${HAPD:-ABSENT}"
+    MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.ModeEnabled="\([^"]*\)".*/\1/p'
+    | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.5.Security.SAEPassphrase?" 2>&1
+    | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p'
+    | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl2_hapd.conf 2>/dev/null
+    | cut -d= -f2- | xargs || true); printf 'BaselineModeEnabled24g=%s\n' "${MODE:-EMPTY}";
+    printf 'BaselineGetterSAEPassphrase24g=%s\n' "${SAE:-EMPTY}"; printf 'BaselineHostapdSAEPassphrase24g=%s\n'
+    "${HAPD:-ABSENT}"
   capture: saepassphrase_baseline_24g
 - id: step4_saepassphrase_set_mode_all
   action: exec
   target: DUT
   band: 5g
   command:
-    - printf 'RequestedModeEnabledAll=WPA3-Personal\n'
-    - ubus-cli "WiFi.AccessPoint.*.Security.ModeEnabled=WPA3-Personal" >/dev/null 2>&1
+  - printf 'RequestedModeEnabledAll=WPA3-Personal\n'
+  - ubus-cli "WiFi.AccessPoint.*.Security.ModeEnabled=WPA3-Personal" >/dev/null 
+    2>&1
   depends_on: step3_saepassphrase_baseline_24g
   capture: saepassphrase_set_mode_all
 - id: step5_saepassphrase_set_all
@@ -115,8 +131,9 @@ steps:
   target: DUT
   band: 5g
   command:
-    - printf 'RequestedSAEPassphraseAll=1234567890\n'
-    - ubus-cli "WiFi.AccessPoint.*.Security.SAEPassphrase=1234567890" >/dev/null 2>&1
+  - printf 'RequestedSAEPassphraseAll=1234567890\n'
+  - ubus-cli "WiFi.AccessPoint.*.Security.SAEPassphrase=1234567890" >/dev/null 
+    2>&1
   depends_on: step4_saepassphrase_set_mode_all
   capture: saepassphrase_set_all
 - id: step6_saepassphrase_after_set_5g
@@ -124,7 +141,14 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    sleep 5; MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.1.Security.SAEPassphrase?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); printf 'AfterSetModeEnabled5g=%s\n' "${MODE:-EMPTY}"; printf 'AfterSetGetterSAEPassphrase5g=%s\n' "${SAE:-EMPTY}"; printf 'AfterSetHostapdSAEPassphrase5g=%s\n' "${HAPD:-ABSENT}"
+    sleep 5; MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" 2>&1 | sed
+    -n 's/^WiFi\.AccessPoint\.1\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head
+    -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.1.Security.SAEPassphrase?" 2>&1 | sed
+    -n 's/^WiFi\.AccessPoint\.1\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p' | head
+    -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d=
+    -f2- | xargs || true); printf 'AfterSetModeEnabled5g=%s\n' "${MODE:-EMPTY}"; printf
+    'AfterSetGetterSAEPassphrase5g=%s\n' "${SAE:-EMPTY}"; printf 'AfterSetHostapdSAEPassphrase5g=%s\n'
+    "${HAPD:-ABSENT}"
   depends_on: step5_saepassphrase_set_all
   capture: saepassphrase_after_set_5g
 - id: step7_saepassphrase_after_set_6g
@@ -132,7 +156,13 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.3.Security.SAEPassphrase?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); printf 'AfterSetModeEnabled6g=%s\n' "${MODE:-EMPTY}"; printf 'AfterSetGetterSAEPassphrase6g=%s\n' "${SAE:-EMPTY}"; printf 'AfterSetHostapdSAEPassphrase6g=%s\n' "${HAPD:-ABSENT}"
+    MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.ModeEnabled="\([^"]*\)".*/\1/p'
+    | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.3.Security.SAEPassphrase?" 2>&1
+    | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p'
+    | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl1_hapd.conf 2>/dev/null
+    | cut -d= -f2- | xargs || true); printf 'AfterSetModeEnabled6g=%s\n' "${MODE:-EMPTY}";
+    printf 'AfterSetGetterSAEPassphrase6g=%s\n' "${SAE:-EMPTY}"; printf 'AfterSetHostapdSAEPassphrase6g=%s\n'
+    "${HAPD:-ABSENT}"
   depends_on: step6_saepassphrase_after_set_5g
   capture: saepassphrase_after_set_6g
 - id: step8_saepassphrase_after_set_24g
@@ -140,7 +170,13 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.5.Security.SAEPassphrase?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); printf 'AfterSetModeEnabled24g=%s\n' "${MODE:-EMPTY}"; printf 'AfterSetGetterSAEPassphrase24g=%s\n' "${SAE:-EMPTY}"; printf 'AfterSetHostapdSAEPassphrase24g=%s\n' "${HAPD:-ABSENT}"
+    MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.ModeEnabled="\([^"]*\)".*/\1/p'
+    | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.5.Security.SAEPassphrase?" 2>&1
+    | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p'
+    | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl2_hapd.conf 2>/dev/null
+    | cut -d= -f2- | xargs || true); printf 'AfterSetModeEnabled24g=%s\n' "${MODE:-EMPTY}";
+    printf 'AfterSetGetterSAEPassphrase24g=%s\n' "${SAE:-EMPTY}"; printf 'AfterSetHostapdSAEPassphrase24g=%s\n'
+    "${HAPD:-ABSENT}"
   depends_on: step7_saepassphrase_after_set_6g
   capture: saepassphrase_after_set_24g
 - id: step9_saepassphrase_restore_baseline
@@ -148,18 +184,30 @@ steps:
   target: DUT
   band: 5g
   command:
-    - ubus-cli "WiFi.AccessPoint.1.Security.SAEPassphrase=password" >/dev/null 2>&1
-    - ubus-cli "WiFi.AccessPoint.2.Security.SAEPassphrase=password" >/dev/null 2>&1
-    - "ubus-cli 'WiFi.AccessPoint.3.Security.SAEPassphrase=\"00000000\"' >/dev/null 2>&1"
-    - "ubus-cli 'WiFi.AccessPoint.4.Security.SAEPassphrase=\"00000000\"' >/dev/null 2>&1"
-    - ubus-cli "WiFi.AccessPoint.5.Security.SAEPassphrase=password" >/dev/null 2>&1
-    - ubus-cli "WiFi.AccessPoint.6.Security.SAEPassphrase=password" >/dev/null 2>&1
-    - ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal" >/dev/null 2>&1
-    - ubus-cli "WiFi.AccessPoint.2.Security.ModeEnabled=WPA2-Personal" >/dev/null 2>&1
-    - ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal" >/dev/null 2>&1
-    - ubus-cli "WiFi.AccessPoint.4.Security.ModeEnabled=WPA3-Personal" >/dev/null 2>&1
-    - ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal" >/dev/null 2>&1
-    - ubus-cli "WiFi.AccessPoint.6.Security.ModeEnabled=WPA2-Personal" >/dev/null 2>&1
+  - ubus-cli "WiFi.AccessPoint.1.Security.SAEPassphrase=password" >/dev/null 
+    2>&1
+  - ubus-cli "WiFi.AccessPoint.2.Security.SAEPassphrase=password" >/dev/null 
+    2>&1
+  - "ubus-cli 'WiFi.AccessPoint.3.Security.SAEPassphrase=\"00000000\"' >/dev/null
+    2>&1"
+  - "ubus-cli 'WiFi.AccessPoint.4.Security.SAEPassphrase=\"00000000\"' >/dev/null
+    2>&1"
+  - ubus-cli "WiFi.AccessPoint.5.Security.SAEPassphrase=password" >/dev/null 
+    2>&1
+  - ubus-cli "WiFi.AccessPoint.6.Security.SAEPassphrase=password" >/dev/null 
+    2>&1
+  - ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal" >/dev/null 
+    2>&1
+  - ubus-cli "WiFi.AccessPoint.2.Security.ModeEnabled=WPA2-Personal" >/dev/null 
+    2>&1
+  - ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal" >/dev/null 
+    2>&1
+  - ubus-cli "WiFi.AccessPoint.4.Security.ModeEnabled=WPA3-Personal" >/dev/null 
+    2>&1
+  - ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal" >/dev/null 
+    2>&1
+  - ubus-cli "WiFi.AccessPoint.6.Security.ModeEnabled=WPA2-Personal" >/dev/null 
+    2>&1
   depends_on: step8_saepassphrase_after_set_24g
   capture: saepassphrase_restore_baseline
 - id: step10_saepassphrase_after_restore_5g
@@ -167,7 +215,14 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    sleep 5; MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.1.Security.SAEPassphrase?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.1\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); printf 'AfterRestoreModeEnabled5g=%s\n' "${MODE:-EMPTY}"; printf 'AfterRestoreGetterSAEPassphrase5g=%s\n' "${SAE:-EMPTY}"; printf 'AfterRestoreHostapdSAEPassphrase5g=%s\n' "${HAPD:-ABSENT}"
+    sleep 5; MODE=$(ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?" 2>&1 | sed
+    -n 's/^WiFi\.AccessPoint\.1\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head
+    -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.1.Security.SAEPassphrase?" 2>&1 | sed
+    -n 's/^WiFi\.AccessPoint\.1\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p' | head
+    -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl0_hapd.conf 2>/dev/null | cut -d=
+    -f2- | xargs || true); printf 'AfterRestoreModeEnabled5g=%s\n' "${MODE:-EMPTY}";
+    printf 'AfterRestoreGetterSAEPassphrase5g=%s\n' "${SAE:-EMPTY}"; printf 'AfterRestoreHostapdSAEPassphrase5g=%s\n'
+    "${HAPD:-ABSENT}"
   depends_on: step9_saepassphrase_restore_baseline
   capture: saepassphrase_after_restore_5g
 - id: step11_saepassphrase_after_restore_6g
@@ -175,7 +230,13 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.3.Security.SAEPassphrase?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl1_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); printf 'AfterRestoreModeEnabled6g=%s\n' "${MODE:-EMPTY}"; printf 'AfterRestoreGetterSAEPassphrase6g=%s\n' "${SAE:-EMPTY}"; printf 'AfterRestoreHostapdSAEPassphrase6g=%s\n' "${HAPD:-ABSENT}"
+    MODE=$(ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.ModeEnabled="\([^"]*\)".*/\1/p'
+    | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.3.Security.SAEPassphrase?" 2>&1
+    | sed -n 's/^WiFi\.AccessPoint\.3\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p'
+    | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl1_hapd.conf 2>/dev/null
+    | cut -d= -f2- | xargs || true); printf 'AfterRestoreModeEnabled6g=%s\n' "${MODE:-EMPTY}";
+    printf 'AfterRestoreGetterSAEPassphrase6g=%s\n' "${SAE:-EMPTY}"; printf 'AfterRestoreHostapdSAEPassphrase6g=%s\n'
+    "${HAPD:-ABSENT}"
   depends_on: step10_saepassphrase_after_restore_5g
   capture: saepassphrase_after_restore_6g
 - id: step12_saepassphrase_after_restore_24g
@@ -183,7 +244,13 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.ModeEnabled="\([^"]*\)".*/\1/p' | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.5.Security.SAEPassphrase?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p' | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl2_hapd.conf 2>/dev/null | cut -d= -f2- | xargs || true); printf 'AfterRestoreModeEnabled24g=%s\n' "${MODE:-EMPTY}"; printf 'AfterRestoreGetterSAEPassphrase24g=%s\n' "${SAE:-EMPTY}"; printf 'AfterRestoreHostapdSAEPassphrase24g=%s\n' "${HAPD:-ABSENT}"
+    MODE=$(ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?" 2>&1 | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.ModeEnabled="\([^"]*\)".*/\1/p'
+    | head -n 1); SAE=$(ubus-cli "WiFi.AccessPoint.5.Security.SAEPassphrase?" 2>&1
+    | sed -n 's/^WiFi\.AccessPoint\.5\.Security\.SAEPassphrase="\([^"]*\)".*/\1/p'
+    | head -n 1); HAPD=$(grep -m1 '^sae_password=' /tmp/wl2_hapd.conf 2>/dev/null
+    | cut -d= -f2- | xargs || true); printf 'AfterRestoreModeEnabled24g=%s\n' "${MODE:-EMPTY}";
+    printf 'AfterRestoreGetterSAEPassphrase24g=%s\n' "${SAE:-EMPTY}"; printf 'AfterRestoreHostapdSAEPassphrase24g=%s\n'
+    "${HAPD:-ABSENT}"
   depends_on: step11_saepassphrase_after_restore_6g
   capture: saepassphrase_after_restore_24g
 
@@ -195,11 +262,13 @@ pass_criteria:
 - field: saepassphrase_baseline_5g.BaselineGetterSAEPassphrase5g
   operator: equals
   value: password
-  description: 5G AP1 / wl0 getter baseline keeps the observed placeholder SAE passphrase.
+  description: 5G AP1 / wl0 getter baseline keeps the observed placeholder SAE 
+    passphrase.
 - field: saepassphrase_baseline_5g.BaselineHostapdSAEPassphrase5g
   operator: equals
   value: ABSENT
-  description: 5G AP1 / wl0 hostapd should expose no `sae_password` while the band is on WPA2.
+  description: 5G AP1 / wl0 hostapd should expose no `sae_password` while the 
+    band is on WPA2.
 - field: saepassphrase_baseline_6g.BaselineModeEnabled6g
   operator: equals
   value: WPA3-Personal
@@ -207,11 +276,13 @@ pass_criteria:
 - field: saepassphrase_baseline_6g.BaselineGetterSAEPassphrase6g
   operator: equals
   value: '00000000'
-  description: 6G AP3 / wl1 getter should start from the documented `00000000` baseline.
+  description: 6G AP3 / wl1 getter should start from the documented `00000000` 
+    baseline.
 - field: saepassphrase_baseline_6g.BaselineHostapdSAEPassphrase6g
   operator: equals
   value: '00000000'
-  description: 6G AP3 / wl1 hostapd should start from the same baseline SAE passphrase.
+  description: 6G AP3 / wl1 hostapd should start from the same baseline SAE 
+    passphrase.
 - field: saepassphrase_baseline_24g.BaselineModeEnabled24g
   operator: equals
   value: WPA2-Personal
@@ -219,15 +290,18 @@ pass_criteria:
 - field: saepassphrase_baseline_24g.BaselineGetterSAEPassphrase24g
   operator: equals
   value: password
-  description: 2.4G AP5 / wl2 getter baseline keeps the observed placeholder SAE passphrase.
+  description: 2.4G AP5 / wl2 getter baseline keeps the observed placeholder SAE
+    passphrase.
 - field: saepassphrase_baseline_24g.BaselineHostapdSAEPassphrase24g
   operator: equals
   value: ABSENT
-  description: 2.4G AP5 / wl2 hostapd should expose no `sae_password` while the band is on WPA2.
+  description: 2.4G AP5 / wl2 hostapd should expose no `sae_password` while the 
+    band is on WPA2.
 - field: saepassphrase_after_set_5g.AfterSetModeEnabled5g
   operator: equals
   value: WPA3-Personal
-  description: 5G AP1 / wl0 should read back WPA3-Personal after the workbook mode replay.
+  description: 5G AP1 / wl0 should read back WPA3-Personal after the workbook 
+    mode replay.
 - field: saepassphrase_after_set_5g.AfterSetGetterSAEPassphrase5g
   operator: equals
   value: '1234567890'
@@ -235,11 +309,13 @@ pass_criteria:
 - field: saepassphrase_after_set_5g.AfterSetHostapdSAEPassphrase5g
   operator: equals
   reference: saepassphrase_after_set_5g.AfterSetGetterSAEPassphrase5g
-  description: 5G AP1 / wl0 hostapd should converge to the same SAE passphrase as the getter.
+  description: 5G AP1 / wl0 hostapd should converge to the same SAE passphrase 
+    as the getter.
 - field: saepassphrase_after_set_6g.AfterSetModeEnabled6g
   operator: equals
   value: WPA3-Personal
-  description: 6G AP3 / wl1 should stay on WPA3-Personal after the workbook replay.
+  description: 6G AP3 / wl1 should stay on WPA3-Personal after the workbook 
+    replay.
 - field: saepassphrase_after_set_6g.AfterSetGetterSAEPassphrase6g
   operator: equals
   value: '1234567890'
@@ -247,19 +323,23 @@ pass_criteria:
 - field: saepassphrase_after_set_6g.AfterSetHostapdSAEPassphrase6g
   operator: equals
   reference: saepassphrase_after_set_6g.AfterSetGetterSAEPassphrase6g
-  description: 6G AP3 / wl1 hostapd should converge to the same SAE passphrase as the getter.
+  description: 6G AP3 / wl1 hostapd should converge to the same SAE passphrase 
+    as the getter.
 - field: saepassphrase_after_set_24g.AfterSetModeEnabled24g
   operator: equals
   value: WPA3-Personal
-  description: 2.4G AP5 / wl2 should read back WPA3-Personal after the workbook mode replay.
+  description: 2.4G AP5 / wl2 should read back WPA3-Personal after the workbook 
+    mode replay.
 - field: saepassphrase_after_set_24g.AfterSetGetterSAEPassphrase24g
   operator: equals
   value: '1234567890'
-  description: 2.4G AP5 / wl2 getter should read back the workbook SAE passphrase.
+  description: 2.4G AP5 / wl2 getter should read back the workbook SAE 
+    passphrase.
 - field: saepassphrase_after_set_24g.AfterSetHostapdSAEPassphrase24g
   operator: equals
   reference: saepassphrase_after_set_24g.AfterSetGetterSAEPassphrase24g
-  description: 2.4G AP5 / wl2 hostapd should converge to the same SAE passphrase as the getter.
+  description: 2.4G AP5 / wl2 hostapd should converge to the same SAE passphrase
+    as the getter.
 - field: saepassphrase_after_restore_5g.AfterRestoreModeEnabled5g
   operator: equals
   reference: saepassphrase_baseline_5g.BaselineModeEnabled5g
@@ -267,11 +347,13 @@ pass_criteria:
 - field: saepassphrase_after_restore_5g.AfterRestoreGetterSAEPassphrase5g
   operator: equals
   reference: saepassphrase_baseline_5g.BaselineGetterSAEPassphrase5g
-  description: 5G AP1 / wl0 getter should restore to the observed baseline placeholder.
+  description: 5G AP1 / wl0 getter should restore to the observed baseline 
+    placeholder.
 - field: saepassphrase_after_restore_5g.AfterRestoreHostapdSAEPassphrase5g
   operator: equals
   reference: saepassphrase_baseline_5g.BaselineHostapdSAEPassphrase5g
-  description: 5G AP1 / wl0 hostapd should restore to the baseline absence of `sae_password`.
+  description: 5G AP1 / wl0 hostapd should restore to the baseline absence of 
+    `sae_password`.
 - field: saepassphrase_after_restore_6g.AfterRestoreModeEnabled6g
   operator: equals
   reference: saepassphrase_baseline_6g.BaselineModeEnabled6g
@@ -291,26 +373,22 @@ pass_criteria:
 - field: saepassphrase_after_restore_24g.AfterRestoreGetterSAEPassphrase24g
   operator: equals
   reference: saepassphrase_baseline_24g.BaselineGetterSAEPassphrase24g
-  description: 2.4G AP5 / wl2 getter should restore to the observed baseline placeholder.
+  description: 2.4G AP5 / wl2 getter should restore to the observed baseline 
+    placeholder.
 - field: saepassphrase_after_restore_24g.AfterRestoreHostapdSAEPassphrase24g
   operator: equals
   reference: saepassphrase_baseline_24g.BaselineHostapdSAEPassphrase24g
-  description: 2.4G AP5 / wl2 hostapd should restore to the baseline absence of `sae_password`.
+  description: 2.4G AP5 / wl2 hostapd should restore to the baseline absence of 
+    `sae_password`.
 
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"'
-  - 'ubus-cli "WiFi.AccessPoint.1.Security.SAEPassphrase?"'
-  - 'grep -m1 ''^sae_password='' /tmp/wl0_hapd.conf || true'
-  - 'ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"'
-  - 'ubus-cli "WiFi.AccessPoint.3.Security.SAEPassphrase?"'
-  - 'grep -m1 ''^sae_password='' /tmp/wl1_hapd.conf || true'
-  - 'ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"'
-  - 'ubus-cli "WiFi.AccessPoint.5.Security.SAEPassphrase?"'
-  - 'grep -m1 ''^sae_password='' /tmp/wl2_hapd.conf || true'
+- 'ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"'
+- 'ubus-cli "WiFi.AccessPoint.1.Security.SAEPassphrase?"'
+- 'grep -m1 ''^sae_password='' /tmp/wl0_hapd.conf || true'
+- 'ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"'
+- 'ubus-cli "WiFi.AccessPoint.3.Security.SAEPassphrase?"'
+- 'grep -m1 ''^sae_password='' /tmp/wl1_hapd.conf || true'
+- 'ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"'
+- 'ubus-cli "WiFi.AccessPoint.5.Security.SAEPassphrase?"'
+- 'grep -m1 ''^sae_password='' /tmp/wl2_hapd.conf || true'
 
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: '2026-04-15 live probe showed wildcard `ModeEnabled=WPA3-Personal` plus wildcard `SAEPassphrase=1234567890` converges AP1/AP3/AP5 getters and wl0/wl1/wl2 hostapd `sae_password=` to `1234567890`; restore returns 5G/2.4G to `WPA2-Personal` + `password` with no `sae_password`, and 6G to `WPA3-Personal` + quoted `00000000`.'

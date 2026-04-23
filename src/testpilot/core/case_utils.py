@@ -97,74 +97,10 @@ def band_results(status: str, bands: list[str] | None) -> tuple[str, str, str]:
     return r5, r6, r24
 
 
-def baseline_results_reference(case: dict[str, Any]) -> dict[str, Any] | None:
-    """Resolve the results_reference dict matching the case baseline version."""
-    source = case.get("source")
-    if not isinstance(source, dict):
-        return None
-    results_reference = case.get("results_reference")
-    if not isinstance(results_reference, dict):
-        return None
-
-    baseline = str(source.get("baseline", "")).strip()
-    candidates: list[str] = []
-    if baseline:
-        candidates.append(baseline)
-        version_match = re.search(r"\bv\d+(?:\.\d+)+\b", baseline, re.IGNORECASE)
-        if version_match:
-            candidates.append(version_match.group(0))
-        numeric_match = re.search(r"\b\d+(?:\.\d+)+\b", baseline)
-        if numeric_match:
-            candidates.append(f"v{numeric_match.group(0)}")
-
-    seen: set[str] = set()
-    for candidate in candidates:
-        norm = candidate.strip()
-        if not norm or norm.lower() in seen:
-            continue
-        seen.add(norm.lower())
-        value = results_reference.get(norm)
-        if isinstance(value, dict):
-            return value
-        for key, entry in results_reference.items():
-            if isinstance(key, str) and key.strip().lower() == norm.lower() and isinstance(entry, dict):
-                return entry
-    for fallback in ("v4.0.3", "4.0.3", "v4.0.1", "4.0.1"):
-        value = results_reference.get(fallback)
-        if isinstance(value, dict):
-            return value
-        for key, entry in results_reference.items():
-            if isinstance(key, str) and key.strip().lower() == fallback.lower() and isinstance(entry, dict):
-                return entry
-    return None
-
-
 def case_band_results(case: dict[str, Any], verdict: bool) -> tuple[str, str, str]:
     """Compute per-band results for *case* given an evaluation *verdict*."""
-    default_status = "Pass" if verdict else "Fail"
-    result_5g, result_6g, result_24g = band_results(default_status, case.get("bands"))
-    reference = baseline_results_reference(case)
-    if not reference:
-        return result_5g, result_6g, result_24g
-
-    by_band = {
-        "5g": result_5g,
-        "6g": result_6g,
-        "2.4g": result_24g,
-    }
-    for b in ("5g", "6g", "2.4g"):
-        value = reference.get(b)
-        if not isinstance(value, str):
-            continue
-        norm = value.strip()
-        if not norm:
-            continue
-        if verdict:
-            by_band[b] = norm
-        elif norm in {"Skip", "N/A"}:
-            by_band[b] = norm
-
-    return by_band["5g"], by_band["6g"], by_band["2.4g"]
+    status = "Pass" if verdict else "Fail"
+    return band_results(status, case.get("bands"))
 
 
 def overall_case_status(result_5g: str, result_6g: str, result_24g: str) -> str:

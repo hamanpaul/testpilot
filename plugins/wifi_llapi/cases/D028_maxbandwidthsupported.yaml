@@ -2,12 +2,9 @@ id: wifi-llapi-D028-maxbandwidthsupported
 name: "MaxBandwidthSupported — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 28
   object: "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
   api: MaxBandwidthSupported
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -52,13 +49,15 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac5g=\1/p'
   capture: assoc_5g
 - id: step2_5g
   action: exec
   target: DUT
   band: 5g
-  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported?"
+  command: ubus-cli 
+    "WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported?"
   depends_on: step1_5g_assoc
   capture: result_5g
 - id: step3_6g
@@ -70,13 +69,15 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac24g=\1/p'
   capture: assoc_24g
 - id: step5_24g
   action: exec
   target: DUT
   band: 2.4g
-  command: ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MaxBandwidthSupported?"
+  command: ubus-cli 
+    "WiFi.AccessPoint.5.AssociatedDevice.1.MaxBandwidthSupported?"
   depends_on: step4_24g_assoc
   capture: result_24g
 pass_criteria:
@@ -95,24 +96,12 @@ pass_criteria:
 - field: result_24g.MaxBandwidthSupported
   operator: not_contains
   value: 'ERROR'
-  description: "2.4G -- must not return ERROR; live value = \"Unknown\" (STA OMI=0x3203 forces 20MHz; BW unresolvable -- STA device difference vs workbook expectation)."
+  description: "2.4G -- must not return ERROR; live value = \"Unknown\" (STA OMI=0x3203
+    forces 20MHz; BW unresolvable -- STA device difference vs workbook expectation)."
 - field: result_24g.MaxBandwidthSupported
   operator: regex
   value: '^(20MHz|40MHz|80MHz|160MHz|Unknown)$'
   description: "2.4G -- must remain a recognized bandwidth token or \"Unknown\""
 verification_command:
-  - 'DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported?"'
-  - 'DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MaxBandwidthSupported?"'
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Fail
-    2.4g: Pass
-    comment: |
-      Live evidence (BCM v4.0.3):
-      5G: WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported=160MHz
-      6G: workbook row 28 remains fail-shaped; the current lab still skips AP3/wl1 because STA association is BCME_NOTREADY in this environment.
-      2.4G: WiFi.AccessPoint.5.AssociatedDevice.1.MaxBandwidthSupported=Unknown
-          Root cause: 2.4G STA OMI=0x3203 forces 20MHz operation;
-          wld_util_getMaxBwCap() returns BCME_NOTFOUND -> value reported as "Unknown".
-          This is a STA device difference from the workbook reference STA, not a LLAPI bug.
+- 'DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported?"'
+- 'DUT# ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MaxBandwidthSupported?"'

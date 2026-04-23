@@ -2,12 +2,9 @@ id: wifi-llapi-D068-discoverymethodenabled-accesspoint-rnr
 name: "DiscoveryMethodEnabled — WiFi.AccessPoint.{i}."
 version: '1.1'
 source:
-  report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
-  sheet: Wifi_LLAPI
   row: 70
   object: WiFi.AccessPoint.{i}.
   api: DiscoveryMethodEnabled
-  baseline: BCM v4.0.3
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
@@ -125,7 +122,9 @@ steps:
   target: DUT
   band: 5g
   command: >-
-    awk '/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled5gCount=" enabled+0; print "RnrDisabled5gCount=" disabled+0; print "RnrTotal5gCount=" total+0}' /tmp/wl0_hapd.conf
+    awk '/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++}
+    END {print "RnrEnabled5gCount=" enabled+0; print "RnrDisabled5gCount=" disabled+0;
+    print "RnrTotal5gCount=" total+0}' /tmp/wl0_hapd.conf
   depends_on: step9_after_rnr_24g
   capture: cfg_5g_after
 - id: step11_cfg_6g_after
@@ -133,7 +132,9 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    awk '/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled6gCount=" enabled+0; print "RnrDisabled6gCount=" disabled+0; print "RnrTotal6gCount=" total+0}' /tmp/wl1_hapd.conf
+    awk '/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++}
+    END {print "RnrEnabled6gCount=" enabled+0; print "RnrDisabled6gCount=" disabled+0;
+    print "RnrTotal6gCount=" total+0}' /tmp/wl1_hapd.conf
   depends_on: step10_cfg_5g_after
   capture: cfg_6g_after
 - id: step12_cfg_24g_after
@@ -141,7 +142,9 @@ steps:
   target: DUT
   band: 2.4g
   command: >-
-    awk '/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled24gCount=" enabled+0; print "RnrDisabled24gCount=" disabled+0; print "RnrTotal24gCount=" total+0}' /tmp/wl2_hapd.conf
+    awk '/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++}
+    END {print "RnrEnabled24gCount=" enabled+0; print "RnrDisabled24gCount=" disabled+0;
+    print "RnrTotal24gCount=" total+0}' /tmp/wl2_hapd.conf
   depends_on: step11_cfg_6g_after
   capture: cfg_24g_after
 - id: step13_restore_5g
@@ -170,7 +173,9 @@ steps:
   target: DUT
   band: 6g
   command: >-
-    awk '/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled6gCount=" enabled+0; print "RnrDisabled6gCount=" disabled+0; print "RnrTotal6gCount=" total+0}' /tmp/wl1_hapd.conf
+    awk '/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++}
+    END {print "RnrEnabled6gCount=" enabled+0; print "RnrDisabled6gCount=" disabled+0;
+    print "RnrTotal6gCount=" total+0}' /tmp/wl1_hapd.conf
   depends_on: step15_restore_24g
   capture: cfg_6g_restore
 pass_criteria:
@@ -185,11 +190,13 @@ pass_criteria:
 - field: default_24g.DiscoveryMethodEnabled
   operator: equals
   value: Default
-  description: 2.4G AP5 should start at the default DiscoveryMethodEnabled value.
+  description: 2.4G AP5 should start at the default DiscoveryMethodEnabled 
+    value.
 - field: set_rnr_5g.DiscoveryMethodEnabled
   operator: equals
   value: RNR
-  description: 5G AP1 should acknowledge the accepted RNR setter even though hostapd state does not follow.
+  description: 5G AP1 should acknowledge the accepted RNR setter even though 
+    hostapd state does not follow.
 - field: set_rnr_6g.DiscoveryMethodEnabled
   operator: equals
   value: RNR
@@ -197,7 +204,8 @@ pass_criteria:
 - field: set_rnr_24g.DiscoveryMethodEnabled
   operator: equals
   value: RNR
-  description: 2.4G AP5 should acknowledge the accepted RNR setter even though hostapd state does not follow.
+  description: 2.4G AP5 should acknowledge the accepted RNR setter even though 
+    hostapd state does not follow.
 - field: after_rnr_5g.DiscoveryMethodEnabled
   operator: equals
   value: RNR
@@ -213,31 +221,38 @@ pass_criteria:
 - field: cfg_5g_after.RnrEnabled5gCount
   operator: equals
   value: '0'
-  description: wl0 hostapd config should still expose no RNR-enabled lines after the 5G setter write.
+  description: wl0 hostapd config should still expose no RNR-enabled lines after
+    the 5G setter write.
 - field: cfg_5g_after.RnrTotal5gCount
   operator: equals
   value: '0'
-  description: wl0 hostapd config should still expose no `rnr=` lines after the 5G setter write.
+  description: wl0 hostapd config should still expose no `rnr=` lines after the 
+    5G setter write.
 - field: cfg_6g_after.RnrEnabled6gCount
   operator: equals
   value: '1'
-  description: wl1 hostapd config should expose one `rnr=1` line after the 6G setter write.
+  description: wl1 hostapd config should expose one `rnr=1` line after the 6G 
+    setter write.
 - field: cfg_6g_after.RnrDisabled6gCount
   operator: equals
   value: '1'
-  description: wl1 hostapd config should keep one `rnr=0` line for the sibling BSS.
+  description: wl1 hostapd config should keep one `rnr=0` line for the sibling 
+    BSS.
 - field: cfg_6g_after.RnrTotal6gCount
   operator: equals
   value: '2'
-  description: wl1 hostapd config should expose two total `rnr=` lines in the dual-BSS file.
+  description: wl1 hostapd config should expose two total `rnr=` lines in the 
+    dual-BSS file.
 - field: cfg_24g_after.RnrEnabled24gCount
   operator: equals
   value: '0'
-  description: wl2 hostapd config should still expose no RNR-enabled lines after the 2.4G setter write.
+  description: wl2 hostapd config should still expose no RNR-enabled lines after
+    the 2.4G setter write.
 - field: cfg_24g_after.RnrTotal24gCount
   operator: equals
   value: '0'
-  description: wl2 hostapd config should still expose no `rnr=` lines after the 2.4G setter write.
+  description: wl2 hostapd config should still expose no `rnr=` lines after the 
+    2.4G setter write.
 - field: restore_5g.DiscoveryMethodEnabled
   operator: equals
   value: Default
@@ -253,33 +268,39 @@ pass_criteria:
 - field: cfg_6g_restore.RnrEnabled6gCount
   operator: equals
   value: '0'
-  description: wl1 hostapd config should return to zero RNR-enabled lines after restore.
+  description: wl1 hostapd config should return to zero RNR-enabled lines after 
+    restore.
 - field: cfg_6g_restore.RnrDisabled6gCount
   operator: equals
   value: '2'
-  description: wl1 hostapd config should return both dual-BSS `rnr=` lines to `0` after restore.
+  description: wl1 hostapd config should return both dual-BSS `rnr=` lines to 
+    `0` after restore.
 - field: cfg_6g_restore.RnrTotal6gCount
   operator: equals
   value: '2'
-  description: wl1 hostapd config should still expose two total `rnr=` lines after restore.
+  description: wl1 hostapd config should still expose two total `rnr=` lines 
+    after restore.
 verification_command:
-  - 'ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"'
-  - 'ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"'
-  - 'ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"'
-  - ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=RNR
-  - ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=RNR
-  - ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=RNR
-  - 'ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?"'
-  - 'awk ''/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled5gCount=" enabled+0; print "RnrDisabled5gCount=" disabled+0; print "RnrTotal5gCount=" total+0}'' /tmp/wl0_hapd.conf'
-  - 'awk ''/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled6gCount=" enabled+0; print "RnrDisabled6gCount=" disabled+0; print "RnrTotal6gCount=" total+0}'' /tmp/wl1_hapd.conf'
-  - 'awk ''/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled24gCount=" enabled+0; print "RnrDisabled24gCount=" disabled+0; print "RnrTotal24gCount=" total+0}'' /tmp/wl2_hapd.conf'
-  - ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=Default
-  - ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=Default
-  - ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=Default
-  - 'ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?" | sed -n ''1,20p'''
-  - 'awk ''/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print "RnrEnabled6gCount=" enabled+0; print "RnrDisabled6gCount=" disabled+0; print "RnrTotal6gCount=" total+0}'' /tmp/wl1_hapd.conf | sed -n ''1,20p'''
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
+- 'ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"'
+- 'ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"'
+- 'ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"'
+- ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=RNR
+- ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=RNR
+- ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=RNR
+- 'ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?"'
+- 'awk ''/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++}
+  END {print "RnrEnabled5gCount=" enabled+0; print "RnrDisabled5gCount=" disabled+0;
+  print "RnrTotal5gCount=" total+0}'' /tmp/wl0_hapd.conf'
+- 'awk ''/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++}
+  END {print "RnrEnabled6gCount=" enabled+0; print "RnrDisabled6gCount=" disabled+0;
+  print "RnrTotal6gCount=" total+0}'' /tmp/wl1_hapd.conf'
+- 'awk ''/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++}
+  END {print "RnrEnabled24gCount=" enabled+0; print "RnrDisabled24gCount=" disabled+0;
+  print "RnrTotal24gCount=" total+0}'' /tmp/wl2_hapd.conf'
+- ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=Default
+- ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=Default
+- ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=Default
+- 'ubus-cli "WiFi.AccessPoint.*.DiscoveryMethodEnabled?" | sed -n ''1,20p'''
+- 'awk ''/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++}
+  END {print "RnrEnabled6gCount=" enabled+0; print "RnrDisabled6gCount=" disabled+0;
+  print "RnrTotal6gCount=" total+0}'' /tmp/wl1_hapd.conf | sed -n ''1,20p'''

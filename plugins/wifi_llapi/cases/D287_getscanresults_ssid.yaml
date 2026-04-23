@@ -4,17 +4,11 @@ source:
   row: 287
   object: WiFi.Radio.{i}.
   api: getScanResults()
-  baseline: 0310-BGW720-300
 bands:
 - 5g
 - 6g
 - 2.4g
 llapi_support: Support
-results_reference:
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
 topology:
   devices:
     DUT:
@@ -26,42 +20,60 @@ steps:
   target: dut
   action: exec
   capture: llapi_5g
-  command: 'OUT=$(ubus-cli "WiFi.Radio.1.getScanResults()" | head -60); BSSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); SSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*SSID = \"\([^\"]*\)\".*/\1/p" | head -n1); [ -n "$BSSID" ] && printf "LlapiBssid5g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; [ -n "$SSID" ] && printf "LlapiSSID5g=%s\n" "$SSID"'
+  command: 'OUT=$(ubus-cli "WiFi.Radio.1.getScanResults()" | head -60); BSSID=$(printf
+    "%s\n" "$OUT" | sed -n "s/^[[:space:]]*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1);
+    SSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*SSID = \"\([^\"]*\)\".*/\1/p"
+    | head -n1); [ -n "$BSSID" ] && printf "LlapiBssid5g=%s\n" "$(printf "%s" "$BSSID"
+    | tr "A-F" "a-f")"; [ -n "$SSID" ] && printf "LlapiSSID5g=%s\n" "$SSID"'
   expected: 5G 第一個 serialized scan object 需提供 BSSID 與 SSID
   description: Radio.1 (5g) 以 first-object capture 驗證 public SSID
 - id: step_5g_iw_scan
   target: dut
   action: exec
   capture: iw_5g
-  command: 'TARGET="{{llapi_5g.LlapiBssid5g}}"; BLOCK=$(iw dev wl0 scan | grep -A20 -im1 "^BSS $TARGET"); SSID=$(printf "%s\n" "$BLOCK" | sed -n "s/^[[:space:]]*SSID: \(.*\)$/\1/p" | head -n1); [ -n "$SSID" ] && printf "IwSSID5g=%s\n" "$SSID"'
+  command: 'TARGET="{{llapi_5g.LlapiBssid5g}}"; BLOCK=$(iw dev wl0 scan | grep -A20
+    -im1 "^BSS $TARGET"); SSID=$(printf "%s\n" "$BLOCK" | sed -n "s/^[[:space:]]*SSID:
+    \(.*\)$/\1/p" | head -n1); [ -n "$SSID" ] && printf "IwSSID5g=%s\n" "$SSID"'
   expected: wl0 scan 需能對同一個 first-object target 回放 SSID
   description: wl0 scan 對位 5G first-object target 的 SSID
 - id: step_6g_scan
   target: dut
   action: exec
   capture: llapi_6g
-  command: 'OUT=$(ubus-cli "WiFi.Radio.2.getScanResults()" | head -60); BSSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); SSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*SSID = \"\([^\"]*\)\".*/\1/p" | head -n1); [ -n "$BSSID" ] && printf "LlapiBssid6g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; [ -n "$SSID" ] && printf "LlapiSSID6g=%s\n" "$SSID"'
+  command: 'OUT=$(ubus-cli "WiFi.Radio.2.getScanResults()" | head -60); BSSID=$(printf
+    "%s\n" "$OUT" | sed -n "s/^[[:space:]]*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1);
+    SSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*SSID = \"\([^\"]*\)\".*/\1/p"
+    | head -n1); [ -n "$BSSID" ] && printf "LlapiBssid6g=%s\n" "$(printf "%s" "$BSSID"
+    | tr "A-F" "a-f")"; [ -n "$SSID" ] && printf "LlapiSSID6g=%s\n" "$SSID"'
   expected: 6G 第一個 serialized scan object 需提供 BSSID 與 SSID
   description: Radio.2 (6g) 以 first-object capture 驗證 public SSID
 - id: step_6g_iw_scan
   target: dut
   action: exec
   capture: iw_6g
-  command: 'TARGET="{{llapi_6g.LlapiBssid6g}}"; BLOCK=$(iw dev wl1 scan | grep -A20 -im1 "^BSS $TARGET"); SSID=$(printf "%s\n" "$BLOCK" | sed -n "s/^[[:space:]]*SSID: \(.*\)$/\1/p" | head -n1); [ -n "$SSID" ] && printf "IwSSID6g=%s\n" "$SSID"'
+  command: 'TARGET="{{llapi_6g.LlapiBssid6g}}"; BLOCK=$(iw dev wl1 scan | grep -A20
+    -im1 "^BSS $TARGET"); SSID=$(printf "%s\n" "$BLOCK" | sed -n "s/^[[:space:]]*SSID:
+    \(.*\)$/\1/p" | head -n1); [ -n "$SSID" ] && printf "IwSSID6g=%s\n" "$SSID"'
   expected: wl1 scan 需能對同一個 first-object target 回放 SSID
   description: wl1 scan 對位 6G first-object target 的 SSID
 - id: step_24g_scan
   target: dut
   action: exec
   capture: llapi_24g
-  command: 'OUT=$(ubus-cli "WiFi.Radio.3.getScanResults()" | head -60); BSSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1); SSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*SSID = \"\([^\"]*\)\".*/\1/p" | head -n1); [ -n "$BSSID" ] && printf "LlapiBssid24g=%s\n" "$(printf "%s" "$BSSID" | tr "A-F" "a-f")"; [ -n "$SSID" ] && printf "LlapiSSID24g=%s\n" "$SSID"'
+  command: 'OUT=$(ubus-cli "WiFi.Radio.3.getScanResults()" | head -60); BSSID=$(printf
+    "%s\n" "$OUT" | sed -n "s/^[[:space:]]*BSSID = \"\([^\"]*\)\".*/\1/p" | head -n1);
+    SSID=$(printf "%s\n" "$OUT" | sed -n "s/^[[:space:]]*SSID = \"\([^\"]*\)\".*/\1/p"
+    | head -n1); [ -n "$BSSID" ] && printf "LlapiBssid24g=%s\n" "$(printf "%s" "$BSSID"
+    | tr "A-F" "a-f")"; [ -n "$SSID" ] && printf "LlapiSSID24g=%s\n" "$SSID"'
   expected: 2.4G 第一個 serialized scan object 需提供 BSSID 與 SSID
   description: Radio.3 (2.4g) 以 first-object capture 驗證 public SSID
 - id: step_24g_iw_scan
   target: dut
   action: exec
   capture: iw_24g
-  command: 'TARGET="{{llapi_24g.LlapiBssid24g}}"; BLOCK=$(iw dev wl2 scan | grep -A20 -im1 "^BSS $TARGET"); SSID=$(printf "%s\n" "$BLOCK" | sed -n "s/^[[:space:]]*SSID: \(.*\)$/\1/p" | head -n1); [ -n "$SSID" ] && printf "IwSSID24g=%s\n" "$SSID"'
+  command: 'TARGET="{{llapi_24g.LlapiBssid24g}}"; BLOCK=$(iw dev wl2 scan | grep -A20
+    -im1 "^BSS $TARGET"); SSID=$(printf "%s\n" "$BLOCK" | sed -n "s/^[[:space:]]*SSID:
+    \(.*\)$/\1/p" | head -n1); [ -n "$SSID" ] && printf "IwSSID24g=%s\n" "$SSID"'
   expected: wl2 scan 需能對同一個 first-object target 回放 SSID
   description: wl2 scan 對位 2.4G first-object target 的 SSID
 pass_criteria:

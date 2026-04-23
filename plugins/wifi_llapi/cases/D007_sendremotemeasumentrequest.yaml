@@ -2,16 +2,15 @@ id: wifi-llapi-D007-sendremotemeasumentrequest
 name: sendRemoteMeasumentRequest() — WiFi.AccessPoint.{i}.
 version: '1.1'
 source:
-  report: "0310-BGW720-300_LLAPI_Test_Report.xlsx"
-  sheet: Wifi_LLAPI
   row: 7
   object: "WiFi.AccessPoint.{i}."
   api: "sendRemoteMeasumentRequest()"
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli WiFi.AccessPoint.{i}.sendRemoteMeasumentRequest(mac:string, bssid:string, class:uint32, channel:uint32,
-  timeout:uint32):bool
+hlapi_command: ubus-cli 
+  WiFi.AccessPoint.{i}.sendRemoteMeasumentRequest(mac:string, bssid:string, 
+  class:uint32, channel:uint32, timeout:uint32):bool
 llapi_support: Support
 implemented_by: pWHM
 topology:
@@ -76,19 +75,20 @@ steps:
   target: DUT
   band: 5g
   command:
-    - ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=25"
+  - ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=25"
 - id: step1_5g_sta_join
   action: exec
   target: STA
   band: 5g
   command:
-    - iw dev wl0 link
-    - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+  - iw dev wl0 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
 - id: step2_5g_assoc
   action: exec
   target: DUT
   band: 5g
-  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+  command: wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac5g=\1/p'
   depends_on: step1_5g_sta_join
   capture: assoc_5g
 - id: step3_5g
@@ -104,20 +104,21 @@ steps:
   target: DUT
   band: 6g
   command:
-    - ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=25"
+  - ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=25"
 - id: step5_6g_sta_join
   action: exec
   target: STA
   band: 6g
   command:
-    - iw dev wl1 link
-    - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-    - wl -i wl1 status
+  - iw dev wl1 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+  - wl -i wl1 status
 - id: step6_6g_assoc
   action: exec
   target: DUT
   band: 6g
-  command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+  command: wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac6g=\1/p'
   depends_on: step5_6g_sta_join
   capture: assoc_6g
 - id: step7_6g
@@ -133,19 +134,20 @@ steps:
   target: DUT
   band: 2.4g
   command:
-    - ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=25"
+  - ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=25"
 - id: step9_24g_sta_join
   action: exec
   target: STA
   band: 2.4g
   command:
-    - iw dev wl2 link
-    - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+  - iw dev wl2 link
+  - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
 - id: step10_24g_assoc
   action: exec
   target: DUT
   band: 2.4g
-  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+  command: wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ 
+    ]*\).*$/AssocMac24g=\1/p'
   depends_on: step9_24g_sta_join
   capture: assoc_24g
 - id: step11_24g
@@ -208,21 +210,6 @@ pass_criteria:
   description: "2.4G: 成功回傳應維持 [ [ ] ] 的空 list 形狀"
 
 verification_command:
-  - wl -i wl0 assoclist
-  - wl -i wl1 assoclist
-  - wl -i wl2 assoclist
-results_reference:
-  v4.0.1:
-    5g: Fail
-    6g: Fail
-    2.4g: Fail
-    comment: 'ARC: GW does not send sendRemoteMeasumentRequest by using the command.'
-  v4.0.3:
-    5g: Pass
-    6g: Pass
-    2.4g: Pass
-    comment: >-
-      Live-verified target shape is [ [ ] ] on all three bands.
-      Function name is sendRemoteMeasumentRequest (canonical typo).
-      class parameter must be integer 0.
-      6G now uses the validated testpilot6G WPA3/SAE baseline instead of the old blocker path.
+- wl -i wl0 assoclist
+- wl -i wl1 assoclist
+- wl -i wl2 assoclist

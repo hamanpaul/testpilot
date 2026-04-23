@@ -58,18 +58,11 @@ def _create_case_yaml(path: Path, *, case_id: str, source_row: int, source_objec
     payload = {
         "id": case_id,
         "name": case_id,
+        "bands": ["5g", "6g", "2.4g"],
         "source": {
             "row": source_row,
             "object": source_object,
             "api": source_api,
-            "baseline": "v4.0.3",
-        },
-        "results_reference": {
-            "v4.0.3": {
-                "5g": "Pass",
-                "6g": "Pass",
-                "2.4g": "Pass",
-            }
         },
     }
     path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
@@ -237,17 +230,10 @@ def test_compare_run_against_0401_overlays_later_runs(tmp_path: Path):
     assert payload["cases"][0]["trace_path"] == str(rerun_dir / "wifi-llapi-D004-kickstation.json")
 
 
-def test_case_band_results_falls_back_to_v403_without_source_baseline():
+def test_case_band_results_uses_verdict_only_status():
     case = {
-        "results_reference": {
-            "v4.0.1": {"5g": "Fail", "6g": "Fail", "2.4g": "Fail"},
-            "v4.0.3": {"5g": "Pass", "6g": "Blocker", "2.4g": "Pass"},
-        },
-        "source": {
-            "row": 4,
-            "object": "WiFi.AccessPoint.{i}.",
-            "api": "sendBssTransferRequest()",
-        },
+        "bands": ["5g", "6g"],
+        "results_reference": {"v4.0.3": {"5g": "Pass", "6g": "Blocker", "2.4g": "Pass"}},
     }
 
-    assert case_band_results(case, True) == ("Pass", "Blocker", "Pass")
+    assert case_band_results(case, True) == ("Pass", "Pass", "N/A")
