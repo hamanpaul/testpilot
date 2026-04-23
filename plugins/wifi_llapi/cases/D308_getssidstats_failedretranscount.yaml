@@ -1,5 +1,5 @@
 id: d308-getssidstats-failedretranscount
-name: D308 getSSIDStats FailedRetransCount
+name: "FailedRetransCount — WiFi.SSID.{i}.getSSIDStats()."
 source:
   row: 308
   object: WiFi.SSID.{i}.
