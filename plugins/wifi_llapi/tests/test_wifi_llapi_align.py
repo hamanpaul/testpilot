@@ -15,11 +15,17 @@ from testpilot.reporting.wifi_llapi_align import (
     build_template_index,
     write_blocked_cases_report,
     write_skipped_cases_report,
+    _extract_name_api,
 )
 
 from testpilot.reporting.wifi_llapi_excel import create_run_report_from_template, fill_blocked_markers, fill_skip_markers
 from testpilot.schema.case_schema import load_case
 
+def test_extract_name_api_cases():
+    # Should extract method token if present
+    assert _extract_name_api("FailedRetransCount - WiFi.SSID.{i}.getSSIDStats().") == "getSSIDStats()"
+    # Should extract left token if no method present
+    assert _extract_name_api("AssociationTime - WiFi.AccessPoint.{i}.AssociatedDevice.{i}.") == "AssociationTime"
 
 def _build_template(path: Path) -> None:
     wb = Workbook()

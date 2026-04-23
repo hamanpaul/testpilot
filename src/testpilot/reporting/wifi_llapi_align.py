@@ -61,9 +61,19 @@ class AlignmentConflictError(RuntimeError):
     pass
 
 
+_METHOD_TOKEN_PATTERN = re.compile(r"\b[A-Za-z_][A-Za-z0-9_]*\(\)")
+
 def _extract_name_api(name: object) -> str:
     text = str(name).strip() if isinstance(name, str) else ""
-    return text.split(".")[-1].strip() if text else ""
+    if not text:
+        return ""
+    method_tokens = _METHOD_TOKEN_PATTERN.findall(text)
+    if method_tokens:
+        return method_tokens[-1]
+    for separator in (" - ", " — "):
+        if separator in text:
+            return text.split(separator, 1)[0].strip()
+    return text
 
 
 def _replace_id_row(case_id: str, canonical_row: int) -> str | None:
