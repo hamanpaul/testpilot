@@ -21,6 +21,15 @@ preparation.
 
 - `testpilot run wifi_llapi` no longer accepts `--report-source-xlsx`; rebuild the checked-in template with `testpilot wifi-llapi build-template-report --source-xlsx <path>` before running if the template needs refreshing.
 
+### Removed - BREAKING
+
+- `plugins/wifi_llapi/cases/` no longer carries `results_reference`, `source.baseline`,
+  `source.report`, or `source.sheet`; wifi_llapi report values now reflect runtime
+  verdicts instead of workbook-derived oracle metadata.
+- `testpilot.core.case_utils.baseline_results_reference()` has been removed;
+  `case_band_results()` now projects per-band results from runtime verdict plus
+  `case.bands` only.
+
 ## [0.2.0]
 
 ### Added

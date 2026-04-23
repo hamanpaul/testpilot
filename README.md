@@ -68,13 +68,13 @@ deployment should install from the tagged source tree.
 # Option A: install directly from a GitHub tag
 uv venv .venv
 source .venv/bin/activate
-uv pip install "git+https://github.com/hamanpaul/testpilot@v0.2.0"
+uv pip install "git+https://github.com/hamanpaul/testpilot@v0.2.2"
 testpilot --version
 
 # Option B: install from a checked-out release tag
 git clone https://github.com/hamanpaul/testpilot.git
 cd testpilot
-git checkout v0.2.0
+git checkout v0.2.2
 uv pip install .
 testpilot --version
 ```
