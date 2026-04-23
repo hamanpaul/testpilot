@@ -1,12 +1,12 @@
 id: wifi-llapi-D026-linkbandwidth
 aliases:
 - wifi-llapi-r023-linkbandwidth
-name: "LinkBandwidth \u2014 WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+name: LinkBandwidth — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
 version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 23
+  row: 26
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: LinkBandwidth
 platform:
@@ -34,104 +34,85 @@ topology:
   - from: STA
     to: DUT
     band: 5g
-test_environment: |
-  Topology:
+test_environment: 'Topology:
+
   - DUT: COM1 (AP role)
+
   - STA: COM0 (station role for this case; do not rely on the old A0/B0 heuristic)
+
   Transport:
+
   - serialwrap attach COM0 / COM1
+
   Live band mapping:
+
   - 5G: DUT wl0 / AP1 / SSID.4 / TestPilot_BTM
+
   - 6G: DUT wl1 / AP3 / SSID.6 / TestPilot_BTM
+
   - 2.4G: DUT wl2 / AP5 / SSID.8 / TestPilot_24G
+
   Preconditions:
+
   - keep only one associated station on AP1 so AssociatedDevice.1 stays deterministic
+
   - use the validated 5G single-band WPA3 baseline for this case
-  - do not depend on the old workbook sample values for read-only AssociatedDevice fields
-setup_steps: |
-  1) DUT 5G baseline:
-     - enable Radio.1 / SSID.4 / AP1
-     - configure AP1 as WPA3-Personal with MFP required
-     - keep the validated live SSID/credential pair as TestPilot_BTM / testpilot6g
-  2) STA 5G preparation:
-     - disable local AP1/AP2 on COM1
-     - move COM1 br-lan off 192.168.1.0/24 to avoid bridge self-hit side effects
-     - reset wl0 and its wpa_supplicant control socket
-     - connect wl0 to TestPilot_BTM with SAE
-  3) Association evidence:
-     - COM1: iw dev wl0 link ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status
-     - COM0: wl -i wl0 assoclist
-sta_env_setup: |
-  DUT 5G AP baseline:
-    ubus-cli WiFi.Radio.1.Enable=1
-    ubus-cli WiFi.Radio.1.BeaconPeriod=100
-    ubus-cli WiFi.Radio.1.DTIMPeriod=3
-    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.1.OfdmaEnable=1
-    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.1.OperatingStandards=ax
-    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.1.Sensing.Enable=1
-    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.1.LongRetryLimit=6
-    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.4.SSID=TestPilot_BTM
-    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
-    ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=testpilot6g
-    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Required
-    ubus-cli WiFi.AccessPoint.1.Enable=1
-  STA 5G preparation:
-    ifconfig br-lan 192.168.88.1 netmask 255.255.255.0 up
-    ubus-cli WiFi.AccessPoint.1.Enable=0
-    ubus-cli WiFi.AccessPoint.2.Enable=0
-    wpa_cli terminate 2>/dev/null || true
-    rm -f /var/run/wpa_supplicant/wl0 2>/dev/null || true
-    iw dev wl0.1 del 2>/dev/null || true
-    iw dev wl0 disconnect 2>/dev/null || true
-    iw dev wl1 disconnect 2>/dev/null || true
-    iw dev wl2 disconnect 2>/dev/null || true
-    iw dev wl0 set type managed
-    ifconfig wl0 up
-    mkdir -p /var/run/wpa_supplicant
-    printf 'ctrl_interface=/var/run/wpa_supplicant
-  update_config=1
-  sae_pwe=2
-  network={
-  ssid="TestPilot_BTM"
-  key_mgmt=SAE
-  sae_password="testpilot6g"
-  ieee80211w=2
-  scan_ssid=1
-  }
-  ' > /tmp/wpa_wl0.conf
-    wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
-    sleep 3
-  STA 5G connect verify:
-    wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
-    sleep 10
-    iw dev wl0 link
-    wpa_cli -p /var/run/wpa_supplicant -i wl0 status
-  DUT association evidence:
-    wl -i wl0 assoclist
-test_procedure: |
-  1) Confirm the 5G STA is associated to AP1 and resolve its live MAC address.
-  2) Read WiFi.Radio.1.OperatingChannelBandwidth so the serving radio bandwidth is explicit.
+
+  - do not depend on the old workbook sample values for read-only AssociatedDevice
+  fields
+
+  '
+setup_steps: "1) DUT 5G baseline:\n   - enable Radio.1 / SSID.4 / AP1\n   - configure\
+  \ AP1 as WPA3-Personal with MFP required\n   - keep the validated live SSID/credential\
+  \ pair as TestPilot_BTM / testpilot6g\n2) STA 5G preparation:\n   - disable local\
+  \ AP1/AP2 on COM1\n   - move COM1 br-lan off 192.168.1.0/24 to avoid bridge self-hit\
+  \ side effects\n   - reset wl0 and its wpa_supplicant control socket\n   - connect\
+  \ wl0 to TestPilot_BTM with SAE\n3) Association evidence:\n   - COM1: iw dev wl0\
+  \ link ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status\n   - COM0: wl -i wl0\
+  \ assoclist\n"
+sta_env_setup: "DUT 5G AP baseline:\n  ubus-cli WiFi.Radio.1.Enable=1\n  ubus-cli\
+  \ WiFi.Radio.1.BeaconPeriod=100\n  ubus-cli WiFi.Radio.1.DTIMPeriod=3\n  ubus-cli\
+  \ WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1\n  ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1\n\
+  \  ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto\n  ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1\n\
+  \  ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1\n  ubus-cli WiFi.Radio.1.OfdmaEnable=1\n\
+  \  ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0\n  ubus-cli WiFi.Radio.1.OperatingStandards=ax\n\
+  \  ubus-cli WiFi.Radio.1.RxChainCtrl=-1\n  ubus-cli WiFi.Radio.1.TxChainCtrl=-1\n\
+  \  ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0\n  ubus-cli WiFi.Radio.1.Sensing.Enable=1\n\
+  \  ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0\n  ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0\n\
+  \  ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0\n  ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0\n\
+  \  ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0\n  ubus-cli WiFi.Radio.1.LongRetryLimit=6\n\
+  \  ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1\n  ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1\n\
+  \  ubus-cli WiFi.SSID.4.SSID=TestPilot_BTM\n  ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=\n\
+  \  ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=\n  ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal\n\
+  \  ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=testpilot6g\n  ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Required\n\
+  \  ubus-cli WiFi.AccessPoint.1.Enable=1\nSTA 5G preparation:\n  ifconfig br-lan\
+  \ 192.168.88.1 netmask 255.255.255.0 up\n  ubus-cli WiFi.AccessPoint.1.Enable=0\n\
+  \  ubus-cli WiFi.AccessPoint.2.Enable=0\n  wpa_cli terminate 2>/dev/null || true\n\
+  \  rm -f /var/run/wpa_supplicant/wl0 2>/dev/null || true\n  iw dev wl0.1 del 2>/dev/null\
+  \ || true\n  iw dev wl0 disconnect 2>/dev/null || true\n  iw dev wl1 disconnect\
+  \ 2>/dev/null || true\n  iw dev wl2 disconnect 2>/dev/null || true\n  iw dev wl0\
+  \ set type managed\n  ifconfig wl0 up\n  mkdir -p /var/run/wpa_supplicant\n  printf\
+  \ 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\nnetwork={\n\
+  ssid=\"TestPilot_BTM\"\nkey_mgmt=SAE\nsae_password=\"testpilot6g\"\nieee80211w=2\n\
+  scan_ssid=1\n}\n' > /tmp/wpa_wl0.conf\n  wpa_supplicant -B -D nl80211 -i wl0 -c\
+  \ /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant\n  sleep 3\nSTA 5G connect verify:\n\
+  \  wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect\n  sleep 10\n  iw dev wl0\
+  \ link\n  wpa_cli -p /var/run/wpa_supplicant -i wl0 status\nDUT association evidence:\n\
+  \  wl -i wl0 assoclist\n"
+test_procedure: '1) Confirm the 5G STA is associated to AP1 and resolve its live MAC
+  address.
+
+  2) Read WiFi.Radio.1.OperatingChannelBandwidth so the serving radio bandwidth is
+  explicit.
+
   3) Read WiFi.AccessPoint.1.AssociatedDevice.1.LinkBandwidth on DUT.
-  4) Cross-check the same STA against wl0 sta_info 'link bandwidth = XX MHZ'.
-  5) Pass when LLAPI LinkBandwidth matches both the radio bandwidth and the driver link bandwidth after format normalization.
+
+  4) Cross-check the same STA against wl0 sta_info ''link bandwidth = XX MHZ''.
+
+  5) Pass when LLAPI LinkBandwidth matches both the radio bandwidth and the driver
+  link bandwidth after format normalization.
+
+  '
 steps:
 - id: step1
   action: exec
@@ -153,7 +134,9 @@ steps:
 - id: step4
   action: exec
   target: DUT
-  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*link bandwidth = *\([0-9][0-9]*\) MHZ.*/DriverLinkBandwidth=\1MHz/p'''
+  command: STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+    | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'); [ -n "$STA_MAC" ] && wl -i wl0
+    sta_info $STA_MAC | sed -n 's/.*link bandwidth = *\([0-9][0-9]*\) MHZ.*/DriverLinkBandwidth=\1MHz/p'
   depends_on: step3
   capture: driver_bw
 pass_criteria:
@@ -168,12 +151,14 @@ pass_criteria:
 - field: result.LinkBandwidth
   operator: equals
   reference: driver_bw.DriverLinkBandwidth
-  description: LLAPI LinkBandwidth must match the driver link bandwidth for the same STA.
+  description: LLAPI LinkBandwidth must match the driver link bandwidth for the same
+    STA.
 verification_command:
-  - 'ubus-cli "WiFi.Radio.1.OperatingChannelBandwidth?"'
-  - 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LinkBandwidth?"'
-  - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
-  - 'wl -i wl0 sta_info $STA_MAC | grep "link bandwidth"'
+- ubus-cli "WiFi.Radio.1.OperatingChannelBandwidth?"
+- ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LinkBandwidth?"
+- STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
+  's/.*MACAddress="\([^"]*\)".*/\1/p')
+- wl -i wl0 sta_info $STA_MAC | grep "link bandwidth"
 results_reference:
   v4.0.1:
     5g: Pass
@@ -184,4 +169,5 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
-    comment: '5G serialwrap retest: LinkBandwidth="20MHz", Radio.1.OperatingChannelBandwidth="20MHz", and wl0 sta_info reported link bandwidth = 20 MHZ, matching workbook Pass.'
+    comment: '5G serialwrap retest: LinkBandwidth="20MHz", Radio.1.OperatingChannelBandwidth="20MHz",
+      and wl0 sta_info reported link bandwidth = 20 MHZ, matching workbook Pass.'

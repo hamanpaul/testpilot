@@ -1,7 +1,7 @@
 id: d501-ssid-wmm-ac_bk_stats_wmmbytessent_ssid
 name: D501 WmmBytesSent.AC_BK
 source:
-  row: 368
+  row: 501
   object: WiFi.SSID.{i}.Stats.WmmBytesSent.
   api: AC_BK
   baseline: 0310-BGW720-300

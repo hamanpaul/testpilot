@@ -1,7 +1,7 @@
 id: d515-ssid-wmm-ac_vo_stats_wmmfailedreceived
 name: D515 WmmFailedReceived.AC_VO
 source:
-  row: 382
+  row: 515
   object: WiFi.SSID.{i}.Stats.WmmFailedReceived.
   api: AC_VO
   baseline: 0310-BGW720-300

@@ -1,7 +1,7 @@
 id: d508-ssid-wmm-ac_be_stats_wmmfailedbytessent_ssid
 name: D508 WmmFailedbytesSent.AC_BE
 source:
-  row: 375
+  row: 508
   object: WiFi.SSID.{i}.Stats.WmmFailedbytesSent.
   api: AC_BE
   baseline: 0310-BGW720-300

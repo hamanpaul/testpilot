@@ -1,7 +1,7 @@
 id: d498-ssid-wmm-ac_vi_stats_wmmbytesreceived_ssid
 name: D498 WmmBytesReceived.AC_VI
 source:
-  row: 365
+  row: 498
   object: WiFi.SSID.{i}.Stats.WmmBytesReceived.
   api: AC_VI
   baseline: 0310-BGW720-300

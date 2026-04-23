@@ -227,7 +227,19 @@ Typical artifact bundle contents:
 - `DUT.log`
 - `STA.log`
 - `agent_trace/`
-- `alignment_issues.json` (only when row alignment warnings are emitted)
+- `blocked_cases.md` — cases whose `(source.object, source.api)` or `name`
+  cannot be reconciled with the template workbook; they are not executed.
+- `skipped_cases.md` — duplicate cases that align to a template row already
+  claimed by an earlier filename-sorted case; they are marked in the report and
+  skipped from execution.
+
+> [!IMPORTANT]
+> The first `testpilot run wifi_llapi` after pulling new case metadata may
+> rewrite `plugins/wifi_llapi/cases/*.yaml` in place to align `D###`,
+> `source.row`, and compatible `id` fragments with the checked-in template
+> workbook. Review those diffs and commit them with the run results.
+
+`alignment_issues.json` is no longer produced by `testpilot run wifi_llapi`; runtime now uses the checked-in template workbook only, and workbook rebuilds go through `testpilot wifi-llapi build-template-report --source-xlsx <path>`.
 
 Shared template files remain under `plugins/wifi_llapi/reports/templates/`.
 
@@ -737,7 +749,18 @@ testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
 - `DUT.log`
 - `STA.log`
 - `agent_trace/`
-- `alignment_issues.json`（只有 row/object/api 對齊警告時才會出現）
+- `blocked_cases.md` — `(source.object, source.api)` 或 `name` 無法與
+  template workbook 對齊的 cases；這些案例不會被執行
+- `skipped_cases.md` — 對齊到已被較早 filename-sorted case 佔用之
+  template row 的重複案例；它們會在報告中標記並跳過執行
+
+> [!IMPORTANT]
+> 在拉入新的 case metadata 後，第一次執行 `testpilot run wifi_llapi`
+> 可能會直接改寫 `plugins/wifi_llapi/cases/*.yaml`，把 `D###`、
+> `source.row` 與相容的 `id` 片段對齊到 repo 內已提交的 template
+> workbook。請檢查這些 diff，並與該次 run 結果一起提交。
+
+`alignment_issues.json` 不再由 `testpilot run wifi_llapi` 產生；runtime 現在只使用 repo 內已提交的 template workbook，而 workbook 重建統一透過 `testpilot wifi-llapi build-template-report --source-xlsx <path>`。
 
 共用 template 檔維持在 `plugins/wifi_llapi/reports/templates/`。
 

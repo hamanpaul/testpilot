@@ -1,12 +1,12 @@
 id: wifi-llapi-D027-macaddress-accesspoint-associateddevice
 aliases:
 - wifi-llapi-r024-macaddress-accesspoint-associateddevice
-name: "MACAddress \u2014 WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+name: MACAddress — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
 version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 24
+  row: 27
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: MACAddress
 platform:
@@ -34,98 +34,78 @@ topology:
   - from: STA
     to: DUT
     band: 6g
-test_environment: |
-  Topology:
+test_environment: 'Topology:
+
   - DUT: COM1 (AP role)
+
   - STA: COM0 (station role for this case; do not rely on the old A0/B0 heuristic)
+
   Transport:
+
   - serialwrap attach COM0 / COM1
+
   Live band mapping:
+
   - 5G: DUT wl0 / AP1 / SSID.4 / TestPilot_BTM
+
   - 6G: DUT wl1 / AP3 / SSID.6 / TestPilot_BTM
+
   - 2.4G: DUT wl2 / AP5 / SSID.8 / TestPilot_24G
+
   Preconditions:
+
   - keep only one associated station on AP3 so AssociatedDevice.1 stays deterministic
+
   - use the validated 6G single-band baseline for this case
-setup_steps: |
-  1) DUT 6G baseline:
-     - enable Radio.2 / SSID.6 / AP3
-     - configure AP3 as WPA3-Personal with MFP required
-     - keep the validated live SSID/credential pair as TestPilot_BTM / testpilot6g
-  2) STA 6G preparation:
-     - disable local AP3/AP4 on COM1
-     - move COM1 br-lan off 192.168.1.0/24 so later traffic checks do not self-hit the local bridge
-     - reset wl1 and its wpa_supplicant control socket
-     - connect wl1 to TestPilot_BTM with SAE
-  3) Association evidence:
-     - COM1: iw dev wl1 link ; wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-     - COM0: wl -i wl1 assoclist
-sta_env_setup: |
-  DUT 6G AP baseline:
-    ubus-cli WiFi.Radio.2.Enable=1
-    ubus-cli WiFi.Radio.2.BeaconPeriod=100
-    ubus-cli WiFi.Radio.2.DTIMPeriod=3
-    ubus-cli WiFi.Radio.2.DriverConfig.FragmentationThreshold=-1
-    ubus-cli WiFi.Radio.2.DriverConfig.RtsThreshold=-1
-    ubus-cli WiFi.Radio.2.DriverConfig.TPCMode=Auto
-    ubus-cli WiFi.Radio.2.ExplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.2.ImplicitBeamFormingEnabled=1
-    ubus-cli WiFi.Radio.2.OfdmaEnable=1
-    ubus-cli WiFi.Radio.2.ObssCoexistenceEnable=0
-    ubus-cli WiFi.Radio.2.OperatingStandards=ax
-    ubus-cli WiFi.Radio.2.RxChainCtrl=-1
-    ubus-cli WiFi.Radio.2.TxChainCtrl=-1
-    ubus-cli WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev=0
-    ubus-cli WiFi.Radio.2.Sensing.Enable=1
-    ubus-cli WiFi.Radio.2.IEEE80211ax.BssColorPartial=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.PSRDisallowed=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.SRGOBSSPDMaxOffset=0
-    ubus-cli WiFi.Radio.2.IEEE80211ax.SRGOBSSPDMinOffset=0
-    ubus-cli WiFi.Radio.2.LongRetryLimit=6
-    ubus-cli WiFi.Radio.2.MultiUserMIMOEnabled=1
-    ubus-cli WiFi.Radio.2.TargetWakeTimeEnable=1
-    ubus-cli WiFi.SSID.6.SSID=TestPilot_BTM
-    ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet=
-    ubus-cli WiFi.AccessPoint.4.IEEE80211u.QoSMapSet=
-    sleep 3
-    ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
-    ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase=testpilot6g
-    ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Required
-    ubus-cli WiFi.AccessPoint.3.MultiAPType=FronthaulBSS
-    ubus-cli WiFi.AccessPoint.3.Enable=1
-  STA 6G preparation:
-    ifconfig br-lan 192.168.88.1 netmask 255.255.255.0 up
-    ubus-cli WiFi.AccessPoint.3.Enable=0
-    ubus-cli WiFi.AccessPoint.4.Enable=0
-    wpa_cli terminate 2>/dev/null || true
-    sleep 1
-    rm -f /var/run/wpa_supplicant/wl1 2>/dev/null || true
-    iw dev wl1.1 del 2>/dev/null || true
-    iw dev wl1 disconnect 2>/dev/null || true
-    ifconfig wl1 down
-    wl -i wl1 down
-    wl -i wl1 ap 0
-    iw dev wl1 set type managed
-    wl -i wl1 up
-    ifconfig wl1 up
-    mkdir -p /var/run/wpa_supplicant
-    printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\nnetwork={\nssid="TestPilot_BTM"\nkey_mgmt=SAE\nsae_password="testpilot6g"\nieee80211w=2\nscan_ssid=1\n}\n' > /tmp/wpa_wl1.conf
-    wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant
-    wpa_cli -p /var/run/wpa_supplicant -i wl1 enable_network 0
-    wpa_cli -p /var/run/wpa_supplicant -i wl1 select_network 0
-    sleep 3
-  STA 6G connect verify:
-    wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect
-    sleep 15
-    iw dev wl1 link
-    wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-  DUT association evidence:
-    wl -i wl1 assoclist
-test_procedure: |
-  1) Read the live station MAC from COM1 wl1 and normalize it to upper-case so it can be compared without hard-coded sample values.
+
+  '
+setup_steps: "1) DUT 6G baseline:\n   - enable Radio.2 / SSID.6 / AP3\n   - configure\
+  \ AP3 as WPA3-Personal with MFP required\n   - keep the validated live SSID/credential\
+  \ pair as TestPilot_BTM / testpilot6g\n2) STA 6G preparation:\n   - disable local\
+  \ AP3/AP4 on COM1\n   - move COM1 br-lan off 192.168.1.0/24 so later traffic checks\
+  \ do not self-hit the local bridge\n   - reset wl1 and its wpa_supplicant control\
+  \ socket\n   - connect wl1 to TestPilot_BTM with SAE\n3) Association evidence:\n\
+  \   - COM1: iw dev wl1 link ; wpa_cli -p /var/run/wpa_supplicant -i wl1 status\n\
+  \   - COM0: wl -i wl1 assoclist\n"
+sta_env_setup: "DUT 6G AP baseline:\n  ubus-cli WiFi.Radio.2.Enable=1\n  ubus-cli\
+  \ WiFi.Radio.2.BeaconPeriod=100\n  ubus-cli WiFi.Radio.2.DTIMPeriod=3\n  ubus-cli\
+  \ WiFi.Radio.2.DriverConfig.FragmentationThreshold=-1\n  ubus-cli WiFi.Radio.2.DriverConfig.RtsThreshold=-1\n\
+  \  ubus-cli WiFi.Radio.2.DriverConfig.TPCMode=Auto\n  ubus-cli WiFi.Radio.2.ExplicitBeamFormingEnabled=1\n\
+  \  ubus-cli WiFi.Radio.2.ImplicitBeamFormingEnabled=1\n  ubus-cli WiFi.Radio.2.OfdmaEnable=1\n\
+  \  ubus-cli WiFi.Radio.2.ObssCoexistenceEnable=0\n  ubus-cli WiFi.Radio.2.OperatingStandards=ax\n\
+  \  ubus-cli WiFi.Radio.2.RxChainCtrl=-1\n  ubus-cli WiFi.Radio.2.TxChainCtrl=-1\n\
+  \  ubus-cli WiFi.Radio.2.Vendor.Brcm.RegulatoryDomainRev=0\n  ubus-cli WiFi.Radio.2.Sensing.Enable=1\n\
+  \  ubus-cli WiFi.Radio.2.IEEE80211ax.BssColorPartial=0\n  ubus-cli WiFi.Radio.2.IEEE80211ax.NonSRGOBSSPDMaxOffset=0\n\
+  \  ubus-cli WiFi.Radio.2.IEEE80211ax.PSRDisallowed=0\n  ubus-cli WiFi.Radio.2.IEEE80211ax.SRGOBSSPDMaxOffset=0\n\
+  \  ubus-cli WiFi.Radio.2.IEEE80211ax.SRGOBSSPDMinOffset=0\n  ubus-cli WiFi.Radio.2.LongRetryLimit=6\n\
+  \  ubus-cli WiFi.Radio.2.MultiUserMIMOEnabled=1\n  ubus-cli WiFi.Radio.2.TargetWakeTimeEnable=1\n\
+  \  ubus-cli WiFi.SSID.6.SSID=TestPilot_BTM\n  ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet=\n\
+  \  ubus-cli WiFi.AccessPoint.4.IEEE80211u.QoSMapSet=\n  sleep 3\n  ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal\n\
+  \  ubus-cli WiFi.AccessPoint.3.Security.SAEPassphrase=testpilot6g\n  ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Required\n\
+  \  ubus-cli WiFi.AccessPoint.3.MultiAPType=FronthaulBSS\n  ubus-cli WiFi.AccessPoint.3.Enable=1\n\
+  STA 6G preparation:\n  ifconfig br-lan 192.168.88.1 netmask 255.255.255.0 up\n \
+  \ ubus-cli WiFi.AccessPoint.3.Enable=0\n  ubus-cli WiFi.AccessPoint.4.Enable=0\n\
+  \  wpa_cli terminate 2>/dev/null || true\n  sleep 1\n  rm -f /var/run/wpa_supplicant/wl1\
+  \ 2>/dev/null || true\n  iw dev wl1.1 del 2>/dev/null || true\n  iw dev wl1 disconnect\
+  \ 2>/dev/null || true\n  ifconfig wl1 down\n  wl -i wl1 down\n  wl -i wl1 ap 0\n\
+  \  iw dev wl1 set type managed\n  wl -i wl1 up\n  ifconfig wl1 up\n  mkdir -p /var/run/wpa_supplicant\n\
+  \  printf 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nsae_pwe=2\\\
+  nnetwork={\\nssid=\"TestPilot_BTM\"\\nkey_mgmt=SAE\\nsae_password=\"testpilot6g\"\
+  \\nieee80211w=2\\nscan_ssid=1\\n}\\n' > /tmp/wpa_wl1.conf\n  wpa_supplicant -B -D\
+  \ nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant\n  wpa_cli -p /var/run/wpa_supplicant\
+  \ -i wl1 enable_network 0\n  wpa_cli -p /var/run/wpa_supplicant -i wl1 select_network\
+  \ 0\n  sleep 3\nSTA 6G connect verify:\n  wpa_cli -p /var/run/wpa_supplicant -i\
+  \ wl1 reconnect\n  sleep 15\n  iw dev wl1 link\n  wpa_cli -p /var/run/wpa_supplicant\
+  \ -i wl1 status\nDUT association evidence:\n  wl -i wl1 assoclist\n"
+test_procedure: '1) Read the live station MAC from COM1 wl1 and normalize it to upper-case
+  so it can be compared without hard-coded sample values.
+
   2) Confirm AP3 wl1 assoclist reports the same station MAC from driver evidence.
-  3) Read WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress on DUT and require it to match both the COM1 station MAC and the AP-side assoclist MAC.
+
+  3) Read WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress on DUT and require it to
+  match both the COM1 station MAC and the AP-side assoclist MAC.
+
+  '
 steps:
 - id: step1
   action: exec
@@ -156,11 +136,12 @@ pass_criteria:
 - field: result.MACAddress
   operator: equals
   reference: assoc_driver.AssocMAC
-  description: AssociatedDevice.1.MACAddress should match the live COM1/driver MAC, not a canned sample value.
+  description: AssociatedDevice.1.MACAddress should match the live COM1/driver MAC,
+    not a canned sample value.
 verification_command:
-  - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
-  - wl -i wl1 assoclist
-  - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"'
+- wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+- wl -i wl1 assoclist
+- ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"
 results_reference:
   v4.0.1:
     5g: Pass
@@ -171,4 +152,5 @@ results_reference:
     5g: Pass
     6g: Pass
     2.4g: Pass
-    comment: Serialwrap 6G retest returned AP3 AssociatedDevice.1.MACAddress=2C:59:17:00:04:86 and matched both wl1 status/address and wl1 assoclist.
+    comment: Serialwrap 6G retest returned AP3 AssociatedDevice.1.MACAddress=2C:59:17:00:04:86
+      and matched both wl1 status/address and wl1 assoclist.

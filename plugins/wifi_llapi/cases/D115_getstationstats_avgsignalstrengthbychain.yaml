@@ -1,10 +1,10 @@
-id: wifi-llapi-D114-getstationstats-avgsignalstrengthbychain
+id: wifi-llapi-D115-getstationstats-avgsignalstrengthbychain
 name: getStationStats() AvgSignalStrengthByChain — WiFi.AccessPoint.{i}.
 version: '1.0'
 source:
   report: 0310-BGW720-300_LLAPI_Test_Report.xlsx
   sheet: Wifi_LLAPI
-  row: 114
+  row: 115
   object: WiFi.AccessPoint.{i}.
   api: getStationStats()
   baseline: 0310-BGW720-300
@@ -58,22 +58,38 @@ topology:
   - from: STA
     to: DUT
     band: 2.4g
-test_environment: |
-  Topology:
+test_environment: 'Topology:
+
   - DUT: COM1 (B0, AP role)
+
   - STA: COM0 (A0, STA role)
+
   Transport:
+
   - DUT/STA via serialwrap COM0/COM1
+
   Baseline:
+
   - 5G = AP1 / wl0 / testpilot5G / WPA2-Personal
+
   - 6G = AP3 / wl1 / testpilot6G / WPA3-Personal / SAE
+
   - 2.4G = AP5 / wl2 / testpilot2G / WPA2-Personal
+
   Pre-check:
+
   - STA verifies per-band link on wl0 / wl1 / wl2 before each getter
+
   - DUT wl -i wl{0,1,2} assoclist -> live STA MAC
+
   Notes:
-  - Active 0403 returns a single integer dBm average, not a comma-separated chain list
+
+  - Active 0403 returns a single integer dBm average, not a comma-separated chain
+  list
+
   - Sequential per-band validation only; no simultaneous multi-band STA association
+
+  '
 steps:
 - id: step1_5g_sta_join
   action: exec
@@ -146,7 +162,7 @@ pass_criteria:
   description: AP1 should have at least one associated STA
 - field: result_5g.AvgSignalStrengthByChain
   operator: regex
-  value: "^-?\\d+$"
+  value: ^-?\d+$
   band: 5g
   description: AvgSignalStrengthByChain should be an integer dBm
 - field: result_5g.AvgSignalStrengthByChain
@@ -161,7 +177,7 @@ pass_criteria:
   description: AP3 should have at least one associated STA
 - field: result_6g.AvgSignalStrengthByChain
   operator: regex
-  value: "^-?\\d+$"
+  value: ^-?\d+$
   band: 6g
   description: AvgSignalStrengthByChain should be an integer dBm
 - field: result_6g.AvgSignalStrengthByChain
@@ -176,7 +192,7 @@ pass_criteria:
   description: AP5 should have at least one associated STA
 - field: result_24g.AvgSignalStrengthByChain
   operator: regex
-  value: "^-?\\d+$"
+  value: ^-?\d+$
   band: 2.4g
   description: AvgSignalStrengthByChain should be an integer dBm
 - field: result_24g.AvgSignalStrengthByChain
@@ -185,12 +201,12 @@ pass_criteria:
   band: 2.4g
   description: 2.4G AvgSignalStrengthByChain should remain a negative dBm value
 verification_command:
-  - wl -i wl0 assoclist
-  - ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep AvgSignalStrengthByChain
-  - wl -i wl1 assoclist
-  - ubus-cli "WiFi.AccessPoint.3.getStationStats()" 2>&1 | grep AvgSignalStrengthByChain
-  - wl -i wl2 assoclist
-  - ubus-cli "WiFi.AccessPoint.5.getStationStats()" 2>&1 | grep AvgSignalStrengthByChain
+- wl -i wl0 assoclist
+- ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep AvgSignalStrengthByChain
+- wl -i wl1 assoclist
+- ubus-cli "WiFi.AccessPoint.3.getStationStats()" 2>&1 | grep AvgSignalStrengthByChain
+- wl -i wl2 assoclist
+- ubus-cli "WiFi.AccessPoint.5.getStationStats()" 2>&1 | grep AvgSignalStrengthByChain
 results_reference:
   v4.0.3:
     5g: Pass

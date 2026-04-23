@@ -11,6 +11,7 @@ This module keeps the public API identical to pre-split versions so that
 
 from __future__ import annotations
 
+from dataclasses import asdict, dataclass
 from datetime import date, datetime
 import json
 import logging
@@ -57,16 +58,25 @@ from testpilot.core.runner_selector import (
 from testpilot.core.testbed_config import TestbedConfig
 from testpilot.reporting.reporter import generate_reports
 from testpilot.reporting import log_capture
+from testpilot.reporting.wifi_llapi_align import (
+    _resolve_collisions,
+    align_case,
+    apply_alignment_mutations,
+    build_template_index,
+    write_blocked_cases_report,
+    write_skipped_cases_report,
+)
 from testpilot.reporting.wifi_llapi_excel import (
     ReportMeta,
     WifiLlapiCaseResult,
-    collect_alignment_issues,
     create_run_report_from_template,
-    ensure_template_report,
+    fill_blocked_markers,
     fill_case_results,
+    fill_skip_markers,
     finalize_report_metadata,
     generate_report_filename,
 )
+from testpilot.schema.case_schema import load_case
 
 log = logging.getLogger(__name__)
 
@@ -76,6 +86,14 @@ DEFAULT_CONFIG_DIR = "configs"
 
 # Re-export for backward compatibility
 __all__ = ["Orchestrator", "DEFAULT_WIFI_LLAPI_EXECUTION_POLICY"]
+
+
+@dataclass(slots=True)
+class WifiLlapiAlignmentPrep:
+    runnable_cases: list[dict[str, Any]]
+    blocked_results: list[Any]
+    skipped_results: list[Any]
+    alignment_summary: dict[str, Any]
 
 
 class Orchestrator:
@@ -190,21 +208,6 @@ class Orchestrator:
             log.debug("SDK session cleanup failed for %s", session_id)
 
     # -- discovery -------------------------------------------------------------
-
-    @staticmethod
-    def _load_wifi_llapi_template_source(manifest_path: Path) -> str | None:
-        if not manifest_path.exists():
-            return None
-        try:
-            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-        except Exception:
-            log.warning("failed to read wifi_llapi template manifest: %s", manifest_path)
-            return None
-        source_workbook = payload.get("source_workbook")
-        if not isinstance(source_workbook, str):
-            return None
-        source_text = source_workbook.strip()
-        return source_text or None
 
     def discover_plugins(self) -> list[str]:
         """列出所有可用 plugin。"""
@@ -450,6 +453,92 @@ class Orchestrator:
             "sta_log_path": str(sta_log_path),
         }
 
+    def _load_wifi_llapi_case_pairs(
+        self,
+        *,
+        plugin: Any,
+        case_ids: list[str] | None,
+    ) -> list[tuple[Path, dict[str, Any]]]:
+        case_files = [
+            path
+            for path in sorted(plugin.cases_dir.glob("*.y*ml"))
+            if not path.stem.startswith("_")
+        ]
+        case_pairs = [(path, load_case(path)) for path in case_files]
+        if case_ids:
+            requested_ids = {str(case_id).strip() for case_id in case_ids if str(case_id).strip()}
+            return [
+                (path, case)
+                for path, case in case_pairs
+                if _case_matches_requested_ids(case, requested_ids)
+            ]
+        return [
+            (path, case)
+            for path, case in case_pairs
+            if _is_wifi_llapi_official_case(case)
+        ]
+
+    @staticmethod
+    def _build_wifi_llapi_alignment_summary(align_results: list[Any]) -> dict[str, Any]:
+        return {
+            "already_aligned": sum(
+                1 for result in align_results if result.status == "already_aligned"
+            ),
+            "auto_aligned": sum(1 for result in align_results if result.status == "auto_aligned"),
+            "blocked": sum(1 for result in align_results if result.status == "blocked"),
+            "skipped": sum(1 for result in align_results if result.status == "skipped"),
+            "mutations": [
+                {
+                    "case_id": result.id_before,
+                    "filename_before": result.filename_before,
+                    "filename_after": result.case_file.name,
+                    "source_row_before": result.source_row_before,
+                    "source_row_after": result.source_row_after,
+                    "id_after": result.id_after or result.id_before,
+                    "status": result.status,
+                }
+                for result in align_results
+            ],
+        }
+
+    def _prepare_wifi_llapi_alignment(
+        self,
+        *,
+        plugin: Any,
+        case_ids: list[str] | None,
+        template_path: Path,
+    ) -> WifiLlapiAlignmentPrep:
+        case_pairs = self._load_wifi_llapi_case_pairs(plugin=plugin, case_ids=case_ids)
+        index = build_template_index(template_path)
+        align_results = [align_case(case, index, path) for path, case in case_pairs]
+        _resolve_collisions(align_results)
+        apply_alignment_mutations(align_results)
+        runnable_results = [
+            result
+            for result in align_results
+            if result.status in {"already_aligned", "auto_aligned"}
+        ]
+        blocked_results = [result for result in align_results if result.status == "blocked"]
+        skipped_results = [result for result in align_results if result.status == "skipped"]
+        return WifiLlapiAlignmentPrep(
+            runnable_cases=[load_case(result.case_file) for result in runnable_results],
+            blocked_results=blocked_results,
+            skipped_results=skipped_results,
+            alignment_summary=self._build_wifi_llapi_alignment_summary(align_results),
+        )
+
+    @staticmethod
+    def _finalize_wifi_llapi_alignment_artifacts(
+        *,
+        report_path: Path,
+        artifact_dir: Path,
+        prep: WifiLlapiAlignmentPrep,
+    ) -> None:
+        fill_blocked_markers(report_xlsx=report_path, blocked=prep.blocked_results)
+        fill_skip_markers(report_xlsx=report_path, skipped=prep.skipped_results)
+        write_blocked_cases_report(prep.blocked_results, artifact_dir / "blocked_cases.md")
+        write_skipped_cases_report(prep.skipped_results, artifact_dir / "skipped_cases.md")
+
     # -- wifi_llapi run loop ---------------------------------------------------
 
     def _run_wifi_llapi(
@@ -457,29 +546,11 @@ class Orchestrator:
         plugin_name: str,
         case_ids: list[str] | None,
         dut_fw_ver: str | None,
-        report_source_xlsx: str | None,
         provider_config: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         plugin = self.loader.load(plugin_name)
-        discovered_cases = plugin.discover_cases()
-        if case_ids:
-            requested_ids = {str(case_id).strip() for case_id in case_ids if str(case_id).strip()}
-            cases = [
-                c for c in discovered_cases if _case_matches_requested_ids(c, requested_ids)
-            ]
-        else:
-            cases = [
-                c
-                for c in discovered_cases
-                if _is_wifi_llapi_official_case(c)
-            ]
-
         reports_root = self.plugins_dir / plugin_name / "reports"
         template_path = reports_root / "templates" / "wifi_llapi_template.xlsx"
-        manifest_path = reports_root / "templates" / "wifi_llapi_template.manifest.json"
-        source_xlsx = Path(report_source_xlsx) if report_source_xlsx else None
-        alignment_xlsx: Path
-        source_report = ""
         run_date = date.today()
         fw_ver = dut_fw_ver or "DUT-FW-VER"
         run_id = datetime.now().strftime("%Y%m%dT%H%M%S%f")
@@ -487,49 +558,20 @@ class Orchestrator:
         artifact_name = Path(report_name).stem
         artifact_dir = reports_root / artifact_name
 
-        if source_xlsx is not None:
-            if not source_xlsx.exists():
-                raise FileNotFoundError(f"wifi_llapi source report not found: {source_xlsx}")
-            ensure_template_report(
-                source_xlsx=source_xlsx,
-                template_path=template_path,
-                manifest_path=manifest_path,
-            )
-            alignment_xlsx = source_xlsx
-            source_report = str(source_xlsx)
-        elif template_path.exists():
-            alignment_xlsx = template_path
-            source_report = self._load_wifi_llapi_template_source(manifest_path) or str(template_path)
-        else:
+        if not template_path.exists():
             raise FileNotFoundError(
                 "wifi_llapi template not found. Run "
                 "`testpilot wifi-llapi build-template-report --source-xlsx <path>` "
-                "or pass `--report-source-xlsx <path>` to rebuild it."
+                "to rebuild it."
             )
 
         artifact_dir.mkdir(parents=True, exist_ok=True)
-        alignment_issues = collect_alignment_issues(cases, alignment_xlsx)
-        if alignment_issues:
-            alignment_path = artifact_dir / "alignment_issues.json"
-            alignment_path.write_text(
-                json.dumps(
-                    {
-                        "source_report": source_report,
-                        "alignment_sheet": str(alignment_xlsx),
-                        "issues_count": len(alignment_issues),
-                        "issues": alignment_issues,
-                    },
-                    indent=2,
-                    ensure_ascii=False,
-                ),
-                encoding="utf-8",
-            )
-            log.warning(
-                "alignment issues: %d case(s) have source.row mismatch with template Excel "
-                "(report row placement may be inaccurate); report: %s",
-                len(alignment_issues),
-                alignment_path,
-            )
+        alignment_prep = self._prepare_wifi_llapi_alignment(
+            plugin=plugin,
+            case_ids=case_ids,
+            template_path=template_path,
+        )
+        cases = alignment_prep.runnable_cases
 
         agent_config = self.runner_selector.load_agent_config(plugin_name)
         execution_policy = self.runner_selector.build_execution_policy(agent_config)
@@ -703,18 +745,21 @@ class Orchestrator:
             self._stop_serialwrap()
 
         fill_case_results(report_xlsx=report_path, case_results=case_results)
+        self._finalize_wifi_llapi_alignment_artifacts(
+            report_path=report_path,
+            artifact_dir=artifact_dir,
+            prep=alignment_prep,
+        )
         finalize_report_metadata(
             report_xlsx=report_path,
             meta=ReportMeta(
                 run_date=run_date,
                 dut_fw_ver=fw_ver,
-                source_excel=source_report,
+                source_excel="",
             ),
         )
 
         # -- md / json reports ------------------------------------------------
-        import dataclasses
-
         run_finished_monotonic = time.monotonic()
         run_finished_at_iso = datetime.now().astimezone().isoformat(timespec="seconds")
         timing_rows: list[dict[str, Any]] = [
@@ -749,8 +794,9 @@ class Orchestrator:
             "run_id": run_id,
             "timing": timing_rows,
             "output_stem": artifact_name,
+            "alignment_summary": alignment_prep.alignment_summary,
         }
-        case_dicts = [dataclasses.asdict(cr) for cr in case_results]
+        case_dicts = [asdict(cr) for cr in case_results]
         md_json_paths = generate_reports(
             case_results=case_dicts,
             meta=report_meta,
@@ -775,7 +821,6 @@ class Orchestrator:
             "json_report_path": str(md_json_paths[1]) if len(md_json_paths) > 1 else "",
             "dut_log_path": dut_log_path,
             "sta_log_path": sta_log_path,
-            "source_report": source_report,
             "run_id": run_id,
             "agent_trace_dir": str(agent_trace_dir),
             "agent_trace_count": len(case_trace_files),
@@ -789,13 +834,12 @@ class Orchestrator:
         case_ids: list[str] | None = None,
         *,
         dut_fw_ver: str | None = None,
-        report_source_xlsx: str | None = None,
         provider_config: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """執行測試。
 
         wifi_llapi plugin:
-        - builds/extracts template report from source Excel sheet,
+        - uses the checked-in template report,
         - executes cases through plugin hooks,
         - fills report test command/result columns by source row.
 
@@ -807,7 +851,6 @@ class Orchestrator:
                 plugin_name=plugin_name,
                 case_ids=case_ids,
                 dut_fw_ver=dut_fw_ver,
-                report_source_xlsx=report_source_xlsx,
                 provider_config=provider_config,
             )
 

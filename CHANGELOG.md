@@ -9,6 +9,18 @@ preparation.
 
 ## [Unreleased]
 
+### Added
+
+- `testpilot run wifi_llapi` now performs a runtime alignment phase that
+  auto-corrects case filename `D###`, `source.row`, and compatible `id` values
+  against the checked-in template workbook before execution.
+- wifi_llapi artifact bundles may now include `blocked_cases.md` and
+  `skipped_cases.md` when metadata drift cannot be safely auto-aligned.
+
+### Changed - BREAKING
+
+- `testpilot run wifi_llapi` no longer accepts `--report-source-xlsx`; rebuild the checked-in template with `testpilot wifi-llapi build-template-report --source-xlsx <path>` before running if the template needs refreshing.
+
 ## [0.2.0]
 
 ### Added

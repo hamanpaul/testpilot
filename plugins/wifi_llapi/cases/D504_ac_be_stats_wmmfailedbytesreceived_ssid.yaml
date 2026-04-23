@@ -1,7 +1,7 @@
 id: d504-ssid-wmm-ac_be_stats_wmmfailedbytesreceived_ssid
 name: D504 WmmFailedBytesReceived.AC_BE
 source:
-  row: 371
+  row: 504
   object: WiFi.SSID.{i}.Stats.WmmFailedBytesReceived.
   api: AC_BE
   baseline: 0310-BGW720-300

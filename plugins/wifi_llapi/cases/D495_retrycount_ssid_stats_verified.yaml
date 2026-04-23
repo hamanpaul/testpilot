@@ -1,4 +1,4 @@
-id: wifi-llapi-d495-retrycount
+id: wifi-llapi-d495-retrycount-verified
 name: "RetryCount — WiFi.SSID.{i}.Stats."
 version: '1.0'
 source:

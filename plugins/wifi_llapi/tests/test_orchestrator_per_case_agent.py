@@ -7,8 +7,10 @@ from pathlib import Path
 from typing import Any
 
 from openpyxl import Workbook
+import yaml
 
 from testpilot.core.orchestrator import Orchestrator
+from testpilot.reporting.wifi_llapi_excel import ensure_template_report
 
 FAIL_CASE_ID = "wifi-llapi-D004-retry-fail"
 PASS_CASE_ID = "wifi-llapi-D005-pass-after-fail"
@@ -178,18 +180,92 @@ runners:
     )
 
 
+def _write_case_files(cases_dir: Path) -> None:
+    cases_dir.mkdir(parents=True, exist_ok=True)
+    cases = [
+        {
+            "id": FAIL_CASE_ID,
+            "aliases": [FAIL_CASE_LEGACY_ID],
+            "name": "kickStation()",
+            "source": {
+                "row": 4,
+                "object": "WiFi.AccessPoint.{i}.",
+                "api": "kickStation()",
+            },
+            "version": "1.0",
+            "topology": {
+                "devices": {
+                    "DUT": {"role": "ap", "transport": "serial"},
+                    "STA": {"role": "sta", "transport": "adb"},
+                }
+            },
+            "steps": [
+                {
+                    "id": "s1",
+                    "action": "exec",
+                    "target": "DUT",
+                    "command": "ubus-cli fail",
+                }
+            ],
+            "pass_criteria": ["step s1 succeeds"],
+            "simulation": "always_fail",
+            "bands": ["5g"],
+        },
+        {
+            "id": PASS_CASE_ID,
+            "aliases": [PASS_CASE_LEGACY_ID],
+            "name": "scan()",
+            "source": {
+                "row": 5,
+                "object": "WiFi.Radio.{i}.",
+                "api": "scan()",
+            },
+            "version": "1.0",
+            "topology": {
+                "devices": {
+                    "DUT": {"role": "ap", "transport": "serial"},
+                    "STA": {"role": "sta", "transport": "adb"},
+                }
+            },
+            "steps": [
+                {
+                    "id": "s1",
+                    "action": "exec",
+                    "target": "DUT",
+                    "command": "ubus-cli pass",
+                }
+            ],
+            "pass_criteria": ["step s1 succeeds"],
+            "simulation": "always_pass",
+            "bands": ["6g"],
+        },
+    ]
+    for case in cases:
+        row = int(case["source"]["row"])
+        stem_suffix = str(case["id"]).split("-", 3)[-1].replace("-", "_")
+        case_path = cases_dir / f"D{row:03d}_{stem_suffix}.yaml"
+        case_path.write_text(yaml.safe_dump(case, sort_keys=False), encoding="utf-8")
+
+
 def _build_temp_project(tmp_path: Path) -> tuple[Path, Path]:
     root = tmp_path / "project"
     _write_testbed_yaml(root / "configs" / "testbed.yaml")
-    _write_wifi_llapi_plugin(root / "plugins" / "wifi_llapi")
+    plugin_dir = root / "plugins" / "wifi_llapi"
+    _write_wifi_llapi_plugin(plugin_dir)
+    _write_case_files(plugin_dir / "cases")
 
     source_xlsx = root / "source.xlsx"
     _write_source_xlsx(source_xlsx)
+    ensure_template_report(
+        source_xlsx=source_xlsx,
+        template_path=plugin_dir / "reports" / "templates" / "wifi_llapi_template.xlsx",
+        manifest_path=plugin_dir / "reports" / "templates" / "wifi_llapi_template.manifest.json",
+    )
     return root, source_xlsx
 
 
 def _run_wifi_llapi(tmp_path: Path) -> tuple[dict[str, Any], Orchestrator, Path]:
-    project_root, source_xlsx = _build_temp_project(tmp_path)
+    project_root, _source_xlsx = _build_temp_project(tmp_path)
 
     orch = Orchestrator(
         project_root=project_root,
@@ -200,7 +276,6 @@ def _run_wifi_llapi(tmp_path: Path) -> tuple[dict[str, Any], Orchestrator, Path]
         "wifi_llapi",
         case_ids=[FAIL_CASE_LEGACY_ID, PASS_CASE_LEGACY_ID],
         dut_fw_ver="FW-TEST-1",
-        report_source_xlsx=str(source_xlsx),
     )
     return result, orch, project_root
 
@@ -325,6 +400,7 @@ def test_retry_then_fail_and_continue_and_summary(tmp_path: Path):
     assert result["status"] == "completed"
     assert result["pass_count"] == 1
     assert result["fail_count"] == 1
+    assert "source_report" not in result
     assert Path(result["report_path"]).is_file()
 
     plugin = orch.loader.load("wifi_llapi")
