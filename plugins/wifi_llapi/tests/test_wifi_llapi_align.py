@@ -58,8 +58,43 @@ def test_build_template_index_happy(template_path: Path):
     index = build_template_index(template)
 
     assert index.forward[4] == ("WiFi.AccessPoint.{i}.", "kickStation()")
-    assert index.by_object_api[("WiFi.Radio.{i}.", "getRadioStats()")] == 5
+    assert index.by_object_api[("WiFi.Radio.{i}.", "getRadioStats()")] == [5]
     assert index.by_api["HeCapabilities"] == [6]
+
+
+def test_align_blocks_ambiguous_object_api_family(tmp_path: Path):
+    template = tmp_path / "template.xlsx"
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Wifi_LLAPI"
+    ws["A4"] = "WiFi.SSID.{i}."
+    ws["C4"] = "getSSIDStats()"
+    ws["A5"] = "WiFi.SSID.{i}."
+    ws["C5"] = "getSSIDStats()"
+    wb.save(template)
+    wb.close()
+    index = build_template_index(template)
+    case_file = tmp_path / "D021_getssidstats.yaml"
+    case_file.write_text("stub\n", encoding="utf-8")
+
+    result = align_case(
+        {
+            "id": "wifi-llapi-D021-getssidstats",
+            "name": "getSSIDStats()",
+            "source": {
+                "row": 21,
+                "object": "WiFi.SSID.{i}.",
+                "api": "getSSIDStats()",
+            },
+        },
+        index,
+        case_file,
+    )
+
+    assert result.status == "blocked"
+    assert result.blocked_reason == "ambiguous_object_api_family"
+    assert result.source_row_after is None
+    assert result.candidate_template_rows == [4, 5]
 
 
 def test_align_already_aligned(tmp_path: Path, template_path: Path):
