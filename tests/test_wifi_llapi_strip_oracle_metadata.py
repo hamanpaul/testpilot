@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 import tempfile
 
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "wifi_llapi_strip_oracle_metadata.py"
@@ -26,6 +27,13 @@ def write_yaml(path: Path, text: str):
 
 def read_text(path: Path):
     return path.read_text(encoding="utf-8")
+
+
+@pytest.fixture
+def tmp_cases_dir(tmp_path):
+    d = tmp_path / "cases"
+    d.mkdir()
+    return d
 
 
 def test_dry_run_no_write(tmp_cases_dir):
@@ -129,38 +137,3 @@ source: some-string
     assert "source: some-string" in txt
 
 
-if __name__ == '__main__':
-    # simple test runner so tests can be run without pytest in this environment
-    import inspect
-    failures = 0
-    globals_dict = globals()
-    for name, obj in list(globals_dict.items()):
-        if name.startswith('test_') and inspect.isfunction(obj):
-            try:
-                # provide fixture
-                params = inspect.signature(obj).parameters
-                if 'tmp_cases_dir' in params:
-                    from tempfile import TemporaryDirectory
-                    td = TemporaryDirectory(dir=str(Path(__file__).resolve().parents[1]))
-                    try:
-                        tmpd = Path(td.name) / 'cases'
-                        tmpd.mkdir()
-                        obj(tmpd)
-                    finally:
-                        td.cleanup()
-                else:
-                    obj()
-                print(f"{name}: OK")
-            except AssertionError as e:
-                import traceback
-                traceback.print_exc()
-                print(f"{name}: FAIL - {e}")
-                failures += 1
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                print(f"{name}: ERROR - {e}")
-                failures += 1
-    if failures:
-        sys.exit(1)
-    print('ALL OK')
