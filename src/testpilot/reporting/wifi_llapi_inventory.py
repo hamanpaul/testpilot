@@ -256,7 +256,9 @@ def _collect_history_candidates(repo_root: Path, cases_dir: Path) -> dict[int, d
         if not match:
             continue
         row = int(match.group("row"))
-        candidates.setdefault(row, {})[line] = current_sha
+        row_candidates = candidates.setdefault(row, {})
+        if line not in row_candidates:
+            row_candidates[line] = current_sha
     return candidates
 
 

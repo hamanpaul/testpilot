@@ -39,6 +39,27 @@ def _write_case(path: Path, *, case_id: str, row: int, obj: str, api: str) -> No
     path.write_text(yaml.safe_dump(payload, sort_keys=False, allow_unicode=True), encoding="utf-8")
 
 
+def _write_history_case(
+    path: Path,
+    *,
+    case_id: str,
+    row: int,
+    obj: str,
+    api: str,
+    marker: str,
+) -> None:
+    payload = {
+        "id": case_id,
+        "name": api,
+        "marker": marker,
+        "topology": {"devices": {"DUT": {}, "STA": {}}},
+        "steps": [{"id": "step-1", "action": "noop", "target": "DUT"}],
+        "pass_criteria": [{"field": "status", "operator": "equals", "expected": "Pass"}],
+        "source": {"row": row, "object": obj, "api": api},
+    }
+    path.write_text(yaml.safe_dump(payload, sort_keys=False, allow_unicode=True), encoding="utf-8")
+
+
 def _init_repo(repo_root: Path) -> None:
     subprocess.run(["git", "init"], cwd=repo_root, check=True, capture_output=True)
     subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=repo_root, check=True)
@@ -176,6 +197,16 @@ def test_restore_target_occupied_by_demoted_file_is_applied_safely(tmp_path: Pat
     _write_template(templates_dir / "wifi_llapi_template.xlsx")
     _init_repo(repo_root)
 
+    _write_history_case(
+        cases_dir / "D004_restoretarget.yaml",
+        case_id="wifi-llapi-D004-restoretarget",
+        row=4,
+        obj="WiFi.Radio.{i}.",
+        api="getRadioStats()",
+        marker="v2",
+    )
+    subprocess.run(["git", "add", "."], cwd=repo_root, check=True)
+    subprocess.run(["git", "commit", "-m", "seed history"], cwd=repo_root, check=True, capture_output=True)
     _write_case(
         cases_dir / "D004_restoretarget.yaml",
         case_id="wifi-llapi-D004-restoretarget",
@@ -184,7 +215,8 @@ def test_restore_target_occupied_by_demoted_file_is_applied_safely(tmp_path: Pat
         api="getRadioStats()",
     )
     subprocess.run(["git", "add", "."], cwd=repo_root, check=True)
-    subprocess.run(["git", "commit", "-m", "seed history"], cwd=repo_root, check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "history v2"], cwd=repo_root, check=True, capture_output=True)
+    (cases_dir / "D004_restoretarget.yaml").unlink()
     _write_case(
         cases_dir / "D004_restoretarget.yaml",
         case_id="wifi-llapi-D004-restoretarget",
@@ -192,8 +224,6 @@ def test_restore_target_occupied_by_demoted_file_is_applied_safely(tmp_path: Pat
         obj="WiFi.Unknown.{i}.",
         api="notInTemplate()",
     )
-    subprocess.run(["git", "add", "."], cwd=repo_root, check=True)
-    subprocess.run(["git", "commit", "-m", "drift current file"], cwd=repo_root, check=True, capture_output=True)
     _write_case(
         cases_dir / "D005_canonical.yaml",
         case_id="wifi-llapi-D005-canonical",
@@ -217,6 +247,61 @@ def test_restore_target_occupied_by_demoted_file_is_applied_safely(tmp_path: Pat
     assert all(len(a.discoverable_case_files) == 1 for a in audit.rows.values())
 
 
+def test_history_restore_prefers_newest_revision_for_same_path(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    cases_dir = repo_root / "plugins" / "wifi_llapi" / "cases"
+    templates_dir = repo_root / "plugins" / "wifi_llapi" / "reports" / "templates"
+    cases_dir.mkdir(parents=True)
+    templates_dir.mkdir(parents=True)
+    _write_template(templates_dir / "wifi_llapi_template.xlsx")
+    _init_repo(repo_root)
+
+    _write_case(
+        cases_dir / "D005_canonical.yaml",
+        case_id="wifi-llapi-D005-canonical",
+        row=5,
+        obj="WiFi.SSID.{i}.",
+        api="getSSIDStats()",
+    )
+    case_path = cases_dir / "D004_history.yaml"
+    _write_history_case(
+        case_path,
+        case_id="wifi-llapi-D004-history",
+        row=4,
+        obj="WiFi.Radio.{i}.",
+        api="getRadioStats()",
+        marker="v1",
+    )
+    subprocess.run(["git", "add", "."], cwd=repo_root, check=True)
+    subprocess.run(["git", "commit", "-m", "history v1"], cwd=repo_root, check=True, capture_output=True)
+
+    _write_history_case(
+        case_path,
+        case_id="wifi-llapi-D004-history",
+        row=4,
+        obj="WiFi.Radio.{i}.",
+        api="getRadioStats()",
+        marker="v2",
+    )
+    subprocess.run(["git", "add", "."], cwd=repo_root, check=True)
+    subprocess.run(["git", "commit", "-m", "history v2"], cwd=repo_root, check=True, capture_output=True)
+
+    case_path.unlink()
+    subprocess.run(["git", "add", "-u"], cwd=repo_root, check=True)
+    subprocess.run(["git", "commit", "-m", "delete history"], cwd=repo_root, check=True, capture_output=True)
+
+    plan = build_wifi_llapi_inventory_reconcile_plan(
+        templates_dir / "wifi_llapi_template.xlsx",
+        cases_dir,
+        repo_root=repo_root,
+    )
+
+    assert any(action.kind == "restore" and action.row == 4 for action in plan.actions)
+    apply_wifi_llapi_inventory_reconcile_plan(plan)
+    restored = yaml.safe_load((cases_dir / "D004_history.yaml").read_text(encoding="utf-8"))
+    assert restored["marker"] == "v2"
+
+
 def test_repo_scale_inventory_reports_drifted_cases_without_omission() -> None:
     repo_root = Path(__file__).resolve().parents[3]
     audit = audit_wifi_llapi_inventory(
@@ -229,7 +314,13 @@ def test_repo_scale_inventory_reports_drifted_cases_without_omission() -> None:
         repo_root=repo_root,
     )
 
-    omitted = {"D068_discoverymethodenabled_accesspoint_rnr.yaml", "D495_retrycount_ssid_stats_verified.yaml"}
-    present = {action.case_file.name for action in plan.actions if action.case_file is not None}
-    present |= {action.case_file.name for action in plan.blockers if action.case_file is not None}
-    assert omitted <= present
+    blocker_rows = {action.row for action in plan.blockers if action.row is not None}
+    restore_rows = {action.row for action in plan.actions if action.kind == "restore"}
+    assert set(audit.missing_rows) == blocker_rows | restore_rows
+    unresolved_drifted = {
+        case_audit.case_file.name
+        for case_audit in audit.cases.values()
+        if case_audit.status == "drifted" and case_audit.resolved_row is None
+    }
+    blocker_case_names = {action.case_file.name for action in plan.blockers if action.case_file is not None}
+    assert unresolved_drifted <= blocker_case_names
