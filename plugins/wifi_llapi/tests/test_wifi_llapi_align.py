@@ -143,12 +143,12 @@ def test_align_uses_source_row_to_break_ambiguous_object_api_family(tmp_path: Pa
     wb.save(template)
     wb.close()
     index = build_template_index(template)
-    case_file = tmp_path / "D005_getssidstats.yaml"
+    case_file = tmp_path / "D021_getssidstats.yaml"
     case_file.write_text("stub\n", encoding="utf-8")
 
     result = align_case(
         {
-            "id": "wifi-llapi-D005-getssidstats",
+            "id": "wifi-llapi-D021-getssidstats",
             "name": "getSSIDStats()",
             "source": {
                 "row": 5,
@@ -160,9 +160,10 @@ def test_align_uses_source_row_to_break_ambiguous_object_api_family(tmp_path: Pa
         case_file,
     )
 
-    assert result.status == "already_aligned"
+    assert result.status == "auto_aligned"
     assert result.template_row == 5
     assert result.source_row_after == 5
+    assert result.filename_after == "D005_getssidstats.yaml"
     assert result.blocked_reason is None
 
 
@@ -175,6 +176,8 @@ def test_align_keeps_blocked_when_source_row_is_not_in_ambiguous_family(tmp_path
     ws["C4"] = "getSSIDStats()"
     ws["A5"] = "WiFi.SSID.{i}."
     ws["C5"] = "getSSIDStats()"
+    ws["A6"] = "WiFi.SSID.{i}."
+    ws["C6"] = "getRadioStats()"
     wb.save(template)
     wb.close()
     index = build_template_index(template)
