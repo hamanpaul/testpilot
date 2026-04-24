@@ -3,6 +3,7 @@ from __future__ import annotations
 import subprocess
 import sys
 from pathlib import Path
+import pytest
 
 import yaml
 from openpyxl import Workbook
@@ -38,6 +39,12 @@ def _write_case(path: Path, *, case_id: str, row: int, obj: str, api: str) -> No
     path.write_text(yaml.safe_dump(payload, sort_keys=False, allow_unicode=True), encoding="utf-8")
 
 
+def _init_repo(repo_root: Path) -> None:
+    subprocess.run(["git", "init"], cwd=repo_root, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=repo_root, check=True)
+    subprocess.run(["git", "config", "user.name", "Test User"], cwd=repo_root, check=True)
+
+
 def test_reconcile_plan_reports_restore_rewrite_and_demote_actions(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     cases_dir = repo_root / "plugins" / "wifi_llapi" / "cases"
@@ -46,9 +53,7 @@ def test_reconcile_plan_reports_restore_rewrite_and_demote_actions(tmp_path: Pat
     templates_dir.mkdir(parents=True)
     _write_template(templates_dir / "wifi_llapi_template.xlsx")
 
-    subprocess.run(["git", "init"], cwd=repo_root, check=True, capture_output=True)
-    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=repo_root, check=True)
-    subprocess.run(["git", "config", "user.name", "Test User"], cwd=repo_root, check=True)
+    _init_repo(repo_root)
 
     restored_case = cases_dir / "D004_restored.yaml"
     _write_case(restored_case, case_id="wifi-llapi-D004-restored", row=4, obj="WiFi.Radio.{i}.", api="getRadioStats()")
@@ -118,7 +123,101 @@ def test_reconcile_plan_reports_restore_rewrite_and_demote_actions(tmp_path: Pat
     assert audit.rows[5].status == "canonical"
 
 
-def test_repo_scale_inventory_has_no_silent_official_row_omissions() -> None:
+def test_ambiguous_history_candidate_becomes_blocker(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    cases_dir = repo_root / "plugins" / "wifi_llapi" / "cases"
+    templates_dir = repo_root / "plugins" / "wifi_llapi" / "reports" / "templates"
+    cases_dir.mkdir(parents=True)
+    templates_dir.mkdir(parents=True)
+    _write_template(templates_dir / "wifi_llapi_template.xlsx")
+    _init_repo(repo_root)
+
+    _write_case(
+        cases_dir / "D004_alpha.yaml",
+        case_id="wifi-llapi-D004-alpha",
+        row=4,
+        obj="WiFi.Radio.{i}.",
+        api="getRadioStats()",
+    )
+    subprocess.run(["git", "add", "."], cwd=repo_root, check=True)
+    subprocess.run(["git", "commit", "-m", "alpha"], cwd=repo_root, check=True, capture_output=True)
+    (cases_dir / "D004_alpha.yaml").unlink()
+    _write_case(
+        cases_dir / "D004_beta.yaml",
+        case_id="wifi-llapi-D004-beta",
+        row=4,
+        obj="WiFi.Radio.{i}.",
+        api="getRadioStats()",
+    )
+    subprocess.run(["git", "add", "."], cwd=repo_root, check=True)
+    subprocess.run(["git", "commit", "-m", "beta"], cwd=repo_root, check=True, capture_output=True)
+    (cases_dir / "D004_beta.yaml").unlink()
+    subprocess.run(["git", "add", "-u"], cwd=repo_root, check=True)
+    subprocess.run(["git", "commit", "-m", "remove row"], cwd=repo_root, check=True, capture_output=True)
+
+    plan = build_wifi_llapi_inventory_reconcile_plan(
+        templates_dir / "wifi_llapi_template.xlsx",
+        cases_dir,
+        repo_root=repo_root,
+    )
+
+    assert any(action.reason == "ambiguous_history_candidate" for action in plan.blockers)
+    assert not any(action.kind == "restore" and action.row == 4 for action in plan.actions)
+    with pytest.raises(ValueError):
+        apply_wifi_llapi_inventory_reconcile_plan(plan)
+
+
+def test_restore_target_occupied_by_demoted_file_is_applied_safely(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    cases_dir = repo_root / "plugins" / "wifi_llapi" / "cases"
+    templates_dir = repo_root / "plugins" / "wifi_llapi" / "reports" / "templates"
+    cases_dir.mkdir(parents=True)
+    templates_dir.mkdir(parents=True)
+    _write_template(templates_dir / "wifi_llapi_template.xlsx")
+    _init_repo(repo_root)
+
+    _write_case(
+        cases_dir / "D004_restoretarget.yaml",
+        case_id="wifi-llapi-D004-restoretarget",
+        row=4,
+        obj="WiFi.Radio.{i}.",
+        api="getRadioStats()",
+    )
+    subprocess.run(["git", "add", "."], cwd=repo_root, check=True)
+    subprocess.run(["git", "commit", "-m", "seed history"], cwd=repo_root, check=True, capture_output=True)
+    _write_case(
+        cases_dir / "D004_restoretarget.yaml",
+        case_id="wifi-llapi-D004-restoretarget",
+        row=999,
+        obj="WiFi.Unknown.{i}.",
+        api="notInTemplate()",
+    )
+    subprocess.run(["git", "add", "."], cwd=repo_root, check=True)
+    subprocess.run(["git", "commit", "-m", "drift current file"], cwd=repo_root, check=True, capture_output=True)
+    _write_case(
+        cases_dir / "D005_canonical.yaml",
+        case_id="wifi-llapi-D005-canonical",
+        row=5,
+        obj="WiFi.SSID.{i}.",
+        api="getSSIDStats()",
+    )
+
+    plan = build_wifi_llapi_inventory_reconcile_plan(
+        templates_dir / "wifi_llapi_template.xlsx",
+        cases_dir,
+        repo_root=repo_root,
+    )
+
+    assert any(action.kind == "restore" and action.row == 4 for action in plan.actions)
+    assert any(action.kind == "demote" and action.case_file.name == "D004_restoretarget.yaml" for action in plan.actions)
+    apply_wifi_llapi_inventory_reconcile_plan(plan)
+    audit = audit_wifi_llapi_inventory(templates_dir / "wifi_llapi_template.xlsx", cases_dir)
+    assert audit.rows[4].status == "canonical"
+    assert audit.rows[5].status == "canonical"
+    assert all(len(a.discoverable_case_files) == 1 for a in audit.rows.values())
+
+
+def test_repo_scale_inventory_reports_drifted_cases_without_omission() -> None:
     repo_root = Path(__file__).resolve().parents[3]
     audit = audit_wifi_llapi_inventory(
         repo_root / "plugins" / "wifi_llapi" / "reports" / "templates" / "wifi_llapi_template.xlsx",
@@ -130,9 +229,7 @@ def test_repo_scale_inventory_has_no_silent_official_row_omissions() -> None:
         repo_root=repo_root,
     )
 
-    blocker_rows = {action.row for action in plan.blockers}
-    restore_rows = {action.row for action in plan.actions if action.kind == "restore"}
-    assert set(audit.missing_rows) == blocker_rows | restore_rows
-    assert any(action.kind == "restore" for action in plan.actions)
-    assert any(action.kind == "rewrite" for action in plan.actions)
-    assert any(action.kind == "demote" for action in plan.actions)
+    omitted = {"D068_discoverymethodenabled_accesspoint_rnr.yaml", "D495_retrycount_ssid_stats_verified.yaml"}
+    present = {action.case_file.name for action in plan.actions if action.case_file is not None}
+    present |= {action.case_file.name for action in plan.blockers if action.case_file is not None}
+    assert omitted <= present

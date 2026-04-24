@@ -231,7 +231,7 @@ def _git_capture(repo_root: Path, *args: str) -> str:
     return completed.stdout
 
 
-def _collect_history_candidates(repo_root: Path, cases_dir: Path) -> dict[int, tuple[str, str]]:
+def _collect_history_candidates(repo_root: Path, cases_dir: Path) -> dict[int, dict[str, str]]:
     output = _git_capture(
         repo_root,
         "log",
@@ -242,7 +242,7 @@ def _collect_history_candidates(repo_root: Path, cases_dir: Path) -> dict[int, t
         "--",
         str(cases_dir.relative_to(repo_root)),
     )
-    candidates: dict[int, tuple[str, str]] = {}
+    candidates: dict[int, dict[str, str]] = {}
     current_sha = ""
     for raw_line in output.splitlines():
         line = raw_line.strip()
@@ -256,8 +256,7 @@ def _collect_history_candidates(repo_root: Path, cases_dir: Path) -> dict[int, t
         if not match:
             continue
         row = int(match.group("row"))
-        if row not in candidates:
-            candidates[row] = (current_sha, line)
+        candidates.setdefault(row, {})[line] = current_sha
     return candidates
 
 
@@ -323,8 +322,8 @@ def build_wifi_llapi_inventory_reconcile_plan(
         grouped_rows.setdefault(case_audit.resolved_row, []).append((case_audit.case_file, _load_case_yaml(case_audit.case_file)))
 
     for row in audit.missing_rows:
-        candidate = history_candidates.get(row)
-        if not candidate:
+        candidate_paths = history_candidates.get(row, {})
+        if not candidate_paths:
             blockers.append(
                 WifiLlapiInventoryReconcileAction(
                     kind="blocker",
@@ -335,7 +334,19 @@ def build_wifi_llapi_inventory_reconcile_plan(
                 )
             )
             continue
-        sha, relative_path = candidate
+        if len(candidate_paths) > 1:
+            blockers.append(
+                WifiLlapiInventoryReconcileAction(
+                    kind="blocker",
+                    row=row,
+                    case_file=None,
+                    target_file=None,
+                    reason="ambiguous_history_candidate",
+                    source_ref=",".join(sorted(candidate_paths)),
+                )
+            )
+            continue
+        relative_path, sha = next(iter(candidate_paths.items()))
         target_file = cases_dir / Path(relative_path).name
         actions.append(
             WifiLlapiInventoryReconcileAction(
@@ -392,6 +403,17 @@ def build_wifi_llapi_inventory_reconcile_plan(
             )
 
     for case_name, case_audit in sorted(audit.cases.items()):
+        if case_audit.status == "drifted" and case_audit.resolved_row is None:
+            blockers.append(
+                WifiLlapiInventoryReconcileAction(
+                    kind="blocker",
+                    row=None,
+                    case_file=case_audit.case_file,
+                    target_file=None,
+                    reason=case_audit.reason,
+                )
+            )
+            continue
         if case_audit.status != "extra":
             continue
         actions.append(
@@ -404,7 +426,7 @@ def build_wifi_llapi_inventory_reconcile_plan(
             )
         )
 
-    actions.sort(key=lambda action: ({"restore": 0, "rewrite": 1, "demote": 2, "blocker": 3}[action.kind], action.row or 0, action.case_file.name if action.case_file else ""))
+    actions.sort(key=lambda action: ({"demote": 0, "rewrite": 1, "restore": 2, "blocker": 3}[action.kind], action.row or 0, action.case_file.name if action.case_file else ""))
     blockers.sort(key=lambda action: (action.row or 0, action.reason))
     return WifiLlapiInventoryReconcilePlan(
         template_xlsx=template_xlsx,
@@ -417,7 +439,11 @@ def build_wifi_llapi_inventory_reconcile_plan(
 
 
 def apply_wifi_llapi_inventory_reconcile_plan(plan: WifiLlapiInventoryReconcilePlan) -> None:
-    for action in plan.actions:
+    if plan.blockers:
+        raise ValueError("cannot apply blocked wifi_llapi inventory reconcile plan")
+
+    phase_order = {"demote": 0, "rewrite": 1, "restore": 2}
+    for action in sorted(plan.actions, key=lambda item: (phase_order[item.kind], item.row or 0, item.case_file.name if item.case_file else "")):
         if action.kind == "restore":
             assert action.case_file is not None
             assert action.source_ref is not None
