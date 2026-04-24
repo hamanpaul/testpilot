@@ -164,6 +164,7 @@ def test_align_uses_source_row_to_break_ambiguous_object_api_family(tmp_path: Pa
     assert result.template_row == 5
     assert result.source_row_after == 5
     assert result.filename_after == "D005_getssidstats.yaml"
+    assert result.id_after == "wifi-llapi-D005-getssidstats"
     assert result.blocked_reason is None
 
 
@@ -172,26 +173,24 @@ def test_align_keeps_blocked_when_source_row_is_not_in_ambiguous_family(tmp_path
     wb = Workbook()
     ws = wb.active
     ws.title = "Wifi_LLAPI"
-    ws["A4"] = "WiFi.SSID.{i}."
-    ws["C4"] = "getSSIDStats()"
-    ws["A5"] = "WiFi.SSID.{i}."
-    ws["C5"] = "getSSIDStats()"
-    ws["A6"] = "WiFi.SSID.{i}."
-    ws["C6"] = "getRadioStats()"
+    ws["A8"] = "WiFi.Radio.{i}."
+    ws["C8"] = "getRadioStats()"
+    ws["A11"] = "WiFi.Radio.{i}."
+    ws["C11"] = "getRadioStats()"
     wb.save(template)
     wb.close()
     index = build_template_index(template)
-    case_file = tmp_path / "D021_getssidstats.yaml"
+    case_file = tmp_path / "D010_getradiostats.yaml"
     case_file.write_text("stub\n", encoding="utf-8")
 
     result = align_case(
         {
-            "id": "wifi-llapi-D021-getssidstats",
-            "name": "getSSIDStats()",
+            "id": "wifi-llapi-D010-getradiostats",
+            "name": "getRadioStats()",
             "source": {
-                "row": 21,
-                "object": "WiFi.SSID.{i}.",
-                "api": "getSSIDStats()",
+                "row": 10,
+                "object": "WiFi.Radio.{i}.",
+                "api": "getRadioStats()",
             },
         },
         index,
@@ -200,7 +199,7 @@ def test_align_keeps_blocked_when_source_row_is_not_in_ambiguous_family(tmp_path
 
     assert result.status == "blocked"
     assert result.blocked_reason == "ambiguous_object_api_family"
-    assert result.candidate_template_rows == [4, 5]
+    assert result.candidate_template_rows == [8, 11]
 
 
 def test_align_already_aligned(tmp_path: Path, template_path: Path):
