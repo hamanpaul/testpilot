@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from copy import deepcopy
 from pathlib import Path
 import re
+import shutil
+import subprocess
 from typing import Any, Literal
 
 from testpilot.reporting.wifi_llapi_align import build_template_index
@@ -84,6 +87,55 @@ class WifiLlapiInventoryAudit:
         }
 
 
+@dataclass(slots=True)
+class WifiLlapiInventoryReconcileAction:
+    kind: Literal["restore", "rewrite", "demote", "blocker"]
+    row: int | None
+    case_file: Path | None
+    target_file: Path | None
+    reason: str
+    source_ref: str | None = None
+
+    def to_line(self) -> str:
+        parts = [self.kind]
+        if self.row is not None:
+            parts.append(f"row={self.row:03d}")
+        if self.case_file is not None:
+            parts.append(f"case={self.case_file.name}")
+        if self.target_file is not None and self.target_file != self.case_file:
+            parts.append(f"target={self.target_file.name}")
+        if self.source_ref:
+            parts.append(f"source={self.source_ref}")
+        if self.reason:
+            parts.append(f"reason={self.reason}")
+        return " ".join(parts)
+
+
+@dataclass(slots=True)
+class WifiLlapiInventoryReconcilePlan:
+    template_xlsx: Path
+    cases_dir: Path
+    repo_root: Path
+    audit: WifiLlapiInventoryAudit
+    actions: tuple[WifiLlapiInventoryReconcileAction, ...] = ()
+    blockers: tuple[WifiLlapiInventoryReconcileAction, ...] = ()
+
+    def to_lines(self) -> list[str]:
+        lines = [action.to_line() for action in self.actions]
+        lines.extend(action.to_line() for action in self.blockers)
+        return lines
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "template_xlsx": str(self.template_xlsx),
+            "cases_dir": str(self.cases_dir),
+            "repo_root": str(self.repo_root),
+            "audit": self.audit.to_dict(),
+            "actions": [action.to_line() for action in self.actions],
+            "blockers": [action.to_line() for action in self.blockers],
+        }
+
+
 def _extract_row_from_filename(case_file: Path) -> int | None:
     match = _FILE_D_PATTERN.match(case_file.stem)
     if not match:
@@ -96,6 +148,35 @@ def _extract_row_from_case_id(case_id: str) -> int | None:
     if not match:
         return None
     return int(match.group(2))
+
+
+def _replace_case_id_row(case_id: str, row: int) -> str:
+    return _ID_D_PATTERN.sub(lambda match: f"{match.group(1)}{row:03d}{match.group(3)}", case_id, count=1)
+
+
+def _sanitize_slug(text: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "_", normalize_text(text)).strip("_")
+    return slug or "case"
+
+
+def _case_slug(case: dict[str, Any], case_file: Path) -> str:
+    stem = case_file.stem
+    match = _FILE_D_PATTERN.match(stem)
+    if match and match.group("suffix"):
+        slug = match.group("suffix").lstrip("_")
+        if slug:
+            return slug
+    name = str(case.get("name", "")).strip()
+    if name:
+        return _sanitize_slug(name)
+    case_id = str(case.get("id", "")).strip()
+    if case_id:
+        return _sanitize_slug(case_id)
+    return "case"
+
+
+def _canonical_case_filename(case: dict[str, Any], row: int, case_file: Path) -> str:
+    return f"D{row:03d}_{_case_slug(case, case_file)}.yaml"
 
 
 def _is_canonical_metadata(case: dict[str, Any], row: int, case_file: Path) -> bool:
@@ -131,6 +212,257 @@ def _resolve_case_row(
     if len(candidate_rows) == 1:
         return candidate_rows[0]
     return None
+
+
+def _find_repo_root(path: Path) -> Path:
+    for parent in [path, *path.parents]:
+        if (parent / ".git").exists():
+            return parent
+    return path
+
+
+def _git_capture(repo_root: Path, *args: str) -> str:
+    completed = subprocess.run(
+        ["git", "-C", str(repo_root), *args],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return completed.stdout
+
+
+def _collect_history_candidates(repo_root: Path, cases_dir: Path) -> dict[int, tuple[str, str]]:
+    output = _git_capture(
+        repo_root,
+        "log",
+        "--all",
+        "--diff-filter=AMR",
+        "--name-only",
+        "--pretty=format:%H",
+        "--",
+        str(cases_dir.relative_to(repo_root)),
+    )
+    candidates: dict[int, tuple[str, str]] = {}
+    current_sha = ""
+    for raw_line in output.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if re.fullmatch(r"[0-9a-f]{40}", line):
+            current_sha = line
+            continue
+        path = Path(line)
+        match = _FILE_D_PATTERN.match(path.name)
+        if not match:
+            continue
+        row = int(match.group("row"))
+        if row not in candidates:
+            candidates[row] = (current_sha, line)
+    return candidates
+
+
+def _load_case_yaml(path: Path) -> dict[str, Any]:
+    return load_case(path, validator=validate_wifi_llapi_case)
+
+
+def _normalize_case_metadata(case: dict[str, Any], *, row: int, case_file: Path) -> dict[str, Any]:
+    normalized = deepcopy(case)
+    normalized["id"] = _replace_case_id_row(str(normalized.get("id", "")), row)
+    normalized["source"] = dict(normalized.get("source") or {})
+    normalized["source"]["row"] = row
+    normalized["source"]["object"] = normalized["source"].get("object", "")
+    normalized["source"]["api"] = normalized["source"].get("api", "")
+    return normalized
+
+
+def _write_case_yaml(path: Path, case: dict[str, Any]) -> None:
+    import yaml
+
+    path.write_text(yaml.safe_dump(case, sort_keys=False, allow_unicode=True), encoding="utf-8")
+
+
+def _demote_case_file(case_file: Path) -> Path:
+    if case_file.stem.startswith("_"):
+        return case_file
+    return case_file.with_name(f"_{case_file.name}")
+
+
+def _choose_survivor(row: int, grouped: list[tuple[Path, dict[str, Any]]]) -> tuple[Path, dict[str, Any]]:
+    def score(item: tuple[Path, dict[str, Any]]) -> tuple[int, int, int, str]:
+        case_file, case = item
+        source = case.get("source") if isinstance(case.get("source"), dict) else {}
+        return (
+            1 if int(source.get("row", 0) or 0) == row else 0,
+            1 if _extract_row_from_filename(case_file) == row else 0,
+            1 if _extract_row_from_case_id(str(case.get("id", ""))) == row else 0,
+            str(case_file),
+        )
+
+    return sorted(grouped, key=score, reverse=True)[0]
+
+
+def build_wifi_llapi_inventory_reconcile_plan(
+    template_xlsx: Path | str,
+    cases_dir: Path | str,
+    *,
+    repo_root: Path | str | None = None,
+) -> WifiLlapiInventoryReconcilePlan:
+    template_xlsx = Path(template_xlsx)
+    cases_dir = Path(cases_dir)
+    repo_root = _find_repo_root(Path(repo_root) if repo_root is not None else cases_dir)
+    audit = audit_wifi_llapi_inventory(template_xlsx, cases_dir)
+    history_candidates = _collect_history_candidates(repo_root, cases_dir)
+
+    actions: list[WifiLlapiInventoryReconcileAction] = []
+    blockers: list[WifiLlapiInventoryReconcileAction] = []
+
+    grouped_rows: dict[int, list[tuple[Path, dict[str, Any]]]] = {}
+    for case_audit in audit.cases.values():
+        if case_audit.resolved_row is None or case_audit.status == "extra":
+            continue
+        grouped_rows.setdefault(case_audit.resolved_row, []).append((case_audit.case_file, _load_case_yaml(case_audit.case_file)))
+
+    for row in audit.missing_rows:
+        candidate = history_candidates.get(row)
+        if not candidate:
+            blockers.append(
+                WifiLlapiInventoryReconcileAction(
+                    kind="blocker",
+                    row=row,
+                    case_file=None,
+                    target_file=None,
+                    reason="missing_history_candidate",
+                )
+            )
+            continue
+        sha, relative_path = candidate
+        target_file = cases_dir / Path(relative_path).name
+        actions.append(
+            WifiLlapiInventoryReconcileAction(
+                kind="restore",
+                row=row,
+                case_file=target_file,
+                target_file=target_file,
+                reason="restore_from_history",
+                source_ref=f"{sha}:{relative_path}",
+            )
+        )
+
+    for row, row_audit in sorted(audit.rows.items()):
+        grouped = sorted(grouped_rows.get(row, []), key=lambda item: str(item[0]))
+        if not grouped:
+            continue
+        survivor = None
+        if row_audit.canonical_case_file is not None:
+            for case_file, case in grouped:
+                if case_file.name == row_audit.canonical_case_file:
+                    survivor = (case_file, case)
+                    break
+        else:
+            survivor = _choose_survivor(row, grouped)
+
+        if survivor is None:
+            continue
+
+        survivor_file, survivor_case = survivor
+        canonical_name = _canonical_case_filename(survivor_case, row, survivor_file)
+        canonical_path = survivor_file.with_name(canonical_name)
+        if canonical_path != survivor_file or not _is_canonical_metadata(survivor_case, row, survivor_file):
+            actions.append(
+                WifiLlapiInventoryReconcileAction(
+                    kind="rewrite",
+                    row=row,
+                    case_file=survivor_file,
+                    target_file=canonical_path,
+                    reason="canonical_row_bearing_metadata",
+                )
+            )
+
+        for case_file, _case in grouped:
+            if case_file == survivor_file:
+                continue
+            actions.append(
+                WifiLlapiInventoryReconcileAction(
+                    kind="demote",
+                    row=row,
+                    case_file=case_file,
+                    target_file=_demote_case_file(case_file),
+                    reason="non_canonical_leftover",
+                )
+            )
+
+    for case_name, case_audit in sorted(audit.cases.items()):
+        if case_audit.status != "extra":
+            continue
+        actions.append(
+            WifiLlapiInventoryReconcileAction(
+                kind="demote",
+                row=case_audit.resolved_row,
+                case_file=case_audit.case_file,
+                target_file=_demote_case_file(case_audit.case_file),
+                reason="extra_outside_official_inventory",
+            )
+        )
+
+    actions.sort(key=lambda action: ({"restore": 0, "rewrite": 1, "demote": 2, "blocker": 3}[action.kind], action.row or 0, action.case_file.name if action.case_file else ""))
+    blockers.sort(key=lambda action: (action.row or 0, action.reason))
+    return WifiLlapiInventoryReconcilePlan(
+        template_xlsx=template_xlsx,
+        cases_dir=cases_dir,
+        repo_root=repo_root,
+        audit=audit,
+        actions=tuple(actions),
+        blockers=tuple(blockers),
+    )
+
+
+def apply_wifi_llapi_inventory_reconcile_plan(plan: WifiLlapiInventoryReconcilePlan) -> None:
+    for action in plan.actions:
+        if action.kind == "restore":
+            assert action.case_file is not None
+            assert action.source_ref is not None
+            sha, relative_path = action.source_ref.split(":", 1)
+            restored_text = _git_capture(plan.repo_root, "show", f"{sha}:{relative_path}")
+            case = _load_case_yaml_from_text(restored_text, action.case_file)
+            normalized = _normalize_case_metadata(case, row=action.row or 0, case_file=action.case_file)
+            action.case_file.parent.mkdir(parents=True, exist_ok=True)
+            if action.case_file.exists():
+                raise FileExistsError(f"restore target already exists: {action.case_file}")
+            _write_case_yaml(action.case_file, normalized)
+        elif action.kind == "rewrite":
+            assert action.case_file is not None
+            assert action.target_file is not None
+            case = _load_case_yaml(action.case_file)
+            normalized = _normalize_case_metadata(case, row=action.row or 0, case_file=action.target_file)
+            if action.target_file != action.case_file:
+                action.target_file.parent.mkdir(parents=True, exist_ok=True)
+                if action.target_file.exists():
+                    raise FileExistsError(f"rewrite target already exists: {action.target_file}")
+                _write_case_yaml(action.target_file, normalized)
+                action.case_file.unlink()
+            else:
+                _write_case_yaml(action.case_file, normalized)
+        elif action.kind == "demote":
+            assert action.case_file is not None
+            assert action.target_file is not None
+            action.target_file.parent.mkdir(parents=True, exist_ok=True)
+            if action.target_file == action.case_file:
+                continue
+            if action.target_file.exists():
+                raise FileExistsError(f"demote target already exists: {action.target_file}")
+            shutil.move(str(action.case_file), str(action.target_file))
+        elif action.kind == "blocker":
+            continue
+
+
+def _load_case_yaml_from_text(text: str, source: Path) -> dict[str, Any]:
+    import yaml
+
+    data = yaml.safe_load(text)
+    if not isinstance(data, dict):
+        raise TypeError(f"{source}: restored case must be a mapping")
+    validate_wifi_llapi_case(data, source)
+    return data
 
 
 def audit_wifi_llapi_inventory(template_xlsx: Path | str, cases_dir: Path | str) -> WifiLlapiInventoryAudit:
