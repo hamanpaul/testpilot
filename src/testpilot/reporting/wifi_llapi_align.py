@@ -75,6 +75,8 @@ def _extract_name_api(name: object) -> str:
     for separator in (" - ", " — "):
         if separator in text:
             return text.split(separator, 1)[0].strip()
+    if "." in text:
+        return text.rsplit(".", 1)[-1].strip()
     return text
 
 

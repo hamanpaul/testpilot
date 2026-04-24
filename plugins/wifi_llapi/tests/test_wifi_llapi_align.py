@@ -28,6 +28,40 @@ def test_extract_name_api_cases():
     assert _extract_name_api("AssociationTime - WiFi.AccessPoint.{i}.AssociatedDevice.{i}.") == "AssociationTime"
     # Regression: em-dash separator
     assert _extract_name_api("AssociationTime — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.") == "AssociationTime"
+    # Regression: legacy dotted labels should resolve to the terminal API token
+    assert _extract_name_api("D496 WmmBytesReceived.AC_BE") == "AC_BE"
+
+
+def test_align_allows_legacy_dotted_name_api(tmp_path: Path):
+    template = tmp_path / "template.xlsx"
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Wifi_LLAPI"
+    ws["A4"] = "WiFi.SSID.{i}."
+    ws["C4"] = "AC_BE"
+    wb.save(template)
+    wb.close()
+    index = build_template_index(template)
+    case_file = tmp_path / "D496_ac_be_stats_wmmbytesreceived_ssid.yaml"
+    case_file.write_text("stub\n", encoding="utf-8")
+
+    result = align_case(
+        {
+            "id": "wifi-llapi-D496-ac-be-stats-wmmbytesreceived-ssid",
+            "name": "D496 WmmBytesReceived.AC_BE",
+            "source": {
+                "row": 496,
+                "object": "WiFi.SSID.{i}.",
+                "api": "AC_BE",
+            },
+        },
+        index,
+        case_file,
+    )
+
+    assert result.status == "auto_aligned"
+    assert result.blocked_reason is None
+    assert result.source_row_after == 4
 
 def _build_template(path: Path) -> None:
     wb = Workbook()
