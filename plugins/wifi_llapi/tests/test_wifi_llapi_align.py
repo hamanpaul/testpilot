@@ -15,11 +15,53 @@ from testpilot.reporting.wifi_llapi_align import (
     build_template_index,
     write_blocked_cases_report,
     write_skipped_cases_report,
+    _extract_name_api,
 )
 
 from testpilot.reporting.wifi_llapi_excel import create_run_report_from_template, fill_blocked_markers, fill_skip_markers
 from testpilot.schema.case_schema import load_case
 
+def test_extract_name_api_cases():
+    # Should extract method token if present
+    assert _extract_name_api("FailedRetransCount - WiFi.SSID.{i}.getSSIDStats().") == "getSSIDStats()"
+    # Should extract left token if no method present
+    assert _extract_name_api("AssociationTime - WiFi.AccessPoint.{i}.AssociatedDevice.{i}.") == "AssociationTime"
+    # Regression: em-dash separator
+    assert _extract_name_api("AssociationTime — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.") == "AssociationTime"
+    # Regression: legacy dotted labels should resolve to the terminal API token
+    assert _extract_name_api("D496 WmmBytesReceived.AC_BE") == "AC_BE"
+
+
+def test_align_allows_legacy_dotted_name_api(tmp_path: Path):
+    template = tmp_path / "template.xlsx"
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Wifi_LLAPI"
+    ws["A4"] = "WiFi.SSID.{i}."
+    ws["C4"] = "AC_BE"
+    wb.save(template)
+    wb.close()
+    index = build_template_index(template)
+    case_file = tmp_path / "D496_ac_be_stats_wmmbytesreceived_ssid.yaml"
+    case_file.write_text("stub\n", encoding="utf-8")
+
+    result = align_case(
+        {
+            "id": "wifi-llapi-D496-ac-be-stats-wmmbytesreceived-ssid",
+            "name": "D496 WmmBytesReceived.AC_BE",
+            "source": {
+                "row": 496,
+                "object": "WiFi.SSID.{i}.",
+                "api": "AC_BE",
+            },
+        },
+        index,
+        case_file,
+    )
+
+    assert result.status == "auto_aligned"
+    assert result.blocked_reason is None
+    assert result.source_row_after == 4
 
 def _build_template(path: Path) -> None:
     wb = Workbook()
@@ -50,8 +92,43 @@ def test_build_template_index_happy(template_path: Path):
     index = build_template_index(template)
 
     assert index.forward[4] == ("WiFi.AccessPoint.{i}.", "kickStation()")
-    assert index.by_object_api[("WiFi.Radio.{i}.", "getRadioStats()")] == 5
+    assert index.by_object_api[("WiFi.Radio.{i}.", "getRadioStats()")] == [5]
     assert index.by_api["HeCapabilities"] == [6]
+
+
+def test_align_blocks_ambiguous_object_api_family(tmp_path: Path):
+    template = tmp_path / "template.xlsx"
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Wifi_LLAPI"
+    ws["A4"] = "WiFi.SSID.{i}."
+    ws["C4"] = "getSSIDStats()"
+    ws["A5"] = "WiFi.SSID.{i}."
+    ws["C5"] = "getSSIDStats()"
+    wb.save(template)
+    wb.close()
+    index = build_template_index(template)
+    case_file = tmp_path / "D021_getssidstats.yaml"
+    case_file.write_text("stub\n", encoding="utf-8")
+
+    result = align_case(
+        {
+            "id": "wifi-llapi-D021-getssidstats",
+            "name": "getSSIDStats()",
+            "source": {
+                "row": 21,
+                "object": "WiFi.SSID.{i}.",
+                "api": "getSSIDStats()",
+            },
+        },
+        index,
+        case_file,
+    )
+
+    assert result.status == "blocked"
+    assert result.blocked_reason == "ambiguous_object_api_family"
+    assert result.source_row_after is None
+    assert result.candidate_template_rows == [4, 5]
 
 
 def test_align_already_aligned(tmp_path: Path, template_path: Path):
@@ -375,6 +452,32 @@ def test_write_blocked_report_md(tmp_path: Path):
     text = out_path.read_text(encoding="utf-8")
     assert "| case_id | filename | source.row |" in text
     assert "name_points_to_different_row" in text
+
+
+def test_write_blocked_report_md_includes_candidate_template_rows(tmp_path: Path):
+    out_path = tmp_path / "blocked_cases.md"
+    blocked = [
+        AlignResult(
+            case_file=tmp_path / "D021_hecapabilities.yaml",
+            status="blocked",
+            source_row_before=21,
+            source_row_after=None,
+            source_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
+            source_api="HeCapabilities",
+            filename_before="D021_hecapabilities.yaml",
+            filename_after=None,
+            id_before="wifi-llapi-D021-hecapabilities",
+            id_after=None,
+            blocked_reason="ambiguous_object_api_family",
+            candidate_template_rows=[6, 30],
+        )
+    ]
+
+    write_blocked_cases_report(blocked, out_path)
+
+    text = out_path.read_text(encoding="utf-8")
+    assert "ambiguous_object_api_family" in text
+    assert "@ rows [6, 30]" in text
 
 
 def test_write_skipped_report_md(tmp_path: Path):

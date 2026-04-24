@@ -3137,15 +3137,15 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         "D305_getssidstats_discardpacketssent.yaml": {"row": 305, "api": "DiscardPacketsSent", "expected": "Pass"},
         "D306_getssidstats_errorsreceived.yaml": {"row": 306, "api": "ErrorsReceived", "expected": "Pass"},
         "D307_getssidstats_errorssent.yaml": {"row": 307, "api": "ErrorsSent", "expected": "Pass"},
-        "D308_getssidstats_failedretranscount.yaml": {"row": 308, "api": "FailedRetransCount", "expected": "Not Supported"},
+        "D308_getssidstats_failedretranscount.yaml": {"row": 308, "api": "FailedRetransCount", "expected": "Not Supported", "name": "FailedRetransCount — WiFi.SSID.{i}.getSSIDStats()."},
         "D309_getssidstats_multicastpacketsreceived.yaml": {"row": 309, "api": "MulticastPacketsReceived", "expected": "Pass"},
         "D310_getssidstats_multicastpacketssent.yaml": {"row": 310, "api": "MulticastPacketsSent", "expected": "Pass"},
         "D311_getssidstats_packetsreceived.yaml": {"row": 311, "api": "PacketsReceived", "expected": "Pass"},
         "D312_getssidstats_packetssent.yaml": {"row": 312, "api": "PacketsSent", "expected": "Pass"},
-        "D313_getssidstats_retranscount.yaml": {"row": 313, "api": "RetransCount", "expected": "Not Supported"},
+        "D313_getssidstats_retranscount.yaml": {"row": 313, "api": "RetransCount", "expected": "Not Supported", "name": "RetransCount — WiFi.SSID.{i}.getSSIDStats()."},
         "D314_getssidstats_unicastpacketsreceived.yaml": {"row": 314, "api": "UnicastPacketsReceived", "expected": "Pass"},
         "D315_getssidstats_unicastpacketssent.yaml": {"row": 315, "api": "UnicastPacketsSent", "expected": "Pass"},
-        "D316_getssidstats_unknownprotopacketsreceived.yaml": {"row": 316, "api": "UnknownProtoPacketsReceived", "expected": "Not Supported"},
+        "D316_getssidstats_unknownprotopacketsreceived.yaml": {"row": 316, "api": "UnknownProtoPacketsReceived", "expected": "Not Supported", "name": "UnknownProtoPacketsReceived — WiFi.SSID.{i}.getSSIDStats()."},
     }
 
     for filename, meta in multiband_getssid_cases.items():
@@ -3155,7 +3155,7 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         commands = "\n".join(str(step.get("command", "")) for step in case_data["steps"])
         assert "aliases" not in case_data
         assert case_data["id"] == f"d{num}-getssidstats-{meta['api'].lower()}"
-        assert case_data["name"] == f"D{num} getSSIDStats {meta['api']}"
+        assert case_data["name"] == meta.get("name", f"D{num} getSSIDStats {meta['api']}")
         assert case_data["source"]["row"] == meta["row"]
         assert case_data["source"]["api"] == "getSSIDStats()"
         assert 'WiFi.SSID.4.getSSIDStats()' in commands

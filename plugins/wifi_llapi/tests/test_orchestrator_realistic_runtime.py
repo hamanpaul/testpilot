@@ -421,6 +421,30 @@ def test_run_with_mixed_alignment(tmp_path: Path, monkeypatch):
     cases_dir = project_root / "plugins" / "wifi_llapi" / "cases"
     cases_dir.mkdir(parents=True, exist_ok=True)
 
+    source_xlsx = project_root / "source.xlsx"
+    wb = load_workbook(source_xlsx)
+    ws = wb["Wifi_LLAPI"]
+    # Inject a duplicate family into the generated template so runtime alignment must block it.
+    ws["A30"] = "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+    ws["C30"] = "HeCapabilities"
+    wb.save(source_xlsx)
+    wb.close()
+    ensure_template_report(
+        source_xlsx=source_xlsx,
+        template_path=project_root
+        / "plugins"
+        / "wifi_llapi"
+        / "reports"
+        / "templates"
+        / "wifi_llapi_template.xlsx",
+        manifest_path=project_root
+        / "plugins"
+        / "wifi_llapi"
+        / "reports"
+        / "templates"
+        / "wifi_llapi_template.manifest.json",
+    )
+
     base_case = {
         "version": "1.0",
         "topology": {
@@ -501,17 +525,40 @@ def test_run_with_mixed_alignment(tmp_path: Path, monkeypatch):
     result = orch.run("wifi_llapi", dut_fw_ver="FW-IT-REALISTIC-1")
 
     assert result["status"] == "completed"
-    assert result["cases_count"] == 2
-    assert result["agent_trace_count"] == 2
+    assert result["cases_count"] == 1
+    assert result["agent_trace_count"] == 1
     summary = json.loads(Path(result["json_report_path"]).read_text(encoding="utf-8"))
-    assert summary["meta"]["alignment_summary"]["auto_aligned"] == 1
-    assert summary["meta"]["alignment_summary"]["skipped"] == 1
+    assert summary["meta"]["alignment_summary"]["already_aligned"] == 1
+    assert summary["meta"]["alignment_summary"]["auto_aligned"] == 0
+    assert summary["meta"]["alignment_summary"]["blocked"] == 2
+    assert summary["meta"]["alignment_summary"]["skipped"] == 0
+    assert summary["meta"]["alignment_summary"]["blocked_details"] == [
+        {
+            "case_id": "wifi-llapi-D021-hecapabilities",
+            "reason": "ambiguous_object_api_family",
+            "candidate_template_rows": [21, 30],
+        },
+        {
+            "case_id": "wifi-llapi-D030-duplicate",
+            "reason": "ambiguous_object_api_family",
+            "candidate_template_rows": [21, 30],
+        },
+    ]
     assert yaml.safe_load((cases_dir / "D021_hecapabilities.yaml").read_text(encoding="utf-8"))[
         "source"
-    ]["row"] == 21
+    ]["row"] == 7
+    assert yaml.safe_load((cases_dir / "D030_duplicate.yaml").read_text(encoding="utf-8"))["source"][
+        "row"
+    ] == 21
+    blocked_report = Path(result["artifact_dir"]) / "blocked_cases.md"
+    assert blocked_report.is_file()
+    blocked_text = blocked_report.read_text(encoding="utf-8")
+    assert "wifi-llapi-D021-hecapabilities" in blocked_text
+    assert "wifi-llapi-D030-duplicate" in blocked_text
+    assert "ambiguous_object_api_family" in blocked_text
+    assert "@ rows [21, 30]" in blocked_text
     skipped_report = Path(result["artifact_dir"]) / "skipped_cases.md"
-    assert skipped_report.is_file()
-    assert "wifi-llapi-D030-duplicate" in skipped_report.read_text(encoding="utf-8")
+    assert not skipped_report.exists()
 
 
 def test_realistic_runtime_uses_verdict_only_band_statuses(

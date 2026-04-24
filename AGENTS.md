@@ -48,8 +48,10 @@ Wifi_llapi reporting guidance:
 
 3. `testpilot wifi-llapi build-template-report --source-xlsx <path>` is a build/audit path. `testpilot run wifi_llapi` must not depend on raw source workbooks.
 4. `wifi_llapi` runtime alignment treats `(source.object, source.api)` as the canonical lookup key into the checked-in template workbook; `D###`, `source.row`, and matching `id` fragments are derived metadata and may be auto-corrected during `testpilot run wifi_llapi`.
-5. `testpilot run wifi_llapi` may rename case files and rewrite `source.row` / `id` in-place. Review and commit those case diffs together with the corresponding runtime artifacts.
-6. Alignment and audit are separate responsibilities: runtime alignment fixes metadata drift only; audit mode remains the place to change `name`, `steps`, `pass_criteria`, `source.object`, `source.api`, or `aliases`.
+5. If one `(source.object, source.api)` pair maps to multiple template rows, runtime alignment must block that family instead of guessing a row; follow-up cleanup uses the surfaced candidate template rows.
+6. `testpilot run wifi_llapi` may rename case files and rewrite `source.row` / `id` in-place. Review and commit those case diffs together with the corresponding runtime artifacts.
+7. Runtime artifact bundles and JSON `alignment_summary.blocked_details` must expose blocked ambiguous families with their candidate template rows so maintainers can reconcile template duplicates offline.
+8. Alignment and audit are separate responsibilities: runtime alignment fixes metadata drift only; audit mode remains the place to change `name`, `steps`, `pass_criteria`, `source.object`, `source.api`, or `aliases`.
 
 ## Local Artifact Version Control Policy
 

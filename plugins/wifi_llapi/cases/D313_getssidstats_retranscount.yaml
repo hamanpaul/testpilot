@@ -1,5 +1,5 @@
 id: d313-getssidstats-retranscount
-name: D313 getSSIDStats RetransCount
+name: "RetransCount — WiFi.SSID.{i}.getSSIDStats()."
 source:
   row: 313
   object: WiFi.SSID.{i}.

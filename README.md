@@ -229,9 +229,15 @@ Typical artifact bundle contents:
 - `agent_trace/`
 - `blocked_cases.md` — cases whose `(source.object, source.api)` or `name`
   cannot be reconciled with the template workbook; they are not executed.
+  Ambiguous template families are blocked here instead of auto-aligned, and the
+  report includes candidate template rows for follow-up cleanup.
 - `skipped_cases.md` — duplicate cases that align to a template row already
   claimed by an earlier filename-sorted case; they are marked in the report and
   skipped from execution.
+
+The JSON runtime artifact also carries `meta.alignment_summary.blocked_details`,
+including each blocked case reason plus `candidate_template_rows` when runtime
+alignment hits an ambiguous template family.
 
 > [!IMPORTANT]
 > The first `testpilot run wifi_llapi` after pulling new case metadata may
@@ -750,9 +756,16 @@ testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
 - `STA.log`
 - `agent_trace/`
 - `blocked_cases.md` — `(source.object, source.api)` 或 `name` 無法與
-  template workbook 對齊的 cases；這些案例不會被執行
+  template workbook 對齊的 cases；這些案例不會被執行。若同一個
+  `(source.object, source.api)` 對應到多個 template rows，runtime 會
+  將該 family 視為 blocked，而不是猜測自動對齊；報告中也會列出
+  candidate template rows 供後續清理
 - `skipped_cases.md` — 對齊到已被較早 filename-sorted case 佔用之
   template row 的重複案例；它們會在報告中標記並跳過執行
+
+JSON runtime artifact 也會帶出 `meta.alignment_summary.blocked_details`，
+其中包含每個 blocked case 的 reason，以及在 ambiguous template family
+情境下的 `candidate_template_rows`。
 
 > [!IMPORTANT]
 > 在拉入新的 case metadata 後，第一次執行 `testpilot run wifi_llapi`

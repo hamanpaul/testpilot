@@ -1,5 +1,5 @@
 id: d316-getssidstats-unknownprotopacketsreceived
-name: D316 getSSIDStats UnknownProtoPacketsReceived
+name: "UnknownProtoPacketsReceived — WiFi.SSID.{i}.getSSIDStats()."
 source:
   row: 316
   object: WiFi.SSID.{i}.

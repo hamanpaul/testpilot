@@ -23,6 +23,7 @@ BlockedReason = Literal[
     "object_api_not_in_template",
     "name_points_to_different_row",
     "name_not_in_template",
+    "ambiguous_object_api_family",
 ]
 
 _ID_D_PATTERN = re.compile(r"(wifi-llapi-D)(\d{3})(-)")
@@ -34,7 +35,7 @@ log = logging.getLogger(__name__)
 @dataclass(slots=True)
 class TemplateIndex:
     forward: dict[int, tuple[str, str]]
-    by_object_api: dict[tuple[str, str], int]
+    by_object_api: dict[tuple[str, str], list[int]]
     by_api: dict[str, list[int]]
 
 
@@ -55,15 +56,28 @@ class AlignResult:
     template_row: int | None = None
     template_row_object: str | None = None
     template_row_api: str | None = None
+    candidate_template_rows: list[int] | None = None
 
 
 class AlignmentConflictError(RuntimeError):
     pass
 
 
+_METHOD_TOKEN_PATTERN = re.compile(r"\b[A-Za-z_][A-Za-z0-9_]*\(\)")
+
 def _extract_name_api(name: object) -> str:
     text = str(name).strip() if isinstance(name, str) else ""
-    return text.split(".")[-1].strip() if text else ""
+    if not text:
+        return ""
+    method_tokens = _METHOD_TOKEN_PATTERN.findall(text)
+    if method_tokens:
+        return method_tokens[-1]
+    for separator in (" - ", " — "):
+        if separator in text:
+            return text.split(separator, 1)[0].strip()
+    if "." in text:
+        return text.rsplit(".", 1)[-1].strip()
+    return text
 
 
 def _replace_id_row(case_id: str, canonical_row: int) -> str | None:
@@ -77,7 +91,7 @@ def build_template_index(template_xlsx: Path) -> TemplateIndex:
     try:
         ws = wb[DEFAULT_SHEET_NAME]
         forward: dict[int, tuple[str, str]] = {}
-        by_object_api: dict[tuple[str, str], int] = {}
+        by_object_api: dict[tuple[str, str], list[int]] = {}
         by_api: dict[str, list[int]] = {}
         empty_streak = 0
         for row in range(DATA_START_ROW, min(ws.max_row, DATA_START_ROW + MAX_SCAN_ROWS) + 1):
@@ -90,7 +104,7 @@ def build_template_index(template_xlsx: Path) -> TemplateIndex:
                 continue
             empty_streak = 0
             forward[row] = (obj, api)
-            by_object_api[(obj, api)] = row
+            by_object_api.setdefault((obj, api), []).append(row)
             by_api.setdefault(api, []).append(row)
         return TemplateIndex(forward=forward, by_object_api=by_object_api, by_api=by_api)
     finally:
@@ -105,9 +119,8 @@ def align_case(case: dict, index: TemplateIndex, case_file: Path) -> AlignResult
     case_id = str(case.get("id", ""))
     name_api = _extract_name_api(case.get("name"))
     filename_before = case_file.name
-    template_row = index.by_object_api.get((obj, api))
-    template_object, template_api = index.forward.get(template_row, ("", ""))
-    if template_row is None:
+    candidate_rows = index.by_object_api.get((obj, api), [])
+    if not candidate_rows:
         return AlignResult(
             case_file=case_file,
             status="blocked",
@@ -121,9 +134,26 @@ def align_case(case: dict, index: TemplateIndex, case_file: Path) -> AlignResult
             id_after=None,
             blocked_reason="object_api_not_in_template",
         )
+    if len(candidate_rows) > 1:
+        return AlignResult(
+            case_file=case_file,
+            status="blocked",
+            source_row_before=source_row_before,
+            source_row_after=None,
+            source_object=obj,
+            source_api=api,
+            filename_before=filename_before,
+            filename_after=None,
+            id_before=case_id,
+            id_after=None,
+            blocked_reason="ambiguous_object_api_family",
+            candidate_template_rows=list(candidate_rows),
+        )
+    template_row = candidate_rows[0]
+    template_object, template_api = index.forward.get(template_row, ("", ""))
     if name_api and name_api != template_api:
-        candidate_rows = index.by_api.get(name_api, [])
-        reason = "name_points_to_different_row" if candidate_rows else "name_not_in_template"
+        name_api_candidates = index.by_api.get(name_api, [])
+        reason = "name_points_to_different_row" if name_api_candidates else "name_not_in_template"
         return AlignResult(
             case_file=case_file,
             status="blocked",
@@ -139,6 +169,7 @@ def align_case(case: dict, index: TemplateIndex, case_file: Path) -> AlignResult
             template_row=template_row,
             template_row_object=template_object,
             template_row_api=template_api,
+            candidate_template_rows=list(name_api_candidates) if name_api_candidates else None,
         )
     filename_after = None
     source_row_after = template_row
@@ -267,6 +298,8 @@ def write_blocked_cases_report(blocked: list[AlignResult], out_path: Path) -> No
             if item.template_row_object and item.template_row_api
             else "—"
         )
+        if item.candidate_template_rows:
+            template_pair = f"{template_pair} @ rows {item.candidate_template_rows}"
         lines.append(
             f"| {item.id_before} | {item.filename_before} | {item.source_row_before} | "
             f"{source_pair} | {template_pair} | {item.blocked_reason} |"
