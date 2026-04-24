@@ -131,6 +131,75 @@ def test_align_blocks_ambiguous_object_api_family(tmp_path: Path):
     assert result.candidate_template_rows == [4, 5]
 
 
+def test_align_uses_source_row_to_break_ambiguous_object_api_family(tmp_path: Path):
+    template = tmp_path / "template.xlsx"
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Wifi_LLAPI"
+    ws["A4"] = "WiFi.SSID.{i}."
+    ws["C4"] = "getSSIDStats()"
+    ws["A5"] = "WiFi.SSID.{i}."
+    ws["C5"] = "getSSIDStats()"
+    wb.save(template)
+    wb.close()
+    index = build_template_index(template)
+    case_file = tmp_path / "D005_getssidstats.yaml"
+    case_file.write_text("stub\n", encoding="utf-8")
+
+    result = align_case(
+        {
+            "id": "wifi-llapi-D005-getssidstats",
+            "name": "getSSIDStats()",
+            "source": {
+                "row": 5,
+                "object": "WiFi.SSID.{i}.",
+                "api": "getSSIDStats()",
+            },
+        },
+        index,
+        case_file,
+    )
+
+    assert result.status == "already_aligned"
+    assert result.template_row == 5
+    assert result.source_row_after == 5
+    assert result.blocked_reason is None
+
+
+def test_align_keeps_blocked_when_source_row_is_not_in_ambiguous_family(tmp_path: Path):
+    template = tmp_path / "template.xlsx"
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Wifi_LLAPI"
+    ws["A4"] = "WiFi.SSID.{i}."
+    ws["C4"] = "getSSIDStats()"
+    ws["A5"] = "WiFi.SSID.{i}."
+    ws["C5"] = "getSSIDStats()"
+    wb.save(template)
+    wb.close()
+    index = build_template_index(template)
+    case_file = tmp_path / "D021_getssidstats.yaml"
+    case_file.write_text("stub\n", encoding="utf-8")
+
+    result = align_case(
+        {
+            "id": "wifi-llapi-D021-getssidstats",
+            "name": "getSSIDStats()",
+            "source": {
+                "row": 21,
+                "object": "WiFi.SSID.{i}.",
+                "api": "getSSIDStats()",
+            },
+        },
+        index,
+        case_file,
+    )
+
+    assert result.status == "blocked"
+    assert result.blocked_reason == "ambiguous_object_api_family"
+    assert result.candidate_template_rows == [4, 5]
+
+
 def test_align_already_aligned(tmp_path: Path, template_path: Path):
     template = template_path
     index = build_template_index(template)
