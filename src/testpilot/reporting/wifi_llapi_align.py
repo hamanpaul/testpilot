@@ -134,22 +134,27 @@ def align_case(case: dict, index: TemplateIndex, case_file: Path) -> AlignResult
             id_after=None,
             blocked_reason="object_api_not_in_template",
         )
+    template_row: int | None = None
     if len(candidate_rows) > 1:
-        return AlignResult(
-            case_file=case_file,
-            status="blocked",
-            source_row_before=source_row_before,
-            source_row_after=None,
-            source_object=obj,
-            source_api=api,
-            filename_before=filename_before,
-            filename_after=None,
-            id_before=case_id,
-            id_after=None,
-            blocked_reason="ambiguous_object_api_family",
-            candidate_template_rows=list(candidate_rows),
-        )
-    template_row = candidate_rows[0]
+        if source_row_before in candidate_rows:
+            template_row = source_row_before
+        else:
+            return AlignResult(
+                case_file=case_file,
+                status="blocked",
+                source_row_before=source_row_before,
+                source_row_after=None,
+                source_object=obj,
+                source_api=api,
+                filename_before=filename_before,
+                filename_after=None,
+                id_before=case_id,
+                id_after=None,
+                blocked_reason="ambiguous_object_api_family",
+                candidate_template_rows=list(candidate_rows),
+            )
+    else:
+        template_row = candidate_rows[0]
     template_object, template_api = index.forward.get(template_row, ("", ""))
     if name_api and name_api != template_api:
         name_api_candidates = index.by_api.get(name_api, [])

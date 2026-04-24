@@ -424,7 +424,8 @@ def test_run_with_mixed_alignment(tmp_path: Path, monkeypatch):
     source_xlsx = project_root / "source.xlsx"
     wb = load_workbook(source_xlsx)
     ws = wb["Wifi_LLAPI"]
-    # Inject a duplicate family into the generated template so runtime alignment must block it.
+    # Inject a duplicate family into the generated template so runtime alignment must
+    # still run the row-correct case and only block the row-mismatched one.
     ws["A30"] = "WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
     ws["C30"] = "HeCapabilities"
     wb.save(source_xlsx)
@@ -525,12 +526,12 @@ def test_run_with_mixed_alignment(tmp_path: Path, monkeypatch):
     result = orch.run("wifi_llapi", dut_fw_ver="FW-IT-REALISTIC-1")
 
     assert result["status"] == "completed"
-    assert result["cases_count"] == 1
-    assert result["agent_trace_count"] == 1
+    assert result["cases_count"] == 2
+    assert result["agent_trace_count"] == 2
     summary = json.loads(Path(result["json_report_path"]).read_text(encoding="utf-8"))
     assert summary["meta"]["alignment_summary"]["already_aligned"] == 1
-    assert summary["meta"]["alignment_summary"]["auto_aligned"] == 0
-    assert summary["meta"]["alignment_summary"]["blocked"] == 2
+    assert summary["meta"]["alignment_summary"]["auto_aligned"] == 1
+    assert summary["meta"]["alignment_summary"]["blocked"] == 1
     assert summary["meta"]["alignment_summary"]["skipped"] == 0
     assert summary["meta"]["alignment_summary"]["blocked_details"] == [
         {
@@ -538,23 +539,23 @@ def test_run_with_mixed_alignment(tmp_path: Path, monkeypatch):
             "reason": "ambiguous_object_api_family",
             "candidate_template_rows": [21, 30],
         },
-        {
-            "case_id": "wifi-llapi-D030-duplicate",
-            "reason": "ambiguous_object_api_family",
-            "candidate_template_rows": [21, 30],
-        },
     ]
     assert yaml.safe_load((cases_dir / "D021_hecapabilities.yaml").read_text(encoding="utf-8"))[
         "source"
     ]["row"] == 7
-    assert yaml.safe_load((cases_dir / "D030_duplicate.yaml").read_text(encoding="utf-8"))["source"][
+    assert not (cases_dir / "D030_duplicate.yaml").exists()
+    assert yaml.safe_load((cases_dir / "D021_duplicate.yaml").read_text(encoding="utf-8"))["source"][
         "row"
     ] == 21
+    assert any(
+        mutation["case_id"] == "wifi-llapi-D030-duplicate" and mutation["status"] == "auto_aligned"
+        for mutation in summary["meta"]["alignment_summary"]["mutations"]
+    )
     blocked_report = Path(result["artifact_dir"]) / "blocked_cases.md"
     assert blocked_report.is_file()
     blocked_text = blocked_report.read_text(encoding="utf-8")
     assert "wifi-llapi-D021-hecapabilities" in blocked_text
-    assert "wifi-llapi-D030-duplicate" in blocked_text
+    assert "wifi-llapi-D030-duplicate" not in blocked_text
     assert "ambiguous_object_api_family" in blocked_text
     assert "@ rows [21, 30]" in blocked_text
     skipped_report = Path(result["artifact_dir"]) / "skipped_cases.md"
