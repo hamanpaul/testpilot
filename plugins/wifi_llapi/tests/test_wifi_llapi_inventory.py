@@ -135,3 +135,53 @@ def test_audit_to_dict_is_machine_checkable(tmp_path: Path) -> None:
     assert payload["missing_rows"] == [5, 6, 7]
     assert payload["cases"]["D004_canonical.yaml"]["status"] == "canonical"
     assert payload["rows"]["4"]["canonical_case_file"] == "D004_canonical.yaml"
+
+
+def test_audit_marks_unresolved_in_template_family_as_drifted(tmp_path: Path) -> None:
+    template = tmp_path / "template.xlsx"
+    cases_dir = tmp_path / "cases"
+    cases_dir.mkdir()
+    _write_template(template)
+    from openpyxl import load_workbook
+
+    wb = load_workbook(template)
+    ws = wb["Wifi_LLAPI"]
+    ws["A8"] = "WiFi.SSID.{i}."
+    ws["C8"] = "getSSIDStats()"
+    wb.save(template)
+    wb.close()
+    _write_case(
+        cases_dir / "D099_family_drift.yaml",
+        case_id="wifi-llapi-D099-family-drift",
+        name="getSSIDStats()",
+        row=99,
+        obj="WiFi.SSID.{i}.",
+        api="getSSIDStats()",
+    )
+
+    audit = audit_wifi_llapi_inventory(template, cases_dir)
+
+    assert audit.cases["D099_family_drift.yaml"].status == "drifted"
+    assert audit.cases["D099_family_drift.yaml"].reason == "unresolved_object_api_family"
+
+
+def test_audit_treats_stale_id_fragment_as_drifted_metadata(tmp_path: Path) -> None:
+    template = tmp_path / "template.xlsx"
+    cases_dir = tmp_path / "cases"
+    cases_dir.mkdir()
+    _write_template(template)
+    _write_case(
+        cases_dir / "D004_stale_id.yaml",
+        case_id="wifi-llapi-D099-stale-id",
+        name="getRadioStats()",
+        row=4,
+        obj="WiFi.Radio.{i}.",
+        api="getRadioStats()",
+    )
+
+    audit = audit_wifi_llapi_inventory(template, cases_dir)
+
+    assert audit.rows[4].status == "drifted"
+    assert audit.rows[4].canonical_case_file is None
+    assert audit.cases["D004_stale_id.yaml"].status == "drifted"
+    assert audit.cases["D004_stale_id.yaml"].resolved_row == 4

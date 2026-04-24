@@ -143,6 +143,7 @@ def audit_wifi_llapi_inventory(template_xlsx: Path | str, cases_dir: Path | str)
     row_groups: dict[int, list[tuple[Path, dict[str, Any]]]] = {row: [] for row in official_rows}
     case_audits: dict[str, WifiLlapiInventoryCaseAudit] = {}
     extra_rows: dict[str, WifiLlapiInventoryCaseAudit] = {}
+    case_status_counts = {"canonical": 0, "drifted": 0, "duplicate": 0, "extra": 0}
 
     for case_file, case in discovered_cases:
         source = case.get("source") if isinstance(case.get("source"), dict) else {}
@@ -155,6 +156,8 @@ def audit_wifi_llapi_inventory(template_xlsx: Path | str, cases_dir: Path | str)
         candidate_rows = index.by_object_api.get((source_object, source_api), [])
         resolved_row = _resolve_case_row(case, candidate_rows)
         if resolved_row is None:
+            status: CaseStatus = "extra" if not candidate_rows else "drifted"
+            reason = "object_api_not_in_template" if not candidate_rows else "unresolved_object_api_family"
             audit = WifiLlapiInventoryCaseAudit(
                 case_file=case_file,
                 case_id=case_id,
@@ -162,12 +165,16 @@ def audit_wifi_llapi_inventory(template_xlsx: Path | str, cases_dir: Path | str)
                 source_object=source_object,
                 source_api=source_api,
                 resolved_row=None,
-                status="extra",
-                reason="object_api_not_in_template" if not candidate_rows else "unresolved_object_api_family",
+                status=status,
+                reason=reason,
                 filename_row=filename_row,
                 id_row=id_row,
             )
-            extra_rows[case_file.name] = audit
+            if status == "extra":
+                extra_rows[case_file.name] = audit
+            else:
+                case_audits[case_file.name] = audit
+                case_status_counts["drifted"] += 1
             continue
         row_groups.setdefault(resolved_row, []).append((case_file, case))
         case_audits[case_file.name] = WifiLlapiInventoryCaseAudit(
@@ -185,7 +192,6 @@ def audit_wifi_llapi_inventory(template_xlsx: Path | str, cases_dir: Path | str)
 
     row_audits: dict[int, WifiLlapiInventoryRowAudit] = {}
     missing_rows: list[int] = []
-    case_status_counts = {"canonical": 0, "drifted": 0, "duplicate": 0, "extra": 0}
 
     for row in official_rows:
         source_object, source_api = index.forward[row]
