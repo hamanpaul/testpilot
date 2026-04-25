@@ -248,6 +248,37 @@ def test_verify_post_state_returns_expected_summary(monkeypatch):
     }
 
 
+def test_verify_post_state_counts_duplicate_row_coverage_once(monkeypatch):
+    rows = {row: {} for row in range(1, 416)}
+
+    class Cases(dict):
+        def __len__(self) -> int:  # pragma: no cover - test helper
+            return 415
+
+    cases = Cases(
+        {
+            "D001_alpha.yaml": {"source_row": 1, "id": "wifi-llapi-D001-alpha"},
+            "D001_beta.yaml": {"source_row": 1, "id": "wifi-llapi-D001-beta"},
+            **{
+                f"D{row:03d}_case.yaml": {"source_row": row, "id": f"wifi-llapi-D{row:03d}-case"}
+                for row in range(2, 416)
+            },
+        }
+    )
+
+    class DummyTemplate:
+        def exists(self) -> bool:
+            return True
+
+    monkeypatch.setattr(ali, "load_support_rows", lambda: rows)
+    monkeypatch.setattr(ali, "scan_cases", lambda: cases)
+    monkeypatch.setattr(ali, "TEMPLATE_YAML", DummyTemplate())
+
+    state = ali.verify_post_state()
+
+    assert state["canonical_coverage"] == 415
+
+
 def test_verify_post_state_raises_with_missing_rows(monkeypatch):
     cases = {
         "D001_alpha.yaml": {"source_row": 1, "id": "wifi-llapi-D001-alpha"},

@@ -384,15 +384,14 @@ def verify_post_state() -> dict:
     total = len(cases)
     incl_template = total + (1 if template_exists else 0)
 
-    canonical = 0
     liberal_missing = []
     coverage: dict[int, str] = {}
     for fname, info in cases.items():
-        fr = filename_row(fname)
         sr = info["source_row"]
-        if fr in rows and fr == sr:
-            canonical += 1
-            coverage.setdefault(fr, fname)
+        if sr in rows:
+            coverage.setdefault(sr, fname)
+
+    canonical = len(coverage)
 
     for r in rows:
         if r not in coverage:
