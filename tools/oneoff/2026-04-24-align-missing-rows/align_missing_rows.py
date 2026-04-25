@@ -388,7 +388,7 @@ def verify_post_state() -> dict:
     coverage: dict[int, str] = {}
     for fname, info in cases.items():
         sr = info["source_row"]
-        if sr in rows:
+        if sr in rows and filename_row(fname) == sr:
             coverage.setdefault(sr, fname)
 
     canonical = len(coverage)

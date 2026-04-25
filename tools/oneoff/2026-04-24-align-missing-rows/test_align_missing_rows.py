@@ -279,6 +279,26 @@ def test_verify_post_state_counts_duplicate_row_coverage_once(monkeypatch):
     assert state["canonical_coverage"] == 415
 
 
+def test_verify_post_state_ignores_mismatched_filename_row_for_canonical_coverage(monkeypatch):
+    rows = {1: {}}
+    cases = {
+        "D002_misaligned.yaml": {"source_row": 1, "id": "wifi-llapi-D001-misaligned"},
+    }
+
+    class DummyTemplate:
+        def exists(self) -> bool:
+            return False
+
+    monkeypatch.setattr(ali, "load_support_rows", lambda: rows)
+    monkeypatch.setattr(ali, "scan_cases", lambda: cases)
+    monkeypatch.setattr(ali, "TEMPLATE_YAML", DummyTemplate())
+
+    with pytest.raises(ali.PostStateError) as excinfo:
+        ali.verify_post_state()
+
+    assert "canonical coverage = 0/415" in str(excinfo.value)
+
+
 def test_verify_post_state_raises_with_missing_rows(monkeypatch):
     cases = {
         "D001_alpha.yaml": {"source_row": 1, "id": "wifi-llapi-D001-alpha"},
