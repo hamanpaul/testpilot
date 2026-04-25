@@ -1,7 +1,7 @@
 # wifi_llapi inventory alignment report
 
-- generated_at: `2026-04-25T06:48:38.348926+00:00`
-- mode: `dry-run`
+- generated_at: `2026-04-25T07:03:00.215497+00:00`
+- mode: `apply`
 - actions: `17`
 
 ## Renames (8)
@@ -43,4 +43,13 @@
 
 ## Post state
 
-_not-run_
+```json
+{
+  "canonical_coverage": 294,
+  "incl_template": 416,
+  "liberal_missing": 0,
+  "liberal_missing_rows": [],
+  "support_rows": 415,
+  "total_cases": 415
+}
+```

@@ -1,8 +1,8 @@
-id: wifi-llapi-D115-getstationstats-authenticationstate
-name: getStationStats() AuthenticationState — WiFi.AccessPoint.{i}.
+id: wifi-llapi-D111-getstationstats-associationtime
+name: getStationStats() AssociationTime — WiFi.AccessPoint.{i}.
 version: '1.0'
 source:
-  row: 115
+  row: 111
   object: WiFi.AccessPoint.{i}.
   api: getStationStats()
 platform:
@@ -56,9 +56,9 @@ test_environment: 'Topology:
 
   Notes:
 
-  - Workbook row 112 is AuthenticationState.
+  - Workbook row 111 is AssociationTime.
 
-  - AuthenticationState = 1 for authenticated STA
+  - Non-empty ISO 8601 timestamp when STA associated
 
   - Only 5G tested (COM1 associated to AP1)
 
@@ -81,11 +81,10 @@ pass_criteria:
   value: ''
   band: 5g
   description: AP1 should have at least one associated STA
-- field: stats_output.AuthenticationState
-  operator: equals
-  value: '1'
+- field: stats_output.AssociationTime
+  operator: regex
+  value: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$
   band: 5g
-  description: AuthenticationState should be 1 for authenticated STA
+  description: AssociationTime should be ISO 8601 timestamp
 verification_command:
-- ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep 
-  AuthenticationState
+- ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep AssociationTime

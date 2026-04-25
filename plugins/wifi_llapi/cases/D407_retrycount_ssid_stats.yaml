@@ -1,8 +1,8 @@
-id: wifi-llapi-d495-retrycount-basic
+id: wifi-llapi-D407-retrycount
 name: RetryCount — WiFi.SSID.{i}.Stats.
 version: '1.0'
 source:
-  row: 495
+  row: 407
   object: WiFi.SSID.{i}.Stats.
   api: RetryCount
 platform:

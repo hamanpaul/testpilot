@@ -22,6 +22,27 @@ def clone_cases(cases: dict[str, ali.CaseInfo]) -> dict[str, ali.CaseInfo]:
     return {name: dict(info) for name, info in cases.items()}
 
 
+def build_pre_apply_cases_from_current_repo() -> dict[str, ali.CaseInfo]:
+    cases = clone_cases(ali.scan_cases())
+
+    cases.pop(ali.PLAN_CREATE["filename"])
+    for filename, stale_row in ali.PLAN_DELETES:
+        cases[filename] = {"source_row": stale_row, "id": f"restored-{stale_row}"}
+
+    for filename, old_row, old_id, _new_row in ali.PLAN_METADATA_ONLY:
+        cases[filename] = {"source_row": old_row, "id": old_id}
+
+    old, old_row, old_id, new, _new_row, _new_id = ali.PLAN_MOVE
+    cases.pop(new)
+    cases[old] = {"source_row": old_row, "id": old_id}
+
+    for old, old_row, old_id, new, _new_row, _new_id in ali.PLAN_RENAMES:
+        cases.pop(new)
+        cases[old] = {"source_row": old_row, "id": old_id}
+
+    return cases
+
+
 def test_metadata_edit_only_updates_id_and_source_row_for_realistic_yaml(tmp_path):
     dst = tmp_path / "synthetic.yaml"
     before = dedent(
@@ -125,13 +146,13 @@ def test_load_support_rows_returns_415_entries():
     assert rows[428]["param"] == "Channel"
 
 
-def test_scan_cases_returns_420_files():
+def test_scan_cases_returns_415_files_after_apply():
     cases = ali.scan_cases()
     # Pre-action count; verify _template.yaml is excluded
     assert "_template.yaml" not in cases
-    assert len(cases) == 420
+    assert len(cases) == 415
     # Spot-check a known yaml
-    assert cases["D115_getstationstats_accesspoint.yaml"]["source_row"] == 115
+    assert cases["D109_getstationstats.yaml"]["source_row"] == 109
 
 
 def test_filename_row_parsing():
@@ -140,16 +161,16 @@ def test_filename_row_parsing():
     assert ali.filename_row("_template.yaml") is None
 
 
-def test_plan_validates_against_current_repo_state():
+def test_plan_validates_against_pre_apply_fixture():
     rows = ali.load_support_rows()
-    cases = ali.scan_cases()
+    cases = build_pre_apply_cases_from_current_repo()
     errors = ali.validate_plan(rows, cases)
     assert errors == [], "\n".join(errors)
 
 
 def test_plan_rejects_rename_source_row_drift():
     rows = ali.load_support_rows()
-    cases = clone_cases(ali.scan_cases())
+    cases = build_pre_apply_cases_from_current_repo()
     cases["D068_discoverymethodenabled_accesspoint_fils.yaml"]["source_row"] = 999
 
     errors = ali.validate_plan(rows, cases)
@@ -159,7 +180,7 @@ def test_plan_rejects_rename_source_row_drift():
 
 def test_plan_rejects_rename_source_id_drift():
     rows = ali.load_support_rows()
-    cases = clone_cases(ali.scan_cases())
+    cases = build_pre_apply_cases_from_current_repo()
     cases["D068_discoverymethodenabled_accesspoint_upr.yaml"]["id"] = "wifi-llapi-D999-wrong"
 
     errors = ali.validate_plan(rows, cases)
@@ -169,7 +190,7 @@ def test_plan_rejects_rename_source_id_drift():
 
 def test_plan_rejects_move_source_row_and_id_drift():
     rows = ali.load_support_rows()
-    cases = clone_cases(ali.scan_cases())
+    cases = build_pre_apply_cases_from_current_repo()
     cases["D495_retrycount_ssid_stats_basic.yaml"]["source_row"] = 407
     cases["D495_retrycount_ssid_stats_basic.yaml"]["id"] = "wifi-llapi-D407-retrycount"
 
@@ -181,7 +202,7 @@ def test_plan_rejects_move_source_row_and_id_drift():
 
 def test_plan_rejects_metadata_only_row_drift():
     rows = ali.load_support_rows()
-    cases = clone_cases(ali.scan_cases())
+    cases = build_pre_apply_cases_from_current_repo()
     cases["D495_retrycount_ssid_stats_verified.yaml"]["source_row"] = 495
 
     errors = ali.validate_plan(rows, cases)
@@ -191,7 +212,7 @@ def test_plan_rejects_metadata_only_row_drift():
 
 def test_plan_rejects_metadata_only_id_drift():
     rows = ali.load_support_rows()
-    cases = clone_cases(ali.scan_cases())
+    cases = build_pre_apply_cases_from_current_repo()
     cases["D495_retrycount_ssid_stats_verified.yaml"]["id"] = "wifi-llapi-d495-retrycount-wrong"
 
     errors = ali.validate_plan(rows, cases)
@@ -201,7 +222,7 @@ def test_plan_rejects_metadata_only_id_drift():
 
 def test_plan_rejects_delete_row_drift():
     rows = ali.load_support_rows()
-    cases = clone_cases(ali.scan_cases())
+    cases = build_pre_apply_cases_from_current_repo()
     cases["D096_uapsdenable.yaml"]["source_row"] = 999
 
     errors = ali.validate_plan(rows, cases)
@@ -211,7 +232,7 @@ def test_plan_rejects_delete_row_drift():
 
 def test_plan_rejects_delete_row_still_in_support_set():
     rows = ali.load_support_rows()
-    cases = clone_cases(ali.scan_cases())
+    cases = build_pre_apply_cases_from_current_repo()
     rows[96] = {
         "object": "WiFi.AccessPoint.{i}.",
         "type": "boolean",
@@ -284,7 +305,7 @@ def test_verify_post_state_counts_duplicate_row_coverage_once(monkeypatch):
 
 def test_project_post_cases_matches_current_snapshot_shape():
     rows = ali.load_support_rows()
-    projected = ali.project_post_cases(ali.scan_cases())
+    projected = ali.project_post_cases(build_pre_apply_cases_from_current_repo())
     summary = ali.summarize_inventory(rows, projected, template_exists=True)
 
     assert summary == {

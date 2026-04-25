@@ -72,6 +72,14 @@ PLAN_CREATE: dict[str, object] = {
     "api": "Channel",
     "hlapi_command": 'ubus-cli "WiFi.AccessPoint.{i}.Neighbour.{i}.Channel=36"',
     "llapi_support": "Support",
+    "step1_command": 'echo "replace with actual test command"',
+    "step2_command": 'echo "replace with verification command"',
+    "verification_command": [
+        'ubus-cli "WiFi.?" | sed -n "1,200p"',
+        "wl -i wl0 status 2>/dev/null || true",
+        "wl -i wl1 status 2>/dev/null || true",
+        "wl -i wl2 status 2>/dev/null || true",
+    ],
 }
 
 
@@ -295,6 +303,9 @@ def execute_create_from_template(spec: dict) -> dict:
     data["source"]["api"] = spec["api"]
     data["hlapi_command"] = spec["hlapi_command"]
     data["llapi_support"] = spec["llapi_support"]
+    data["steps"][0]["command"] = spec["step1_command"]
+    data["steps"][1]["command"] = spec["step2_command"]
+    data["verification_command"] = list(spec["verification_command"])
     with dst.open("w") as fh:
         y.dump(data, fh)
     _git(["add", str(dst.relative_to(REPO_ROOT))])

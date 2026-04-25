@@ -1,8 +1,8 @@
-id: wifi-llapi-D115-getstationstats-avgsignalstrength
+id: wifi-llapi-D113-getstationstats-avgsignalstrength
 name: getStationStats() AvgSignalStrength — WiFi.AccessPoint.{i}.
 version: '1.0'
 source:
-  row: 115
+  row: 113
   object: WiFi.AccessPoint.{i}.
   api: getStationStats()
 platform:

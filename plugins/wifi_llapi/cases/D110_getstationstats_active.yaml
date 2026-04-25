@@ -1,8 +1,8 @@
-id: wifi-llapi-D115-getstationstats-active
+id: wifi-llapi-D110-getstationstats-active
 name: getStationStats() Active — WiFi.AccessPoint.{i}.
 version: '1.0'
 source:
-  row: 115
+  row: 110
   object: WiFi.AccessPoint.{i}.
   api: getStationStats()
 platform:

@@ -223,7 +223,14 @@
       "to": "D428_channel_neighbour.yaml"
     }
   ],
-  "generated_at": "2026-04-25T06:48:38.349099+00:00",
-  "mode": "dry-run",
-  "post_state": null
+  "generated_at": "2026-04-25T07:03:00.215740+00:00",
+  "mode": "apply",
+  "post_state": {
+    "canonical_coverage": 294,
+    "incl_template": 416,
+    "liberal_missing": 0,
+    "liberal_missing_rows": [],
+    "support_rows": 415,
+    "total_cases": 415
+  }
 }

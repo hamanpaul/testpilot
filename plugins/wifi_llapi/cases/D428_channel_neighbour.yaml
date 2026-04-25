@@ -1,0 +1,177 @@
+# Test case YAML 範本
+# 每個 .yaml 檔描述一條 test case
+# 以 _ 開頭的檔案會被 plugin 忽略
+
+id: "wifi-llapi-D428-channel-neighbour" # 官方 row-indexed 命名: wifi-llapi-D{row:03d}-<slug>
+name: "Channel — WiFi.AccessPoint.{i}.Neighbour.{i}."
+version: "1.0"
+
+source:
+  row: 428                           # 對應 xlsx 的行號
+
+  object: WiFi.AccessPoint.{i}.Neighbour.{i}.
+  api: Channel
+platform:
+  prplos: "4.0.3"
+  bdk: "6.3.1"
+
+# --- 拓撲與連線 ---
+topology:
+  links:
+  - from: STA
+    to: DUT
+    band: "5g"                       # 2.4g / 5g / 6g
+  - from: DUT
+    to: EndpointPC
+    interface: eth1
+
+  devices:
+    DUT:
+      role: ap
+      transport: serial
+      selector: COM0
+      config:
+      - iface: "5g"
+        mode: ap
+        ssid: "{{SSID_5G}}"
+        key: "{{KEY_5G}}"
+        mlo: false
+      - iface: wan
+        type: ethernet
+        port: eth0
+      - iface: lan
+        type: ethernet
+        port: eth1
+
+    STA:
+      role: sta
+      transport: serial
+      selector: COM1
+      config:
+      - iface: "5g"
+        mode: sta
+        ssid: "{{SSID_5G}}"
+        key: "{{KEY_5G}}"
+
+    EndpointPC:
+      role: endpoint
+      transport: ssh
+      config:
+      - iface: eth0
+        speed: "1G"
+
+# --- 環境驗證 ---
+env_verify:
+- action: ping
+  from: STA
+  to: DUT
+  expect: pass
+
+# --- 測試步驟 ---
+
+test_environment: |
+  Topology:
+  - DUT: COM0 (B0, AP role)
+  - STA: COM1 (A0, STA role, STA-required cases only)
+  Transport:
+  - serialwrap attach COM0 / COM1
+  Band mapping:
+  - 5G: DUT wl0 / AP1 / SSID.4
+  - 6G: DUT wl1 / AP3 / SSID.6
+  - 2.4G: DUT wl2 / AP5 / SSID.8
+  Pre-check:
+  - cat /proc/socinfo | grep Revision | cut -d: -f2
+  - iw dev
+  - ubus-cli "WiFi.Radio.?" | sed -n "1,120p"
+
+setup_steps: |
+  1) Describe the DUT/STA baseline in plain language.
+  2) Keep this section human-readable; put executable setup commands in sta_env_setup.
+  3) Make the commands band-specific instead of one shared all-band baseline.
+
+sta_env_setup: |
+  DUT band-specific setup:
+    ubus-cli WiFi.Radio.1.Enable=1
+    ubus-cli WiFi.Radio.1.BeaconPeriod=100
+    ubus-cli WiFi.Radio.1.DTIMPeriod=3
+    ubus-cli WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1
+    ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1
+    ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
+    ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1
+    ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1
+    ubus-cli WiFi.Radio.1.OfdmaEnable=1
+    ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0
+    ubus-cli WiFi.Radio.1.OperatingStandards=ax
+    ubus-cli WiFi.Radio.1.RxChainCtrl=-1
+    ubus-cli WiFi.Radio.1.TxChainCtrl=-1
+    ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0
+    ubus-cli WiFi.Radio.1.Sensing.Enable=1
+    ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
+    ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
+    ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0
+    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0
+    ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0
+    ubus-cli WiFi.Radio.1.LongRetryLimit=6
+    ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1
+    ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1
+    ubus-cli WiFi.SSID.4.SSID={{SSID_5G}}
+    ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
+    ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=
+    ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=None
+    ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+    ubus-cli WiFi.AccessPoint.1.Enable=1
+  STA band-specific setup:
+    ubus-cli WiFi.AccessPoint.1.Enable=0
+    ubus-cli WiFi.AccessPoint.2.Enable=0
+    killall wpa_supplicant 2>/dev/null || true
+    iw dev wl0.1 del 2>/dev/null || true
+    iw dev wl0 set type managed
+    ifconfig wl0 up
+    iw dev wl0 connect {{SSID_5G}}
+    sleep 2
+    iw dev wl0 link
+  DUT association evidence:
+    wl -i wl0 assoclist
+
+test_procedure: |
+  1) Execute case command on DUT:
+     <fill hlapi_command>
+  2) LLAPI readback on DUT:
+     ubus-cli "WiFi.?"
+  3) For stats/AssociatedDevice cases, generate traffic (ping/iperf) before re-read.
+  4) STA link validation:
+      iw dev wl0 link
+  5) Cross-check with verification_command (driver/hostapd/iw/proc evidence).
+
+steps:
+- id: step1
+  action: exec
+  target: DUT
+  command: echo "replace with actual test command"
+  capture: result1
+
+- id: step2
+  action: exec
+  target: DUT
+  command: echo "replace with verification command"
+  capture: result2
+  depends_on: step1
+
+# --- 通過條件 ---
+pass_criteria:
+- field: result2
+  operator: "contains"
+  value: "expected output"
+  description: "描述此條件驗證的目的"
+
+# --- 測試頻段（可選，指定需要重複測試的頻段）---
+
+verification_command:
+- ubus-cli "WiFi.?" | sed -n "1,200p"
+- wl -i wl0 status 2>/dev/null || true
+- wl -i wl1 status 2>/dev/null || true
+- wl -i wl2 status 2>/dev/null || true
+
+bands: ["5g", "6g", "2.4g"]
+hlapi_command: ubus-cli "WiFi.AccessPoint.{i}.Neighbour.{i}.Channel=36"
+llapi_support: Support

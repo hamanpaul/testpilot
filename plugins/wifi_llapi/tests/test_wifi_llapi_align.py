@@ -341,7 +341,7 @@ def test_align_all_repo_cases():
         "skipped": sum(1 for r in results if r.status == "skipped"),
     }
 
-    assert sum(counts.values()) == 420
+    assert sum(counts.values()) == 415
     assert counts["auto_aligned"] <= 168
     assert not duplicates, f"duplicate discoverable case ids: {duplicates}"
 
