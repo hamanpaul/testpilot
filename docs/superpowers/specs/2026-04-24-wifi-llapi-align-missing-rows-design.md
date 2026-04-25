@@ -76,9 +76,9 @@ xlsx row 495 與 row 407 同為 `WiFi.SSID.{i}.Stats.RetryCount` Support（xlsx 
 
 | Row | 新檔 | 關鍵欄位 |
 |---|---|---|
-| 428 | `D428_channel_neighbour.yaml` | id `wifi-llapi-D428-channel-neighbour`；source `{row:428, object:'WiFi.AccessPoint.{i}.Neighbour.{i}.', api:'Channel'}`；name `Channel — WiFi.AccessPoint.{i}.Neighbour.{i}.`；hlapi_command `ubus-cli "WiFi.AccessPoint.{i}.Neighbour.{i}.Channel=36"`；llapi_support `Support` |
+| 428 | `D428_channel_neighbour.yaml` | id `wifi-llapi-D428-channel-neighbour`；source `{row:428, object:'WiFi.AccessPoint.{i}.Neighbour.{i}.', api:'Channel'}`；name `D428 Neighbour Channel`；hlapi_command `ubus-cli "WiFi.AccessPoint.1.Neighbour.1.Channel?"`；llapi_support `Support` |
 
-其餘欄位（topology / steps / pass_criteria / verification_command 等）保留 `_template.yaml` scaffold，給後人手動補實作。
+其餘欄位原本以 `_template.yaml` scaffold 建檔；後續已補成 AP-only runnable Neighbour lifecycle case，沿用 add/read/delete pattern 驗證 `Channel`。
 
 ## 帳目驗證
 
@@ -155,5 +155,4 @@ apply 完後須全數通過：
 
 ## 未來工作（明確不在本次）
 
-- 為 `D428_channel_neighbour.yaml` 補入實際 steps / topology / pass_criteria
 - Stream 1 reconcile pipeline 完整跑通並消除剩餘 blockers
