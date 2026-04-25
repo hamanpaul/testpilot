@@ -42,14 +42,16 @@ PLAN_MOVE: tuple[str, int, str, str, int, str] = (
     407,
     "wifi-llapi-D407-retrycount",
 )
-PLAN_METADATA_ONLY: list[tuple[str, int, int, str | None]] = [("D495_retrycount_ssid_stats_verified.yaml", 362, 495, None)]
-PLAN_DELETES: list[str] = [
-    "D096_uapsdenable.yaml",
-    "D097_vendorie.yaml",
-    "D100_wmmenable.yaml",
-    "D102_configmethodssupported.yaml",
-    "D106_relaycredentialsenable.yaml",
-    "D474_channel_radio_37.yaml",
+PLAN_METADATA_ONLY: list[tuple[str, int, str, int]] = [
+    ("D495_retrycount_ssid_stats_verified.yaml", 362, "wifi-llapi-d495-retrycount-verified", 495)
+]
+PLAN_DELETES: list[tuple[str, int]] = [
+    ("D096_uapsdenable.yaml", 96),
+    ("D097_vendorie.yaml", 97),
+    ("D100_wmmenable.yaml", 100),
+    ("D102_configmethodssupported.yaml", 102),
+    ("D106_relaycredentialsenable.yaml", 106),
+    ("D474_channel_radio_37.yaml", 474),
 ]
 PLAN_CREATE: dict[str, object] = {
     "filename": "D428_channel_neighbour.yaml",
@@ -164,17 +166,29 @@ def validate_plan(
     if not new_id.startswith(f"wifi-llapi-D{new_row:03d}-"):
         errors.append(f"move new_id does not encode row {new_row}: {new_id}")
 
-    for fname, old_row, new_row, _new_id in PLAN_METADATA_ONLY:
+    for fname, old_row, old_id, new_row in PLAN_METADATA_ONLY:
         if fname not in cases:
             errors.append(f"metadata-only target missing: {fname}")
-        elif cases[fname]["source_row"] != old_row:
-            errors.append(f"metadata-only source row drift: {fname}")
+        else:
+            case = cases[fname]
+            if case["source_row"] != old_row:
+                errors.append(f"metadata-only source row drift: {fname}")
+            if case["id"] != old_id:
+                errors.append(f"metadata-only source id drift: {fname}")
         if new_row not in support_rows:
             errors.append(f"metadata-only new_row {new_row} not in Support set")
 
-    for fname in PLAN_DELETES:
+    for fname, stale_row in PLAN_DELETES:
         if fname not in cases:
             errors.append(f"delete target missing: {fname}")
+            continue
+        fr = filename_row(fname)
+        if fr != stale_row:
+            errors.append(f"delete filename row {fr} != stale_row {stale_row} ({fname})")
+        if cases[fname]["source_row"] != stale_row:
+            errors.append(f"delete source row drift: {fname}")
+        if stale_row in support_rows:
+            errors.append(f"delete stale row still in Support set: {fname}")
 
     create = PLAN_CREATE
     if create["filename"] in cases:

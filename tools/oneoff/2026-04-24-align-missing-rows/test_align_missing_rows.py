@@ -88,3 +88,38 @@ def test_plan_rejects_metadata_only_row_drift():
     errors = ali.validate_plan(rows, cases)
 
     assert "metadata-only source row drift: D495_retrycount_ssid_stats_verified.yaml" in errors
+
+
+def test_plan_rejects_metadata_only_id_drift():
+    rows = ali.load_support_rows()
+    cases = clone_cases(ali.scan_cases())
+    cases["D495_retrycount_ssid_stats_verified.yaml"]["id"] = "wifi-llapi-d495-retrycount-wrong"
+
+    errors = ali.validate_plan(rows, cases)
+
+    assert "metadata-only source id drift: D495_retrycount_ssid_stats_verified.yaml" in errors
+
+
+def test_plan_rejects_delete_row_drift():
+    rows = ali.load_support_rows()
+    cases = clone_cases(ali.scan_cases())
+    cases["D096_uapsdenable.yaml"]["source_row"] = 999
+
+    errors = ali.validate_plan(rows, cases)
+
+    assert "delete source row drift: D096_uapsdenable.yaml" in errors
+
+
+def test_plan_rejects_delete_row_still_in_support_set():
+    rows = ali.load_support_rows()
+    cases = clone_cases(ali.scan_cases())
+    rows[96] = {
+        "object": "WiFi.AccessPoint.{i}.",
+        "type": "boolean",
+        "param": "UAPSDEnable",
+        "hlapi": "ubus-cli WiFi.AccessPoint.{i}.UAPSDEnable=0",
+    }
+
+    errors = ali.validate_plan(rows, cases)
+
+    assert "delete stale row still in Support set: D096_uapsdenable.yaml" in errors
