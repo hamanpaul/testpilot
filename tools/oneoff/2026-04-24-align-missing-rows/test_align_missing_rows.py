@@ -436,6 +436,29 @@ def test_main_dry_run_writes_both_reports_and_returns_zero(monkeypatch, tmp_path
     )
 
 
+def test_write_markdown_report_groups_actions_into_four_sections(monkeypatch, tmp_path):
+    markdown_path = tmp_path / "inventory_alignment_20260424.md"
+    monkeypatch.setattr(ali, "REPORT_MD", markdown_path)
+    actions = ali._planned_actions()
+
+    output = ali.write_markdown_report("dry-run", actions, None)
+
+    assert output == markdown_path
+    content = markdown_path.read_text()
+    assert "# wifi_llapi inventory alignment report" in content
+    assert "## Renames (8)" in content
+    assert "## Move + Metadata Fix (2)" in content
+    assert "## Deletes (6)" in content
+    assert "## New from _template.yaml (1)" in content
+    assert "## Actions" not in content
+    assert content.count("| 66 | `D068_discoverymethodenabled_accesspoint_fils.yaml` |") == 1
+    assert content.count("| 407 | `D495_retrycount_ssid_stats_basic.yaml` |") == 1
+    assert content.count("| — | `D096_uapsdenable.yaml` | `—` | — |") == 1
+    assert content.count("| 428 | `_template.yaml` | `D428_channel_neighbour.yaml` |") == 1
+    assert "## Post state" in content
+    assert "_not-run_" in content
+
+
 def test_main_fails_when_plan_validation_errors_exist(monkeypatch, capsys):
     support_rows = {
         428: {

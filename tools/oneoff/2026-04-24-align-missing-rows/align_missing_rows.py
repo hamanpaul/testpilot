@@ -209,7 +209,12 @@ def _git(args: list[str]) -> None:
 
 
 def _display_path(path: Path) -> str:
-    return str(path.relative_to(REPO_ROOT))
+    if not path.is_absolute():
+        return str(path)
+    try:
+        return str(path.relative_to(REPO_ROOT))
+    except ValueError:
+        return path.name
 
 
 def _edit_metadata(path: Path, new_row: int | None, new_id: str | None) -> dict[str, list]:
@@ -499,26 +504,47 @@ def _apply_actions() -> list[dict]:
     return actions
 
 
+def _report_sections(actions: list[dict]) -> list[tuple[str, list[dict]]]:
+    return [
+        ("Renames (8)", [action for action in actions if action["kind"] == "rename"]),
+        ("Move + Metadata Fix (2)", [action for action in actions if action["kind"] in ("move", "metadata")]),
+        ("Deletes (6)", [action for action in actions if action["kind"] == "delete"]),
+        ("New from _template.yaml (1)", [action for action in actions if action["kind"] == "create"]),
+    ]
+
+
+def _format_field_changes(fields_changed: dict[str, list]) -> str:
+    if not fields_changed:
+        return "—"
+    parts = []
+    for key, values in fields_changed.items():
+        before, after = values
+        parts.append(f"`{key}`: {before!r} → {after!r}")
+    return "<br>".join(parts)
+
+
 def write_markdown_report(mode: str, actions: list[dict], post_state: dict | None) -> Path:
     generated_at = datetime.now(timezone.utc).isoformat()
     lines = [
-        "# Inventory alignment report",
+        "# wifi_llapi inventory alignment report",
         "",
         f"- generated_at: `{generated_at}`",
         f"- mode: `{mode}`",
         f"- actions: `{len(actions)}`",
         "",
-        "## Actions",
-        "",
-        "| kind | row | from | to | fields_changed |",
-        "| --- | --- | --- | --- | --- |",
     ]
-    for action in actions:
-        fields_changed = json.dumps(action["fields_changed"], ensure_ascii=False, sort_keys=True)
-        lines.append(
-            f"| {action['kind']} | {action['row']} | {action['from']} | {action['to']} | `{fields_changed}` |"
-        )
-    lines.extend(["", "## Post state", ""])
+    for title, items in _report_sections(actions):
+        lines.extend([f"## {title}", ""])
+        if not items:
+            lines.extend(["(none)", ""])
+            continue
+        lines.extend(["| row | from | to | fields_changed |", "| --- | --- | --- | --- |"])
+        for action in items:
+            lines.append(
+                f"| {action['row'] or '—'} | `{action['from']}` | `{action['to'] or '—'}` | {_format_field_changes(action['fields_changed'])} |"
+            )
+        lines.append("")
+    lines.extend(["## Post state", ""])
     if post_state is None:
         lines.append("_not-run_")
     else:
