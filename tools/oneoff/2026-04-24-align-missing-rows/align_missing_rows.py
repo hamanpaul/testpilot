@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import argparse
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import TypedDict
@@ -119,6 +121,101 @@ def scan_cases(cases_dir: Path = CASES_DIR) -> dict[str, CaseInfo]:
 def filename_row(name: str) -> int | None:
     m = _FN_ROW_RE.match(name)
     return int(m.group(1)) if m else None
+
+
+def _yaml_rt() -> YAML:
+    """Round-trip YAML loader/dumper that preserves comments and long lines."""
+    y = YAML()
+    y.preserve_quotes = True
+    y.width = 4096
+    return y
+
+
+def _git(args: list[str]) -> None:
+    subprocess.run(["git", *args], cwd=REPO_ROOT, check=True)
+
+
+def _edit_metadata(path: Path, new_row: int | None, new_id: str | None) -> dict[str, list]:
+    """Edit `id` and `source.row` in place via ruamel round-trip. Return changed fields."""
+    y = _yaml_rt()
+    with path.open() as fh:
+        data = y.load(fh)
+    changes: dict[str, list] = {}
+    if new_id is not None and data.get("id") != new_id:
+        changes["id"] = [data.get("id"), new_id]
+        data["id"] = new_id
+    if new_row is not None:
+        source = data.setdefault("source", {})
+        old = source.get("row")
+        if old != new_row:
+            changes["source.row"] = [old, new_row]
+            source["row"] = new_row
+    if changes:
+        with path.open("w") as fh:
+            y.dump(data, fh)
+    return changes
+
+
+def execute_rename(old: str, new: str, new_row: int, new_id: str) -> dict:
+    src = CASES_DIR / old
+    dst = CASES_DIR / new
+    _git(["mv", str(src.relative_to(REPO_ROOT)), str(dst.relative_to(REPO_ROOT))])
+    fields = _edit_metadata(dst, new_row, new_id)
+    _git(["add", str(dst.relative_to(REPO_ROOT))])
+    return {"kind": "rename", "row": new_row, "from": old, "to": new, "fields_changed": fields}
+
+
+def execute_move(old: str, new: str, new_row: int, new_id: str) -> dict:
+    record = execute_rename(old, new, new_row, new_id)
+    record["kind"] = "move"
+    return record
+
+
+def execute_metadata_only(filename: str, new_row: int, new_id: str | None) -> dict:
+    path = CASES_DIR / filename
+    fields = _edit_metadata(path, new_row, new_id)
+    if fields:
+        _git(["add", str(path.relative_to(REPO_ROOT))])
+    return {"kind": "metadata", "row": new_row, "from": filename, "to": filename, "fields_changed": fields}
+
+
+def execute_delete(filename: str) -> dict:
+    path = CASES_DIR / filename
+    _git(["rm", str(path.relative_to(REPO_ROOT))])
+    return {"kind": "delete", "row": None, "from": filename, "to": None, "fields_changed": {}}
+
+
+def execute_create_from_template(spec: dict) -> dict:
+    src = TEMPLATE_YAML
+    dst = CASES_DIR / spec["filename"]
+    shutil.copy2(src, dst)
+    y = _yaml_rt()
+    with dst.open() as fh:
+        data = y.load(fh)
+    data["id"] = spec["id"]
+    data["name"] = spec["name"]
+    if "source" not in data:
+        data["source"] = {}
+    data["source"]["row"] = spec["row"]
+    data["source"]["object"] = spec["object"]
+    data["source"]["api"] = spec["api"]
+    data["hlapi_command"] = spec["hlapi_command"]
+    data["llapi_support"] = spec["llapi_support"]
+    with dst.open("w") as fh:
+        y.dump(data, fh)
+    _git(["add", str(dst.relative_to(REPO_ROOT))])
+    return {
+        "kind": "create",
+        "row": spec["row"],
+        "from": "_template.yaml",
+        "to": spec["filename"],
+        "fields_changed": {
+            "id": [None, spec["id"]],
+            "source.row": [None, spec["row"]],
+            "source.object": [None, spec["object"]],
+            "source.api": [None, spec["api"]],
+        },
+    }
 
 
 def validate_plan(

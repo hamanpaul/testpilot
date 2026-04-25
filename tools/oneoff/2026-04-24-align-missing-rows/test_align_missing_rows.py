@@ -6,6 +6,7 @@ Run with:
 
 from __future__ import annotations
 
+import shutil
 import sys
 from pathlib import Path
 
@@ -16,6 +17,28 @@ import align_missing_rows as ali  # noqa: E402
 
 def clone_cases(cases: dict[str, ali.CaseInfo]) -> dict[str, ali.CaseInfo]:
     return {name: dict(info) for name, info in cases.items()}
+
+
+def test_metadata_edit_preserves_multiline_test_environment(tmp_path):
+    src = ali.CASES_DIR / "D115_getstationstats_accesspoint.yaml"
+    dst = tmp_path / "copy.yaml"
+    shutil.copy2(src, dst)
+
+    before = dst.read_text()
+    assert "Workbook row 109 is getStationStats()" in before, \
+        "fixture sanity: multiline test_environment block must be present"
+
+    changes = ali._edit_metadata(dst, new_row=109, new_id="wifi-llapi-D109-getstationstats")
+
+    assert changes == {
+        "id": ["wifi-llapi-D115-getstationstats-accesspoint", "wifi-llapi-D109-getstationstats"],
+        "source.row": [115, 109],
+    }
+    after = dst.read_text()
+    assert "Workbook row 109 is getStationStats()" in after, \
+        "round-trip must preserve multiline test_environment block"
+    assert "row: 109" in after
+    assert "wifi-llapi-D109-getstationstats" in after
 
 
 def test_load_support_rows_returns_415_entries():
