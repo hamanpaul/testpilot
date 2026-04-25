@@ -142,6 +142,8 @@ def validate_plan(
     fr = filename_row(new)
     if fr != new_row:
         errors.append(f"move target filename row {fr} != new_row {new_row}")
+    if not new_id.startswith(f"wifi-llapi-D{new_row:03d}-"):
+        errors.append(f"move new_id does not encode row {new_row}: {new_id}")
 
     for fname, new_row, _new_id in PLAN_METADATA_ONLY:
         if fname not in cases:
