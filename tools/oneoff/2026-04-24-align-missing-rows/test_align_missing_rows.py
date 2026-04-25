@@ -6,8 +6,8 @@ Run with:
 
 from __future__ import annotations
 
-import shutil
 import sys
+from textwrap import dedent
 from pathlib import Path
 
 # Make the script importable
@@ -20,9 +20,19 @@ def clone_cases(cases: dict[str, ali.CaseInfo]) -> dict[str, ali.CaseInfo]:
 
 
 def test_metadata_edit_preserves_multiline_test_environment(tmp_path):
-    src = ali.CASES_DIR / "D115_getstationstats_accesspoint.yaml"
-    dst = tmp_path / "copy.yaml"
-    shutil.copy2(src, dst)
+    dst = tmp_path / "synthetic.yaml"
+    dst.write_text(
+        dedent(
+            """\
+            id: wifi-llapi-D115-getstationstats-accesspoint
+            source:
+              row: 115
+            test_environment: |
+              Workbook row 109 is getStationStats()
+              and must remain multiline after metadata edits.
+            """
+        )
+    )
 
     before = dst.read_text()
     assert "Workbook row 109 is getStationStats()" in before, \
