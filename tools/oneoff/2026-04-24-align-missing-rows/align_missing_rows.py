@@ -63,10 +63,14 @@ def main(argv: list[str] | None = None) -> int:
                         help="Actually mutate the working tree (default: dry-run).")
     args = parser.parse_args(argv)
     _self_check_plan_counts()
+    plan_summary = (
+        f"plan: {len(PLAN_RENAMES)} renames + 1 move + "
+        f"{len(PLAN_METADATA_ONLY)} metadata-only + {len(PLAN_DELETES)} deletes + 1 create"
+    )
     if args.apply:
-        print("mode: apply")
+        print(f"mode: apply | {plan_summary}")
     else:
-        print("mode: dry-run | plan: 8 renames + 1 move + 1 metadata-only + 6 deletes + 1 create")
+        print(f"mode: dry-run | {plan_summary}")
     return 0
 
 
