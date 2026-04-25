@@ -35,3 +35,10 @@ def test_filename_row_parsing():
     assert ali.filename_row("D068_foo.yaml") == 68
     assert ali.filename_row("D0428_bar.yaml") == 428
     assert ali.filename_row("_template.yaml") is None
+
+
+def test_plan_validates_against_current_repo_state():
+    rows = ali.load_support_rows()
+    cases = ali.scan_cases()
+    errors = ali.validate_plan(rows, cases)
+    assert errors == [], "\n".join(errors)

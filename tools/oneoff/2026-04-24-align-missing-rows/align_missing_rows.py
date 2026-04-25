@@ -68,6 +68,10 @@ class CaseInfo(TypedDict):
     id: str | None
 
 
+class PlanValidationError(RuntimeError):
+    pass
+
+
 def load_support_rows(xlsx: Path = TEMPLATE_XLSX) -> dict[int, SupportRow]:
     wb = load_workbook(xlsx, read_only=True)
     ws = wb["Wifi_LLAPI"]
@@ -106,6 +110,61 @@ def scan_cases(cases_dir: Path = CASES_DIR) -> dict[str, CaseInfo]:
 def filename_row(name: str) -> int | None:
     m = _FN_ROW_RE.match(name)
     return int(m.group(1)) if m else None
+
+
+def validate_plan(
+    support_rows: dict[int, SupportRow],
+    cases: dict[str, CaseInfo],
+) -> list[str]:
+    """Return list of validation error strings; empty list = valid."""
+    errors: list[str] = []
+
+    for old, new, new_row, new_id in PLAN_RENAMES:
+        if old not in cases:
+            errors.append(f"rename source missing: {old}")
+        if new in cases:
+            errors.append(f"rename target already exists: {new}")
+        if new_row not in support_rows:
+            errors.append(f"rename new_row {new_row} not in Support set")
+        fr = filename_row(new)
+        if fr != new_row:
+            errors.append(f"rename target filename row {fr} != new_row {new_row} ({new})")
+        if not new_id.startswith(f"wifi-llapi-D{new_row:03d}-"):
+            errors.append(f"rename new_id does not encode row {new_row}: {new_id}")
+
+    old, new, new_row, new_id = PLAN_MOVE
+    if old not in cases:
+        errors.append(f"move source missing: {old}")
+    if new in cases:
+        errors.append(f"move target already exists: {new}")
+    if new_row not in support_rows:
+        errors.append(f"move new_row {new_row} not in Support set")
+    fr = filename_row(new)
+    if fr != new_row:
+        errors.append(f"move target filename row {fr} != new_row {new_row}")
+
+    for fname, new_row, _new_id in PLAN_METADATA_ONLY:
+        if fname not in cases:
+            errors.append(f"metadata-only target missing: {fname}")
+        if new_row not in support_rows:
+            errors.append(f"metadata-only new_row {new_row} not in Support set")
+
+    for fname in PLAN_DELETES:
+        if fname not in cases:
+            errors.append(f"delete target missing: {fname}")
+
+    create = PLAN_CREATE
+    if create["filename"] in cases:
+        errors.append(f"create target already exists: {create['filename']}")
+    if create["row"] not in support_rows:
+        errors.append(f"create row {create['row']} not in Support set")
+    if not TEMPLATE_YAML.exists():
+        errors.append(f"_template.yaml not found at {TEMPLATE_YAML}")
+    fr = filename_row(create["filename"])
+    if fr != create["row"]:
+        errors.append(f"create filename row {fr} != row {create['row']}")
+
+    return errors
 
 
 def _self_check_plan_counts() -> None:
