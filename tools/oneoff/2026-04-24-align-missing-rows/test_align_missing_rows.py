@@ -246,7 +246,8 @@ def test_verify_post_state_returns_expected_summary(monkeypatch):
         "incl_template": 416,
         "support_rows": 415,
         "canonical_coverage": 415,
-        "liberal_missing": [],
+        "liberal_missing": 0,
+        "liberal_missing_rows": [],
     }
 
 
@@ -321,7 +322,8 @@ def test_verify_post_state_raises_with_missing_rows(monkeypatch):
     message = str(excinfo.value)
     assert "liberal-missing rows: [2]" in message
     assert "canonical coverage = 1/415" in message
-    assert "'liberal_missing': [2]" in message
+    assert "'liberal_missing': 1" in message
+    assert "'liberal_missing_rows': [2]" in message
 
 
 def test_planned_actions_match_current_plan_shapes():

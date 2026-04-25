@@ -543,7 +543,7 @@ def verify_post_state() -> dict:
     total = len(cases)
     incl_template = total + (1 if template_exists else 0)
 
-    liberal_missing = []
+    liberal_missing_rows: list[int] = []
     coverage: dict[int, str] = {}
     for fname, info in cases.items():
         sr = info["source_row"]
@@ -559,14 +559,15 @@ def verify_post_state() -> dict:
                 for f, info in cases.items()
             )
             if not covered:
-                liberal_missing.append(r)
+                liberal_missing_rows.append(r)
 
     state = {
         "total_cases": total,
         "incl_template": incl_template,
         "support_rows": len(rows),
         "canonical_coverage": canonical,
-        "liberal_missing": liberal_missing,
+        "liberal_missing": len(liberal_missing_rows),
+        "liberal_missing_rows": liberal_missing_rows,
     }
 
     errors = []
@@ -576,8 +577,8 @@ def verify_post_state() -> dict:
         errors.append(f"total incl _template = {incl_template}, expected 416")
     if canonical != 415:
         errors.append(f"canonical coverage = {canonical}/415")
-    if liberal_missing:
-        errors.append(f"liberal-missing rows: {liberal_missing}")
+    if liberal_missing_rows:
+        errors.append(f"liberal-missing rows: {liberal_missing_rows}")
     if errors:
         raise PostStateError("; ".join(errors) + f" | state={state}")
     return state
