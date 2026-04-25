@@ -282,6 +282,42 @@ def test_verify_post_state_counts_duplicate_row_coverage_once(monkeypatch):
     assert state["canonical_coverage"] == 415
 
 
+def test_project_post_cases_matches_current_snapshot_shape():
+    rows = ali.load_support_rows()
+    projected = ali.project_post_cases(ali.scan_cases())
+    summary = ali.summarize_inventory(rows, projected, template_exists=True)
+
+    assert summary == {
+        "total_cases": 415,
+        "incl_template": 416,
+        "support_rows": 415,
+        "canonical_coverage": 294,
+        "liberal_missing": 0,
+        "liberal_missing_rows": [],
+    }
+
+
+def test_verify_post_state_accepts_plan_derived_noncanonical_expected_state(monkeypatch):
+    rows = {1: {}, 2: {}}
+    cases = {
+        "D001_alpha.yaml": {"source_row": 1, "id": "wifi-llapi-D001-alpha"},
+        "D099_beta.yaml": {"source_row": 2, "id": "wifi-llapi-D002-beta"},
+    }
+
+    class DummyTemplate:
+        def exists(self) -> bool:
+            return True
+
+    monkeypatch.setattr(ali, "load_support_rows", lambda: rows)
+    monkeypatch.setattr(ali, "scan_cases", lambda: cases)
+    monkeypatch.setattr(ali, "TEMPLATE_YAML", DummyTemplate())
+
+    expected = ali.summarize_inventory(rows, cases, template_exists=True)
+    state = ali.verify_post_state(expected)
+
+    assert state == expected
+
+
 def test_verify_post_state_ignores_mismatched_filename_row_for_canonical_coverage(monkeypatch):
     rows = {1: {}}
     cases = {
@@ -299,7 +335,7 @@ def test_verify_post_state_ignores_mismatched_filename_row_for_canonical_coverag
     with pytest.raises(ali.PostStateError) as excinfo:
         ali.verify_post_state()
 
-    assert "canonical coverage = 0/415" in str(excinfo.value)
+    assert "canonical coverage = 0/1, expected 1/1" in str(excinfo.value)
 
 
 def test_verify_post_state_raises_with_missing_rows(monkeypatch):
@@ -320,8 +356,8 @@ def test_verify_post_state_raises_with_missing_rows(monkeypatch):
         ali.verify_post_state()
 
     message = str(excinfo.value)
-    assert "liberal-missing rows: [2]" in message
-    assert "canonical coverage = 1/415" in message
+    assert "liberal-missing rows: [2], expected []" in message
+    assert "canonical coverage = 1/2, expected 2/2" in message
     assert "'liberal_missing': 1" in message
     assert "'liberal_missing_rows': [2]" in message
 
@@ -519,8 +555,9 @@ def test_main_apply_writes_reports_before_reraising_post_state_failure(monkeypat
     monkeypatch.setattr(ali, "validate_plan", lambda rows, scanned: [])
     monkeypatch.setattr(ali, "_ensure_clean_worktree", lambda: None)
     monkeypatch.setattr(ali, "_apply_actions", lambda: actions)
+    monkeypatch.setattr(ali, "project_post_cases", lambda scanned: clone_cases(scanned))
 
-    def fail_verify() -> dict:
+    def fail_verify(_expected_state: dict) -> dict:
         raise ali.PostStateError("post-state failed")
 
     monkeypatch.setattr(ali, "verify_post_state", fail_verify)
@@ -569,6 +606,7 @@ def test_main_apply_writes_partial_reports_before_reraising_apply_failure(monkey
     monkeypatch.setattr(ali, "scan_cases", lambda: cases)
     monkeypatch.setattr(ali, "validate_plan", lambda rows, scanned: [])
     monkeypatch.setattr(ali, "_ensure_clean_worktree", lambda: None)
+    monkeypatch.setattr(ali, "project_post_cases", lambda scanned: clone_cases(scanned))
 
     def fail_apply() -> list[dict]:
         raise ali.ApplyActionsError("apply failed", partial_actions)

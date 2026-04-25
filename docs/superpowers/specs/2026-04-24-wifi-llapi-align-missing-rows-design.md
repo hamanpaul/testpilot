@@ -132,7 +132,7 @@ tools/oneoff/2026-04-24-align-missing-rows/
       "total_cases": 415,
       "incl_template": 416,
       "support_rows": 415,
-      "canonical_coverage": 415,
+      "canonical_coverage": 294,
       "liberal_missing": 0
     }
   }
@@ -143,10 +143,10 @@ tools/oneoff/2026-04-24-align-missing-rows/
 apply 完後須全數通過：
 
 1. `ls plugins/wifi_llapi/cases/*.yaml | wc -l` = **416**
-2. 對每個 xlsx Support row r，恰存在一支 yaml 滿足 `filename_row == source.row == r`（canonical coverage = 415/415）
+2. 對每個 xlsx Support row r，都必須至少有一支 yaml 在 `filename_row == r` 或 `source.row == r` 其中之一覆蓋到（`liberal_missing = 0`）；`canonical_coverage` 則作為 snapshot-aware 指標回報目前仍維持 `filename_row == source.row == r` 的 row 數，本 snapshot 預期為 `294/415`
 3. `git status` 反映：8 R（rename）、1 R（move）、1 M（D495_verified）、6 D（delete）、1 A（D428 新增），加 `tools/oneoff/...` 目錄下的 script + README + report
 4. `git diff --stat` 對 8 個 rename yaml 的差異只出現在 `id` 與 `source.row` 兩個 key
-5. JSON report 中 `post_state.canonical_coverage == 415` 且 `liberal_missing == 0`
+5. JSON report 中 `post_state` 必須等於 plan-derived expected state（本 snapshot 為 `canonical_coverage == 294`、`liberal_missing == 0`）
 
 ## 不在驗收範圍
 

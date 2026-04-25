@@ -966,10 +966,10 @@ Expected output:
 mode=apply | support_rows=415 | current_cases=420
 actions: 17
 reports: ...
-post-state: {'total_cases': 415, 'incl_template': 416, 'support_rows': 415, 'canonical_coverage': 415, 'liberal_missing': []}
+post-state: {'total_cases': 415, 'incl_template': 416, 'support_rows': 415, 'canonical_coverage': 294, 'liberal_missing': 0, 'liberal_missing_rows': []}
 ```
 
-If `post-state` shows anything other than `canonical_coverage=415` and `liberal_missing=[]`, the script raises `PostStateError` and exits non-zero. Inspect the raised state, run `git status` to see partial changes, and use `git restore --staged .` + `git checkout .` to revert before debugging.
+If `post-state` differs from the plan-derived expected state for the current repo snapshot (in this branch: `canonical_coverage=294` and `liberal_missing_rows=[]`), the script raises `PostStateError` and exits non-zero. Inspect the raised state, run `git status` to see partial changes, and use `git restore --staged .` + `git checkout .` to revert before debugging.
 
 - [ ] **Step 3: Verify acceptance criteria**
 

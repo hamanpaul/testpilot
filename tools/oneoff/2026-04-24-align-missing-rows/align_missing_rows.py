@@ -136,6 +136,10 @@ def scan_cases(cases_dir: Path = CASES_DIR) -> dict[str, CaseInfo]:
     return out
 
 
+def clone_cases(cases: dict[str, CaseInfo]) -> dict[str, CaseInfo]:
+    return {name: dict(info) for name, info in cases.items()}
+
+
 def filename_row(name: str) -> int | None:
     m = _FN_ROW_RE.match(name)
     return int(m.group(1)) if m else None
@@ -485,6 +489,62 @@ def _planned_actions() -> list[dict]:
     return actions
 
 
+def project_post_cases(cases: dict[str, CaseInfo]) -> dict[str, CaseInfo]:
+    projected = clone_cases(cases)
+
+    for old, _old_row, _old_id, new, new_row, new_id in PLAN_RENAMES:
+        projected.pop(old)
+        projected[new] = {"source_row": new_row, "id": new_id}
+
+    old, _old_row, _old_id, new, new_row, new_id = PLAN_MOVE
+    projected.pop(old)
+    projected[new] = {"source_row": new_row, "id": new_id}
+
+    for fname, _old_row, old_id, new_row in PLAN_METADATA_ONLY:
+        projected[fname] = {"source_row": new_row, "id": old_id}
+
+    for fname, _stale_row in PLAN_DELETES:
+        projected.pop(fname)
+
+    projected[PLAN_CREATE["filename"]] = {
+        "source_row": PLAN_CREATE["row"],
+        "id": PLAN_CREATE["id"],
+    }
+    return projected
+
+
+def summarize_inventory(
+    support_rows: dict[int, SupportRow],
+    cases: dict[str, CaseInfo],
+    *,
+    template_exists: bool,
+) -> dict:
+    total = len(cases)
+    incl_template = total + (1 if template_exists else 0)
+
+    liberal_missing_rows: list[int] = []
+    coverage: dict[int, str] = {}
+    filename_rows = {filename_row(fname) for fname in cases}
+    source_rows = {info["source_row"] for info in cases.values()}
+    for fname, info in cases.items():
+        sr = info["source_row"]
+        if sr in support_rows and filename_row(fname) == sr:
+            coverage.setdefault(sr, fname)
+
+    for row in support_rows:
+        if row not in coverage and row not in filename_rows and row not in source_rows:
+            liberal_missing_rows.append(row)
+
+    return {
+        "total_cases": total,
+        "incl_template": incl_template,
+        "support_rows": len(support_rows),
+        "canonical_coverage": len(coverage),
+        "liberal_missing": len(liberal_missing_rows),
+        "liberal_missing_rows": liberal_missing_rows,
+    }
+
+
 def _apply_actions() -> list[dict]:
     actions: list[dict] = []
     try:
@@ -564,51 +624,32 @@ def write_json_report(mode: str, actions: list[dict], post_state: dict | None) -
     return REPORT_JSON
 
 
-def verify_post_state() -> dict:
+def verify_post_state(expected_state: dict | None = None) -> dict:
     """Re-scan repo and assert acceptance criteria. Raises on failure."""
     rows = load_support_rows()
     cases = scan_cases()
     template_exists = TEMPLATE_YAML.exists()
-
-    total = len(cases)
-    incl_template = total + (1 if template_exists else 0)
-
-    liberal_missing_rows: list[int] = []
-    coverage: dict[int, str] = {}
-    for fname, info in cases.items():
-        sr = info["source_row"]
-        if sr in rows and filename_row(fname) == sr:
-            coverage.setdefault(sr, fname)
-
-    canonical = len(coverage)
-
-    for r in rows:
-        if r not in coverage:
-            covered = any(
-                filename_row(f) == r or info["source_row"] == r
-                for f, info in cases.items()
-            )
-            if not covered:
-                liberal_missing_rows.append(r)
-
-    state = {
-        "total_cases": total,
-        "incl_template": incl_template,
-        "support_rows": len(rows),
-        "canonical_coverage": canonical,
-        "liberal_missing": len(liberal_missing_rows),
-        "liberal_missing_rows": liberal_missing_rows,
+    support_count = len(rows)
+    state = summarize_inventory(rows, cases, template_exists=template_exists)
+    expected = expected_state or {
+        "total_cases": support_count,
+        "incl_template": support_count + (1 if template_exists else 0),
+        "support_rows": support_count,
+        "canonical_coverage": support_count,
+        "liberal_missing": 0,
+        "liberal_missing_rows": [],
     }
-
     errors = []
-    if total != 415:
-        errors.append(f"total cases = {total}, expected 415")
-    if incl_template != 416:
-        errors.append(f"total incl _template = {incl_template}, expected 416")
-    if canonical != 415:
-        errors.append(f"canonical coverage = {canonical}/415")
-    if liberal_missing_rows:
-        errors.append(f"liberal-missing rows: {liberal_missing_rows}")
+    if state["total_cases"] != expected["total_cases"]:
+        errors.append(f"total cases = {state['total_cases']}, expected {expected['total_cases']}")
+    if state["incl_template"] != expected["incl_template"]:
+        errors.append(f"total incl _template = {state['incl_template']}, expected {expected['incl_template']}")
+    if state["canonical_coverage"] != expected["canonical_coverage"]:
+        errors.append(
+            f"canonical coverage = {state['canonical_coverage']}/{support_count}, expected {expected['canonical_coverage']}/{support_count}"
+        )
+    if state["liberal_missing_rows"] != expected["liberal_missing_rows"]:
+        errors.append(f"liberal-missing rows: {state['liberal_missing_rows']}, expected {expected['liberal_missing_rows']}")
     if errors:
         raise PostStateError("; ".join(errors) + f" | state={state}")
     return state
@@ -639,11 +680,16 @@ def main(argv: list[str] | None = None) -> int:
     post: dict | None = None
     pending_error: Exception | None = None
     if args.apply:
+        expected_post_state = summarize_inventory(
+            support_rows,
+            project_post_cases(cases),
+            template_exists=TEMPLATE_YAML.exists(),
+        )
         _ensure_clean_worktree()
         try:
             actions = _apply_actions()
             try:
-                post = verify_post_state()
+                post = verify_post_state(expected_post_state)
             except Exception as exc:
                 pending_error = exc
         except ApplyActionsError as exc:

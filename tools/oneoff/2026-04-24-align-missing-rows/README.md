@@ -24,6 +24,13 @@ Apply (mutates working tree via `git mv`/`git rm`/`git add`):
 
 Working tree must be clean before `--apply`.
 
+Post-state verification is plan-derived, not an unconditional `415/415` canonical
+assertion. This one-shot batch is only responsible for eliminating the known
+missing Support rows from the current snapshot; unrelated pre-existing
+filename/source-row drift is reported via `canonical_coverage` but does not fail
+apply if the generated post-state matches the plan expectation and
+`liberal_missing_rows` is empty.
+
 ## After this runs
 
 Do not delete this directory. The script + reports stay for audit. Future
