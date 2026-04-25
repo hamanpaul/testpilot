@@ -95,6 +95,12 @@ class PostStateError(RuntimeError):
     pass
 
 
+class ApplyActionsError(RuntimeError):
+    def __init__(self, message: str, partial_actions: list[dict]):
+        super().__init__(message)
+        self.partial_actions = list(partial_actions)
+
+
 def load_support_rows(xlsx: Path = TEMPLATE_XLSX) -> dict[int, SupportRow]:
     wb = load_workbook(xlsx, read_only=True)
     ws = wb["Wifi_LLAPI"]
@@ -472,15 +478,20 @@ def _planned_actions() -> list[dict]:
 
 def _apply_actions() -> list[dict]:
     actions: list[dict] = []
-    for old, _old_row, _old_id, new, new_row, new_id in PLAN_RENAMES:
-        actions.append(execute_rename(old, new, new_row, new_id))
-    old, _old_row, _old_id, new, new_row, new_id = PLAN_MOVE
-    actions.append(execute_move(old, new, new_row, new_id))
-    for fname, _old_row, _old_id, new_row in PLAN_METADATA_ONLY:
-        actions.append(execute_metadata_only(fname, new_row, None))
-    for fname, _stale_row in PLAN_DELETES:
-        actions.append(execute_delete(fname))
-    actions.append(execute_create_from_template(PLAN_CREATE))
+    try:
+        for old, _old_row, _old_id, new, new_row, new_id in PLAN_RENAMES:
+            actions.append(execute_rename(old, new, new_row, new_id))
+        old, _old_row, _old_id, new, new_row, new_id = PLAN_MOVE
+        actions.append(execute_move(old, new, new_row, new_id))
+        for fname, _old_row, _old_id, new_row in PLAN_METADATA_ONLY:
+            actions.append(execute_metadata_only(fname, new_row, None))
+        for fname, _stale_row in PLAN_DELETES:
+            actions.append(execute_delete(fname))
+        actions.append(execute_create_from_template(PLAN_CREATE))
+    except ApplyActionsError:
+        raise
+    except Exception as exc:
+        raise ApplyActionsError(str(exc), actions) from exc
     return actions
 
 
@@ -593,14 +604,19 @@ def main(argv: list[str] | None = None) -> int:
 
     mode = "apply" if args.apply else "dry-run"
     print(f"mode: {mode} | support_rows: {len(support_rows)} | current_cases: {len(cases)}")
+    actions: list[dict] = []
     post: dict | None = None
     pending_error: Exception | None = None
     if args.apply:
         _ensure_clean_worktree()
-        actions = _apply_actions()
         try:
-            post = verify_post_state()
-        except Exception as exc:
+            actions = _apply_actions()
+            try:
+                post = verify_post_state()
+            except Exception as exc:
+                pending_error = exc
+        except ApplyActionsError as exc:
+            actions = exc.partial_actions
             pending_error = exc
     else:
         actions = _planned_actions()

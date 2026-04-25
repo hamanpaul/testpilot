@@ -515,3 +515,53 @@ def test_main_apply_writes_reports_before_reraising_post_state_failure(monkeypat
         ("md", "apply", actions, None),
         ("json", "apply", actions, None),
     ]
+
+
+def test_main_apply_writes_partial_reports_before_reraising_apply_failure(monkeypatch):
+    support_rows = {
+        428: {
+            "object": "WiFi.AccessPoint.{i}.Neighbour.{i}.",
+            "type": "unsignedInt",
+            "param": "Channel",
+            "hlapi": 'ubus-cli "WiFi.AccessPoint.{i}.Neighbour.{i}.Channel=36"',
+        }
+    }
+    cases = {
+        "D115_getstationstats_accesspoint.yaml": {
+            "source_row": 115,
+            "id": "wifi-llapi-D115-getstationstats-accesspoint",
+        }
+    }
+    calls: list[tuple[str, str, list[dict], dict | None]] = []
+    partial_actions = [
+        {"kind": "rename", "row": 109, "from": "old.yaml", "to": "new.yaml", "fields_changed": {}},
+        {"kind": "delete", "row": None, "from": "stale.yaml", "to": None, "fields_changed": {}},
+    ]
+
+    monkeypatch.setattr(ali, "load_support_rows", lambda: support_rows)
+    monkeypatch.setattr(ali, "scan_cases", lambda: cases)
+    monkeypatch.setattr(ali, "validate_plan", lambda rows, scanned: [])
+    monkeypatch.setattr(ali, "_ensure_clean_worktree", lambda: None)
+
+    def fail_apply() -> list[dict]:
+        raise ali.ApplyActionsError("apply failed", partial_actions)
+
+    monkeypatch.setattr(ali, "_apply_actions", fail_apply)
+    monkeypatch.setattr(
+        ali,
+        "write_markdown_report",
+        lambda mode, report_actions, post_state: calls.append(("md", mode, report_actions, post_state)) or Path("report.md"),
+    )
+    monkeypatch.setattr(
+        ali,
+        "write_json_report",
+        lambda mode, report_actions, post_state: calls.append(("json", mode, report_actions, post_state)) or Path("report.json"),
+    )
+
+    with pytest.raises(ali.ApplyActionsError, match="apply failed"):
+        ali.main(["--apply"])
+
+    assert calls == [
+        ("md", "apply", partial_actions, None),
+        ("json", "apply", partial_actions, None),
+    ]
