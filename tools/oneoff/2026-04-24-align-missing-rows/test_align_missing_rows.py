@@ -123,3 +123,40 @@ def test_plan_rejects_delete_row_still_in_support_set():
     errors = ali.validate_plan(rows, cases)
 
     assert "delete stale row still in Support set: D096_uapsdenable.yaml" in errors
+
+
+def test_main_fails_when_plan_validation_errors_exist(monkeypatch, capsys):
+    support_rows = {
+        428: {
+            "object": "WiFi.AccessPoint.{i}.Neighbour.{i}.",
+            "type": "unsignedInt",
+            "param": "Channel",
+            "hlapi": 'ubus-cli "WiFi.AccessPoint.{i}.Neighbour.{i}.Channel=36"',
+        }
+    }
+    cases = {
+        "D115_getstationstats_accesspoint.yaml": {
+            "source_row": 115,
+            "id": "wifi-llapi-D115-getstationstats-accesspoint",
+        }
+    }
+
+    monkeypatch.setattr(ali, "load_support_rows", lambda: support_rows)
+    monkeypatch.setattr(ali, "scan_cases", lambda: cases)
+    monkeypatch.setattr(
+        ali,
+        "validate_plan",
+        lambda rows, scanned: [
+            "rename source missing: D068_discoverymethodenabled_accesspoint_fils.yaml",
+            "delete source row drift: D096_uapsdenable.yaml",
+        ],
+    )
+
+    rc = ali.main([])
+    captured = capsys.readouterr()
+
+    assert rc != 0
+    assert "plan validation failed" in captured.err
+    assert "rename source missing: D068_discoverymethodenabled_accesspoint_fils.yaml" in captured.err
+    assert "delete source row drift: D096_uapsdenable.yaml" in captured.err
+    assert "mode:" not in captured.out
