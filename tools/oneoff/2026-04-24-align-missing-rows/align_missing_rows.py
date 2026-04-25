@@ -8,14 +8,20 @@ for the full design and acceptance criteria.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
+from typing import TypedDict
+
+from openpyxl import load_workbook
+from ruamel.yaml import YAML
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 TEMPLATE_XLSX = REPO_ROOT / "plugins" / "wifi_llapi" / "reports" / "templates" / "wifi_llapi_template.xlsx"
 CASES_DIR = REPO_ROOT / "plugins" / "wifi_llapi" / "cases"
 TEMPLATE_YAML = CASES_DIR / "_template.yaml"
 THIS_DIR = Path(__file__).resolve().parent
+_FN_ROW_RE = re.compile(r"^D(\d{3,4})_")
 
 PLAN_RENAMES: list[tuple[str, str, int, str]] = [
     ("D068_discoverymethodenabled_accesspoint_fils.yaml", "D066_discoverymethodenabled_accesspoint_fils.yaml", 66, "wifi-llapi-D066-discoverymethodenabled-accesspoint-fils"),
@@ -48,6 +54,58 @@ PLAN_CREATE: dict[str, object] = {
     "hlapi_command": 'ubus-cli "WiFi.AccessPoint.{i}.Neighbour.{i}.Channel=36"',
     "llapi_support": "Support",
 }
+
+
+class SupportRow(TypedDict):
+    object: str
+    type: str
+    param: str
+    hlapi: str
+
+
+class CaseInfo(TypedDict):
+    source_row: int | None
+    id: str | None
+
+
+def load_support_rows(xlsx: Path = TEMPLATE_XLSX) -> dict[int, SupportRow]:
+    wb = load_workbook(xlsx, read_only=True)
+    ws = wb["Wifi_LLAPI"]
+    out: dict[int, SupportRow] = {}
+    for i, row in enumerate(ws.iter_rows(min_row=2, max_row=ws.max_row, values_only=True), start=2):
+        if row[0] is None and row[3] is None:
+            continue
+        e = (row[4] or "").strip() if row[4] else ""
+        if e == "Support":
+            out[i] = {
+                "object": row[0] or "",
+                "type": row[1] or "",
+                "param": (row[2] or "").strip() if row[2] else "",
+                "hlapi": row[3] or "",
+            }
+    return out
+
+
+def scan_cases(cases_dir: Path = CASES_DIR) -> dict[str, CaseInfo]:
+    yaml_loader = YAML(typ="safe")
+    out: dict[str, CaseInfo] = {}
+    for f in sorted(cases_dir.glob("*.yaml")):
+        if f.name.startswith("_"):
+            continue
+        d = yaml_loader.load(f)
+        if not isinstance(d, dict):
+            continue
+        sr = (d.get("source") or {}).get("row")
+        out[f.name] = {
+            "source_row": int(sr) if sr is not None else None,
+            "id": d.get("id"),
+        }
+    return out
+
+
+def filename_row(name: str) -> int | None:
+    m = _FN_ROW_RE.match(name)
+    return int(m.group(1)) if m else None
 
 
 def _self_check_plan_counts() -> None:
