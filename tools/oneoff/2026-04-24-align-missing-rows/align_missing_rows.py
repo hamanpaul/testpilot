@@ -83,6 +83,10 @@ class PlanValidationError(RuntimeError):
     pass
 
 
+class PostStateError(RuntimeError):
+    pass
+
+
 def load_support_rows(xlsx: Path = TEMPLATE_XLSX) -> dict[int, SupportRow]:
     wb = load_workbook(xlsx, read_only=True)
     ws = wb["Wifi_LLAPI"]
@@ -369,6 +373,56 @@ def _self_check_plan_counts() -> None:
     assert len(PLAN_METADATA_ONLY) == 1
     assert len(PLAN_DELETES) == 6
     # net cases delta = -6 (deletes) + 1 (create) = -5; renames/move/metadata are net 0
+
+
+def verify_post_state() -> dict:
+    """Re-scan repo and assert acceptance criteria. Raises on failure."""
+    rows = load_support_rows()
+    cases = scan_cases()
+    template_exists = TEMPLATE_YAML.exists()
+
+    total = len(cases)
+    incl_template = total + (1 if template_exists else 0)
+
+    canonical = 0
+    liberal_missing = []
+    coverage: dict[int, str] = {}
+    for fname, info in cases.items():
+        fr = filename_row(fname)
+        sr = info["source_row"]
+        if fr in rows and fr == sr:
+            canonical += 1
+            coverage.setdefault(fr, fname)
+
+    for r in rows:
+        if r not in coverage:
+            covered = any(
+                filename_row(f) == r or info["source_row"] == r
+                for f, info in cases.items()
+            )
+            if not covered:
+                liberal_missing.append(r)
+
+    state = {
+        "total_cases": total,
+        "incl_template": incl_template,
+        "support_rows": len(rows),
+        "canonical_coverage": canonical,
+        "liberal_missing": liberal_missing,
+    }
+
+    errors = []
+    if total != 415:
+        errors.append(f"total cases = {total}, expected 415")
+    if incl_template != 416:
+        errors.append(f"total incl _template = {incl_template}, expected 416")
+    if canonical != 415:
+        errors.append(f"canonical coverage = {canonical}/415")
+    if liberal_missing:
+        errors.append(f"liberal-missing rows: {liberal_missing}")
+    if errors:
+        raise PostStateError("; ".join(errors) + f" | state={state}")
+    return state
 
 
 def main(argv: list[str] | None = None) -> int:

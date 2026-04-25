@@ -9,6 +9,7 @@ from __future__ import annotations
 import sys
 from textwrap import dedent
 from pathlib import Path
+import pytest
 
 # Make the script importable
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -219,6 +220,55 @@ def test_plan_rejects_delete_row_still_in_support_set():
     errors = ali.validate_plan(rows, cases)
 
     assert "delete stale row still in Support set: D096_uapsdenable.yaml" in errors
+
+
+def test_verify_post_state_returns_expected_summary(monkeypatch):
+    rows = {row: {} for row in range(1, 416)}
+    cases = {
+        f"D{row:03d}_case.yaml": {"source_row": row, "id": f"wifi-llapi-D{row:03d}-case"}
+        for row in rows
+    }
+
+    class DummyTemplate:
+        def exists(self) -> bool:
+            return True
+
+    monkeypatch.setattr(ali, "load_support_rows", lambda: rows)
+    monkeypatch.setattr(ali, "scan_cases", lambda: cases)
+    monkeypatch.setattr(ali, "TEMPLATE_YAML", DummyTemplate())
+
+    state = ali.verify_post_state()
+
+    assert state == {
+        "total_cases": 415,
+        "incl_template": 416,
+        "support_rows": 415,
+        "canonical_coverage": 415,
+        "liberal_missing": [],
+    }
+
+
+def test_verify_post_state_raises_with_missing_rows(monkeypatch):
+    cases = {
+        "D001_alpha.yaml": {"source_row": 1, "id": "wifi-llapi-D001-alpha"},
+        "D500_other.yaml": {"source_row": 999, "id": "wifi-llapi-D500-other"},
+    }
+
+    class DummyTemplate:
+        def exists(self) -> bool:
+            return False
+
+    monkeypatch.setattr(ali, "load_support_rows", lambda: {1: {}, 2: {}})
+    monkeypatch.setattr(ali, "scan_cases", lambda: cases)
+    monkeypatch.setattr(ali, "TEMPLATE_YAML", DummyTemplate())
+
+    with pytest.raises(ali.PostStateError) as excinfo:
+        ali.verify_post_state()
+
+    message = str(excinfo.value)
+    assert "liberal-missing rows: [2]" in message
+    assert "canonical coverage = 1/415" in message
+    assert "'liberal_missing': [2]" in message
 
 
 def test_main_fails_when_plan_validation_errors_exist(monkeypatch, capsys):
