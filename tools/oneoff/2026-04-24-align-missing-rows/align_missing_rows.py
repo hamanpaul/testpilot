@@ -17,7 +17,7 @@ CASES_DIR = REPO_ROOT / "plugins" / "wifi_llapi" / "cases"
 TEMPLATE_YAML = CASES_DIR / "_template.yaml"
 THIS_DIR = Path(__file__).resolve().parent
 
-PLAN_RENAMES = [
+PLAN_RENAMES: list[tuple[str, str, int, str]] = [
     ("D068_discoverymethodenabled_accesspoint_fils.yaml", "D066_discoverymethodenabled_accesspoint_fils.yaml", 66, "wifi-llapi-D066-discoverymethodenabled-accesspoint-fils"),
     ("D068_discoverymethodenabled_accesspoint_upr.yaml", "D067_discoverymethodenabled_accesspoint_upr.yaml", 67, "wifi-llapi-D067-discoverymethodenabled-accesspoint-upr"),
     ("D115_getstationstats_accesspoint.yaml", "D109_getstationstats.yaml", 109, "wifi-llapi-D109-getstationstats"),
@@ -28,9 +28,9 @@ PLAN_RENAMES = [
     ("D115_getstationstats_avgsignalstrengthbychain.yaml", "D114_getstationstats_avgsignalstrengthbychain.yaml", 114, "wifi-llapi-D114-getstationstats-avgsignalstrengthbychain"),
 ]
 
-PLAN_MOVE = ("D495_retrycount_ssid_stats_basic.yaml", "D407_retrycount_ssid_stats.yaml", 407, "wifi-llapi-D407-retrycount")
-PLAN_METADATA_ONLY = [("D495_retrycount_ssid_stats_verified.yaml", 495, None)]
-PLAN_DELETES = [
+PLAN_MOVE: tuple[str, str, int, str] = ("D495_retrycount_ssid_stats_basic.yaml", "D407_retrycount_ssid_stats.yaml", 407, "wifi-llapi-D407-retrycount")
+PLAN_METADATA_ONLY: list[tuple[str, int, str | None]] = [("D495_retrycount_ssid_stats_verified.yaml", 495, None)]
+PLAN_DELETES: list[str] = [
     "D096_uapsdenable.yaml",
     "D097_vendorie.yaml",
     "D100_wmmenable.yaml",
@@ -38,7 +38,7 @@ PLAN_DELETES = [
     "D106_relaycredentialsenable.yaml",
     "D474_channel_radio_37.yaml",
 ]
-PLAN_CREATE = {
+PLAN_CREATE: dict[str, object] = {
     "filename": "D428_channel_neighbour.yaml",
     "row": 428,
     "id": "wifi-llapi-D428-channel-neighbour",
