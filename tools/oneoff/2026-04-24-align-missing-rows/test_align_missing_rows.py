@@ -19,24 +19,65 @@ def clone_cases(cases: dict[str, ali.CaseInfo]) -> dict[str, ali.CaseInfo]:
     return {name: dict(info) for name, info in cases.items()}
 
 
-def test_metadata_edit_preserves_multiline_test_environment(tmp_path):
+def test_metadata_edit_only_updates_id_and_source_row_for_realistic_yaml(tmp_path):
     dst = tmp_path / "synthetic.yaml"
-    dst.write_text(
-        dedent(
-            """\
-            id: wifi-llapi-D115-getstationstats-accesspoint
-            source:
-              row: 115
-            test_environment: |
-              Workbook row 109 is getStationStats()
-              and must remain multiline after metadata edits.
-            """
-        )
-    )
+    before = dedent(
+        """\
+        id: wifi-llapi-D115-getstationstats-accesspoint
+        name: getStationStats() — WiFi.AccessPoint.{i}.
+        version: '1.0'
+        source:
+          row: 115
+          object: WiFi.AccessPoint.{i}.
+          api: getStationStats()
+        test_environment: 'Topology:
 
-    before = dst.read_text()
-    assert "Workbook row 109 is getStationStats()" in before, \
-        "fixture sanity: multiline test_environment block must be present"
+          - DUT: COM1 (B0, AP role)
+
+          - Workbook H excerpt uses `hostapd_cli sta`, but current 0403 official baseline
+          exposes `/tmp/wl0_hapd.conf` without a matching `/var/run/hostapd/wl0` control socket;
+          `hostapd_cli` returns `wpa_ctrl_open: No such file or directory`.
+
+          - Current single-STA baseline therefore uses driver `wl assoclist` as the stable
+          runtime association oracle and verifies that getStationStats() returns the same
+          STA MAC.
+
+          '
+        steps:
+        - id: step1_assoc_precheck
+          action: exec
+          target: DUT
+          command: wl -i wl0 assoclist | awk 'NR==1 {print "AssocMac=" $2}'
+          capture: assoc_check
+        - id: step2_getstationstats
+          action: exec
+          target: DUT
+          command:
+          - A="$(wl -i wl0 assoclist | awk 'NR==1 {print $2}')"
+          - S="$(ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>/dev/null)"
+          - M="$(printf '%s\\n' "$S" | grep -m1 'MACAddress = ' | cut -d'"' -f2)"
+          - echo "StationStatsMac=$M"
+          - printf '%s\\n' "$S" | grep -m1 'Active = ' | cut -d= -f2 | tr -d ' ,' | sed
+            's/^/TopLevelActive=/'
+          capture: stats_output
+        verification_command:
+        - wl -i wl0 assoclist
+        - ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep -m1 'MACAddress =
+          '
+        - ubus-cli "WiFi.AccessPoint.1.getStationStats()" 2>&1 | grep -m1 'Active = '
+        """
+    )
+    dst.write_text(before)
+
+    expected_after = (
+        before
+        .replace(
+            "id: wifi-llapi-D115-getstationstats-accesspoint",
+            "id: wifi-llapi-D109-getstationstats",
+            1,
+        )
+        .replace("  row: 115", "  row: 109", 1)
+    )
 
     changes = ali._edit_metadata(dst, new_row=109, new_id="wifi-llapi-D109-getstationstats")
 
@@ -45,10 +86,7 @@ def test_metadata_edit_preserves_multiline_test_environment(tmp_path):
         "source.row": [115, 109],
     }
     after = dst.read_text()
-    assert "Workbook row 109 is getStationStats()" in after, \
-        "round-trip must preserve multiline test_environment block"
-    assert "row: 109" in after
-    assert "wifi-llapi-D109-getstationstats" in after
+    assert after == expected_after
 
 
 def test_load_support_rows_returns_415_entries():

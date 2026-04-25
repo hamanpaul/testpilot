@@ -131,12 +131,42 @@ def _yaml_rt() -> YAML:
     return y
 
 
-def _git(args: list[str]) -> None:
-    subprocess.run(["git", *args], cwd=REPO_ROOT, check=True)
+def _yaml_safe() -> YAML:
+    return YAML(typ="safe")
 
 
-def _edit_metadata(path: Path, new_row: int | None, new_id: str | None) -> dict[str, list]:
-    """Edit `id` and `source.row` in place via ruamel round-trip. Return changed fields."""
+def _replace_top_level_scalar(text: str, key: str, value: str) -> tuple[str, bool]:
+    pattern = re.compile(rf"(?m)^(?P<prefix>{re.escape(key)}:\s*)(?P<value>[^\n#]*?)(?P<suffix>\s*(?:#.*)?)$")
+
+    def repl(match: re.Match[str]) -> str:
+        return f"{match.group('prefix')}{value}{match.group('suffix')}"
+
+    updated, count = pattern.subn(repl, text, count=1)
+    return updated, count > 0
+
+
+def _replace_source_row(text: str, new_row: int) -> tuple[str, bool]:
+    source_match = re.search(r"(?ms)^source:\n(?P<body>(?:^[ \t]+.*(?:\n|$))*)", text)
+    if not source_match:
+        return text, False
+
+    body = source_match.group("body")
+    row_pattern = re.compile(r"(?m)^(?P<indent>[ \t]+row:\s*)(?P<value>[^\n#]*?)(?P<suffix>\s*(?:#.*)?)$")
+
+    def repl(match: re.Match[str]) -> str:
+        return f"{match.group('indent')}{new_row}{match.group('suffix')}"
+
+    new_body, count = row_pattern.subn(repl, body, count=1)
+    if count:
+        return text[: source_match.start("body")] + new_body + text[source_match.end("body") :], True
+
+    indent_match = re.search(r"(?m)^([ \t]+)\S", body)
+    indent = indent_match.group(1) if indent_match else "  "
+    inserted = f"{indent}row: {new_row}\n"
+    return text[: source_match.start("body")] + inserted + body + text[source_match.end("body") :], True
+
+
+def _edit_metadata_via_ruamel(path: Path, new_row: int | None, new_id: str | None) -> dict[str, list]:
     y = _yaml_rt()
     with path.open() as fh:
         data = y.load(fh)
@@ -153,6 +183,39 @@ def _edit_metadata(path: Path, new_row: int | None, new_id: str | None) -> dict[
     if changes:
         with path.open("w") as fh:
             y.dump(data, fh)
+    return changes
+
+
+def _git(args: list[str]) -> None:
+    subprocess.run(["git", *args], cwd=REPO_ROOT, check=True)
+
+
+def _edit_metadata(path: Path, new_row: int | None, new_id: str | None) -> dict[str, list]:
+    """Edit `id` and `source.row` in place while preserving unrelated file layout."""
+    text = path.read_text()
+    data = _yaml_safe().load(text)
+    changes: dict[str, list] = {}
+
+    if new_id is not None and data.get("id") != new_id:
+        changes["id"] = [data.get("id"), new_id]
+    if new_row is not None:
+        source = data.setdefault("source", {})
+        old = source.get("row")
+        if old != new_row:
+            changes["source.row"] = [old, new_row]
+    if not changes:
+        return changes
+
+    updated = text
+    if "id" in changes:
+        updated, changed = _replace_top_level_scalar(updated, "id", new_id)
+        if not changed:
+            return _edit_metadata_via_ruamel(path, new_row, new_id)
+    if "source.row" in changes:
+        updated, changed = _replace_source_row(updated, new_row)
+        if not changed:
+            return _edit_metadata_via_ruamel(path, new_row, new_id)
+    path.write_text(updated)
     return changes
 
 
