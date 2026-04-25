@@ -8,10 +8,12 @@ for the full design and acceptance criteria.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import shutil
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TypedDict
 
@@ -23,6 +25,8 @@ TEMPLATE_XLSX = REPO_ROOT / "plugins" / "wifi_llapi" / "reports" / "templates" /
 CASES_DIR = REPO_ROOT / "plugins" / "wifi_llapi" / "cases"
 TEMPLATE_YAML = CASES_DIR / "_template.yaml"
 THIS_DIR = Path(__file__).resolve().parent
+REPORT_MD = THIS_DIR / "inventory_alignment_20260424.md"
+REPORT_JSON = THIS_DIR / "inventory_alignment_20260424.json"
 _FN_ROW_RE = re.compile(r"^D(\d{3,4})_")
 
 PLAN_RENAMES: list[tuple[str, int, str, str, int, str]] = [
@@ -375,6 +379,139 @@ def _self_check_plan_counts() -> None:
     # net cases delta = -6 (deletes) + 1 (create) = -5; renames/move/metadata are net 0
 
 
+def _ensure_clean_worktree() -> None:
+    proc = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    dirty = [line for line in proc.stdout.splitlines() if line.strip()]
+    if dirty:
+        raise RuntimeError("worktree is not clean:\n" + "\n".join(dirty))
+
+
+def _planned_actions() -> list[dict]:
+    actions: list[dict] = []
+    for old, old_row, old_id, new, new_row, new_id in PLAN_RENAMES:
+        actions.append(
+            {
+                "kind": "rename",
+                "row": new_row,
+                "from": old,
+                "to": new,
+                "fields_changed": {
+                    "id": [old_id, new_id],
+                    "source.row": [old_row, new_row],
+                },
+            }
+        )
+    old, old_row, old_id, new, new_row, new_id = PLAN_MOVE
+    actions.append(
+        {
+            "kind": "move",
+            "row": new_row,
+            "from": old,
+            "to": new,
+            "fields_changed": {
+                "id": [old_id, new_id],
+                "source.row": [old_row, new_row],
+            },
+        }
+    )
+    for fname, old_row, _old_id, new_row in PLAN_METADATA_ONLY:
+        actions.append(
+            {
+                "kind": "metadata",
+                "row": new_row,
+                "from": fname,
+                "to": fname,
+                "fields_changed": {
+                    "source.row": [old_row, new_row],
+                },
+            }
+        )
+    for fname, _stale_row in PLAN_DELETES:
+        actions.append(
+            {
+                "kind": "delete",
+                "row": None,
+                "from": fname,
+                "to": None,
+                "fields_changed": {},
+            }
+        )
+    actions.append(
+        {
+            "kind": "create",
+            "row": PLAN_CREATE["row"],
+            "from": "_template.yaml",
+            "to": PLAN_CREATE["filename"],
+            "fields_changed": {
+                "id": [None, PLAN_CREATE["id"]],
+                "source.row": [None, PLAN_CREATE["row"]],
+                "source.object": [None, PLAN_CREATE["object"]],
+                "source.api": [None, PLAN_CREATE["api"]],
+            },
+        }
+    )
+    return actions
+
+
+def _apply_actions() -> list[dict]:
+    actions: list[dict] = []
+    for old, _old_row, _old_id, new, new_row, new_id in PLAN_RENAMES:
+        actions.append(execute_rename(old, new, new_row, new_id))
+    old, _old_row, _old_id, new, new_row, new_id = PLAN_MOVE
+    actions.append(execute_move(old, new, new_row, new_id))
+    for fname, _old_row, _old_id, new_row in PLAN_METADATA_ONLY:
+        actions.append(execute_metadata_only(fname, new_row, None))
+    for fname, _stale_row in PLAN_DELETES:
+        actions.append(execute_delete(fname))
+    actions.append(execute_create_from_template(PLAN_CREATE))
+    return actions
+
+
+def write_markdown_report(mode: str, actions: list[dict], post_state: dict | None) -> Path:
+    generated_at = datetime.now(timezone.utc).isoformat()
+    lines = [
+        "# Inventory alignment report",
+        "",
+        f"- generated_at: `{generated_at}`",
+        f"- mode: `{mode}`",
+        f"- actions: `{len(actions)}`",
+        "",
+        "## Actions",
+        "",
+        "| kind | row | from | to | fields_changed |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for action in actions:
+        fields_changed = json.dumps(action["fields_changed"], ensure_ascii=False, sort_keys=True)
+        lines.append(
+            f"| {action['kind']} | {action['row']} | {action['from']} | {action['to']} | `{fields_changed}` |"
+        )
+    lines.extend(["", "## Post state", ""])
+    if post_state is None:
+        lines.append("_not-run_")
+    else:
+        lines.extend(["```json", json.dumps(post_state, indent=2, ensure_ascii=False, sort_keys=True), "```"])
+    REPORT_MD.write_text("\n".join(lines) + "\n")
+    return REPORT_MD
+
+
+def write_json_report(mode: str, actions: list[dict], post_state: dict | None) -> Path:
+    payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "mode": mode,
+        "actions": actions,
+        "post_state": post_state,
+    }
+    REPORT_JSON.write_text(json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True) + "\n")
+    return REPORT_JSON
+
+
 def verify_post_state() -> dict:
     """Re-scan repo and assert acceptance criteria. Raises on failure."""
     rows = load_support_rows()
@@ -426,9 +563,13 @@ def verify_post_state() -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--apply", action="store_true",
-                        help="Actually mutate the working tree (default: dry-run).")
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="Actually mutate the working tree (default: dry-run).",
+    )
     args = parser.parse_args(argv)
+
     _self_check_plan_counts()
     support_rows = load_support_rows()
     cases = scan_cases()
@@ -438,14 +579,23 @@ def main(argv: list[str] | None = None) -> int:
         for err in errors:
             print(f"- {err}", file=sys.stderr)
         return 1
-    plan_summary = (
-        f"plan: {len(PLAN_RENAMES)} renames + 1 move + "
-        f"{len(PLAN_METADATA_ONLY)} metadata-only + {len(PLAN_DELETES)} deletes + 1 create"
-    )
+
+    mode = "apply" if args.apply else "dry-run"
+    print(f"mode: {mode} | support_rows: {len(support_rows)} | current_cases: {len(cases)}")
     if args.apply:
-        print(f"mode: apply | {plan_summary}")
+        _ensure_clean_worktree()
+        actions = _apply_actions()
+        post = verify_post_state()
     else:
-        print(f"mode: dry-run | {plan_summary}")
+        actions = _planned_actions()
+        post = None
+    report_md = write_markdown_report(mode, actions, post)
+    report_json = write_json_report(mode, actions, post)
+    print(f"actions: {len(actions)}")
+    print(f"report_md: {report_md}")
+    print(f"report_json: {report_json}")
+    if post is not None:
+        print(f"post_state: {json.dumps(post, ensure_ascii=False, sort_keys=True)}")
     return 0
 
 

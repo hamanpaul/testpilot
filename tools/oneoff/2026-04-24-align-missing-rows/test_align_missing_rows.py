@@ -7,6 +7,7 @@ Run with:
 from __future__ import annotations
 
 import sys
+import json
 from textwrap import dedent
 from pathlib import Path
 import pytest
@@ -320,6 +321,81 @@ def test_verify_post_state_raises_with_missing_rows(monkeypatch):
     assert "liberal-missing rows: [2]" in message
     assert "canonical coverage = 1/415" in message
     assert "'liberal_missing': [2]" in message
+
+
+def test_planned_actions_match_current_plan_shapes():
+    actions = ali._planned_actions()
+
+    assert len(actions) == 17
+    assert [action["kind"] for action in actions].count("rename") == 8
+    assert [action["kind"] for action in actions].count("move") == 1
+    assert [action["kind"] for action in actions].count("metadata") == 1
+    assert [action["kind"] for action in actions].count("delete") == 6
+    assert [action["kind"] for action in actions].count("create") == 1
+    assert actions[0] == {
+        "kind": "rename",
+        "row": 66,
+        "from": "D068_discoverymethodenabled_accesspoint_fils.yaml",
+        "to": "D066_discoverymethodenabled_accesspoint_fils.yaml",
+        "fields_changed": {
+            "id": [
+                "wifi-llapi-D068-discoverymethodenabled-accesspoint-fils",
+                "wifi-llapi-D066-discoverymethodenabled-accesspoint-fils",
+            ],
+            "source.row": [68, 66],
+        },
+    }
+    assert actions[-1] == {
+        "kind": "create",
+        "row": 428,
+        "from": "_template.yaml",
+        "to": "D428_channel_neighbour.yaml",
+        "fields_changed": {
+            "id": [None, "wifi-llapi-D428-channel-neighbour"],
+            "source.row": [None, 428],
+            "source.object": [None, "WiFi.AccessPoint.{i}.Neighbour.{i}."],
+            "source.api": [None, "Channel"],
+        },
+    }
+
+
+def test_main_dry_run_writes_both_reports_and_returns_zero(monkeypatch, tmp_path, capsys):
+    markdown_path = tmp_path / "inventory_alignment_20260424.md"
+    json_path = tmp_path / "inventory_alignment_20260424.json"
+    support_rows = {
+        428: {
+            "object": "WiFi.AccessPoint.{i}.Neighbour.{i}.",
+            "type": "unsignedInt",
+            "param": "Channel",
+            "hlapi": 'ubus-cli "WiFi.AccessPoint.{i}.Neighbour.{i}.Channel=36"',
+        }
+    }
+    cases = {
+        "D115_getstationstats_accesspoint.yaml": {
+            "source_row": 115,
+            "id": "wifi-llapi-D115-getstationstats-accesspoint",
+        }
+    }
+
+    monkeypatch.setattr(ali, "REPORT_MD", markdown_path)
+    monkeypatch.setattr(ali, "REPORT_JSON", json_path)
+    monkeypatch.setattr(ali, "load_support_rows", lambda: support_rows)
+    monkeypatch.setattr(ali, "scan_cases", lambda: cases)
+    monkeypatch.setattr(ali, "validate_plan", lambda rows, scanned: [])
+
+    rc = ali.main([])
+    captured = capsys.readouterr()
+
+    assert rc == 0
+    assert markdown_path.exists()
+    assert json_path.exists()
+    payload = json.loads(json_path.read_text())
+    assert payload["mode"] == "dry-run"
+    assert payload["post_state"] is None
+    assert len(payload["actions"]) == 17
+    assert "mode: dry-run" in captured.out
+    assert str(markdown_path) in captured.out
+    assert str(json_path) in captured.out
 
 
 def test_main_fails_when_plan_validation_errors_exist(monkeypatch, capsys):
