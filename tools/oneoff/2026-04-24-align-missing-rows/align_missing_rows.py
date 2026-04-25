@@ -146,7 +146,7 @@ def _replace_top_level_scalar(text: str, key: str, value: str) -> tuple[str, boo
 
 
 def _replace_source_row(text: str, new_row: int) -> tuple[str, bool]:
-    source_match = re.search(r"(?ms)^source:\n(?P<body>(?:^[ \t]+.*(?:\n|$))*)", text)
+    source_match = re.search(r"(?m)^source:\n(?P<body>(?:^[ \t]+.*(?:\n|$))*)", text)
     if not source_match:
         return text, False
 

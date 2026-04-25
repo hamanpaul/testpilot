@@ -89,6 +89,31 @@ def test_metadata_edit_only_updates_id_and_source_row_for_realistic_yaml(tmp_pat
     assert after == expected_after
 
 
+def test_metadata_edit_inserts_source_row_without_touching_later_nested_row(tmp_path):
+    dst = tmp_path / "synthetic.yaml"
+    before = dedent(
+        """\
+        id: wifi-llapi-D115-getstationstats-accesspoint
+        name: getStationStats() — WiFi.AccessPoint.{i}.
+        source:
+          object: WiFi.AccessPoint.{i}.
+          api: getStationStats()
+        other_section:
+          label: example
+          row: 999
+        """
+    )
+    dst.write_text(before)
+
+    changes = ali._edit_metadata(dst, new_row=109, new_id=None)
+
+    assert changes == {"source.row": [None, 109]}
+    after = dst.read_text()
+    assert "source:\n  row: 109\n  object: WiFi.AccessPoint.{i}.\n  api: getStationStats()" in after
+    assert "other_section:\n  label: example\n  row: 999" in after
+    assert "  row: 109\n" in after.split("other_section:", 1)[0]
+
+
 def test_load_support_rows_returns_415_entries():
     rows = ali.load_support_rows()
     assert len(rows) == 415
