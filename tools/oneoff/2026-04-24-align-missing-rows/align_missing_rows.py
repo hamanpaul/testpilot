@@ -28,6 +28,10 @@ THIS_DIR = Path(__file__).resolve().parent
 REPORT_MD = THIS_DIR / "inventory_alignment_20260424.md"
 REPORT_JSON = THIS_DIR / "inventory_alignment_20260424.json"
 _FN_ROW_RE = re.compile(r"^D(\d{3,4})_")
+_ALLOWED_DIRTY_PATHS = {
+    str(REPORT_MD.relative_to(REPO_ROOT)),
+    str(REPORT_JSON.relative_to(REPO_ROOT)),
+}
 
 PLAN_RENAMES: list[tuple[str, int, str, str, int, str]] = [
     ("D068_discoverymethodenabled_accesspoint_fils.yaml", 68, "wifi-llapi-D068-discoverymethodenabled-accesspoint-fils", "D066_discoverymethodenabled_accesspoint_fils.yaml", 66, "wifi-llapi-D066-discoverymethodenabled-accesspoint-fils"),
@@ -387,7 +391,14 @@ def _ensure_clean_worktree() -> None:
         capture_output=True,
         text=True,
     )
-    dirty = [line for line in proc.stdout.splitlines() if line.strip()]
+    dirty = []
+    for line in proc.stdout.splitlines():
+        if not line.strip():
+            continue
+        path = line[3:]
+        if path in _ALLOWED_DIRTY_PATHS:
+            continue
+        dirty.append(line)
     if dirty:
         raise RuntimeError("worktree is not clean:\n" + "\n".join(dirty))
 
@@ -582,13 +593,17 @@ def main(argv: list[str] | None = None) -> int:
 
     mode = "apply" if args.apply else "dry-run"
     print(f"mode: {mode} | support_rows: {len(support_rows)} | current_cases: {len(cases)}")
+    post: dict | None = None
+    pending_error: Exception | None = None
     if args.apply:
         _ensure_clean_worktree()
         actions = _apply_actions()
-        post = verify_post_state()
+        try:
+            post = verify_post_state()
+        except Exception as exc:
+            pending_error = exc
     else:
         actions = _planned_actions()
-        post = None
     report_md = write_markdown_report(mode, actions, post)
     report_json = write_json_report(mode, actions, post)
     print(f"actions: {len(actions)}")
@@ -596,6 +611,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"report_json: {report_json}")
     if post is not None:
         print(f"post_state: {json.dumps(post, ensure_ascii=False, sort_keys=True)}")
+    if pending_error is not None:
+        raise pending_error
     return 0
 
 
