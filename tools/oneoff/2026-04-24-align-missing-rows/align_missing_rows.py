@@ -23,19 +23,26 @@ TEMPLATE_YAML = CASES_DIR / "_template.yaml"
 THIS_DIR = Path(__file__).resolve().parent
 _FN_ROW_RE = re.compile(r"^D(\d{3,4})_")
 
-PLAN_RENAMES: list[tuple[str, str, int, str]] = [
-    ("D068_discoverymethodenabled_accesspoint_fils.yaml", "D066_discoverymethodenabled_accesspoint_fils.yaml", 66, "wifi-llapi-D066-discoverymethodenabled-accesspoint-fils"),
-    ("D068_discoverymethodenabled_accesspoint_upr.yaml", "D067_discoverymethodenabled_accesspoint_upr.yaml", 67, "wifi-llapi-D067-discoverymethodenabled-accesspoint-upr"),
-    ("D115_getstationstats_accesspoint.yaml", "D109_getstationstats.yaml", 109, "wifi-llapi-D109-getstationstats"),
-    ("D115_getstationstats_active.yaml", "D110_getstationstats_active.yaml", 110, "wifi-llapi-D110-getstationstats-active"),
-    ("D115_getstationstats_associationtime.yaml", "D111_getstationstats_associationtime.yaml", 111, "wifi-llapi-D111-getstationstats-associationtime"),
-    ("D115_getstationstats_authenticationstate.yaml", "D112_getstationstats_authenticationstate.yaml", 112, "wifi-llapi-D112-getstationstats-authenticationstate"),
-    ("D115_getstationstats_avgsignalstrength.yaml", "D113_getstationstats_avgsignalstrength.yaml", 113, "wifi-llapi-D113-getstationstats-avgsignalstrength"),
-    ("D115_getstationstats_avgsignalstrengthbychain.yaml", "D114_getstationstats_avgsignalstrengthbychain.yaml", 114, "wifi-llapi-D114-getstationstats-avgsignalstrengthbychain"),
+PLAN_RENAMES: list[tuple[str, int, str, str, int, str]] = [
+    ("D068_discoverymethodenabled_accesspoint_fils.yaml", 68, "wifi-llapi-D068-discoverymethodenabled-accesspoint-fils", "D066_discoverymethodenabled_accesspoint_fils.yaml", 66, "wifi-llapi-D066-discoverymethodenabled-accesspoint-fils"),
+    ("D068_discoverymethodenabled_accesspoint_upr.yaml", 68, "wifi-llapi-D068-discoverymethodenabled-accesspoint-upr", "D067_discoverymethodenabled_accesspoint_upr.yaml", 67, "wifi-llapi-D067-discoverymethodenabled-accesspoint-upr"),
+    ("D115_getstationstats_accesspoint.yaml", 115, "wifi-llapi-D115-getstationstats-accesspoint", "D109_getstationstats.yaml", 109, "wifi-llapi-D109-getstationstats"),
+    ("D115_getstationstats_active.yaml", 115, "wifi-llapi-D115-getstationstats-active", "D110_getstationstats_active.yaml", 110, "wifi-llapi-D110-getstationstats-active"),
+    ("D115_getstationstats_associationtime.yaml", 115, "wifi-llapi-D115-getstationstats-associationtime", "D111_getstationstats_associationtime.yaml", 111, "wifi-llapi-D111-getstationstats-associationtime"),
+    ("D115_getstationstats_authenticationstate.yaml", 115, "wifi-llapi-D115-getstationstats-authenticationstate", "D112_getstationstats_authenticationstate.yaml", 112, "wifi-llapi-D112-getstationstats-authenticationstate"),
+    ("D115_getstationstats_avgsignalstrength.yaml", 115, "wifi-llapi-D115-getstationstats-avgsignalstrength", "D113_getstationstats_avgsignalstrength.yaml", 113, "wifi-llapi-D113-getstationstats-avgsignalstrength"),
+    ("D115_getstationstats_avgsignalstrengthbychain.yaml", 115, "wifi-llapi-D115-getstationstats-avgsignalstrengthbychain", "D114_getstationstats_avgsignalstrengthbychain.yaml", 114, "wifi-llapi-D114-getstationstats-avgsignalstrengthbychain"),
 ]
 
-PLAN_MOVE: tuple[str, str, int, str] = ("D495_retrycount_ssid_stats_basic.yaml", "D407_retrycount_ssid_stats.yaml", 407, "wifi-llapi-D407-retrycount")
-PLAN_METADATA_ONLY: list[tuple[str, int, str | None]] = [("D495_retrycount_ssid_stats_verified.yaml", 495, None)]
+PLAN_MOVE: tuple[str, int, str, str, int, str] = (
+    "D495_retrycount_ssid_stats_basic.yaml",
+    495,
+    "wifi-llapi-d495-retrycount-basic",
+    "D407_retrycount_ssid_stats.yaml",
+    407,
+    "wifi-llapi-D407-retrycount",
+)
+PLAN_METADATA_ONLY: list[tuple[str, int, int, str | None]] = [("D495_retrycount_ssid_stats_verified.yaml", 362, 495, None)]
 PLAN_DELETES: list[str] = [
     "D096_uapsdenable.yaml",
     "D097_vendorie.yaml",
@@ -119,9 +126,15 @@ def validate_plan(
     """Return list of validation error strings; empty list = valid."""
     errors: list[str] = []
 
-    for old, new, new_row, new_id in PLAN_RENAMES:
+    for old, old_row, old_id, new, new_row, new_id in PLAN_RENAMES:
         if old not in cases:
             errors.append(f"rename source missing: {old}")
+        else:
+            case = cases[old]
+            if case["source_row"] != old_row:
+                errors.append(f"rename source row drift: {old}")
+            if case["id"] != old_id:
+                errors.append(f"rename source id drift: {old}")
         if new in cases:
             errors.append(f"rename target already exists: {new}")
         if new_row not in support_rows:
@@ -132,9 +145,15 @@ def validate_plan(
         if not new_id.startswith(f"wifi-llapi-D{new_row:03d}-"):
             errors.append(f"rename new_id does not encode row {new_row}: {new_id}")
 
-    old, new, new_row, new_id = PLAN_MOVE
+    old, old_row, old_id, new, new_row, new_id = PLAN_MOVE
     if old not in cases:
         errors.append(f"move source missing: {old}")
+    else:
+        case = cases[old]
+        if case["source_row"] != old_row:
+            errors.append(f"move source row drift: {old}")
+        if case["id"] != old_id:
+            errors.append(f"move source id drift: {old}")
     if new in cases:
         errors.append(f"move target already exists: {new}")
     if new_row not in support_rows:
@@ -145,9 +164,11 @@ def validate_plan(
     if not new_id.startswith(f"wifi-llapi-D{new_row:03d}-"):
         errors.append(f"move new_id does not encode row {new_row}: {new_id}")
 
-    for fname, new_row, _new_id in PLAN_METADATA_ONLY:
+    for fname, old_row, new_row, _new_id in PLAN_METADATA_ONLY:
         if fname not in cases:
             errors.append(f"metadata-only target missing: {fname}")
+        elif cases[fname]["source_row"] != old_row:
+            errors.append(f"metadata-only source row drift: {fname}")
         if new_row not in support_rows:
             errors.append(f"metadata-only new_row {new_row} not in Support set")
 
