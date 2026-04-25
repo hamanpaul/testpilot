@@ -429,9 +429,11 @@ def test_main_dry_run_writes_both_reports_and_returns_zero(monkeypatch, tmp_path
     assert payload["mode"] == "dry-run"
     assert payload["post_state"] is None
     assert len(payload["actions"]) == 17
-    assert "mode: dry-run" in captured.out
-    assert str(markdown_path) in captured.out
-    assert str(json_path) in captured.out
+    assert "mode=dry-run | support_rows=1 | current_cases=1" in captured.out
+    assert (
+        "reports: inventory_alignment_20260424.md, inventory_alignment_20260424.json"
+        in captured.out
+    )
 
 
 def test_main_fails_when_plan_validation_errors_exist(monkeypatch, capsys):

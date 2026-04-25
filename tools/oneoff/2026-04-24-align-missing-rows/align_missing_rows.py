@@ -208,6 +208,10 @@ def _git(args: list[str]) -> None:
     subprocess.run(["git", *args], cwd=REPO_ROOT, check=True)
 
 
+def _display_path(path: Path) -> str:
+    return str(path.relative_to(REPO_ROOT))
+
+
 def _edit_metadata(path: Path, new_row: int | None, new_id: str | None) -> dict[str, list]:
     """Edit `id` and `source.row` in place while preserving unrelated file layout."""
     text = path.read_text()
@@ -604,7 +608,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     mode = "apply" if args.apply else "dry-run"
-    print(f"mode: {mode} | support_rows: {len(support_rows)} | current_cases: {len(cases)}")
+    print(f"mode={mode} | support_rows={len(support_rows)} | current_cases={len(cases)}")
     actions: list[dict] = []
     post: dict | None = None
     pending_error: Exception | None = None
@@ -624,8 +628,7 @@ def main(argv: list[str] | None = None) -> int:
     report_md = write_markdown_report(mode, actions, post)
     report_json = write_json_report(mode, actions, post)
     print(f"actions: {len(actions)}")
-    print(f"report_md: {report_md}")
-    print(f"report_json: {report_json}")
+    print(f"reports: {_display_path(report_md)}, {_display_path(report_json)}")
     if post is not None:
         print(f"post_state: {json.dumps(post, ensure_ascii=False, sort_keys=True)}")
     if pending_error is not None:
