@@ -19,6 +19,11 @@ ROOT = Path(__file__).resolve().parents[1]
 CASES_DIR = ROOT / "plugins" / "wifi_llapi" / "cases"
 FORBIDDEN_TOP_KEYS = {"results_reference"}
 FORBIDDEN_SOURCE_KEYS = {"baseline", "report", "sheet"}
+PLACEHOLDER_MARKERS = (
+    "replace with actual test command",
+    "replace with verification command",
+    "expected output",
+)
 
 
 def _discoverable_case_paths() -> list[Path]:
@@ -51,6 +56,13 @@ def test_no_shipped_case_contains_forbidden_fields() -> None:
         if isinstance(source, dict):
             forbidden_source = FORBIDDEN_SOURCE_KEYS & set(source)
             assert not forbidden_source, f"{path} still has forbidden source keys: {sorted(forbidden_source)}"
+
+
+def test_no_discoverable_case_contains_template_placeholders() -> None:
+    for path in _discoverable_case_paths():
+        text = path.read_text(encoding="utf-8")
+        for marker in PLACEHOLDER_MARKERS:
+            assert marker not in text, f"{path} still contains placeholder marker: {marker!r}"
 
 
 def test_discovery_matches_discoverable_case_files() -> None:

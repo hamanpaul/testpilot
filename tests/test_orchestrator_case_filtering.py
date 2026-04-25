@@ -70,12 +70,12 @@ def test_discover_wifi_llapi_cases_excludes_underscore_prefix():
     assert len(underscore_cases) == 0, f"Underscore-prefixed cases leaked: {underscore_cases}"
 
 
-def test_discover_wifi_llapi_has_420_official_cases():
-    """wifi_llapi should have exactly 420 official discoverable cases."""
+def test_discover_wifi_llapi_has_415_official_cases():
+    """wifi_llapi should have exactly 415 official discoverable cases."""
     orch = _make_orchestrator()
     cases = orch.list_cases("wifi_llapi")
     official = [c for c in cases if Orchestrator._is_wifi_llapi_official_case(c)]
-    assert len(official) == 420, f"Expected 420 official cases, got {len(official)}"
+    assert len(official) == 415, f"Expected 415 official cases, got {len(official)}"
 
 
 def test_load_wifi_llapi_case_pairs_rejects_results_reference_on_run_path(tmp_path, monkeypatch):
