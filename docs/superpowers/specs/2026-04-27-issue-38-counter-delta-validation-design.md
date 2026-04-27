@@ -305,7 +305,7 @@ def _validate_phase_ordering(case) -> str | None:
 ```
 Stage A（必遷，~30 case）── api 名稱含 Retry / Retrans / Fail / Error / Drop / Discard / Glitch / BadPLCP
                            且 llapi_support: Support
-                           ─► 必走 delta_nonzero + delta_match
+                           ─► 預設走 delta_nonzero + delta_match
 
 Stage B（個案判斷，~50 case）── api 名稱含 Count / Bytes / Packets / Stats
                                  ─► 進一步區分：
@@ -329,6 +329,9 @@ D406, D407, D448, D451                               # radio_stats retry / pream
 D452, D453, D454, D455, D457, D458                   # vendor stats badplcp / glitch / radio retry / retrans
 D495, D580                                           # retrycount verified / affiliated sta errors
 ```
+
+> Wave 1 樣板中的 **D313** 是刻意保留的例外：它用來示範 **multi-band baseline/trigger/verify phase** 與共享 trigger phase 的描述方式，因此只要求每個 band 的 `delta_nonzero`。  
+> Wave 1 的 `reference_delta + delta_match` 樣板由 **D037** 承擔；等到後續 wave 為 getSSIDStats 家族選定穩定的 companion counter 後，再把同家族遷移收斂到完整的 cross-source delta_match 範式。
 
 ### Stage B 預估遷移名單
 
@@ -525,8 +528,8 @@ Wave 1（基礎建設 PR）必須交付：
 - [ ] `tests/test_wifi_llapi_excel.py`：Integration test E 擴充
 - [ ] `tests/fixtures/wifi_llapi_delta/`：3 個 fixture case
 - [ ] `plugins/wifi_llapi/CASE_YAML_SYNTAX.md`：完整 yaml syntax reference
-- [ ] `plugins/wifi_llapi/cases/D037_retransmissions.yaml`：遷移為 delta 範式（樣板 case）
-- [ ] `plugins/wifi_llapi/cases/D313_getssidstats_retranscount.yaml`：遷移為 delta 範式（樣板 case）
+- [ ] `plugins/wifi_llapi/cases/D037_retransmissions.yaml`：遷移為 delta 範式（`delta_nonzero + delta_match` 樣板 case）
+- [ ] `plugins/wifi_llapi/cases/D313_getssidstats_retranscount.yaml`：遷移為 multi-band delta 範式（shared trigger phase + per-band `delta_nonzero` 樣板 case）
 
 Wave 2 / Wave 3 各自的遷移 PR 內容見 §7。
 

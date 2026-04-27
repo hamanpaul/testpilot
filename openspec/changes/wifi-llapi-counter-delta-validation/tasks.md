@@ -75,7 +75,7 @@
 ## 6. Wave 1 — Sample Case Migration
 
 - [x] 6.1 Migrate `plugins/wifi_llapi/cases/D037_retransmissions.yaml` to delta range; remove `'Workbook v4.0.3 marks this API as Fail'` description line; ensure baseline → trigger → verify ordering and at least one `delta_nonzero` and one `delta_match`
-- [x] 6.2 Migrate `plugins/wifi_llapi/cases/D313_getssidstats_retranscount.yaml` to delta range; remove the per-band `equals 0` criteria; add baseline/trigger/verify steps for each band
+- [x] 6.2 Migrate `plugins/wifi_llapi/cases/D313_getssidstats_retranscount.yaml` to delta range; remove the per-band `equals 0` criteria; add baseline/trigger/verify steps for each band with per-band `delta_nonzero` checks
 - [x] 6.3 Run emulated transport suite for both samples; confirm verdicts match design expectations
 
 ## 7. Wave 1 — PR Gating
