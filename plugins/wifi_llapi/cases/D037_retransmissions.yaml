@@ -93,60 +93,114 @@ sta_env_setup: "DUT 5G AP baseline:\n  ubus-cli WiFi.Radio.1.Enable=1\n  ubus-cl
   \  sleep 10\n  iw dev wl0 link\n  wpa_cli -p /var/run/wpa_supplicant -i wl0 status\n\
   DUT association evidence:\n  wl -i wl0 assoclist\n"
 test_procedure: '1) Confirm the 5G STA is associated to AP1 and resolve its live MAC
-  address.
+  address plus STA wl0 IPv4 address.
 
-  2) Read WiFi.AccessPoint.1.AssociatedDevice.1.Retransmissions on DUT. The workbook
-  expects this case to fail: the LLAPI stays 0 even though driver retry counters are
-  non-zero for the same STA.
+  2) Capture baseline DUT LLAPI Retransmissions and the matching driver `tx pkts
+  retries` counter for the same STA.
 
-  3) Cross-check the same STA against wl0 sta_info `tx pkts retries`.
+  3) From the DUT bridge IP, run a best-effort large-packet ping burst toward the
+  resolved STA IP to exercise AP-to-STA retransmission behavior.
+
+  4) Capture verify DUT LLAPI Retransmissions and the matching driver `tx pkts
+  retries` counter, then compare baseline-to-verify deltas.
 
   '
 steps:
-- id: step1
+- id: step1_resolve_assoc
+  phase: baseline
   action: exec
   target: DUT
   command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
   capture: assoc_entry
-- id: step2
+- id: step2_resolve_sta_ip
+  phase: baseline
+  action: exec
+  target: STA
+  command: ifconfig wl0 | awk '/inet addr:/ {gsub("addr:","",$2); print "StaIp=" $2;
+    exit} $1=="inet" {print "StaIp=" $2; exit}'
+  depends_on: step1_resolve_assoc
+  capture: sta_ip
+- id: step3_api_baseline
+  phase: baseline
   action: exec
   target: DUT
   command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Retransmissions?"
-  depends_on: step1
-  capture: result
-- id: step3
+  depends_on: step2_resolve_sta_ip
+  capture: api_before_5g
+- id: step4_drv_baseline
+  phase: baseline
   action: exec
   target: DUT
-  command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
-    | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC;
+  command: 'STA_MAC="{{assoc_entry.MACAddress}}"; [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC;
     [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*tx pkts retries:
     *\([0-9][0-9]*\).*/DriverRetransmissions=\1/p'''
-  depends_on: step2
-  capture: driver_counter
+  depends_on: step3_api_baseline
+  capture: drv_before_5g
+- id: step5_trigger
+  phase: trigger
+  action: exec
+  target: DUT
+  command: PROBE_OUT=$(ping -I br-lan -c 20 -s 1400 -W 1 {{sta_ip.StaIp}} 2>&1);
+    printf '%s\n' "$PROBE_OUT"; printf '%s\n' "$PROBE_OUT" | awk '/packets transmitted/
+    {print "TriggerTxPackets=" $1; exit}'
+  depends_on: step4_drv_baseline
+  capture: trigger_probe
+- id: step6_api_verify
+  phase: verify
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Retransmissions?"
+  depends_on: step5_trigger
+  capture: api_after_5g
+- id: step7_drv_verify
+  phase: verify
+  action: exec
+  target: DUT
+  command: 'STA_MAC="{{assoc_entry.MACAddress}}"; [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC;
+    [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*tx pkts retries:
+    *\([0-9][0-9]*\).*/DriverRetransmissions=\1/p'''
+  depends_on: step6_api_verify
+  capture: drv_after_5g
 pass_criteria:
 - field: assoc_entry.MACAddress
   operator: regex
   value: ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$
   description: AP1 AssociatedDevice.1 must first resolve to the live 5G STA MAC.
-- field: result.Retransmissions
-  operator: equals
-  value: '0'
-  description: 'Workbook v4.0.3 marks this API as Fail: LLAPI Retransmissions still
-    reads 0.'
-- field: driver_counter.DriverAssocMac
-  operator: equals
-  reference: assoc_entry.MACAddress
-  description: Driver counter sampling must use the same live AssociatedDevice 
-    MAC resolved in step1.
-- field: driver_counter.DriverRetransmissions
+- field: sta_ip.StaIp
+  operator: regex
+  value: ^([0-9]{1,3}\.){3}[0-9]{1,3}$
+  description: The 5G STA wl0 interface must expose an IPv4 address for the DUT-originated trigger.
+- field: trigger_probe.TriggerTxPackets
   operator: '>'
   value: '0'
-  description: Driver retry counters must still show real retransmissions for 
-    the same STA.
+  description: The DUT trigger step must actually transmit a downlink burst toward the resolved STA IP.
+- field: drv_before_5g.DriverAssocMac
+  operator: equals
+  reference: assoc_entry.MACAddress
+  description: Baseline driver sampling must target the same live AssociatedDevice MAC resolved in step1.
+- field: drv_after_5g.DriverAssocMac
+  operator: equals
+  reference: assoc_entry.MACAddress
+  description: Verify driver sampling must target the same live AssociatedDevice MAC resolved in step1.
+- delta:
+    baseline: api_before_5g.Retransmissions
+    verify: api_after_5g.Retransmissions
+  operator: delta_nonzero
+  description: 5G API Retransmissions must grow after the DUT-originated trigger workload.
+- delta:
+    baseline: api_before_5g.Retransmissions
+    verify: api_after_5g.Retransmissions
+  reference_delta:
+    baseline: drv_before_5g.DriverRetransmissions
+    verify: drv_after_5g.DriverRetransmissions
+  operator: delta_match
+  tolerance_pct: 10
+  description: 5G API retransmission delta must stay within ±10% of the driver delta.
 verification_command:
 - ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Retransmissions?"
-- STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed 
-  -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
-- '[ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC'
-- '[ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*tx pkts retries:
+- ifconfig wl0 | awk '/inet addr:/ {gsub("addr:","",$2); print "StaIp=" $2; exit}
+  $1=="inet" {print "StaIp=" $2; exit}'
+- ping -I br-lan -c 20 -s 1400 -W 1 <resolved STA wl0 IPv4>
+- 'STA_MAC="{{assoc_entry.MACAddress}}" && [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC'
+- 'STA_MAC="{{assoc_entry.MACAddress}}" && [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*tx pkts retries:
   *\([0-9][0-9]*\).*/DriverRetransmissions=\1/p'''
