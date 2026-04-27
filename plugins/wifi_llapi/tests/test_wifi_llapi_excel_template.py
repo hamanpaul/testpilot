@@ -5,6 +5,9 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 
 from testpilot.reporting.wifi_llapi_excel import (
+    COMMENT_HEADER,
+    DEFAULT_CLEAR_COLUMNS,
+    DEFAULT_TEMPLATE_MAX_COLUMN,
     WifiLlapiCaseResult,
     build_template_from_source,
     collect_alignment_issues,
@@ -13,6 +16,7 @@ from testpilot.reporting.wifi_llapi_excel import (
     generate_report_filename,
     normalize_command_block,
     sanitize_report_output,
+    _truncate_comment,
 )
 from testpilot.schema.case_schema import load_case
 
@@ -71,24 +75,28 @@ def test_build_template_from_source(tmp_path: Path):
     result = build_template_from_source(source, template)
     assert result.total_case_rows == 2
     assert result.sheet_name == "Wifi_LLAPI"
+    assert DEFAULT_TEMPLATE_MAX_COLUMN == "M"
+    assert result.cleared_columns == DEFAULT_CLEAR_COLUMNS
+    assert "M" in result.cleared_columns
 
     wb = load_workbook(template)
     assert wb.sheetnames == ["Wifi_LLAPI"]
     ws = wb["Wifi_LLAPI"]
-    assert ws.max_column == 12
-    assert get_column_letter(ws.max_column) == "L"
-    assert all(r.max_col <= 12 for r in ws.merged_cells.ranges)
+    assert ws.max_column == 13
+    assert get_column_letter(ws.max_column) == "M"
+    assert all(r.max_col <= 13 for r in ws.merged_cells.ranges)
     assert ws["I2"].value == "Result"
     assert ws["L2"].value == "Tester"
     assert ws["I3"].value == "WiFi 5G"
     assert ws["J3"].value == "WiFi 6G"
     assert ws["K3"].value == "WiFi 2.4G"
     assert ws["L3"].value == "Tester"
+    assert ws["M3"].value == COMMENT_HEADER
     assert "S" not in ws.column_dimensions
     assert "AB" not in ws.column_dimensions
     assert ws["C4"].value == "kickStation()"
     assert ws["C5"].value == "scan()"
-    for cell in ("G4", "H4", "I4", "J4", "K4", "L4", "G5", "H5", "I5", "J5", "K5", "L5"):
+    for cell in ("G4", "H4", "I4", "J4", "K4", "L4", "M4", "G5", "H5", "I5", "J5", "K5", "L5", "M5"):
         assert ws[cell].value is None
     wb.close()
 
@@ -112,6 +120,7 @@ def test_fill_case_results(tmp_path: Path):
                 result_5g="Pass",
                 result_6g="Pass",
                 result_24g="Pass",
+                comment="verified via DUT and STA logs",
             )
         ],
     )
@@ -124,6 +133,51 @@ def test_fill_case_results(tmp_path: Path):
     assert ws["J4"].value == "Pass"
     assert ws["K4"].value == "Pass"
     assert ws["L4"].value == "testpilot"
+    assert ws["M4"].value == "verified via DUT and STA logs"
+    wb.close()
+
+
+def test_fill_case_results_comment_truncates_and_blank_stays_empty(tmp_path: Path):
+    source = tmp_path / "source.xlsx"
+    template = tmp_path / "wifi_llapi_template.xlsx"
+    report = tmp_path / "20260304_BGW720-B0-403_wifi_LLAPI.xlsx"
+    _create_source_xlsx(source)
+    build_template_from_source(source, template)
+    create_run_report_from_template(template, report)
+
+    fill_case_results(
+        report,
+        [
+            WifiLlapiCaseResult(
+                case_id="wifi-llapi-D004-kickstation",
+                source_row=4,
+                executed_test_command="cmd",
+                command_output="out",
+                result_5g="Pass",
+                result_6g="Pass",
+                result_24g="Pass",
+                comment="x" * 201,
+            ),
+            WifiLlapiCaseResult(
+                case_id="wifi-llapi-D005-scan",
+                source_row=5,
+                executed_test_command="cmd2",
+                command_output="out2",
+                result_5g="Fail",
+                result_6g="Fail",
+                result_24g="Fail",
+                comment="",
+            ),
+        ],
+    )
+
+    wb = load_workbook(report)
+    ws = wb["Wifi_LLAPI"]
+    assert ws["M4"].value == ("x" * 197) + "..."
+    assert len(ws["M4"].value) == 200
+    assert _truncate_comment("") == ""
+    assert _truncate_comment(None) == ""
+    assert ws["M5"].value in (None, "")
     wb.close()
 
 
@@ -141,6 +195,7 @@ def test_fill_case_results_with_merged_row(tmp_path: Path):
     ws.merge_cells("J4:J5")
     ws.merge_cells("K4:K5")
     ws.merge_cells("L4:L5")
+    ws.merge_cells("M4:M5")
     wb.save(source)
     wb.close()
 
@@ -170,6 +225,7 @@ def test_fill_case_results_with_merged_row(tmp_path: Path):
     assert ws["J4"].value == "N/A"
     assert ws["K4"].value == "Pass"
     assert ws["L4"].value == "testpilot"
+    assert ws["M4"].value in (None, "")
     wb.close()
 
 
