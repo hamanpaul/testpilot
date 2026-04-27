@@ -227,7 +227,11 @@ class ExecutionEngine:
                 if not comment:
                     verdict = bool(plugin.evaluate(runtime_case, {"steps": step_results}))
                     if not verdict:
-                        comment = "pass_criteria not satisfied"
+                        last_failure = runtime_case.get("_last_failure")
+                        if isinstance(last_failure, dict):
+                            comment = str(last_failure.get("comment") or "pass_criteria not satisfied")
+                        else:
+                            comment = "pass_criteria not satisfied"
                         failure_payload = self._dispatch_failure(
                             runtime_case=runtime_case,
                             runner=runner,
