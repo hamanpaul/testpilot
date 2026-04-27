@@ -80,7 +80,7 @@
 
 ## 7. Wave 1 — PR Gating
 
-- [ ] 7.1 Confirm Wave 1 PR description includes design link and sample case before/after diff
+- [x] 7.1 Confirm Wave 1 PR description includes design link and sample case before/after diff
 - [ ] 7.2 CI green on unit + integration tests
 - [x] 7.3 `pytest tests/` full suite green (no regression in existing modules)
 - [ ] 7.4 Wave 1 PR merged to main BEFORE opening any Wave 2 / Wave 3 PR
@@ -113,7 +113,7 @@
 ## 10. Closeout
 
 - [ ] 10.1 Confirm `grep -rn "equals" plugins/wifi_llapi/cases/ | grep "value: '0'"` returns only Stage C cases (settings/state assertions explicitly out of scope)
-- [ ] 10.2 Confirm zero references to `'Workbook v4.0.3 marks this API as Fail'` remain in migrated cases
+- [x] 10.2 Confirm zero references to `'Workbook v4.0.3 marks this API as Fail'` remain in migrated cases
 - [x] 10.3 Run `openspec validate wifi-llapi-counter-delta-validation --strict` and confirm green
 - [x] 10.4 Final `pytest tests/` full suite green
 - [ ] 10.5 Archive change with `openspec archive wifi-llapi-counter-delta-validation`
