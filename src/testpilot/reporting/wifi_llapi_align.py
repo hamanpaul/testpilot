@@ -19,12 +19,13 @@ from testpilot.reporting.wifi_llapi_excel import (
 )
 
 AlignStatus = Literal["already_aligned", "auto_aligned", "blocked", "skipped"]
-BlockedReason = Literal[
+KnownBlockedReason = Literal[
     "object_api_not_in_template",
     "name_points_to_different_row",
     "name_not_in_template",
     "ambiguous_object_api_family",
 ]
+BlockedReason = KnownBlockedReason | str
 
 _ID_D_PATTERN = re.compile(r"(wifi-llapi-D)(\d{3})(-)")
 _FILE_D_PATTERN = re.compile(r"^D(?P<row>\d{3})(?P<suffix>.*)$")
