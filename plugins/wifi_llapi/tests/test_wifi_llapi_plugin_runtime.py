@@ -3142,7 +3142,6 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
         "D310_getssidstats_multicastpacketssent.yaml": {"row": 310, "api": "MulticastPacketsSent", "expected": "Pass"},
         "D311_getssidstats_packetsreceived.yaml": {"row": 311, "api": "PacketsReceived", "expected": "Pass"},
         "D312_getssidstats_packetssent.yaml": {"row": 312, "api": "PacketsSent", "expected": "Pass"},
-        "D313_getssidstats_retranscount.yaml": {"row": 313, "api": "RetransCount", "expected": "Not Supported", "name": "RetransCount — WiFi.SSID.{i}.getSSIDStats()."},
         "D314_getssidstats_unicastpacketsreceived.yaml": {"row": 314, "api": "UnicastPacketsReceived", "expected": "Pass"},
         "D315_getssidstats_unicastpacketssent.yaml": {"row": 315, "api": "UnicastPacketsSent", "expected": "Pass"},
         "D316_getssidstats_unknownprotopacketsreceived.yaml": {"row": 316, "api": "UnknownProtoPacketsReceived", "expected": "Not Supported", "name": "UnknownProtoPacketsReceived — WiFi.SSID.{i}.getSSIDStats()."},
@@ -21130,7 +21129,6 @@ _SSID_STATS_CASES = [
     ("D310_getssidstats_multicastpacketssent.yaml", 310, "MulticastPacketsSent", "Pass"),
     ("D311_getssidstats_packetsreceived.yaml", 311, "PacketsReceived", "Pass"),
     ("D312_getssidstats_packetssent.yaml", 312, "PacketsSent", "Pass"),
-    ("D313_getssidstats_retranscount.yaml", 313, "RetransCount", "Not Supported"),
     ("D314_getssidstats_unicastpacketsreceived.yaml", 314, "UnicastPacketsReceived", "Pass"),
     ("D315_getssidstats_unicastpacketssent.yaml", 315, "UnicastPacketsSent", "Pass"),
     ("D316_getssidstats_unknownprotopacketsreceived.yaml", 316, "UnknownProtoPacketsReceived", "Not Supported"),
@@ -21184,6 +21182,180 @@ def test_ssid_stats_evaluate(yaml_file, row, field, verdict):
         }
     assert plugin.evaluate(case, results) is True
 
+
+def test_d313_getssidstats_retranscount_uses_delta_contract():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    plugin = _load_plugin()
+    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
+    assert "d313-getssidstats-retranscount" in discoverable_ids
+
+    raw_case = yaml.safe_load((cases_dir / "D313_getssidstats_retranscount.yaml").read_text(encoding="utf-8"))
+    case_data = load_case(cases_dir / "D313_getssidstats_retranscount.yaml")
+
+    assert "aliases" not in raw_case
+    assert case_data["id"] == "d313-getssidstats-retranscount"
+    assert case_data["source"]["row"] == 313
+    assert case_data["source"]["api"] == "getSSIDStats()"
+    assert case_data["bands"] == ["5g", "6g", "2.4g"]
+    assert "shared multi-band trigger phase" in case_data["test_procedure"]
+    assert [step["phase"] for step in case_data["steps"]] == [
+        "baseline",
+        "baseline",
+        "baseline",
+        "trigger",
+        "trigger",
+        "trigger",
+        "verify",
+        "verify",
+        "verify",
+    ]
+    assert [step["action"] for step in case_data["steps"]] == [
+        "read",
+        "read",
+        "read",
+        "wait",
+        "wait",
+        "wait",
+        "read",
+        "read",
+        "read",
+    ]
+    assert [step["capture"] for step in case_data["steps"] if step.get("capture")] == [
+        "stats_5g_before",
+        "stats_6g_before",
+        "stats_24g_before",
+        "trigger_segment_5g",
+        "trigger_segment_6g",
+        "trigger_segment_24g",
+        "stats_5g_after",
+        "stats_6g_after",
+        "stats_24g_after",
+    ]
+    assert all(step.get("duration") == 30 for step in case_data["steps"][3:6])
+    assert all("shared multi-band trigger phase" in step["description"].lower() for step in case_data["steps"][3:6])
+    assert all("ubus-cli" not in step.get("command", "") for step in case_data["steps"][3:6])
+    assert len(case_data["pass_criteria"]) == 3
+    assert case_data["pass_criteria"] == [
+        {
+            "delta": {
+                "baseline": "stats_5g_before.RetransCount",
+                "verify": "stats_5g_after.RetransCount",
+            },
+            "operator": "delta_nonzero",
+            "description": "5G RetransCount must increase across the shared multi-band trigger phase.",
+        },
+        {
+            "delta": {
+                "baseline": "stats_6g_before.RetransCount",
+                "verify": "stats_6g_after.RetransCount",
+            },
+            "operator": "delta_nonzero",
+            "description": "6G RetransCount must increase across the shared multi-band trigger phase.",
+        },
+        {
+            "delta": {
+                "baseline": "stats_24g_before.RetransCount",
+                "verify": "stats_24g_after.RetransCount",
+            },
+            "operator": "delta_nonzero",
+            "description": "2.4G RetransCount must increase across the shared multi-band trigger phase.",
+        },
+    ]
+    assert not any(
+        criterion.get("field", "").endswith(".RetransCount")
+        and criterion.get("operator") == "equals"
+        and str(criterion.get("value")) == "0"
+        for criterion in case_data["pass_criteria"]
+    )
+
+
+def test_d313_getssidstats_retranscount_setup_env(monkeypatch):
+    """D313 remains DUT-only even after delta migration."""
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    case = load_case(cases_dir / "D313_getssidstats_retranscount.yaml")
+    topo = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    assert plugin.setup_env(case, topology=topo) is True
+    plugin.teardown(case, topo)
+
+
+def test_d313_getssidstats_retranscount_evaluate_delta_examples():
+    plugin = _load_plugin()
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    case_data = load_case(cases_dir / "D313_getssidstats_retranscount.yaml")
+
+    def stats_output(ssid: str, value: int) -> str:
+        return (
+            f"WiFi.SSID.{ssid}.getSSIDStats() returned\n"
+            "[\n    {\n"
+            f"        RetransCount = {value},\n"
+            "    }\n]"
+        )
+
+    pass_results = {
+        "steps": {
+            "step_5g_baseline_stats": {
+                "success": True,
+                "output": stats_output("4", 10),
+                "timing": 0.01,
+            },
+            "step_6g_baseline_stats": {
+                "success": True,
+                "output": stats_output("6", 20),
+                "timing": 0.01,
+            },
+            "step_24g_baseline_stats": {
+                "success": True,
+                "output": stats_output("8", 30),
+                "timing": 0.01,
+            },
+            "step_5g_trigger_segment": {
+                "success": True,
+                "output": "waited 30.000s",
+                "timing": 30.0,
+            },
+            "step_6g_trigger_segment": {
+                "success": True,
+                "output": "waited 30.000s",
+                "timing": 30.0,
+            },
+            "step_24g_trigger_segment": {
+                "success": True,
+                "output": "waited 30.000s",
+                "timing": 30.0,
+            },
+            "step_5g_verify_stats": {
+                "success": True,
+                "output": stats_output("4", 11),
+                "timing": 0.01,
+            },
+            "step_6g_verify_stats": {
+                "success": True,
+                "output": stats_output("6", 25),
+                "timing": 0.01,
+            },
+            "step_24g_verify_stats": {
+                "success": True,
+                "output": stats_output("8", 31),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case_data, pass_results) is True
+
+    zero_delta_results = {
+        "steps": {
+            **pass_results["steps"],
+            "step_6g_verify_stats": {
+                "success": True,
+                "output": stats_output("6", 20),
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(case_data, zero_delta_results) is False
 
 # --- Batch 4d: D317 BSSID SSID property ---
 
