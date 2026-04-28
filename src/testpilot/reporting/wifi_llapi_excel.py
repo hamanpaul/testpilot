@@ -26,7 +26,7 @@ from testpilot.reporting.excel_adapter import (
 
 DEFAULT_SHEET_NAME = "Wifi_LLAPI"
 DEFAULT_TEMPLATE_NAME = "wifi_llapi_template.xlsx"
-DEFAULT_TEMPLATE_MAX_COLUMN = "L"
+DEFAULT_TEMPLATE_MAX_COLUMN = "M"
 RESULT_GROUP_HEADER = "Result"
 RESULT_HEADERS_BY_COLUMN = {
     "I": "WiFi 5G",
@@ -34,6 +34,7 @@ RESULT_HEADERS_BY_COLUMN = {
     "K": "WiFi 2.4G",
 }
 TESTER_HEADER = "Tester"
+COMMENT_HEADER = "Comment"
 DEFAULT_CLEAR_COLUMNS = (
     "G",   # Test steps
     "H",   # Driver-level verified command output
@@ -41,6 +42,7 @@ DEFAULT_CLEAR_COLUMNS = (
     "J",   # ARC 6g result
     "K",   # ARC 2.4g result
     "L",   # ARC tester
+    "M",   # Reporter comment
 )
 DATA_START_ROW = 4
 EMPTY_STREAK_STOP = 200
@@ -302,7 +304,7 @@ def _set_cell_value_safe(ws, row: int, col: str, value: str) -> None:
 
 
 def _normalize_template_headers(ws) -> None:
-    """Normalize Wifi_LLAPI result/tester header semantics for columns I~L."""
+    """Normalize Wifi_LLAPI result/tester header semantics for columns I~M."""
     for merged in list(ws.merged_cells.ranges):
         if merged.max_row < 2 or merged.min_row > 2:
             continue
@@ -317,6 +319,16 @@ def _normalize_template_headers(ws) -> None:
     ws.cell(row=3, column=10).value = RESULT_HEADERS_BY_COLUMN["J"]
     ws.cell(row=3, column=11).value = RESULT_HEADERS_BY_COLUMN["K"]
     ws.cell(row=3, column=12).value = TESTER_HEADER
+    ws.cell(row=3, column=13).value = COMMENT_HEADER
+
+
+def _truncate_comment(text: str | None, limit: int = 200) -> str:
+    if not text:
+        return ""
+    value = str(text)
+    if len(value) <= limit:
+        return value
+    return value[: max(limit - 3, 0)] + "..."
 
 
 def build_template_from_source(
@@ -326,7 +338,7 @@ def build_template_from_source(
     sheet_name: str = DEFAULT_SHEET_NAME,
     clear_rules: ClearRules | None = None,
 ) -> TemplateBuildResult:
-    """Extract wifi_LLAPI sheet as template, keep A~L columns, and clear runtime fields."""
+    """Extract wifi_LLAPI sheet as template, keep A~M columns, and clear runtime fields."""
     rules = clear_rules or ClearRules()
     source = Path(source_xlsx)
     out_path = Path(out_template_xlsx)
@@ -343,7 +355,7 @@ def build_template_from_source(
     wb.active = 0
     ws = wb[actual_sheet_name]
 
-    # Keep template schema stable: only columns A~L are preserved.
+    # Keep template schema stable: only columns A~M are preserved.
     template_max_col_idx = _to_col_idx(DEFAULT_TEMPLATE_MAX_COLUMN)
     _trim_sheet_to_max_column(ws, template_max_col_idx)
     _normalize_template_headers(ws)
@@ -452,6 +464,7 @@ def fill_case_results(
         _set_cell_value_safe(ws, row, "J", item.result_6g)
         _set_cell_value_safe(ws, row, "K", item.result_24g)
         _set_cell_value_safe(ws, row, "L", item.tester)
+        _set_cell_value_safe(ws, row, "M", _truncate_comment(item.comment))
 
     wb.save(path)
     wb.close()
@@ -584,6 +597,8 @@ def collect_alignment_issues(
 
 
 def _clear_result_row(ws, row: int) -> None:
+    # Column M is reserved for evaluate-failure comments, so BLOCKED/SKIP
+    # marker flows intentionally clear only G~L and leave M unchanged.
     for column in ("G", "H", "I", "J", "K", "L"):
         _set_cell_value_safe(ws, row, column, None)
 

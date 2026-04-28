@@ -58,6 +58,7 @@ from testpilot.core.testbed_config import TestbedConfig
 from testpilot.reporting.reporter import generate_reports
 from testpilot.reporting import log_capture
 from testpilot.reporting.wifi_llapi_align import (
+    AlignResult,
     _resolve_collisions,
     align_case,
     apply_alignment_mutations,
@@ -515,7 +516,30 @@ class Orchestrator:
     ) -> WifiLlapiAlignmentPrep:
         case_pairs = self._load_wifi_llapi_case_pairs(plugin=plugin, case_ids=case_ids)
         index = build_template_index(template_path)
-        align_results = [align_case(case, index, path) for path, case in case_pairs]
+        align_results: list[AlignResult] = []
+        validate_delta_schema = getattr(plugin, "_validate_delta_schema", None)
+        for path, case in case_pairs:
+            if callable(validate_delta_schema):
+                error = validate_delta_schema(case)
+                if error:
+                    source = case.get("source") if isinstance(case.get("source"), dict) else {}
+                    align_results.append(
+                        AlignResult(
+                            case_file=path,
+                            status="blocked",
+                            source_row_before=int(source.get("row", 0) or 0),
+                            source_row_after=None,
+                            source_object=str(source.get("object", "") or ""),
+                            source_api=str(source.get("api", "") or ""),
+                            filename_before=path.name,
+                            filename_after=None,
+                            id_before=str(case.get("id", "")),
+                            id_after=None,
+                            blocked_reason=f"invalid_delta_schema: {error}",
+                        )
+                    )
+                    continue
+            align_results.append(align_case(case, index, path))
         _resolve_collisions(align_results)
         apply_alignment_mutations(align_results)
         runnable_results = [

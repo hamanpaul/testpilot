@@ -607,6 +607,7 @@ def test_fill_blocked_markers(tmp_path: Path):
     assert ws["H6"].value == "BLOCKED: name_not_in_template"
     assert ws["G6"].value is None
     assert ws["I6"].value is None
+    assert ws["M6"].value is None
     wb.close()
 
 
@@ -639,6 +640,7 @@ def test_fill_skip_markers(tmp_path: Path):
     assert ws["H6"].value == "SKIP: duplicate with D006"
     assert ws["G6"].value is None
     assert ws["I6"].value is None
+    assert ws["M6"].value is None
     wb.close()
 
 

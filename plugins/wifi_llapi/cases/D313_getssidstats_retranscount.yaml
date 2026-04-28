@@ -9,6 +9,11 @@ bands:
 - 6g
 - 2.4g
 llapi_support: Support
+test_procedure: |
+  1) Capture baseline getSSIDStats().RetransCount on 5G, 6G, and 2.4G before any trigger activity.
+  2) Hold a shared multi-band trigger phase with dedicated 5G / 6G / 2.4G segments so external traffic can be induced per band as needed.
+  3) Because delta-phase ordering requires all verify reads after all trigger steps, each band is judged against the full shared trigger phase rather than a private per-band window.
+  4) Re-read getSSIDStats().RetransCount on all three bands and require each band delta to be positive.
 topology:
   devices:
     DUT:
@@ -16,34 +21,91 @@ topology:
       transport: serial
       selector: COM1
 steps:
-- id: step_5g_stats
+- id: step_5g_baseline_stats
+  phase: baseline
   target: dut
   action: read
-  capture: stats_5g
+  capture: stats_5g_before
   command: ubus-cli "WiFi.SSID.4.getSSIDStats()"
   expected: getSSIDStats() 回傳有效值
-  description: SSID.4 (5g) getSSIDStats()
-- id: step_6g_stats
+  description: SSID.4 (5g) RetransCount baseline read
+- id: step_6g_baseline_stats
+  phase: baseline
   target: dut
   action: read
-  capture: stats_6g
+  capture: stats_6g_before
   command: ubus-cli "WiFi.SSID.6.getSSIDStats()"
   expected: getSSIDStats() 回傳有效值
-  description: SSID.6 (6g) getSSIDStats()
-- id: step_24g_stats
+  description: SSID.6 (6g) RetransCount baseline read
+- id: step_24g_baseline_stats
+  phase: baseline
   target: dut
   action: read
-  capture: stats_24g
+  capture: stats_24g_before
   command: ubus-cli "WiFi.SSID.8.getSSIDStats()"
   expected: getSSIDStats() 回傳有效值
-  description: SSID.8 (2.4g) getSSIDStats()
+  description: SSID.8 (2.4g) RetransCount baseline read
+- id: step_5g_trigger_segment
+  phase: trigger
+  target: dut
+  action: wait
+  duration: 30
+  capture: trigger_segment_5g
+  expected: 保留 shared multi-band trigger phase 的 5G segment，供人工或外部流量在此期間發生
+  description: 5G trigger segment inside the shared multi-band trigger phase
+- id: step_6g_trigger_segment
+  phase: trigger
+  target: dut
+  action: wait
+  duration: 30
+  capture: trigger_segment_6g
+  expected: 保留 shared multi-band trigger phase 的 6G segment，供人工或外部流量在此期間發生
+  description: 6G trigger segment inside the shared multi-band trigger phase
+- id: step_24g_trigger_segment
+  phase: trigger
+  target: dut
+  action: wait
+  duration: 30
+  capture: trigger_segment_24g
+  expected: 保留 shared multi-band trigger phase 的 2.4G segment，供人工或外部流量在此期間發生
+  description: 2.4G trigger segment inside the shared multi-band trigger phase
+- id: step_5g_verify_stats
+  phase: verify
+  target: dut
+  action: read
+  capture: stats_5g_after
+  command: ubus-cli "WiFi.SSID.4.getSSIDStats()"
+  expected: getSSIDStats() 回傳有效值
+  description: SSID.4 (5g) RetransCount verify read
+- id: step_6g_verify_stats
+  phase: verify
+  target: dut
+  action: read
+  capture: stats_6g_after
+  command: ubus-cli "WiFi.SSID.6.getSSIDStats()"
+  expected: getSSIDStats() 回傳有效值
+  description: SSID.6 (6g) RetransCount verify read
+- id: step_24g_verify_stats
+  phase: verify
+  target: dut
+  action: read
+  capture: stats_24g_after
+  command: ubus-cli "WiFi.SSID.8.getSSIDStats()"
+  expected: getSSIDStats() 回傳有效值
+  description: SSID.8 (2.4g) RetransCount verify read
 pass_criteria:
-- field: stats_5g.RetransCount
-  operator: equals
-  value: 0
-- field: stats_6g.RetransCount
-  operator: equals
-  value: 0
-- field: stats_24g.RetransCount
-  operator: equals
-  value: 0
+- delta:
+    baseline: stats_5g_before.RetransCount
+    verify: stats_5g_after.RetransCount
+  operator: delta_nonzero
+  description: 5G RetransCount must increase across the shared multi-band trigger phase.
+- delta:
+    baseline: stats_6g_before.RetransCount
+    verify: stats_6g_after.RetransCount
+  operator: delta_nonzero
+  description: 6G RetransCount must increase across the shared multi-band trigger phase.
+- delta:
+    baseline: stats_24g_before.RetransCount
+    verify: stats_24g_after.RetransCount
+  operator: delta_nonzero
+  description: 2.4G RetransCount must increase across the shared multi-band trigger phase.

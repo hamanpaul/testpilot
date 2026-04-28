@@ -27,6 +27,7 @@ from baseline_qualifier import BaselineQualifier
 from command_resolver import CommandResolver
 
 log = logging.getLogger(__name__)
+ZERO_DELTA_COMMENT = "fail 原因為 0，數值無變化"
 
 
 class Plugin(PluginBase):
@@ -129,7 +130,12 @@ class Plugin(PluginBase):
         return Path(__file__).parent / "cases"
 
     def discover_cases(self) -> list[dict[str, Any]]:
-        return load_cases_dir(self.cases_dir, validator=validate_wifi_llapi_case)
+        cases = load_cases_dir(self.cases_dir, validator=validate_wifi_llapi_case)
+        for case in cases:
+            if error := self._validate_delta_schema(case):
+                case["llapi_support"] = "Blocked"
+                case["blocked_reason"] = f"invalid_delta_schema: {error}"
+        return cases
 
     # -- reporter overrides ----------------------------------------------------
 
@@ -164,6 +170,10 @@ class Plugin(PluginBase):
             return float(value)
         except (TypeError, ValueError):
             return None
+
+    @staticmethod
+    def _format_number(value: float) -> str:
+        return f"{value:g}"
 
     @staticmethod
     def _as_mapping(value: Any) -> dict[str, Any]:
@@ -1042,6 +1052,85 @@ class Plugin(PluginBase):
         if "result" not in context:
             context["result"] = aggregate_fields if aggregate_fields else aggregate_output
         return context
+
+    def _validate_delta_schema(self, case: dict[str, Any]) -> str | None:
+        criteria = case.get("pass_criteria")
+        if not isinstance(criteria, list):
+            return None
+
+        saw_delta = False
+        for criterion in criteria:
+            if not isinstance(criterion, dict) or "delta" not in criterion:
+                continue
+            saw_delta = True
+            operator = str(criterion.get("operator", "")).strip().lower()
+            if operator not in {"delta_nonzero", "delta_match"}:
+                return f"unknown delta operator: {operator or '<empty>'}"
+            error = self._validate_delta_endpoint_schema(criterion.get("delta"), field="delta")
+            if error:
+                return error
+            if operator == "delta_match":
+                error = self._validate_delta_endpoint_schema(
+                    criterion.get("reference_delta"),
+                    field="reference_delta",
+                )
+                if error:
+                    return error
+
+        if not saw_delta:
+            return None
+        return self._validate_phase_ordering(case)
+
+    @staticmethod
+    def _validate_delta_endpoint_schema(value: Any, *, field: str) -> str | None:
+        if not isinstance(value, dict):
+            return f"{field} must be a mapping with non-empty baseline/verify"
+        if not value:
+            return f"{field} must be a mapping with non-empty baseline/verify"
+
+        baseline = value.get("baseline")
+        if not isinstance(baseline, str) or not baseline.strip():
+            return f"{field}.baseline must be a non-empty string"
+
+        verify = value.get("verify")
+        if not isinstance(verify, str) or not verify.strip():
+            return f"{field}.verify must be a non-empty string"
+
+        return None
+
+    def _validate_phase_ordering(self, case: dict[str, Any]) -> str | None:
+        criteria = case.get("pass_criteria")
+        if not isinstance(criteria, list) or not any(
+            isinstance(criterion, dict) and "delta" in criterion for criterion in criteria
+        ):
+            return None
+
+        saw_trigger = False
+        saw_verify_before_trigger = False
+        saw_verify = False
+        for step in case.get("steps", []):
+            if not isinstance(step, dict):
+                continue
+            phase = str(step.get("phase", "verify")).strip() or "verify"
+            if phase not in {"baseline", "trigger", "verify"}:
+                return f"unknown phase: {phase}"
+            if phase == "trigger":
+                if saw_verify and saw_trigger:
+                    return "trigger step must precede verify"
+                saw_trigger = True
+                continue
+            if phase == "baseline" and saw_trigger:
+                return "baseline step must precede trigger"
+            if phase == "verify" and not saw_trigger:
+                saw_verify_before_trigger = True
+            if phase == "verify":
+                saw_verify = True
+
+        if not saw_trigger:
+            return "delta_* operators require at least one phase=trigger step"
+        if saw_verify_before_trigger:
+            return "verify step must follow trigger"
+        return None
 
     def _compare(self, actual: Any, operator: str, expected: Any) -> bool:
         op = operator.strip().lower()
@@ -3286,10 +3375,192 @@ class Plugin(PluginBase):
             "fallback_reason": fallback_reason,
         }
 
+    def _evaluate_field_criterion(
+        self,
+        case: dict[str, Any],
+        context: dict[str, Any],
+        criterion: dict[str, Any],
+        idx: int,
+    ) -> bool:
+        aggregate_output = str(context.get("_aggregate_output", ""))
+        field = str(criterion.get("field", "")).strip()
+        operator = str(criterion.get("operator", "contains"))
+        expected = criterion.get("value")
+        reference = str(criterion.get("reference", "")).strip()
+
+        actual = self._resolve_field(context, field) if field else None
+        capture_raw = self._as_mapping(context.get("_capture_raw"))
+        if field and "." not in field and isinstance(actual, dict):
+            raw_output = capture_raw.get(field)
+            if isinstance(raw_output, str) and raw_output:
+                actual = raw_output
+        if isinstance(actual, dict) and "captured" in actual and "output" in actual:
+            captured = actual.get("captured")
+            if isinstance(captured, dict) and len(captured) == 1:
+                actual = next(iter(captured.values()))
+        if actual is None:
+            log.warning("[%s] evaluate: field not found (%s), fallback aggregate output", self.name, field)
+            actual = self._field_fallback_output(aggregate_output, field)
+
+        if expected is None and reference:
+            expected = self._resolve_field(context, reference)
+            if expected is None:
+                log.warning(
+                    "[%s] evaluate: reference not found (%s), fallback aggregate output",
+                    self.name,
+                    reference,
+                )
+                expected = aggregate_output
+
+        if self._compare(actual, operator, expected):
+            return True
+
+        self._record_runtime_failure(
+            case,
+            phase="evaluate",
+            comment="pass_criteria not satisfied",
+            category="test",
+            reason_code="pass_criteria_not_satisfied",
+            output=self._preview_value(actual),
+            metadata={
+                "criterion_index": idx,
+                "field": field,
+                "operator": operator,
+                "expected": self._preview_value(expected),
+                "actual": self._preview_value(actual),
+            },
+        )
+        log.info(
+            "[%s] evaluate failed: field=%s op=%s expected=%s actual=%s",
+            self.name,
+            field,
+            operator,
+            self._preview_value(expected),
+            self._preview_value(actual),
+        )
+        return False
+
+    def _evaluate_delta_criterion(
+        self,
+        case: dict[str, Any],
+        context: dict[str, Any],
+        criterion: dict[str, Any],
+        idx: int,
+    ) -> bool:
+        def resolve_number(path: str) -> float | None:
+            value = self._resolve_field(context, path) if path else None
+            return self._to_number(value)
+
+        def record_failure(comment: str, reason_code: str, metadata: dict[str, Any]) -> bool:
+            self._record_runtime_failure(
+                case,
+                phase="evaluate",
+                comment=comment,
+                category="test",
+                reason_code=reason_code,
+                metadata={"criterion_index": idx, **metadata},
+            )
+            return False
+
+        operator = str(criterion.get("operator", "")).strip().lower()
+        if operator not in {"delta_nonzero", "delta_match"}:
+            return record_failure(
+                f"fail 原因為 invalid delta operator: {operator or '<empty>'}",
+                "invalid_delta_operator",
+                {"operator": operator},
+            )
+        delta = self._as_mapping(criterion.get("delta"))
+        baseline_path = str(delta.get("baseline", "")).strip()
+        verify_path = str(delta.get("verify", "")).strip()
+        baseline_value = self._resolve_field(context, baseline_path) if baseline_path else None
+        verify_value = self._resolve_field(context, verify_path) if verify_path else None
+        baseline_number = resolve_number(baseline_path)
+        verify_number = resolve_number(verify_path)
+
+        if baseline_number is None or verify_number is None:
+            return record_failure(
+                "fail 原因為 delta 端點非數值",
+                "delta_value_not_numeric",
+                {
+                    "operator": operator,
+                    "baseline": baseline_path,
+                    "verify": verify_path,
+                    "baseline_value": self._preview_value(baseline_value),
+                    "verify_value": self._preview_value(verify_value),
+                },
+            )
+
+        delta_a = verify_number - baseline_number
+        if operator == "delta_nonzero":
+            if delta_a > 0:
+                return True
+            return record_failure(
+                ZERO_DELTA_COMMENT,
+                "delta_zero",
+                {
+                    "operator": operator,
+                    "baseline": baseline_path,
+                    "verify": verify_path,
+                    "delta": self._format_number(delta_a),
+                },
+            )
+
+        reference_delta = self._as_mapping(criterion.get("reference_delta"))
+        baseline_ref_path = str(reference_delta.get("baseline", "")).strip()
+        verify_ref_path = str(reference_delta.get("verify", "")).strip()
+        baseline_ref_value = self._resolve_field(context, baseline_ref_path) if baseline_ref_path else None
+        verify_ref_value = self._resolve_field(context, verify_ref_path) if verify_ref_path else None
+        baseline_ref_number = resolve_number(baseline_ref_path)
+        verify_ref_number = resolve_number(verify_ref_path)
+
+        if baseline_ref_number is None or verify_ref_number is None:
+            return record_failure(
+                "fail 原因為 delta 端點非數值",
+                "delta_value_not_numeric",
+                {
+                    "operator": operator,
+                    "baseline": baseline_ref_path,
+                    "verify": verify_ref_path,
+                    "baseline_value": self._preview_value(baseline_ref_value),
+                    "verify_value": self._preview_value(verify_ref_value),
+                },
+            )
+
+        delta_b = verify_ref_number - baseline_ref_number
+        if delta_a <= 0 or delta_b <= 0:
+            return record_failure(
+                ZERO_DELTA_COMMENT,
+                "delta_zero_side",
+                {
+                    "operator": operator,
+                    "delta": self._format_number(delta_a),
+                    "reference_delta": self._format_number(delta_b),
+                },
+            )
+
+        tolerance_pct = self._to_float(criterion.get("tolerance_pct"), 0.0)
+        tolerance = tolerance_pct / 100.0
+        ratio = abs(delta_a - delta_b) / max(abs(delta_a), abs(delta_b))
+        if ratio <= tolerance:
+            return True
+
+        return record_failure(
+            "fail 原因為 delta 不一致："
+            f"api={self._format_number(delta_a)} "
+            f"drv={self._format_number(delta_b)} "
+            f"tol={self._format_number(tolerance_pct)}%",
+            "delta_mismatch",
+            {
+                "operator": operator,
+                "delta": self._format_number(delta_a),
+                "reference_delta": self._format_number(delta_b),
+                "tolerance_pct": self._format_number(tolerance_pct),
+            },
+        )
+
     def evaluate(self, case: dict[str, Any], results: dict[str, Any]) -> bool:
         """評估通過條件。"""
         context = self._build_eval_context(case, results)
-        aggregate_output = str(context.get("_aggregate_output", ""))
         criteria = case.get("pass_criteria")
         if not isinstance(criteria, list) or not criteria:
             return False
@@ -3299,61 +3570,12 @@ class Plugin(PluginBase):
                 log.warning("[%s] evaluate: invalid criteria[%d]", self.name, idx)
                 return False
 
-            field = str(criterion.get("field", "")).strip()
-            operator = str(criterion.get("operator", "contains"))
-            expected = criterion.get("value")
-            reference = str(criterion.get("reference", "")).strip()
+            if "delta" in criterion:
+                if not self._evaluate_delta_criterion(case, context, criterion, idx):
+                    return False
+                continue
 
-            actual = self._resolve_field(context, field) if field else None
-            capture_raw = self._as_mapping(context.get("_capture_raw"))
-            if field and "." not in field and isinstance(actual, dict):
-                raw_output = capture_raw.get(field)
-                if isinstance(raw_output, str) and raw_output:
-                    actual = raw_output
-            # Unwrap step context: when field resolves to a step_context dict
-            # with a single captured value, use that value directly so regex /
-            # equals criteria match the extracted data rather than the whole dict.
-            if isinstance(actual, dict) and "captured" in actual and "output" in actual:
-                captured = actual.get("captured")
-                if isinstance(captured, dict) and len(captured) == 1:
-                    actual = next(iter(captured.values()))
-            if actual is None:
-                log.warning("[%s] evaluate: field not found (%s), fallback aggregate output", self.name, field)
-                actual = self._field_fallback_output(aggregate_output, field)
-
-            if expected is None and reference:
-                expected = self._resolve_field(context, reference)
-                if expected is None:
-                    log.warning(
-                        "[%s] evaluate: reference not found (%s), fallback aggregate output",
-                        self.name,
-                        reference,
-                    )
-                    expected = aggregate_output
-
-            if not self._compare(actual, operator, expected):
-                self._record_runtime_failure(
-                    case,
-                    phase="evaluate",
-                    comment="pass_criteria not satisfied",
-                    category="test",
-                    reason_code="pass_criteria_not_satisfied",
-                    output=self._preview_value(actual),
-                    metadata={
-                        "field": field,
-                        "operator": operator,
-                        "expected": self._preview_value(expected),
-                        "actual": self._preview_value(actual),
-                    },
-                )
-                log.info(
-                    "[%s] evaluate failed: field=%s op=%s expected=%s actual=%s",
-                    self.name,
-                    field,
-                    operator,
-                    self._preview_value(expected),
-                    self._preview_value(actual),
-                )
+            if not self._evaluate_field_criterion(case, context, criterion, idx):
                 return False
 
         return True
