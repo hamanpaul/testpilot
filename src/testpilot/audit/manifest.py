@@ -5,6 +5,7 @@ import json
 import os
 import subprocess
 import re
+import shutil
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -105,24 +106,9 @@ def create_run(*, plugin: str, workbook_path: Path, cli_args: dict[str, Any], ca
     # determine rid
     rid = generate_rid(None, repo_root=repo_root)
 
-    run_dir = Path(audit_root) / "runs" / rid / plugin
-    mpath = run_dir / "manifest.json"
-
-    # Atomically reserve the run directory to avoid race where two callers
-    # generate same RID and then one overwrites the other's manifest. mkdir
-    # with exist_ok=False will raise if the directory already exists.
-    try:
-        run_dir.mkdir(parents=True, exist_ok=False)
-    except FileExistsError:
-        raise FileExistsError(f"run directory already exists: {run_dir}")
-
-    # create expected subdirectories
-    (run_dir / "case").mkdir(parents=True, exist_ok=True)
-    (run_dir / "buckets").mkdir(parents=True, exist_ok=True)
-
     workbook_sha = ""
     wbpath = Path(workbook_path)
-    if wbpath.exists():
+    if wbpath.is_file():
         workbook_sha = _sha256_of_file(wbpath)
 
     manifest = RunManifest(
@@ -136,15 +122,39 @@ def create_run(*, plugin: str, workbook_path: Path, cli_args: dict[str, Any], ca
         init_timestamp=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ"),
     )
 
-    # Write manifest atomically
-    tmp_path = run_dir / "manifest.json.tmp"
-    with tmp_path.open("w", encoding="utf-8") as f:
-        json.dump(manifest.to_dict(), f, indent=2, ensure_ascii=False)
-        f.flush()
-        os.fsync(f.fileno())
+    run_root = Path(audit_root) / "runs" / rid
+    run_dir = run_root / plugin
+    mpath = run_dir / "manifest.json"
 
-    # Atomic move into final location
-    os.replace(str(tmp_path), str(mpath))
+    # Atomically reserve the run directory to avoid race where two callers
+    # generate same RID and then one overwrites the other's manifest. mkdir
+    # with exist_ok=False will raise if the directory already exists.
+    try:
+        run_dir.mkdir(parents=True, exist_ok=False)
+    except FileExistsError:
+        raise FileExistsError(f"run directory already exists: {run_dir}")
+
+    try:
+        # create expected subdirectories
+        (run_dir / "case").mkdir(parents=True, exist_ok=True)
+        (run_dir / "buckets").mkdir(parents=True, exist_ok=True)
+
+        # Write manifest atomically
+        tmp_path = run_dir / "manifest.json.tmp"
+        with tmp_path.open("w", encoding="utf-8") as f:
+            json.dump(manifest.to_dict(), f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+
+        # Atomic move into final location
+        os.replace(str(tmp_path), str(mpath))
+    except Exception:
+        shutil.rmtree(run_dir, ignore_errors=True)
+        try:
+            run_root.rmdir()
+        except OSError:
+            pass
+        raise
 
     return rid
 

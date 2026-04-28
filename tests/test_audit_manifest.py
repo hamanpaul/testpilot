@@ -108,3 +108,30 @@ def test_generate_rid_propagates_git_errors(tmp_path):
 
     with pytest.raises(_sub.CalledProcessError):
         manifest.generate_rid(repo_root=non_repo)
+
+
+def test_create_run_cleans_up_reserved_dir_on_failure(tmp_path, monkeypatch):
+    repo = init_repo(tmp_path / "repo3")
+    audit_root = tmp_path / "audit3"
+    plugin = "wifi_llapi"
+    fixed_rid = "feedbee-2020-01-02T030405Z"
+
+    monkeypatch.setattr(manifest, "generate_rid", lambda *a, **k: fixed_rid)
+
+    def _boom(_: Path) -> str:
+        raise RuntimeError("git metadata failure")
+
+    monkeypatch.setattr(manifest, "_git_full_sha", _boom)
+
+    with pytest.raises(RuntimeError, match="git metadata failure"):
+        manifest.create_run(
+            plugin=plugin,
+            workbook_path=Path("/no/such"),
+            cli_args={},
+            case_ids=[],
+            audit_root=audit_root,
+            repo_root=repo,
+        )
+
+    assert not (audit_root / "runs" / fixed_rid / plugin).exists()
+    assert not (audit_root / "runs" / fixed_rid).exists()
