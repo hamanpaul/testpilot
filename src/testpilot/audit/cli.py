@@ -14,6 +14,7 @@ from openpyxl.utils.exceptions import InvalidFileException
 
 import yaml as _yaml
 
+from testpilot.audit import apply as apply_mod
 from testpilot.audit import bucket as bucket_mod
 from testpilot.audit import decision as decision_mod
 from testpilot.audit import manifest
@@ -596,3 +597,34 @@ def cmd_decide(
 
     bucket_mod.append_to_bucket(run_dir, bucket_name, {"case": case, "reason": reason})
     click.echo(f"[{bucket_name}] {case}: {reason}")
+
+
+@audit_group.command("apply")
+@click.argument("rid")
+@click.option("--include-pending", is_flag=True, help="Also apply cases from pending bucket.")
+@click.option("--cases", "cases_str", default="", help="Comma-separated case IDs to apply.")
+@click.pass_context
+def cmd_apply(ctx: click.Context, rid: str, include_pending: bool, cases_str: str) -> None:
+    """Apply proposed.yaml back to plugins/<plugin>/cases/."""
+    root = Path(ctx.obj["root"])
+    audit_root = root / "audit"
+    run_dir = _resolve_run_dir(audit_root, rid)
+    plugin = run_dir.name
+    cases_dir = root / "plugins" / plugin / "cases"
+    only: list[str] | None = [c.strip() for c in cases_str.split(",") if c.strip()] or None
+
+    res = apply_mod.apply_run(
+        run_dir,
+        cases_dir=cases_dir,
+        include_pending=include_pending,
+        only_cases=only,
+    )
+    for c in res.applied_cases:
+        click.echo(f"[applied] {c}")
+    for c in res.skipped_cases:
+        click.echo(f"[skipped] {c}")
+    for e in res.errors:
+        click.echo(f"[error] {e}", err=True)
+    click.echo(f"\nTotal applied: {len(res.applied_cases)}")
+    if res.errors:
+        raise click.ClickException(f"{len(res.errors)} case(s) failed to apply")

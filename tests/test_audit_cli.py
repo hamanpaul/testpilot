@@ -719,3 +719,56 @@ def test_decide_stores_resolved_proposed_yaml(tmp_path: Path, monkeypatch) -> No
         )
     )
     assert decision["proposed_yaml"] == str(proposed_yaml.resolve())
+
+
+def test_apply_updates_case_yaml_from_applied_bucket(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    (root / "audit").mkdir()
+    cases_dir = root / "plugins" / "wifi_llapi" / "cases"
+    cases_dir.mkdir(parents=True)
+
+    runner = CliRunner()
+    rid = _init_audit_run(runner, root, monkeypatch)
+    run_dir = root / "audit" / "runs" / rid / "wifi_llapi"
+
+    bucket.append_to_bucket(run_dir, "applied", {"case": "D366", "reason": "ready"})
+    (run_dir / "case" / "D366").mkdir(parents=True, exist_ok=True)
+    (run_dir / "case" / "D366" / "proposed.yaml").write_text("id: D366\nname: new\n", encoding="utf-8")
+    (cases_dir / "D366_test.yaml").write_text("id: D366\nname: old\n", encoding="utf-8")
+
+    result = runner.invoke(
+        main,
+        [
+            "--root", str(root),
+            "audit", "apply", rid,
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "[applied] D366" in result.output
+    assert "Total applied: 1" in result.output
+    assert "name: new" in (cases_dir / "D366_test.yaml").read_text(encoding="utf-8")
+
+
+def test_apply_exits_nonzero_when_errors_occur(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    (root / "audit").mkdir()
+    (root / "plugins" / "wifi_llapi" / "cases").mkdir(parents=True)
+
+    runner = CliRunner()
+    rid = _init_audit_run(runner, root, monkeypatch)
+    run_dir = root / "audit" / "runs" / rid / "wifi_llapi"
+
+    bucket.append_to_bucket(run_dir, "applied", {"case": "D400", "reason": "ready"})
+
+    result = runner.invoke(
+        main,
+        [
+            "--root", str(root),
+            "audit", "apply", rid,
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "[error] D400: proposed.yaml missing" in result.output
+    assert "case(s) failed to apply" in result.output
