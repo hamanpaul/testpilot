@@ -92,3 +92,19 @@ def test_prevent_overwrite_on_collision(tmp_path, monkeypatch):
             audit_root=audit_root,
             repo_root=repo,
         )
+
+
+def test_generate_rid_requires_repo_or_commit():
+    # calling without repo_root or commit_sha should raise ValueError
+    with pytest.raises(ValueError):
+        manifest.generate_rid()
+
+
+def test_generate_rid_propagates_git_errors(tmp_path):
+    # Non-git directory should cause subprocess.CalledProcessError to be raised
+    non_repo = tmp_path / "not_a_repo"
+    non_repo.mkdir()
+    import subprocess as _sub
+
+    with pytest.raises(_sub.CalledProcessError):
+        manifest.generate_rid(repo_root=non_repo)
