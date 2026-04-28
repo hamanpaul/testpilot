@@ -214,7 +214,7 @@ Baseline experiment authority and current lab findings live in `docs/wifi-baseli
 | External delivery | `xlsx` | Pass / Fail only, written to Excel report |
 | Internal diagnostics | `md` | Human-readable summary with per-case commands, output, log line references, and diagnostic status |
 | Structured data | `json` | Machine-readable with summary stats, diagnostic status, remediation history, and log line numbers |
-| Local HTML diagnostic | `html` | Self-contained review/share output generated from an existing JSON report |
+| Local HTML diagnostic | `html` | Self-contained review/share output emitted as a first-class artifact alongside `md` / `json` on every `wifi_llapi` run; `wifi-llapi json-to-html` remains available for post-processing existing JSON files |
 | UART RAW log | `DUT.log` / `STA.log` | serialwrap WAL decoded per-run UART communication records |
 
 Per-run output location: `plugins/wifi_llapi/reports/<artifact_name>/`
@@ -223,7 +223,7 @@ Typical artifact bundle contents:
 - `<artifact_name>.xlsx`
 - `<artifact_name>.md`
 - `<artifact_name>.json`
-- `<artifact_name>.html` (when generated via `json-to-html`)
+- `<artifact_name>.html` (emitted by default; path also returned in run result as `html_report_path`)
 - `DUT.log`
 - `STA.log`
 - `agent_trace/`
@@ -742,7 +742,7 @@ testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
 | 對外交付 | `xlsx` | Pass / Fail only，寫入 Excel 報告 |
 | 內部診斷 | `md` | 人可讀摘要，含 per-case 指令、輸出、log 行號引用與 diagnostic status |
 | 結構化資料 | `json` | 機器可讀，含 summary 統計、diagnostic status、remediation history 與 log 行號 |
-| 本地 HTML 診斷 | `html` | 由既有 JSON 報告轉出的 self-contained 檢視／分享格式 |
+| 本地 HTML 診斷 | `html` | 每次 `wifi_llapi` run 與 `md` / `json` 一起自動產出的 self-contained 檢視／分享格式；`wifi-llapi json-to-html` 仍保留作為對既有 JSON 的 post-processing 入口 |
 | UART RAW log | `DUT.log` / `STA.log` | serialwrap WAL 解碼，per-run DUT/STA 原始 UART 通訊記錄 |
 
 每次執行的輸出位置：`plugins/wifi_llapi/reports/<artifact_name>/`
@@ -751,7 +751,7 @@ testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
 - `<artifact_name>.xlsx`
 - `<artifact_name>.md`
 - `<artifact_name>.json`
-- `<artifact_name>.html`（透過 `json-to-html` 額外產生時）
+- `<artifact_name>.html`（預設產出；run result 同時以 `html_report_path` 暴露路徑）
 - `DUT.log`
 - `STA.log`
 - `agent_trace/`

@@ -291,7 +291,7 @@ MCP 目前仍只作為 **selective extension surface**，優先順序低於 in-p
 | attempt trace | 記錄 timeout / commands / outputs / comments | 每次 retry 都保留 |
 | canonical result | 報表投影與 agent summary 的共同來源 | 不可被 agent 任意覆寫 |
 | xlsx report | 對外交付 | Pass/Fail only |
-| md/json/html report | 內部診斷 / remediation / summary | `html` 由既有 `json` opt-in 轉出 |
+| md/json/html report | 內部診斷 / remediation / summary | 三種格式由 wifi_llapi run 自動 emit；`html` 同時可透過 `wifi-llapi json-to-html` post-process |
 
 ---
 

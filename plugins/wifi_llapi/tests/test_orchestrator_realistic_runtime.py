@@ -693,17 +693,21 @@ def test_realistic_runtime_covers_hooks_and_report_outputs(tmp_path: Path, monke
     report_path = Path(result["report_path"])
     md_report_path = Path(result["md_report_path"])
     json_report_path = Path(result["json_report_path"])
+    html_report_path = Path(result["html_report_path"])
     trace_dir = Path(result["agent_trace_dir"])
     artifact_dir = Path(result["artifact_dir"])
     assert report_path.is_file()
     assert md_report_path.is_file()
     assert json_report_path.is_file()
+    assert html_report_path.is_file()
+    assert html_report_path.suffix == ".html"
     assert trace_dir.is_dir()
     assert artifact_dir.is_dir()
     assert result["run_id"] in report_path.name
     assert artifact_dir == report_path.parent
     assert md_report_path.parent == artifact_dir
     assert json_report_path.parent == artifact_dir
+    assert html_report_path.parent == artifact_dir
     assert trace_dir.parent == artifact_dir
     assert artifact_dir.name == report_path.stem
 

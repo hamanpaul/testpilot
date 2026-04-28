@@ -805,13 +805,14 @@ class Orchestrator:
             "alignment_summary": alignment_prep.alignment_summary,
         }
         case_dicts = [asdict(cr) for cr in case_results]
-        md_json_paths = generate_reports(
+        report_paths = generate_reports(
             case_results=case_dicts,
             meta=report_meta,
             output_dir=artifact_dir,
-            formats=["md", "json"],
+            formats=["md", "json", "html"],
         )
-        for p in md_json_paths:
+        paths_by_suffix = {p.suffix.lstrip("."): p for p in report_paths}
+        for p in report_paths:
             log.info("wifi_llapi %s report generated: %s", p.suffix, p)
 
         log.info("wifi_llapi report generated: %s", report_path)
@@ -825,8 +826,9 @@ class Orchestrator:
             "artifact_dir": str(artifact_dir),
             "template_path": str(template_path),
             "report_path": str(report_path),
-            "md_report_path": str(md_json_paths[0]) if len(md_json_paths) > 0 else "",
-            "json_report_path": str(md_json_paths[1]) if len(md_json_paths) > 1 else "",
+            "md_report_path": str(paths_by_suffix.get("md", "")),
+            "json_report_path": str(paths_by_suffix.get("json", "")),
+            "html_report_path": str(paths_by_suffix.get("html", "")),
             "dut_log_path": dut_log_path,
             "sta_log_path": sta_log_path,
             "run_id": run_id,
