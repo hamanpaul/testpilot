@@ -644,4 +644,7 @@ def cmd_pr(ctx: click.Context, rid: str, draft: bool) -> None:
         url = pr_mod.open_pr(run_dir, rid=rid, draft=draft)
     except (subprocess.CalledProcessError, ValueError, OSError) as exc:
         raise click.ClickException(f"PR creation failed: {exc}") from exc
-    click.echo(url)
+    if url:
+        click.echo(url)
+    else:
+        click.echo("[INFO] no applied cases to stage; nothing committed.")

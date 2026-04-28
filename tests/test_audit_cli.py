@@ -772,3 +772,25 @@ def test_apply_exits_nonzero_when_errors_occur(tmp_path: Path, monkeypatch) -> N
     assert result.exit_code != 0
     assert "[error] D400: proposed.yaml missing" in result.output
     assert "case(s) failed to apply" in result.output
+
+
+def test_pr_prints_info_when_nothing_to_stage(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    (root / "audit").mkdir()
+    (root / "plugins" / "wifi_llapi" / "cases").mkdir(parents=True)
+
+    runner = CliRunner()
+    rid = _init_audit_run(runner, root, monkeypatch)
+
+    monkeypatch.setattr(audit_cli.pr_mod, "open_pr", lambda run_dir, rid, draft=False: "")
+
+    result = runner.invoke(
+        main,
+        [
+            "--root", str(root),
+            "audit", "pr", rid,
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "no applied cases to stage" in result.output
