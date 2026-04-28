@@ -87,9 +87,8 @@ sta_env_setup: "DUT 5G AP baseline:\n  ubus-cli WiFi.Radio.1.Enable=1\n  ubus-cl
   \ || true\n  iw dev wl0 disconnect 2>/dev/null || true\n  iw dev wl1 disconnect\
   \ 2>/dev/null || true\n  iw dev wl2 disconnect 2>/dev/null || true\n  iw dev wl0\
   \ set type managed\n  ifconfig wl0 up\n  mkdir -p /var/run/wpa_supplicant\n  printf\
-  \ 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\nnetwork={\n\
-  ssid=\"TestPilot_BTM\"\nkey_mgmt=SAE\nsae_password=\"testpilot6g\"\nieee80211w=2\n\
-  scan_ssid=1\n}\n' > /tmp/wpa_wl0.conf\n  wpa_supplicant -B -D nl80211 -i wl0 -c\
+  \ 'ctrl_interface=/var/run/wpa_supplicant\\nupdate_config=1\\nsae_pwe=2\\nnetwork={\\nssid=\"TestPilot_BTM\"\\nkey_mgmt=SAE\\nsae_password=\"testpilot6g\"\\nieee80211w=2\\nscan_ssid=1\\n}\\n'\
+  \ > /tmp/wpa_wl0.conf\n  wpa_supplicant -B -D nl80211 -i wl0 -c\
   \ /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant\n  sleep 3\nSTA 5G connect verify:\n\
   \  wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect\n  sleep 10\n  iw dev wl0\
   \ link\n  wpa_cli -p /var/run/wpa_supplicant -i wl0 status\nDUT association evidence:\n\

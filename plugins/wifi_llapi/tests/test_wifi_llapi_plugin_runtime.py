@@ -18915,19 +18915,6 @@ def test_d077_macfilteraddresslist_accesspoint_entry_add_fragment_executes():
                 "DriverTxSupportedVhtMCS=9,9,9,9",
             ],
         ),
-        (
-            "D054_txerrors.yaml",
-            "\n".join(
-                [
-                    'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
-                    "WiFi.AccessPoint.1.AssociatedDevice.1.TxErrors=0",
-                ]
-            ),
-            [
-                "AssocMAC=2C:59:17:00:04:85",
-                "AssocTxErrors=0",
-            ],
-        ),
     ],
 )
 def test_associateddevice_sibling_sed_fragments_execute(
@@ -18951,6 +18938,37 @@ def test_associateddevice_sibling_sed_fragments_execute(
 
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.strip().splitlines() == expected_lines
+
+
+def test_d054_driver_txerrors_command_extracts_sta_info_fields():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+    case_data = load_case(cases_dir / "D054_txerrors.yaml")
+    step4_command = case_data["steps"][3]["command"]
+    sed_script = step4_command.split("| sed -n ", 1)[1]
+    driver_output = "\n".join(
+        [
+            "rate of last tx pkt: 866000 Kbps",
+            "    tx failures: 26",
+            "idle 0 seconds",
+        ]
+    )
+
+    proc = subprocess.run(
+        [
+            "sh",
+            "-lc",
+            f'STA_MAC="2C:59:17:00:04:85"; [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC; cat <<\'EOF\' | sed -n {sed_script}\n{driver_output}\nEOF',
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip().splitlines() == [
+        "DriverAssocMac=2C:59:17:00:04:85",
+        "DriverTxErrors=26",
+    ]
 
 
 def test_run_sta_band_connect_sequence_keeps_6g_ctrl_alive(monkeypatch):
