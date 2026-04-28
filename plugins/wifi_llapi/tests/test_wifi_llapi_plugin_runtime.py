@@ -5015,70 +5015,106 @@ def test_pending_failure_shaped_associateddevice_cases_use_supported_contracts()
         "wifi-llapi-D040-rxmulticastpacketcount",
     }.issubset(discoverable_ids)
 
-    failure_cases = {
-        "D036_powersave.yaml": {
-            "id": "wifi-llapi-D036-powersave",
-            "row": 36,
-            "api": "PowerSave",
-            "driver_token": "DriverPowerSaveFlags=",
-            "driver_field": "driver_flags.DriverPowerSaveFlags",
-            "driver_operator": "contains",
-            "driver_value": "APSD_BE",
-        },
-        "D040_rxmulticastpacketcount.yaml": {
-            "id": "wifi-llapi-D040-rxmulticastpacketcount",
-                "row": 40,
-            "api": "RxMulticastPacketCount",
-            "driver_token": "DriverRxMulticastPacketCount=",
-            "driver_field": "driver_counter.DriverRxMulticastPacketCount",
-            "driver_operator": ">",
-            "driver_value": "0",
-        },
-    }
+    d036 = load_case(cases_dir / "D036_powersave.yaml")
+    assert any(
+        criterion["field"] == "result.PowerSave"
+        and criterion["operator"] == "equals"
+        and str(criterion["value"]) == "0"
+        for criterion in d036["pass_criteria"]
+    )
 
-    for filename, meta in failure_cases.items():
-        raw_case = yaml.safe_load((cases_dir / filename).read_text(encoding="utf-8"))
-        case_data = load_case(cases_dir / filename)
-        commands = "\n".join(str(step.get("command", "")) for step in case_data["steps"])
-        links = {link["band"] for link in case_data["topology"]["links"]}
+    d040_raw = yaml.safe_load((cases_dir / "D040_rxmulticastpacketcount.yaml").read_text(encoding="utf-8"))
+    d040 = load_case(cases_dir / "D040_rxmulticastpacketcount.yaml")
+    d040_commands = "\n".join(str(step.get("command", "")) for step in d040["steps"])
+    d040_links = {link["band"] for link in d040["topology"]["links"]}
 
-        assert "aliases" not in raw_case
-        assert case_data["id"] == meta["id"]
-        assert case_data["source"]["row"] == meta["row"]
-        assert case_data["bands"] == ["5g"]
-        assert links == {"5g"}
-        assert case_data["hlapi_command"] == f'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}?"'
-        assert "MACAddress?" in commands
-        assert "DriverAssocMac=" in commands
-        assert meta["driver_token"] in commands
-        assert any(
-            criterion["field"] == f'result.{meta["api"]}'
-            and criterion["operator"] == "equals"
-            and str(criterion["value"]) == "0"
-            for criterion in case_data["pass_criteria"]
-        )
-        assert any(
-            criterion["field"] == f'{meta["driver_field"].rsplit(".", 1)[0]}.DriverAssocMac'
-            and criterion["operator"] == "equals"
-            and criterion["reference"] == "assoc_entry.MACAddress"
-            for criterion in case_data["pass_criteria"]
-        )
-        assert any(
-            criterion["field"] == meta["driver_field"]
-            and criterion["operator"] == meta["driver_operator"]
-            and str(criterion["value"]) == meta["driver_value"]
-            for criterion in case_data["pass_criteria"]
-        )
-        if filename == "D040_rxmulticastpacketcount.yaml":
-            assert any(step.get("target") == "STA" for step in case_data["steps"])
-            assert "ProbeTxPackets=" in commands
-            assert any(
-                criterion["field"] == "probe.ProbeTxPackets"
-                and criterion["operator"] == ">"
-                and str(criterion["value"]) == "0"
-                for criterion in case_data["pass_criteria"]
-            )
-        
+    assert "aliases" not in d040_raw
+    assert d040["id"] == "wifi-llapi-D040-rxmulticastpacketcount"
+    assert d040["source"]["row"] == 40
+    assert d040["llapi_support"] == "Support"
+    assert d040["bands"] == ["5g"]
+    assert d040_links == {"5g"}
+    assert d040["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RxMulticastPacketCount?"'
+    assert [step["phase"] for step in d040["steps"]] == [
+        "baseline",
+        "baseline",
+        "baseline",
+        "baseline",
+        "trigger",
+        "verify",
+        "verify",
+    ]
+    assert [step["capture"] for step in d040["steps"] if step.get("capture")] == [
+        "assoc_entry",
+        "sta_ip",
+        "api_before_5g",
+        "drv_before_5g",
+        "trigger_probe",
+        "api_after_5g",
+        "drv_after_5g",
+    ]
+    assert "ifconfig wl0 192.168.1.3" in d040_commands
+    assert "TriggerTxPackets=" in d040_commands
+    assert "DriverAssocMac=" in d040_commands
+    assert "DriverRxMulticastPacketCount=" in d040_commands
+    assert any(
+        criterion["field"] == "assoc_entry.MACAddress"
+        and criterion["operator"] == "regex"
+        for criterion in d040["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "sta_ip.StaIp"
+        and criterion["operator"] == "regex"
+        for criterion in d040["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "trigger_probe.TriggerTxPackets"
+        and criterion["operator"] == ">"
+        and str(criterion["value"]) == "0"
+        for criterion in d040["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "drv_before_5g.DriverAssocMac"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "assoc_entry.MACAddress"
+        for criterion in d040["pass_criteria"]
+    )
+    assert any(
+        criterion["field"] == "drv_after_5g.DriverAssocMac"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "assoc_entry.MACAddress"
+        for criterion in d040["pass_criteria"]
+    )
+    assert any(
+        criterion.get("operator") == "delta_nonzero"
+        and criterion.get("delta")
+        == {
+            "baseline": "api_before_5g.RxMulticastPacketCount",
+            "verify": "api_after_5g.RxMulticastPacketCount",
+        }
+        for criterion in d040["pass_criteria"]
+    )
+    assert any(
+        criterion.get("operator") == "delta_match"
+        and criterion.get("delta")
+        == {
+            "baseline": "api_before_5g.RxMulticastPacketCount",
+            "verify": "api_after_5g.RxMulticastPacketCount",
+        }
+        and criterion.get("reference_delta")
+        == {
+            "baseline": "drv_before_5g.DriverRxMulticastPacketCount",
+            "verify": "drv_after_5g.DriverRxMulticastPacketCount",
+        }
+        and criterion.get("tolerance_pct") == 10
+        for criterion in d040["pass_criteria"]
+    )
+    assert not any(
+        criterion.get("field") == "result.RxMulticastPacketCount"
+        and criterion.get("operator") == "equals"
+        and str(criterion.get("value")) == "0"
+        for criterion in d040["pass_criteria"]
+    )
 
 
 def test_pending_failure_shaped_associateddevice_cases_evaluate_live_examples():
@@ -5119,424 +5155,126 @@ def test_pending_failure_shaped_associateddevice_cases_evaluate_live_examples():
     }
     assert plugin.evaluate(d036, d036_fail_results) is False
 
-    d036_mismatch_results = {
-        "steps": {
-            **d036_results["steps"],
-            "step3": {
-                "success": True,
-                "output": "DriverAssocMac=AA:AA:AA:AA:AA:AA\nDriverPowerSaveFlags=APSD_BE,APSD_BK,APSD_VI,APSD_VO",
-                "timing": 0.01,
-            },
-        }
-    }
-    assert plugin.evaluate(d036, d036_mismatch_results) is False
-
     d040 = load_case(cases_dir / "D040_rxmulticastpacketcount.yaml")
     d040_results = {
-        "steps": {
-            "step1": {
-                "success": True,
-                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
-                "timing": 0.01,
-            },
-            "step2": {
-                "success": True,
-                "output": "5 packets transmitted, 0 received, 100% packet loss, time 4103ms\nProbeTxPackets=5",
-                "timing": 0.01,
-            },
-            "step3": {
-                "success": True,
-                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.RxMulticastPacketCount=0",
-                "timing": 0.01,
-            },
-            "step4": {
-                "success": True,
-                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverRxMulticastPacketCount=10",
-                "timing": 0.01,
-            },
-        }
-    }
-    assert plugin.evaluate(d040, d040_results) is True
-
-    d040_fail_results = {
-        "steps": {
-            **d040_results["steps"],
-            "step2": {
-                "success": True,
-                "output": "",
-                "timing": 0.01,
-            },
-            "step4": {
-                "success": True,
-                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverRxMulticastPacketCount=0",
-                "timing": 0.01,
-            },
-        }
-    }
-    assert plugin.evaluate(d040, d040_fail_results) is False
-
-    d040_mismatch_results = {
-        "steps": {
-            **d040_results["steps"],
-            "step4": {
-                "success": True,
-                "output": "DriverAssocMac=AA:AA:AA:AA:AA:AA\nDriverRxMulticastPacketCount=10",
-                "timing": 0.01,
-            },
-        }
-    }
-    assert plugin.evaluate(d040, d040_mismatch_results) is False
-
-
-def test_d034_noise_associateddevice_uses_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    plugin = _load_plugin()
-    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
-    assert "wifi-llapi-D034-noise-accesspoint-associateddevice" in discoverable_ids
-
-    d034_raw = yaml.safe_load(
-        (cases_dir / "D034_noise_accesspoint_associateddevice.yaml").read_text(
-            encoding="utf-8"
-        )
-    )
-    d034 = load_case(cases_dir / "D034_noise_accesspoint_associateddevice.yaml")
-    d034_commands = "\n".join(str(step.get("command", "")) for step in d034["steps"])
-    d034_links = {link["band"] for link in d034["topology"]["links"]}
-    d034_sta_config = d034["topology"]["devices"]["STA"]["config"][0]
-
-    assert "aliases" not in d034_raw
-    assert d034["id"] == "wifi-llapi-D034-noise-accesspoint-associateddevice"
-    assert d034["source"]["row"] == 34
-    assert d034["bands"] == ["5g"]
-    assert d034_links == {"5g"}
-    assert d034_sta_config["ssid"] == "testpilot5G"
-    assert d034_sta_config["key"] == "00000000"
-    assert "sta_env_setup" not in d034
-    assert d034["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Noise?"'
-    assert "MACAddress?" in d034_commands
-    assert "DriverAssocMac=" in d034_commands
-    assert "DriverNoise=" in d034_commands
-    assert "DriverNoiseMin=" in d034_commands
-    assert "DriverNoiseMax=" in d034_commands
-    assert any(
-        criterion["field"] == "result.Noise"
-        and criterion["operator"] == "regex"
-        and criterion["value"] == "^-[0-9]+$"
-        for criterion in d034["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "result.Noise"
-        and criterion["operator"] == "<"
-        and str(criterion["value"]) == "0"
-        for criterion in d034["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "driver_noise.DriverAssocMac"
-        and criterion["operator"] == "equals"
-        and criterion["reference"] == "assoc_entry.MACAddress"
-        for criterion in d034["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "driver_noise.DriverNoise"
-        and criterion["operator"] == "regex"
-        and criterion["value"] == "^-[0-9]+$"
-        for criterion in d034["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "driver_noise.DriverNoise"
-        and criterion["operator"] == "<"
-        and str(criterion["value"]) == "0"
-        for criterion in d034["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "result.Noise"
-        and criterion["operator"] == ">="
-        and criterion["reference"] == "driver_noise.DriverNoiseMin"
-        for criterion in d034["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "result.Noise"
-        and criterion["operator"] == "<="
-        and criterion["reference"] == "driver_noise.DriverNoiseMax"
-        for criterion in d034["pass_criteria"]
-    )
-
-
-def test_d034_noise_associateddevice_evaluate_live_examples():
-    plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-
-    d034 = load_case(cases_dir / "D034_noise_accesspoint_associateddevice.yaml")
-    d034_results = {
-        "steps": {
-            "step1": {
-                "success": True,
-                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
-                "timing": 0.01,
-            },
-            "step2": {
-                "success": True,
-                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.Noise=-100",
-                "timing": 0.01,
-            },
-            "step3": {
-                "success": True,
-                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverNoise=-100\nDriverNoiseMin=-102\nDriverNoiseMax=-98",
-                "timing": 0.01,
-            },
-        }
-    }
-    assert plugin.evaluate(d034, d034_results) is True
-
-    d034_fail_results = {
-        "steps": {
-            **d034_results["steps"],
-            "step3": {
-                "success": True,
-                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverNoise=-95\nDriverNoiseMin=-97\nDriverNoiseMax=-93",
-                "timing": 0.01,
-            },
-        }
-    }
-    assert plugin.evaluate(d034, d034_fail_results) is False
-
-    d034_zero_results = {
-        "steps": {
-            **d034_results["steps"],
-            "step2": {
-                "success": True,
-                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.Noise=0",
-                "timing": 0.01,
-            },
-        }
-    }
-    assert plugin.evaluate(d034, d034_zero_results) is False
-
-    d034_mismatch_results = {
-        "steps": {
-            **d034_results["steps"],
-            "step3": {
-                "success": True,
-                "output": "DriverAssocMac=AA:AA:AA:AA:AA:AA\nDriverNoise=-100\nDriverNoiseMin=-102\nDriverNoiseMax=-98",
-                "timing": 0.01,
-            },
-        }
-    }
-    assert plugin.evaluate(d034, d034_mismatch_results) is False
-
-    d034_missing_driver_range_results = {
-        "steps": {
-            **d034_results["steps"],
-            "step3": {
-                "success": True,
-                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverNoise=-100",
-                "timing": 0.01,
-            },
-        }
-    }
-    assert plugin.evaluate(d034, d034_missing_driver_range_results) is False
-
-
-def test_d037_retransmissions_uses_delta_contract():
-    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    plugin = _load_plugin()
-    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
-    assert "wifi-llapi-D037-retransmissions" in discoverable_ids
-
-    raw_case = yaml.safe_load((cases_dir / "D037_retransmissions.yaml").read_text(encoding="utf-8"))
-    case_data = load_case(cases_dir / "D037_retransmissions.yaml")
-
-    assert "Workbook v4.0.3 marks this API as Fail" not in case_data["test_procedure"]
-    assert "aliases" not in raw_case
-    assert case_data["id"] == "wifi-llapi-D037-retransmissions"
-    assert case_data["source"]["row"] == 37
-    assert case_data["bands"] == ["5g"]
-    assert case_data["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Retransmissions?"'
-    assert [step["phase"] for step in case_data["steps"]] == [
-        "baseline",
-        "baseline",
-        "baseline",
-        "baseline",
-        "trigger",
-        "verify",
-        "verify",
-    ]
-    assert [step["capture"] for step in case_data["steps"] if step.get("capture")] == [
-        "assoc_entry",
-        "sta_ip",
-        "api_before_5g",
-        "drv_before_5g",
-        "trigger_probe",
-        "api_after_5g",
-        "drv_after_5g",
-    ]
-    assert "ifconfig wl0" in case_data["steps"][1]["command"]
-    assert "ping -I br-lan -c 20 -s 1400 -W 1 {{sta_ip.StaIp}}" in case_data["steps"][4]["command"]
-    assert any(
-        criterion["field"] == "assoc_entry.MACAddress"
-        and criterion["operator"] == "regex"
-        for criterion in case_data["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "sta_ip.StaIp"
-        and criterion["operator"] == "regex"
-        for criterion in case_data["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "trigger_probe.TriggerTxPackets"
-        and criterion["operator"] == ">"
-        and str(criterion["value"]) == "0"
-        for criterion in case_data["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "drv_before_5g.DriverAssocMac"
-        and criterion["operator"] == "equals"
-        and criterion["reference"] == "assoc_entry.MACAddress"
-        for criterion in case_data["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "drv_after_5g.DriverAssocMac"
-        and criterion["operator"] == "equals"
-        and criterion["reference"] == "assoc_entry.MACAddress"
-        for criterion in case_data["pass_criteria"]
-    )
-    assert any(
-        criterion.get("operator") == "delta_nonzero"
-        and criterion.get("delta")
-        == {
-            "baseline": "api_before_5g.Retransmissions",
-            "verify": "api_after_5g.Retransmissions",
-        }
-        for criterion in case_data["pass_criteria"]
-    )
-    assert any(
-        criterion.get("operator") == "delta_match"
-        and criterion.get("delta")
-        == {
-            "baseline": "api_before_5g.Retransmissions",
-            "verify": "api_after_5g.Retransmissions",
-        }
-        and criterion.get("reference_delta")
-        == {
-            "baseline": "drv_before_5g.DriverRetransmissions",
-            "verify": "drv_after_5g.DriverRetransmissions",
-        }
-        and criterion.get("tolerance_pct") == 10
-        for criterion in case_data["pass_criteria"]
-    )
-    assert not any(
-        criterion.get("field") == "result.Retransmissions"
-        and criterion.get("operator") == "equals"
-        and str(criterion.get("value")) == "0"
-        for criterion in case_data["pass_criteria"]
-    )
-
-
-def test_d037_retransmissions_evaluate_delta_examples():
-    plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    case_data = load_case(cases_dir / "D037_retransmissions.yaml")
-
-    pass_results = {
         "steps": {
             "step1_resolve_assoc": {
                 "success": True,
                 "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
                 "timing": 0.01,
             },
-            "step2_resolve_sta_ip": {
+            "step2_prepare_probe_target": {
                 "success": True,
-                "output": "StaIp=192.168.88.2",
+                "output": "StaIp=192.168.1.3",
                 "timing": 0.01,
             },
             "step3_api_baseline": {
                 "success": True,
-                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.Retransmissions=10",
+                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.RxMulticastPacketCount=10",
                 "timing": 0.01,
             },
             "step4_drv_baseline": {
                 "success": True,
-                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverRetransmissions=100",
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverRxMulticastPacketCount=10",
                 "timing": 0.01,
             },
             "step5_trigger": {
                 "success": True,
-                "output": "20 packets transmitted, 20 received, 0% packet loss\nTriggerTxPackets=20",
-                "timing": 1.5,
+                "output": "5 packets transmitted, 0 received, 100% packet loss, time 4103ms\nTriggerTxPackets=5",
+                "timing": 0.01,
             },
             "step6_api_verify": {
                 "success": True,
-                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.Retransmissions=16",
+                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.RxMulticastPacketCount=15",
                 "timing": 0.01,
             },
             "step7_drv_verify": {
                 "success": True,
-                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverRetransmissions=106",
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverRxMulticastPacketCount=15",
                 "timing": 0.01,
             },
         }
     }
-    assert plugin.evaluate(case_data, pass_results) is True
+    assert plugin.evaluate(d040, d040_results) is True
 
-    zero_delta_results = {
+    d040_zero_results = {
         "steps": {
-            **pass_results["steps"],
+            **d040_results["steps"],
             "step6_api_verify": {
                 "success": True,
-                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.Retransmissions=10",
+                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.RxMulticastPacketCount=10",
                 "timing": 0.01,
             },
         }
     }
-    assert plugin.evaluate(case_data, zero_delta_results) is False
+    assert plugin.evaluate(d040, d040_zero_results) is False
 
-    mismatch_results = {
+    d040_mismatch_results = {
         "steps": {
-            **pass_results["steps"],
+            **d040_results["steps"],
             "step7_drv_verify": {
                 "success": True,
-                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverRetransmissions=140",
+                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverRxMulticastPacketCount=30",
                 "timing": 0.01,
             },
         }
     }
-    assert plugin.evaluate(case_data, mismatch_results) is False
+    assert plugin.evaluate(d040, d040_mismatch_results) is False
+
+    d040_assoc_mismatch_results = {
+        "steps": {
+            **d040_results["steps"],
+            "step7_drv_verify": {
+                "success": True,
+                "output": "DriverAssocMac=AA:AA:AA:AA:AA:AA\nDriverRxMulticastPacketCount=15",
+                "timing": 0.01,
+            },
+        }
+    }
+    assert plugin.evaluate(d040, d040_assoc_mismatch_results) is False
 
 
-def test_wave2_associateddevice_delta_cases_use_supported_contracts():
+def test_pending_counter_pass_associateddevice_cases_use_supported_contracts():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
     assert {
-        "wifi-llapi-D038-rx-retransmissions",
-        "wifi-llapi-D051-tx-retransmissions",
-        "wifi-llapi-D052-tx-retransmissionsfailed",
+        "wifi-llapi-D039-rxbytes",
+        "wifi-llapi-D041-rxpacketcount",
+        "wifi-llapi-D042-rxunicastpacketcount",
     }.issubset(discoverable_ids)
 
-    counter_cases = {
-        "D038_rx_retransmissions.yaml": {
-            "id": "wifi-llapi-D038-rx-retransmissions",
-            "row": 38,
-            "api": "Rx_Retransmissions",
-            "probe_field": "dut_ip.DutIp",
-            "trigger_command": "ping -I wl0 -c 20 -s 1400 -W 1 {{dut_ip.DutIp}}",
-            "driver_before": "drv_before_5g.DriverRxRetransmissions",
-            "driver_after": "drv_after_5g.DriverRxRetransmissions",
-            "driver_token": "DriverRxRetransmissions=",
+    pass_cases = {
+        "D039_rxbytes.yaml": {
+            "id": "wifi-llapi-D039-rxbytes",
+            "row": 39,
+            "api": "RxBytes",
+            "driver_before": "drv_before_5g.DriverRxBytes",
+            "driver_after": "drv_after_5g.DriverRxBytes",
+            "driver_token": "DriverRxBytes=",
+            "trigger_command": "ping -I wl0 -c 8 -s 1400 -W 1 {{dut_ip.DutIp}}",
         },
-        "D051_tx_retransmissions.yaml": {
-            "id": "wifi-llapi-D051-tx-retransmissions",
-            "row": 53,
-            "api": "Tx_Retransmissions",
-            "probe_field": "sta_ip.StaIp",
-            "trigger_command": "ping -I br-lan -c 20 -s 1400 -W 1 {{sta_ip.StaIp}}",
-            "driver_before": "drv_before_5g.DriverTxRetransmissions",
-            "driver_after": "drv_after_5g.DriverTxRetransmissions",
-            "driver_token": "DriverTxRetransmissions=",
+        "D041_rxpacketcount.yaml": {
+            "id": "wifi-llapi-D041-rxpacketcount",
+            "row": 41,
+            "api": "RxPacketCount",
+            "driver_before": "drv_before_5g.DriverRxPacketCount",
+            "driver_after": "drv_after_5g.DriverRxPacketCount",
+            "driver_token": "DriverRxPacketCount=",
+            "trigger_command": "ping -I wl0 -c 8 -s 1400 -W 1 {{dut_ip.DutIp}}",
+        },
+        "D042_rxunicastpacketcount.yaml": {
+            "id": "wifi-llapi-D042-rxunicastpacketcount",
+            "row": 42,
+            "api": "RxUnicastPacketCount",
+            "driver_before": "drv_before_5g.DriverRxUnicastPacketCount",
+            "driver_after": "drv_after_5g.DriverRxUnicastPacketCount",
+            "driver_token": "DriverRxUnicastPacketCount=",
+            "trigger_command": "ping -I wl0 -c 8 -s 1400 -W 1 {{dut_ip.DutIp}}",
         },
     }
 
-    for filename, meta in counter_cases.items():
+    for filename, meta in pass_cases.items():
         raw_case = yaml.safe_load((cases_dir / filename).read_text(encoding="utf-8"))
         case_data = load_case(cases_dir / filename)
         commands = "\n".join(str(step.get("command", "")) for step in case_data["steps"])
@@ -5545,13 +5283,11 @@ def test_wave2_associateddevice_delta_cases_use_supported_contracts():
         assert "aliases" not in raw_case
         assert case_data["id"] == meta["id"]
         assert case_data["source"]["row"] == meta["row"]
-        assert case_data["llapi_support"] == "Support"
         assert case_data["bands"] == ["5g"]
         assert links == {"5g"}
-        assert case_data["hlapi_command"] == (
-            f'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}?"'
-        )
+        assert case_data["hlapi_command"] == f'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}?"'
         assert [step["phase"] for step in case_data["steps"]] == [
+            "baseline",
             "baseline",
             "baseline",
             "baseline",
@@ -5561,11 +5297,38 @@ def test_wave2_associateddevice_delta_cases_use_supported_contracts():
             "verify",
         ]
         assert "MACAddress?" in commands
+        assert "ifconfig wl0 192.168.1.3" in commands
+        assert 'print "StaIp="' in commands
+        assert "DutIp=" in commands
         assert meta["trigger_command"] in commands
         assert "DriverAssocMac=" in commands
         assert meta["driver_token"] in commands
+        assert [step["capture"] for step in case_data["steps"] if step.get("capture")] == [
+            "assoc_entry",
+            "sta_ip",
+            "dut_ip",
+            "api_before_5g",
+            "drv_before_5g",
+            "trigger_probe",
+            "api_after_5g",
+            "drv_after_5g",
+        ]
+        assert case_data["steps"][1]["id"] == "step2_prepare_probe_target"
+        assert case_data["steps"][1]["target"] == "STA"
+        assert case_data["steps"][1]["command"] == [
+            "ifconfig wl0 192.168.1.3 netmask 255.255.255.0 up",
+            "ip -4 addr show dev wl0 | awk '/inet / {sub(/\\/24$/, \"\", $2); print \"StaIp=\" $2; exit}'",
+        ]
+        assert case_data["steps"][2]["id"] == "step3_resolve_probe_target"
+        assert case_data["steps"][2]["depends_on"] == "step2_prepare_probe_target"
+        assert case_data["steps"][5]["id"] == "step6_trigger"
+        assert case_data["steps"][5]["depends_on"] == "step5_drv_baseline"
         assert any(
-            criterion["field"] == meta["probe_field"] and criterion["operator"] == "regex"
+            criterion["field"] == "sta_ip.StaIp" and criterion["operator"] == "regex"
+            for criterion in case_data["pass_criteria"]
+        )
+        assert any(
+            criterion["field"] == "dut_ip.DutIp" and criterion["operator"] == "regex"
             for criterion in case_data["pass_criteria"]
         )
         assert any(
@@ -5617,289 +5380,6 @@ def test_wave2_associateddevice_delta_cases_use_supported_contracts():
             for criterion in case_data["pass_criteria"]
         )
 
-    d052_raw = yaml.safe_load(
-        (cases_dir / "D052_tx_retransmissionsfailed.yaml").read_text(encoding="utf-8")
-    )
-    d052 = load_case(cases_dir / "D052_tx_retransmissionsfailed.yaml")
-    d052_commands = "\n".join(str(step.get("command", "")) for step in d052["steps"])
-
-    assert "aliases" not in d052_raw
-    assert d052["id"] == "wifi-llapi-D052-tx-retransmissionsfailed"
-    assert d052["source"]["row"] == 54
-    assert d052["llapi_support"] == "Support"
-    assert d052["hlapi_command"] == (
-        'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Tx_RetransmissionsFailed?"'
-    )
-    assert "manual" in d052["test_procedure"].lower()
-    assert "external" in d052["test_procedure"].lower()
-    assert [step["phase"] for step in d052["steps"]] == [
-        "baseline",
-        "baseline",
-        "baseline",
-        "trigger",
-        "verify",
-        "verify",
-    ]
-    assert d052["steps"][3]["action"] == "wait"
-    assert d052["steps"][3]["duration"] == 30
-    assert "DriverTxRetransmissionsFailed=" in d052_commands
-    assert any(
-        criterion.get("operator") == "delta_nonzero"
-        and criterion.get("delta")
-        == {
-            "baseline": "api_before_5g.Tx_RetransmissionsFailed",
-            "verify": "api_after_5g.Tx_RetransmissionsFailed",
-        }
-        for criterion in d052["pass_criteria"]
-    )
-    assert any(
-        criterion.get("operator") == "delta_match"
-        and criterion.get("reference_delta")
-        == {
-            "baseline": "drv_before_5g.DriverTxRetransmissionsFailed",
-            "verify": "drv_after_5g.DriverTxRetransmissionsFailed",
-        }
-        for criterion in d052["pass_criteria"]
-    )
-
-
-def test_wave2_associateddevice_delta_cases_evaluate_live_examples():
-    plugin = _load_plugin()
-    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-
-    counter_cases = {
-        "D038_rx_retransmissions.yaml": {
-            "api_before": "WiFi.AccessPoint.1.AssociatedDevice.1.Rx_Retransmissions=11",
-            "api_after": "WiFi.AccessPoint.1.AssociatedDevice.1.Rx_Retransmissions=17",
-            "probe_output": "DutIp=192.168.88.1",
-            "driver_before": "DriverRxRetransmissions=121",
-            "driver_after": "DriverRxRetransmissions=127",
-        },
-        "D051_tx_retransmissions.yaml": {
-            "api_before": "WiFi.AccessPoint.1.AssociatedDevice.1.Tx_Retransmissions=11",
-            "api_after": "WiFi.AccessPoint.1.AssociatedDevice.1.Tx_Retransmissions=17",
-            "probe_output": "StaIp=192.168.88.2",
-            "driver_before": "DriverTxRetransmissions=121",
-            "driver_after": "DriverTxRetransmissions=127",
-        },
-    }
-
-    for filename, meta in counter_cases.items():
-        case_data = load_case(cases_dir / filename)
-        pass_results = {
-            "steps": {
-                "step1_resolve_assoc": {
-                    "success": True,
-                    "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
-                    "timing": 0.01,
-                },
-                "step2_resolve_probe_target": {
-                    "success": True,
-                    "output": meta["probe_output"],
-                    "timing": 0.01,
-                },
-                "step3_api_baseline": {
-                    "success": True,
-                    "output": meta["api_before"],
-                    "timing": 0.01,
-                },
-                "step4_drv_baseline": {
-                    "success": True,
-                    "output": f'DriverAssocMac=2C:59:17:00:04:85\n{meta["driver_before"]}',
-                    "timing": 0.01,
-                },
-                "step5_trigger": {
-                    "success": True,
-                    "output": "20 packets transmitted, 20 received, 0% packet loss\nTriggerTxPackets=20",
-                    "timing": 1.5,
-                },
-                "step6_api_verify": {
-                    "success": True,
-                    "output": meta["api_after"],
-                    "timing": 0.01,
-                },
-                "step7_drv_verify": {
-                    "success": True,
-                    "output": f'DriverAssocMac=2C:59:17:00:04:85\n{meta["driver_after"]}',
-                    "timing": 0.01,
-                },
-            }
-        }
-        assert plugin.evaluate(case_data, pass_results) is True
-
-        zero_delta_results = {
-            "steps": {
-                **pass_results["steps"],
-                "step6_api_verify": {
-                    "success": True,
-                    "output": meta["api_before"],
-                    "timing": 0.01,
-                },
-            }
-        }
-        assert plugin.evaluate(case_data, zero_delta_results) is False
-
-        mismatch_results = {
-            "steps": {
-                **pass_results["steps"],
-                "step7_drv_verify": {
-                    "success": True,
-                    "output": "DriverAssocMac=2C:59:17:00:04:85\n"
-                    + meta["driver_after"].replace("127", "150"),
-                    "timing": 0.01,
-                },
-            }
-        }
-        assert plugin.evaluate(case_data, mismatch_results) is False
-
-    d052 = load_case(cases_dir / "D052_tx_retransmissionsfailed.yaml")
-    d052_pass_results = {
-        "steps": {
-            "step1_resolve_assoc": {
-                "success": True,
-                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
-                "timing": 0.01,
-            },
-            "step2_api_baseline": {
-                "success": True,
-                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.Tx_RetransmissionsFailed=3",
-                "timing": 0.01,
-            },
-            "step3_drv_baseline": {
-                "success": True,
-                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverTxRetransmissionsFailed=30",
-                "timing": 0.01,
-            },
-            "step4_trigger_window": {
-                "success": True,
-                "output": "ManualTriggerWindow=30",
-                "timing": 30.0,
-            },
-            "step5_api_verify": {
-                "success": True,
-                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.Tx_RetransmissionsFailed=9",
-                "timing": 0.01,
-            },
-            "step6_drv_verify": {
-                "success": True,
-                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverTxRetransmissionsFailed=36",
-                "timing": 0.01,
-            },
-        }
-    }
-    assert plugin.evaluate(d052, d052_pass_results) is True
-
-    d052_zero_delta_results = {
-        "steps": {
-            **d052_pass_results["steps"],
-            "step5_api_verify": {
-                "success": True,
-                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.Tx_RetransmissionsFailed=3",
-                "timing": 0.01,
-            },
-        }
-    }
-    assert plugin.evaluate(d052, d052_zero_delta_results) is False
-
-    d052_mismatch_results = {
-        "steps": {
-            **d052_pass_results["steps"],
-            "step6_drv_verify": {
-                "success": True,
-                "output": "DriverAssocMac=2C:59:17:00:04:85\nDriverTxRetransmissionsFailed=45",
-                "timing": 0.01,
-            },
-        }
-    }
-    assert plugin.evaluate(d052, d052_mismatch_results) is False
-
-
-def test_pending_counter_pass_associateddevice_cases_use_supported_contracts():
-    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    plugin = _load_plugin()
-    discoverable_ids = {case["id"] for case in plugin.discover_cases()}
-    assert {
-        "wifi-llapi-D039-rxbytes",
-        "wifi-llapi-D041-rxpacketcount",
-        "wifi-llapi-D056-txpacketcount",
-    }.issubset(discoverable_ids)
-
-    pass_cases = {
-        "D039_rxbytes.yaml": {
-            "id": "wifi-llapi-D039-rxbytes",
-            "row": 39,
-            "api": "RxBytes",
-            "driver_token": "DriverRxBytes=",
-            "driver_field": "driver_counter.DriverRxBytes",
-        },
-        "D041_rxpacketcount.yaml": {
-            "id": "wifi-llapi-D041-rxpacketcount",
-            "row": 41,
-            "api": "RxPacketCount",
-            "driver_token": "DriverRxPacketCount=",
-            "driver_field": "driver_counter.DriverRxPacketCount",
-        },
-        "D056_txpacketcount.yaml": {
-            "id": "wifi-llapi-D056-txpacketcount",
-            "row": 56,
-            "api": "TxPacketCount",
-            "driver_token": "DriverTxPacketCount=",
-            "driver_field": "driver_counter.DriverTxPacketCount",
-        },
-    }
-
-    for filename, meta in pass_cases.items():
-        raw_case = yaml.safe_load((cases_dir / filename).read_text(encoding="utf-8"))
-        case_data = load_case(cases_dir / filename)
-        commands = "\n".join(str(step.get("command", "")) for step in case_data["steps"])
-        links = {link["band"] for link in case_data["topology"]["links"]}
-
-        assert "aliases" not in raw_case
-        assert case_data["id"] == meta["id"]
-        assert case_data["source"]["row"] == meta["row"]
-        assert case_data["bands"] == ["5g"]
-        assert links == {"5g"}
-        assert case_data["hlapi_command"] == f'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}?"'
-        assert "MACAddress?" in commands
-        assert "DriverAssocMac=" in commands
-        assert meta["driver_token"] in commands
-        assert any(
-            criterion["field"] == f'result.{meta["api"]}'
-            and criterion["operator"] == "regex"
-            and criterion["value"] == "^[0-9]+$"
-            for criterion in case_data["pass_criteria"]
-        )
-        assert any(
-            criterion["field"] == f'result.{meta["api"]}'
-            and criterion["operator"] == ">"
-            and str(criterion["value"]) == "0"
-            for criterion in case_data["pass_criteria"]
-        )
-        assert any(
-            criterion["field"] == "driver_counter.DriverAssocMac"
-            and criterion["operator"] == "equals"
-            and criterion["reference"] == "assoc_entry.MACAddress"
-            for criterion in case_data["pass_criteria"]
-        )
-        assert any(
-            criterion["field"] == meta["driver_field"]
-            and criterion["operator"] == ">"
-            and str(criterion["value"]) == "0"
-            for criterion in case_data["pass_criteria"]
-        )
-        assert any(
-            criterion["field"] == f'result.{meta["api"]}'
-            and criterion["operator"] == "equals"
-            and criterion["reference"] == meta["driver_field"]
-            for criterion in case_data["pass_criteria"]
-        )
-        _cpass_rr = {
-            "D039_rxbytes.yaml": ("Pass", "Pass", "Pass"),
-            "D041_rxpacketcount.yaml": ("Pass", "Pass", "Pass"),
-            "D056_txpacketcount.yaml": ("Pass", "Pass", "Pass"),
-        }
-        exp5, exp6, exp24 = _cpass_rr[filename]
-
 
 def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
     plugin = _load_plugin()
@@ -5908,18 +5388,15 @@ def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
     pass_cases = {
         "D039_rxbytes.yaml": {
             "api": "RxBytes",
-            "driver_output": "DriverRxBytes=723",
-            "driver_fail_output": "DriverRxBytes=0",
+            "driver_field": "DriverRxBytes",
         },
         "D041_rxpacketcount.yaml": {
             "api": "RxPacketCount",
-            "driver_output": "DriverRxPacketCount=7",
-            "driver_fail_output": "DriverRxPacketCount=0",
+            "driver_field": "DriverRxPacketCount",
         },
-        "D056_txpacketcount.yaml": {
-            "api": "TxPacketCount",
-            "driver_output": "DriverTxPacketCount=12956",
-            "driver_fail_output": "DriverTxPacketCount=0",
+        "D042_rxunicastpacketcount.yaml": {
+            "api": "RxUnicastPacketCount",
+            "driver_field": "DriverRxUnicastPacketCount",
         },
     }
 
@@ -5927,43 +5404,56 @@ def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
         case_data = load_case(cases_dir / filename)
         pass_results = {
             "steps": {
-                "step1": {
+                "step1_resolve_assoc": {
                     "success": True,
                     "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
                     "timing": 0.01,
                 },
-                "step2": {
+                "step2_prepare_probe_target": {
                     "success": True,
-                    "output": f'WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}={meta["driver_output"].split("=", 1)[1]}',
+                    "output": "StaIp=192.168.1.3",
                     "timing": 0.01,
                 },
-                "step3": {
+                "step3_resolve_probe_target": {
                     "success": True,
-                    "output": f'DriverAssocMac=2C:59:17:00:04:85\n{meta["driver_output"]}',
+                    "output": "DutIp=192.168.1.1",
+                    "timing": 0.01,
+                },
+                "step4_api_baseline": {
+                    "success": True,
+                    "output": f'WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}=10',
+                    "timing": 0.01,
+                },
+                "step5_drv_baseline": {
+                    "success": True,
+                    "output": f'DriverAssocMac=2C:59:17:00:04:85\n{meta["driver_field"]}=100',
+                    "timing": 0.01,
+                },
+                "step6_trigger": {
+                    "success": True,
+                    "output": '8 packets transmitted, 8 received, 0% packet loss\nTriggerTxPackets=8',
+                    "timing": 0.01,
+                },
+                "step7_api_verify": {
+                    "success": True,
+                    "output": f'WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}=16',
+                    "timing": 0.01,
+                },
+                "step8_drv_verify": {
+                    "success": True,
+                    "output": f'DriverAssocMac=2C:59:17:00:04:85\n{meta["driver_field"]}=106',
                     "timing": 0.01,
                 },
             }
         }
         assert plugin.evaluate(case_data, pass_results) is True
 
-        fail_results = {
-            "steps": {
-                **pass_results["steps"],
-                "step3": {
-                    "success": True,
-                    "output": f'DriverAssocMac=2C:59:17:00:04:85\n{meta["driver_fail_output"]}',
-                    "timing": 0.01,
-                },
-            }
-        }
-        assert plugin.evaluate(case_data, fail_results) is False
-
         zero_results = {
             "steps": {
                 **pass_results["steps"],
-                "step2": {
+                "step7_api_verify": {
                     "success": True,
-                    "output": f'WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}=0',
+                    "output": f'WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}=10',
                     "timing": 0.01,
                 },
             }
@@ -5973,14 +5463,38 @@ def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
         mismatch_results = {
             "steps": {
                 **pass_results["steps"],
-                "step3": {
+                "step8_drv_verify": {
                     "success": True,
-                    "output": f'DriverAssocMac=AA:AA:AA:AA:AA:AA\n{meta["driver_output"]}',
+                    "output": f'DriverAssocMac=2C:59:17:00:04:85\n{meta["driver_field"]}=130',
                     "timing": 0.01,
                 },
             }
         }
         assert plugin.evaluate(case_data, mismatch_results) is False
+
+        assoc_mismatch_results = {
+            "steps": {
+                **pass_results["steps"],
+                "step8_drv_verify": {
+                    "success": True,
+                    "output": f'DriverAssocMac=AA:AA:AA:AA:AA:AA\n{meta["driver_field"]}=106',
+                    "timing": 0.01,
+                },
+            }
+        }
+        assert plugin.evaluate(case_data, assoc_mismatch_results) is False
+
+        missing_sta_ip_results = {
+            "steps": {
+                **pass_results["steps"],
+                "step2_prepare_probe_target": {
+                    "success": True,
+                    "output": "StaIp=",
+                    "timing": 0.01,
+                },
+            }
+        }
+        assert plugin.evaluate(case_data, missing_sta_ip_results) is False
 
 
 def test_d059_uplinkbandwidth_uses_positive_same_sta_contract():
@@ -7695,19 +7209,22 @@ def test_d055_txmulticastpacketcount_uses_same_sta_delivery_contract():
     assert d055["bands"] == ["5g"]
     assert d055_links == {"5g"}
     assert d055["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount?"'
-    assert "cat /sys/class/net/wl0/address" in d055_commands
-    assert "tr 'A-F' 'a-f'" in d055_commands
+    assert [step["phase"] for step in d055["steps"]] == [
+        "baseline",
+        "baseline",
+        "baseline",
+        "baseline",
+        "trigger",
+        "verify",
+        "verify",
+        "verify",
+    ]
     assert "StaRxPacketsBefore=" in d055_commands
     assert "StaRxBytesBefore=" in d055_commands
-    assert "MACAddress?" in d055_commands
-    assert "ping -b -I br-lan -c 10 -W 1 192.168.1.255" in d055_commands
     assert "ProbeTxPackets=" in d055_commands
     assert "StaRxPacketsAfter=" in d055_commands
     assert "StaRxBytesAfter=" in d055_commands
-    assert "AssocTxMulticastPacketCount=" in d055_commands
     assert "DriverTxMulticastPacketCount=" in d055_commands
-    assert "DriverTxMulticastBytes=" in d055_commands
-    assert 'AssocMAC=' in d055_commands
     assert any(
         criterion["field"] == "assoc_entry.MACAddress"
         and criterion["operator"] == "equals"
@@ -7733,33 +7250,39 @@ def test_d055_txmulticastpacketcount_uses_same_sta_delivery_contract():
         for criterion in d055["pass_criteria"]
     )
     assert any(
-        criterion["field"] == "result.TxMulticastPacketCount"
-        and criterion["operator"] == "equals"
-        and str(criterion["value"]) == "0"
-        for criterion in d055["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "result.TxMulticastPacketCount"
-        and criterion["operator"] == "equals"
-        and criterion.get("reference") == "assoc_snapshot.AssocTxMulticastPacketCount"
-        for criterion in d055["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "driver_counter.DriverAssocMac"
+        criterion["field"] == "drv_before_5g.DriverAssocMac"
         and criterion["operator"] == "equals"
         and criterion.get("reference") == "assoc_entry.MACAddress"
         for criterion in d055["pass_criteria"]
     )
     assert any(
-        criterion["field"] == "driver_counter.DriverTxMulticastPacketCount"
+        criterion["field"] == "drv_after_5g.DriverAssocMac"
         and criterion["operator"] == "equals"
-        and str(criterion["value"]) == "0"
+        and criterion.get("reference") == "assoc_entry.MACAddress"
         for criterion in d055["pass_criteria"]
     )
     assert any(
-        criterion["field"] == "driver_counter.DriverTxMulticastBytes"
-        and criterion["operator"] == "equals"
-        and str(criterion["value"]) == "0"
+        criterion.get("operator") == "delta_nonzero"
+        and criterion.get("delta")
+        == {
+            "baseline": "api_before_5g.TxMulticastPacketCount",
+            "verify": "api_after_5g.TxMulticastPacketCount",
+        }
+        for criterion in d055["pass_criteria"]
+    )
+    assert any(
+        criterion.get("operator") == "delta_match"
+        and criterion.get("reference_delta")
+        == {
+            "baseline": "drv_before_5g.DriverTxMulticastPacketCount",
+            "verify": "drv_after_5g.DriverTxMulticastPacketCount",
+        }
+        for criterion in d055["pass_criteria"]
+    )
+    assert not any(
+        criterion.get("field") == "result.TxMulticastPacketCount"
+        and criterion.get("operator") == "equals"
+        and str(criterion.get("value")) == "0"
         for criterion in d055["pass_criteria"]
     )
 
@@ -7771,45 +7294,44 @@ def test_d055_txmulticastpacketcount_evaluate_live_examples():
 
     d055_results = {
         "steps": {
-            "step1": {
+            "step1_sta_identity": {
                 "success": True,
-                "output": "\n".join(
-                    [
-                        "StaMac=2c:59:17:00:04:85",
-                        "StaRxPacketsBefore=136067",
-                        "StaRxBytesBefore=15249537",
-                    ]
-                ),
+                "output": "StaMac=2c:59:17:00:04:85\nStaRxPacketsBefore=136067\nStaRxBytesBefore=15249537",
                 "timing": 0.01,
             },
-            "step2": {
+            "step2_assoc_entry": {
                 "success": True,
                 "output": "MACAddress=2c:59:17:00:04:85",
                 "timing": 0.01,
             },
-            "step3": {
+            "step3_api_baseline": {
+                "success": True,
+                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount=10",
+                "timing": 0.01,
+            },
+            "step4_drv_baseline": {
+                "success": True,
+                "output": "DriverAssocMac=2c:59:17:00:04:85\nDriverTxMulticastPacketCount=10",
+                "timing": 0.01,
+            },
+            "step5_trigger": {
                 "success": True,
                 "output": "10 packets transmitted, 0 received, 100% packet loss, time 9034ms\nProbeTxPackets=10",
                 "timing": 0.01,
             },
-            "step4": {
+            "step6_sta_after": {
                 "success": True,
                 "output": "StaRxPacketsAfter=136077\nStaRxBytesAfter=15250517",
                 "timing": 0.01,
             },
-            "step5": {
+            "step7_api_verify": {
                 "success": True,
-                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount=0",
+                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount=14",
                 "timing": 0.01,
             },
-            "step6": {
+            "step8_drv_verify": {
                 "success": True,
-                "output": "AssocMAC=2c:59:17:00:04:85\nAssocTxMulticastPacketCount=0",
-                "timing": 0.01,
-            },
-            "step7": {
-                "success": True,
-                "output": "DriverAssocMac=2c:59:17:00:04:85\nDriverTxMulticastPacketCount=0\nDriverTxMulticastBytes=0",
+                "output": "DriverAssocMac=2c:59:17:00:04:85\nDriverTxMulticastPacketCount=14",
                 "timing": 0.01,
             },
         }
@@ -7819,7 +7341,7 @@ def test_d055_txmulticastpacketcount_evaluate_live_examples():
     d055_no_delivery_results = {
         "steps": {
             **d055_results["steps"],
-            "step4": {
+            "step6_sta_after": {
                 "success": True,
                 "output": "StaRxPacketsAfter=136067\nStaRxBytesAfter=15249537",
                 "timing": 0.01,
@@ -7828,251 +7350,235 @@ def test_d055_txmulticastpacketcount_evaluate_live_examples():
     }
     assert plugin.evaluate(d055, d055_no_delivery_results) is False
 
-    d055_wrong_llapi_results = {
+    d055_zero_results = {
         "steps": {
             **d055_results["steps"],
-            "step5": {
+            "step7_api_verify": {
                 "success": True,
-                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount=3",
+                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount=10",
                 "timing": 0.01,
             },
         }
     }
-    assert plugin.evaluate(d055, d055_wrong_llapi_results) is False
+    assert plugin.evaluate(d055, d055_zero_results) is False
 
     d055_wrong_driver_results = {
         "steps": {
             **d055_results["steps"],
-            "step7": {
+            "step8_drv_verify": {
                 "success": True,
-                "output": "DriverAssocMac=2c:59:17:00:04:85\nDriverTxMulticastPacketCount=2\nDriverTxMulticastBytes=196",
+                "output": "DriverAssocMac=2c:59:17:00:04:85\nDriverTxMulticastPacketCount=30",
                 "timing": 0.01,
             },
         }
     }
     assert plugin.evaluate(d055, d055_wrong_driver_results) is False
 
-    d055_wrong_assoc_results = {
-        "steps": {
-            **d055_results["steps"],
-            "step2": {
-                "success": True,
-                "output": "MACAddress=aa:aa:aa:aa:aa:aa",
-                "timing": 0.01,
-            },
-        }
-    }
-    assert plugin.evaluate(d055, d055_wrong_assoc_results) is False
-
-    d055_mixed_case_llapi_results = {
-        "steps": {
-            **d055_results["steps"],
-            "step2": {
-                "success": True,
-                "output": "MACAddress=2c:59:17:00:04:85",
-                "timing": 0.01,
-            },
-            "step6": {
-                "success": True,
-                "output": "AssocMAC=2c:59:17:00:04:85\nAssocTxMulticastPacketCount=0",
-                "timing": 0.01,
-            },
-            "step7": {
-                "success": True,
-                "output": "DriverAssocMac=2c:59:17:00:04:85\nDriverTxMulticastPacketCount=0\nDriverTxMulticastBytes=0",
-                "timing": 0.01,
-            },
-        }
-    }
-    assert plugin.evaluate(d055, d055_mixed_case_llapi_results) is True
-
 
 def test_d057_txunicastpacketcount_uses_same_sta_failure_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     plugin = _load_plugin()
     discoverable_ids = {case["id"] for case in plugin.discover_cases()}
-    assert "wifi-llapi-D057-txunicastpacketcount" in discoverable_ids
+    assert {
+        "wifi-llapi-D056-txpacketcount",
+        "wifi-llapi-D057-txunicastpacketcount",
+    }.issubset(discoverable_ids)
 
-    d057_raw = yaml.safe_load((cases_dir / "D057_txunicastpacketcount.yaml").read_text(encoding="utf-8"))
-    d057 = load_case(cases_dir / "D057_txunicastpacketcount.yaml")
-    d057_commands = "\n".join(str(step.get("command", "")) for step in d057["steps"])
-    d057_links = {link["band"] for link in d057["topology"]["links"]}
+    pass_cases = {
+        "D056_txpacketcount.yaml": {
+            "id": "wifi-llapi-D056-txpacketcount",
+            "row": 56,
+            "api": "TxPacketCount",
+            "driver_before": "drv_before_5g.DriverTxPacketCount",
+            "driver_after": "drv_after_5g.DriverTxPacketCount",
+            "driver_token": "DriverTxPacketCount=",
+            "ssid": "TestPilot_BTM",
+        },
+        "D057_txunicastpacketcount.yaml": {
+            "id": "wifi-llapi-D057-txunicastpacketcount",
+            "row": 57,
+            "api": "TxUnicastPacketCount",
+            "driver_before": "drv_before_5g.DriverTxUnicastPacketCount",
+            "driver_after": "drv_after_5g.DriverTxUnicastPacketCount",
+            "driver_token": "DriverTxUnicastPacketCount=",
+            "ssid": "testpilot5G",
+        },
+    }
 
-    assert "aliases" not in d057_raw
-    assert d057["id"] == "wifi-llapi-D057-txunicastpacketcount"
-    assert d057["source"]["row"] == 57
-    assert d057["llapi_support"] == "Support"
-    assert d057["bands"] == ["5g"]
-    assert d057_links == {"5g"}
-    assert d057["topology"]["devices"]["STA"]["config"][0]["ssid"] == "testpilot5G"
-    assert d057["topology"]["devices"]["STA"]["config"][0]["security"] == "WPA2-Personal"
-    assert "sta_env_setup" not in d057_raw
-    assert d057["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount?"'
-    assert "cat /sys/class/net/wl0/address" in d057_commands
-    assert "tr 'A-F' 'a-f'" in d057_commands
-    assert "MACAddress?" in d057_commands
-    assert 'TxUnicastPacketCount?"' in d057_commands
-    assert "AssocTxUnicastPacketCount=" in d057_commands
-    assert "AssocTxPacketCount=" in d057_commands
-    assert "DriverTxPacketCount=" in d057_commands
-    assert "DriverTxUnicastPacketCount=" in d057_commands
-    assert "DriverTxBytes=" in d057_commands
-    assert "DriverTxUnicastBytes=" in d057_commands
-    assert any(
-        criterion["field"] == "assoc_entry.MACAddress"
-        and criterion["operator"] == "equals"
-        and criterion.get("reference") == "sta_identity.StaMac"
-        for criterion in d057["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "result.TxUnicastPacketCount"
-        and criterion["operator"] == "equals"
-        and str(criterion["value"]) == "0"
-        for criterion in d057["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "result.TxUnicastPacketCount"
-        and criterion["operator"] == "equals"
-        and criterion.get("reference") == "assoc_snapshot.AssocTxUnicastPacketCount"
-        for criterion in d057["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "assoc_snapshot.AssocTxPacketCount"
-        and criterion["operator"] == ">"
-        and str(criterion["value"]) == "0"
-        for criterion in d057["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "driver_capture.DriverAssocMac"
-        and criterion["operator"] == "equals"
-        and criterion.get("reference") == "assoc_entry.MACAddress"
-        for criterion in d057["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "driver_capture.DriverTxPacketCount"
-        and criterion["operator"] == ">"
-        and str(criterion["value"]) == "0"
-        for criterion in d057["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "assoc_snapshot.AssocTxPacketCount"
-        and criterion["operator"] == "equals"
-        and criterion.get("reference") == "driver_capture.DriverTxPacketCount"
-        for criterion in d057["pass_criteria"]
-    )
-    assert any(
-        criterion["field"] == "driver_capture.DriverTxUnicastPacketCount"
-        and criterion["operator"] == ">"
-        and str(criterion["value"]) == "0"
-        for criterion in d057["pass_criteria"]
-    )
+    for filename, meta in pass_cases.items():
+        raw_case = yaml.safe_load((cases_dir / filename).read_text(encoding="utf-8"))
+        case_data = load_case(cases_dir / filename)
+        commands = "\n".join(str(step.get("command", "")) for step in case_data["steps"])
+        links = {link["band"] for link in case_data["topology"]["links"]}
+
+        assert "aliases" not in raw_case
+        assert case_data["id"] == meta["id"]
+        assert case_data["source"]["row"] == meta["row"]
+        assert case_data["llapi_support"] == "Support"
+        assert case_data["bands"] == ["5g"]
+        assert links == {"5g"}
+        assert case_data["hlapi_command"] == f'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}?"'
+        assert [step["phase"] for step in case_data["steps"]] == [
+            "baseline",
+            "baseline",
+            "baseline",
+            "baseline",
+            "trigger",
+            "verify",
+            "verify",
+        ]
+        assert "wpa_state=" in commands
+        assert "StaIp=" in commands
+        assert "TriggerTxPackets=" in commands
+        assert "DriverAssocMac=" in commands
+        assert meta["driver_token"] in commands
+        assert any(
+            criterion["field"] == "sta_ready_5g.wpa_state"
+            and criterion["operator"] == "equals"
+            and criterion["value"] == "COMPLETED"
+            for criterion in case_data["pass_criteria"]
+        )
+        assert any(
+            criterion["field"] == "sta_ready_5g.ssid"
+            and criterion["operator"] == "equals"
+            and criterion["value"] == meta["ssid"]
+            for criterion in case_data["pass_criteria"]
+        )
+        assert any(
+            criterion["field"] == "assoc_entry.MACAddress"
+            and criterion["operator"] == "equals"
+            and criterion.get("reference") == "sta_ready_5g.StaMac"
+            for criterion in case_data["pass_criteria"]
+        )
+        assert any(
+            criterion["field"] == "trigger_probe.TriggerTxPackets"
+            and criterion["operator"] == ">"
+            and str(criterion["value"]) == "0"
+            for criterion in case_data["pass_criteria"]
+        )
+        assert any(
+            criterion.get("operator") == "delta_nonzero"
+            and criterion.get("delta")
+            == {
+                "baseline": f'api_before_5g.{meta["api"]}',
+                "verify": f'api_after_5g.{meta["api"]}',
+            }
+            for criterion in case_data["pass_criteria"]
+        )
+        assert any(
+            criterion.get("operator") == "delta_match"
+            and criterion.get("reference_delta")
+            == {
+                "baseline": meta["driver_before"],
+                "verify": meta["driver_after"],
+            }
+            for criterion in case_data["pass_criteria"]
+        )
+        assert not any(
+            criterion.get("field") == f'result.{meta["api"]}'
+            and criterion.get("operator") == "equals"
+            and str(criterion.get("value")) == "0"
+            for criterion in case_data["pass_criteria"]
+        )
 
 
 def test_d057_txunicastpacketcount_evaluate_live_examples():
     plugin = _load_plugin()
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
-    d057 = load_case(cases_dir / "D057_txunicastpacketcount.yaml")
 
-    d057_results = {
-        "steps": {
-            "step1": {
-                "success": True,
-                "output": "StaMac=2c:59:17:00:04:85",
-                "timing": 0.01,
-            },
-            "step2": {
-                "success": True,
-                "output": "MACAddress=2c:59:17:00:04:85",
-                "timing": 0.01,
-            },
-            "step3": {
-                "success": True,
-                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0",
-                "timing": 0.01,
-            },
-            "step4": {
-                "success": True,
-                "output": "\n".join(
-                    [
-                        "AssocMAC=2c:59:17:00:04:85",
-                        "AssocTxUnicastPacketCount=0",
-                        "AssocTxPacketCount=90442",
-                    ]
-                ),
-                "timing": 0.01,
-            },
-            "step5": {
-                "success": True,
-                "output": "\n".join(
-                    [
-                        "DriverAssocMac=2c:59:17:00:04:85",
-                        "DriverTxPacketCount=90442",
-                        "DriverTxUnicastPacketCount=90442",
-                        "DriverTxBytes=0",
-                        "DriverTxUnicastBytes=0",
-                    ]
-                ),
-                "timing": 0.01,
-            },
-        }
+    pass_cases = {
+        "D056_txpacketcount.yaml": {
+            "api": "TxPacketCount",
+            "driver_field": "DriverTxPacketCount",
+            "ssid": "TestPilot_BTM",
+            "key_mgmt": "SAE",
+        },
+        "D057_txunicastpacketcount.yaml": {
+            "api": "TxUnicastPacketCount",
+            "driver_field": "DriverTxUnicastPacketCount",
+            "ssid": "testpilot5G",
+            "key_mgmt": "WPA2-PSK",
+        },
     }
-    assert plugin.evaluate(d057, d057_results) is True
 
-    d057_wrong_llapi_results = {
-        "steps": {
-            **d057_results["steps"],
-            "step3": {
-                "success": True,
-                "output": "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=7",
-                "timing": 0.01,
-            },
+    for filename, meta in pass_cases.items():
+        case_data = load_case(cases_dir / filename)
+        pass_results = {
+            "steps": {
+                "step1_sta_ready": {
+                    "success": True,
+                    "output": "ssid={ssid}\nkey_mgmt={key_mgmt}\nwpa_state=COMPLETED\nStaMac=2c:59:17:00:04:85\nStaIp=192.168.1.3".format(**meta),
+                    "timing": 0.01,
+                },
+                "step2_assoc_entry": {
+                    "success": True,
+                    "output": 'MACAddress=2c:59:17:00:04:85',
+                    "timing": 0.01,
+                },
+                "step3_api_baseline": {
+                    "success": True,
+                    "output": f'WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}=10',
+                    "timing": 0.01,
+                },
+                "step4_drv_baseline": {
+                    "success": True,
+                    "output": f'DriverAssocMac=2c:59:17:00:04:85\n{meta["driver_field"]}=100',
+                    "timing": 0.01,
+                },
+                "step5_trigger": {
+                    "success": True,
+                    "output": '8 packets transmitted, 8 received, 0% packet loss\nTriggerTxPackets=8',
+                    "timing": 0.01,
+                },
+                "step6_api_verify": {
+                    "success": True,
+                    "output": f'WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}=16',
+                    "timing": 0.01,
+                },
+                "step7_drv_verify": {
+                    "success": True,
+                    "output": f'DriverAssocMac=2c:59:17:00:04:85\n{meta["driver_field"]}=106',
+                    "timing": 0.01,
+                },
+            }
         }
-    }
-    assert plugin.evaluate(d057, d057_wrong_llapi_results) is False
+        assert plugin.evaluate(case_data, pass_results) is True
 
-    d057_missing_total_results = {
-        "steps": {
-            **d057_results["steps"],
-            "step4": {
-                "success": True,
-                "output": "AssocMAC=2c:59:17:00:04:85\nAssocTxUnicastPacketCount=0\nAssocTxPacketCount=0",
-                "timing": 0.01,
-            },
+        zero_results = {
+            "steps": {
+                **pass_results["steps"],
+                "step6_api_verify": {
+                    "success": True,
+                    "output": f'WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}=10',
+                    "timing": 0.01,
+                },
+            }
         }
-    }
-    assert plugin.evaluate(d057, d057_missing_total_results) is False
+        assert plugin.evaluate(case_data, zero_results) is False
 
-    d057_wrong_driver_results = {
-        "steps": {
-            **d057_results["steps"],
-            "step5": {
-                "success": True,
-                "output": "\n".join(
-                    [
-                        "DriverAssocMac=2c:59:17:00:04:85",
-                        "DriverTxPacketCount=90442",
-                        "DriverTxUnicastPacketCount=0",
-                        "DriverTxBytes=0",
-                        "DriverTxUnicastBytes=0",
-                    ]
-                ),
-                "timing": 0.01,
-            },
+        mismatch_results = {
+            "steps": {
+                **pass_results["steps"],
+                "step7_drv_verify": {
+                    "success": True,
+                    "output": f'DriverAssocMac=2c:59:17:00:04:85\n{meta["driver_field"]}=130',
+                    "timing": 0.01,
+                },
+            }
         }
-    }
-    assert plugin.evaluate(d057, d057_wrong_driver_results) is False
+        assert plugin.evaluate(case_data, mismatch_results) is False
 
-    d057_wrong_assoc_results = {
-        "steps": {
-            **d057_results["steps"],
-            "step2": {
-                "success": True,
-                "output": "MACAddress=aa:aa:aa:aa:aa:aa",
-                "timing": 0.01,
-            },
+        assoc_mismatch_results = {
+            "steps": {
+                **pass_results["steps"],
+                "step7_drv_verify": {
+                    "success": True,
+                    "output": f'DriverAssocMac=aa:aa:aa:aa:aa:aa\n{meta["driver_field"]}=106',
+                    "timing": 0.01,
+                },
+            }
         }
-    }
-    assert plugin.evaluate(d057, d057_wrong_assoc_results) is False
+        assert plugin.evaluate(case_data, assoc_mismatch_results) is False
 
 
 def test_d053_txbytes_contract():
@@ -8093,33 +7599,46 @@ def test_d053_txbytes_contract():
     assert d053["bands"] == ["5g", "6g", "2.4g"]
     assert d053_links == {"5g", "6g", "2.4g"}
     assert d053["hlapi_command"] == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxBytes?"'
-    assert len(d053["steps"]) == 15
-    assert len(d053["pass_criteria"]) == 36
-    assert "PingTx5g=" in d053_commands
-    assert "PingTx6g=" in d053_commands
-    assert "PingTx24g=" in d053_commands
-    assert "AssocTxBytes5g=" in d053_commands
-    assert "AssocTxBytes6g=" in d053_commands
-    assert "AssocTxBytes24g=" in d053_commands
+    assert len(d053["steps"]) == 21
+    assert [step["phase"] for step in d053["steps"]] == [
+        "baseline", "baseline", "baseline", "baseline", "trigger", "verify", "verify",
+        "baseline", "baseline", "baseline", "baseline", "trigger", "verify", "verify",
+        "baseline", "baseline", "baseline", "baseline", "trigger", "verify", "verify",
+    ]
+    assert "TriggerTxPackets5g=" in d053_commands
+    assert "TriggerTxPackets6g=" in d053_commands
+    assert "TriggerTxPackets24g=" in d053_commands
     assert "DriverTxBytes5g=" in d053_commands
     assert "DriverTxBytes6g=" in d053_commands
     assert "DriverTxBytes24g=" in d053_commands
     assert any(
-        criterion["field"] == "assoc_entry_5g.AssocMac5g"
+        criterion["field"] == "sta_ready_5g.wpa_state"
         and criterion["operator"] == "equals"
-        and criterion.get("reference") == "sta_ready_5g.StaMac5g"
+        and criterion["value"] == "COMPLETED"
         for criterion in d053["pass_criteria"]
     )
     assert any(
-        criterion["field"] == "capture_6g.TxBytes6g"
-        and criterion["operator"] == "equals"
-        and criterion.get("reference") == "capture_6g.AssocTxBytes6g"
+        criterion.get("field") == "assoc_entry_6g.AssocMac6g"
+        and criterion.get("operator") == "equals"
+        and criterion.get("reference") == "sta_ready_6g.StaMac6g"
         for criterion in d053["pass_criteria"]
     )
     assert any(
-        criterion["field"] == "capture_24g.DriverTxBytes24g"
-        and criterion["operator"] == "equals"
-        and criterion.get("reference") == "capture_24g.TxBytes24g"
+        criterion.get("operator") == "delta_nonzero"
+        and criterion.get("delta")
+        == {
+            "baseline": "api_before_24g.TxBytes",
+            "verify": "api_after_24g.TxBytes",
+        }
+        for criterion in d053["pass_criteria"]
+    )
+    assert any(
+        criterion.get("operator") == "delta_match"
+        and criterion.get("reference_delta")
+        == {
+            "baseline": "drv_before_6g.DriverTxBytes6g",
+            "verify": "drv_after_6g.DriverTxBytes6g",
+        }
         for criterion in d053["pass_criteria"]
     )
 
@@ -8131,156 +7650,27 @@ def test_d053_txbytes_evaluate_live_examples():
 
     d053_results = {
         "steps": {
-            "step1_5g_sta_ready": {
-                "success": True,
-                "output": "\n".join(
-                    [
-                        "bssid=2c:59:17:00:19:95",
-                        "freq=5180",
-                        "ssid=testpilot5G",
-                        "key_mgmt=WPA2-PSK",
-                        "wpa_state=COMPLETED",
-                        "StaMac5g=2c:59:17:00:04:85",
-                    ]
-                ),
-                "timing": 0.01,
-            },
-            "step2_5g_assoc_entry": {
-                "success": True,
-                "output": "AssocMac5g=2c:59:17:00:04:85",
-                "timing": 0.01,
-            },
-            "step3_5g_ip_prep": {
-                "success": True,
-                "output": "StaIp5g=192.168.1.3/24",
-                "timing": 0.01,
-            },
-            "step4_5g_ping_trigger": {
-                "success": True,
-                "output": "\n".join(
-                    [
-                        "PingReturnCode5g=1",
-                        "PingTx5g=8",
-                        "PingRx5g=0",
-                    ]
-                ),
-                "timing": 0.01,
-            },
-            "step5_5g_tight_capture": {
-                "success": True,
-                "output": "\n".join(
-                    [
-                        "AssocMac5g=2c:59:17:00:04:85",
-                        "AssocTxBytes5g=12944",
-                        "AssocTxPacketCount5g=24",
-                        "TxBytes5g=12944",
-                        "DriverAssocMac5g=2c:59:17:00:04:85",
-                        "DriverTxBytes5g=12944",
-                        "DriverTxPacketCount5g=24",
-                    ]
-                ),
-                "timing": 0.01,
-            },
-            "step6_6g_sta_ready": {
-                "success": True,
-                "output": "\n".join(
-                    [
-                        "bssid=2c:59:17:00:19:96",
-                        "freq=5955",
-                        "ssid=testpilot6G",
-                        "key_mgmt=SAE",
-                        "wpa_state=COMPLETED",
-                        "StaMac6g=2c:59:17:00:04:86",
-                    ]
-                ),
-                "timing": 0.01,
-            },
-            "step7_6g_assoc_entry": {
-                "success": True,
-                "output": "AssocMac6g=2c:59:17:00:04:86",
-                "timing": 0.01,
-            },
-            "step8_6g_ip_prep": {
-                "success": True,
-                "output": "StaIp6g=192.168.1.3/24",
-                "timing": 0.01,
-            },
-            "step9_6g_ping_trigger": {
-                "success": True,
-                "output": "\n".join(
-                    [
-                        "PingReturnCode6g=1",
-                        "PingTx6g=8",
-                        "PingRx6g=0",
-                    ]
-                ),
-                "timing": 0.01,
-            },
-            "step10_6g_tight_capture": {
-                "success": True,
-                "output": "\n".join(
-                    [
-                        "AssocMac6g=2c:59:17:00:04:86",
-                        "AssocTxBytes6g=28270",
-                        "AssocTxPacketCount6g=49",
-                        "TxBytes6g=28270",
-                        "DriverAssocMac6g=2c:59:17:00:04:86",
-                        "DriverTxBytes6g=28270",
-                        "DriverTxPacketCount6g=49",
-                    ]
-                ),
-                "timing": 0.01,
-            },
-            "step11_24g_sta_ready": {
-                "success": True,
-                "output": "\n".join(
-                    [
-                        "bssid=2c:59:17:00:19:a7",
-                        "freq=2412",
-                        "ssid=testpilot2G",
-                        "key_mgmt=WPA2-PSK",
-                        "wpa_state=COMPLETED",
-                        "StaMac24g=2c:59:17:00:04:97",
-                    ]
-                ),
-                "timing": 0.01,
-            },
-            "step12_24g_assoc_entry": {
-                "success": True,
-                "output": "AssocMac24g=2c:59:17:00:04:97",
-                "timing": 0.01,
-            },
-            "step13_24g_ip_prep": {
-                "success": True,
-                "output": "StaIp24g=192.168.1.3/24",
-                "timing": 0.01,
-            },
-            "step14_24g_ping_trigger": {
-                "success": True,
-                "output": "\n".join(
-                    [
-                        "PingReturnCode24g=1",
-                        "PingTx24g=8",
-                        "PingRx24g=0",
-                    ]
-                ),
-                "timing": 0.01,
-            },
-            "step15_24g_tight_capture": {
-                "success": True,
-                "output": "\n".join(
-                    [
-                        "AssocMac24g=2c:59:17:00:04:97",
-                        "AssocTxBytes24g=90",
-                        "AssocTxPacketCount24g=10",
-                        "TxBytes24g=90",
-                        "DriverAssocMac24g=2c:59:17:00:04:97",
-                        "DriverTxBytes24g=90",
-                        "DriverTxPacketCount24g=10",
-                    ]
-                ),
-                "timing": 0.01,
-            },
+            "step1_5g_sta_ready": {"success": True, "output": "wpa_state=COMPLETED\nssid=testpilot5G\nStaMac5g=2c:59:17:00:04:85\nStaIp5g=192.168.1.3", "timing": 0.01},
+            "step2_5g_assoc_entry": {"success": True, "output": "AssocMac5g=2c:59:17:00:04:85", "timing": 0.01},
+            "step3_5g_api_baseline": {"success": True, "output": "WiFi.AccessPoint.1.AssociatedDevice.1.TxBytes=10", "timing": 0.01},
+            "step4_5g_drv_baseline": {"success": True, "output": "DriverAssocMac5g=2c:59:17:00:04:85\nDriverTxBytes5g=100", "timing": 0.01},
+            "step5_5g_trigger": {"success": True, "output": "TriggerTxPackets5g=8", "timing": 0.01},
+            "step6_5g_api_verify": {"success": True, "output": "WiFi.AccessPoint.1.AssociatedDevice.1.TxBytes=18", "timing": 0.01},
+            "step7_5g_drv_verify": {"success": True, "output": "DriverAssocMac5g=2c:59:17:00:04:85\nDriverTxBytes5g=108", "timing": 0.01},
+            "step8_6g_sta_ready": {"success": True, "output": "wpa_state=COMPLETED\nssid=testpilot6G\nStaMac6g=2c:59:17:00:04:86\nStaIp6g=192.168.1.3", "timing": 0.01},
+            "step9_6g_assoc_entry": {"success": True, "output": "AssocMac6g=2c:59:17:00:04:86", "timing": 0.01},
+            "step10_6g_api_baseline": {"success": True, "output": "WiFi.AccessPoint.3.AssociatedDevice.1.TxBytes=20", "timing": 0.01},
+            "step11_6g_drv_baseline": {"success": True, "output": "DriverAssocMac6g=2c:59:17:00:04:86\nDriverTxBytes6g=200", "timing": 0.01},
+            "step12_6g_trigger": {"success": True, "output": "TriggerTxPackets6g=8", "timing": 0.01},
+            "step13_6g_api_verify": {"success": True, "output": "WiFi.AccessPoint.3.AssociatedDevice.1.TxBytes=28", "timing": 0.01},
+            "step14_6g_drv_verify": {"success": True, "output": "DriverAssocMac6g=2c:59:17:00:04:86\nDriverTxBytes6g=208", "timing": 0.01},
+            "step15_24g_sta_ready": {"success": True, "output": "wpa_state=COMPLETED\nssid=testpilot2G\nStaMac24g=2c:59:17:00:04:97\nStaIp24g=192.168.1.3", "timing": 0.01},
+            "step16_24g_assoc_entry": {"success": True, "output": "AssocMac24g=2c:59:17:00:04:97", "timing": 0.01},
+            "step17_24g_api_baseline": {"success": True, "output": "WiFi.AccessPoint.5.AssociatedDevice.1.TxBytes=30", "timing": 0.01},
+            "step18_24g_drv_baseline": {"success": True, "output": "DriverAssocMac24g=2c:59:17:00:04:97\nDriverTxBytes24g=300", "timing": 0.01},
+            "step19_24g_trigger": {"success": True, "output": "TriggerTxPackets24g=8", "timing": 0.01},
+            "step20_24g_api_verify": {"success": True, "output": "WiFi.AccessPoint.5.AssociatedDevice.1.TxBytes=38", "timing": 0.01},
+            "step21_24g_drv_verify": {"success": True, "output": "DriverAssocMac24g=2c:59:17:00:04:97\nDriverTxBytes24g=308", "timing": 0.01},
         }
     }
     assert plugin.evaluate(d053, d053_results) is True
@@ -8288,19 +7678,9 @@ def test_d053_txbytes_evaluate_live_examples():
     d053_wrong_6g_driver_results = {
         "steps": {
             **d053_results["steps"],
-            "step10_6g_tight_capture": {
+            "step14_6g_drv_verify": {
                 "success": True,
-                "output": "\n".join(
-                    [
-                        "AssocMac6g=2c:59:17:00:04:86",
-                        "AssocTxBytes6g=28270",
-                        "AssocTxPacketCount6g=49",
-                        "TxBytes6g=28270",
-                        "DriverAssocMac6g=2c:59:17:00:04:86",
-                        "DriverTxBytes6g=11111",
-                        "DriverTxPacketCount6g=49",
-                    ]
-                ),
+                "output": "DriverAssocMac6g=2c:59:17:00:04:86\nDriverTxBytes6g=260",
                 "timing": 0.01,
             },
         }
@@ -17309,8 +16689,9 @@ def test_extract_cli_fragments_ignores_prose_after_ubus_keyword():
         ("D034_noise_accesspoint_associateddevice.yaml", 2, "DriverNoise="),
         ("D037_retransmissions.yaml", 3, "DriverRetransmissions="),
         ("D038_rx_retransmissions.yaml", 3, "DriverRxRetransmissions="),
-        ("D039_rxbytes.yaml", 2, "DriverRxBytes="),
+        ("D039_rxbytes.yaml", 4, "DriverRxBytes="),
         ("D040_rxmulticastpacketcount.yaml", 3, "DriverRxMulticastPacketCount="),
+        ("D042_rxunicastpacketcount.yaml", 4, "DriverRxUnicastPacketCount="),
         ("D044_signalnoiseratio.yaml", 2, "DriverSignalNoiseRatio="),
         ("D043_securitymodeenabled.yaml", 2, "DriverSecurityModeEnabled="),
         ("D045_signalstrength_accesspoint_associateddevice.yaml", 2, "DriverSignalStrength="),
@@ -17321,7 +16702,7 @@ def test_extract_cli_fragments_ignores_prose_after_ubus_keyword():
         ("D052_tx_retransmissionsfailed.yaml", 2, "DriverTxRetransmissionsFailed="),
         ("D054_txerrors.yaml", 3, "DriverTxErrors="),
         ("D049_supportedmcs.yaml", 2, "DriverMCSSetPresent="),
-        ("D056_txpacketcount.yaml", 2, "DriverTxPacketCount="),
+        ("D056_txpacketcount.yaml", 3, "DriverTxPacketCount="),
         ("D059_uplinkbandwidth.yaml", 3, "DriverUplinkBandwidth="),
         ("D060_uplinkmcs.yaml", 3, "DriverUplinkMCS="),
         ("D061_uplinkshortguard.yaml", 4, "DriverUplinkShortGuardGI="),
@@ -17509,21 +16890,18 @@ def test_d055_txmulticastpacketcount_verification_fragments_preserve_delivery_an
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d055 = load_case(cases_dir / "D055_txmulticastpacketcount.yaml")
 
-    step3_command = d055["steps"][2]["command"]
-    step6_command = d055["steps"][5]["command"]
-    step7_command = d055["steps"][6]["command"]
+    step5_command = d055["steps"][4]["command"]
+    step8_command = d055["steps"][7]["command"]
     verification_commands = plugin._extract_cli_fragments(d055["verification_command"])
 
-    assert "ProbeTxPackets=" in step3_command
-    assert "AssocTxMulticastPacketCount=" in step6_command
-    assert plugin._sanitize_cli_fragment(step7_command) == step7_command
-    assert plugin._extract_cli_fragments(step7_command) == [step7_command]
-    assert step3_command in verification_commands
+    assert "ProbeTxPackets=" in step5_command
+    assert plugin._sanitize_cli_fragment(step8_command) == step8_command
+    assert plugin._extract_cli_fragments(step8_command) == [step8_command]
+    assert len(verification_commands) == 6
     assert any("StaRxPacketsBefore=" in fragment for fragment in verification_commands)
     assert any("StaRxPacketsAfter=" in fragment for fragment in verification_commands)
-    assert 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount?"' in verification_commands
-    assert step6_command in verification_commands
-    assert step7_command in verification_commands
+    assert step5_command in verification_commands
+    assert verification_commands[-1] == step8_command
 
 
 def test_d055_txmulticastpacketcount_macaddress_fragment_normalizes_case():
@@ -17548,34 +16926,13 @@ def test_d055_txmulticastpacketcount_macaddress_fragment_normalizes_case():
     assert proc.stdout.strip() == "MACAddress=2c:59:17:00:04:85"
 
 
-def test_d055_txmulticastpacketcount_snapshot_sed_fragment_executes():
+def test_d055_txmulticastpacketcount_driver_fragment_mentions_counter():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d055 = load_case(cases_dir / "D055_txmulticastpacketcount.yaml")
-    step6_command = d055["steps"][5]["command"]
-    pipeline = step6_command.split("|", 1)[1].strip()
-    sample_output = "\n".join(
-        [
-            'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
-            "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount=0",
-        ]
-    )
+    step8_command = d055["steps"][7]["command"]
 
-    proc = subprocess.run(
-        [
-            "sh",
-            "-lc",
-            f"cat <<'EOF' | {pipeline}\n{sample_output}\nEOF",
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-
-    assert proc.returncode == 0, proc.stderr
-    assert proc.stdout.strip().splitlines() == [
-        "AssocMAC=2c:59:17:00:04:85",
-        "AssocTxMulticastPacketCount=0",
-    ]
+    assert "DriverTxMulticastPacketCount=" in step8_command
+    assert "DriverAssocMac=" in step8_command
 
 
 def test_d057_txunicastpacketcount_verification_fragments_preserve_snapshot_and_driver_checks():
@@ -17583,20 +16940,16 @@ def test_d057_txunicastpacketcount_verification_fragments_preserve_snapshot_and_
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d057 = load_case(cases_dir / "D057_txunicastpacketcount.yaml")
 
-    step3_command = d057["steps"][2]["command"]
-    step4_command = d057["steps"][3]["command"]
     step5_command = d057["steps"][4]["command"]
+    step7_command = d057["steps"][6]["command"]
     verification_commands = plugin._extract_cli_fragments(d057["verification_command"])
 
-    assert step3_command == 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount?"'
-    assert "AssocTxPacketCount=" in step4_command
-    assert plugin._sanitize_cli_fragment(step5_command) == step5_command
-    assert plugin._extract_cli_fragments(step5_command) == [step5_command]
+    assert "TriggerTxPackets=" in step5_command
+    assert plugin._sanitize_cli_fragment(step7_command) == step7_command
+    assert plugin._extract_cli_fragments(step7_command) == [step7_command]
     assert len(verification_commands) == 4
-    assert verification_commands[0] == "cat /sys/class/net/wl0/address | tr 'A-F' 'a-f' | sed 's/^/StaMac=/'"
-    assert verification_commands[1] == step3_command
-    assert verification_commands[2] == step4_command
-    assert verification_commands[3] == step5_command
+    assert verification_commands[2] == step5_command
+    assert verification_commands[3] == step7_command
 
 
 def test_d057_txunicastpacketcount_macaddress_fragment_normalizes_case():
@@ -17621,36 +16974,13 @@ def test_d057_txunicastpacketcount_macaddress_fragment_normalizes_case():
     assert proc.stdout.strip() == "MACAddress=2c:59:17:00:04:85"
 
 
-def test_d057_txunicastpacketcount_snapshot_fragment_executes():
+def test_d057_txunicastpacketcount_driver_fragment_mentions_driver_counter():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d057 = load_case(cases_dir / "D057_txunicastpacketcount.yaml")
-    step4_command = d057["steps"][3]["command"]
-    pipeline = step4_command.split("|", 1)[1].strip()
-    sample_output = "\n".join(
-        [
-            'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
-            "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount=0",
-            "WiFi.AccessPoint.1.AssociatedDevice.1.TxPacketCount=90442",
-        ]
-    )
+    step7_command = d057["steps"][6]["command"]
 
-    proc = subprocess.run(
-        [
-            "sh",
-            "-lc",
-            f"cat <<'EOF' | {pipeline}\n{sample_output}\nEOF",
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-
-    assert proc.returncode == 0, proc.stderr
-    assert proc.stdout.strip().splitlines() == [
-        "AssocMAC=2c:59:17:00:04:85",
-        "AssocTxUnicastPacketCount=0",
-        "AssocTxPacketCount=90442",
-    ]
+    assert "DriverTxUnicastPacketCount=" in step7_command
+    assert "DriverAssocMac=" in step7_command
 
 
 def test_d053_txbytes_verification_fragments_preserve_snapshot_and_driver_checks():
@@ -17658,16 +16988,14 @@ def test_d053_txbytes_verification_fragments_preserve_snapshot_and_driver_checks
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d053 = load_case(cases_dir / "D053_txbytes.yaml")
 
-    step5_command = d053["steps"][4]["command"]
+    step7_command = d053["steps"][6]["command"]
     verification_commands = plugin._extract_cli_fragments(d053["verification_command"])
 
-    assert "TxBytes5g=" in step5_command
-    assert "AssocTxPacketCount5g=" in step5_command
-    assert "DriverTxBytes5g=" in step5_command
-    assert plugin._sanitize_cli_fragment(step5_command) == step5_command
-    assert plugin._extract_cli_fragments(step5_command) == [step5_command]
-    assert len(verification_commands) == 15
-    assert verification_commands[4] == step5_command
+    assert "DriverTxBytes5g=" in step7_command
+    assert plugin._sanitize_cli_fragment(step7_command) == step7_command
+    assert plugin._extract_cli_fragments(step7_command) == [step7_command]
+    assert len(verification_commands) == 12
+    assert verification_commands[3] == step7_command
 
 
 def test_d053_txbytes_macaddress_fragment_normalizes_case():

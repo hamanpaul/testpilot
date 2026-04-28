@@ -101,7 +101,7 @@
 
 ## 9. Wave 3 — Stage B Migration (~50 cases)
 
-- [ ] 9.1 Sub-PR `wave3-associated-device-traffic`: migrate D031, D039, D040, D041, D042, D053, D055, D056, D057
+- [x] 9.1 Sub-PR `wave3-associated-device-traffic`: migrate D039, D040, D041, D042, D053, D055, D056, D057; keep D031 as documented holdout because repo-local evidence still shows `MUMimoTxPktsCount` is a stubbed `Not Supported` field rather than a live traffic delta counter
 - [ ] 9.2 Sub-PR `wave3-getstats-traffic`: migrate D128, D130, D131, D132, D135, D136, D137
 - [ ] 9.3 Sub-PR `wave3-getradiostats-bcast-mcast-bytes`: migrate D263–D266, D271–D276
 - [ ] 9.4 Sub-PR `wave3-getssidstats-bcast-mcast-bytes`: migrate D300–D303, D309–D315

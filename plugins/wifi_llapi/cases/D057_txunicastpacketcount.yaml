@@ -1,5 +1,5 @@
 id: wifi-llapi-D057-txunicastpacketcount
-name: "TxUnicastPacketCount — WiFi.AccessPoint.{i}.AssociatedDevice.{i}."
+name: TxUnicastPacketCount — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
 version: '1.1'
 source:
   row: 57
@@ -8,10 +8,11 @@ source:
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount?"'
+hlapi_command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount?"
 llapi_support: Support
 implemented_by: pWHM
-bands: ["5g"]
+bands:
+- 5g
 topology:
   devices:
     DUT:
@@ -33,151 +34,160 @@ topology:
   - from: STA
     to: DUT
     band: 5g
-test_environment: |
-  Topology:
+test_environment: 'Topology:
+
   - DUT: COM1 (AP role)
+
   - STA: COM0 (STA role)
+
   Transport:
+
   - serialwrap attach COM0 / COM1
+
   Baseline:
+
   - 5G = AP1 / wl0 / testpilot5G / WPA2-Personal
+
   Preconditions:
+
   - keep only one associated station on AP1 so AssociatedDevice.1 stays deterministic
+
   - use the validated generic 5G WPA2 baseline for this case
+
   - workbook row 57 is TxUnicastPacketCount; stale row 59 is UplinkBandwidth
-  - clean-start replay of the old TestPilot_BTM / SAE custom env left COM0 wpa_supplicant at `wpaie set error (-7)` with `wpa_state=DISCONNECTED` even though COM1 wl0 was beaconing the SSID, so this case now relies on the stable auto-baseline path instead of the non-reproducible custom WPA3 setup
-  - current 5G retest resolves the same live STA on AP1 while TxPacketCount is positive but TxUnicastPacketCount stays 0
-setup_steps: |
-  1) Let the runner apply the deterministic 5G auto-baseline from band-baselines.yaml.
+
+  - clean-start replay of the old TestPilot_BTM / SAE custom env left COM0 wpa_supplicant at `wpaie set error (-7)` with `wpa_state=DISCONNECTED`
+  even though COM1 wl0 was beaconing the SSID, so this case now relies on the stable auto-baseline path instead of the non-reproducible
+  custom WPA3 setup
+
+  - current 5G retest resolves the same live STA on AP1 while TxPacketCount is positive but TxUnicastPacketCount stays 0'
+setup_steps: '1) Let the runner apply the deterministic 5G auto-baseline from band-baselines.yaml.
+
   2) Verify COM0 wl0 is connected to testpilot5G and COM1 wl0 assoclist resolves the same STA MAC.
-  3) Read AP1 AssociatedDevice.1.TxUnicastPacketCount directly, then compare it with the same entry's TxPacketCount and COM1 wl0 sta_info counters.
-test_procedure: |
-  1) Resolve COM1 wl0's live STA MAC and require AP1 AssociatedDevice.1 to point to that same station.
-  2) Read WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount directly on DUT, then cross-check the same AssociatedDevice snapshot for both TxUnicastPacketCount and sibling TxPacketCount.
-  3) Cross-check wl0 sta_info for the same STA and capture both `tx total pkts` and `tx ucast pkts`.
-  4) The current 5G retest is fail-shaped: TxUnicastPacketCount stays 0 while the same entry's TxPacketCount and wl0 sta_info tx ucast pkts remain positive.
+
+  3) Read AP1 AssociatedDevice.1.TxUnicastPacketCount directly, then compare it with the same entry''s TxPacketCount and COM1
+  wl0 sta_info counters.'
+test_procedure: '1) Resolve the live 5G STA state, assign a concrete wl0 IPv4 address, and require AP1 AssociatedDevice.1
+  to point to that same station.
+
+
+  2) Capture baseline DUT LLAPI TxUnicastPacketCount and the matching driver `tx ucast pkts` counter for the same STA.
+
+
+  3) From the DUT bridge IP, run a bounded ping burst toward the resolved STA IP to exercise AP-to-STA unicast traffic.
+
+
+  4) Capture verify DUT LLAPI TxUnicastPacketCount and the matching driver `tx ucast pkts` counter, then compare baseline-to-verify
+  deltas.'
 steps:
-- id: step1
+- id: step1_sta_ready
+  phase: baseline
   action: exec
   target: STA
-  command: cat /sys/class/net/wl0/address | tr 'A-F' 'a-f' | sed 's/^/StaMac=/'
-  capture: sta_identity
-- id: step2
+  command:
+  - wpa_cli -p /var/run/wpa_supplicant -i wl0 status | sed -n 's/^wpa_state=/wpa_state=/p; s/^ssid=/ssid=/p; s/^key_mgmt=/key_mgmt=/p'
+  - cat /sys/class/net/wl0/address | tr 'A-F' 'a-f' | sed 's/^/StaMac=/'
+  - ifconfig wl0 192.168.1.3 netmask 255.255.255.0 up
+  - ip -4 addr show dev wl0 | awk '/inet / {sub(/\/24$/, "", $2); print "StaIp=" $2; exit}'
+  capture: sta_ready_5g
+- id: step2_assoc_entry
+  phase: baseline
   action: exec
   target: DUT
-  command: >-
-    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'
-    | tr 'A-F' 'a-f' | sed 's/^/MACAddress=/'
-  depends_on: step1
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p' | tr
+    'A-F' 'a-f' | sed 's/^/MACAddress=/'
+  depends_on: step1_sta_ready
   capture: assoc_entry
-- id: step3
+- id: step3_api_baseline
+  phase: baseline
   action: exec
   target: DUT
-  command: 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount?"'
-  depends_on: step2
-  capture: result
-- id: step4
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount?"
+  depends_on: step2_assoc_entry
+  capture: api_before_5g
+- id: step4_drv_baseline
+  phase: baseline
   action: exec
   target: DUT
-  command: >-
-    ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= '/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/
-    {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxUnicastPacketCount=/
-    {print "AssocTxUnicastPacketCount=" $2} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxPacketCount=/
-    {print "AssocTxPacketCount=" $2}'
-  depends_on: step3
-  capture: assoc_snapshot
-- id: step5
+  command: 'STA_MAC="{{assoc_entry.MACAddress}}"; [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC; [ -n "$STA_MAC" ] &&
+    wl -i wl0 sta_info $STA_MAC | sed -n ''s/^[[:space:]]*tx ucast pkts: \([0-9][0-9]*\).*/DriverTxUnicastPacketCount=\1/p'''
+  depends_on: step3_api_baseline
+  capture: drv_before_5g
+- id: step5_trigger
+  phase: trigger
   action: exec
   target: DUT
-  command: >-
-    STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
-    's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f'); [ -n "$STA_MAC" ] && echo
-    DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n 's/^[[:space:]]*tx
-    total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount=\1/p; s/^[[:space:]]*tx ucast
-    pkts: \([0-9][0-9]*\).*/DriverTxUnicastPacketCount=\1/p; s/^[[:space:]]*tx total
-    bytes: \([0-9][0-9]*\).*/DriverTxBytes=\1/p; s/^[[:space:]]*tx ucast bytes: \([0-9][0-9]*\).*/DriverTxUnicastBytes=\1/p'
-  depends_on: step4
-  capture: driver_capture
+  command: PROBE_OUT=$(ping -I br-lan -c 8 -W 1 {{sta_ready_5g.StaIp}} 2>&1); printf '%s\n' "$PROBE_OUT"; printf '%s\n' "$PROBE_OUT"
+    | awk '/packets transmitted/ {print "TriggerTxPackets=" $1; exit}'
+  depends_on: step4_drv_baseline
+  capture: trigger_probe
+- id: step6_api_verify
+  phase: verify
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount?"
+  depends_on: step5_trigger
+  capture: api_after_5g
+- id: step7_drv_verify
+  phase: verify
+  action: exec
+  target: DUT
+  command: 'STA_MAC="{{assoc_entry.MACAddress}}"; [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC; [ -n "$STA_MAC" ] &&
+    wl -i wl0 sta_info $STA_MAC | sed -n ''s/^[[:space:]]*tx ucast pkts: \([0-9][0-9]*\).*/DriverTxUnicastPacketCount=\1/p'''
+  depends_on: step6_api_verify
+  capture: drv_after_5g
 pass_criteria:
-- field: sta_identity.StaMac
+- field: sta_ready_5g.wpa_state
+  operator: equals
+  value: COMPLETED
+  description: The 5G STA must remain associated before the downlink trigger.
+- field: sta_ready_5g.ssid
+  operator: equals
+  value: testpilot5G
+  description: The 5G STA must remain on the documented baseline SSID.
+- field: sta_ready_5g.StaMac
   operator: regex
   value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: COM1 wl0 must resolve to a concrete live STA MAC before DUT-side 
-    validation.
-- field: assoc_entry.MACAddress
+  description: The 5G STA MAC must resolve before DUT-side validation.
+- field: sta_ready_5g.StaIp
   operator: regex
-  value: ^([0-9a-f]{2}:){5}[0-9a-f]{2}$
-  description: AP1 AssociatedDevice.1 must first resolve to the live 5G STA MAC.
+  value: ^([0-9]{1,3}\.){3}[0-9]{1,3}$
+  description: The 5G STA interface must expose an IPv4 address for the DUT-originated trigger.
 - field: assoc_entry.MACAddress
   operator: equals
-  reference: sta_identity.StaMac
-  description: AP1 AssociatedDevice.1 must correspond to the same COM1 wl0 
-    station used for this manual checkpoint.
-- field: result.TxUnicastPacketCount
-  operator: regex
-  value: ^[0-9]+$
-  description: TxUnicastPacketCount direct getter must produce a numeric counter
-    for the live AssociatedDevice entry.
-- field: result.TxUnicastPacketCount
-  operator: equals
+  reference: sta_ready_5g.StaMac
+  description: AP1 AssociatedDevice.1 must resolve to the same live STA MAC.
+- field: trigger_probe.TriggerTxPackets
+  operator: '>'
   value: '0'
-  description: The current 5G live retest shows TxUnicastPacketCount still reads
-    0 for the same AssociatedDevice entry.
-- field: assoc_snapshot.AssocMAC
+  description: The DUT trigger step must actually transmit a downlink burst toward the resolved STA IP.
+- field: drv_before_5g.DriverAssocMac
   operator: equals
   reference: assoc_entry.MACAddress
-  description: AssociatedDevice snapshot evidence must come from the same AP1 
-    station entry.
-- field: result.TxUnicastPacketCount
-  operator: equals
-  reference: assoc_snapshot.AssocTxUnicastPacketCount
-  description: Direct getter TxUnicastPacketCount must match the same 
-    AssociatedDevice snapshot value.
-- field: assoc_snapshot.AssocTxPacketCount
-  operator: '>'
-  value: '0'
-  description: The sibling TxPacketCount on the same AssociatedDevice entry must
-    remain positive during this checkpoint.
-- field: driver_capture.DriverAssocMac
+  description: Baseline driver sampling must target the same live AssociatedDevice MAC resolved in step2.
+- field: drv_after_5g.DriverAssocMac
   operator: equals
   reference: assoc_entry.MACAddress
-  description: Driver evidence must target the same AssociatedDevice MAC 
-    resolved in step2.
-- field: driver_capture.DriverTxPacketCount
-  operator: '>'
-  value: '0'
-  description: wl0 sta_info must report a positive tx total packet count for the
-    same STA.
-- field: assoc_snapshot.AssocTxPacketCount
-  operator: equals
-  reference: driver_capture.DriverTxPacketCount
-  description: The sibling TxPacketCount on the same AssociatedDevice entry must
-    match wl0 sta_info tx total pkts.
-- field: driver_capture.DriverTxUnicastPacketCount
-  operator: '>'
-  value: '0'
-  description: wl0 sta_info must report a positive tx ucast packet count for the
-    same STA.
-- field: driver_capture.DriverTxBytes
-  operator: regex
-  value: ^[0-9]+$
-  description: wl0 sta_info must still expose tx total bytes as supporting 
-    context for the same STA.
-- field: driver_capture.DriverTxUnicastBytes
-  operator: regex
-  value: ^[0-9]+$
-  description: wl0 sta_info must still expose tx ucast bytes as supporting 
-    context for the same STA.
+  description: Verify driver sampling must target the same live AssociatedDevice MAC resolved in step2.
+- delta:
+    baseline: api_before_5g.TxUnicastPacketCount
+    verify: api_after_5g.TxUnicastPacketCount
+  operator: delta_nonzero
+  description: 5G API TxUnicastPacketCount must grow after the DUT-originated trigger workload.
+- delta:
+    baseline: api_before_5g.TxUnicastPacketCount
+    verify: api_after_5g.TxUnicastPacketCount
+  reference_delta:
+    baseline: drv_before_5g.DriverTxUnicastPacketCount
+    verify: drv_after_5g.DriverTxUnicastPacketCount
+  operator: delta_match
+  tolerance_pct: 10
+  description: 5G API TxUnicastPacketCount delta must stay within ±10% of the driver delta.
 verification_command:
-- 'cat /sys/class/net/wl0/address | tr ''A-F'' ''a-f'' | sed ''s/^/StaMac=/'''
-- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount?"'
-- 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | awk -F= ''/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.MACAddress=/
-  {gsub(/"/, "", $2); print "AssocMAC=" tolower($2)} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxUnicastPacketCount=/
-  {print "AssocTxUnicastPacketCount=" $2} /^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxPacketCount=/
-  {print "AssocTxPacketCount=" $2}'''
-- 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n
-  ''s/.*MACAddress="\([^"]*\)".*/\1/p'' | tr ''A-F'' ''a-f''); [ -n "$STA_MAC" ] &&
-  echo DriverAssocMac=$STA_MAC && wl -i wl0 sta_info $STA_MAC | sed -n ''s/^[[:space:]]*tx
-  total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount=\1/p; s/^[[:space:]]*tx ucast
-  pkts: \([0-9][0-9]*\).*/DriverTxUnicastPacketCount=\1/p; s/^[[:space:]]*tx total
-  bytes: \([0-9][0-9]*\).*/DriverTxBytes=\1/p; s/^[[:space:]]*tx ucast bytes: \([0-9][0-9]*\).*/DriverTxUnicastBytes=\1/p'''
+- wpa_cli -p /var/run/wpa_supplicant -i wl0 status | sed -n 's/^wpa_state=/wpa_state=/p; s/^ssid=/ssid=/p; s/^key_mgmt=/key_mgmt=/p'
+- ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p' | tr 'A-F' 'a-f'
+  | sed 's/^/MACAddress=/'
+- PROBE_OUT=$(ping -I br-lan -c 8 -W 1 {{sta_ready_5g.StaIp}} 2>&1); printf '%s\n' "$PROBE_OUT"; printf '%s\n' "$PROBE_OUT"
+  | awk '/packets transmitted/ {print "TriggerTxPackets=" $1; exit}'
+- 'STA_MAC="{{assoc_entry.MACAddress}}"; [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC; [ -n "$STA_MAC" ] && wl -i wl0
+  sta_info $STA_MAC | sed -n ''s/^[[:space:]]*tx ucast pkts: \([0-9][0-9]*\).*/DriverTxUnicastPacketCount=\1/p'''
