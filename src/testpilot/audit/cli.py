@@ -547,3 +547,52 @@ def cmd_record(ctx: click.Context, rid: str, case: str, evidence: Path) -> None:
         click.echo(f"[OK] recorded {out_path}; all citations verified")
     else:
         click.echo(f"[WARN] recorded {out_path}; some citations did not verify")
+
+
+@audit_group.command("decide")
+@click.argument("rid")
+@click.argument("case")
+@click.option(
+    "--bucket",
+    "bucket_name",
+    required=True,
+    type=click.Choice(["confirmed", "applied", "pending", "block"]),
+)
+@click.option("--reason", required=True)
+@click.option(
+    "--proposed-yaml",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=None,
+)
+@click.pass_context
+def cmd_decide(
+    ctx: click.Context,
+    rid: str,
+    case: str,
+    bucket_name: str,
+    reason: str,
+    proposed_yaml: Path | None,
+) -> None:
+    """Finalize a case's audit decision: write decision.json + append bucket entry."""
+    root = Path(ctx.obj["root"])
+    audit_root = root / "audit"
+    run_dir = _resolve_run_dir(audit_root, rid)
+
+    case_dir = run_dir / "case" / case
+    case_dir.mkdir(parents=True, exist_ok=True)
+
+    _remove_case_from_buckets(run_dir, case)
+
+    decision: dict[str, Any] = {
+        "case": case,
+        "bucket": bucket_name,
+        "reason": reason,
+        "proposed_yaml": str(proposed_yaml.resolve()) if proposed_yaml else None,
+    }
+    (case_dir / "decision.json").write_text(
+        json.dumps(decision, indent=2, ensure_ascii=False, sort_keys=True),
+        encoding="utf-8",
+    )
+
+    bucket_mod.append_to_bucket(run_dir, bucket_name, {"case": case, "reason": reason})
+    click.echo(f"[{bucket_name}] {case}: {reason}")

@@ -615,3 +615,107 @@ def test_record_writes_warn_status_when_citations_do_not_verify(tmp_path: Path, 
         )
     )
     assert recorded["citations_verified"] is False
+
+
+def test_decide_writes_decision_json_and_bucket(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    (root / "audit").mkdir()
+    (root / "plugins" / "wifi_llapi" / "cases").mkdir(parents=True)
+
+    runner = CliRunner()
+    rid = _init_audit_run(runner, root, monkeypatch)
+
+    result = runner.invoke(
+        main,
+        [
+            "--root", str(root),
+            "audit", "decide", rid, "D366",
+            "--bucket", "applied",
+            "--reason", "test ok",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "[applied] D366: test ok" in result.output
+
+    decision_path = root / "audit" / "runs" / rid / "wifi_llapi" / "case" / "D366" / "decision.json"
+    assert decision_path.is_file()
+    decision = json.loads(decision_path.read_text(encoding="utf-8"))
+    assert decision["bucket"] == "applied"
+    assert decision["reason"] == "test ok"
+    assert decision["case"] == "D366"
+
+    bucket_path = root / "audit" / "runs" / rid / "wifi_llapi" / "buckets" / "applied.jsonl"
+    bucket_lines = bucket_path.read_text(encoding="utf-8").splitlines()
+    assert any('"D366"' in line for line in bucket_lines)
+
+
+def test_decide_is_idempotent_and_moves_between_buckets(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    (root / "audit").mkdir()
+    (root / "plugins" / "wifi_llapi" / "cases").mkdir(parents=True)
+
+    runner = CliRunner()
+    rid = _init_audit_run(runner, root, monkeypatch)
+    run_dir = root / "audit" / "runs" / rid / "wifi_llapi"
+
+    # First decide: pending
+    r1 = runner.invoke(
+        main,
+        ["--root", str(root), "audit", "decide", rid, "D366", "--bucket", "pending", "--reason", "first"],
+    )
+    assert r1.exit_code == 0, r1.output
+
+    # Second decide: applied (rebucket)
+    r2 = runner.invoke(
+        main,
+        ["--root", str(root), "audit", "decide", rid, "D366", "--bucket", "applied", "--reason", "second"],
+    )
+    assert r2.exit_code == 0, r2.output
+
+    # D366 should NOT appear in pending any more
+    pending_entries = bucket.list_bucket(run_dir, "pending")
+    assert not any(e.get("case") == "D366" or e.get("case_id") == "D366" for e in pending_entries)
+
+    # D366 should appear exactly once in applied
+    applied_entries = bucket.list_bucket(run_dir, "applied")
+    d366_in_applied = [e for e in applied_entries if e.get("case") == "D366" or e.get("case_id") == "D366"]
+    assert len(d366_in_applied) == 1
+
+    # decision.json reflects the latest decision
+    decision = json.loads(
+        (run_dir / "case" / "D366" / "decision.json").read_text(encoding="utf-8")
+    )
+    assert decision["bucket"] == "applied"
+    assert decision["reason"] == "second"
+
+
+def test_decide_stores_resolved_proposed_yaml(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    (root / "audit").mkdir()
+    (root / "plugins" / "wifi_llapi" / "cases").mkdir(parents=True)
+
+    runner = CliRunner()
+    rid = _init_audit_run(runner, root, monkeypatch)
+
+    proposed_yaml = root / "patches" / "D999.yaml"
+    proposed_yaml.parent.mkdir(parents=True, exist_ok=True)
+    proposed_yaml.write_text("id: D999\n", encoding="utf-8")
+
+    result = runner.invoke(
+        main,
+        [
+            "--root", str(root),
+            "audit", "decide", rid, "D999",
+            "--bucket", "confirmed",
+            "--reason", "verified",
+            "--proposed-yaml", str(proposed_yaml),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    decision = json.loads(
+        (root / "audit" / "runs" / rid / "wifi_llapi" / "case" / "D999" / "decision.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert decision["proposed_yaml"] == str(proposed_yaml.resolve())
