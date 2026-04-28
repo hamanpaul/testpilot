@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import hashlib
+import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -9,11 +10,13 @@ from typing import Any
 from zipfile import BadZipFile
 
 import click
+import yaml as _yaml
 from openpyxl.utils.exceptions import InvalidFileException
 
 from testpilot.audit import bucket as bucket_mod
 from testpilot.audit import manifest
-from testpilot.audit.workbook_index import build_index
+from testpilot.audit import pass12 as pass12_mod
+from testpilot.audit.workbook_index import build_index, normalize_api, normalize_object
 
 
 def _resolve_workbook_path(root: Path, plugin: str, workbook: str | None) -> Path:
@@ -94,6 +97,28 @@ def _resolve_run_dir(audit_root: Path, rid: str, plugin: str | None = None) -> P
         names = ", ".join(child.name for child in children) or "<none>"
         raise click.ClickException(f"expected exactly one plugin run directory under {run_root}, found: {names}")
     return children[0]
+
+
+def _rewrite_bucket_entries(run_dir: Path, bucket_name: str, entries: list[dict[str, Any]]) -> None:
+    bucket_path = run_dir / "buckets" / f"{bucket_name}.jsonl"
+    if not entries:
+        bucket_path.unlink(missing_ok=True)
+        return
+    bucket_path.parent.mkdir(parents=True, exist_ok=True)
+    bucket_path.write_text(
+        "".join(json.dumps(entry, ensure_ascii=False) + "\n" for entry in entries),
+        encoding="utf-8",
+    )
+
+
+def _remove_case_from_buckets(run_dir: Path, case_id: str) -> None:
+    for bucket_name in bucket_mod.BUCKETS:
+        kept_entries = [
+            entry
+            for entry in bucket_mod.list_bucket(run_dir, bucket_name)
+            if entry.get("case_id") != case_id and entry.get("case") != case_id
+        ]
+        _rewrite_bucket_entries(run_dir, bucket_name, kept_entries)
 
 
 @click.group("audit")
@@ -244,3 +269,167 @@ def audit_summary(ctx: click.Context, rid: str) -> None:
     summary_path = run_dir / "summary.md"
     summary_path.write_text("\n".join(lines), encoding="utf-8")
     click.echo(str(summary_path))
+
+
+@audit_group.command("pass12")
+@click.argument("rid")
+@click.pass_context
+def audit_pass12(ctx: click.Context, rid: str) -> None:
+    """Run Pass 1 + Pass 2 across all cases for an audit RID."""
+    root = Path(ctx.obj["root"])
+    audit_root = root / "audit"
+    run_dir = _resolve_run_dir(audit_root, rid)
+    plugin = run_dir.name
+
+    run_manifest = manifest.load_run(rid, plugin=plugin, audit_root=audit_root)
+
+    snapshot = run_dir / "workbook_snapshot.xlsx"
+    if not snapshot.is_file():
+        raise click.ClickException(f"workbook snapshot not found: {snapshot}")
+
+    cli_args = run_manifest.get("cli_args", {})
+    sheet = cli_args.get("sheet", "Wifi_LLAPI")
+    column_overrides = cli_args.get("column_overrides") or None
+
+    try:
+        wb_index = build_index(snapshot, sheet_name=sheet, column_overrides=column_overrides)
+    except (OSError, ValueError, BadZipFile, InvalidFileException) as exc:
+        raise click.ClickException(f"failed to build workbook index: {exc}") from exc
+
+    cases_root = root / "plugins" / plugin / "cases"
+    if not cases_root.is_dir():
+        for case_id in run_manifest["cases"]:
+            _remove_case_from_buckets(run_dir, case_id)
+            bucket_mod.append_to_bucket(
+                run_dir,
+                "block",
+                {
+                    "case_id": case_id,
+                    "reason": "cases_dir_not_found",
+                    "cases_dir": str(cases_root),
+                },
+            )
+            click.echo(f"[block] {case_id}: cases_dir_not_found")
+        return
+
+    for case_id in run_manifest["cases"]:
+        _remove_case_from_buckets(run_dir, case_id)
+
+        # Locate case YAML
+        yaml_files = sorted(cases_root.glob(f"{case_id}_*.yaml"))
+        if not yaml_files:
+            bucket_mod.append_to_bucket(
+                run_dir,
+                "block",
+                {"case_id": case_id, "reason": "case_yaml_not_found"},
+            )
+            click.echo(f"[block] {case_id}: case_yaml_not_found")
+            continue
+        if len(yaml_files) > 1:
+            bucket_mod.append_to_bucket(
+                run_dir,
+                "block",
+                {
+                    "case_id": case_id,
+                    "reason": "case_yaml_ambiguous",
+                    "candidate_files": [path.name for path in yaml_files],
+                },
+            )
+            click.echo(f"[block] {case_id}: case_yaml_ambiguous")
+            continue
+
+        try:
+            case_data = _yaml.safe_load(yaml_files[0].read_text(encoding="utf-8")) or {}
+        except (OSError, _yaml.YAMLError) as exc:
+            bucket_mod.append_to_bucket(
+                run_dir,
+                "block",
+                {"case_id": case_id, "reason": f"case_yaml_parse_error: {exc}"},
+            )
+            click.echo(f"[block] {case_id}: case_yaml_parse_error")
+            continue
+        if not isinstance(case_data, dict):
+            bucket_mod.append_to_bucket(
+                run_dir,
+                "block",
+                {"case_id": case_id, "reason": "case_yaml_invalid_root"},
+            )
+            click.echo(f"[block] {case_id}: case_yaml_invalid_root")
+            continue
+
+        source = case_data.get("source")
+        if not isinstance(source, dict):
+            source = {}
+        obj = source.get("object") or ""
+        api = source.get("api") or ""
+        key = (normalize_object(obj), normalize_api(api))
+
+        # Workbook row resolution
+        rows = wb_index.get(key, [])
+        if not rows:
+            bucket_mod.append_to_bucket(
+                run_dir,
+                "block",
+                {"case_id": case_id, "reason": "workbook_row_missing", "key": list(key)},
+            )
+            click.echo(f"[block] {case_id}: workbook_row_missing")
+            continue
+
+        if len(rows) > 1:
+            bucket_mod.append_to_bucket(
+                run_dir,
+                "block",
+                {
+                    "case_id": case_id,
+                    "reason": "workbook_row_ambiguous",
+                    "candidate_row_indices": [r.raw_row_index for r in rows],
+                },
+            )
+            click.echo(f"[block] {case_id}: workbook_row_ambiguous")
+            continue
+
+        wb_row = rows[0]
+        case_dir = run_dir / "case" / case_id
+        case_dir.mkdir(parents=True, exist_ok=True)
+
+        result = pass12_mod.run_pass12_for_case(
+            plugin=plugin,
+            case_id=case_id,
+            workbook_row=wb_row,
+            run_dir=run_dir,
+        )
+
+        # Write pass1 artifact (always)
+        pass1_payload: dict[str, Any] = {
+            "case_id": case_id,
+            "pass1_verdict_match": result.pass1_verdict_match,
+            "pass1_artifacts": result.pass1_artifacts,
+            "bucket": result.bucket,
+            "reason": result.reason,
+        }
+        (case_dir / "pass1_baseline.json").write_text(
+            json.dumps(pass1_payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+        # Write pass2 artifact when commands were extracted
+        if result.extracted_commands:
+            pass2_payload: dict[str, Any] = {
+                "case_id": case_id,
+                "pass2_verdict_match": result.pass2_verdict_match,
+                "extracted_commands": [
+                    {"command": c.command, "citation": c.citation, "rule": c.rule}
+                    for c in result.extracted_commands
+                ],
+            }
+            (case_dir / "pass2_workbook.json").write_text(
+                json.dumps(pass2_payload, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+        bucket_mod.append_to_bucket(
+            run_dir,
+            result.bucket,
+            {"case_id": case_id, "reason": result.reason},
+        )
+        click.echo(f"[{result.bucket}] {case_id}: {result.reason}")
