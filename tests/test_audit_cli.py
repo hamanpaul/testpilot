@@ -6,7 +6,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 import testpilot.audit.cli as audit_cli
-from testpilot.audit import manifest
+from testpilot.audit import bucket, manifest
 from testpilot.cli import main
 
 
@@ -211,3 +211,93 @@ def test_audit_init_wraps_invalid_workbook_errors(tmp_path: Path) -> None:
 
     assert result.exit_code != 0
     assert result.output
+
+
+def test_audit_status_reports_manifest_and_bucket_counts(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    workbook = root / "audit" / "workbooks" / "demo.xlsx"
+    workbook.parent.mkdir(parents=True, exist_ok=True)
+    workbook.write_bytes(b"workbook-bytes")
+
+    monkeypatch.setattr(audit_cli, "build_index", lambda *args, **kwargs: {})
+
+    runner = CliRunner()
+    init_result = runner.invoke(
+        main,
+        ["--root", str(root), "audit", "init", "demo", "--cases", "D001,D002"],
+    )
+
+    assert init_result.exit_code == 0, init_result.output
+    rid = init_result.output.strip()
+    run_dir = root / "audit" / "runs" / rid / "demo"
+    bucket.append_to_bucket(run_dir, "confirmed", {"case_id": "D001"})
+    bucket.append_to_bucket(run_dir, "pending", {"case_id": "D002"})
+    bucket.append_to_bucket(run_dir, "needs_pass3", {"case_id": "D003"})
+
+    status_result = runner.invoke(main, ["--root", str(root), "audit", "status", rid])
+
+    assert status_result.exit_code == 0, status_result.output
+    assert f"RID: {rid}" in status_result.output
+    assert "plugin: demo" in status_result.output
+    assert "cases: 2" in status_result.output
+    for bucket_name, count in {
+        "confirmed": 1,
+        "applied": 0,
+        "pending": 1,
+        "block": 0,
+        "needs_pass3": 1,
+    }.items():
+        assert f"  {bucket_name}: {count}" in status_result.output
+
+
+def test_audit_summary_writes_markdown_report(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    workbook = root / "manual.xlsx"
+    workbook.write_bytes(b"manual-workbook")
+
+    monkeypatch.setattr(audit_cli, "build_index", lambda *args, **kwargs: {})
+
+    runner = CliRunner()
+    init_result = runner.invoke(
+        main,
+        [
+            "--root",
+            str(root),
+            "audit",
+            "init",
+            "demo",
+            "--workbook",
+            str(workbook),
+            "--cases",
+            "D009,D011",
+        ],
+    )
+
+    assert init_result.exit_code == 0, init_result.output
+    rid = init_result.output.strip()
+    run_dir = root / "audit" / "runs" / rid / "demo"
+    bucket.append_to_bucket(run_dir, "confirmed", {"case_id": "D009"})
+    bucket.append_to_bucket(run_dir, "block", {"case_id": "D011"})
+
+    summary_result = runner.invoke(main, ["--root", str(root), "audit", "summary", rid])
+
+    assert summary_result.exit_code == 0, summary_result.output
+    summary_path = run_dir / "summary.md"
+    assert summary_path.is_file()
+    body = summary_path.read_text(encoding="utf-8")
+    assert "# Audit Run Summary" in body
+    assert f"- **RID**: `{rid}`" in body
+    assert "- **Plugin**: `demo`" in body
+    assert f"- **Workbook**: `{workbook}`" in body
+    assert "- **Total cases**: 2" in body
+    data = manifest.load_run(rid, plugin="demo", audit_root=root / "audit")
+    assert f"- **Init**: {data['init_timestamp']}" in body
+    assert "| Bucket | Count |" in body
+    for bucket_name, count in {
+        "confirmed": 1,
+        "applied": 0,
+        "pending": 0,
+        "block": 1,
+        "needs_pass3": 0,
+    }.items():
+        assert f"| {bucket_name} | {count} |" in body

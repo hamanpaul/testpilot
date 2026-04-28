@@ -1,7 +1,6 @@
 """Audit CLI commands."""
 
 from __future__ import annotations
-
 import shutil
 import subprocess
 from pathlib import Path
@@ -11,6 +10,7 @@ from zipfile import BadZipFile
 import click
 from openpyxl.utils.exceptions import InvalidFileException
 
+from testpilot.audit import bucket as bucket_mod
 from testpilot.audit import manifest
 from testpilot.audit.workbook_index import build_index
 
@@ -63,6 +63,23 @@ def _cleanup_failed_run(audit_root: Path, rid: str, plugin: str) -> None:
         run_root.rmdir()
     except OSError:
         pass
+
+
+def _resolve_run_dir(audit_root: Path, rid: str, plugin: str | None = None) -> Path:
+    run_root = audit_root / "runs" / rid
+    if not run_root.is_dir():
+        raise click.ClickException(f"RID not found: {rid}")
+    if plugin is not None:
+        run_dir = run_root / plugin
+        if not run_dir.is_dir():
+            raise click.ClickException(f"run directory not found: {run_dir}")
+        return run_dir
+
+    children = sorted(path for path in run_root.iterdir() if path.is_dir())
+    if len(children) != 1:
+        names = ", ".join(child.name for child in children) or "<none>"
+        raise click.ClickException(f"expected exactly one plugin run directory under {run_root}, found: {names}")
+    return children[0]
 
 
 @click.group("audit")
@@ -157,3 +174,56 @@ def _build_cli_args(
     if column_overrides:
         cli_args["column_overrides"] = dict(column_overrides)
     return cli_args
+
+
+@audit_group.command("status")
+@click.argument("rid")
+@click.pass_context
+def audit_status(ctx: click.Context, rid: str) -> None:
+    """Print manifest and bucket counts for an audit run."""
+
+    audit_root = Path(ctx.obj["root"]) / "audit"
+    run_dir = _resolve_run_dir(audit_root, rid)
+    plugin = run_dir.name
+    run_manifest = manifest.load_run(rid, plugin=plugin, audit_root=audit_root)
+
+    click.echo(f"RID: {rid}")
+    click.echo(f"plugin: {plugin}")
+    click.echo(f"cases: {len(run_manifest['cases'])}")
+    click.echo("buckets:")
+    for bucket_name in bucket_mod.BUCKETS:
+        click.echo(f"  {bucket_name}: {len(bucket_mod.list_bucket(run_dir, bucket_name))}")
+
+
+@audit_group.command("summary")
+@click.argument("rid")
+@click.pass_context
+def audit_summary(ctx: click.Context, rid: str) -> None:
+    """Write a Markdown summary for an audit run."""
+
+    audit_root = Path(ctx.obj["root"]) / "audit"
+    run_dir = _resolve_run_dir(audit_root, rid)
+    plugin = run_dir.name
+    run_manifest = manifest.load_run(rid, plugin=plugin, audit_root=audit_root)
+
+    lines = [
+        "# Audit Run Summary",
+        "",
+        f"- **RID**: `{rid}`",
+        f"- **Plugin**: `{plugin}`",
+        f"- **Workbook**: `{run_manifest['workbook_path']}`",
+        f"- **Total cases**: {len(run_manifest['cases'])}",
+        f"- **Init**: {run_manifest['init_timestamp']}",
+        "",
+        "## Bucket counts",
+        "",
+        "| Bucket | Count |",
+        "| --- | ---: |",
+    ]
+    for bucket_name in bucket_mod.BUCKETS:
+        lines.append(f"| {bucket_name} | {len(bucket_mod.list_bucket(run_dir, bucket_name))} |")
+    lines.append("")
+
+    summary_path = run_dir / "summary.md"
+    summary_path.write_text("\n".join(lines), encoding="utf-8")
+    click.echo(str(summary_path))
