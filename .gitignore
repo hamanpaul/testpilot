@@ -68,3 +68,7 @@ uv.lock
 6G-STA-exp.md
 docs/copilot-sdk-hooks-skills-session-resume-persistenc.md
 docs/wifi_llapi_cases_summary.txt
+
+# Audit artifacts (auto-generated)
+audit/*
+!audit/.gitkeep
