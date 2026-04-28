@@ -6,8 +6,10 @@ import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
+from zipfile import BadZipFile
 
 import click
+from openpyxl.utils.exceptions import InvalidFileException
 
 from testpilot.audit import manifest
 from testpilot.audit.workbook_index import build_index
@@ -128,7 +130,13 @@ def audit_init(
         )
         snapshot_path = audit_root / "runs" / rid / plugin / "workbook_snapshot.xlsx"
         shutil.copy2(workbook_path, snapshot_path)
-    except (OSError, ValueError, subprocess.CalledProcessError) as exc:
+    except (
+        OSError,
+        ValueError,
+        BadZipFile,
+        InvalidFileException,
+        subprocess.CalledProcessError,
+    ) as exc:
         if rid is not None:
             _cleanup_failed_run(audit_root, rid, plugin)
         raise click.ClickException(str(exc)) from exc

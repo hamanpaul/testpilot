@@ -194,3 +194,20 @@ def test_audit_init_wraps_git_failures_as_click_errors(tmp_path: Path, monkeypat
 
     assert result.exit_code != 0
     assert "returned non-zero exit status 1" in result.output
+
+
+def test_audit_init_wraps_invalid_workbook_errors(tmp_path: Path) -> None:
+    root = init_repo(tmp_path / "repo")
+    workbook = root / "audit" / "workbooks" / "demo.xlsx"
+    workbook.parent.mkdir(parents=True, exist_ok=True)
+    workbook.write_bytes(b"not-a-real-xlsx")
+
+    cases_dir = root / "plugins" / "demo" / "cases"
+    cases_dir.mkdir(parents=True, exist_ok=True)
+    (cases_dir / "D001_one.yaml").write_text("id: demo-D001\n", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["--root", str(root), "audit", "init", "demo"])
+
+    assert result.exit_code != 0
+    assert result.output
