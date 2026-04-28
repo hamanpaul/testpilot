@@ -15,6 +15,7 @@ from openpyxl.utils.exceptions import InvalidFileException
 import yaml as _yaml
 
 from testpilot.audit import apply as apply_mod
+from testpilot.audit import pr as pr_mod
 from testpilot.audit import bucket as bucket_mod
 from testpilot.audit import decision as decision_mod
 from testpilot.audit import manifest
@@ -628,3 +629,19 @@ def cmd_apply(ctx: click.Context, rid: str, include_pending: bool, cases_str: st
     click.echo(f"\nTotal applied: {len(res.applied_cases)}")
     if res.errors:
         raise click.ClickException(f"{len(res.errors)} case(s) failed to apply")
+
+
+@audit_group.command("pr")
+@click.argument("rid")
+@click.option("--draft", is_flag=True, help="Open the PR as a draft.")
+@click.pass_context
+def cmd_pr(ctx: click.Context, rid: str, draft: bool) -> None:
+    """git commit/push + gh pr create for an audit run."""
+    root = Path(ctx.obj["root"])
+    audit_root = root / "audit"
+    run_dir = _resolve_run_dir(audit_root, rid)
+    try:
+        url = pr_mod.open_pr(run_dir, rid=rid, draft=draft)
+    except (subprocess.CalledProcessError, ValueError, OSError) as exc:
+        raise click.ClickException(f"PR creation failed: {exc}") from exc
+    click.echo(url)
