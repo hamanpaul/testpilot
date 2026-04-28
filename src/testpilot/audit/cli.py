@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +50,17 @@ def _discover_case_ids(root: Path, plugin: str) -> list[str]:
 def _collect_column_overrides(**options: str | None) -> dict[str, str] | None:
     overrides = {key: value for key, value in options.items() if value}
     return overrides or None
+
+
+def _cleanup_failed_run(audit_root: Path, rid: str, plugin: str) -> None:
+    run_root = audit_root / "runs" / rid
+    run_dir = run_root / plugin
+    if run_dir.exists():
+        shutil.rmtree(run_dir, ignore_errors=True)
+    try:
+        run_root.rmdir()
+    except OSError:
+        pass
 
 
 @click.group("audit")
@@ -99,6 +111,7 @@ def audit_init(
         result_24g=col_result_24g,
     )
 
+    rid: str | None = None
     try:
         build_index(
             workbook_path,
@@ -113,11 +126,13 @@ def audit_init(
             audit_root=audit_root,
             repo_root=root,
         )
-    except (OSError, ValueError) as exc:
+        snapshot_path = audit_root / "runs" / rid / plugin / "workbook_snapshot.xlsx"
+        shutil.copy2(workbook_path, snapshot_path)
+    except (OSError, ValueError, subprocess.CalledProcessError) as exc:
+        if rid is not None:
+            _cleanup_failed_run(audit_root, rid, plugin)
         raise click.ClickException(str(exc)) from exc
 
-    snapshot_path = audit_root / "runs" / rid / plugin / "workbook_snapshot.xlsx"
-    shutil.copy2(workbook_path, snapshot_path)
     click.echo(rid)
 
 

@@ -144,3 +144,53 @@ def test_audit_init_accepts_explicit_cli_options(tmp_path: Path, monkeypatch) ->
             "result_24g": "T",
         },
     }
+
+
+def test_audit_init_cleans_up_run_when_snapshot_copy_fails(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    workbook = root / "audit" / "workbooks" / "demo.xlsx"
+    workbook.parent.mkdir(parents=True, exist_ok=True)
+    workbook.write_bytes(b"workbook-bytes")
+
+    cases_dir = root / "plugins" / "demo" / "cases"
+    cases_dir.mkdir(parents=True, exist_ok=True)
+    (cases_dir / "D001_one.yaml").write_text("id: demo-D001\n", encoding="utf-8")
+
+    monkeypatch.setattr(audit_cli, "build_index", lambda *args, **kwargs: {})
+
+    def _boom(*args, **kwargs):
+        raise OSError("copy failed")
+
+    monkeypatch.setattr(audit_cli.shutil, "copy2", _boom)
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["--root", str(root), "audit", "init", "demo"])
+
+    assert result.exit_code != 0
+    assert "copy failed" in result.output
+    runs_root = root / "audit" / "runs"
+    assert not runs_root.exists() or not any(runs_root.iterdir())
+
+
+def test_audit_init_wraps_git_failures_as_click_errors(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    workbook = root / "audit" / "workbooks" / "demo.xlsx"
+    workbook.parent.mkdir(parents=True, exist_ok=True)
+    workbook.write_bytes(b"workbook-bytes")
+
+    cases_dir = root / "plugins" / "demo" / "cases"
+    cases_dir.mkdir(parents=True, exist_ok=True)
+    (cases_dir / "D001_one.yaml").write_text("id: demo-D001\n", encoding="utf-8")
+
+    monkeypatch.setattr(audit_cli, "build_index", lambda *args, **kwargs: {})
+
+    def _git_fail(*args, **kwargs):
+        raise subprocess.CalledProcessError(1, ["git", "rev-parse", "--short", "HEAD"])
+
+    monkeypatch.setattr(audit_cli.manifest, "create_run", _git_fail)
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["--root", str(root), "audit", "init", "demo"])
+
+    assert result.exit_code != 0
+    assert "returned non-zero exit status 1" in result.output
