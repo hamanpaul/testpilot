@@ -83,14 +83,14 @@
 - [x] 7.1 Confirm Wave 1 PR description includes design link and sample case before/after diff
 - [ ] 7.2 CI green on unit + integration tests
 - [x] 7.3 `pytest tests/` full suite green (no regression in existing modules)
-- [ ] 7.4 Wave 1 PR merged to main BEFORE opening any Wave 2 / Wave 3 PR
+- [x] 7.4 Wave 1 PR merged to main BEFORE opening any Wave 2 / Wave 3 PR
 
 ## 8. Wave 2 — Stage A Migration (~30 cases)
 
-- [ ] 8.1 Sub-PR `wave2-associated-device`: migrate D037, D038, D051, D052, D054
+- [x] 8.1 Sub-PR `wave2-associated-device`: migrate remaining D038, D051, D052, D054 (`D037` already completed in Wave 1)
 - [ ] 8.2 Sub-PR `wave2-getradiostats-errors-discard`: migrate D267, D268, D269, D270
 - [ ] 8.3 Sub-PR `wave2-getssidstats-errors-discard`: migrate D304, D305, D306, D307, D308
-- [ ] 8.4 Sub-PR `wave2-getssidstats-retrans-unknown`: migrate D313, D316
+- [ ] 8.4 Sub-PR `wave2-getssidstats-retrans-unknown`: migrate remaining D316 (`D313` already completed in Wave 1)
 - [ ] 8.5 Sub-PR `wave2-ssid-stats-errors-retrans`: migrate D325, D326, D327, D328, D329, D334
 - [ ] 8.6 Sub-PR `wave2-radio-stats-errors-retry-retrans`: migrate D396, D397, D398, D399, D401, D402
 - [ ] 8.7 Sub-PR `wave2-radio-stats-retry-preamble`: migrate D406, D407, D448, D451

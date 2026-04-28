@@ -1,25 +1,217 @@
-id: d051-blocked-tx-retransmissions
-name: D051 Tx_Retransmissions Blocked
+id: wifi-llapi-D051-tx-retransmissions
+name: Tx_Retransmissions — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
+version: '1.1'
 source:
   row: 53
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: Tx_Retransmissions
+platform:
+  prplos: 4.0.3
+  bdk: 6.3.1
+hlapi_command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Tx_Retransmissions?"
+llapi_support: Support
+implemented_by: pWHM
 bands:
 - 5g
-llapi_support: Blocked
 topology:
   devices:
     DUT:
       role: ap
       transport: serial
       selector: COM1
+    STA:
+      role: sta
+      transport: serial
+      selector: COM0
+      config:
+      - iface: 5g
+        mode: sta
+        ssid: TestPilot_BTM
+        key: testpilot6g
+  links:
+  - from: STA
+    to: DUT
+    band: 5g
+test_environment: 'Topology:
+
+  - DUT: COM1 (AP role)
+
+  - STA: COM0 (station role for this case; do not rely on the old A0/B0 heuristic)
+
+  Transport:
+
+  - serialwrap attach COM0 / COM1
+
+  Live band mapping:
+
+  - 5G: DUT wl0 / AP1 / SSID.4 / TestPilot_BTM
+
+  - 6G: DUT wl1 / AP3 / SSID.6 / TestPilot_BTM
+
+  - 2.4G: DUT wl2 / AP5 / SSID.8 / TestPilot_24G
+
+  Preconditions:
+
+  - keep only one associated station on AP1 so AssociatedDevice.1 stays deterministic
+
+  - use the validated 5G single-band WPA3 baseline for this case
+
+  '
+setup_steps: "1) DUT 5G baseline:\n   - enable Radio.1 / SSID.4 / AP1\n   - configure\
+  \ AP1 as WPA3-Personal with MFP required\n   - keep the validated live SSID/credential\
+  \ pair as TestPilot_BTM / testpilot6g\n2) STA 5G preparation:\n   - disable local\
+  \ AP1/AP2 on COM0\n   - move COM0 br-lan off 192.168.1.0/24 to avoid bridge self-hit\
+  \ side effects\n   - reset wl0 and its wpa_supplicant control socket\n   - connect\
+  \ wl0 to TestPilot_BTM with SAE\n3) Association evidence:\n   - COM0: iw dev wl0\
+  \ link ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status\n   - COM1: wl -i wl0\
+  \ assoclist\n"
+sta_env_setup: "DUT 5G AP baseline:\n  ubus-cli WiFi.Radio.1.Enable=1\n  ubus-cli\
+  \ WiFi.Radio.1.BeaconPeriod=100\n  ubus-cli WiFi.Radio.1.DTIMPeriod=3\n  ubus-cli\
+  \ WiFi.Radio.1.DriverConfig.FragmentationThreshold=-1\n  ubus-cli WiFi.Radio.1.DriverConfig.RtsThreshold=-1\n\
+  \  ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto\n  ubus-cli WiFi.Radio.1.ExplicitBeamFormingEnabled=1\n\
+  \  ubus-cli WiFi.Radio.1.ImplicitBeamFormingEnabled=1\n  ubus-cli WiFi.Radio.1.OfdmaEnable=1\n\
+  \  ubus-cli WiFi.Radio.1.ObssCoexistenceEnable=0\n  ubus-cli WiFi.Radio.1.OperatingStandards=ax\n\
+  \  ubus-cli WiFi.Radio.1.RxChainCtrl=-1\n  ubus-cli WiFi.Radio.1.TxChainCtrl=-1\n\
+  \  ubus-cli WiFi.Radio.1.Vendor.Brcm.RegulatoryDomainRev=0\n  ubus-cli WiFi.Radio.1.Sensing.Enable=1\n\
+  \  ubus-cli WiFi.Radio.1.IEEE80211ax.BssColorPartial=0\n  ubus-cli WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0\n\
+  \  ubus-cli WiFi.Radio.1.IEEE80211ax.PSRDisallowed=0\n  ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMaxOffset=0\n\
+  \  ubus-cli WiFi.Radio.1.IEEE80211ax.SRGOBSSPDMinOffset=0\n  ubus-cli WiFi.Radio.1.LongRetryLimit=6\n\
+  \  ubus-cli WiFi.Radio.1.MultiUserMIMOEnabled=1\n  ubus-cli WiFi.Radio.1.TargetWakeTimeEnable=1\n\
+  \  ubus-cli WiFi.SSID.4.SSID=TestPilot_BTM\n  ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=\n\
+  \  ubus-cli WiFi.AccessPoint.2.IEEE80211u.QoSMapSet=\n  ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal\n\
+  \  ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=testpilot6g\n  ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Required\n\
+  \  ubus-cli WiFi.AccessPoint.1.Enable=1\nSTA 5G preparation:\n  ifconfig br-lan\
+  \ 192.168.88.1 netmask 255.255.255.0 up\n  ubus-cli WiFi.AccessPoint.1.Enable=0\n\
+  \  ubus-cli WiFi.AccessPoint.2.Enable=0\n  wpa_cli terminate 2>/dev/null || true\n\
+  \  rm -f /var/run/wpa_supplicant/wl0 2>/dev/null || true\n  iw dev wl0.1 del 2>/dev/null\
+  \ || true\n  iw dev wl0 disconnect 2>/dev/null || true\n  iw dev wl1 disconnect\
+  \ 2>/dev/null || true\n  iw dev wl2 disconnect 2>/dev/null || true\n  iw dev wl0\
+  \ set type managed\n  ifconfig wl0 up\n  mkdir -p /var/run/wpa_supplicant\n  printf\
+  \ 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\nnetwork={\n\
+  ssid=\"TestPilot_BTM\"\nkey_mgmt=SAE\nsae_password=\"testpilot6g\"\nieee80211w=2\n\
+  scan_ssid=1\n}\n' > /tmp/wpa_wl0.conf\n  wpa_supplicant -B -D nl80211 -i wl0 -c\
+  \ /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant\n  sleep 3\nSTA 5G connect verify:\n\
+  \  wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect\n  sleep 10\n  iw dev wl0\
+  \ link\n  wpa_cli -p /var/run/wpa_supplicant -i wl0 status\nDUT association evidence:\n\
+  \  wl -i wl0 assoclist\n"
+test_procedure: '1) Confirm the 5G STA is associated to AP1 and resolve its live wl0
+  IPv4 address.
+
+
+  2) Capture baseline DUT LLAPI Tx_Retransmissions and the matching driver `tx pkts
+  retries` counter for the same STA.
+
+
+  3) From the DUT bridge IP, run a best-effort large-packet ping burst toward the
+  resolved STA IP to exercise AP-to-STA retransmission behavior.
+
+
+  4) Capture verify DUT LLAPI Tx_Retransmissions and the matching driver `tx pkts
+  retries` counter, then compare baseline-to-verify deltas.
+
+  '
 steps:
-- id: step_5g_blocked
-  target: dut
-  action: skip
-  command: "echo blocked"
-  description: "Tx_Retransmissions — needs deterministic retry trigger"
+- id: step1_resolve_assoc
+  phase: baseline
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+  capture: assoc_entry
+- id: step2_resolve_probe_target
+  phase: baseline
+  action: exec
+  target: STA
+  command: ifconfig wl0 | awk '/inet addr:/ {gsub("addr:","",$2); print "StaIp=" $2;
+    exit} $1=="inet" {print "StaIp=" $2; exit}'
+  depends_on: step1_resolve_assoc
+  capture: sta_ip
+- id: step3_api_baseline
+  phase: baseline
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Tx_Retransmissions?"
+  depends_on: step2_resolve_probe_target
+  capture: api_before_5g
+- id: step4_drv_baseline
+  phase: baseline
+  action: exec
+  target: DUT
+  command: 'STA_MAC="{{assoc_entry.MACAddress}}"; [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC;
+    [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*tx pkts retries:
+    *\([0-9][0-9]*\).*/DriverTxRetransmissions=\1/p'''
+  depends_on: step3_api_baseline
+  capture: drv_before_5g
+- id: step5_trigger
+  phase: trigger
+  action: exec
+  target: DUT
+  command: PROBE_OUT=$(ping -I br-lan -c 20 -s 1400 -W 1 {{sta_ip.StaIp}} 2>&1); printf
+    '%s\n' "$PROBE_OUT"; printf '%s\n' "$PROBE_OUT" | awk '/packets transmitted/ {print
+    "TriggerTxPackets=" $1; exit}'
+  depends_on: step4_drv_baseline
+  capture: trigger_probe
+- id: step6_api_verify
+  phase: verify
+  action: exec
+  target: DUT
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Tx_Retransmissions?"
+  depends_on: step5_trigger
+  capture: api_after_5g
+- id: step7_drv_verify
+  phase: verify
+  action: exec
+  target: DUT
+  command: 'STA_MAC="{{assoc_entry.MACAddress}}"; [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC;
+    [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*tx pkts retries:
+    *\([0-9][0-9]*\).*/DriverTxRetransmissions=\1/p'''
+  depends_on: step6_api_verify
+  capture: drv_after_5g
 pass_criteria:
-- field: skip
-  operator: skip
-  value: "Tx_Retransmissions — needs deterministic retry trigger"
+- field: assoc_entry.MACAddress
+  operator: regex
+  value: ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$
+  description: AP1 AssociatedDevice.1 must first resolve to the live 5G STA MAC.
+- field: sta_ip.StaIp
+  operator: regex
+  value: ^([0-9]{1,3}\.){3}[0-9]{1,3}$
+  description: The 5G STA wl0 interface must expose an IPv4 address for the DUT-originated
+    trigger.
+- field: trigger_probe.TriggerTxPackets
+  operator: '>'
+  value: '0'
+  description: The DUT trigger step must actually transmit a downlink burst toward
+    the resolved STA IP.
+- field: drv_before_5g.DriverAssocMac
+  operator: equals
+  reference: assoc_entry.MACAddress
+  description: Baseline driver sampling must target the same live AssociatedDevice
+    MAC resolved in step1.
+- field: drv_after_5g.DriverAssocMac
+  operator: equals
+  reference: assoc_entry.MACAddress
+  description: Verify driver sampling must target the same live AssociatedDevice MAC
+    resolved in step1.
+- delta:
+    baseline: api_before_5g.Tx_Retransmissions
+    verify: api_after_5g.Tx_Retransmissions
+  operator: delta_nonzero
+  description: 5G API Tx_Retransmissions must grow after the DUT-originated trigger
+    workload.
+- delta:
+    baseline: api_before_5g.Tx_Retransmissions
+    verify: api_after_5g.Tx_Retransmissions
+  reference_delta:
+    baseline: drv_before_5g.DriverTxRetransmissions
+    verify: drv_after_5g.DriverTxRetransmissions
+  operator: delta_match
+  tolerance_pct: 10
+  description: 5G API Tx_Retransmissions delta must stay within ±10% of the driver
+    delta.
+verification_command:
+- ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Tx_Retransmissions?"
+- ifconfig wl0 | awk '/inet addr:/ {gsub("addr:","",$2); print "StaIp=" $2; exit}
+  $1=="inet" {print "StaIp=" $2; exit}'
+- ping -I br-lan -c 20 -s 1400 -W 1 <resolved STA wl0 IPv4>
+- 'STA_MAC="{{assoc_entry.MACAddress}}"; [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC;
+  [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*tx pkts retries:
+  *\([0-9][0-9]*\).*/DriverTxRetransmissions=\1/p'''
