@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 
@@ -520,3 +521,97 @@ def test_verify_edit_rejects_schema_invalid_proposed(tmp_path: Path, monkeypatch
 
     assert result.exit_code != 0
     assert "schema invalid" in result.output
+
+
+def test_record_writes_pass3_source_and_ok_status(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    (root / "audit").mkdir()
+    (root / "plugins" / "wifi_llapi" / "cases").mkdir(parents=True)
+
+    runner = CliRunner()
+    rid = _init_audit_run(runner, root, monkeypatch)
+
+    source_file = root / "src" / "driver.c"
+    source_file.parent.mkdir(parents=True, exist_ok=True)
+    source_file.write_text("line1\nuint16 srg_pbssid_bmp[4];\nline3\n", encoding="utf-8")
+
+    evidence_path = root / "evidence.json"
+    evidence_path.write_text(
+        """{
+  "candidate_commands": [],
+  "citations": [
+    {
+      "file": "src/driver.c",
+      "line": 2,
+      "snippet": "uint16 srg_pbssid_bmp[4];"
+    }
+  ]
+}
+""",
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        main,
+        [
+            "--root", str(root),
+            "audit", "record", rid, "D001",
+            "--evidence", str(evidence_path),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "[OK]" in result.output
+    recorded = json.loads(
+        (root / "audit" / "runs" / rid / "wifi_llapi" / "case" / "D001" / "pass3_source.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert recorded["citations_verified"] is True
+
+
+def test_record_writes_warn_status_when_citations_do_not_verify(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    (root / "audit").mkdir()
+    (root / "plugins" / "wifi_llapi" / "cases").mkdir(parents=True)
+
+    runner = CliRunner()
+    rid = _init_audit_run(runner, root, monkeypatch)
+
+    source_file = root / "src" / "driver.c"
+    source_file.parent.mkdir(parents=True, exist_ok=True)
+    source_file.write_text("line1\nuint16 srg_pbssid_bmp[4];\nline3\n", encoding="utf-8")
+
+    evidence_path = root / "evidence.json"
+    evidence_path.write_text(
+        """{
+  "candidate_commands": [],
+  "citations": [
+    {
+      "file": "src/driver.c",
+      "line": 9,
+      "snippet": "uint16 srg_pbssid_bmp[4];"
+    }
+  ]
+}
+""",
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        main,
+        [
+            "--root", str(root),
+            "audit", "record", rid, "D001",
+            "--evidence", str(evidence_path),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "[WARN]" in result.output
+    recorded = json.loads(
+        (root / "audit" / "runs" / rid / "wifi_llapi" / "case" / "D001" / "pass3_source.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert recorded["citations_verified"] is False

@@ -15,6 +15,7 @@ from openpyxl.utils.exceptions import InvalidFileException
 import yaml as _yaml
 
 from testpilot.audit import bucket as bucket_mod
+from testpilot.audit import decision as decision_mod
 from testpilot.audit import manifest
 from testpilot.audit import pass12 as pass12_mod
 from testpilot.audit import verify_edit as ve_mod
@@ -496,3 +497,53 @@ def cmd_verify_edit(
     except OSError as exc:
         raise click.ClickException(f"failed to write verify-edit log: {exc}") from exc
     click.echo(f"[OK] verify-edit pass; logged to {log_path}")
+
+
+@audit_group.command("record")
+@click.argument("rid")
+@click.argument("case")
+@click.option(
+    "--evidence",
+    required=True,
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Path to JSON file with Pass 3 evidence.",
+)
+@click.pass_context
+def cmd_record(ctx: click.Context, rid: str, case: str, evidence: Path) -> None:
+    """Record Pass 3 evidence for a case; verify all citations mechanically."""
+    root = Path(ctx.obj["root"])
+    audit_root = root / "audit"
+    run_dir = _resolve_run_dir(audit_root, rid)
+
+    try:
+        data: dict = json.loads(evidence.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise click.ClickException(f"evidence JSON parse error: {exc}") from exc
+    except OSError as exc:
+        raise click.ClickException(f"evidence file read error: {exc}") from exc
+
+    citations_raw = data.get("citations", [])
+    try:
+        citations = [decision_mod.Citation(**c) for c in citations_raw]
+    except (TypeError, KeyError) as exc:
+        raise click.ClickException(f"malformed citation entry: {exc}") from exc
+
+    all_ok = decision_mod.verify_all(citations, repo_root=root)
+
+    case_dir = run_dir / "case" / case
+    case_dir.mkdir(parents=True, exist_ok=True)
+    out_path = case_dir / "pass3_source.json"
+
+    data["citations_verified"] = all_ok
+    try:
+        out_path.write_text(
+            json.dumps(data, indent=2, ensure_ascii=False, sort_keys=True),
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        raise click.ClickException(f"failed to write pass3_source.json: {exc}") from exc
+
+    if all_ok:
+        click.echo(f"[OK] recorded {out_path}; all citations verified")
+    else:
+        click.echo(f"[WARN] recorded {out_path}; some citations did not verify")
