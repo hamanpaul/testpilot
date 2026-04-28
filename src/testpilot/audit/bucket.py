@@ -46,9 +46,14 @@ def list_bucket(run_dir: Path, bucket: str) -> List[Dict[str, Any]]:
             if not line:
                 continue
             try:
-                out.append(json.loads(line))
+                parsed = json.loads(line)
             except json.JSONDecodeError as exc:
                 raise ValueError(
                     f"Corrupted JSONL in {bucket} bucket at line {line_number}: {exc}"
                 ) from exc
+            if not isinstance(parsed, dict):
+                raise ValueError(
+                    f"Bucket entry must be a dict in {bucket} bucket at line {line_number}"
+                )
+            out.append(parsed)
     return out

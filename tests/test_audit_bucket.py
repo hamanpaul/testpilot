@@ -70,3 +70,13 @@ def test_append_rejects_non_dict_entries(tmp_path):
 
     with pytest.raises(TypeError, match="bucket entry must be a dict"):
         bucket_mod.append_to_bucket(run_dir, "pending", "not-a-dict")
+
+
+def test_list_bucket_rejects_non_dict_json_values(tmp_path):
+    run_dir = tmp_path / "r7"
+    bucket_dir = run_dir / "buckets"
+    bucket_dir.mkdir(parents=True)
+    (bucket_dir / "pending.jsonl").write_text('[1, 2, 3]\n')
+
+    with pytest.raises(ValueError, match="Bucket entry must be a dict.*pending.*line 1"):
+        bucket_mod.list_bucket(run_dir, "pending")
