@@ -38,9 +38,14 @@ def list_bucket(run_dir: Path, bucket: str) -> List[Dict[str, Any]]:
         return []
     out: List[Dict[str, Any]] = []
     with p.open(encoding="utf-8") as f:
-        for line in f:
+        for line_number, line in enumerate(f, start=1):
             line = line.strip()
             if not line:
                 continue
-            out.append(json.loads(line))
+            try:
+                out.append(json.loads(line))
+            except json.JSONDecodeError as exc:
+                raise ValueError(
+                    f"Corrupted JSONL in {bucket} bucket at line {line_number}: {exc}"
+                ) from exc
     return out

@@ -52,3 +52,13 @@ def test_file_is_jsonl(tmp_path):
     with path.open() as f:
         line = f.readline().strip()
     assert json.loads(line) == e
+
+
+def test_corrupted_jsonl_raises_descriptive_error(tmp_path):
+    run_dir = tmp_path / "r5"
+    bucket_dir = run_dir / "buckets"
+    bucket_dir.mkdir(parents=True)
+    (bucket_dir / "pending.jsonl").write_text('{"case": "D1"}\n{"broken": \n')
+
+    with pytest.raises(ValueError, match="Corrupted JSONL.*pending.*line 2"):
+        bucket_mod.list_bucket(run_dir, "pending")
