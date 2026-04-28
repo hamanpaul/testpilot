@@ -60,10 +60,10 @@ test_environment: 'Topology:
 setup_steps: "1) DUT 5G baseline:\n   - enable Radio.1 / SSID.4 / AP1\n   - configure\
   \ AP1 as WPA3-Personal with MFP required\n   - keep the validated live SSID/credential\
   \ pair as TestPilot_BTM / testpilot6g\n2) STA 5G preparation:\n   - disable local\
-  \ AP1/AP2 on COM1\n   - move COM1 br-lan off 192.168.1.0/24 to avoid bridge self-hit\
+  \ AP1/AP2 on COM0\n   - move COM0 br-lan off 192.168.1.0/24 to avoid bridge self-hit\
   \ side effects\n   - reset wl0 and its wpa_supplicant control socket\n   - connect\
-  \ wl0 to TestPilot_BTM with SAE\n3) Association evidence:\n   - COM1: iw dev wl0\
-  \ link ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status\n   - COM0: wl -i wl0\
+  \ wl0 to TestPilot_BTM with SAE\n3) Association evidence:\n   - COM0: iw dev wl0\
+  \ link ; wpa_cli -p /var/run/wpa_supplicant -i wl0 status\n   - COM1: wl -i wl0\
   \ assoclist\n"
 sta_env_setup: "DUT 5G AP baseline:\n  ubus-cli WiFi.Radio.1.Enable=1\n  ubus-cli\
   \ WiFi.Radio.1.BeaconPeriod=100\n  ubus-cli WiFi.Radio.1.DTIMPeriod=3\n  ubus-cli\
