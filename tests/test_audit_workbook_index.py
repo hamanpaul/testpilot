@@ -19,6 +19,7 @@ def test_normalize_object_strips_trailing_dot_and_collapses_index():
     assert normalize_object("WiFi.Radio.{i}.") == "WiFi.Radio.{i}"
     assert normalize_object("WiFi.Radio.1.") == "WiFi.Radio.{i}"
     assert normalize_object("WiFi.Radio.{i}.IEEE80211ax.") == "WiFi.Radio.{i}.IEEE80211ax"
+    assert normalize_object("WiFi.1.2.") == "WiFi.{i}.{i}"
 
 
 def test_normalize_api_strips_whitespace_preserves_case():
@@ -51,6 +52,7 @@ def test_build_index_detects_ambiguity():
     index = build_index(FIXTURE, sheet_name="Wifi_LLAPI")
     key = (normalize_object("WiFi.Radio.{i}."), normalize_api("DuplicateApi"))
     assert len(index[key]) == 2
+    assert index[key][0].command_output == ""
 
 
 def test_build_index_missing_key():

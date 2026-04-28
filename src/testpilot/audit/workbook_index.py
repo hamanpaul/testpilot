@@ -29,7 +29,10 @@ def normalize_object(value: str | None) -> str:
     if value is None:
         return ""
     normalized = str(value).strip()
-    normalized = _SPECIFIC_INDEX_RE.sub(".{i}.", normalized)
+    previous = None
+    while normalized != previous:
+        previous = normalized
+        normalized = _SPECIFIC_INDEX_RE.sub(".{i}.", normalized)
     while normalized.endswith("."):
         normalized = normalized[:-1]
     return normalized
@@ -137,6 +140,15 @@ def build_index(
 
         index: dict[tuple[str, str], list[WorkbookRow]] = {}
         for sheet_row_idx, row in enumerate(rows[1:], start=2):
+            def _cell_to_string(index_name: str) -> str:
+                column_index = columns[index_name]
+                if len(row) <= column_index:
+                    return ""
+                value = row[column_index]
+                if value is None:
+                    return ""
+                return str(value)
+
             object_value = row[columns["object"]] if len(row) > columns["object"] else None
             api_value = row[columns["api"]] if len(row) > columns["api"] else None
             if not object_value or not api_value:
@@ -150,23 +162,11 @@ def build_index(
                 raw_row_index=sheet_row_idx,
                 object_path=str(object_value),
                 api=str(api_value),
-                test_steps=str(
-                    row[columns["test_steps"]] if len(row) > columns["test_steps"] else ""
-                ),
-                command_output=str(
-                    row[columns["command_output"]]
-                    if len(row) > columns["command_output"]
-                    else ""
-                ),
-                result_5g=str(
-                    row[columns["result_5g"]] if len(row) > columns["result_5g"] else ""
-                ),
-                result_6g=str(
-                    row[columns["result_6g"]] if len(row) > columns["result_6g"] else ""
-                ),
-                result_24g=str(
-                    row[columns["result_24g"]] if len(row) > columns["result_24g"] else ""
-                ),
+                test_steps=_cell_to_string("test_steps"),
+                command_output=_cell_to_string("command_output"),
+                result_5g=_cell_to_string("result_5g"),
+                result_6g=_cell_to_string("result_6g"),
+                result_24g=_cell_to_string("result_24g"),
             )
             index.setdefault(key, []).append(workbook_row)
 
