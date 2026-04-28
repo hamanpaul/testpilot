@@ -62,3 +62,11 @@ def test_corrupted_jsonl_raises_descriptive_error(tmp_path):
 
     with pytest.raises(ValueError, match="Corrupted JSONL.*pending.*line 2"):
         bucket_mod.list_bucket(run_dir, "pending")
+
+
+def test_append_rejects_non_dict_entries(tmp_path):
+    run_dir = tmp_path / "r6"
+    run_dir.mkdir()
+
+    with pytest.raises(TypeError, match="bucket entry must be a dict"):
+        bucket_mod.append_to_bucket(run_dir, "pending", "not-a-dict")

@@ -22,6 +22,9 @@ def append_to_bucket(run_dir: Path, bucket: str, entry: Dict[str, Any]) -> None:
 
     The file is append-only; this function will create parent dirs as needed.
     """
+    if not isinstance(entry, dict):
+        raise TypeError("bucket entry must be a dict")
+
     p = _bucket_path(run_dir, bucket)
     p.parent.mkdir(parents=True, exist_ok=True)
     with p.open("a", encoding="utf-8") as f:
