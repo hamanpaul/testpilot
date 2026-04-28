@@ -113,6 +113,7 @@ def _rewrite_bucket_entries(run_dir: Path, bucket_name: str, entries: list[dict[
 
 def _remove_case_from_buckets(run_dir: Path, case_id: str) -> None:
     for bucket_name in bucket_mod.BUCKETS:
+        # Keep cleaning both key shapes while the audit pipeline is mid-rollout.
         kept_entries = [
             entry
             for entry in bucket_mod.list_bucket(run_dir, bucket_name)
@@ -397,6 +398,7 @@ def audit_pass12(ctx: click.Context, rid: str) -> None:
             case_id=case_id,
             workbook_row=wb_row,
             run_dir=run_dir,
+            repo_root=root,
         )
 
         # Write pass1 artifact (always)

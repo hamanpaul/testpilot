@@ -76,6 +76,7 @@ def test_pass1_match_returns_confirmed(tmp_path: Path) -> None:
             case_id="D001",
             workbook_row=wb_row,
             run_dir=tmp_path,
+            repo_root=tmp_path,
         )
 
     assert result.bucket == "confirmed"
@@ -109,6 +110,7 @@ def test_pass1_mismatch_with_extract_returns_needs_pass3(tmp_path: Path) -> None
             case_id="D366",
             workbook_row=wb_row,
             run_dir=tmp_path,
+            repo_root=tmp_path,
         )
 
     assert result.bucket == "needs_pass3"
@@ -143,6 +145,7 @@ def test_pass1_mismatch_no_extract_returns_needs_pass3(tmp_path: Path) -> None:
             case_id="D369",
             workbook_row=wb_row,
             run_dir=tmp_path,
+            repo_root=tmp_path,
         )
 
     assert result.bucket == "needs_pass3"
@@ -169,6 +172,7 @@ def test_pass1_error_returns_block(tmp_path: Path) -> None:
             case_id="D001",
             workbook_row=wb_row,
             run_dir=tmp_path,
+            repo_root=tmp_path,
         )
 
     assert result.bucket == "block"
@@ -200,9 +204,34 @@ def test_pass2_verdict_match_is_none_even_with_extract(tmp_path: Path) -> None:
             case_id="D010",
             workbook_row=wb_row,
             run_dir=tmp_path,
+            repo_root=tmp_path,
         )
 
     assert result.pass2_verdict_match is None
+
+
+def test_run_pass12_for_case_forwards_repo_root(tmp_path: Path) -> None:
+    """run_pass12_for_case must forward the explicit repo_root into the facade layer."""
+    facade_result = AuditCaseResult(
+        case_id="D013",
+        verdict_per_band={"5g": "Pass", "6g": "Pass", "2.4g": "Pass"},
+        capture={},
+        artifacts={},
+        error=None,
+    )
+    wb_row = _make_workbook_row()
+
+    with patch("testpilot.audit.pass12._run_facade", return_value=facade_result) as run_facade:
+        result = run_pass12_for_case(
+            plugin="wifi_llapi",
+            case_id="D013",
+            workbook_row=wb_row,
+            run_dir=tmp_path,
+            repo_root=tmp_path,
+        )
+
+    run_facade.assert_called_once_with("wifi_llapi", "D013", tmp_path)
+    assert result.bucket == "confirmed"
 
 
 # ---------------------------------------------------------------------------

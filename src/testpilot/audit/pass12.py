@@ -36,9 +36,9 @@ class PassResult:
     pass2_artifacts: dict[str, Any] = field(default_factory=dict)  # reserved for later rerun phases
 
 
-def _run_facade(plugin: str, case_id: str) -> AuditCaseResult:
+def _run_facade(plugin: str, case_id: str, repo_root: Path) -> AuditCaseResult:
     """Thin indirection so tests can patch without reaching into runner_facade."""
-    return run_one_case_for_audit(plugin, case_id)
+    return run_one_case_for_audit(plugin, case_id, repo_root=repo_root)
 
 
 def _verdict_matches_workbook(verdict_per_band: dict[str, str], workbook_row: Any) -> bool:
@@ -63,6 +63,7 @@ def run_pass12_for_case(
     case_id: str,
     workbook_row: Any,
     run_dir: Path,
+    repo_root: Path,
 ) -> PassResult:
     """Run Pass 1 then (extract-only) Pass 2 for one case.
 
@@ -71,7 +72,7 @@ def run_pass12_for_case(
     itself does not write files — the CLI layer does.
     """
     # ---- Pass 1 ----------------------------------------------------------------
-    p1 = _run_facade(plugin, case_id)
+    p1 = _run_facade(plugin, case_id, repo_root)
 
     if p1.error:
         return PassResult(
