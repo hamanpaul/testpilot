@@ -649,6 +649,39 @@ def test_audit_pass12_cli_writes_block_artifact_for_pass1_error(
     assert "pass1_error" in matched[0]["reason"]
 
 
+def test_audit_pass12_case_yaml_missing_source_lands_in_block(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """YAML without a mapping `source` should produce a dedicated block reason."""
+    root = init_repo(tmp_path / "repo")
+    plugin = "wifi_llapi"
+    case_id = "D014"
+
+    cases_dir = root / "plugins" / plugin / "cases"
+    cases_dir.mkdir(parents=True, exist_ok=True)
+    (cases_dir / f"{case_id}_missing_source.yaml").write_text(
+        "id: wifi-llapi-D014\nsource: invalid\n",
+        encoding="utf-8",
+    )
+
+    rid = _create_audit_run(root, plugin, [case_id], monkeypatch)
+    monkeypatch.setattr(audit_cli, "build_index", lambda *a, **kw: {})
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["--root", str(root), "audit", "pass12", rid])
+
+    assert result.exit_code == 0, result.output
+    assert "[block]" in result.output
+    assert "case_yaml_missing_source" in result.output
+
+    run_dir = root / "audit" / "runs" / rid / plugin
+    entries = bucket.list_bucket(run_dir, "block")
+    matched = [e for e in entries if e["case_id"] == case_id]
+    assert matched
+    assert matched[0]["reason"] == "case_yaml_missing_source"
+    assert not (run_dir / "case" / case_id).exists()
+
+
 def test_audit_pass12_is_idempotent_for_bucket_entries(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

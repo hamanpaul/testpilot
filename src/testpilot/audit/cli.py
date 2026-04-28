@@ -99,18 +99,6 @@ def _resolve_run_dir(audit_root: Path, rid: str, plugin: str | None = None) -> P
     return children[0]
 
 
-def _rewrite_bucket_entries(run_dir: Path, bucket_name: str, entries: list[dict[str, Any]]) -> None:
-    bucket_path = bucket_mod._bucket_path(run_dir, bucket_name)
-    if not entries:
-        bucket_path.unlink(missing_ok=True)
-        return
-    bucket_path.parent.mkdir(parents=True, exist_ok=True)
-    bucket_path.write_text(
-        "".join(json.dumps(entry, ensure_ascii=False) + "\n" for entry in entries),
-        encoding="utf-8",
-    )
-
-
 def _remove_case_from_buckets(run_dir: Path, case_id: str) -> None:
     for bucket_name in bucket_mod.BUCKETS:
         # Keep cleaning both key shapes while the audit pipeline is mid-rollout.
@@ -119,7 +107,7 @@ def _remove_case_from_buckets(run_dir: Path, case_id: str) -> None:
             for entry in bucket_mod.list_bucket(run_dir, bucket_name)
             if entry.get("case_id") != case_id and entry.get("case") != case_id
         ]
-        _rewrite_bucket_entries(run_dir, bucket_name, kept_entries)
+        bucket_mod.rewrite_bucket(run_dir, bucket_name, kept_entries)
 
 
 @click.group("audit")
@@ -360,7 +348,13 @@ def audit_pass12(ctx: click.Context, rid: str) -> None:
 
         source = case_data.get("source")
         if not isinstance(source, dict):
-            source = {}
+            bucket_mod.append_to_bucket(
+                run_dir,
+                "block",
+                {"case_id": case_id, "reason": "case_yaml_missing_source"},
+            )
+            click.echo(f"[block] {case_id}: case_yaml_missing_source")
+            continue
         obj = source.get("object") or ""
         api = source.get("api") or ""
         key = (normalize_object(obj), normalize_api(api))

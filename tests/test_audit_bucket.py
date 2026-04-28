@@ -81,3 +81,16 @@ def test_list_bucket_rejects_non_dict_json_values(tmp_path):
 
     with pytest.raises(ValueError, match="Bucket entry must be a dict.*pending.*line 1"):
         bucket_mod.list_bucket(run_dir, "pending")
+
+
+def test_rewrite_bucket_replaces_contents_and_clears_when_empty(tmp_path):
+    run_dir = tmp_path / "r8"
+    run_dir.mkdir()
+    bucket_mod.append_to_bucket(run_dir, "pending", {"case_id": "D001"})
+    bucket_mod.append_to_bucket(run_dir, "pending", {"case_id": "D002"})
+
+    bucket_mod.rewrite_bucket(run_dir, "pending", [{"case_id": "D003"}])
+    assert bucket_mod.list_bucket(run_dir, "pending") == [{"case_id": "D003"}]
+
+    bucket_mod.rewrite_bucket(run_dir, "pending", [])
+    assert bucket_mod.list_bucket(run_dir, "pending") == []

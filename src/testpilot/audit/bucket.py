@@ -31,6 +31,19 @@ def append_to_bucket(run_dir: Path, bucket: str, entry: Dict[str, Any]) -> None:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
+def rewrite_bucket(run_dir: Path, bucket: str, entries: List[Dict[str, Any]]) -> None:
+    """Replace the contents of a bucket JSONL file."""
+    p = _bucket_path(run_dir, bucket)
+    if not entries:
+        p.unlink(missing_ok=True)
+        return
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(
+        "".join(json.dumps(entry, ensure_ascii=False) + "\n" for entry in entries),
+        encoding="utf-8",
+    )
+
+
 def list_bucket(run_dir: Path, bucket: str) -> List[Dict[str, Any]]:
     """Return list of entries from the named bucket JSONL file.
 
