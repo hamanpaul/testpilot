@@ -97,22 +97,31 @@ steps:
   target: DUT
   command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
   capture: assoc_entry
-- id: step2_resolve_probe_target
+- id: step2_prepare_probe_target
+  phase: baseline
+  action: exec
+  target: STA
+  command:
+  - ifconfig wl0 192.168.1.3 netmask 255.255.255.0 up
+  - ip -4 addr show dev wl0 | awk '/inet / {sub(/\/24$/, "", $2); print "StaIp=" $2; exit}'
+  depends_on: step1_resolve_assoc
+  capture: sta_ip
+- id: step3_resolve_probe_target
   phase: baseline
   action: exec
   target: DUT
   command: ifconfig br-lan | awk '/inet addr:/ {gsub("addr:","",$2); print "DutIp=" $2; exit} $1=="inet" {print "DutIp=" $2;
     exit}'
-  depends_on: step1_resolve_assoc
+  depends_on: step2_prepare_probe_target
   capture: dut_ip
-- id: step3_api_baseline
+- id: step4_api_baseline
   phase: baseline
   action: exec
   target: DUT
   command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RxBytes?"
-  depends_on: step2_resolve_probe_target
+  depends_on: step3_resolve_probe_target
   capture: api_before_5g
-- id: step4_drv_baseline
+- id: step5_drv_baseline
   phase: baseline
   action: exec
   target: DUT
@@ -120,24 +129,24 @@ steps:
     DriverAssocMac=$STA_MAC; [ -n "$STA_MAC" ] && iw dev wl0 station dump | awk -v mac="$STA_MAC_LOWER" -v sta="$STA_MAC"
     '$1=="Station" && $2==mac {matched=1; print "DriverAssocMac=" sta; next} $1=="Station" {matched=0} matched && $1=="rx"
     && $2=="bytes:" {print "DriverRxBytes=" $3}'
-  depends_on: step3_api_baseline
+  depends_on: step4_api_baseline
   capture: drv_before_5g
-- id: step5_trigger
+- id: step6_trigger
   phase: trigger
   action: exec
   target: STA
   command: PROBE_OUT=$(ping -I wl0 -c 8 -s 1400 -W 1 {{dut_ip.DutIp}} 2>&1); printf '%s\n' "$PROBE_OUT"; printf '%s\n' "$PROBE_OUT"
     | awk '/packets transmitted/ {print "TriggerTxPackets=" $1; exit}'
-  depends_on: step4_drv_baseline
+  depends_on: step5_drv_baseline
   capture: trigger_probe
-- id: step6_api_verify
+- id: step7_api_verify
   phase: verify
   action: exec
   target: DUT
   command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RxBytes?"
-  depends_on: step5_trigger
+  depends_on: step6_trigger
   capture: api_after_5g
-- id: step7_drv_verify
+- id: step8_drv_verify
   phase: verify
   action: exec
   target: DUT
@@ -145,13 +154,17 @@ steps:
     DriverAssocMac=$STA_MAC; [ -n "$STA_MAC" ] && iw dev wl0 station dump | awk -v mac="$STA_MAC_LOWER" -v sta="$STA_MAC"
     '$1=="Station" && $2==mac {matched=1; print "DriverAssocMac=" sta; next} $1=="Station" {matched=0} matched && $1=="rx"
     && $2=="bytes:" {print "DriverRxBytes=" $3}'
-  depends_on: step6_api_verify
+  depends_on: step7_api_verify
   capture: drv_after_5g
 pass_criteria:
 - field: assoc_entry.MACAddress
   operator: regex
   value: ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$
   description: AP1 AssociatedDevice.1 must first resolve to the live 5G STA MAC.
+- field: sta_ip.StaIp
+  operator: regex
+  value: ^([0-9]{1,3}\.){3}[0-9]{1,3}$
+  description: The STA wl0 interface must expose an IPv4 address before the uplink trigger.
 - field: dut_ip.DutIp
   operator: regex
   value: ^([0-9]{1,3}\.){3}[0-9]{1,3}$
@@ -184,6 +197,8 @@ pass_criteria:
   description: 5G API RxBytes delta must stay within ±10% of the driver delta.
 verification_command:
 - ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RxBytes?"
+- ifconfig wl0 192.168.1.3 netmask 255.255.255.0 up
+- ip -4 addr show dev wl0 | awk '/inet / {sub(/\/24$/, "", $2); print "StaIp=" $2; exit}'
 - ifconfig br-lan | awk '/inet addr:/ {gsub("addr:","",$2); print "DutIp=" $2; exit} $1=="inet" {print "DutIp=" $2; exit}'
 - ping -I wl0 -c 8 -s 1400 -W 1 <resolved DUT br-lan IPv4>
 - STA_MAC="{{assoc_entry.MACAddress}}"; STA_MAC_LOWER=$(echo "$STA_MAC" | tr 'A-F' 'a-f'); [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC;

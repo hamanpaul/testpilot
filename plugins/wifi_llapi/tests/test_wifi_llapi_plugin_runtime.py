@@ -5291,15 +5291,42 @@ def test_pending_counter_pass_associateddevice_cases_use_supported_contracts():
             "baseline",
             "baseline",
             "baseline",
+            "baseline",
             "trigger",
             "verify",
             "verify",
         ]
         assert "MACAddress?" in commands
+        assert "ifconfig wl0 192.168.1.3" in commands
+        assert 'print "StaIp="' in commands
         assert "DutIp=" in commands
         assert meta["trigger_command"] in commands
         assert "DriverAssocMac=" in commands
         assert meta["driver_token"] in commands
+        assert [step["capture"] for step in case_data["steps"] if step.get("capture")] == [
+            "assoc_entry",
+            "sta_ip",
+            "dut_ip",
+            "api_before_5g",
+            "drv_before_5g",
+            "trigger_probe",
+            "api_after_5g",
+            "drv_after_5g",
+        ]
+        assert case_data["steps"][1]["id"] == "step2_prepare_probe_target"
+        assert case_data["steps"][1]["target"] == "STA"
+        assert case_data["steps"][1]["command"] == [
+            "ifconfig wl0 192.168.1.3 netmask 255.255.255.0 up",
+            "ip -4 addr show dev wl0 | awk '/inet / {sub(/\\/24$/, \"\", $2); print \"StaIp=\" $2; exit}'",
+        ]
+        assert case_data["steps"][2]["id"] == "step3_resolve_probe_target"
+        assert case_data["steps"][2]["depends_on"] == "step2_prepare_probe_target"
+        assert case_data["steps"][5]["id"] == "step6_trigger"
+        assert case_data["steps"][5]["depends_on"] == "step5_drv_baseline"
+        assert any(
+            criterion["field"] == "sta_ip.StaIp" and criterion["operator"] == "regex"
+            for criterion in case_data["pass_criteria"]
+        )
         assert any(
             criterion["field"] == "dut_ip.DutIp" and criterion["operator"] == "regex"
             for criterion in case_data["pass_criteria"]
@@ -5382,32 +5409,37 @@ def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
                     "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress="2C:59:17:00:04:85"',
                     "timing": 0.01,
                 },
-                "step2_resolve_probe_target": {
+                "step2_prepare_probe_target": {
+                    "success": True,
+                    "output": "StaIp=192.168.1.3",
+                    "timing": 0.01,
+                },
+                "step3_resolve_probe_target": {
                     "success": True,
                     "output": "DutIp=192.168.1.1",
                     "timing": 0.01,
                 },
-                "step3_api_baseline": {
+                "step4_api_baseline": {
                     "success": True,
                     "output": f'WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}=10',
                     "timing": 0.01,
                 },
-                "step4_drv_baseline": {
+                "step5_drv_baseline": {
                     "success": True,
                     "output": f'DriverAssocMac=2C:59:17:00:04:85\n{meta["driver_field"]}=100',
                     "timing": 0.01,
                 },
-                "step5_trigger": {
+                "step6_trigger": {
                     "success": True,
                     "output": '8 packets transmitted, 8 received, 0% packet loss\nTriggerTxPackets=8',
                     "timing": 0.01,
                 },
-                "step6_api_verify": {
+                "step7_api_verify": {
                     "success": True,
                     "output": f'WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}=16',
                     "timing": 0.01,
                 },
-                "step7_drv_verify": {
+                "step8_drv_verify": {
                     "success": True,
                     "output": f'DriverAssocMac=2C:59:17:00:04:85\n{meta["driver_field"]}=106',
                     "timing": 0.01,
@@ -5419,7 +5451,7 @@ def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
         zero_results = {
             "steps": {
                 **pass_results["steps"],
-                "step6_api_verify": {
+                "step7_api_verify": {
                     "success": True,
                     "output": f'WiFi.AccessPoint.1.AssociatedDevice.1.{meta["api"]}=10',
                     "timing": 0.01,
@@ -5431,7 +5463,7 @@ def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
         mismatch_results = {
             "steps": {
                 **pass_results["steps"],
-                "step7_drv_verify": {
+                "step8_drv_verify": {
                     "success": True,
                     "output": f'DriverAssocMac=2C:59:17:00:04:85\n{meta["driver_field"]}=130',
                     "timing": 0.01,
@@ -5443,7 +5475,7 @@ def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
         assoc_mismatch_results = {
             "steps": {
                 **pass_results["steps"],
-                "step7_drv_verify": {
+                "step8_drv_verify": {
                     "success": True,
                     "output": f'DriverAssocMac=AA:AA:AA:AA:AA:AA\n{meta["driver_field"]}=106',
                     "timing": 0.01,
@@ -5451,6 +5483,18 @@ def test_pending_counter_pass_associateddevice_cases_evaluate_live_examples():
             }
         }
         assert plugin.evaluate(case_data, assoc_mismatch_results) is False
+
+        missing_sta_ip_results = {
+            "steps": {
+                **pass_results["steps"],
+                "step2_prepare_probe_target": {
+                    "success": True,
+                    "output": "StaIp=",
+                    "timing": 0.01,
+                },
+            }
+        }
+        assert plugin.evaluate(case_data, missing_sta_ip_results) is False
 
 
 def test_d059_uplinkbandwidth_uses_positive_same_sta_contract():
@@ -16645,9 +16689,9 @@ def test_extract_cli_fragments_ignores_prose_after_ubus_keyword():
         ("D034_noise_accesspoint_associateddevice.yaml", 2, "DriverNoise="),
         ("D037_retransmissions.yaml", 3, "DriverRetransmissions="),
         ("D038_rx_retransmissions.yaml", 3, "DriverRxRetransmissions="),
-        ("D039_rxbytes.yaml", 3, "DriverRxBytes="),
+        ("D039_rxbytes.yaml", 4, "DriverRxBytes="),
         ("D040_rxmulticastpacketcount.yaml", 3, "DriverRxMulticastPacketCount="),
-        ("D042_rxunicastpacketcount.yaml", 3, "DriverRxUnicastPacketCount="),
+        ("D042_rxunicastpacketcount.yaml", 4, "DriverRxUnicastPacketCount="),
         ("D044_signalnoiseratio.yaml", 2, "DriverSignalNoiseRatio="),
         ("D043_securitymodeenabled.yaml", 2, "DriverSecurityModeEnabled="),
         ("D045_signalstrength_accesspoint_associateddevice.yaml", 2, "DriverSignalStrength="),
