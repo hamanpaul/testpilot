@@ -170,3 +170,13 @@ Wifi_llapi reporting guidance:
 1. Python 3.11+，型別標註優先。
 2. 維持最小必要變更，避免無關重構。
 3. plugin 需繼承 `PluginBase` 並匯出 `Plugin` 類別。
+
+## Audit Mode Governance
+
+1. Audit work 全程透過 `testpilot audit ...` 執行；不得直接編輯 `plugins/<plugin>/cases/D*.yaml` 而繞過 `verify-edit`
+2. 每個 audit run 必須有 RID，evidence 與 buckets 落在 gitignored `audit/runs/<RID>/`
+3. YAML 修改只允許動 `steps[*].command`、`steps[*].capture`、`verification_command`、`pass_criteria[*]`
+4. pre-commit hook `audit-yaml-provenance` 強制 case YAML 變動必須對應某個 `verify_edit_log.jsonl`；繞行需用 commit message `[audit-bypass: <reason>]`
+5. Pass 3 由主 agent 負責 evidence 收斂；fleet sub-agents 只做 read-only source survey
+6. `block` 不是 final state；下次 audit run 對同 case 仍可重新評估
+7. doctrine 與操作流程以 `docs/audit-guide.md` 為準

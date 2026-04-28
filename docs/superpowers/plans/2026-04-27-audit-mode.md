@@ -10,7 +10,8 @@
 
 **參考文件**：
 - 上層 design：`docs/superpowers/specs/2026-04-27-audit-mode-design.md` (commit `8427848`)
-- openspec change：`openspec/changes/add-audit-mode/`（proposal/design/specs/tasks）
+- OpenSpec main spec：`openspec/specs/audit-mode/spec.md`
+- OpenSpec archive：`openspec/changes/archive/2026-04-28-add-audit-mode/`
 
 ---
 
@@ -3211,7 +3212,8 @@ cp docs/audit-guide.md docs/audit-guide.md.legacy.bak
 ## 9. 參考
 
 - 設計：`docs/superpowers/specs/2026-04-27-audit-mode-design.md`
-- openspec change：`openspec/changes/add-audit-mode/`
+- OpenSpec main spec：`openspec/specs/audit-mode/spec.md`
+- OpenSpec archive：`openspec/changes/archive/2026-04-28-add-audit-mode/`
 - legacy（原本的 prose-driven calibration guide）：`docs/audit-guide.md.legacy.bak`
 ````
 
@@ -3262,7 +3264,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 
 Acceptance：D366/D369 audit 後 verdict 對齊 workbook Fail；apply 後 git diff 只動 §4 white-list paths。
 
-詳見：`docs/superpowers/specs/2026-04-27-audit-mode-design.md`、`openspec/changes/add-audit-mode/`、`docs/superpowers/plans/2026-04-27-audit-mode.md`。
+詳見：`docs/superpowers/specs/2026-04-27-audit-mode-design.md`、`openspec/specs/audit-mode/spec.md`、`docs/superpowers/plans/2026-04-27-audit-mode.md`。
 ```
 
 - [ ] **Step 3: Update docs/todos.md（追加待辦）**

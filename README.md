@@ -100,6 +100,29 @@ python -m testpilot.cli wifi-llapi baseline-qualify --band 5g
 python -m testpilot.cli run wifi_llapi --case wifi-llapi-D004-kickstation
 ```
 
+### Audit Mode (#36)
+
+```bash
+# Initialize an audit run and get a RID
+testpilot audit init wifi_llapi --workbook ~/0401.xlsx
+
+# Mechanical pre-filter
+testpilot audit pass12 <RID>
+testpilot audit status <RID>
+
+# Main-agent pass3 flow
+testpilot audit verify-edit <RID> <case> --yaml ... --proposed ...
+testpilot audit record <RID> <case> --evidence pass3.json
+testpilot audit decide <RID> <case> --bucket applied --reason "driver_bitmap_validated"
+
+# End of run
+testpilot audit summary <RID>
+testpilot audit apply <RID>
+testpilot audit pr <RID> --draft
+```
+
+See [`docs/audit-guide.md`](docs/audit-guide.md) for the audit doctrine.
+
 ### Authentication
 
 TestPilot supports two LLM backends. The auth chain tries each in order:
@@ -529,14 +552,16 @@ testpilot/
 ├── AGENTS.md
 ├── scripts/
 │   └── install.sh               # One-click install script
+├── audit/                       # Local-only audit runs/evidence (git-ignored)
 ├── docs/
 │   ├── plan.md                  # Master plan
 │   ├── spec.md                  # System spec + architecture diagrams
 │   ├── todos.md                 # Single source of truth for todos
-│   ├── audit-guide.md           # Calibration guide
+│   ├── audit-guide.md           # Audit doctrine
 │   └── audit-todo.md            # Calibration handoff tracker
 ├── src/testpilot/
 │   ├── cli.py                   # CLI entry point (Click)
+│   ├── audit/                   # Audit-mode helpers (RID / buckets / gates / PR)
 │   ├── core/
 │   │   ├── azure_auth.py        # Azure OpenAI BYOK auth
 │   │   ├── orchestrator.py      # Thin facade
@@ -547,7 +572,7 @@ testpilot/
 │   └── transport/               # serialwrap / adb / ssh / network
 ├── plugins/
 │   ├── _template/                  # Plugin skeleton
-│   ├── wifi_llapi/                 # 420 official YAML cases
+│   ├── wifi_llapi/                 # 415 official YAML cases
 │   │   └── testbed.yaml.example    # auto-staged into configs/testbed.yaml
 │   └── brcm_fw_upgrade/
 │       └── testbed.yaml.example    # auto-staged into configs/testbed.yaml
@@ -649,6 +674,29 @@ python -m testpilot.cli list-cases wifi_llapi
 python -m testpilot.cli wifi-llapi baseline-qualify --band 5g
 python -m testpilot.cli run wifi_llapi --case wifi-llapi-D004-kickstation
 ```
+
+### Audit Mode（#36）
+
+```bash
+# 初始化 audit run 並取得 RID
+testpilot audit init wifi_llapi --workbook ~/0401.xlsx
+
+# 機械預過濾
+testpilot audit pass12 <RID>
+testpilot audit status <RID>
+
+# 主 agent Pass 3 流程
+testpilot audit verify-edit <RID> <case> --yaml ... --proposed ...
+testpilot audit record <RID> <case> --evidence pass3.json
+testpilot audit decide <RID> <case> --bucket applied --reason "driver_bitmap_validated"
+
+# 收尾
+testpilot audit summary <RID>
+testpilot audit apply <RID>
+testpilot audit pr <RID> --draft
+```
+
+詳見 [`docs/audit-guide.md`](docs/audit-guide.md)。
 
 ### 認證方式
 
@@ -914,14 +962,16 @@ testpilot/
 ├── AGENTS.md
 ├── scripts/
 │   └── install.sh               # 一鍵安裝腳本
+├── audit/                       # 本地 audit run / evidence（git-ignored）
 ├── docs/
 │   ├── plan.md                  # 主計畫
 │   ├── spec.md                  # 系統規格 + 架構圖
 │   ├── todos.md                 # 唯一待辦看板
-│   ├── audit-guide.md           # 校正指南
+│   ├── audit-guide.md           # audit doctrine
 │   └── audit-todo.md            # 校正交接追蹤
 ├── src/testpilot/
 │   ├── cli.py                   # CLI 入口（Click）
+│   ├── audit/                   # audit-mode helpers（RID / bucket / gate / PR）
 │   ├── core/
 │   │   ├── azure_auth.py        # Azure OpenAI BYOK 認證
 │   │   ├── orchestrator.py      # 薄 facade
@@ -932,7 +982,7 @@ testpilot/
 │   └── transport/               # serialwrap / adb / ssh / network
 ├── plugins/
 │   ├── _template/                  # Plugin 骨架
-│   ├── wifi_llapi/                 # 420 筆 official YAML cases
+│   ├── wifi_llapi/                 # 415 筆 official YAML cases
 │   │   └── testbed.yaml.example    # 由 CLI 自動 stage 至 configs/testbed.yaml
 │   └── brcm_fw_upgrade/
 │       └── testbed.yaml.example    # 由 CLI 自動 stage 至 configs/testbed.yaml
