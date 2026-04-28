@@ -13,7 +13,7 @@ ALLOWED_TOKENS: frozenset[str] = frozenset({
     "ip", "iw", "hostapd", "wpa_cli",
 })
 
-_TRIPLE_FENCE_RE = re.compile(r"```(?:\w+)?\n(.*?)```", re.DOTALL)
+_TRIPLE_FENCE_RE = re.compile(r"```(?:\w+)?[ \t]*\n(.*?)```", re.DOTALL)
 _SINGLE_FENCE_RE = re.compile(r"`([^`\n]+)`")
 _PLACEHOLDER_RE = re.compile(r"<[A-Z_]+>")
 

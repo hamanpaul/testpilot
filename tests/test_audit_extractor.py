@@ -38,6 +38,16 @@ end"""
     assert any("wl -i wl0 sr_config srg_obsscolorbmp" in c.command for c in cmds)
 
 
+def test_fenced_triple_backtick_allows_trailing_whitespace_in_opener():
+    text = """Procedure:
+```bash \t
+wl -i wl0 status
+```
+end"""
+    cmds = extract_commands(text)
+    assert any(c.command == "wl -i wl0 status" for c in cmds)
+
+
 def test_inline_single_backtick():
     text = "Run `grep -c he_spr_srg /tmp/wl0_hapd.conf` and check output"
     cmds = extract_commands(text)

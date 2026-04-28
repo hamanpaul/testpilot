@@ -100,7 +100,7 @@ def _resolve_run_dir(audit_root: Path, rid: str, plugin: str | None = None) -> P
 
 
 def _rewrite_bucket_entries(run_dir: Path, bucket_name: str, entries: list[dict[str, Any]]) -> None:
-    bucket_path = run_dir / "buckets" / f"{bucket_name}.jsonl"
+    bucket_path = bucket_mod._bucket_path(run_dir, bucket_name)
     if not entries:
         bucket_path.unlink(missing_ok=True)
         return
