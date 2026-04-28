@@ -19927,12 +19927,16 @@ _WAVE3_RADIOSTATS_TRAFFIC_DELTA_CASES = {
         "api": "BroadcastPacketsReceived",
         "driver_field": "DriverBroadcastPacketsReceived",
         "trigger_target": "STA",
+        # broadcast Rx: STA-side arping ensures broadcast frames are generated
+        "trigger_assert": "arping",
     },
     "D264_getradiostats_broadcastpacketssent.yaml": {
         "row": 264,
         "api": "BroadcastPacketsSent",
         "driver_field": "DriverBroadcastPacketsSent",
         "trigger_target": "DUT",
+        # broadcast Tx: DUT-side arping ensures broadcast frames are sent
+        "trigger_assert": "arping",
     },
     "D265_getradiostats_bytesreceived.yaml": {
         "row": 265,
@@ -19951,12 +19955,16 @@ _WAVE3_RADIOSTATS_TRAFFIC_DELTA_CASES = {
         "api": "MulticastPacketsReceived",
         "driver_field": "DriverMulticastPacketsReceived",
         "trigger_target": "STA",
+        # multicast Rx: STA sends to all-hosts multicast group 224.0.0.1
+        "trigger_assert": "224.0.0.1",
     },
     "D272_getradiostats_multicastpacketssent.yaml": {
         "row": 272,
         "api": "MulticastPacketsSent",
         "driver_field": "DriverMulticastPacketsSent",
         "trigger_target": "DUT",
+        # multicast Tx: DUT sends to all-hosts multicast group 224.0.0.1
+        "trigger_assert": "224.0.0.1",
     },
     "D273_getradiostats_packetsreceived.yaml": {
         "row": 273,
@@ -19981,6 +19989,9 @@ _WAVE3_RADIOSTATS_TRAFFIC_DELTA_CASES = {
         "api": "UnicastPacketsSent",
         "driver_field": "DriverUnicastPacketsSent",
         "trigger_target": "DUT",
+        # D276 driver must use d11_txfrag/$4 extraction (aligned with D336 prior art)
+        "drv_assert_contains": "d11_txfrag",
+        "drv_assert_excludes": "d11_txmulti",
     },
 }
 
@@ -20088,6 +20099,23 @@ def test_wave3_getradiostats_counter_cases_use_multiband_delta_contracts():
         assert f'{meta["driver_field"]}5g=' in commands
         assert f'{meta["driver_field"]}6g=' in commands
         assert f'{meta["driver_field"]}24g=' in commands
+
+        # Per-case trigger and driver formula assertions
+        if "trigger_assert" in meta:
+            trigger_commands = "\n".join(
+                str(s.get("command", "")) for s in trigger_steps
+            )
+            assert meta["trigger_assert"] in trigger_commands, (
+                f"{filename}: trigger_assert '{meta['trigger_assert']}' not found in trigger steps"
+            )
+        if "drv_assert_contains" in meta:
+            assert meta["drv_assert_contains"] in commands, (
+                f"{filename}: drv_assert_contains '{meta['drv_assert_contains']}' not found"
+            )
+        if "drv_assert_excludes" in meta:
+            assert meta["drv_assert_excludes"] not in commands, (
+                f"{filename}: drv_assert_excludes '{meta['drv_assert_excludes']}' unexpectedly present"
+            )
 
         for capture_suffix in ("5g", "6g", "24g"):
             assert any(

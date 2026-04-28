@@ -85,7 +85,7 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: 'ap=wl0; wf=0; wm=0; set -- $(wl -i "$ap" if_counters | awk ''/^txframe /{print $2} /^d11_txmulti /{print $2}''); tf=${1:-0}; tm=${2:-0}; for ifn in $(ls /sys/class/net/ | grep -E ''^wds0\.0\.[0-9]+$'' || true); do set -- $(wl -i "$ifn" if_counters 2>/dev/null | awk ''/^txframe /{print $2} /^d11_txmulti /{print $2}''); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; r=$(( ((tf+wf)-(tm+wm)) & 0xffffffff )); printf ''DriverUnicastPacketsSent5g=%s\n'' "$r"'
+  command: 'ap=wl0; wf=0; wm=0; set -- $(wl -i "$ap" if_counters | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); tf=${1:-0}; tm=${2:-0}; for ifn in $(ls /sys/class/net/ | grep -E ''^wds0\.0\.[0-9]+$'' || true); do set -- $(wl -i "$ifn" if_counters 2>/dev/null | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; r=$(( ((tf+wf)-(tm+wm)) & 0xffffffff )); printf ''DriverUnicastPacketsSent5g=%s\n'' "$r"'
   depends_on: step2_5g_api_before
   capture: drv_before_5g
 - id: step4_5g_trigger
@@ -109,7 +109,7 @@ steps:
   action: exec
   target: DUT
   band: 5g
-  command: 'ap=wl0; wf=0; wm=0; set -- $(wl -i "$ap" if_counters | awk ''/^txframe /{print $2} /^d11_txmulti /{print $2}''); tf=${1:-0}; tm=${2:-0}; for ifn in $(ls /sys/class/net/ | grep -E ''^wds0\.0\.[0-9]+$'' || true); do set -- $(wl -i "$ifn" if_counters 2>/dev/null | awk ''/^txframe /{print $2} /^d11_txmulti /{print $2}''); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; r=$(( ((tf+wf)-(tm+wm)) & 0xffffffff )); printf ''DriverUnicastPacketsSent5g=%s\n'' "$r"'
+  command: 'ap=wl0; wf=0; wm=0; set -- $(wl -i "$ap" if_counters | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); tf=${1:-0}; tm=${2:-0}; for ifn in $(ls /sys/class/net/ | grep -E ''^wds0\.0\.[0-9]+$'' || true); do set -- $(wl -i "$ifn" if_counters 2>/dev/null | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; r=$(( ((tf+wf)-(tm+wm)) & 0xffffffff )); printf ''DriverUnicastPacketsSent5g=%s\n'' "$r"'
   depends_on: step5_5g_api_after
   capture: drv_after_5g
 - id: step7_6g_sta_ready
@@ -136,7 +136,7 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: 'ap=wl1; wf=0; wm=0; set -- $(wl -i "$ap" if_counters | awk ''/^txframe /{print $2} /^d11_txmulti /{print $2}''); tf=${1:-0}; tm=${2:-0}; for ifn in $(ls /sys/class/net/ | grep -E ''^wds1\.0\.[0-9]+$'' || true); do set -- $(wl -i "$ifn" if_counters 2>/dev/null | awk ''/^txframe /{print $2} /^d11_txmulti /{print $2}''); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; r=$(( ((tf+wf)-(tm+wm)) & 0xffffffff )); printf ''DriverUnicastPacketsSent6g=%s\n'' "$r"'
+  command: 'ap=wl1; wf=0; wm=0; set -- $(wl -i "$ap" if_counters | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); tf=${1:-0}; tm=${2:-0}; for ifn in $(ls /sys/class/net/ | grep -E ''^wds1\.0\.[0-9]+$'' || true); do set -- $(wl -i "$ifn" if_counters 2>/dev/null | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; r=$(( ((tf+wf)-(tm+wm)) & 0xffffffff )); printf ''DriverUnicastPacketsSent6g=%s\n'' "$r"'
   depends_on: step8_6g_api_before
   capture: drv_before_6g
 - id: step10_6g_trigger
@@ -160,7 +160,7 @@ steps:
   action: exec
   target: DUT
   band: 6g
-  command: 'ap=wl1; wf=0; wm=0; set -- $(wl -i "$ap" if_counters | awk ''/^txframe /{print $2} /^d11_txmulti /{print $2}''); tf=${1:-0}; tm=${2:-0}; for ifn in $(ls /sys/class/net/ | grep -E ''^wds1\.0\.[0-9]+$'' || true); do set -- $(wl -i "$ifn" if_counters 2>/dev/null | awk ''/^txframe /{print $2} /^d11_txmulti /{print $2}''); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; r=$(( ((tf+wf)-(tm+wm)) & 0xffffffff )); printf ''DriverUnicastPacketsSent6g=%s\n'' "$r"'
+  command: 'ap=wl1; wf=0; wm=0; set -- $(wl -i "$ap" if_counters | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); tf=${1:-0}; tm=${2:-0}; for ifn in $(ls /sys/class/net/ | grep -E ''^wds1\.0\.[0-9]+$'' || true); do set -- $(wl -i "$ifn" if_counters 2>/dev/null | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; r=$(( ((tf+wf)-(tm+wm)) & 0xffffffff )); printf ''DriverUnicastPacketsSent6g=%s\n'' "$r"'
   depends_on: step11_6g_api_after
   capture: drv_after_6g
 - id: step13_24g_sta_ready
@@ -187,7 +187,7 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: 'ap=wl2; wf=0; wm=0; set -- $(wl -i "$ap" if_counters | awk ''/^txframe /{print $2} /^d11_txmulti /{print $2}''); tf=${1:-0}; tm=${2:-0}; for ifn in $(ls /sys/class/net/ | grep -E ''^wds2\.0\.[0-9]+$'' || true); do set -- $(wl -i "$ifn" if_counters 2>/dev/null | awk ''/^txframe /{print $2} /^d11_txmulti /{print $2}''); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; r=$(( ((tf+wf)-(tm+wm)) & 0xffffffff )); printf ''DriverUnicastPacketsSent24g=%s\n'' "$r"'
+  command: 'ap=wl2; wf=0; wm=0; set -- $(wl -i "$ap" if_counters | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); tf=${1:-0}; tm=${2:-0}; for ifn in $(ls /sys/class/net/ | grep -E ''^wds2\.0\.[0-9]+$'' || true); do set -- $(wl -i "$ifn" if_counters 2>/dev/null | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; r=$(( ((tf+wf)-(tm+wm)) & 0xffffffff )); printf ''DriverUnicastPacketsSent24g=%s\n'' "$r"'
   depends_on: step14_24g_api_before
   capture: drv_before_24g
 - id: step16_24g_trigger
@@ -211,7 +211,7 @@ steps:
   action: exec
   target: DUT
   band: 2.4g
-  command: 'ap=wl2; wf=0; wm=0; set -- $(wl -i "$ap" if_counters | awk ''/^txframe /{print $2} /^d11_txmulti /{print $2}''); tf=${1:-0}; tm=${2:-0}; for ifn in $(ls /sys/class/net/ | grep -E ''^wds2\.0\.[0-9]+$'' || true); do set -- $(wl -i "$ifn" if_counters 2>/dev/null | awk ''/^txframe /{print $2} /^d11_txmulti /{print $2}''); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; r=$(( ((tf+wf)-(tm+wm)) & 0xffffffff )); printf ''DriverUnicastPacketsSent24g=%s\n'' "$r"'
+  command: 'ap=wl2; wf=0; wm=0; set -- $(wl -i "$ap" if_counters | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); tf=${1:-0}; tm=${2:-0}; for ifn in $(ls /sys/class/net/ | grep -E ''^wds2\.0\.[0-9]+$'' || true); do set -- $(wl -i "$ifn" if_counters 2>/dev/null | awk ''/^txframe /{print $2} /^d11_txfrag /{print $4}''); wf=$((wf+${1:-0})); wm=$((wm+${2:-0})); done; r=$(( ((tf+wf)-(tm+wm)) & 0xffffffff )); printf ''DriverUnicastPacketsSent24g=%s\n'' "$r"'
   depends_on: step17_24g_api_after
   capture: drv_after_24g
 pass_criteria:
