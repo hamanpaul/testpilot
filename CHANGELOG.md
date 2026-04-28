@@ -9,6 +9,13 @@ preparation.
 
 ## [Unreleased]
 
+### Changed
+
+- Wave 3 `wifi_llapi` getRadioStats traffic cases `D263-D266` and `D271-D276`
+  now use multiband delta contracts backed by source-aligned radio driver
+  formulas, including deterministic broadcast/multicast triggers and the
+  D336-aligned `D276` unicast-sent extractor.
+
 ### Added
 
 - `testpilot run wifi_llapi` now performs a runtime alignment phase that
