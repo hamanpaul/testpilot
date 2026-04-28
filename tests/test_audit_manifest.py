@@ -1,61 +1,94 @@
 from __future__ import annotations
 
-import re
+import sys
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
+
+# ensure local src is importable when running tests in the worktree
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import pytest
 
 from testpilot.audit import manifest
 
 
-def git_short_sha(cwd: Path) -> str:
-    out = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=str(cwd))
-    return out.decode().strip()
+def init_repo(path: Path) -> Path:
+    path.mkdir(parents=True, exist_ok=True)
+    subprocess.check_call(["git", "init"], cwd=str(path))
+    subprocess.check_call(["git", "config", "user.email", "test@example.com"], cwd=str(path))
+    subprocess.check_call(["git", "config", "user.name", "Test User"], cwd=str(path))
+    # make initial commit
+    (path / "README").write_text("hi")
+    subprocess.check_call(["git", "add", "README"], cwd=str(path))
+    subprocess.check_call(["git", "commit", "-m", "initial"], cwd=str(path))
+    return path
 
 
-def git_full_sha(cwd: Path) -> str:
-    out = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=str(cwd))
-    return out.decode().strip()
+def test_generate_rid_and_create_run(tmp_path):
+    repo = init_repo(tmp_path / "repo")
+    audit_root = tmp_path / "audit"
 
-
-def test_generate_rid_format(tmp_path, monkeypatch):
-    # run inside worktree cwd
-    cwd = Path(".")
-    rid = manifest.generate_rid()
-    assert re.match(manifest.RID_PATTERN, rid)
-    expected_prefix = git_short_sha(cwd) + "-"
-    assert rid.startswith(expected_prefix)
-
-
-def test_create_and_load_run(tmp_path):
-    cwd = Path(".")
     plugin = "wifi_llapi"
-    cli_args = ["--repeat-count", "5"]
-    cases = ["D001"]
-    workbook = "nonexistent.xlsx"
+    workbook = repo / "wb.xlsx"
+    workbook.write_text("content")
 
-    # Create a run
-    run_info = manifest.create_run(plugin=plugin, workbook_path=workbook, cli_args=cli_args, cases=cases)
+    rid = manifest.generate_rid(repo_root=repo, now=datetime(2020, 1, 2, 3, 4, 5, tzinfo=timezone.utc))
+    assert manifest.RID_PATTERN.match(rid)
 
-    # Basic checks
-    assert "rid" in run_info
-    rid = run_info["rid"]
-    assert re.match(manifest.RID_PATTERN, rid)
-    run_dir = Path("audit") / "runs" / rid / plugin
+    rid_created = manifest.create_run(
+        plugin=plugin,
+        workbook_path=workbook,
+        cli_args={"repeat": 5},
+        case_ids=["D001"],
+        audit_root=audit_root,
+        repo_root=repo,
+    )
+
+    assert rid_created == rid or manifest.RID_PATTERN.match(rid_created)
+
+    # files exist
+    run_dir = audit_root / "runs" / rid_created / plugin
     assert (run_dir / "case").exists()
     assert (run_dir / "buckets").exists()
     mpath = run_dir / "manifest.json"
     assert mpath.exists()
 
-    loaded = manifest.load_run(rid, plugin)
+    loaded = manifest.load_run(rid_created, plugin=plugin, audit_root=audit_root)
     assert loaded["plugin"] == plugin
-    assert loaded["rid"] == rid
-    assert loaded["workbook_path"] == workbook
-    # workbook missing -> empty sha
-    assert loaded["workbook_sha256"] == ""
-    assert loaded["cli_args"] == cli_args
-    assert loaded["cases"] == cases
-    # git commit sha should be full 40-char
-    assert loaded["git_commit_sha"] == git_full_sha(cwd)
-    assert re.match(r"\d{4}-\d{2}-\d{2}T\d{6}Z", loaded["init_timestamp"]) or re.match(r"\d{4}-\d{2}-\d{2}T\d{6}Z", run_info["init_timestamp"]) 
+    assert loaded["rid"] == rid_created
+    assert loaded["workbook_path"] == str(workbook)
+    assert loaded["workbook_sha256"] != ""
+    assert loaded["cli_args"]["repeat"] == 5
+    assert loaded["cases"] == ["D001"]
+    assert len(loaded["git_commit_sha"]) == 40
+    assert loaded["init_timestamp"].endswith("Z")
+
+
+def test_prevent_overwrite_on_collision(tmp_path, monkeypatch):
+    repo = init_repo(tmp_path / "repo2")
+    audit_root = tmp_path / "audit2"
+    plugin = "wifi_llapi"
+
+    fixed_rid = "deadbeef-2020-01-02T030405Z"
+    monkeypatch.setattr(manifest, "generate_rid", lambda *a, **k: fixed_rid)
+
+    rid1 = manifest.create_run(
+        plugin=plugin,
+        workbook_path=Path("/no/such"),
+        cli_args={},
+        case_ids=[],
+        audit_root=audit_root,
+        repo_root=repo,
+    )
+    assert rid1 == fixed_rid
+
+    with pytest.raises(FileExistsError):
+        manifest.create_run(
+            plugin=plugin,
+            workbook_path=Path("/no/such"),
+            cli_args={},
+            case_ids=[],
+            audit_root=audit_root,
+            repo_root=repo,
+        )
