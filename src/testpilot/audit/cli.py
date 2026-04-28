@@ -10,13 +10,16 @@ from typing import Any
 from zipfile import BadZipFile
 
 import click
-import yaml as _yaml
 from openpyxl.utils.exceptions import InvalidFileException
+
+import yaml as _yaml
 
 from testpilot.audit import bucket as bucket_mod
 from testpilot.audit import manifest
 from testpilot.audit import pass12 as pass12_mod
+from testpilot.audit import verify_edit as ve_mod
 from testpilot.audit.workbook_index import build_index, normalize_api, normalize_object
+from testpilot.schema.case_schema import CaseValidationError, validate_case
 
 
 def _resolve_workbook_path(root: Path, plugin: str, workbook: str | None) -> Path:
@@ -429,3 +432,67 @@ def audit_pass12(ctx: click.Context, rid: str) -> None:
             {"case_id": case_id, "reason": result.reason},
         )
         click.echo(f"[{result.bucket}] {case_id}: {result.reason}")
+
+
+@audit_group.command("verify-edit")
+@click.argument("rid")
+@click.argument("case")
+@click.option("--yaml", "yaml_path", required=True, type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option("--proposed", "proposed_path", required=True, type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.pass_context
+def cmd_verify_edit(
+    ctx: click.Context,
+    rid: str,
+    case: str,
+    yaml_path: Path,
+    proposed_path: Path,
+) -> None:
+    """Verify an audit YAML edit (boundary + schema + log)."""
+    audit_root = Path(ctx.obj["root"]) / "audit"
+    run_dir = _resolve_run_dir(audit_root, rid)
+
+    # 1. Boundary check
+    try:
+        diffs = ve_mod.check_boundary(yaml_path, proposed_path)
+    except ve_mod.BoundaryViolation as exc:
+        raise click.ClickException(str(exc)) from exc
+    except _yaml.YAMLError as exc:
+        raise click.ClickException(f"YAML parse error during boundary check: {exc}") from exc
+    except OSError as exc:
+        raise click.ClickException(f"YAML file error during boundary check: {exc}") from exc
+
+    # 2. Schema check on proposed.yaml
+    try:
+        raw = proposed_path.read_text(encoding="utf-8")
+        proposed_data = _yaml.safe_load(raw)
+    except OSError as exc:
+        raise click.ClickException(f"proposed YAML read error: {exc}") from exc
+
+    if not isinstance(proposed_data, dict):
+        raise click.ClickException(f"proposed YAML root must be a mapping: {proposed_path}")
+
+    try:
+        validate_case(proposed_data, source=proposed_path)
+    except CaseValidationError as exc:
+        raise click.ClickException(f"schema invalid: {exc}") from exc
+
+    # 3. RID active check
+    if not (run_dir / "manifest.json").is_file():
+        raise click.ClickException(f"RID not active or manifest missing: {rid}")
+
+    # 4. Append verify_edit_log.jsonl
+    log_path = run_dir / "verify_edit_log.jsonl"
+    try:
+        sha_before = ve_mod.file_sha256(yaml_path)
+        sha_after = ve_mod.file_sha256(proposed_path)
+        ve_mod.append_verify_edit_log(
+            log_path=log_path,
+            case=case,
+            yaml_path=yaml_path,
+            sha_before=sha_before,
+            sha_after_proposed=sha_after,
+            diff_paths_set=diffs,
+        )
+    except OSError as exc:
+        raise click.ClickException(f"failed to write verify-edit log: {exc}") from exc
+    click.echo(f"[OK] verify-edit pass; logged to {log_path}")

@@ -371,3 +371,152 @@ def test_audit_summary_writes_markdown_report(tmp_path: Path, monkeypatch) -> No
         "needs_pass3": 0,
     }.items():
         assert f"| {bucket_name} | {count} |" in body
+
+
+_VALID_CASE_YAML = """\
+id: x
+name: x
+source: {row: 1, object: 'WiFi.Radio.{i}.', api: 'Noise'}
+bands: [5g]
+topology: {devices: {DUT: {role: ap}}}
+steps:
+- {id: s1, action: exec, target: DUT, command: 'ubus-cli foo', capture: r}
+pass_criteria:
+- {field: r.x, operator: equals, value: '5'}
+"""
+
+
+def _init_audit_run(runner, root: Path, monkeypatch) -> str:
+    """Helper: init an audit run under root; return RID."""
+    monkeypatch.setattr(audit_cli, "build_index", lambda *a, **kw: {})
+    workbook = root / "wb.xlsx"
+    workbook.write_bytes(b"fake-xlsx-bytes")
+    result = runner.invoke(
+        main,
+        ["--root", str(root), "audit", "init", "wifi_llapi", "--workbook", str(workbook), "--cases", "D001"],
+    )
+    assert result.exit_code == 0, result.output
+    return result.output.strip().splitlines()[-1]
+
+
+def test_verify_edit_pass(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    (root / "audit").mkdir()
+    (root / "plugins" / "wifi_llapi" / "cases").mkdir(parents=True)
+
+    yaml_path = root / "plugins" / "wifi_llapi" / "cases" / "D001_noise.yaml"
+    yaml_path.write_text(_VALID_CASE_YAML, encoding="utf-8")
+
+    runner = CliRunner()
+    rid = _init_audit_run(runner, root, monkeypatch)
+
+    proposed_dir = root / "audit" / "runs" / rid / "wifi_llapi" / "case" / "D001"
+    proposed_dir.mkdir(parents=True, exist_ok=True)
+    proposed_path = proposed_dir / "proposed.yaml"
+    proposed_path.write_text(_VALID_CASE_YAML.replace("value: '5'", "value: '6'"), encoding="utf-8")
+
+    result = runner.invoke(
+        main,
+        [
+            "--root", str(root),
+            "audit", "verify-edit", rid, "D001",
+            "--yaml", str(yaml_path),
+            "--proposed", str(proposed_path),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "[OK]" in result.output
+
+    log_path = root / "audit" / "runs" / rid / "wifi_llapi" / "verify_edit_log.jsonl"
+    log = log_path.read_text(encoding="utf-8")
+    assert "D001" in log
+    assert "pass_criteria" in log
+
+
+def test_verify_edit_rejects_source_row_change(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    (root / "audit").mkdir()
+    (root / "plugins" / "wifi_llapi" / "cases").mkdir(parents=True)
+
+    yaml_path = root / "plugins" / "wifi_llapi" / "cases" / "D001_noise.yaml"
+    yaml_path.write_text(_VALID_CASE_YAML, encoding="utf-8")
+
+    runner = CliRunner()
+    rid = _init_audit_run(runner, root, monkeypatch)
+
+    proposed_dir = root / "audit" / "runs" / rid / "wifi_llapi" / "case" / "D001"
+    proposed_dir.mkdir(parents=True, exist_ok=True)
+    proposed_path = proposed_dir / "proposed.yaml"
+    proposed_path.write_text(_VALID_CASE_YAML.replace("row: 1", "row: 2"), encoding="utf-8")
+
+    result = runner.invoke(
+        main,
+        [
+            "--root", str(root),
+            "audit", "verify-edit", rid, "D001",
+            "--yaml", str(yaml_path),
+            "--proposed", str(proposed_path),
+        ],
+    )
+    assert result.exit_code != 0
+    assert "source.row" in result.output
+
+
+def test_verify_edit_reports_yaml_parse_errors_clearly(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    (root / "audit").mkdir()
+    (root / "plugins" / "wifi_llapi" / "cases").mkdir(parents=True)
+
+    yaml_path = root / "plugins" / "wifi_llapi" / "cases" / "D001_noise.yaml"
+    yaml_path.write_text(_VALID_CASE_YAML, encoding="utf-8")
+
+    runner = CliRunner()
+    rid = _init_audit_run(runner, root, monkeypatch)
+
+    proposed_dir = root / "audit" / "runs" / rid / "wifi_llapi" / "case" / "D001"
+    proposed_dir.mkdir(parents=True, exist_ok=True)
+    proposed_path = proposed_dir / "proposed.yaml"
+    proposed_path.write_text("id: x\nname: [\n", encoding="utf-8")
+
+    result = runner.invoke(
+        main,
+        [
+            "--root", str(root),
+            "audit", "verify-edit", rid, "D001",
+            "--yaml", str(yaml_path),
+            "--proposed", str(proposed_path),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "YAML parse error" in result.output
+
+
+def test_verify_edit_rejects_schema_invalid_proposed(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    (root / "audit").mkdir()
+    (root / "plugins" / "wifi_llapi" / "cases").mkdir(parents=True)
+
+    yaml_path = root / "plugins" / "wifi_llapi" / "cases" / "D001_noise.yaml"
+    yaml_path.write_text(_VALID_CASE_YAML, encoding="utf-8")
+
+    runner = CliRunner()
+    rid = _init_audit_run(runner, root, monkeypatch)
+
+    proposed_dir = root / "audit" / "runs" / rid / "wifi_llapi" / "case" / "D001"
+    proposed_dir.mkdir(parents=True, exist_ok=True)
+    proposed_path = proposed_dir / "proposed.yaml"
+    proposed_path.write_text(_VALID_CASE_YAML.replace("command: 'ubus-cli foo'", "command: 123"), encoding="utf-8")
+
+    result = runner.invoke(
+        main,
+        [
+            "--root", str(root),
+            "audit", "verify-edit", rid, "D001",
+            "--yaml", str(yaml_path),
+            "--proposed", str(proposed_path),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "schema invalid" in result.output
