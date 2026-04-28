@@ -19890,22 +19890,11 @@ _METHOD_STATS_CASES = [
     ("D259_getradioairstats_rxtime.yaml", 261, "getRadioAirStats", "RxTime", "0", "0", "0"),
     ("D260_getradioairstats_totaltime.yaml", 262, "getRadioAirStats", "TotalTime", "3", "26", "17"),
     ("D261_getradioairstats_txtime.yaml", 261, "getRadioAirStats", "TxTime", "0", "0", "1"),
-    # getRadioStats field cases — workbook Pass
-    ("D263_getradiostats_broadcastpacketsreceived.yaml", 263, "getRadioStats", "BroadcastPacketsReceived", "0", "0", "0"),
-    ("D264_getradiostats_broadcastpacketssent.yaml", 264, "getRadioStats", "BroadcastPacketsSent", "0", "0", "0"),
-    ("D265_getradiostats_bytesreceived.yaml", 265, "getRadioStats", "BytesReceived", "185053", "0", "0"),
-    ("D266_getradiostats_bytessent.yaml", 266, "getRadioStats", "BytesSent", "573376410", "383599818", "383764788"),
     ("D267_getradiostats_discardpacketsreceived.yaml", 267, "getRadioStats", "DiscardPacketsReceived", "784", "175", "183"),
     # --- Batch 3: D268-D276 remaining getRadioStats fields ---
     ("D268_getradiostats_discardpacketssent.yaml", 268, "getRadioStats", "DiscardPacketsSent", "0", "0", "0"),
     ("D269_getradiostats_errorsreceive.yaml", 269, "getRadioStats", "ErrorsReceived", "20", "8", "13"),
     ("D270_getradiostats_errorssent.yaml", 270, "getRadioStats", "ErrorsSent", "0", "0", "0"),
-    ("D271_getradiostats_multicastpacketsreceived.yaml", 271, "getRadioStats", "MulticastPacketsReceived", "4", "0", "0"),
-    ("D272_getradiostats_multicastpacketssent.yaml", 272, "getRadioStats", "MulticastPacketsSent", "628763", "824904", "567311"),
-    ("D273_getradiostats_packetsreceived.yaml", 273, "getRadioStats", "PacketsReceived", "264", "0", "0"),
-    ("D274_getradiostats_packetssent.yaml", 274, "getRadioStats", "PacketsSent", "1040842", "824935", "825369"),
-    ("D275_getradiostats_unicastpacketsreceived.yaml", 275, "getRadioStats", "UnicastPacketsReceived", "1673", "0", "0"),
-    ("D276_getradiostats_unicastpacketssent.yaml", 276, "getRadioStats", "UnicastPacketsSent", "1040842", "824935", "825369"),
     # --- Batch 5c: getRadioStats fields ---
     ("D394_bytesreceived_radio_stats.yaml", 289, "getRadioStats", "BytesReceived", "189265", "0", "0"),
     ("D395_bytessent_radio_stats.yaml", 290, "getRadioStats", "BytesSent", "588249079", "393557814", "393818836"),
@@ -19931,6 +19920,69 @@ _METHOD_STATS_CASES = [
     ("D402_getradiostats_retrycount.yaml", 460, "getRadioStats", "RetryCount", "0", "0", "0"),
     ("D459_getradiostats_temperature.yaml", 459, "getRadioStats", "Temperature", "76", "85", "80"),
 ]
+
+_WAVE3_RADIOSTATS_TRAFFIC_DELTA_CASES = {
+    "D263_getradiostats_broadcastpacketsreceived.yaml": {
+        "row": 263,
+        "api": "BroadcastPacketsReceived",
+        "driver_field": "DriverBroadcastPacketsReceived",
+        "trigger_target": "STA",
+    },
+    "D264_getradiostats_broadcastpacketssent.yaml": {
+        "row": 264,
+        "api": "BroadcastPacketsSent",
+        "driver_field": "DriverBroadcastPacketsSent",
+        "trigger_target": "DUT",
+    },
+    "D265_getradiostats_bytesreceived.yaml": {
+        "row": 265,
+        "api": "BytesReceived",
+        "driver_field": "DriverBytesReceived",
+        "trigger_target": "STA",
+    },
+    "D266_getradiostats_bytessent.yaml": {
+        "row": 266,
+        "api": "BytesSent",
+        "driver_field": "DriverBytesSent",
+        "trigger_target": "DUT",
+    },
+    "D271_getradiostats_multicastpacketsreceived.yaml": {
+        "row": 271,
+        "api": "MulticastPacketsReceived",
+        "driver_field": "DriverMulticastPacketsReceived",
+        "trigger_target": "STA",
+    },
+    "D272_getradiostats_multicastpacketssent.yaml": {
+        "row": 272,
+        "api": "MulticastPacketsSent",
+        "driver_field": "DriverMulticastPacketsSent",
+        "trigger_target": "DUT",
+    },
+    "D273_getradiostats_packetsreceived.yaml": {
+        "row": 273,
+        "api": "PacketsReceived",
+        "driver_field": "DriverPacketsReceived",
+        "trigger_target": "STA",
+    },
+    "D274_getradiostats_packetssent.yaml": {
+        "row": 274,
+        "api": "PacketsSent",
+        "driver_field": "DriverPacketsSent",
+        "trigger_target": "DUT",
+    },
+    "D275_getradiostats_unicastpacketsreceived.yaml": {
+        "row": 275,
+        "api": "UnicastPacketsReceived",
+        "driver_field": "DriverUnicastPacketsReceived",
+        "trigger_target": "STA",
+    },
+    "D276_getradiostats_unicastpacketssent.yaml": {
+        "row": 276,
+        "api": "UnicastPacketsSent",
+        "driver_field": "DriverUnicastPacketsSent",
+        "trigger_target": "DUT",
+    },
+}
 
 _METHOD_IDS = [t[0].split(".")[0] for t in _METHOD_STATS_CASES]
 
@@ -20008,6 +20060,59 @@ def test_method_stats_evaluate(yaml_file, row, method, field, live_5g, live_6g, 
             "success": True, "output": output, "timing": 0.01,
         }
     assert plugin.evaluate(case, results) is True
+
+
+def test_wave3_getradiostats_counter_cases_use_multiband_delta_contracts():
+    cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
+
+    for filename, meta in _WAVE3_RADIOSTATS_TRAFFIC_DELTA_CASES.items():
+        raw_case = yaml.safe_load((cases_dir / filename).read_text(encoding="utf-8"))
+        case_data = load_case(cases_dir / filename)
+        commands = "\n".join(str(step.get("command", "")) for step in case_data["steps"])
+        links = {link["band"] for link in case_data["topology"]["links"]}
+        phases = [step.get("phase") for step in case_data["steps"]]
+        trigger_steps = [step for step in case_data["steps"] if step.get("phase") == "trigger"]
+
+        assert "aliases" not in raw_case
+        assert case_data["source"]["row"] == meta["row"]
+        assert case_data["llapi_support"] == "Support"
+        assert case_data["bands"] == ["5g", "6g", "2.4g"]
+        assert {"DUT", "STA"}.issubset(case_data["topology"]["devices"])
+        assert links == {"5g", "6g", "2.4g"}
+        assert len(case_data["steps"]) >= 15
+        assert phases.count("baseline") >= 6
+        assert phases.count("trigger") == 3
+        assert phases.count("verify") >= 6
+        assert len(trigger_steps) == 3
+        assert all(step["target"] == meta["trigger_target"] for step in trigger_steps)
+        assert f'{meta["driver_field"]}5g=' in commands
+        assert f'{meta["driver_field"]}6g=' in commands
+        assert f'{meta["driver_field"]}24g=' in commands
+
+        for capture_suffix in ("5g", "6g", "24g"):
+            assert any(
+                criterion.get("operator") == "delta_nonzero"
+                and criterion.get("delta")
+                == {
+                    "baseline": f"api_before_{capture_suffix}.{meta['api']}",
+                    "verify": f"api_after_{capture_suffix}.{meta['api']}",
+                }
+                for criterion in case_data["pass_criteria"]
+            )
+            assert any(
+                criterion.get("operator") == "delta_match"
+                and criterion.get("delta")
+                == {
+                    "baseline": f"api_before_{capture_suffix}.{meta['api']}",
+                    "verify": f"api_after_{capture_suffix}.{meta['api']}",
+                }
+                and criterion.get("reference_delta")
+                == {
+                    "baseline": f"drv_before_{capture_suffix}.{meta['driver_field']}{capture_suffix}",
+                    "verify": f"drv_after_{capture_suffix}.{meta['driver_field']}{capture_suffix}",
+                }
+                for criterion in case_data["pass_criteria"]
+            )
 
 
 # --- D262 getRadioAirStats():void ---
