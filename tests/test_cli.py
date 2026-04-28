@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import textwrap
 from importlib.util import module_from_spec, spec_from_file_location
 import json
 from pathlib import Path
@@ -13,6 +14,44 @@ from click.testing import CliRunner
 import testpilot.cli
 from testpilot.core.testbed_config import TestbedConfig
 from testpilot.cli import main
+
+
+_DUMMY_PLUGIN_PY = textwrap.dedent(
+    """
+    from __future__ import annotations
+    from pathlib import Path
+    from typing import Any
+    from testpilot.core.plugin_base import PluginBase
+
+    class Plugin(PluginBase):
+        @property
+        def name(self) -> str:
+            return "stage_marker"
+
+        @property
+        def cases_dir(self) -> Path:
+            return Path(__file__).parent / "cases"
+
+        def discover_cases(self) -> list[dict[str, Any]]:
+            return []
+
+        def execute_step(self, case, step, topology):
+            return {"success": True, "output": "", "captured": {}, "timing": 0.0}
+
+        def evaluate(self, case, results):
+            return True
+    """
+).lstrip()
+
+
+def _make_stage_marker_plugin(root: Path, plugin_name: str, marker: str) -> None:
+    plugin_dir = root / "plugins" / plugin_name
+    plugin_dir.mkdir(parents=True)
+    (plugin_dir / "plugin.py").write_text(_DUMMY_PLUGIN_PY, encoding="utf-8")
+    (plugin_dir / "testbed.yaml.example").write_text(
+        f"testbed:\n  name: {marker}\n", encoding="utf-8"
+    )
+    (root / "configs").mkdir(exist_ok=True)
 
 
 def _clear_provider_env(monkeypatch) -> None:
@@ -680,3 +719,128 @@ def test_help_text_for_run():
     assert "--dut-fw-ver" in result.output
     assert "Correct format:" in result.output
     assert "testpilot run wifi_llapi --case wifi-llapi-D004-kickstation" in result.output
+
+
+# --- Plugin-scoped testbed staging --------------------------------------------
+
+
+def test_list_cases_stages_plugin_testbed_template(tmp_path: Path, monkeypatch) -> None:
+    """list-cases <plugin> copies plugins/<plugin>/testbed.yaml.example into configs/testbed.yaml."""
+    _clear_provider_env(monkeypatch)
+    _make_stage_marker_plugin(tmp_path, "stage_marker", "stage-marker-bench")
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["--root", str(tmp_path), "list-cases", "stage_marker"])
+
+    assert result.exit_code == 0, result.output
+    staged = tmp_path / "configs" / "testbed.yaml"
+    assert staged.exists()
+    assert "stage-marker-bench" in staged.read_text(encoding="utf-8")
+
+
+def test_run_switches_testbed_between_plugins(tmp_path: Path, monkeypatch) -> None:
+    """Running plugin A then plugin B must overwrite configs/testbed.yaml each time."""
+    _clear_provider_env(monkeypatch)
+    _make_stage_marker_plugin(tmp_path, "plugin_a", "marker-A")
+    _make_stage_marker_plugin(tmp_path, "plugin_b", "marker-B")
+
+    runner = CliRunner()
+    res_a = runner.invoke(main, ["--root", str(tmp_path), "list-cases", "plugin_a"])
+    assert res_a.exit_code == 0, res_a.output
+    staged = tmp_path / "configs" / "testbed.yaml"
+    assert "marker-A" in staged.read_text(encoding="utf-8")
+
+    res_b = runner.invoke(main, ["--root", str(tmp_path), "list-cases", "plugin_b"])
+    assert res_b.exit_code == 0, res_b.output
+    assert "marker-B" in staged.read_text(encoding="utf-8")
+    assert "marker-A" not in staged.read_text(encoding="utf-8")
+
+
+def test_list_plugins_does_not_overwrite_local_testbed(tmp_path: Path, monkeypatch) -> None:
+    """list-plugins is plugin-agnostic and must not stage any plugin's testbed."""
+    _clear_provider_env(monkeypatch)
+    _make_stage_marker_plugin(tmp_path, "stage_marker", "stage-marker-bench")
+    pre_existing = tmp_path / "configs" / "testbed.yaml"
+    pre_existing.write_text("testbed:\n  name: user-local\n", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["--root", str(tmp_path), "list-plugins"])
+
+    assert result.exit_code == 0, result.output
+    assert pre_existing.read_text(encoding="utf-8") == "testbed:\n  name: user-local\n"
+
+
+def test_brcm_fw_upgrade_run_stages_brcm_testbed_before_run(monkeypatch, tmp_path: Path) -> None:
+    """brcm-fw-upgrade run must stage plugins/brcm_fw_upgrade/testbed.yaml.example."""
+    _clear_provider_env(monkeypatch)
+
+    forward_image = tmp_path / "fw.pkgtb"
+    forward_image.write_bytes(b"$imageversion: tag$ #1 SMP PREEMPT Mon Apr 20 13:02:57 CST 2026")
+
+    captured: list[tuple[Path, str, Path]] = []
+    real_stage = testpilot.cli.stage_plugin_testbed  # will fail until CLI imports it
+
+    def spy(plugins_dir: Path, plugin_name: str, configs_dir: Path) -> Path:
+        captured.append((plugins_dir, plugin_name, configs_dir))
+        return real_stage(plugins_dir, plugin_name, configs_dir)
+
+    monkeypatch.setattr(testpilot.cli, "stage_plugin_testbed", spy)
+    # Short-circuit the heavy run path — we only care about staging happening first.
+    monkeypatch.setattr(
+        "testpilot.cli._derive_brcm_image_metadata",
+        lambda *_args, **_kwargs: {"image_tag": "tag", "build_time": "Apr 20 13:02:57 CST 2026"},
+    )
+
+    class _StubPlugin:
+        def run_cases(self, *_args, **_kwargs):
+            return {"status": "ok", "topology_name": "lab-bench-1"}
+
+    def _stub_load(self, name):
+        return _StubPlugin()
+
+    monkeypatch.setattr(
+        "testpilot.core.plugin_loader.PluginLoader.load",
+        _stub_load,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "brcm-fw-upgrade",
+            "run",
+            "--forward-image",
+            str(forward_image),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert any(plugin == "brcm_fw_upgrade" for _, plugin, _ in captured), captured
+
+
+def test_baseline_qualify_stages_wifi_llapi_testbed_before_qualify(monkeypatch) -> None:
+    """wifi-llapi baseline-qualify must stage plugins/wifi_llapi/testbed.yaml.example."""
+    _clear_provider_env(monkeypatch)
+    captured: list[tuple[Path, str, Path]] = []
+    real_stage = testpilot.cli.stage_plugin_testbed
+
+    def spy(plugins_dir: Path, plugin_name: str, configs_dir: Path) -> Path:
+        captured.append((plugins_dir, plugin_name, configs_dir))
+        return real_stage(plugins_dir, plugin_name, configs_dir)
+
+    monkeypatch.setattr(testpilot.cli, "stage_plugin_testbed", spy)
+
+    class _StubPlugin:
+        def qualify_baseline(self, *_args, **_kwargs):
+            return {"overall_status": "stable"}
+
+    monkeypatch.setattr(
+        "testpilot.core.plugin_loader.PluginLoader.load",
+        lambda self, name: _StubPlugin(),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["wifi-llapi", "baseline-qualify", "--band", "5g", "--repeat-count", "1", "--soak-minutes", "0"])
+
+    assert result.exit_code == 0, result.output
+    assert any(plugin == "wifi_llapi" for _, plugin, _ in captured), captured

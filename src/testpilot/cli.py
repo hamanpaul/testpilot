@@ -19,6 +19,7 @@ from testpilot.core.azure_auth import (
     setup_azure_auth,
 )
 from testpilot.core.orchestrator import Orchestrator
+from testpilot.core.testbed_bootstrap import stage_plugin_testbed
 from testpilot.reporting.wifi_llapi_excel import ensure_template_report
 from testpilot.yaml_command_audit import (
     DEFAULT_AUDIT_FIELDS,
@@ -139,14 +140,30 @@ def main(ctx: click.Context, verbose: bool, root: str | None, azure: bool) -> No
         # else: fall through to GitHub OAuth (handled by Copilot SDK)
 
     ctx.obj["provider_config"] = provider_config
-    ctx.obj["orchestrator"] = Orchestrator(project_root=ctx.obj["root"])
+
+
+def _get_orchestrator(ctx: click.Context, plugin_name: str | None = None) -> Orchestrator:
+    """Build an Orchestrator, staging the plugin's testbed first when a plugin context is known.
+
+    ``list-plugins`` is plugin-agnostic and must pass ``plugin_name=None`` so it
+    does not overwrite the operator's local ``configs/testbed.yaml``. All
+    plugin-specific commands pass their target plugin name so the runtime always
+    starts from that plugin's shipped testbed template.
+    """
+    root: Path = ctx.obj["root"]
+    if plugin_name is not None:
+        try:
+            stage_plugin_testbed(root / "plugins", plugin_name, root / "configs")
+        except FileNotFoundError as exc:
+            raise click.ClickException(str(exc)) from exc
+    return Orchestrator(project_root=root)
 
 
 @main.command("list-plugins")
 @click.pass_context
 def list_plugins(ctx: click.Context) -> None:
     """List available test plugins."""
-    orch: Orchestrator = ctx.obj["orchestrator"]
+    orch = _get_orchestrator(ctx)
     names = orch.discover_plugins()
     if not names:
         console.print("[yellow]No plugins found.[/yellow]")
@@ -169,7 +186,7 @@ def list_plugins(ctx: click.Context) -> None:
 @click.pass_context
 def list_cases(ctx: click.Context, plugin_name: str) -> None:
     """List test cases for a plugin."""
-    orch: Orchestrator = ctx.obj["orchestrator"]
+    orch = _get_orchestrator(ctx, plugin_name)
     cases = orch.list_cases(plugin_name)
     if not cases:
         console.print(f"[yellow]No cases found for plugin '{plugin_name}'.[/yellow]")
@@ -211,7 +228,7 @@ def run_tests(
     Example:
       testpilot run wifi_llapi --case wifi-llapi-D004-kickstation --dut-fw-ver BGW720-B0-403
     """
-    orch: Orchestrator = ctx.obj["orchestrator"]
+    orch = _get_orchestrator(ctx, plugin_name)
     provider_config = ctx.obj.get("provider_config")
     provider_notice = str(ctx.obj.get("provider_notice") or "")
     if provider_config and provider_notice == "azure_interactive":
@@ -282,7 +299,7 @@ def brcm_fw_upgrade_run(
     extra_vars: tuple[str, ...],
 ) -> None:
     """Run brcm_fw_upgrade cases with explicit runtime overrides."""
-    orch: Orchestrator = ctx.obj["orchestrator"]
+    orch = _get_orchestrator(ctx, "brcm_fw_upgrade")
     plugin = orch.loader.load("brcm_fw_upgrade")
     derived_metadata: dict[str, str] | None = None
     if expected_image_tag is None or expected_build_time is None:
@@ -352,7 +369,7 @@ def baseline_qualify(
     soak_minutes: int,
 ) -> None:
     """Qualify reusable DUT/STA baseline connectivity before full wifi_llapi runs."""
-    orch: Orchestrator = ctx.obj["orchestrator"]
+    orch = _get_orchestrator(ctx, "wifi_llapi")
     plugin = orch.loader.load("wifi_llapi")
     qualify = getattr(plugin, "qualify_baseline", None)
     if not callable(qualify):

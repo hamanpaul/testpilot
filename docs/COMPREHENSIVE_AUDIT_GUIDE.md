@@ -38,8 +38,7 @@ testpilot/
 │       ├── plugin.py      # WiFi LLAPI plugin implementation
 │       ├── agent-config.yaml  # Agent/model policy
 │       └── reports/       # Audit reports, evidence, and Excel templates
-├── configs/
-│   └── testbed.yaml.example    # Testbed configuration template
+├── configs/                    # operator-local effective testbed.yaml (auto-staged; git-ignored)
 ├── docs/
 │   ├── audit-todo.md           # Calibration checklist & progress tracker
 │   ├── plan.md                 # Master plan, phases, risk gates
@@ -104,7 +103,7 @@ testpilot/
 
 ### Testbed Configuration
 
-**File**: `configs/testbed.yaml.example`
+**Source**: `plugins/<plugin>/testbed.yaml.example` (auto-staged into `configs/testbed.yaml` whenever the CLI resolves a plugin context)
 
 ```yaml
 testbed:
@@ -845,7 +844,7 @@ Audit Documentation:
 
 Schema & Configuration:
   src/testpilot/schema/case_schema.py            ← YAML validation rules
-  configs/testbed.yaml.example                   ← Testbed config template
+  plugins/<plugin>/testbed.yaml.example          ← Per-plugin testbed template (auto-staged)
   plugins/wifi_llapi/agent-config.yaml           ← Agent/model policy
 
 Test Cases:
@@ -933,7 +932,7 @@ Regression Tests:
 - [ ] DUT firmware version >= 4.0.3 (BGW720-B0)
 - [ ] STA firmware compatible with prplOS B0
 - [ ] Host machine can reach both DUT and STA (network interfaces)
-- [ ] testbed.yaml copied from example and configured with correct ports/IPs
+- [ ] `configs/testbed.yaml` (auto-staged from `plugins/<plugin>/testbed.yaml.example`) edited with correct ports/IPs for this lab
 - [ ] Default baseline applied:
   - [ ] 5G SSID `testpilot5G` / WPA2 / `00000000`
   - [ ] 6G SSID `testpilot6G` / WPA3-SAE / `00000000`
