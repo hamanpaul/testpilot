@@ -53,10 +53,15 @@ testbed:
 
 ```bash
 uv pip install -e ".[dev]"                              # Install
-cp configs/testbed.yaml.example configs/testbed.yaml    # First-time config
-testpilot list-cases wifi_llapi                         # Verify
+testpilot list-cases wifi_llapi                         # Verify (auto-stages plugin testbed)
 testpilot run wifi_llapi --dut-fw-ver BGW720-B0-403     # Run
 ```
+
+> The CLI automatically copies `plugins/<plugin>/testbed.yaml.example` into
+> `configs/testbed.yaml` whenever it resolves a plugin context, so each run
+> starts from that plugin's shipped testbed shape with no leakage between
+> plugins. Edit `configs/testbed.yaml` to match your lab — note that switching
+> to a different plugin will overwrite it.
 
 ### Installing a Released Version
 
@@ -191,7 +196,7 @@ testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
 
 ### BRCM firmware upgrade plugin
 
-Use `brcm_fw_upgrade` for parameterized BRCM firmware transitions with explicit forward/rollback image overrides. The example `configs/testbed.yaml.example` includes matching default values you can copy into your lab config.
+Use `brcm_fw_upgrade` for parameterized BRCM firmware transitions with explicit forward/rollback image overrides. The plugin ships its own `plugins/brcm_fw_upgrade/testbed.yaml.example`, which the CLI auto-stages into `configs/testbed.yaml` on every `brcm-fw-upgrade run`.
 
 ```bash
 python -m testpilot.cli list-cases brcm_fw_upgrade
@@ -541,11 +546,13 @@ testpilot/
 │   ├── reporting/               # xlsx / md / json (+ html) reporters
 │   └── transport/               # serialwrap / adb / ssh / network
 ├── plugins/
-│   ├── _template/               # Plugin skeleton
-│   └── wifi_llapi/              # 420 official YAML cases
-├── configs/
-│   └── testbed.yaml.example
-└── tests/                       # Engine tests
+│   ├── _template/                  # Plugin skeleton
+│   ├── wifi_llapi/                 # 420 official YAML cases
+│   │   └── testbed.yaml.example    # auto-staged into configs/testbed.yaml
+│   └── brcm_fw_upgrade/
+│       └── testbed.yaml.example    # auto-staged into configs/testbed.yaml
+├── configs/                        # operator-local (git-ignored)
+└── tests/                          # Engine tests
 ```
 
 ### Development & Testing
@@ -619,10 +626,14 @@ testbed:
 
 ```bash
 uv pip install -e ".[dev]"                              # 安裝
-cp configs/testbed.yaml.example configs/testbed.yaml    # 首次設定
-testpilot list-cases wifi_llapi                         # 驗證
+testpilot list-cases wifi_llapi                         # 驗證（自動 stage plugin testbed）
 testpilot run wifi_llapi --dut-fw-ver BGW720-B0-403     # 執行
 ```
+
+> 解析到 plugin context 時，CLI 會把 `plugins/<plugin>/testbed.yaml.example`
+> 複製成 `configs/testbed.yaml`，確保每次執行都從該 plugin 自帶的 testbed
+> 起跑、不殘留別的 plugin 設定。`configs/testbed.yaml` 可依實機調整，但切換
+> plugin 時會被覆寫。
 
 ### CLI 入口
 
@@ -920,11 +931,13 @@ testpilot/
 │   ├── reporting/               # xlsx / md / json（+ html）reporters
 │   └── transport/               # serialwrap / adb / ssh / network
 ├── plugins/
-│   ├── _template/               # Plugin 骨架
-│   └── wifi_llapi/              # 420 筆 official YAML cases
-├── configs/
-│   └── testbed.yaml.example
-└── tests/                       # 引擎核心測試
+│   ├── _template/                  # Plugin 骨架
+│   ├── wifi_llapi/                 # 420 筆 official YAML cases
+│   │   └── testbed.yaml.example    # 由 CLI 自動 stage 至 configs/testbed.yaml
+│   └── brcm_fw_upgrade/
+│       └── testbed.yaml.example    # 由 CLI 自動 stage 至 configs/testbed.yaml
+├── configs/                        # operator 本地（git-ignored）
+└── tests/                          # 引擎核心測試
 ```
 
 ### 開發與測試

@@ -17,8 +17,8 @@ src/testpilot/
   transport/  # transport abstractions
   env/        # env modules (roadmap)
   schema/     # YAML case schema validation
-plugins/      # each plugin in its own directory
-configs/      # testbed config (see testbed.yaml.example)
+plugins/      # each plugin in its own directory; ships testbed.yaml.example
+configs/      # operator-local effective testbed.yaml (auto-staged by CLI; git-ignored)
 docs/         # plan, todos, phase docs
 scripts/      # utility scripts (gen_cases, build_template_report)
 ```
@@ -34,7 +34,8 @@ scripts/      # utility scripts (gen_cases, build_template_report)
 
 ```bash
 uv pip install -e ".[dev]"
-cp configs/testbed.yaml.example configs/testbed.yaml   # 首次設定
+# configs/testbed.yaml is auto-staged from plugins/<plugin>/testbed.yaml.example
+# whenever a plugin-aware command runs; no manual cp needed.
 python -m testpilot.cli --version
 python -m testpilot.cli list-plugins
 python -m testpilot.cli list-cases wifi_llapi

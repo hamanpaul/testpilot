@@ -156,7 +156,7 @@ Appendices A–E: Glossary, Workbook columns, Verdicts, Blockers, Lab checklist
 | `audit-report-260313-185447.md` | 488KB | Live evidence, 170+ case sections |
 | `docs/` | 8 files | Documentation structure |
 | `plugins/wifi_llapi/` | 415+ cases | YAML case files, agent config |
-| `configs/testbed.yaml.example` | 35 | Testbed configuration |
+| `plugins/<plugin>/testbed.yaml.example` | 30 | Per-plugin testbed template (auto-staged into `configs/testbed.yaml`) |
 | `schema/case_schema.py` | 102 | YAML validation rules |
 | `D093_ssidadvertisementenabled.yaml` | 234 | Complete case example |
 
