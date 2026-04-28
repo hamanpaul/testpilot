@@ -151,13 +151,13 @@ def build_index(
 
             object_value = row[columns["object"]] if len(row) > columns["object"] else None
             api_value = row[columns["api"]] if len(row) > columns["api"] else None
-            if not object_value or not api_value:
+            key = (
+                normalize_object(str(object_value) if object_value is not None else None),
+                normalize_api(str(api_value) if api_value is not None else None),
+            )
+            if not key[0] or not key[1]:
                 continue
 
-            key = (
-                normalize_object(str(object_value)),
-                normalize_api(str(api_value)),
-            )
             workbook_row = WorkbookRow(
                 raw_row_index=sheet_row_idx,
                 object_path=str(object_value),
