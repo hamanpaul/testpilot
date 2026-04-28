@@ -17,7 +17,12 @@ from testpilot.audit.workbook_index import build_index
 
 
 def _resolve_workbook_path(root: Path, plugin: str, workbook: str | None) -> Path:
-    workbook_path = Path(workbook) if workbook else root / "audit" / "workbooks" / f"{plugin}.xlsx"
+    if workbook:
+        workbook_path = Path(workbook)
+        if not workbook_path.is_absolute():
+            workbook_path = root / workbook_path
+    else:
+        workbook_path = root / "audit" / "workbooks" / f"{plugin}.xlsx"
     if not workbook_path.is_file():
         raise click.ClickException(f"workbook not found: {workbook_path}")
     return workbook_path

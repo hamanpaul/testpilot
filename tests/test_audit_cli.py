@@ -146,6 +146,49 @@ def test_audit_init_accepts_explicit_cli_options(tmp_path: Path, monkeypatch) ->
     }
 
 
+def test_audit_init_resolves_relative_workbook_against_root(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    workbook = root / "manual.xlsx"
+    workbook.write_bytes(b"manual-workbook")
+
+    cases_dir = root / "plugins" / "demo" / "cases"
+    cases_dir.mkdir(parents=True, exist_ok=True)
+    (cases_dir / "D009_one.yaml").write_text("id: demo-D009\n", encoding="utf-8")
+
+    calls: list[Path] = []
+
+    def fake_build_index(
+        workbook_path: Path | str,
+        *,
+        sheet_name: str = "Wifi_LLAPI",
+        column_overrides: dict[str, str] | None = None,
+    ) -> dict[tuple[str, str], list[object]]:
+        calls.append(Path(workbook_path))
+        return {}
+
+    monkeypatch.setattr(audit_cli, "build_index", fake_build_index)
+    monkeypatch.chdir(tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "--root",
+            str(root),
+            "audit",
+            "init",
+            "demo",
+            "--workbook",
+            "manual.xlsx",
+            "--cases",
+            "D009",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert calls == [workbook]
+
+
 def test_audit_init_cleans_up_run_when_snapshot_copy_fails(tmp_path: Path, monkeypatch) -> None:
     root = init_repo(tmp_path / "repo")
     workbook = root / "audit" / "workbooks" / "demo.xlsx"
