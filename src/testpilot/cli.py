@@ -585,5 +585,10 @@ def json_to_html(json_report: str, out: str | None) -> None:
     console.print(f"[green]✓[/green] HTML report: {result}")
 
 
+from testpilot.audit.cli import audit_group
+
+main.add_command(audit_group)
+
+
 if __name__ == "__main__":
     main()
