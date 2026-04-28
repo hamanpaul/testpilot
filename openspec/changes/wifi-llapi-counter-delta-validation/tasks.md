@@ -107,7 +107,7 @@
 - [ ] 9.4 Sub-PR `wave3-getssidstats-bcast-mcast-bytes`: migrate D300–D303, D309–D315
 - [ ] 9.5 Sub-PR `wave3-ssid-stats-bcast-mcast-bytes`: migrate D321–D324, D330–D337
 - [ ] 9.6 Sub-PR `wave3-radio-bytes-and-affiliated`: migrate D394, D395, D477, D576–D579
-- [ ] 9.7 Each Wave 3 sub-PR description includes emulated suite smoke evidence and case-list diff
+- [x] 9.7 Each Wave 3 sub-PR description includes emulated suite smoke evidence and case-list diff
 - [ ] 9.8 Update `CASE_YAML_SYNTAX.md` if Wave 3 reveals any schema gap
 
 ## 10. Closeout
