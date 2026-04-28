@@ -1,6 +1,7 @@
 """Audit CLI commands."""
 
 from __future__ import annotations
+import hashlib
 import shutil
 import subprocess
 from pathlib import Path
@@ -63,6 +64,14 @@ def _cleanup_failed_run(audit_root: Path, rid: str, plugin: str) -> None:
         run_root.rmdir()
     except OSError:
         pass
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(8192), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _resolve_run_dir(audit_root: Path, rid: str, plugin: str | None = None) -> Path:
@@ -147,6 +156,9 @@ def audit_init(
         )
         snapshot_path = audit_root / "runs" / rid / plugin / "workbook_snapshot.xlsx"
         shutil.copy2(workbook_path, snapshot_path)
+        run_manifest = manifest.load_run(rid, plugin=plugin, audit_root=audit_root)
+        if _file_sha256(snapshot_path) != run_manifest.get("workbook_sha256", ""):
+            raise ValueError("workbook snapshot SHA mismatch")
     except (
         OSError,
         ValueError,

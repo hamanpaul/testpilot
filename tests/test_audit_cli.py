@@ -213,6 +213,33 @@ def test_audit_init_wraps_invalid_workbook_errors(tmp_path: Path) -> None:
     assert result.output
 
 
+def test_audit_init_cleans_up_when_snapshot_sha_mismatches(tmp_path: Path, monkeypatch) -> None:
+    root = init_repo(tmp_path / "repo")
+    workbook = root / "audit" / "workbooks" / "demo.xlsx"
+    workbook.parent.mkdir(parents=True, exist_ok=True)
+    workbook.write_bytes(b"workbook-bytes")
+
+    cases_dir = root / "plugins" / "demo" / "cases"
+    cases_dir.mkdir(parents=True, exist_ok=True)
+    (cases_dir / "D001_one.yaml").write_text("id: demo-D001\n", encoding="utf-8")
+
+    monkeypatch.setattr(audit_cli, "build_index", lambda *args, **kwargs: {})
+
+    def _copy_different(src: Path, dst: Path) -> Path:
+        Path(dst).write_bytes(b"different-snapshot-bytes")
+        return Path(dst)
+
+    monkeypatch.setattr(audit_cli.shutil, "copy2", _copy_different)
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["--root", str(root), "audit", "init", "demo"])
+
+    assert result.exit_code != 0
+    assert "snapshot sha mismatch" in result.output.lower()
+    runs_root = root / "audit" / "runs"
+    assert not runs_root.exists() or not any(runs_root.iterdir())
+
+
 def test_audit_status_reports_manifest_and_bucket_counts(tmp_path: Path, monkeypatch) -> None:
     root = init_repo(tmp_path / "repo")
     workbook = root / "audit" / "workbooks" / "demo.xlsx"
