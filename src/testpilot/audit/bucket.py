@@ -2,13 +2,13 @@ from pathlib import Path
 import json
 from typing import Any, Dict, List
 
-BUCKETS = [
+BUCKETS = (
     "confirmed",
     "applied",
     "pending",
     "block",
     "needs_pass3",
-]
+)
 
 
 def _bucket_path(run_dir: Path, bucket: str) -> Path:

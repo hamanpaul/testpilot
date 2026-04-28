@@ -5,17 +5,18 @@ import pytest
 import importlib
 bucket_mod = importlib.import_module('testpilot.audit.bucket')
 
-EXPECTED_BUCKETS = [
+EXPECTED_BUCKETS = (
     "confirmed",
     "applied",
     "pending",
     "block",
     "needs_pass3",
-]
+)
 
 
 def test_buckets_constant():
     assert bucket_mod.BUCKETS == EXPECTED_BUCKETS
+    assert isinstance(bucket_mod.BUCKETS, tuple)
 
 
 def test_empty_bucket_reads_empty(tmp_path):
