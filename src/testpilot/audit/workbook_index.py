@@ -151,9 +151,12 @@ def build_index(
 
             object_value = row[columns["object"]] if len(row) > columns["object"] else None
             api_value = row[columns["api"]] if len(row) > columns["api"] else None
+            if not isinstance(object_value, str) or not isinstance(api_value, str):
+                continue
+
             key = (
-                normalize_object(str(object_value) if object_value is not None else None),
-                normalize_api(str(api_value) if api_value is not None else None),
+                normalize_object(object_value),
+                normalize_api(api_value),
             )
             if not key[0] or not key[1]:
                 continue

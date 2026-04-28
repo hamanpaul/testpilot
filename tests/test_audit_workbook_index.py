@@ -115,3 +115,21 @@ def test_build_index_skips_rows_that_normalize_to_empty_keys(tmp_path: Path):
     assert list(index.keys()) == [
         (normalize_object("WiFi.Radio.1."), normalize_api("Noise"))
     ]
+
+
+def test_build_index_skips_non_string_object_or_api_values(tmp_path: Path):
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Types"
+    sheet.append(["Object", "API", "Test Steps", "Command Output", "5G", "6G", "2.4G"])
+    sheet.append([0, "Noise", "ignored", "", "", "", ""])
+    sheet.append(["WiFi.Radio.1.", False, "ignored", "", "", "", ""])
+    sheet.append(["WiFi.Radio.1.", "Noise", "kept", "stdout", "Pass", "Pass", "Pass"])
+
+    workbook_path = tmp_path / "types.xlsx"
+    workbook.save(workbook_path)
+
+    index = build_index(workbook_path, sheet_name="Types")
+    assert list(index.keys()) == [
+        (normalize_object("WiFi.Radio.1."), normalize_api("Noise"))
+    ]
