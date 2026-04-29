@@ -9,6 +9,10 @@
 5. 已核准的重構計畫實作，需對齊 `docs/plan.md` 的 phase 與邊界。
 6. 本檔狀態需同步反映 `docs/plan.md` 的現況快照。
 
+> Audit mode（#36）已作為 cross-cutting capability 落地；為遵守本看板的非 Plan
+> Mode 治理，audit phase 細節維持在 `docs/plan.md` 與
+> `openspec/specs/audit-mode/spec.md`，本檔不 retroactively 新增一組新 ID。
+
 ---
 
 ## Phase 0：Scaffold

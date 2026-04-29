@@ -183,9 +183,9 @@ audit SHALL NOT 修改：
 
 ### Requirement: verify-edit gate 與 verify_edit_log
 
-`testpilot audit verify-edit <RID> <case_yaml_path>` SHALL：
+`testpilot audit verify-edit <RID> <case> --yaml <case_yaml_path> --proposed <proposed_yaml_path>` SHALL：
 
-1. 讀取目前 working tree 的 `<case_yaml_path>` 與 audit `proposed.yaml`，做 path-aware diff
+1. 讀取目前 working tree 的 `--yaml <case_yaml_path>` 與 audit `--proposed <proposed_yaml_path>`，做 path-aware diff
 2. 驗證 diff 只動 §YAML edit boundary 中的 allowed paths（用 ruamel.yaml + json-pointer 比對 path 集合）
 3. 載入 proposed.yaml 跑 `case_schema.validate()`；不過 → fail
 4. 驗證 RID 在 active 狀態（manifest.json 存在）

@@ -270,6 +270,22 @@ TestPilot 的主目標是：
 | R5-07 | `execute_step` heuristic 收斂 | CommandResolver strategy pattern refactor | done |
 | R5-08 | control-plane / verdict-plane 邊界測試 | 15 boundary tests for hook/retry/timeout/band | done |
 
+### Phase R6：Audit Mode（issue #36）
+
+- Deliverables：
+  - `testpilot audit` CLI 群組（`init` / `pass12` / `record` / `verify-edit` / `decide` / `status` / `summary` / `apply` / `pr`）
+  - gitignored `audit/` 工作區（RID、workbook snapshot、buckets、verify-edit log、case evidence）
+  - pre-commit hook `audit-yaml-provenance`
+  - `docs/audit-guide.md` audit doctrine 與對應文件同步
+- Acceptance：
+  - audit apply 後的 `plugins/<plugin>/cases/` diff 只應落在 audit white-list paths
+  - provenance hook 能擋下未經 `verify-edit` 的 case YAML 變動
+  - D366 / D369 的 audit acceptance 以 driver bitmap 驗證與 workbook verdict 對齊為準
+- 參考：
+  - `docs/superpowers/specs/2026-04-27-audit-mode-design.md`
+  - `openspec/specs/audit-mode/spec.md`
+  - `docs/superpowers/plans/2026-04-27-audit-mode.md`
+
 ### 4.3 舊 Phase 的位置
 
 - R1：Report / 指令清理（低風險，已大幅落地）
@@ -277,6 +293,7 @@ TestPilot 的主目標是：
 - R3：Plugin Template / PluginBase 瘦身（仍重要）
 - R4：第三次重構，正式導入 Copilot SDK control plane
 - R5：第三次重構期間同步進行的 kernel hardening
+- R6：audit / calibration 專用工作模式與證據鏈治理
 
 ### 執行順序
 

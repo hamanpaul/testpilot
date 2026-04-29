@@ -18,6 +18,15 @@ preparation.
 
 ### Added
 
+- `testpilot audit` CLI subcommand group (`init`, `pass12`, `record`,
+  `verify-edit`, `decide`, `status`, `summary`, `apply`, `pr`) that separates
+  workbook-driven audit work from normal `testpilot run` execution.
+- Gitignored `audit/` workspace for RID-scoped workbook snapshots, buckets,
+  verify-edit logs, and case-level evidence artifacts.
+- `scripts/check_audit_yaml_provenance.py` plus `.pre-commit-config.yaml` to
+  enforce that `plugins/<plugin>/cases/D*.yaml` changes map back to a
+  `verify_edit_log.jsonl` entry unless `[audit-bypass: <reason>]` is used.
+- `docs/audit-guide.md` rewritten as the audit-mode agent doctrine.
 - `testpilot run wifi_llapi` now performs a runtime alignment phase that
   auto-corrects case filename `D###`, `source.row`, and compatible `id` values
   against the checked-in template workbook before execution.
