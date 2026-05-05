@@ -1,7 +1,7 @@
 id: d211-radio-operatingstandards
 name: D211 Radio OperatingStandards
 source:
-  row: 172
+  row: 211
   object: WiFi.Radio.{i}.
   api: OperatingStandards
 bands:
@@ -40,10 +40,10 @@ steps:
 pass_criteria:
 - field: getter_5g.OperatingStandards
   operator: regex
-  value: ".+"
+  value: .+
 - field: getter_6g.OperatingStandards
   operator: regex
-  value: ".+"
+  value: .+
 - field: getter_24g.OperatingStandards
   operator: regex
-  value: ".+"
+  value: .+

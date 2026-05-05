@@ -1,7 +1,7 @@
 id: d378-radio-maxsupportedssids
 name: D378 Radio MaxSupportedSSIDs
 source:
-  row: 281
+  row: 378
   object: WiFi.Radio.{i}.
   api: MaxSupportedSSIDs
 bands:

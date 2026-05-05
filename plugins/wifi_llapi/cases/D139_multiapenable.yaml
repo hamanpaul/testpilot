@@ -1,7 +1,7 @@
 id: d139-endpoint-multiapenable
 name: D139 EndPoint MultiAPEnable
 source:
-  row: 127
+  row: 139
   object: WiFi.EndPoint.{i}.
   api: MultiAPEnable
 bands:

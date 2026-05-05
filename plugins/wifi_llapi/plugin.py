@@ -1105,30 +1105,37 @@ class Plugin(PluginBase):
         ):
             return None
 
-        saw_trigger = False
-        saw_verify_before_trigger = False
-        saw_verify = False
+        phase_state: dict[str, dict[str, bool]] = {}
         for step in case.get("steps", []):
             if not isinstance(step, dict):
                 continue
             phase = str(step.get("phase", "verify")).strip() or "verify"
             if phase not in {"baseline", "trigger", "verify"}:
                 return f"unknown phase: {phase}"
+            scope = self._normalize_band_name(step.get("band")) or "__global__"
+            state = phase_state.setdefault(
+                scope,
+                {
+                    "saw_trigger": False,
+                    "saw_verify_before_trigger": False,
+                    "saw_verify": False,
+                },
+            )
             if phase == "trigger":
-                if saw_verify and saw_trigger:
+                if state["saw_verify"] and state["saw_trigger"]:
                     return "trigger step must precede verify"
-                saw_trigger = True
+                state["saw_trigger"] = True
                 continue
-            if phase == "baseline" and saw_trigger:
+            if phase == "baseline" and state["saw_trigger"]:
                 return "baseline step must precede trigger"
-            if phase == "verify" and not saw_trigger:
-                saw_verify_before_trigger = True
+            if phase == "verify" and not state["saw_trigger"]:
+                state["saw_verify_before_trigger"] = True
             if phase == "verify":
-                saw_verify = True
+                state["saw_verify"] = True
 
-        if not saw_trigger:
+        if not any(state["saw_trigger"] for state in phase_state.values()):
             return "delta_* operators require at least one phase=trigger step"
-        if saw_verify_before_trigger:
+        if any(state["saw_verify_before_trigger"] for state in phase_state.values()):
             return "verify step must follow trigger"
         return None
 

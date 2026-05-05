@@ -1,7 +1,7 @@
 id: d490-getradiostats-wmm-failedbytessent-ac_be
 name: D490 getRadioStats WmmFailedbytesSent AC_BE
 source:
-  row: 357
+  row: 490
   object: WiFi.Radio.{i}.Stats.WmmFailedbytesSent.
   api: AC_BE
 bands:

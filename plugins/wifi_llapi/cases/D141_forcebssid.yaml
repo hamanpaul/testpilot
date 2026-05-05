@@ -1,7 +1,7 @@
 id: d141-endpoint-forcebssid
 name: D141 EndPoint ForceBSSID
 source:
-  row: 129
+  row: 141
   object: WiFi.EndPoint.{i}.Profile.WPS.
   api: ForceBSSID
 bands:

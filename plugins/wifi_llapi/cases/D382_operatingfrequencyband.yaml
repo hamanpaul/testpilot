@@ -1,7 +1,7 @@
 id: d382-radio-operatingfrequencyband
 name: D382 Radio OperatingFrequencyBand
 source:
-  row: 285
+  row: 382
   object: WiFi.Radio.{i}.
   api: OperatingFrequencyBand
 bands:

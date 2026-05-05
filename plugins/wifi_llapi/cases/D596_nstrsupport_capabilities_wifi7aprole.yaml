@@ -1,7 +1,7 @@
 id: d596-wifi7aprole-nstrsupport
 name: D596 WiFi7APRole NSTRSupport
 source:
-  row: 412
+  row: 596
   object: WiFi.Radio.{i}.Capabilities.WiFi7APRole.
   api: NSTRSupport
 bands:

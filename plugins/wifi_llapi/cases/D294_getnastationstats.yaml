@@ -1,7 +1,7 @@
 id: d294-getnastationstats
 name: D294 getNaStationStats
 source:
-  row: 219
+  row: 294
   object: WiFi.Radio.{i}.NaStaMonitor.
   api: getNaStationStats()
 bands:

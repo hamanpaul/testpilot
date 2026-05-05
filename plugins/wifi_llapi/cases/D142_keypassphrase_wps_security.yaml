@@ -1,7 +1,7 @@
 id: d142-endpoint-keypassphrase
 name: D142 EndPoint KeyPassPhrase
 source:
-  row: 130
+  row: 142
   object: WiFi.EndPoint.{i}.Profile.WPS.Security.
   api: KeyPassPhrase
 bands:

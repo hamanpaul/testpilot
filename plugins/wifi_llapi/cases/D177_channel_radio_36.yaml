@@ -1,7 +1,7 @@
 id: d177-radio-channel
 name: D177 Radio Channel
 source:
-  row: 430
+  row: 177
   object: WiFi.Radio.{i}.
   api: Channel
 bands:

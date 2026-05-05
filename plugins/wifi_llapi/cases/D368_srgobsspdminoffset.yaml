@@ -1,7 +1,7 @@
 id: d368-ieee80211ax-srgobsspdminoffset
 name: D368 IEEE80211ax SRGOBSSPDMinOffset
 source:
-  row: 370
+  row: 368
   object: WiFi.Radio.{i}.IEEE80211ax.
   api: SRGOBSSPDMinOffset
 bands:

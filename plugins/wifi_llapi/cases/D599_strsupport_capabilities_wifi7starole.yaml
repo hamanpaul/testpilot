@@ -1,7 +1,7 @@
 id: d599-wifi7starole-strsupport
 name: D599 WiFi7STARole STRSupport
 source:
-  row: 415
+  row: 599
   object: WiFi.Radio.{i}.Capabilities.WiFi7STARole.
   api: STRSupport
 bands:

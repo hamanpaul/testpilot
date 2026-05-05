@@ -1,7 +1,7 @@
 id: d594-wifi7aprole-emlsrsupport
 name: D594 WiFi7APRole EMLSRSupport
 source:
-  row: 410
+  row: 594
   object: WiFi.Radio.{i}.Capabilities.WiFi7APRole.
   api: EMLSRSupport
 bands:

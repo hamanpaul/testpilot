@@ -1,7 +1,7 @@
 id: d376-radio-longretrylimit
 name: D376 Radio LongRetryLimit
 source:
-  row: 279
+  row: 376
   object: WiFi.Radio.{i}.
   api: LongRetryLimit
 bands:

@@ -1,7 +1,7 @@
 id: d147-endpoint-ssid
 name: D147 EndPoint SSID
 source:
-  row: 135
+  row: 147
   object: WiFi.EndPoint.{i}.Profile.WPS.
   api: SSID
 bands:

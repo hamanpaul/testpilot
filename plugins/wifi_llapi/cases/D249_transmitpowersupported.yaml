@@ -1,7 +1,7 @@
 id: d249-radio-transmitpowersupported
 name: D249 Radio TransmitPowerSupported
 source:
-  row: 181
+  row: 249
   object: WiFi.Radio.{i}.
   api: TransmitPowerSupported
 bands:

@@ -1,7 +1,7 @@
 id: d593-wifi7aprole-emlmrsupport
 name: D593 WiFi7APRole EMLMRSupport
 source:
-  row: 409
+  row: 593
   object: WiFi.Radio.{i}.Capabilities.WiFi7APRole.
   api: EMLMRSupport
 bands:

@@ -1,7 +1,7 @@
 id: d145-endpoint-presharedkey
 name: D145 EndPoint PreSharedKey
 source:
-  row: 133
+  row: 145
   object: WiFi.EndPoint.{i}.Profile.WPS.Security.
   api: PreSharedKey
 bands:

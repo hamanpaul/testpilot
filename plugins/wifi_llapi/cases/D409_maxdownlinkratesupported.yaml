@@ -1,7 +1,7 @@
 id: d409-assocdev-maxdownlinkratesupported
 name: D409 AssociatedDevice MaxDownlinkRateSupported
 source:
-  row: 411
+  row: 409
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: MaxDownlinkRateSupported
 bands:
@@ -29,15 +29,14 @@ steps:
   target: dut
   action: read
   capture: getter_5g
-  command: ubus-cli 
-    "WiFi.AccessPoint.1.AssociatedDevice.1.MaxDownlinkRateSupported?"
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MaxDownlinkRateSupported?"
   expected: MaxDownlinkRateSupported 回傳有效值
   description: AP1 AssociatedDevice.1 MaxDownlinkRateSupported getter
   depends_on: step_5g_assoc_check
 pass_criteria:
 - field: assoc_check
   operator: regex
-  value: "assoclist [0-9A-Fa-f:]+"
+  value: assoclist [0-9A-Fa-f:]+
 - field: getter_5g.MaxDownlinkRateSupported
   operator: regex
-  value: '^\d+$'
+  value: ^\d+$

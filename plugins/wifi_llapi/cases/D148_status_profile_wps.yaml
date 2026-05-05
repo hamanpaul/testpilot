@@ -1,7 +1,7 @@
 id: d148-endpoint-status
 name: D148 EndPoint Status
 source:
-  row: 136
+  row: 148
   object: WiFi.EndPoint.{i}.Profile.WPS.
   api: Status
 bands:

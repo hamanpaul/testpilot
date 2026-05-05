@@ -1,7 +1,7 @@
 id: d597-wifi7starole-emlmrsupport
 name: D597 WiFi7STARole EMLMRSupport
 source:
-  row: 413
+  row: 597
   object: WiFi.Radio.{i}.Capabilities.WiFi7STARole.
   api: EMLMRSupport
 bands:

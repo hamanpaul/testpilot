@@ -1,7 +1,7 @@
 id: d143-endpoint-mfpconfig
 name: D143 EndPoint MFPConfig
 source:
-  row: 131
+  row: 143
   object: WiFi.EndPoint.{i}.Profile.WPS.Security.
   api: MFPConfig
 bands:

@@ -1,7 +1,7 @@
 id: d246-radio-supportedstandards
 name: D246 Radio SupportedStandards
 source:
-  row: 178
+  row: 246
   object: WiFi.Radio.{i}.
   api: SupportedStandards
 bands:

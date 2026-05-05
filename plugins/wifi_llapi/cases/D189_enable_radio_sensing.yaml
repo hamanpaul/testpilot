@@ -1,7 +1,7 @@
 id: d189-radio-sensing-enable
 name: D189 Radio Enable
 source:
-  row: 264
+  row: 189
   object: WiFi.Radio.{i}.
   api: Enable
 bands:

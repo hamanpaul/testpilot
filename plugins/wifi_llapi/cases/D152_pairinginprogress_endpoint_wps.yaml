@@ -1,7 +1,7 @@
 id: d152-endpoint-pairinginprogress
 name: D152 EndPoint PairingInProgress
 source:
-  row: 137
+  row: 152
   object: WiFi.EndPoint.{i}.WPS.
   api: PairingInProgress
 bands:

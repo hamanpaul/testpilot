@@ -1,7 +1,7 @@
 id: d256-getradioairstats-freetime
 name: D256 getRadioAirStats FreeTime
 source:
-  row: 258
+  row: 256
   object: WiFi.Radio.{i}.
   api: getRadioAirStats()
 bands:

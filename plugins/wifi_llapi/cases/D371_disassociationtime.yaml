@@ -1,7 +1,7 @@
 id: d371-assocdev-disassociationtime
 name: D371 AssociatedDevice DisassociationTime
 source:
-  row: 373
+  row: 371
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: DisassociationTime
 bands:
@@ -36,7 +36,7 @@ steps:
 pass_criteria:
 - field: assoc_check
   operator: regex
-  value: "assoclist [0-9A-Fa-f:]+"
+  value: assoclist [0-9A-Fa-f:]+
 - field: getter_5g.DisassociationTime
   operator: regex
-  value: "^20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+  value: ^20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$

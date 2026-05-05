@@ -1,7 +1,7 @@
 id: d144-endpoint-modeenabled
 name: D144 EndPoint ModeEnabled
 source:
-  row: 132
+  row: 144
   object: WiFi.EndPoint.{i}.Profile.WPS.Security.
   api: ModeEnabled
 bands:

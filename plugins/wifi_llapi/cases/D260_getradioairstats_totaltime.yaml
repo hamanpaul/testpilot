@@ -1,7 +1,7 @@
 id: d260-getradioairstats-totaltime
 name: D260 getRadioAirStats TotalTime
 source:
-  row: 262
+  row: 260
   object: WiFi.Radio.{i}.
   api: getRadioAirStats()
 bands:
