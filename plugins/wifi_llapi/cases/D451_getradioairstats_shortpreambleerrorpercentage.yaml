@@ -1,9 +1,9 @@
 id: d451-radioairstats-shortpreambleerrorpercentage
 name: D451 getRadioAirStats ShortPreambleErrorPercentage
 source:
-  row: 453
-  object: WiFi.Radio.{i}.getRadioAirStats()
-  api: ShortPreambleErrorPercentage
+  row: 451
+  object: WiFi.Radio.{i}.
+  api: getRadioAirStats()
 bands:
 - 5g
 - 6g

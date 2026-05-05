@@ -2,7 +2,7 @@ id: wifi-llapi-D051-tx-retransmissions
 name: Tx_Retransmissions — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
 version: '1.1'
 source:
-  row: 53
+  row: 51
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: Tx_Retransmissions
 platform:

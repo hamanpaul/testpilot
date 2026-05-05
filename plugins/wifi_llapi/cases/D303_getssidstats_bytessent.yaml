@@ -1,7 +1,7 @@
 id: d303-getssidstats-bytessent
 name: D303 getSSIDStats BytesSent
 source:
-  row: 228
+  row: 303
   object: WiFi.SSID.{i}.
   api: getSSIDStats()
 bands:

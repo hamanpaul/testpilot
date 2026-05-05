@@ -1,8 +1,8 @@
 id: d365-radio-psrdisallowed
 name: D365 Radio PSRDisallowed
 source:
-  row: 272
-  object: WiFi.Radio.{i}.
+  row: 365
+  object: WiFi.Radio.{i}.IEEE80211ax.
   api: PSRDisallowed
 bands:
 - 5g

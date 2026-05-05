@@ -3,7 +3,7 @@ name: RekeyingInterval — WiFi.AccessPoint.{i}.Security
 version: '1.0'
 source:
   row: 90
-  object: "WiFi.AccessPoint.{i}.Security"
+  object: WiFi.AccessPoint.{i}.Security.
   api: "RekeyingInterval"
 platform:
   prplos: 4.0.3

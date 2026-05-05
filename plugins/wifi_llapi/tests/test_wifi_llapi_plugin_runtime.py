@@ -3131,8 +3131,8 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
     multiband_getssid_cases = {
         "D300_getssidstats_broadcastpacketsreceived.yaml": {"row": 300, "api": "BroadcastPacketsReceived", "expected": "Pass"},
         "D301_getssidstats_broadcastpacketssent.yaml": {"row": 301, "api": "BroadcastPacketsSent", "expected": "Pass"},
-        "D302_getssidstats_bytesreceived.yaml": {"row": 227, "api": "BytesReceived", "expected": "Fail"},
-        "D303_getssidstats_bytessent.yaml": {"row": 228, "api": "BytesSent", "expected": "Pass"},
+        "D302_getssidstats_bytesreceived.yaml": {"row": 302, "api": "BytesReceived", "expected": "Fail"},
+        "D303_getssidstats_bytessent.yaml": {"row": 303, "api": "BytesSent", "expected": "Pass"},
         "D304_getssidstats_discardpacketsreceived.yaml": {"row": 304, "api": "DiscardPacketsReceived", "expected": "Pass"},
         "D305_getssidstats_discardpacketssent.yaml": {"row": 305, "api": "DiscardPacketsSent", "expected": "Pass"},
         "D306_getssidstats_errorsreceived.yaml": {"row": 306, "api": "ErrorsReceived", "expected": "Pass"},
@@ -8747,7 +8747,7 @@ def test_d068_discoverymethodenabled_accesspoint_rnr_contract():
 
     assert "aliases" not in d068_raw
     assert d068["id"] == "wifi-llapi-D068-discoverymethodenabled-accesspoint-rnr"
-    assert d068["source"]["row"] == 70
+    assert d068["source"]["row"] == 68
     assert d068["llapi_support"] == "Support"
     assert d068["bands"] == ["5g", "6g", "2.4g"]
     assert set(d068["topology"]["devices"]) == {"DUT"}
@@ -9748,7 +9748,7 @@ def test_d075_interworkingenable_accesspoint_contract():
 
     assert "aliases" not in d075_raw
     assert d075["id"] == "wifi-llapi-D075-interworkingenable-accesspoint"
-    assert d075["source"]["row"] == 77
+    assert d075["source"]["row"] == 75
     assert d075["llapi_support"] == "Support"
     assert d075["implemented_by"] == "pWHM"
     assert d075["bands"] == ["5g", "6g", "2.4g"]
@@ -9913,7 +9913,7 @@ def test_d076_qosmapset_accesspoint_contract():
 
     assert "aliases" not in d076_raw
     assert d076["id"] == "wifi-llapi-D076-qosmapset-accesspoint"
-    assert d076["source"]["row"] == 70
+    assert d076["source"]["row"] == 76
     assert d076["llapi_support"] == "Not Supported"
     assert d076["implemented_by"] == "pWHM"
     assert d076["bands"] == ["5g", "6g", "2.4g"]
@@ -13064,7 +13064,7 @@ def test_d089_presharedkey_accesspoint_security_contract():
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     d089 = load_case(cases_dir / "D089_presharedkey_accesspoint_security.yaml")
     assert d089["id"] == "wifi-llapi-D089-presharedkey-accesspoint-security"
-    assert d089["source"]["row"] == 83
+    assert d089["source"]["row"] == 89
     assert d089["source"]["api"] == "PreSharedKey"
     assert d089["bands"] == ["5g", "6g", "2.4g"]
     assert len(d089["steps"]) == 12
@@ -13234,12 +13234,12 @@ def test_d090_rekeyinginterval_evaluate_live_examples():
 # ---------------------------------------------------------------------------
 
 def test_d091_sha256enable_contract():
-    """D091 YAML loads with 12 steps, 9 pass_criteria, row=93, all-band Fail."""
+    """D091 YAML loads with 12 steps, 9 pass_criteria, row=91, all-band Fail."""
     from testpilot.schema.case_schema import load_case
     c = load_case("plugins/wifi_llapi/cases/D091_sha256enable.yaml")
     assert len(c["steps"]) == 12
     assert len(c["pass_criteria"]) == 9
-    assert c["source"]["row"] == 93
+    assert c["source"]["row"] == 91
 
 
 def test_d091_sha256enable_setup_env_uses_only_dut_transport(monkeypatch):
@@ -14544,7 +14544,7 @@ def test_d118_getstats_encryptionmode_contract():
     """D118 getStats() EncryptionMode YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D118_getstats_encryptionmode.yaml")
-    assert case["source"]["row"] == 106
+    assert case["source"]["row"] == 118
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -14584,7 +14584,7 @@ def test_d119_getstats_hecapabilities_contract():
     """D119 getStats() HeCapabilities YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D119_getstats_hecapabilities.yaml")
-    assert case["source"]["row"] == 121
+    assert case["source"]["row"] == 119
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -14624,7 +14624,7 @@ def test_d120_getstats_htcapabilities_contract():
     """D120 getStats() HtCapabilities YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D120_getstats_htcapabilities.yaml")
-    assert case["source"]["row"] == 122
+    assert case["source"]["row"] == 120
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -14664,7 +14664,7 @@ def test_d121_getstats_lastdatadownlinkrate_contract():
     """D121 getStats() LastDataDownlinkRate YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D121_getstats_lastdatadownlinkrate.yaml")
-    assert case["source"]["row"] == 123
+    assert case["source"]["row"] == 121
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -14704,7 +14704,7 @@ def test_d122_getstats_lastdatauplinkrate_contract():
     """D122 getStats() LastDataUplinkRate YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D122_getstats_lastdatauplinkrate.yaml")
-    assert case["source"]["row"] == 124
+    assert case["source"]["row"] == 122
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -14744,7 +14744,7 @@ def test_d123_getstats_linkbandwidth_contract():
     """D123 getStats() LinkBandwidth YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D123_getstats_linkbandwidth.yaml")
-    assert case["source"]["row"] == 125
+    assert case["source"]["row"] == 123
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -14784,7 +14784,7 @@ def test_d124_getstats_maxrxspatialstreamssupported_contract():
     """D124 getStats() MaxRxSpatialStreamsSupported YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D124_getstats_maxrxspatialstreamssupported.yaml")
-    assert case["source"]["row"] == 126
+    assert case["source"]["row"] == 124
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -14824,7 +14824,7 @@ def test_d125_getstats_maxtxspatialstreamssupported_contract():
     """D125 getStats() MaxTxSpatialStreamsSupported YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D125_getstats_maxtxspatialstreamssupported.yaml")
-    assert case["source"]["row"] == 127
+    assert case["source"]["row"] == 125
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -14864,7 +14864,7 @@ def test_d126_getstats_noise_contract():
     """D126 getStats() Noise YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D126_getstats_noise.yaml")
-    assert case["source"]["row"] == 128
+    assert case["source"]["row"] == 126
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -14904,7 +14904,7 @@ def test_d127_getstats_operatingstandard_contract():
     """D127 getStats() OperatingStandard YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D127_getstats_operatingstandard.yaml")
-    assert case["source"]["row"] == 129
+    assert case["source"]["row"] == 127
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -14944,7 +14944,7 @@ def test_d128_getstats_retransmissions_contract():
     """D128 getStats() Retransmissions YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D128_getstats_retransmissions.yaml")
-    assert case["source"]["row"] == 130
+    assert case["source"]["row"] == 128
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -14984,7 +14984,7 @@ def test_d129_getstats_rssi_contract():
     """D129 getStats() RSSI YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D129_getstats_rssi.yaml")
-    assert case["source"]["row"] == 131
+    assert case["source"]["row"] == 129
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -15024,7 +15024,7 @@ def test_d130_getstats_rx_retransmissions_contract():
     """D130 getStats() Rx_Retransmissions YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D130_getstats_rx_retransmissions.yaml")
-    assert case["source"]["row"] == 132
+    assert case["source"]["row"] == 130
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -15064,7 +15064,7 @@ def test_d131_getstats_rxbytes_contract():
     """D131 getStats() RxBytes YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D131_getstats_rxbytes.yaml")
-    assert case["source"]["row"] == 133
+    assert case["source"]["row"] == 131
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -15104,7 +15104,7 @@ def test_d132_getstats_rxpacketcount_contract():
     """D132 getStats() RxPacketCount YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D132_getstats_rxpacketcount.yaml")
-    assert case["source"]["row"] == 134
+    assert case["source"]["row"] == 132
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -15144,7 +15144,7 @@ def test_d133_getstats_securitymodeenabled_contract():
     """D133 getStats() SecurityModeEnabled YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D133_getstats_securitymodeenabled.yaml")
-    assert case["source"]["row"] == 135
+    assert case["source"]["row"] == 133
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -15184,7 +15184,7 @@ def test_d134_getstats_supportedmcs_contract():
     """D134 getStats() SupportedMCS YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D134_getstats_supportedmcs.yaml")
-    assert case["source"]["row"] == 136
+    assert case["source"]["row"] == 134
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -15224,7 +15224,7 @@ def test_d135_getstats_tx_retransmissions_contract():
     """D135 getStats() Tx_Retransmissions YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D135_getstats_tx_retransmissions.yaml")
-    assert case["source"]["row"] == 137
+    assert case["source"]["row"] == 135
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -15264,7 +15264,7 @@ def test_d136_getstats_txbytes_contract():
     """D136 getStats() TxBytes YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D136_getstats_txbytes.yaml")
-    assert case["source"]["row"] == 138
+    assert case["source"]["row"] == 136
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -15304,7 +15304,7 @@ def test_d137_getstats_txpacketcount_contract():
     """D137 getStats() TxPacketCount YAML loads with correct metadata."""
     cases_dir = Path(__file__).resolve().parents[3] / "plugins" / "wifi_llapi" / "cases"
     case = load_case(cases_dir / "D137_getstats_txpacketcount.yaml")
-    assert case["source"]["row"] == 139
+    assert case["source"]["row"] == 137
     assert case["llapi_support"] == "Not Supported"
     assert len(case["steps"]) == 1
     assert len(case["pass_criteria"]) == 1
@@ -19801,7 +19801,7 @@ _RADIO_GETTER_CASES = [
     ("D461_htcapabilities_radio.yaml", 461, "YhA=", "AAA=", "YhA=", "WiFi.Radio.{r}.HTCapabilities"),
     ("D467_rxbeamformingcapsenabled.yaml", 467, "DEFAULT", "DEFAULT", "DEFAULT", "WiFi.Radio.{r}.RxBeamformingCapsEnabled"),
     # --- Batch 5b: IEEE80211ax property getters ---
-    ("D365_psrdisallowed.yaml", 272, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.PSRDisallowed"),
+    ("D365_psrdisallowed.yaml", 365, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.PSRDisallowed"),
     ("D462_bsscolor.yaml", 462, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.BssColor"),
     ("D463_hesigaspatialreusevalue15allowed.yaml", 463, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.HESIGASpatialReuseValue15Allowed"),
     ("D464_nonsrgoffsetvalid.yaml", 464, "0", "0", "0", "WiFi.Radio.{r}.IEEE80211ax.NonSRGOffsetValid"),
@@ -19896,28 +19896,28 @@ _METHOD_STATS_CASES = [
     ("D269_getradiostats_errorsreceive.yaml", 269, "getRadioStats", "ErrorsReceived", "20", "8", "13"),
     ("D270_getradiostats_errorssent.yaml", 270, "getRadioStats", "ErrorsSent", "0", "0", "0"),
     # --- Batch 5c: getRadioStats fields ---
-    ("D394_bytesreceived_radio_stats.yaml", 289, "getRadioStats", "BytesReceived", "189265", "0", "0"),
-    ("D395_bytessent_radio_stats.yaml", 290, "getRadioStats", "BytesSent", "588249079", "393557814", "393818836"),
+    ("D394_bytesreceived_radio_stats.yaml", 394, "getRadioStats", "BytesReceived", "189265", "0", "0"),
+    ("D395_bytessent_radio_stats.yaml", 395, "getRadioStats", "BytesSent", "588249079", "393557814", "393818836"),
     ("D396_errorsreceived_radio_stats.yaml", 396, "getRadioStats", "ErrorsReceived", "20", "8", "13"),
     ("D397_errorssent_radio_stats.yaml", 397, "getRadioStats", "ErrorsSent", "0", "0", "0"),
-    ("D454_failedretranscount_radio_stats.yaml", 293, "getRadioStats", "FailedRetransCount", "48", "0", "0"),
+    ("D454_failedretranscount_radio_stats.yaml", 454, "getRadioStats", "FailedRetransCount", "48", "0", "0"),
     ("D456_noise_radio_stats.yaml", 456, "getRadioStats", "Noise", "-100", "-97", "-79"),
     ("D457_retranscount_radio_stats.yaml", 457, "getRadioStats", "RetransCount", "17234", "0", "0"),
     ("D458_retrycount_radio_stats.yaml", 458, "getRadioStats", "RetryCount", "0", "0", "0"),
-    ("D403_temperature.yaml", 298, "getRadioStats", "Temperature", "82", "85", "80"),
+    ("D403_temperature.yaml", 403, "getRadioStats", "Temperature", "82", "85", "80"),
     # --- Bulk calibration batch 6: additional getRadioAirStats/getRadioStats fields ---
-    ("D447_getradioairstats_inttime.yaml", 449, "getRadioAirStats", "IntTime", "1", "16", "3"),
-    ("D448_getradioairstats_longpreambleerrorpercentage.yaml", 450, "getRadioAirStats", "LongPreambleErrorPercentage", "0", "0", "0"),
-    ("D449_getradioairstats_noisetime.yaml", 451, "getRadioAirStats", "NoiseTime", "0", "0", "0"),
-    ("D450_getradioairstats_obsstime.yaml", 452, "getRadioAirStats", "ObssTime", "0", "0", "0"),
-    ("D451_getradioairstats_shortpreambleerrorpercentage.yaml", 453, "getRadioAirStats", "ShortPreambleErrorPercentage", "0", "0", "0"),
-    ("D452_getradioairstats_vendorstats_badplcp.yaml", 454, "getRadioAirStats", "VendorStats.Badplcp", "0", "0", "0"),
-    ("D453_getradioairstats_vendorstats_glitch.yaml", 455, "getRadioAirStats", "VendorStats.glitch", "0", "0", "0"),
-    ("D398_getradiostats_failedretranscount.yaml", 456, "getRadioStats", "FailedRetransCount", "86", "0", "0"),
-    ("D399_getradiostats_multipleretrycount.yaml", 457, "getRadioStats", "MultipleRetryCount", "0", "0", "0"),
-    ("D400_getradiostats_noise.yaml", 458, "getRadioStats", "Noise", "-100", "-97", "-79"),
-    ("D401_getradiostats_retranscount.yaml", 459, "getRadioStats", "RetransCount", "26776", "0", "0"),
-    ("D402_getradiostats_retrycount.yaml", 460, "getRadioStats", "RetryCount", "0", "0", "0"),
+    ("D447_getradioairstats_inttime.yaml", 447, "getRadioAirStats", "IntTime", "1", "16", "3"),
+    ("D448_getradioairstats_longpreambleerrorpercentage.yaml", 448, "getRadioAirStats", "LongPreambleErrorPercentage", "0", "0", "0"),
+    ("D449_getradioairstats_noisetime.yaml", 449, "getRadioAirStats", "NoiseTime", "0", "0", "0"),
+    ("D450_getradioairstats_obsstime.yaml", 450, "getRadioAirStats", "ObssTime", "0", "0", "0"),
+    ("D451_getradioairstats_shortpreambleerrorpercentage.yaml", 451, "getRadioAirStats", "ShortPreambleErrorPercentage", "0", "0", "0"),
+    ("D452_getradioairstats_vendorstats_badplcp.yaml", 452, "getRadioAirStats", "VendorStats.Badplcp", "0", "0", "0"),
+    ("D453_getradioairstats_vendorstats_glitch.yaml", 453, "getRadioAirStats", "VendorStats.glitch", "0", "0", "0"),
+    ("D398_getradiostats_failedretranscount.yaml", 398, "getRadioStats", "FailedRetransCount", "86", "0", "0"),
+    ("D399_getradiostats_multipleretrycount.yaml", 399, "getRadioStats", "MultipleRetryCount", "0", "0", "0"),
+    ("D400_getradiostats_noise.yaml", 400, "getRadioStats", "Noise", "-100", "-97", "-79"),
+    ("D401_getradiostats_retranscount.yaml", 401, "getRadioStats", "RetransCount", "26776", "0", "0"),
+    ("D402_getradiostats_retrycount.yaml", 402, "getRadioStats", "RetryCount", "0", "0", "0"),
     ("D459_getradiostats_temperature.yaml", 459, "getRadioStats", "Temperature", "76", "85", "80"),
 ]
 
@@ -20816,8 +20816,8 @@ _SSID_STATS_CASES = [
     # (yaml_file, row, field, verdict)
     ("D300_getssidstats_broadcastpacketsreceived.yaml", 300, "BroadcastPacketsReceived", "Pass"),
     ("D301_getssidstats_broadcastpacketssent.yaml", 301, "BroadcastPacketsSent", "Pass"),
-    ("D302_getssidstats_bytesreceived.yaml", 227, "BytesReceived", "Fail"),
-    ("D303_getssidstats_bytessent.yaml", 228, "BytesSent", "Pass"),
+    ("D302_getssidstats_bytesreceived.yaml", 302, "BytesReceived", "Fail"),
+    ("D303_getssidstats_bytessent.yaml", 303, "BytesSent", "Pass"),
     ("D304_getssidstats_discardpacketsreceived.yaml", 304, "DiscardPacketsReceived", "Pass"),
     ("D305_getssidstats_discardpacketssent.yaml", 305, "DiscardPacketsSent", "Pass"),
     ("D306_getssidstats_errorsreceived.yaml", 306, "ErrorsReceived", "Pass"),
@@ -23927,13 +23927,13 @@ _SKIP_BLOCKED_CASES = [
     ("D355_addclient.yaml", 357, "Skip"),
     ("D356_delclient.yaml", 358, "Skip"),
     ("D357_csistats.yaml", 359, "Skip"),
-    ("D575_macaddress_associateddevice_affiliatedsta.yaml", 578, "Skip"),
-    ("D576_bytessent_associateddevice_affiliatedsta.yaml", 579, "Skip"),
-    ("D577_bytesreceived_associateddevice_affiliatedsta.yaml", 580, "Skip"),
-    ("D578_packetssent_associateddevice_affiliatedsta.yaml", 581, "Skip"),
-    ("D579_packetsreceived_associateddevice_affiliatedsta.yaml", 582, "Skip"),
-    ("D580_errorssent_associateddevice_affiliatedsta.yaml", 583, "Skip"),
-    ("D581_signalstrength_associateddevice_affiliatedsta.yaml", 584, "Skip"),
+    ("D575_macaddress_associateddevice_affiliatedsta.yaml", 575, "Skip"),
+    ("D576_bytessent_associateddevice_affiliatedsta.yaml", 576, "Skip"),
+    ("D577_bytesreceived_associateddevice_affiliatedsta.yaml", 577, "Skip"),
+    ("D578_packetssent_associateddevice_affiliatedsta.yaml", 578, "Skip"),
+    ("D579_packetsreceived_associateddevice_affiliatedsta.yaml", 579, "Skip"),
+    ("D580_errorssent_associateddevice_affiliatedsta.yaml", 580, "Skip"),
+    ("D581_signalstrength_associateddevice_affiliatedsta.yaml", 581, "Skip"),
 ]
 _SKIP_BLOCKED_IDS = [t[0].split(".")[0] for t in _SKIP_BLOCKED_CASES]
 

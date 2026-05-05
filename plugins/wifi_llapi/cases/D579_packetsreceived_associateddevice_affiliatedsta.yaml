@@ -1,8 +1,8 @@
 id: d579-skip-affiliatedsta-packetsreceived
 name: D579 AffiliatedSTA PacketsReceived Skip
 source:
-  row: 582
-  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.
+  row: 579
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.{i}.
   api: PacketsReceived
 bands:
 - 5g

@@ -1,9 +1,9 @@
 id: d447-radioairstats-inttime
 name: D447 getRadioAirStats IntTime
 source:
-  row: 449
-  object: WiFi.Radio.{i}.getRadioAirStats()
-  api: IntTime
+  row: 447
+  object: WiFi.Radio.{i}.
+  api: getRadioAirStats()
 bands:
 - 5g
 - 6g

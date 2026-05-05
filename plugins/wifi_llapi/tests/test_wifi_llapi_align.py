@@ -15,24 +15,13 @@ from testpilot.reporting.wifi_llapi_align import (
     build_template_index,
     write_blocked_cases_report,
     write_skipped_cases_report,
-    _extract_name_api,
 )
 
 from testpilot.reporting.wifi_llapi_excel import create_run_report_from_template, fill_blocked_markers, fill_skip_markers
 from testpilot.schema.case_schema import load_case
 
-def test_extract_name_api_cases():
-    # Should extract method token if present
-    assert _extract_name_api("FailedRetransCount - WiFi.SSID.{i}.getSSIDStats().") == "getSSIDStats()"
-    # Should extract left token if no method present
-    assert _extract_name_api("AssociationTime - WiFi.AccessPoint.{i}.AssociatedDevice.{i}.") == "AssociationTime"
-    # Regression: em-dash separator
-    assert _extract_name_api("AssociationTime — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.") == "AssociationTime"
-    # Regression: legacy dotted labels should resolve to the terminal API token
-    assert _extract_name_api("D496 WmmBytesReceived.AC_BE") == "AC_BE"
 
-
-def test_align_allows_legacy_dotted_name_api(tmp_path: Path):
+def test_align_ignores_descriptive_name(tmp_path: Path):
     template = tmp_path / "template.xlsx"
     wb = Workbook()
     ws = wb.active
@@ -253,7 +242,7 @@ def test_align_auto_source_row_drift(tmp_path: Path, template_path: Path):
     assert result.source_row_after == 6
 
 
-def test_align_blocked_name_different_row(tmp_path: Path, template_path: Path):
+def test_align_does_not_validate_name_against_template(tmp_path: Path, template_path: Path):
     template = template_path
     index = build_template_index(template)
     case_file = tmp_path / "D021_hecapabilities.yaml"
@@ -273,8 +262,9 @@ def test_align_blocked_name_different_row(tmp_path: Path, template_path: Path):
         case_file,
     )
 
-    assert result.status == "blocked"
-    assert result.blocked_reason == "name_points_to_different_row"
+    assert result.status == "auto_aligned"
+    assert result.source_row_after == 6
+    assert result.blocked_reason is None
     assert isinstance(index, TemplateIndex)
 
 
@@ -511,7 +501,7 @@ def test_write_blocked_report_md(tmp_path: Path):
             filename_after=None,
             id_before="wifi-llapi-D021-hecapabilities",
             id_after=None,
-            blocked_reason="name_points_to_different_row",
+            blocked_reason="object_api_not_in_template",
             template_row=21,
             template_row_object="WiFi.AccessPoint.{i}.AssociatedDevice.{i}.",
             template_row_api="DownlinkShortGuard",
@@ -522,7 +512,7 @@ def test_write_blocked_report_md(tmp_path: Path):
 
     text = out_path.read_text(encoding="utf-8")
     assert "| case_id | filename | source.row |" in text
-    assert "name_points_to_different_row" in text
+    assert "object_api_not_in_template" in text
 
 
 def test_write_blocked_report_md_includes_candidate_template_rows(tmp_path: Path):
@@ -597,14 +587,14 @@ def test_fill_blocked_markers(tmp_path: Path):
             filename_after=None,
             id_before="wifi-llapi-D021-hecapabilities",
             id_after=None,
-            blocked_reason="name_not_in_template",
+            blocked_reason="object_api_not_in_template",
         )
     ]
 
     fill_blocked_markers(report, blocked)
     wb = load_workbook(report)
     ws = wb["Wifi_LLAPI"]
-    assert ws["H6"].value == "BLOCKED: name_not_in_template"
+    assert ws["H6"].value == "BLOCKED: object_api_not_in_template"
     assert ws["G6"].value is None
     assert ws["I6"].value is None
     assert ws["M6"].value is None

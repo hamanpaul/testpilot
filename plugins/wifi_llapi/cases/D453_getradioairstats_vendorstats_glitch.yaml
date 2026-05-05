@@ -1,9 +1,9 @@
 id: d453-radioairstats-vendorstats-glitch
 name: D453 getRadioAirStats VendorStats.glitch
 source:
-  row: 455
-  object: WiFi.Radio.{i}.getRadioAirStats()
-  api: VendorStats.glitch
+  row: 453
+  object: WiFi.Radio.{i}.
+  api: getRadioAirStats()
 bands:
 - 5g
 - 6g

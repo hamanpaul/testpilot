@@ -1,14 +1,14 @@
 id: wifi-llapi-D124-getstats-maxrxspatialstreamssupported
-name: getStats() MaxRxSpatialStreamsSupported — WiFi.AccessPoint.{i}.
+name: getStats() MaxRxSpatialStreamsSupported — WiFi.EndPoint.{i}.
 version: '1.0'
 source:
-  row: 126
-  object: WiFi.AccessPoint.{i}.
+  row: 124
+  object: WiFi.EndPoint.{i}.
   api: getStats()
 platform:
   prplos: 4.0.3
   bdk: 6.3.1
-hlapi_command: ubus-cli "WiFi.AccessPoint.{i}.getStats()"
+hlapi_command: ubus-cli "WiFi.EndPoint.{i}.getStats()"
 llapi_support: Not Supported
 implemented_by: N/A
 bands:
@@ -39,7 +39,7 @@ steps:
 - id: step1_getstats_probe
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.AccessPoint.1.getStats()"
+  command: ubus-cli "WiFi.EndPoint.1.getStats()"
   capture: getstats_probe
 pass_criteria:
 - field: getstats_probe
@@ -47,6 +47,6 @@ pass_criteria:
   value: function not found
   description: getStats() should return function not found error
 verification_command:
-- ubus-cli "WiFi.AccessPoint.1.getStats()" 2>&1
-- ubus-cli "WiFi.AccessPoint.3.getStats()" 2>&1
-- ubus-cli "WiFi.AccessPoint.5.getStats()" 2>&1
+- ubus-cli "WiFi.EndPoint.1.getStats()" 2>&1
+- ubus-cli "WiFi.EndPoint.3.getStats()" 2>&1
+- ubus-cli "WiFi.EndPoint.5.getStats()" 2>&1

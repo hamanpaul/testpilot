@@ -1,7 +1,7 @@
 id: d302-getssidstats-bytesreceived
 name: D302 getSSIDStats BytesReceived
 source:
-  row: 227
+  row: 302
   object: WiFi.SSID.{i}.
   api: getSSIDStats()
 bands:

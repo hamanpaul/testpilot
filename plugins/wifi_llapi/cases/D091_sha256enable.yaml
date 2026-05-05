@@ -2,8 +2,8 @@ id: wifi-llapi-D091-sha256enable
 name: "SHA256Enable — WiFi.AccessPoint.{i}.Security"
 version: '1.0'
 source:
-  row: 93
-  object: "WiFi.AccessPoint.{i}.Security"
+  row: 91
+  object: WiFi.AccessPoint.{i}.Security.
   api: "SHA256Enable"
 platform:
   prplos: 4.0.3

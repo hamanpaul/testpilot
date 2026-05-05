@@ -1,9 +1,9 @@
 id: d394-getradiostats-bytesreceived
 name: D394 getRadioStats BytesReceived
 source:
-  row: 289
-  object: WiFi.Radio.{i}.
-  api: getRadioStats()
+  row: 394
+  object: WiFi.Radio.{i}.Stats.
+  api: BytesReceived
 bands:
 - 5g
 - 6g
@@ -20,23 +20,23 @@ steps:
   target: dut
   action: read
   capture: stats_5g
-  command: ubus-cli "WiFi.Radio.1.getRadioStats()"
-  expected: getRadioStats() 回傳有效值
-  description: Radio.1 (5g) getRadioStats()
+  command: ubus-cli "WiFi.Radio.1.Stats.BytesReceived?"
+  expected: BytesReceived 回傳有效值
+  description: Radio.1 (5g) BytesReceived getter (Stats. 直接讀)
 - id: step_6g_stats
   target: dut
   action: read
   capture: stats_6g
-  command: ubus-cli "WiFi.Radio.2.getRadioStats()"
-  expected: getRadioStats() 回傳有效值
-  description: Radio.2 (6g) getRadioStats()
+  command: ubus-cli "WiFi.Radio.2.Stats.BytesReceived?"
+  expected: BytesReceived 回傳有效值
+  description: Radio.2 (6g) BytesReceived getter (Stats. 直接讀)
 - id: step_24g_stats
   target: dut
   action: read
   capture: stats_24g
-  command: ubus-cli "WiFi.Radio.3.getRadioStats()"
-  expected: getRadioStats() 回傳有效值
-  description: Radio.3 (2.4g) getRadioStats()
+  command: ubus-cli "WiFi.Radio.3.Stats.BytesReceived?"
+  expected: BytesReceived 回傳有效值
+  description: Radio.3 (2.4g) BytesReceived getter (Stats. 直接讀)
 pass_criteria:
 - field: stats_5g.BytesReceived
   operator: regex

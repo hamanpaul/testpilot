@@ -1,8 +1,8 @@
 id: d576-skip-affiliatedsta-bytessent
 name: D576 AffiliatedSTA BytesSent Skip
 source:
-  row: 579
-  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.
+  row: 576
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.{i}.
   api: BytesSent
 bands:
 - 5g

@@ -1,8 +1,8 @@
 id: d580-skip-affiliatedsta-errorssent
 name: D580 AffiliatedSTA ErrorsSent Skip
 source:
-  row: 583
-  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.
+  row: 580
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.{i}.
   api: ErrorsSent
 bands:
 - 5g

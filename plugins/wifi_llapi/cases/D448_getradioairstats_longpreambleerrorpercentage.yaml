@@ -1,9 +1,9 @@
 id: d448-radioairstats-longpreambleerrorpercentage
 name: D448 getRadioAirStats LongPreambleErrorPercentage
 source:
-  row: 450
-  object: WiFi.Radio.{i}.getRadioAirStats()
-  api: LongPreambleErrorPercentage
+  row: 448
+  object: WiFi.Radio.{i}.
+  api: getRadioAirStats()
 bands:
 - 5g
 - 6g
