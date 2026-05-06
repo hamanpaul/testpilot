@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -29,6 +30,104 @@ from testpilot.yaml_command_audit import (
 )
 
 console = Console()
+
+_SKILL_NAME = "testpilot-normal-test"
+
+
+# ---------------------------------------------------------------------------
+# Git helpers
+# ---------------------------------------------------------------------------
+
+
+def _git_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+    """Run a git command and return the CompletedProcess result."""
+    return subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        **kwargs,
+    )
+
+
+def _source_ref_label() -> str:
+    """Return a source-ref label '<ref>@<short-sha>' for the current checkout."""
+    sha_result = _git_run(["git", "rev-parse", "--short", "HEAD"])
+    short_sha = sha_result.stdout.strip() if sha_result.returncode == 0 else "unknown"
+
+    # Prefer symbolic branch ref
+    sym_result = _git_run(["git", "symbolic-ref", "--short", "HEAD"])
+    if sym_result.returncode == 0:
+        ref = sym_result.stdout.strip()
+        return f"{ref}@{short_sha}"
+
+    # Fall back to exact tag name
+    tag_result = _git_run(["git", "describe", "--tags", "--exact-match", "HEAD"])
+    if tag_result.returncode == 0:
+        ref = tag_result.stdout.strip()
+        return f"{ref}@{short_sha}"
+
+    # Detached HEAD
+    return f"commit@{short_sha}"
+
+
+def _version_string() -> str:
+    """Return the full version string including source ref."""
+    return f"TestPilot {__version__} ({_source_ref_label()})"
+
+
+# ---------------------------------------------------------------------------
+# Pre-dispatch helpers: --update and --verify-install
+# ---------------------------------------------------------------------------
+
+
+def _get_skills_root() -> Path:
+    """Return the path to the agents skills directory."""
+    return Path.home() / ".agents" / "skills"
+
+
+def _get_managed_src() -> Path:
+    """Return the managed checkout source path."""
+    return Path.home() / ".local" / "share" / "testpilot" / "src"
+
+
+def _handle_update(ref: str | None) -> None:
+    """Handle --update pre-dispatch: update managed checkout to ref (default: main)."""
+    target_ref = ref or "main"
+    managed_src = _get_managed_src()
+
+    # Check for dirty working tree (even if path doesn't exist, _git_run handles it)
+    status = _git_run(
+        ["git", "status", "--porcelain"],
+        cwd=str(managed_src) if managed_src.exists() else None,
+    )
+    if status.returncode == 0 and status.stdout.strip():
+        console.print(
+            "[bold red]Managed checkout has uncommitted changes.[/bold red]\n"
+            "Please commit, stash, or resolve local edits before updating.\n"
+            f"  path: {managed_src}",
+        )
+        raise SystemExit(1)
+
+    console.print(f"[bold]Updating TestPilot to ref:[/bold] {target_ref}")
+    console.print("[dim](managed install update; internals implemented in task 2)[/dim]")
+
+
+def _handle_verify_install() -> None:
+    """Handle --verify-install pre-dispatch: report deployment health."""
+    skills_root = _get_skills_root()
+    skill_path = skills_root / _SKILL_NAME
+    errors: list[str] = []
+
+    if not skill_path.exists():
+        errors.append(f"MISSING skill: {skill_path}")
+
+    if errors:
+        for msg in errors:
+            console.print(f"[bold red]FAIL[/bold red] {msg}")
+        raise SystemExit(1)
+
+    console.print(f"[bold green]OK[/bold green] skill: {skill_path}")
+    console.print("[bold green]verify-install: all checks passed[/bold green]")
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -98,8 +197,23 @@ class HelpfulRunCommand(click.Command):
             raise
 
 
-@click.group()
-@click.version_option(__version__, prog_name="testpilot")
+def _print_version(ctx: click.Context, _param: click.Parameter, value: bool) -> None:
+    """Click callback: print source-ref-aware version string and exit."""
+    if not value or ctx.resilient_parsing:
+        return
+    click.echo(_version_string())
+    ctx.exit()
+
+
+@click.group(invoke_without_command=True)
+@click.option(
+    "--version",
+    is_eager=True,
+    expose_value=False,
+    is_flag=True,
+    callback=_print_version,
+    help="Show version and exit.",
+)
 @click.option("-v", "--verbose", is_flag=True, help="Enable debug logging.")
 @click.option(
     "--root",
@@ -113,13 +227,56 @@ class HelpfulRunCommand(click.Command):
     default=False,
     help="Use Azure OpenAI API. Prompts for endpoint, key, and model interactively.",
 )
+@click.option(
+    "--update",
+    "update_ref",
+    default=None,
+    is_eager=True,
+    expose_value=True,
+    metavar="REF",
+    help="Update managed checkout to REF (default: main) and exit.",
+    is_flag=False,
+    flag_value="main",
+)
+@click.option(
+    "--verify-install",
+    "verify_install",
+    is_flag=True,
+    default=False,
+    is_eager=True,
+    expose_value=True,
+    help="Report managed install health and exit.",
+)
 @click.pass_context
-def main(ctx: click.Context, verbose: bool, root: str | None, azure: bool) -> None:
+def main(
+    ctx: click.Context,
+    verbose: bool,
+    root: str | None,
+    azure: bool,
+    update_ref: str | None,
+    verify_install: bool,
+) -> None:
     """TestPilot — plugin-based test automation for embedded devices."""
+    # Pre-dispatch: --update and --verify-install run before normal routing.
+    if update_ref is not None:
+        _handle_update(update_ref)
+        ctx.exit(0)
+        return
+    if verify_install:
+        _handle_verify_install()
+        ctx.exit(0)
+        return
+
     _setup_logging(verbose)
     ctx.ensure_object(dict)
     ctx.obj["root"] = Path(root) if root else Path(__file__).resolve().parents[2]
     ctx.obj["provider_notice"] = None
+
+    # When invoked without a subcommand (and no pre-dispatch flags), show help.
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
+        ctx.exit(0)
+        return
 
     # --- Authentication: Azure BYOK → GitHub OAuth fallback ---
     provider_config: dict | None = None

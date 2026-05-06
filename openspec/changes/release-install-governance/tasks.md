@@ -1,9 +1,9 @@
 ## 1. Version and CLI foundations
 
-- [ ] 1.1 Add tests for canonical `VERSION` mirror alignment and source-ref-aware `testpilot --version`.
-- [ ] 1.2 Add `VERSION`, align `pyproject.toml` and `src/testpilot/__init__.py` to `0.2.0`, and implement source ref version formatting.
-- [ ] 1.3 Add tests for pre-dispatch `--update [REF]` and `--verify-install` handling before normal Click routing.
-- [ ] 1.4 Implement narrow pre-dispatch handling for `--update [REF]`, `--verify-install`, and update help.
+- [x] 1.1 Add tests for canonical `VERSION` mirror alignment and source-ref-aware `testpilot --version`.
+- [x] 1.2 Add `VERSION`, align `pyproject.toml` and `src/testpilot/__init__.py` to `0.2.0`, and implement source ref version formatting.
+- [x] 1.3 Add tests for pre-dispatch `--update [REF]` and `--verify-install` handling before normal Click routing.
+- [x] 1.4 Implement narrow pre-dispatch handling for `--update [REF]`, `--verify-install`, and update help.
 
 ## 2. Managed installer and verification
 
