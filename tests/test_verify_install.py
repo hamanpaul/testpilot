@@ -85,14 +85,18 @@ class TestVersionMirrorCheck:
         init_dir.mkdir(parents=True)
         (init_dir / "__init__.py").write_text('__version__ = "0.2.0"\n')
 
+        skills_root = tmp_path / "skills"
+        expected_skill_path = skills_root / "testpilot-normal-test"
+        mock_console = MagicMock()
         # No skill directory created intentionally.
         with patch("testpilot.cli._get_managed_src", return_value=managed_src):
-            with patch(
-                "testpilot.cli._get_skills_root", return_value=tmp_path / "skills"
-            ):
-                with pytest.raises(SystemExit) as exc_info:
-                    _handle_verify_install()
+            with patch("testpilot.cli._get_skills_root", return_value=skills_root):
+                with patch("testpilot.cli.console", mock_console):
+                    with pytest.raises(SystemExit) as exc_info:
+                        _handle_verify_install()
         assert exc_info.value.code != 0
+        output = " ".join(str(c) for c in mock_console.print.call_args_list)
+        assert str(expected_skill_path) in output
 
 
 # ---------------------------------------------------------------------------
