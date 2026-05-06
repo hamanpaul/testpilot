@@ -6,7 +6,6 @@ import json
 import logging
 import re
 import subprocess
-import sys
 from pathlib import Path
 
 import click
@@ -14,8 +13,8 @@ from rich.console import Console
 from rich.table import Table
 
 from testpilot import __version__
+from testpilot.audit.cli import audit_group
 from testpilot.core.azure_auth import (
-    AzureAuthError,
     resolve_provider_config,
     setup_azure_auth,
 )
@@ -31,8 +30,8 @@ from testpilot.yaml_command_audit import (
 
 console = Console()
 
-_SKILL_NAME = "testpilot-normal-test"
 # Expected under ~/.agents/skills/ — the Copilot agent skill directory for normal-test runs.
+_SKILL_NAME = "testpilot-normal-test"
 
 
 # ---------------------------------------------------------------------------
@@ -752,8 +751,6 @@ def json_to_html(json_report: str, out: str | None) -> None:
     result = reporter.generate(cases, meta, out_path)
     console.print(f"[green]✓[/green] HTML report: {result}")
 
-
-from testpilot.audit.cli import audit_group
 
 main.add_command(audit_group)
 

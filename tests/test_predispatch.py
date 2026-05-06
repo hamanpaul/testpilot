@@ -7,7 +7,7 @@ normal Click routing and never fall through into the regular command group.
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from click.testing import CliRunner
@@ -62,7 +62,7 @@ def test_update_does_not_enter_click_commands() -> None:
     assert result.exit_code == 0
 
 
-def test_update_dirty_checkout_exits_nonzero(tmp_path: pytest.TempPathFactory) -> None:
+def test_update_dirty_checkout_exits_nonzero(tmp_path: Path) -> None:
     """_handle_update should exit non-zero when managed checkout is dirty."""
     from testpilot.cli import _handle_update
 
@@ -131,7 +131,7 @@ def test_verify_install_dispatches_before_click() -> None:
     assert result.exit_code == 0
 
 
-def test_verify_install_missing_skill_exits_nonzero(tmp_path: pytest.TempPathFactory) -> None:
+def test_verify_install_missing_skill_exits_nonzero(tmp_path: Path) -> None:
     """_handle_verify_install should exit non-zero when skill dir is missing."""
     from testpilot.cli import _handle_verify_install
 
@@ -144,10 +144,9 @@ def test_verify_install_missing_skill_exits_nonzero(tmp_path: pytest.TempPathFac
     assert exc_info.value.code != 0
 
 
-def test_verify_install_healthy_exits_zero(tmp_path: pytest.TempPathFactory) -> None:
+def test_verify_install_healthy_exits_zero(tmp_path: Path) -> None:
     """_handle_verify_install should exit 0 and print OK when skill dir is present."""
     from testpilot.cli import _handle_verify_install
-    from unittest.mock import MagicMock
 
     skill_root = tmp_path / ".agents" / "skills"
     skill_dir = skill_root / "testpilot-normal-test"
