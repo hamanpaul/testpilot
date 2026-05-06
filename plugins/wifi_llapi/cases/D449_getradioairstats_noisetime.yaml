@@ -1,9 +1,9 @@
 id: d449-radioairstats-noisetime
 name: D449 getRadioAirStats NoiseTime
 source:
-  row: 451
-  object: WiFi.Radio.{i}.getRadioAirStats()
-  api: NoiseTime
+  row: 449
+  object: WiFi.Radio.{i}.
+  api: getRadioAirStats()
 bands:
 - 5g
 - 6g

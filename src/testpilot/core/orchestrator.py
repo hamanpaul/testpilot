@@ -404,9 +404,17 @@ class Orchestrator:
         artifact_dir: Path,
         case_seq_ranges: dict[str, dict[str, int | None]],
         case_results: list[WifiLlapiCaseResult],
+        run_seq_start: int | None = None,
+        run_seq_end: int | None = None,
     ) -> dict[str, str]:
         """Export WAL records, decode DUT/STA logs, and annotate case results."""
-        records = log_capture.export_records(from_seq=1)
+        del run_id
+        from_seq = 1 if run_seq_start is None else max(int(run_seq_start) + 1, 1)
+        records = log_capture.export_records(
+            from_seq=from_seq,
+            to_seq=run_seq_end,
+            limit=0,
+        )
         if not records:
             return {}
 
@@ -448,6 +456,23 @@ class Orchestrator:
             "dut_log_path": str(dut_log_path),
             "sta_log_path": str(sta_log_path),
         }
+
+    def _resolve_wifi_llapi_firmware_version(
+        self,
+        *,
+        plugin: Any,
+        cases: list[dict[str, Any]],
+        requested: str | None,
+    ) -> tuple[str, str]:
+        requested_value = (requested or "").strip()
+        if requested_value and requested_value != "DUT-FW-VER":
+            return requested_value, "cli"
+        capture = getattr(plugin, "capture_dut_firmware_version", None)
+        if callable(capture):
+            captured = str(capture(self.config, cases) or "").strip()
+            if captured:
+                return captured, "dut_git_revision"
+        return "DUT-FW-VER", "fallback_default"
 
     def _load_wifi_llapi_case_pairs(
         self,
@@ -584,11 +609,6 @@ class Orchestrator:
         reports_root = self.plugins_dir / plugin_name / "reports"
         template_path = reports_root / "templates" / "wifi_llapi_template.xlsx"
         run_date = date.today()
-        fw_ver = dut_fw_ver or "DUT-FW-VER"
-        run_id = datetime.now().strftime("%Y%m%dT%H%M%S%f")
-        report_name = generate_report_filename(run_date, fw_ver, unique_suffix=run_id)
-        artifact_name = Path(report_name).stem
-        artifact_dir = reports_root / artifact_name
 
         if not template_path.exists():
             raise FileNotFoundError(
@@ -597,13 +617,27 @@ class Orchestrator:
                 "to rebuild it."
             )
 
-        artifact_dir.mkdir(parents=True, exist_ok=True)
         alignment_prep = self._prepare_wifi_llapi_alignment(
             plugin=plugin,
             case_ids=case_ids,
             template_path=template_path,
         )
         cases = alignment_prep.runnable_cases
+
+        # -- serialwrap daemon lifecycle: start fresh for this run -------------
+        wal_path = self._start_serialwrap_for_run()
+        run_seq_start = log_capture.get_current_seq(wal_path)
+
+        fw_ver, fw_ver_source = self._resolve_wifi_llapi_firmware_version(
+            plugin=plugin,
+            cases=cases,
+            requested=dut_fw_ver,
+        )
+        run_id = datetime.now().strftime("%Y%m%dT%H%M%S%f")
+        report_name = generate_report_filename(run_date, fw_ver, unique_suffix=run_id)
+        artifact_name = Path(report_name).stem
+        artifact_dir = reports_root / artifact_name
+        artifact_dir.mkdir(parents=True, exist_ok=True)
 
         agent_config = self.runner_selector.load_agent_config(plugin_name)
         execution_policy = self.runner_selector.build_execution_policy(agent_config)
@@ -630,8 +664,6 @@ class Orchestrator:
         first_case_started_monotonic: float | None = None
         first_case_started_at_iso = ""
 
-        # -- serialwrap daemon lifecycle: start fresh for this run -------------
-        wal_path = self._start_serialwrap_for_run()
         case_seq_ranges: dict[str, dict[str, int | None]] = {}
 
         for case in cases:
@@ -763,11 +795,14 @@ class Orchestrator:
         dut_log_path = ""
         sta_log_path = ""
         try:
+            run_seq_end = log_capture.get_current_seq(wal_path)
             log_result = self._export_serialwrap_logs(
                 run_id=run_id,
                 artifact_dir=artifact_dir,
                 case_seq_ranges=case_seq_ranges,
                 case_results=case_results,
+                run_seq_start=run_seq_start,
+                run_seq_end=run_seq_end,
             )
             dut_log_path = log_result.get("dut_log_path", "")
             sta_log_path = log_result.get("sta_log_path", "")
@@ -823,6 +858,7 @@ class Orchestrator:
             "date": run_date.isoformat(),
             "plugin": plugin_name,
             "firmware_version": fw_ver,
+            "firmware_version_source": fw_ver_source,
             "run_id": run_id,
             "timing": timing_rows,
             "output_stem": artifact_name,

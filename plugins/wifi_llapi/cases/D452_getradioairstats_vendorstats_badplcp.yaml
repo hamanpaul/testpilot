@@ -1,9 +1,9 @@
 id: d452-radioairstats-vendorstats-badplcp
 name: D452 getRadioAirStats VendorStats.Badplcp
 source:
-  row: 454
-  object: WiFi.Radio.{i}.getRadioAirStats()
-  api: VendorStats.Badplcp
+  row: 452
+  object: WiFi.Radio.{i}.
+  api: getRadioAirStats()
 bands:
 - 5g
 - 6g

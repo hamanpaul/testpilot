@@ -3,7 +3,7 @@ name: "WEPKey — WiFi.AccessPoint.{i}.Security"
 version: '1.0'
 source:
   row: 92
-  object: "WiFi.AccessPoint.{i}.Security"
+  object: WiFi.AccessPoint.{i}.Security.
   api: "WEPKey"
 platform:
   prplos: 4.0.3

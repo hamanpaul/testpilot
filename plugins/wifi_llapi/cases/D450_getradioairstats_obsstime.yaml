@@ -1,9 +1,9 @@
 id: d450-radioairstats-obsstime
 name: D450 getRadioAirStats ObssTime
 source:
-  row: 452
-  object: WiFi.Radio.{i}.getRadioAirStats()
-  api: ObssTime
+  row: 450
+  object: WiFi.Radio.{i}.
+  api: getRadioAirStats()
 bands:
 - 5g
 - 6g

@@ -1,7 +1,7 @@
 id: d138-endpoint-intfname
 name: D138 EndPoint IntfName
 source:
-  row: 126
+  row: 138
   object: WiFi.EndPoint.{i}.
   api: IntfName
 bands:

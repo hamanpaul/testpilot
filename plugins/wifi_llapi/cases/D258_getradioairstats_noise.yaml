@@ -1,7 +1,7 @@
 id: d258-getradioairstats-noise
 name: D258 getRadioAirStats Noise
 source:
-  row: 260
+  row: 258
   object: WiFi.Radio.{i}.
   api: getRadioAirStats()
 bands:

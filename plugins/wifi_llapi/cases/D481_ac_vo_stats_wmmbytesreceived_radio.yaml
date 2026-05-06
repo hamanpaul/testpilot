@@ -1,7 +1,7 @@
 id: d481-getradiostats-wmm-bytesreceived-ac_vo
 name: D481 getRadioStats WmmBytesReceived AC_VO
 source:
-  row: 348
+  row: 481
   object: WiFi.Radio.{i}.Stats.WmmBytesReceived.
   api: AC_VO
 bands:

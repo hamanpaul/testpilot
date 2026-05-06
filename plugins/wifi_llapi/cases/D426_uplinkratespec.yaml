@@ -1,7 +1,7 @@
 id: d426-assocdev-uplinkratespec
 name: D426 AssociatedDevice UplinkRateSpec
 source:
-  row: 428
+  row: 426
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: UplinkRateSpec
 bands:
@@ -36,7 +36,7 @@ steps:
 pass_criteria:
 - field: assoc_check
   operator: regex
-  value: "assoclist [0-9A-Fa-f:]+"
+  value: assoclist [0-9A-Fa-f:]+
 - field: getter_5g.UplinkRateSpec
   operator: regex
-  value: ".+"
+  value: .+

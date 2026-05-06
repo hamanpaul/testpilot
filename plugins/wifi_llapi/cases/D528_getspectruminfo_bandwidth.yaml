@@ -2,8 +2,8 @@ id: d528-spectruminfo-bandwidth
 name: D528 getSpectrumInfo bandwidth
 source:
   row: 528
-  object: WiFi.Radio.{i}.getSpectrumInfo()
-  api: bandwidth
+  object: WiFi.Radio.{i}.
+  api: getSpectrumInfo()
 bands:
 - 5g
 - 6g

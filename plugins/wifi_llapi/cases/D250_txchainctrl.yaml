@@ -1,7 +1,7 @@
 id: d250-radio-txchainctrl
 name: D250 Radio TxChainCtrl
 source:
-  row: 182
+  row: 250
   object: WiFi.Radio.{i}.
   api: TxChainCtrl
 bands:

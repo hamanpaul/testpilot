@@ -262,6 +262,7 @@ def get_current_seq(wal_path: Path | None = None) -> int | None:
 def export_records(
     from_seq: int = 1,
     to_seq: int | None = None,
+    limit: int | None = None,
 ) -> list[dict[str, Any]]:
     """Export WAL records in a seq range.
 
@@ -270,6 +271,8 @@ def export_records(
     args = ["wal", "export", "--from-seq", str(from_seq)]
     if to_seq is not None:
         args.extend(["--to-seq", str(to_seq)])
+    if limit is not None:
+        args.extend(["--limit", str(limit)])
     payload = _run_sw(args, timeout=60.0)
     records = payload.get("records", [])
     if not isinstance(records, list):

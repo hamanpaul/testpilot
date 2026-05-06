@@ -1,8 +1,8 @@
 id: d400-radiostats-noise
 name: D400 getRadioStats Noise
 source:
-  row: 458
-  object: WiFi.Radio.{i}.getRadioStats()
+  row: 400
+  object: WiFi.Radio.{i}.Stats.
   api: Noise
 bands:
 - 5g
@@ -20,21 +20,21 @@ steps:
   target: dut
   action: read
   capture: method_5g
-  command: ubus-cli "WiFi.Radio.1.getRadioStats()"
+  command: ubus-cli "WiFi.Radio.1.Stats.Noise?"
   expected: Noise 回傳有效值
   description: Radio.1 (5g) getRadioStats 取得 Noise
 - id: step_6g_method
   target: dut
   action: read
   capture: method_6g
-  command: ubus-cli "WiFi.Radio.2.getRadioStats()"
+  command: ubus-cli "WiFi.Radio.2.Stats.Noise?"
   expected: Noise 回傳有效值
   description: Radio.2 (6g) getRadioStats 取得 Noise
 - id: step_24g_method
   target: dut
   action: read
   capture: method_24g
-  command: ubus-cli "WiFi.Radio.3.getRadioStats()"
+  command: ubus-cli "WiFi.Radio.3.Stats.Noise?"
   expected: Noise 回傳有效值
   description: Radio.3 (2.4g) getRadioStats 取得 Noise
 pass_criteria:

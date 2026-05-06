@@ -1,7 +1,7 @@
 id: d454-getradiostats-failedretranscount
 name: D454 getRadioStats FailedRetransCount
 source:
-  row: 293
+  row: 454
   object: WiFi.Radio.{i}.
   api: getRadioStats()
 bands:

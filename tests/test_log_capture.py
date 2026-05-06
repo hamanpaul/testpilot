@@ -278,6 +278,23 @@ class TestExportRecords:
         call_args = mock_run.call_args[0][0]
         assert "--from-seq" in call_args
         assert "--to-seq" not in call_args
+        assert "--limit" not in call_args
+
+    @patch("testpilot.reporting.log_capture._run_sw")
+    def test_export_with_unlimited_limit(self, mock_run):
+        mock_run.return_value = {"ok": True, "records": []}
+        log_capture.export_records(from_seq=10, to_seq=200, limit=0)
+        call_args = mock_run.call_args[0][0]
+        assert call_args == [
+            "wal",
+            "export",
+            "--from-seq",
+            "10",
+            "--to-seq",
+            "200",
+            "--limit",
+            "0",
+        ]
 
     @patch("testpilot.reporting.log_capture._run_sw")
     def test_export_missing_records(self, mock_run):

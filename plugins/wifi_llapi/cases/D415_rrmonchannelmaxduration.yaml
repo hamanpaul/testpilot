@@ -1,7 +1,7 @@
 id: d415-assocdev-rrmonchannelmaxduration
 name: D415 AssociatedDevice RrmOnChannelMaxDuration
 source:
-  row: 417
+  row: 415
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: RrmOnChannelMaxDuration
 bands:
@@ -29,15 +29,14 @@ steps:
   target: dut
   action: read
   capture: getter_5g
-  command: ubus-cli 
-    "WiFi.AccessPoint.1.AssociatedDevice.1.RrmOnChannelMaxDuration?"
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RrmOnChannelMaxDuration?"
   expected: RrmOnChannelMaxDuration 回傳有效值
   description: AP1 AssociatedDevice.1 RrmOnChannelMaxDuration getter
   depends_on: step_5g_assoc_check
 pass_criteria:
 - field: assoc_check
   operator: regex
-  value: "assoclist [0-9A-Fa-f:]+"
+  value: assoclist [0-9A-Fa-f:]+
 - field: getter_5g.RrmOnChannelMaxDuration
   operator: regex
-  value: '^\d+$'
+  value: ^\d+$

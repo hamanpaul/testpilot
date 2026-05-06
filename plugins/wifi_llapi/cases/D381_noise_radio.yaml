@@ -1,7 +1,7 @@
 id: d381-radio-noise
 name: D381 Radio Noise
 source:
-  row: 284
+  row: 381
   object: WiFi.Radio.{i}.
   api: Noise
 bands:

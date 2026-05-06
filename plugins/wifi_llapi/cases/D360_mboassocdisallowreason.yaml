@@ -1,7 +1,7 @@
 id: d360-ap-mboassocdisallowreason
 name: D360 AP MBOAssocDisallowReason
 source:
-  row: 269
+  row: 360
   object: WiFi.AccessPoint.{i}.
   api: MBOAssocDisallowReason
 bands:

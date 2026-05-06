@@ -3,7 +3,7 @@ name: "ModeEnabled — WiFi.AccessPoint.{i}.Security"
 version: '1.1'
 source:
   row: 87
-  object: WiFi.AccessPoint.{i}.Security
+  object: WiFi.AccessPoint.{i}.Security.
   api: ModeEnabled
 platform:
   prplos: 4.0.3

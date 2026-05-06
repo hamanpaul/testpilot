@@ -1,7 +1,7 @@
 id: d357-skip-csistats
 name: D357 Sensing csiStats Skip
 source:
-  row: 359
+  row: 357
   object: WiFi.Radio.{i}.Sensing.
   api: csiStats()
 bands:
@@ -17,9 +17,9 @@ steps:
 - id: step_5g_skip
   target: dut
   action: skip
-  command: "echo skip"
-  description: "Sensing methods require CSI client setup not available in lab"
+  command: echo skip
+  description: Sensing methods require CSI client setup not available in lab
 pass_criteria:
 - field: skip
   operator: skip
-  value: "Sensing methods require CSI client setup not available in lab"
+  value: Sensing methods require CSI client setup not available in lab

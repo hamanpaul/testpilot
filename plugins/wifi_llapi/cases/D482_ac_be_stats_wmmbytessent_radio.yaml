@@ -1,7 +1,7 @@
 id: d482-getradiostats-wmm-bytessent-ac_be
 name: D482 getRadioStats WmmBytesSent AC_BE
 source:
-  row: 349
+  row: 482
   object: WiFi.Radio.{i}.Stats.WmmBytesSent.
   api: AC_BE
 bands:

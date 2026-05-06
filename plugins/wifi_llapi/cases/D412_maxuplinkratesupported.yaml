@@ -1,7 +1,7 @@
 id: d412-assocdev-maxuplinkratesupported
 name: D412 AssociatedDevice MaxUplinkRateSupported
 source:
-  row: 414
+  row: 412
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: MaxUplinkRateSupported
 bands:
@@ -29,15 +29,14 @@ steps:
   target: dut
   action: read
   capture: getter_5g
-  command: ubus-cli 
-    "WiFi.AccessPoint.1.AssociatedDevice.1.MaxUplinkRateSupported?"
+  command: ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MaxUplinkRateSupported?"
   expected: MaxUplinkRateSupported 回傳有效值
   description: AP1 AssociatedDevice.1 MaxUplinkRateSupported getter
   depends_on: step_5g_assoc_check
 pass_criteria:
 - field: assoc_check
   operator: regex
-  value: "assoclist [0-9A-Fa-f:]+"
+  value: assoclist [0-9A-Fa-f:]+
 - field: getter_5g.MaxUplinkRateSupported
   operator: regex
-  value: '^\d+$'
+  value: ^\d+$

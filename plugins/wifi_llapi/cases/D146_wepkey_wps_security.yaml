@@ -1,7 +1,7 @@
 id: d146-endpoint-wepkey
 name: D146 EndPoint WEPKey
 source:
-  row: 134
+  row: 146
   object: WiFi.EndPoint.{i}.Profile.WPS.Security.
   api: WEPKey
 bands:

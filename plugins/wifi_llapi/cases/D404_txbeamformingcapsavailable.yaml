@@ -1,7 +1,7 @@
 id: d404-radio-txbeamformingcapsavailable
 name: D404 Radio TxBeamformingCapsAvailable
 source:
-  row: 299
+  row: 404
   object: WiFi.Radio.{i}.
   api: TxBeamformingCapsAvailable
 bands:

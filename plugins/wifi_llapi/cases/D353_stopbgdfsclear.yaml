@@ -1,7 +1,7 @@
 id: d353-skip-stopbgdfsclear
 name: D353 stopBgDfsClear Skip
 source:
-  row: 355
+  row: 353
   object: WiFi.wps_DefParam.
   api: stopBgDfsClear()
 bands:
@@ -17,9 +17,9 @@ steps:
 - id: step_5g_skip
   target: dut
   action: skip
-  command: "echo skip"
-  description: "stopBgDfsClear — WiFi.wps_DefParam not found on DUT (error 4)"
+  command: echo skip
+  description: stopBgDfsClear — WiFi.wps_DefParam not found on DUT (error 4)
 pass_criteria:
 - field: skip
   operator: skip
-  value: "stopBgDfsClear — WiFi.wps_DefParam not found on DUT (error 4)"
+  value: stopBgDfsClear — WiFi.wps_DefParam not found on DUT (error 4)

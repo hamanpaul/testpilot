@@ -1,7 +1,7 @@
 id: d588-ssid-mldunit
 name: D588 SSID MLDUnit
 source:
-  row: 591
+  row: 588
   object: WiFi.SSID.{i}.
   api: MLDUnit
 bands:

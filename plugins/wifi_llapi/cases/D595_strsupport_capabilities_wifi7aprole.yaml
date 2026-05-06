@@ -1,7 +1,7 @@
 id: d595-wifi7aprole-strsupport
 name: D595 WiFi7APRole STRSupport
 source:
-  row: 411
+  row: 595
   object: WiFi.Radio.{i}.Capabilities.WiFi7APRole.
   api: STRSupport
 bands:

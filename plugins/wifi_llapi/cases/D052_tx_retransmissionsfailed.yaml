@@ -2,7 +2,7 @@ id: wifi-llapi-D052-tx-retransmissionsfailed
 name: Tx_RetransmissionsFailed — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
 version: '1.1'
 source:
-  row: 54
+  row: 52
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: Tx_RetransmissionsFailed
 platform:
@@ -187,7 +187,8 @@ pass_criteria:
     driver delta.
 verification_command:
 - ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Tx_RetransmissionsFailed?"
-- echo "Manual/external trigger window — wait 30 seconds while retry-exhaustion traffic is induced."
+- echo "Manual/external trigger window — wait 30 seconds while retry-exhaustion traffic
+  is induced."
 - 'STA_MAC="{{assoc_entry.MACAddress}}"; [ -n "$STA_MAC" ] && echo DriverAssocMac=$STA_MAC;
   [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n ''s/.*tx pkts retry exhausted:
   *\([0-9][0-9]*\).*/DriverTxRetransmissionsFailed=\1/p'''

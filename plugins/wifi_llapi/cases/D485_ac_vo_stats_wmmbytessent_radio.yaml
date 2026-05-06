@@ -1,7 +1,7 @@
 id: d485-getradiostats-wmm-bytessent-ac_vo
 name: D485 getRadioStats WmmBytesSent AC_VO
 source:
-  row: 352
+  row: 485
   object: WiFi.Radio.{i}.Stats.WmmBytesSent.
   api: AC_VO
 bands:

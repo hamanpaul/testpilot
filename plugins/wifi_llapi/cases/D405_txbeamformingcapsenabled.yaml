@@ -1,7 +1,7 @@
 id: d405-radio-txbeamformingcapsenabled
 name: D405 Radio TxBeamformingCapsEnabled
 source:
-  row: 300
+  row: 405
   object: WiFi.Radio.{i}.
   api: TxBeamformingCapsEnabled
 bands:

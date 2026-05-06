@@ -1,7 +1,7 @@
 id: d140-endpoint-enable
 name: D140 EndPoint Enable
 source:
-  row: 128
+  row: 140
   object: WiFi.EndPoint.{i}.Profile.WPS.
   api: Enable
 bands:

@@ -1,8 +1,8 @@
 id: d402-radiostats-retrycount
 name: D402 getRadioStats RetryCount
 source:
-  row: 460
-  object: WiFi.Radio.{i}.getRadioStats()
+  row: 402
+  object: WiFi.Radio.{i}.Stats.
   api: RetryCount
 bands:
 - 5g
@@ -20,21 +20,21 @@ steps:
   target: dut
   action: read
   capture: method_5g
-  command: ubus-cli "WiFi.Radio.1.getRadioStats()"
+  command: ubus-cli "WiFi.Radio.1.Stats.RetryCount?"
   expected: RetryCount 回傳有效值
   description: Radio.1 (5g) getRadioStats 取得 RetryCount
 - id: step_6g_method
   target: dut
   action: read
   capture: method_6g
-  command: ubus-cli "WiFi.Radio.2.getRadioStats()"
+  command: ubus-cli "WiFi.Radio.2.Stats.RetryCount?"
   expected: RetryCount 回傳有效值
   description: Radio.2 (6g) getRadioStats 取得 RetryCount
 - id: step_24g_method
   target: dut
   action: read
   capture: method_24g
-  command: ubus-cli "WiFi.Radio.3.getRadioStats()"
+  command: ubus-cli "WiFi.Radio.3.Stats.RetryCount?"
   expected: RetryCount 回傳有效值
   description: Radio.3 (2.4g) getRadioStats 取得 RetryCount
 pass_criteria:

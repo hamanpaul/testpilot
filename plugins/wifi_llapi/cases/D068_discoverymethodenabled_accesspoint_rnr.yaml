@@ -2,7 +2,7 @@ id: wifi-llapi-D068-discoverymethodenabled-accesspoint-rnr
 name: "DiscoveryMethodEnabled — WiFi.AccessPoint.{i}."
 version: '1.1'
 source:
-  row: 70
+  row: 68
   object: WiFi.AccessPoint.{i}.
   api: DiscoveryMethodEnabled
 platform:

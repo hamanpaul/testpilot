@@ -1,7 +1,7 @@
 id: d383-radio-radcapabilitieshephysstr
 name: D383 Radio RadCapabilitiesHePhysStr
 source:
-  row: 286
+  row: 383
   object: WiFi.Radio.{i}.
   api: RadCapabilitiesHePhysStr
 bands:

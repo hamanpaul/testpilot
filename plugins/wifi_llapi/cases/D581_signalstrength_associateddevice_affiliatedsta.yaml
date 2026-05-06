@@ -1,8 +1,8 @@
 id: d581-skip-affiliatedsta-signalstrength
 name: D581 AffiliatedSTA SignalStrength Skip
 source:
-  row: 584
-  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.
+  row: 581
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.{i}.
   api: SignalStrength
 bands:
 - 5g

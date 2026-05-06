@@ -2,8 +2,8 @@ id: wifi-llapi-D089-presharedkey-accesspoint-security
 name: "PreSharedKey — WiFi.AccessPoint.{i}.Security"
 version: '1.1'
 source:
-  row: 83
-  object: WiFi.AccessPoint.{i}.Security
+  row: 89
+  object: WiFi.AccessPoint.{i}.Security.
   api: PreSharedKey
 platform:
   prplos: 4.0.3

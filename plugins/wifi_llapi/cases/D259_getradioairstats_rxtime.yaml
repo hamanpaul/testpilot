@@ -1,7 +1,7 @@
 id: d259-getradioairstats-rxtime
 name: D259 getRadioAirStats RxTime
 source:
-  row: 261
+  row: 259
   object: WiFi.Radio.{i}.
   api: getRadioAirStats()
 bands:

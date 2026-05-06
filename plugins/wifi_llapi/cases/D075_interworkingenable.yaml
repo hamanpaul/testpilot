@@ -2,8 +2,8 @@ id: wifi-llapi-D075-interworkingenable-accesspoint
 name: "InterworkingEnable — WiFi.AccessPoint.{i}.IEEE80211u"
 version: '1.1'
 source:
-  row: 77
-  object: WiFi.AccessPoint.{i}.IEEE80211u
+  row: 75
+  object: WiFi.AccessPoint.{i}.IEEE80211u.
   api: InterworkingEnable
 platform:
   prplos: 4.0.3

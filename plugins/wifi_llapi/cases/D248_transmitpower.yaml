@@ -1,7 +1,7 @@
 id: d248-radio-transmitpower
 name: D248 Radio TransmitPower
 source:
-  row: 180
+  row: 248
   object: WiFi.Radio.{i}.
   api: TransmitPower
 bands:

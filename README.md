@@ -57,6 +57,11 @@ testpilot list-cases wifi_llapi                         # Verify (auto-stages pl
 testpilot run wifi_llapi --dut-fw-ver BGW720-B0-403     # Run
 ```
 
+When `wifi_llapi` runs with the default firmware placeholder, the plugin reads
+the DUT revision with `cat /etc/git_revision` and uses that value in the report
+filename and metadata. Pass `--dut-fw-ver` only when you need an explicit
+operator override.
+
 > The CLI automatically copies `plugins/<plugin>/testbed.yaml.example` into
 > `configs/testbed.yaml` whenever it resolves a plugin context, so each run
 > starts from that plugin's shipped testbed shape with no leakage between
@@ -99,6 +104,11 @@ python -m testpilot.cli list-cases brcm_fw_upgrade
 python -m testpilot.cli wifi-llapi baseline-qualify --band 5g
 python -m testpilot.cli run wifi_llapi --case wifi-llapi-D004-kickstation
 ```
+
+Repository skills for agent-assisted workflows live under `skills/`. The
+`skills/testpilot-normal-test` skill is the GPT-5-mini baseline for `wifi_llapi`
+normal testing and intentionally permits only full-run and explicit by-case
+`testpilot run wifi_llapi` modes.
 
 ### Audit Mode (#36)
 
@@ -243,7 +253,7 @@ Baseline experiment authority and current lab findings live in `docs/wifi-baseli
 | Internal diagnostics | `md` | Human-readable summary with per-case commands, output, log line references, and diagnostic status |
 | Structured data | `json` | Machine-readable with summary stats, diagnostic status, remediation history, and log line numbers |
 | Local HTML diagnostic | `html` | Self-contained review/share output emitted as a first-class artifact alongside `md` / `json` on every `wifi_llapi` run; `wifi-llapi json-to-html` remains available for post-processing existing JSON files |
-| UART RAW log | `DUT.log` / `STA.log` | serialwrap WAL decoded per-run UART communication records |
+| UART RAW log | `DUT.log` / `STA.log` | serialwrap WAL decoded for the complete current report run, bounded by that run's WAL sequence range |
 
 Per-run output location: `plugins/wifi_llapi/reports/<artifact_name>/`
 

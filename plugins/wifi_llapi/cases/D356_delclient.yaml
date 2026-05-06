@@ -1,7 +1,7 @@
 id: d356-skip-delclient
 name: D356 Sensing delClient Skip
 source:
-  row: 358
+  row: 356
   object: WiFi.Radio.{i}.Sensing.
   api: delClient()
 bands:
@@ -17,9 +17,9 @@ steps:
 - id: step_5g_skip
   target: dut
   action: skip
-  command: "echo skip"
-  description: "Sensing methods require CSI client setup not available in lab"
+  command: echo skip
+  description: Sensing methods require CSI client setup not available in lab
 pass_criteria:
 - field: skip
   operator: skip
-  value: "Sensing methods require CSI client setup not available in lab"
+  value: Sensing methods require CSI client setup not available in lab

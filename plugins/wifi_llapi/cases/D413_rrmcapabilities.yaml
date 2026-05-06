@@ -1,7 +1,7 @@
 id: d413-assocdev-rrmcapabilities
 name: D413 AssociatedDevice RrmCapabilities
 source:
-  row: 415
+  row: 413
   object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.
   api: RrmCapabilities
 bands:
@@ -36,7 +36,7 @@ steps:
 pass_criteria:
 - field: assoc_check
   operator: regex
-  value: "assoclist [0-9A-Fa-f:]+"
+  value: assoclist [0-9A-Fa-f:]+
 - field: getter_5g.RrmCapabilities
   operator: regex
-  value: "^.*$"
+  value: ^.*$

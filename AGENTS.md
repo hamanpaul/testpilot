@@ -21,6 +21,7 @@ plugins/      # each plugin in its own directory; ships testbed.yaml.example
 configs/      # operator-local effective testbed.yaml (auto-staged by CLI; git-ignored)
 docs/         # plan, todos, phase docs
 scripts/      # utility scripts (gen_cases, build_template_report)
+skills/       # repository agent skills, including testpilot-normal-test
 ```
 
 ## Case Discovery Convention

@@ -1,7 +1,7 @@
 id: d215-radio-rxchainctrl
 name: D215 Radio RxChainCtrl
 source:
-  row: 176
+  row: 215
   object: WiFi.Radio.{i}.
   api: RxChainCtrl
 bands:

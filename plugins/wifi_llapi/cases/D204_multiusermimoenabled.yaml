@@ -1,7 +1,7 @@
 id: d204-radio-multiusermimoenabled
 name: D204 Radio MultiUserMIMOEnabled
 source:
-  row: 167
+  row: 204
   object: WiFi.Radio.{i}.
   api: MultiUserMIMOEnabled
 bands:
@@ -40,10 +40,10 @@ steps:
 pass_criteria:
 - field: getter_5g.MultiUserMIMOEnabled
   operator: regex
-  value: "^[01]$"
+  value: ^[01]$
 - field: getter_6g.MultiUserMIMOEnabled
   operator: regex
-  value: "^[01]$"
+  value: ^[01]$
 - field: getter_24g.MultiUserMIMOEnabled
   operator: regex
-  value: "^[01]$"
+  value: ^[01]$

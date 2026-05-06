@@ -1,7 +1,7 @@
 id: d181-radio-fragmentationthreshold
 name: D181 Radio FragmentationThreshold
 source:
-  row: 144
+  row: 181
   object: WiFi.Radio.{i}.DriverConfig.
   api: FragmentationThreshold
 bands:

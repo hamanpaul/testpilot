@@ -1,7 +1,7 @@
 id: d359-ap-isolationenable
 name: D359 AccessPoint IsolationEnable
 source:
-  row: 361
+  row: 359
   object: WiFi.AccessPoint.{i}.
   api: IsolationEnable
 bands:

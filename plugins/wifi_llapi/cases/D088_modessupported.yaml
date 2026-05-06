@@ -3,7 +3,7 @@ name: "ModesSupported — WiFi.AccessPoint.{i}.Security"
 version: '1.1'
 source:
   row: 88
-  object: WiFi.AccessPoint.{i}.Security
+  object: WiFi.AccessPoint.{i}.Security.
   api: ModesSupported
 platform:
   prplos: 4.0.3

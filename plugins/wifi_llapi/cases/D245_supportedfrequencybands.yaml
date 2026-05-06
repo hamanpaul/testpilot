@@ -1,7 +1,7 @@
 id: d245-radio-supportedfrequencybands
 name: D245 Radio SupportedFrequencyBands
 source:
-  row: 177
+  row: 245
   object: WiFi.Radio.{i}.
   api: SupportedFrequencyBands
 bands:

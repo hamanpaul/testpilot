@@ -21,8 +21,6 @@ from testpilot.reporting.wifi_llapi_excel import (
 AlignStatus = Literal["already_aligned", "auto_aligned", "blocked", "skipped"]
 KnownBlockedReason = Literal[
     "object_api_not_in_template",
-    "name_points_to_different_row",
-    "name_not_in_template",
     "ambiguous_object_api_family",
 ]
 BlockedReason = KnownBlockedReason | str
@@ -64,23 +62,6 @@ class AlignmentConflictError(RuntimeError):
     pass
 
 
-_METHOD_TOKEN_PATTERN = re.compile(r"\b[A-Za-z_][A-Za-z0-9_]*\(\)")
-
-def _extract_name_api(name: object) -> str:
-    text = str(name).strip() if isinstance(name, str) else ""
-    if not text:
-        return ""
-    method_tokens = _METHOD_TOKEN_PATTERN.findall(text)
-    if method_tokens:
-        return method_tokens[-1]
-    for separator in (" - ", " — "):
-        if separator in text:
-            return text.split(separator, 1)[0].strip()
-    if "." in text:
-        return text.rsplit(".", 1)[-1].strip()
-    return text
-
-
 def _replace_id_row(case_id: str, canonical_row: int) -> str | None:
     if not _ID_D_PATTERN.search(case_id):
         return None
@@ -118,7 +99,6 @@ def align_case(case: dict, index: TemplateIndex, case_file: Path) -> AlignResult
     api = normalize_text(source.get("api"))
     source_row_before = int(source.get("row", 0) or 0)
     case_id = str(case.get("id", ""))
-    name_api = _extract_name_api(case.get("name"))
     filename_before = case_file.name
     candidate_rows = index.by_object_api.get((obj, api), [])
     if not candidate_rows:
@@ -157,26 +137,6 @@ def align_case(case: dict, index: TemplateIndex, case_file: Path) -> AlignResult
     else:
         template_row = candidate_rows[0]
     template_object, template_api = index.forward.get(template_row, ("", ""))
-    if name_api and name_api != template_api:
-        name_api_candidates = index.by_api.get(name_api, [])
-        reason = "name_points_to_different_row" if name_api_candidates else "name_not_in_template"
-        return AlignResult(
-            case_file=case_file,
-            status="blocked",
-            source_row_before=source_row_before,
-            source_row_after=None,
-            source_object=obj,
-            source_api=api,
-            filename_before=filename_before,
-            filename_after=None,
-            id_before=case_id,
-            id_after=None,
-            blocked_reason=reason,
-            template_row=template_row,
-            template_row_object=template_object,
-            template_row_api=template_api,
-            candidate_template_rows=list(name_api_candidates) if name_api_candidates else None,
-        )
     filename_after = None
     source_row_after = template_row
     id_after = _replace_id_row(case_id, template_row)

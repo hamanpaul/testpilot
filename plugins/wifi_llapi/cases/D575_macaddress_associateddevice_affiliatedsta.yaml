@@ -1,8 +1,8 @@
 id: d575-skip-affiliatedsta-macaddress
 name: D575 AffiliatedSTA MACAddress Skip
 source:
-  row: 578
-  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.
+  row: 575
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.{i}.
   api: MACAddress
 bands:
 - 5g

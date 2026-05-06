@@ -562,6 +562,44 @@ def test_run_with_mixed_alignment(tmp_path: Path, monkeypatch):
     assert not skipped_report.exists()
 
 
+def test_run_auto_uses_plugin_dut_firmware_version_when_default_requested(
+    tmp_path: Path,
+    monkeypatch,
+):
+    project_root, _source_xlsx = _prepare_runtime_project(tmp_path)
+    orch = Orchestrator(
+        project_root=project_root,
+        plugins_dir=project_root / "plugins",
+        config_path=project_root / "configs" / "testbed.yaml",
+    )
+    plugin = orch.loader.load("wifi_llapi")
+    _patch_runtime_hooks(monkeypatch, plugin=plugin, cases=_build_cases())
+    events: list[str] = []
+    monkeypatch.setattr(orch, "_start_serialwrap_for_run", lambda: events.append("start") or None)
+    monkeypatch.setattr(orch, "_export_serialwrap_logs", lambda **kwargs: {})
+    monkeypatch.setattr(
+        plugin,
+        "capture_dut_firmware_version",
+        lambda topology, cases: events.append("capture") or "BGW720 11/22",
+    )
+
+    result = orch.run(
+        "wifi_llapi",
+        case_ids=[PASS_CASE_ID],
+        dut_fw_ver="DUT-FW-VER",
+    )
+
+    assert events[:2] == ["start", "capture"]
+    artifact_name = Path(result["artifact_dir"]).name
+    assert "BGW720-11-22" in artifact_name
+    summary = json.loads(Path(result["json_report_path"]).read_text(encoding="utf-8"))
+    assert summary["meta"]["firmware_version"] == "BGW720 11/22"
+    wb = load_workbook(result["report_path"])
+    ws = wb["_meta"]
+    assert ws["B2"].value == "BGW720 11/22"
+    wb.close()
+
+
 def test_realistic_runtime_uses_verdict_only_band_statuses(
     tmp_path: Path,
     monkeypatch,

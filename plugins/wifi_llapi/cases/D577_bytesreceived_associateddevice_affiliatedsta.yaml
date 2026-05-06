@@ -1,8 +1,8 @@
 id: d577-skip-affiliatedsta-bytesreceived
 name: D577 AffiliatedSTA BytesReceived Skip
 source:
-  row: 580
-  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.
+  row: 577
+  object: WiFi.AccessPoint.{i}.AssociatedDevice.{i}.AffiliatedSTA.{i}.
   api: BytesReceived
 bands:
 - 5g

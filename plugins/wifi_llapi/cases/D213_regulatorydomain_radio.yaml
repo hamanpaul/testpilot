@@ -1,7 +1,7 @@
 id: d213-radio-regulatorydomain
 name: D213 Radio RegulatoryDomain
 source:
-  row: 174
+  row: 213
   object: WiFi.Radio.{i}.
   api: RegulatoryDomain
 bands:
@@ -40,10 +40,10 @@ steps:
 pass_criteria:
 - field: getter_5g.RegulatoryDomain
   operator: regex
-  value: ".+"
+  value: .+
 - field: getter_6g.RegulatoryDomain
   operator: regex
-  value: ".+"
+  value: .+
 - field: getter_24g.RegulatoryDomain
   operator: regex
-  value: ".+"
+  value: .+
