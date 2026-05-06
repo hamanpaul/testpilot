@@ -7,10 +7,10 @@
 
 ## 2. Managed installer and verification
 
-- [ ] 2.1 Add installer tests for local repository override, default latest-release resolution, wrapper creation, skill sync, and serialwrap command selection using temporary home/bin paths.
-- [ ] 2.2 Implement `scripts/install.sh` managed checkout, managed venv install, wrapper generation, skill sync, configurable repo/ref defaults, and serialwrap install/update.
-- [ ] 2.3 Add tests for install verification checks, including missing skill failure and version mirror mismatch failure.
-- [ ] 2.4 Implement install verification helpers for checkout, wrapper, console script, serialwrap, skill path, git source, version mirrors, plugin assets, and wifi_llapi case discovery.
+- [x] 2.1 Add installer tests for local repository override, default latest-release resolution, wrapper creation, skill sync, and serialwrap command selection using temporary home/bin paths.
+- [x] 2.2 Implement `scripts/install.sh` managed checkout, managed venv install, wrapper generation, skill sync, configurable repo/ref defaults, and serialwrap install/update.
+- [x] 2.3 Add tests for install verification checks, including missing skill failure and version mirror mismatch failure.
+- [x] 2.4 Implement install verification helpers for checkout, wrapper, console script, serialwrap, skill path, git source, version mirrors, plugin assets, and wifi_llapi case discovery.
 
 ## 3. wifi_llapi operational command
 

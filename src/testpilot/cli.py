@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
+import shutil
 import subprocess
+import tomllib
 from pathlib import Path
 
 import click
@@ -88,13 +91,198 @@ def _version_string() -> str:
 
 
 def _get_skills_root() -> Path:
-    """Return the path to the agents skills directory."""
-    return Path.home() / ".agents" / "skills"
+    """Return the agents skills directory, respecting TESTPILOT_SKILLS_DIR env var."""
+    return Path(
+        os.environ.get(
+            "TESTPILOT_SKILLS_DIR",
+            str(Path.home() / ".agents" / "skills"),
+        )
+    )
 
 
 def _get_managed_src() -> Path:
-    """Return the managed checkout source path."""
-    return Path.home() / ".local" / "share" / "testpilot" / "src"
+    """Return the managed checkout source path, respecting TESTPILOT_HOME env var."""
+    testpilot_home = os.environ.get(
+        "TESTPILOT_HOME",
+        str(Path.home() / ".local" / "share" / "testpilot"),
+    )
+    return Path(testpilot_home) / "src"
+
+
+def _get_managed_venv() -> Path:
+    """Return the managed virtualenv path, respecting TESTPILOT_HOME env var."""
+    testpilot_home = os.environ.get(
+        "TESTPILOT_HOME",
+        str(Path.home() / ".local" / "share" / "testpilot"),
+    )
+    return Path(testpilot_home) / ".venv"
+
+
+def _get_wrapper_path() -> Path:
+    """Return the installed wrapper path, respecting TESTPILOT_BIN_DIR env var."""
+    bin_dir = os.environ.get(
+        "TESTPILOT_BIN_DIR",
+        str(Path.home() / ".local" / "bin"),
+    )
+    return Path(bin_dir) / "testpilot"
+
+
+# ---------------------------------------------------------------------------
+# Install-verification helpers (Task 2.4)
+# ---------------------------------------------------------------------------
+
+
+def _check_managed_checkout(managed_src: Path) -> tuple[bool, str]:
+    """Report whether managed checkout exists (informational, not a hard failure)."""
+    if managed_src.exists():
+        return True, f"OK checkout: {managed_src}"
+    return True, f"WARN checkout not found (non-managed install or first-run): {managed_src}"
+
+
+def _check_wrapper(wrapper_path: Path, managed_venv: Path) -> tuple[bool, str]:
+    """Report whether wrapper exists and references the managed venv."""
+    if not wrapper_path.exists():
+        return True, f"WARN wrapper not found: {wrapper_path}"
+    content = wrapper_path.read_text(errors="replace")
+    if str(managed_venv) in content:
+        return True, f"OK wrapper: {wrapper_path}"
+    return True, f"WARN wrapper does not reference managed venv {managed_venv}: {wrapper_path}"
+
+
+def _check_console_script(managed_venv: Path) -> tuple[bool, str]:
+    """Report whether the console script exists inside the managed venv."""
+    script = managed_venv / "bin" / "testpilot"
+    if script.exists():
+        return True, f"OK console_script: {script}"
+    return True, f"WARN console_script not found: {script}"
+
+
+def _check_serialwrap_available() -> tuple[bool, str]:
+    """Report whether serialwrap is available in PATH."""
+    path = shutil.which("serialwrap")
+    if path:
+        return True, f"OK serialwrap: {path}"
+    return True, "WARN serialwrap not found in PATH"
+
+
+def _check_skill_path(skills_root: Path, skill_name: str) -> tuple[bool, str]:
+    """Check skill directory exists. Absence is a hard failure."""
+    skill_path = skills_root / skill_name
+    if skill_path.exists():
+        return True, f"OK skill: {skill_path}"
+    return False, f"MISSING skill: {skill_path}"
+
+
+def _check_git_source(managed_src: Path) -> tuple[bool, str]:
+    """Report git remote/ref/SHA for the managed checkout."""
+    if not managed_src.exists():
+        return True, "SKIP git_source (no managed checkout)"
+    remote = _git_run(["git", "remote", "get-url", "origin"], cwd=str(managed_src))
+    sha = _git_run(["git", "rev-parse", "--short", "HEAD"], cwd=str(managed_src))
+    ref = _git_run(["git", "symbolic-ref", "--short", "HEAD"], cwd=str(managed_src))
+    remote_url = remote.stdout.strip() if remote.returncode == 0 else "unknown"
+    short_sha = sha.stdout.strip() if sha.returncode == 0 else "unknown"
+    branch = ref.stdout.strip() if ref.returncode == 0 else "detached"
+    return True, f"OK git_source: {remote_url} ({branch}@{short_sha})"
+
+
+def _check_version_mirrors(managed_src: Path) -> tuple[bool, str]:
+    """Check VERSION, pyproject.toml, and __init__.py version alignment.
+
+    Only runs when managed checkout exists. Misalignment is a hard failure.
+    """
+    if not managed_src.exists():
+        return True, "SKIP version_mirrors (no managed checkout)"
+
+    versions: dict[str, str] = {}
+
+    version_file = managed_src / "VERSION"
+    if version_file.exists():
+        versions["VERSION"] = version_file.read_text(encoding="utf-8").strip()
+
+    pyproject_file = managed_src / "pyproject.toml"
+    if pyproject_file.exists():
+        try:
+            data = tomllib.loads(pyproject_file.read_text(encoding="utf-8"))
+            versions["pyproject.toml"] = data["project"]["version"]
+        except Exception:
+            pass
+
+    init_file = managed_src / "src" / "testpilot" / "__init__.py"
+    if init_file.exists():
+        m = re.search(
+            r'__version__\s*=\s*["\']([^"\']+)',
+            init_file.read_text(encoding="utf-8"),
+        )
+        if m:
+            versions["__init__.py"] = m.group(1)
+
+    if not versions:
+        return True, "SKIP version_mirrors (no version files found in managed checkout)"
+
+    unique = set(versions.values())
+    if len(unique) > 1:
+        return False, f"FAIL version_mirrors misaligned: {versions}"
+
+    version = next(iter(unique))
+    return True, f"OK version_mirrors: all at {version}"
+
+
+def _check_plugin_assets(managed_src: Path) -> tuple[bool, str]:
+    """Report whether plugin directories are discoverable in the managed checkout."""
+    plugins_dir = managed_src / "plugins"
+    if not plugins_dir.exists():
+        return True, f"WARN plugin_assets: plugins/ not found at {plugins_dir}"
+    plugins = sorted(p.name for p in plugins_dir.iterdir() if p.is_dir())
+    if not plugins:
+        return True, f"WARN plugin_assets: no plugin directories in {plugins_dir}"
+    return True, f"OK plugin_assets: {', '.join(plugins)}"
+
+
+def _check_wifi_llapi_cases(managed_src: Path) -> tuple[bool, str]:
+    """Report whether wifi_llapi D*.yaml cases are discoverable."""
+    cases_dir = managed_src / "plugins" / "wifi_llapi" / "cases"
+    if not cases_dir.exists():
+        return True, f"WARN wifi_llapi_cases: dir not found at {cases_dir}"
+    cases = list(cases_dir.glob("D*.yaml"))
+    if not cases:
+        return True, f"WARN wifi_llapi_cases: no D*.yaml found in {cases_dir}"
+    return True, f"OK wifi_llapi_cases: {len(cases)} discoverable"
+
+
+def _handle_verify_install() -> None:
+    """Handle --verify-install pre-dispatch: report deployment health."""
+    managed_src = _get_managed_src()
+    managed_venv = _get_managed_venv()
+    wrapper_path = _get_wrapper_path()
+    skills_root = _get_skills_root()
+
+    checks = [
+        _check_managed_checkout(managed_src),
+        _check_wrapper(wrapper_path, managed_venv),
+        _check_console_script(managed_venv),
+        _check_serialwrap_available(),
+        _check_skill_path(skills_root, _SKILL_NAME),
+        _check_git_source(managed_src),
+        _check_version_mirrors(managed_src),
+        _check_plugin_assets(managed_src),
+        _check_wifi_llapi_cases(managed_src),
+    ]
+
+    errors: list[str] = []
+    for ok_flag, msg in checks:
+        if not ok_flag:
+            console.print(f"[bold red]{msg}[/bold red]")
+            errors.append(msg)
+        elif msg.startswith("WARN") or msg.startswith("SKIP"):
+            console.print(f"[yellow]{msg}[/yellow]")
+        else:
+            console.print(f"[bold green]{msg}[/bold green]")
+
+    if errors:
+        raise SystemExit(1)
+
+    console.print("[bold green]verify-install: all checks passed[/bold green]")
 
 
 def _handle_update(ref: str | None) -> None:
@@ -120,24 +308,6 @@ def _handle_update(ref: str | None) -> None:
 
     console.print(f"[bold]Updating TestPilot to ref:[/bold] {target_ref}")
     console.print("[dim](managed install update; internals implemented in task 2)[/dim]")
-
-
-def _handle_verify_install() -> None:
-    """Handle --verify-install pre-dispatch: report deployment health."""
-    skills_root = _get_skills_root()
-    skill_path = skills_root / _SKILL_NAME
-    errors: list[str] = []
-
-    if not skill_path.exists():
-        errors.append(f"MISSING skill: {skill_path}")
-
-    if errors:
-        for msg in errors:
-            console.print(f"[bold red]FAIL[/bold red] {msg}")
-        raise SystemExit(1)
-
-    console.print(f"[bold green]OK[/bold green] skill: {skill_path}")
-    console.print("[bold green]verify-install: all checks passed[/bold green]")
 
 
 def _setup_logging(verbose: bool) -> None:
