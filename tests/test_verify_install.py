@@ -47,6 +47,30 @@ class TestVersionMirrorCheck:
                     _handle_verify_install()
         assert exc_info.value.code != 0
 
+    def test_malformed_pyproject_fails_verify(self, tmp_path: Path) -> None:
+        """Unreadable pyproject version metadata is a hard verify-install failure."""
+        managed_src = tmp_path / "managed_src"
+        managed_src.mkdir()
+
+        (managed_src / "VERSION").write_text("0.2.0\n")
+        (managed_src / "pyproject.toml").write_text("[project\nversion = ")
+        init_dir = managed_src / "src" / "testpilot"
+        init_dir.mkdir(parents=True)
+        (init_dir / "__init__.py").write_text('__version__ = "0.2.0"\n')
+
+        skill_dir = tmp_path / "skills" / "testpilot-normal-test"
+        skill_dir.mkdir(parents=True)
+
+        mock_console = MagicMock()
+        with patch("testpilot.cli._get_managed_src", return_value=managed_src):
+            with patch("testpilot.cli._get_skills_root", return_value=tmp_path / "skills"):
+                with patch("testpilot.cli.console", mock_console):
+                    with pytest.raises(SystemExit) as exc_info:
+                        _handle_verify_install()
+        assert exc_info.value.code != 0
+        output = " ".join(str(c) for c in mock_console.print.call_args_list)
+        assert "pyproject.toml" in output
+
     def test_version_aligned_passes(self, tmp_path: Path) -> None:
         """All version mirrors aligned → verify-install does not fail on version check."""
         managed_src = tmp_path / "managed_src"
@@ -62,12 +86,21 @@ class TestVersionMirrorCheck:
 
         skill_dir = tmp_path / "skills" / "testpilot-normal-test"
         skill_dir.mkdir(parents=True)
+        managed_venv = tmp_path / ".venv"
+        (managed_venv / "bin").mkdir(parents=True)
+        console_script = managed_venv / "bin" / "testpilot"
+        console_script.write_text("#!/usr/bin/env sh\n")
+        wrapper = tmp_path / "bin" / "testpilot"
+        wrapper.parent.mkdir(parents=True)
+        wrapper.write_text(f'#!/usr/bin/env sh\nexec "{console_script}" "$@"\n')
 
         mock_console = MagicMock()
         with patch("testpilot.cli._get_managed_src", return_value=managed_src):
-            with patch("testpilot.cli._get_skills_root", return_value=tmp_path / "skills"):
-                with patch("testpilot.cli.console", mock_console):
-                    _handle_verify_install()  # must not raise
+            with patch("testpilot.cli._get_managed_venv", return_value=managed_venv):
+                with patch("testpilot.cli._get_wrapper_path", return_value=wrapper):
+                    with patch("testpilot.cli._get_skills_root", return_value=tmp_path / "skills"):
+                        with patch("testpilot.cli.console", mock_console):
+                            _handle_verify_install()  # must not raise
 
         output = " ".join(str(c) for c in mock_console.print.call_args_list)
         assert "0.2.0" in output
@@ -144,6 +177,13 @@ class TestManagedCheckoutReport:
 
         skill_dir = tmp_path / "skills" / "testpilot-normal-test"
         skill_dir.mkdir(parents=True)
+        managed_venv = tmp_path / ".venv"
+        (managed_venv / "bin").mkdir(parents=True)
+        console_script = managed_venv / "bin" / "testpilot"
+        console_script.write_text("#!/usr/bin/env sh\n")
+        wrapper = tmp_path / "bin" / "testpilot"
+        wrapper.parent.mkdir(parents=True)
+        wrapper.write_text(f'#!/usr/bin/env sh\nexec "{console_script}" "$@"\n')
 
         def _fake_git(cmd, **kwargs):
             class _R:
@@ -158,15 +198,50 @@ class TestManagedCheckoutReport:
 
         mock_console = MagicMock()
         with patch("testpilot.cli._get_managed_src", return_value=managed_src):
-            with patch(
-                "testpilot.cli._get_skills_root", return_value=tmp_path / "skills"
-            ):
-                with patch("testpilot.cli._git_run", side_effect=_fake_git):
-                    with patch("testpilot.cli.console", mock_console):
-                        _handle_verify_install()
+            with patch("testpilot.cli._get_managed_venv", return_value=managed_venv):
+                with patch("testpilot.cli._get_wrapper_path", return_value=wrapper):
+                    with patch(
+                        "testpilot.cli._get_skills_root", return_value=tmp_path / "skills"
+                    ):
+                        with patch("testpilot.cli._git_run", side_effect=_fake_git):
+                            with patch("testpilot.cli.console", mock_console):
+                                _handle_verify_install()
 
         output = " ".join(str(c) for c in mock_console.print.call_args_list)
         assert "abc1234" in output or "paulc-arc" in output or "main" in output
+
+
+class TestManagedInstallHealthFailures:
+    """Broken managed-install wrapper and console script are hard failures."""
+
+    def test_missing_wrapper_fails_when_managed_checkout_exists(self, tmp_path: Path) -> None:
+        """Managed checkout without wrapper cannot be considered healthy."""
+        from testpilot.cli import _check_wrapper
+
+        managed_src = tmp_path / "managed_src"
+        managed_src.mkdir()
+        managed_venv = tmp_path / ".venv"
+        wrapper = tmp_path / "bin" / "testpilot"
+
+        ok, msg = _check_wrapper(wrapper, managed_venv, managed_src)
+
+        assert not ok
+        assert str(wrapper) in msg
+
+    def test_missing_console_script_fails_when_managed_checkout_exists(
+        self, tmp_path: Path
+    ) -> None:
+        """Managed checkout without venv console script cannot be considered healthy."""
+        from testpilot.cli import _check_console_script
+
+        managed_src = tmp_path / "managed_src"
+        managed_src.mkdir()
+        managed_venv = tmp_path / ".venv"
+
+        ok, msg = _check_console_script(managed_venv, managed_src)
+
+        assert not ok
+        assert "console_script" in msg
 
 
 # ---------------------------------------------------------------------------
@@ -199,4 +274,3 @@ class TestSerialwrapVenvCheck:
         assert str(managed_venv) in msg, (
             f"expected managed venv path {managed_venv} in message: {msg}"
         )
-

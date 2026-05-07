@@ -139,21 +139,27 @@ def _check_managed_checkout(managed_src: Path) -> tuple[bool, str]:
     return True, f"WARN checkout not found (non-managed install or first-run): {managed_src}"
 
 
-def _check_wrapper(wrapper_path: Path, managed_venv: Path) -> tuple[bool, str]:
+def _check_wrapper(wrapper_path: Path, managed_venv: Path, managed_src: Path) -> tuple[bool, str]:
     """Report whether wrapper exists and references the managed venv."""
     if not wrapper_path.exists():
+        if managed_src.exists():
+            return False, f"FAIL wrapper not found: {wrapper_path}"
         return True, f"WARN wrapper not found: {wrapper_path}"
     content = wrapper_path.read_text(errors="replace")
     if str(managed_venv) in content:
         return True, f"OK wrapper: {wrapper_path}"
+    if managed_src.exists():
+        return False, f"FAIL wrapper does not reference managed venv {managed_venv}: {wrapper_path}"
     return True, f"WARN wrapper does not reference managed venv {managed_venv}: {wrapper_path}"
 
 
-def _check_console_script(managed_venv: Path) -> tuple[bool, str]:
+def _check_console_script(managed_venv: Path, managed_src: Path) -> tuple[bool, str]:
     """Report whether the console script exists inside the managed venv."""
     script = managed_venv / "bin" / "testpilot"
     if script.exists():
         return True, f"OK console_script: {script}"
+    if managed_src.exists():
+        return False, f"FAIL console_script not found: {script}"
     return True, f"WARN console_script not found: {script}"
 
 
@@ -198,6 +204,7 @@ def _check_version_mirrors(managed_src: Path) -> tuple[bool, str]:
         return True, "SKIP version_mirrors (no managed checkout)"
 
     versions: dict[str, str] = {}
+    errors: list[str] = []
 
     version_file = managed_src / "VERSION"
     if version_file.exists():
@@ -208,8 +215,8 @@ def _check_version_mirrors(managed_src: Path) -> tuple[bool, str]:
         try:
             data = tomllib.loads(pyproject_file.read_text(encoding="utf-8"))
             versions["pyproject.toml"] = data["project"]["version"]
-        except Exception:
-            pass
+        except (KeyError, tomllib.TOMLDecodeError) as exc:
+            errors.append(f"pyproject.toml unreadable: {exc}")
 
     init_file = managed_src / "src" / "testpilot" / "__init__.py"
     if init_file.exists():
@@ -222,6 +229,8 @@ def _check_version_mirrors(managed_src: Path) -> tuple[bool, str]:
 
     if not versions:
         return True, "SKIP version_mirrors (no version files found in managed checkout)"
+    if errors:
+        return False, f"FAIL version_mirrors metadata errors: {errors}"
 
     unique = set(versions.values())
     if len(unique) > 1:
@@ -262,8 +271,8 @@ def _handle_verify_install() -> None:
 
     checks = [
         _check_managed_checkout(managed_src),
-        _check_wrapper(wrapper_path, managed_venv),
-        _check_console_script(managed_venv),
+        _check_wrapper(wrapper_path, managed_venv, managed_src),
+        _check_console_script(managed_venv, managed_src),
         _check_serialwrap_available(),
         _check_skill_path(skills_root, _SKILL_NAME),
         _check_git_source(managed_src),

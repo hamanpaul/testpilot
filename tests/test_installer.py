@@ -311,6 +311,32 @@ class TestSerialwrapInstall:
         )
 
 
+class TestSerialwrapUpdate:
+    """Installer updates existing serialwrap checkout deterministically."""
+
+    def test_existing_serialwrap_fast_forwards_without_pull(
+        self, fake_home: Path, stubs: Path, git_log: Path
+    ) -> None:
+        """Existing serialwrap checkout uses fetch + ff-only merge, never bare pull."""
+        serialwrap_src = fake_home / ".local" / "share" / "serialwrap" / "src"
+        (serialwrap_src / ".git").mkdir(parents=True)
+        (serialwrap_src / ".git" / "config").touch()
+
+        result = _run_installer(
+            fake_home,
+            stubs,
+            {"TESTPILOT_REPO_URL": "file:///local/testpilot", "TESTPILOT_REF": "v0.2.0"},
+        )
+        assert result.returncode == 0, f"installer failed:\n{result.stdout}\n{result.stderr}"
+
+        log_content = git_log.read_text() if git_log.exists() else ""
+        assert "pull" not in log_content, f"serialwrap update used bare pull:\n{log_content}"
+        assert "fetch origin" in log_content, f"serialwrap update did not fetch:\n{log_content}"
+        assert "merge --ff-only" in log_content, (
+            f"serialwrap update did not attempt ff-only merge:\n{log_content}"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Scenario: Venv idempotency (I-1)
 # ---------------------------------------------------------------------------

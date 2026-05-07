@@ -151,7 +151,12 @@ fi
 info "Installing/updating serialwrap from $SERIALWRAP_REPO_URL ..."
 if [ -d "$SERIALWRAP_SRC/.git" ]; then
     git -C "$SERIALWRAP_SRC" fetch origin
-    git -C "$SERIALWRAP_SRC" pull
+    SERIALWRAP_BRANCH=$(git -C "$SERIALWRAP_SRC" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
+    if [ -z "$SERIALWRAP_BRANCH" ] || [ "$SERIALWRAP_BRANCH" = "HEAD" ]; then
+        SERIALWRAP_BRANCH="main"
+    fi
+    git -C "$SERIALWRAP_SRC" merge --ff-only "origin/$SERIALWRAP_BRANCH" 2>/dev/null || \
+        warn "serialwrap fast-forward failed; manual update may be needed"
     ok "serialwrap updated"
 else
     mkdir -p "$(dirname "$SERIALWRAP_SRC")"
