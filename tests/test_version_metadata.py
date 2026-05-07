@@ -102,6 +102,38 @@ def test_version_output_branch_format() -> None:
     assert re.search(r"TestPilot 0\.2\.0 \(main@abcdef1\)", result.output)
 
 
+def test_version_git_commands_use_source_checkout_cwd() -> None:
+    """--version should run git from the source checkout, not process cwd."""
+    import testpilot.cli as cli
+
+    runner = CliRunner()
+    calls: list[Path] = []
+
+    def _fake_run(cmd, **kwargs):
+        cwd = kwargs.get("cwd")
+        assert cwd is not None, f"git command missing cwd: {cmd}"
+        calls.append(Path(cwd))
+
+        class _R:
+            returncode = 0
+            stdout = ""
+
+        if "symbolic-ref" in cmd and "--short" in cmd:
+            _R.stdout = "main\n"
+        elif "rev-parse" in cmd and "--short" in cmd:
+            _R.stdout = "abcdef1\n"
+        else:
+            _R.returncode = 1
+        return _R()
+
+    with patch("testpilot.cli._git_run", side_effect=_fake_run):
+        result = runner.invoke(main, ["--version"])
+
+    assert result.exit_code == 0
+    assert calls
+    assert set(calls) == {Path(cli.__file__).resolve().parents[2]}
+
+
 def test_version_output_tag_format() -> None:
     """--version should print 'TestPilot X.Y.Z (tag@short-sha)' when on a tag."""
     runner = CliRunner()

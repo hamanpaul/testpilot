@@ -8,6 +8,7 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 import tomllib
 from pathlib import Path
 
@@ -59,19 +60,33 @@ def _git_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess[str]:
         return subprocess.CompletedProcess(args=cmd, returncode=127, stdout="", stderr="")
 
 
+def _source_checkout_dir() -> Path:
+    """Return the checkout directory used for source-ref-aware git metadata."""
+    module_root = Path(__file__).resolve().parents[2]
+    if (module_root / ".git").exists():
+        return module_root
+
+    managed_src = _get_managed_src()
+    if (managed_src / ".git").exists():
+        return managed_src
+
+    return module_root
+
+
 def _source_ref_label() -> str:
     """Return a source-ref label '<ref>@<short-sha>' for the current checkout."""
-    sha_result = _git_run(["git", "rev-parse", "--short", "HEAD"])
+    git_kwargs = {"cwd": str(_source_checkout_dir())}
+    sha_result = _git_run(["git", "rev-parse", "--short", "HEAD"], **git_kwargs)
     short_sha = sha_result.stdout.strip() if sha_result.returncode == 0 else "unknown"
 
     # Prefer symbolic branch ref
-    sym_result = _git_run(["git", "symbolic-ref", "--short", "HEAD"])
+    sym_result = _git_run(["git", "symbolic-ref", "--short", "HEAD"], **git_kwargs)
     if sym_result.returncode == 0:
         ref = sym_result.stdout.strip()
         return f"{ref}@{short_sha}"
 
     # Fall back to exact tag name
-    tag_result = _git_run(["git", "describe", "--tags", "--exact-match", "HEAD"])
+    tag_result = _git_run(["git", "describe", "--tags", "--exact-match", "HEAD"], **git_kwargs)
     if tag_result.returncode == 0:
         ref = tag_result.stdout.strip()
         return f"{ref}@{short_sha}"
@@ -303,24 +318,72 @@ def _handle_update(ref: str | None) -> None:
     target_ref = ref or "main"
     managed_src = _get_managed_src()
 
+    if not (managed_src / ".git").exists():
+        console.print(
+            "[bold red]Managed checkout not found.[/bold red]\n"
+            "Run the managed installer before using testpilot --update.\n"
+            f"  path: {managed_src}",
+        )
+        raise SystemExit(1)
+
     # Only check for dirty state when the managed checkout actually exists.
     # Skipping this guard on a nonexistent path would run git status against
     # the developer's own working tree and produce false positives.
-    if managed_src.exists():
-        status = _git_run(
-            ["git", "status", "--porcelain"],
-            cwd=str(managed_src),
+    status = _git_run(
+        ["git", "status", "--porcelain"],
+        cwd=str(managed_src),
+    )
+    if status.returncode != 0:
+        detail = status.stderr.strip() or "git status failed"
+        console.print(
+            "[bold red]Cannot inspect managed checkout state.[/bold red]\n"
+            f"{detail}\n"
+            f"  path: {managed_src}",
         )
-        if status.returncode == 0 and status.stdout.strip():
-            console.print(
-                "[bold red]Managed checkout has uncommitted changes.[/bold red]\n"
-                "Please commit, stash, or resolve local edits before updating.\n"
-                f"  path: {managed_src}",
-            )
-            raise SystemExit(1)
+        raise SystemExit(status.returncode or 1)
+    if status.stdout.strip():
+        console.print(
+            "[bold red]Managed checkout has uncommitted changes.[/bold red]\n"
+            "Please commit, stash, or resolve local edits before updating.\n"
+            f"  path: {managed_src}",
+        )
+        raise SystemExit(1)
+
+    installer = managed_src / "scripts" / "install.sh"
+    if not installer.exists():
+        console.print(
+            "[bold red]Managed installer not found.[/bold red]\n"
+            f"Expected scripts/install.sh under managed checkout: {installer}",
+        )
+        raise SystemExit(1)
 
     console.print(f"[bold]Updating TestPilot to ref:[/bold] {target_ref}")
-    console.print("[dim](managed install update; internals implemented in task 2)[/dim]")
+
+    env = os.environ.copy()
+    env.update(
+        {
+            "TESTPILOT_REF": target_ref,
+            "TESTPILOT_HOME": str(managed_src.parent),
+            "TESTPILOT_BIN_DIR": str(_get_wrapper_path().parent),
+            "TESTPILOT_SKILLS_DIR": str(_get_skills_root()),
+        }
+    )
+
+    with tempfile.TemporaryDirectory(prefix="testpilot-update-") as tmp_dir:
+        installer_copy = Path(tmp_dir) / "install.sh"
+        shutil.copy2(installer, installer_copy)
+        result = subprocess.run(
+            ["bash", str(installer_copy)],
+            cwd=str(managed_src),
+            env=env,
+            text=True,
+        )
+
+    if result.returncode != 0:
+        console.print(f"[bold red]Update failed with exit code {result.returncode}[/bold red]")
+        raise SystemExit(result.returncode)
+
+    console.print("[bold green]Update complete[/bold green]")
 
 
 def _setup_logging(verbose: bool) -> None:
