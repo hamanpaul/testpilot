@@ -14,9 +14,9 @@
 
 ## 3. wifi_llapi operational command
 
-- [ ] 3.1 Add CLI tests proving `testpilot wifi_llapi` uses the same normal-run path and options as `testpilot run wifi_llapi`.
-- [ ] 3.2 Implement the `testpilot wifi_llapi` primary command through a shared internal run helper without changing helper commands under `testpilot wifi-llapi`.
-- [ ] 3.3 Add tests for `testpilot wifi_llapi --help` showing the fixed operational usage.
+- [x] 3.1 Add CLI tests proving `testpilot wifi_llapi` uses the same normal-run path and options as `testpilot run wifi_llapi`.
+- [x] 3.2 Implement the `testpilot wifi_llapi` primary command through a shared internal run helper without changing helper commands under `testpilot wifi-llapi`.
+- [x] 3.3 Add tests for `testpilot wifi_llapi --help` showing the fixed operational usage.
 
 ## 4. Release and policy governance
 

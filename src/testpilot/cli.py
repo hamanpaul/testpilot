@@ -554,6 +554,29 @@ def list_cases(ctx: click.Context, plugin_name: str) -> None:
     console.print(table)
 
 
+def _run_plugin_cases(
+    ctx: click.Context,
+    plugin_name: str,
+    case_ids: tuple[str, ...],
+    dut_fw_ver: str,
+) -> None:
+    """Run plugin cases through the shared normal-run orchestrator path."""
+    orch = _get_orchestrator(ctx, plugin_name)
+    provider_config = ctx.obj.get("provider_config")
+    provider_notice = str(ctx.obj.get("provider_notice") or "")
+    if provider_config and provider_notice == "azure_interactive":
+        console.print("[green]✓ Azure OpenAI authenticated.[/green]")
+    elif provider_config and provider_notice == "azure_env":
+        console.print("[green]✓ Azure OpenAI (from env vars).[/green]")
+    result = orch.run(
+        plugin_name,
+        list(case_ids) if case_ids else None,
+        dut_fw_ver=dut_fw_ver,
+        provider_config=provider_config,
+    )
+    console.print(result)
+
+
 @main.command("run", cls=HelpfulRunCommand)
 @click.argument("plugin_name")
 @click.option("--case", "case_ids", multiple=True, help="Specific case IDs to run.")
@@ -578,20 +601,29 @@ def run_tests(
     Example:
       testpilot run wifi_llapi --case wifi-llapi-D004-kickstation --dut-fw-ver BGW720-B0-403
     """
-    orch = _get_orchestrator(ctx, plugin_name)
-    provider_config = ctx.obj.get("provider_config")
-    provider_notice = str(ctx.obj.get("provider_notice") or "")
-    if provider_config and provider_notice == "azure_interactive":
-        console.print("[green]✓ Azure OpenAI authenticated.[/green]")
-    elif provider_config and provider_notice == "azure_env":
-        console.print("[green]✓ Azure OpenAI (from env vars).[/green]")
-    result = orch.run(
-        plugin_name,
-        list(case_ids) if case_ids else None,
-        dut_fw_ver=dut_fw_ver,
-        provider_config=provider_config,
-    )
-    console.print(result)
+    _run_plugin_cases(ctx, plugin_name, case_ids, dut_fw_ver)
+
+
+@main.command("wifi_llapi")
+@click.option("--case", "case_ids", multiple=True, help="Specific wifi_llapi case IDs to run.")
+@click.option(
+    "--dut-fw-ver",
+    default="DUT-FW-VER",
+    show_default=True,
+    help="DUT firmware version used in report filename.",
+)
+@click.pass_context
+def wifi_llapi_run(
+    ctx: click.Context,
+    case_ids: tuple[str, ...],
+    dut_fw_ver: str,
+) -> None:
+    """Run wifi_llapi tests.
+
+    Usage:
+      testpilot wifi_llapi [--case CASE_ID] [--dut-fw-ver FW_VER]
+    """
+    _run_plugin_cases(ctx, "wifi_llapi", case_ids, dut_fw_ver)
 
 
 @main.group("wifi-llapi")

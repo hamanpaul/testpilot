@@ -152,6 +152,62 @@ def test_run_without_dut_fw_ver_uses_default(monkeypatch):
     ]
 
 
+def test_wifi_llapi_command_uses_same_run_path(monkeypatch):
+    """wifi_llapi command invokes the same normal run path with wifi_llapi plugin."""
+    _clear_provider_env(monkeypatch)
+    calls: list[dict[str, Any]] = []
+
+    class FakeOrchestrator:
+        def __init__(self, project_root):
+            self.project_root = project_root
+
+        def run(self, plugin_name, case_ids, **kwargs):
+            calls.append(
+                {
+                    "plugin_name": plugin_name,
+                    "case_ids": case_ids,
+                    "kwargs": kwargs,
+                }
+            )
+            return {"status": "ok", "plugin": plugin_name, "case_ids": case_ids}
+
+    monkeypatch.setattr(testpilot.cli, "Orchestrator", FakeOrchestrator)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "wifi_llapi",
+            "--case",
+            "wifi-llapi-D004-kickstation",
+            "--dut-fw-ver",
+            "BGW720-B0-403",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert calls == [
+        {
+            "plugin_name": "wifi_llapi",
+            "case_ids": ["wifi-llapi-D004-kickstation"],
+            "kwargs": {
+                "dut_fw_ver": "BGW720-B0-403",
+                "provider_config": None,
+            },
+        }
+    ]
+
+
+def test_wifi_llapi_help_shows_operational_usage():
+    """wifi_llapi help shows the fixed QC/TEST operational command format."""
+    runner = CliRunner()
+
+    result = runner.invoke(main, ["wifi_llapi", "--help"])
+
+    assert result.exit_code == 0
+    assert "testpilot wifi_llapi [--case CASE_ID] [--dut-fw-ver FW_VER]" in result.output
+
+
 def test_run_wifi_llapi_rejects_removed_report_source_xlsx_flag(monkeypatch):
     _clear_provider_env(monkeypatch)
     runner = CliRunner()
