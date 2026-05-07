@@ -59,6 +59,12 @@ case "$*" in
     touch "$DEST/.git/config"
     exit 0
     ;;
+  *"merge --ff-only origin/main"*)
+    if [ "${{STUB_FAIL_FF_ONLY:-0}}" = "1" ]; then
+      exit 1
+    fi
+    exit 0
+    ;;
   *)
     exit 0
     ;;
@@ -400,3 +406,25 @@ class TestExistingCheckoutUpdate:
         assert "merge --ff-only origin/main" in log_content, (
             f"fast-forward merge not found in git log:\n{log_content}"
         )
+
+    def test_existing_checkout_warns_when_fast_forward_fails(
+        self, fake_home: Path, stubs: Path
+    ) -> None:
+        """Diverged branch update warns instead of claiming silent success."""
+        managed_src = fake_home / ".local" / "share" / "testpilot" / "src"
+        (managed_src / ".git").mkdir(parents=True)
+        (managed_src / ".git" / "config").touch()
+        (managed_src / "skills" / "testpilot-normal-test").mkdir(parents=True)
+
+        result = _run_installer(
+            fake_home,
+            stubs,
+            {
+                "TESTPILOT_REPO_URL": "file:///local/testpilot",
+                "TESTPILOT_REF": "main",
+                "STUB_FAIL_FF_ONLY": "1",
+            },
+        )
+
+        assert result.returncode == 0, f"installer failed:\n{result.stdout}\n{result.stderr}"
+        assert "testpilot fast-forward failed" in result.stdout

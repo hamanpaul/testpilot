@@ -60,16 +60,40 @@ class TestVersionMirrorCheck:
 
         skill_dir = tmp_path / "skills" / "testpilot-normal-test"
         skill_dir.mkdir(parents=True)
+        managed_venv = tmp_path / ".venv"
+        (managed_venv / "bin").mkdir(parents=True)
+        console_script = managed_venv / "bin" / "testpilot"
+        console_script.write_text("#!/usr/bin/env sh\n")
+        wrapper = tmp_path / "bin" / "testpilot"
+        wrapper.parent.mkdir(parents=True)
+        wrapper.write_text(f'#!/usr/bin/env sh\nexec "{console_script}" "$@"\n')
 
         mock_console = MagicMock()
         with patch("testpilot.cli._get_managed_src", return_value=managed_src):
-            with patch("testpilot.cli._get_skills_root", return_value=tmp_path / "skills"):
-                with patch("testpilot.cli.console", mock_console):
-                    with pytest.raises(SystemExit) as exc_info:
-                        _handle_verify_install()
+            with patch("testpilot.cli._get_managed_venv", return_value=managed_venv):
+                with patch("testpilot.cli._get_wrapper_path", return_value=wrapper):
+                    with patch("testpilot.cli._get_skills_root", return_value=tmp_path / "skills"):
+                        with patch("testpilot.cli.console", mock_console):
+                            with pytest.raises(SystemExit) as exc_info:
+                                _handle_verify_install()
         assert exc_info.value.code != 0
         output = " ".join(str(c) for c in mock_console.print.call_args_list)
         assert "pyproject.toml" in output
+
+    def test_malformed_pyproject_fails_when_it_is_only_version_source(
+        self, tmp_path: Path
+    ) -> None:
+        """A malformed pyproject cannot be skipped just because other mirrors are absent."""
+        managed_src = tmp_path / "managed_src"
+        managed_src.mkdir()
+        (managed_src / "pyproject.toml").write_text("[project\nversion = ")
+
+        from testpilot.cli import _check_version_mirrors
+
+        ok, msg = _check_version_mirrors(managed_src)
+
+        assert not ok
+        assert "pyproject.toml" in msg
 
     def test_version_aligned_passes(self, tmp_path: Path) -> None:
         """All version mirrors aligned → verify-install does not fail on version check."""

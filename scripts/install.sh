@@ -100,7 +100,8 @@ if [ -d "$MANAGED_SRC/.git" ]; then
     git -C "$MANAGED_SRC" fetch origin
     git -C "$MANAGED_SRC" checkout "$TESTPILOT_REF"
     # Fast-forward local branch to origin; silently skips for tags/commit SHAs.
-    git -C "$MANAGED_SRC" merge --ff-only "origin/$TESTPILOT_REF" 2>/dev/null || true
+    git -C "$MANAGED_SRC" merge --ff-only "origin/$TESTPILOT_REF" 2>/dev/null || \
+        warn "testpilot fast-forward failed (expected for tag/SHA refs; diverged branch may need manual reset)"
     ok "Managed checkout updated to $TESTPILOT_REF"
 else
     info "Cloning $TESTPILOT_REPO_URL → $MANAGED_SRC ..."

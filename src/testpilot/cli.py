@@ -146,7 +146,8 @@ def _check_wrapper(wrapper_path: Path, managed_venv: Path, managed_src: Path) ->
             return False, f"FAIL wrapper not found: {wrapper_path}"
         return True, f"WARN wrapper not found: {wrapper_path}"
     content = wrapper_path.read_text(errors="replace")
-    if str(managed_venv) in content:
+    expected_console_script = managed_venv / "bin" / "testpilot"
+    if str(expected_console_script) in content:
         return True, f"OK wrapper: {wrapper_path}"
     if managed_src.exists():
         return False, f"FAIL wrapper does not reference managed venv {managed_venv}: {wrapper_path}"
@@ -227,10 +228,10 @@ def _check_version_mirrors(managed_src: Path) -> tuple[bool, str]:
         if m:
             versions["__init__.py"] = m.group(1)
 
-    if not versions:
-        return True, "SKIP version_mirrors (no version files found in managed checkout)"
     if errors:
         return False, f"FAIL version_mirrors metadata errors: {errors}"
+    if not versions:
+        return True, "SKIP version_mirrors (no version files found in managed checkout)"
 
     unique = set(versions.values())
     if len(unique) > 1:
