@@ -22,7 +22,7 @@ def _readme_text() -> str:
 def _extract_cli_commands_from_readme() -> list[str]:
     """Extract CLI command invocations from README."""
     text = _readme_text()
-    pattern = re.compile(r"python\s+-m\s+testpilot\.cli\s+(.+)")
+    pattern = re.compile(r"^\s*(?:python\s+-m\s+testpilot\.cli|testpilot)\s+(.+)", re.MULTILINE)
     commands = []
     for match in pattern.finditer(text):
         # Get first word(s) before any flags/args

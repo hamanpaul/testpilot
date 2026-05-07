@@ -11,6 +11,8 @@ preparation.
 
 ### Changed
 
+- The canonical project version is now `VERSION`; `pyproject.toml` and
+  `src/testpilot/__init__.py` are mirrors validated by tests and release CI.
 - Wave 3 `wifi_llapi` getRadioStats traffic cases `D263-D266` and `D271-D276`
   now use multiband delta contracts backed by source-aligned radio driver
   formulas, including deterministic broadcast/multicast triggers and the
@@ -18,6 +20,13 @@ preparation.
 
 ### Added
 
+- Managed installer, `testpilot --update`, and `testpilot --verify-install`
+  support for QC/TEST deployments with managed TestPilot, skill, and
+  serialwrap assets.
+- `testpilot wifi_llapi` primary run command for normal wifi_llapi operation,
+  while preserving `testpilot run wifi_llapi` compatibility.
+- Release governance checks for `VERSION` canonicality, README CLI help sync
+  markers, `.project-policy.yml`, and release workflow validation.
 - `testpilot audit` CLI subcommand group (`init`, `pass12`, `record`,
   `verify-edit`, `decide`, `status`, `summary`, `apply`, `pr`) that separates
   workbook-driven audit work from normal `testpilot run` execution.

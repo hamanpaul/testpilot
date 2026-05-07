@@ -18,8 +18,8 @@ def test_testpilot_normal_test_skill_limits_gpt5_mini_to_full_run_and_by_case() 
     assert "GPT-5-mini" in content
     assert "full-run" in content
     assert "by-case" in content
-    assert "testpilot run wifi_llapi" in content
-    assert "testpilot run wifi_llapi --case" in content
+    assert "testpilot wifi_llapi" in content
+    assert "testpilot wifi_llapi --case" in content
     assert "Only two allowed modes" in content
     assert "Do not use repo pytest as a substitute" in content
     assert "Do not run audit" in content

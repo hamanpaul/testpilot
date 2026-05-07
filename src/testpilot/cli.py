@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
-import sys
+import shutil
+import subprocess
+import tempfile
+import tomllib
 from pathlib import Path
 
 import click
@@ -13,8 +17,8 @@ from rich.console import Console
 from rich.table import Table
 
 from testpilot import __version__
+from testpilot.audit.cli import audit_group
 from testpilot.core.azure_auth import (
-    AzureAuthError,
     resolve_provider_config,
     setup_azure_auth,
 )
@@ -29,6 +33,357 @@ from testpilot.yaml_command_audit import (
 )
 
 console = Console()
+
+# Expected under ~/.agents/skills/ — the Copilot agent skill directory for normal-test runs.
+_SKILL_NAME = "testpilot-normal-test"
+
+
+# ---------------------------------------------------------------------------
+# Git helpers
+# ---------------------------------------------------------------------------
+
+
+def _git_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess[str]:
+    """Run a git command and return the CompletedProcess result.
+
+    Returns a sentinel result with returncode=127 and empty stdout/stderr if
+    the git executable is not found, so callers never see a FileNotFoundError.
+    """
+    try:
+        return subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            **kwargs,
+        )
+    except FileNotFoundError:
+        return subprocess.CompletedProcess(args=cmd, returncode=127, stdout="", stderr="")
+
+
+def _source_checkout_dir() -> Path:
+    """Return the checkout directory used for source-ref-aware git metadata."""
+    module_root = Path(__file__).resolve().parents[2]
+    if (module_root / ".git").exists():
+        return module_root
+
+    managed_src = _get_managed_src()
+    if (managed_src / ".git").exists():
+        return managed_src
+
+    return module_root
+
+
+def _source_ref_label() -> str:
+    """Return a source-ref label '<ref>@<short-sha>' for the current checkout."""
+    git_kwargs = {"cwd": str(_source_checkout_dir())}
+    sha_result = _git_run(["git", "rev-parse", "--short", "HEAD"], **git_kwargs)
+    short_sha = sha_result.stdout.strip() if sha_result.returncode == 0 else "unknown"
+
+    # Prefer symbolic branch ref
+    sym_result = _git_run(["git", "symbolic-ref", "--short", "HEAD"], **git_kwargs)
+    if sym_result.returncode == 0:
+        ref = sym_result.stdout.strip()
+        return f"{ref}@{short_sha}"
+
+    # Fall back to exact tag name
+    tag_result = _git_run(["git", "describe", "--tags", "--exact-match", "HEAD"], **git_kwargs)
+    if tag_result.returncode == 0:
+        ref = tag_result.stdout.strip()
+        return f"{ref}@{short_sha}"
+
+    # Detached HEAD
+    return f"commit@{short_sha}"
+
+
+def _version_string() -> str:
+    """Return the full version string including source ref."""
+    return f"TestPilot {__version__} ({_source_ref_label()})"
+
+
+# ---------------------------------------------------------------------------
+# Pre-dispatch helpers: --update and --verify-install
+# ---------------------------------------------------------------------------
+
+
+def _get_skills_root() -> Path:
+    """Return the agents skills directory, respecting TESTPILOT_SKILLS_DIR env var."""
+    return Path(
+        os.environ.get(
+            "TESTPILOT_SKILLS_DIR",
+            str(Path.home() / ".agents" / "skills"),
+        )
+    )
+
+
+def _get_managed_src() -> Path:
+    """Return the managed checkout source path, respecting TESTPILOT_HOME env var."""
+    testpilot_home = os.environ.get(
+        "TESTPILOT_HOME",
+        str(Path.home() / ".local" / "share" / "testpilot"),
+    )
+    return Path(testpilot_home) / "src"
+
+
+def _get_managed_venv() -> Path:
+    """Return the managed virtualenv path, respecting TESTPILOT_HOME env var."""
+    testpilot_home = os.environ.get(
+        "TESTPILOT_HOME",
+        str(Path.home() / ".local" / "share" / "testpilot"),
+    )
+    return Path(testpilot_home) / ".venv"
+
+
+def _get_wrapper_path() -> Path:
+    """Return the installed wrapper path, respecting TESTPILOT_BIN_DIR env var."""
+    bin_dir = os.environ.get(
+        "TESTPILOT_BIN_DIR",
+        str(Path.home() / ".local" / "bin"),
+    )
+    return Path(bin_dir) / "testpilot"
+
+
+# ---------------------------------------------------------------------------
+# Install-verification helpers (Task 2.4)
+# ---------------------------------------------------------------------------
+
+
+def _check_managed_checkout(managed_src: Path) -> tuple[bool, str]:
+    """Report whether managed checkout exists (informational, not a hard failure)."""
+    if managed_src.exists():
+        return True, f"OK checkout: {managed_src}"
+    return True, f"WARN checkout not found (non-managed install or first-run): {managed_src}"
+
+
+def _check_wrapper(wrapper_path: Path, managed_venv: Path, managed_src: Path) -> tuple[bool, str]:
+    """Report whether wrapper exists and references the managed venv."""
+    if not wrapper_path.exists():
+        if managed_src.exists():
+            return False, f"FAIL wrapper not found: {wrapper_path}"
+        return True, f"WARN wrapper not found: {wrapper_path}"
+    content = wrapper_path.read_text(errors="replace")
+    expected_console_script = managed_venv / "bin" / "testpilot"
+    if str(expected_console_script) in content:
+        return True, f"OK wrapper: {wrapper_path}"
+    if managed_src.exists():
+        return False, f"FAIL wrapper does not reference managed venv {managed_venv}: {wrapper_path}"
+    return True, f"WARN wrapper does not reference managed venv {managed_venv}: {wrapper_path}"
+
+
+def _check_console_script(managed_venv: Path, managed_src: Path) -> tuple[bool, str]:
+    """Report whether the console script exists inside the managed venv."""
+    script = managed_venv / "bin" / "testpilot"
+    if script.exists():
+        return True, f"OK console_script: {script}"
+    if managed_src.exists():
+        return False, f"FAIL console_script not found: {script}"
+    return True, f"WARN console_script not found: {script}"
+
+
+def _check_serialwrap_available() -> tuple[bool, str]:
+    """Report whether serialwrap is available, preferring the managed venv."""
+    venv_sw = _get_managed_venv() / "bin" / "serialwrap"
+    if venv_sw.exists():
+        return True, f"OK serialwrap: {venv_sw}"
+    path = shutil.which("serialwrap")
+    if path:
+        return True, f"OK serialwrap: {path}"
+    return True, "WARN serialwrap not found in PATH"
+
+
+def _check_skill_path(skills_root: Path, skill_name: str) -> tuple[bool, str]:
+    """Check skill directory exists. Absence is a hard failure."""
+    skill_path = skills_root / skill_name
+    if skill_path.exists():
+        return True, f"OK skill: {skill_path}"
+    return False, f"MISSING skill: {skill_path}"
+
+
+def _check_git_source(managed_src: Path) -> tuple[bool, str]:
+    """Report git remote/ref/SHA for the managed checkout."""
+    if not managed_src.exists():
+        return True, "SKIP git_source (no managed checkout)"
+    remote = _git_run(["git", "remote", "get-url", "origin"], cwd=str(managed_src))
+    sha = _git_run(["git", "rev-parse", "--short", "HEAD"], cwd=str(managed_src))
+    ref = _git_run(["git", "symbolic-ref", "--short", "HEAD"], cwd=str(managed_src))
+    remote_url = remote.stdout.strip() if remote.returncode == 0 else "unknown"
+    short_sha = sha.stdout.strip() if sha.returncode == 0 else "unknown"
+    branch = ref.stdout.strip() if ref.returncode == 0 else "detached"
+    return True, f"OK git_source: {remote_url} ({branch}@{short_sha})"
+
+
+def _check_version_mirrors(managed_src: Path) -> tuple[bool, str]:
+    """Check VERSION, pyproject.toml, and __init__.py version alignment.
+
+    Only runs when managed checkout exists. Misalignment is a hard failure.
+    """
+    if not managed_src.exists():
+        return True, "SKIP version_mirrors (no managed checkout)"
+
+    versions: dict[str, str] = {}
+    errors: list[str] = []
+
+    version_file = managed_src / "VERSION"
+    if version_file.exists():
+        versions["VERSION"] = version_file.read_text(encoding="utf-8").strip()
+
+    pyproject_file = managed_src / "pyproject.toml"
+    if pyproject_file.exists():
+        try:
+            data = tomllib.loads(pyproject_file.read_text(encoding="utf-8"))
+            versions["pyproject.toml"] = data["project"]["version"]
+        except (KeyError, tomllib.TOMLDecodeError) as exc:
+            errors.append(f"pyproject.toml unreadable: {exc}")
+
+    init_file = managed_src / "src" / "testpilot" / "__init__.py"
+    if init_file.exists():
+        m = re.search(
+            r'__version__\s*=\s*["\']([^"\']+)',
+            init_file.read_text(encoding="utf-8"),
+        )
+        if m:
+            versions["__init__.py"] = m.group(1)
+
+    if errors:
+        return False, f"FAIL version_mirrors metadata errors: {errors}"
+    if not versions:
+        return True, "SKIP version_mirrors (no version files found in managed checkout)"
+
+    unique = set(versions.values())
+    if len(unique) > 1:
+        return False, f"FAIL version_mirrors misaligned: {versions}"
+
+    version = next(iter(unique))
+    return True, f"OK version_mirrors: all at {version}"
+
+
+def _check_plugin_assets(managed_src: Path) -> tuple[bool, str]:
+    """Report whether plugin directories are discoverable in the managed checkout."""
+    plugins_dir = managed_src / "plugins"
+    if not plugins_dir.exists():
+        return True, f"WARN plugin_assets: plugins/ not found at {plugins_dir}"
+    plugins = sorted(p.name for p in plugins_dir.iterdir() if p.is_dir())
+    if not plugins:
+        return True, f"WARN plugin_assets: no plugin directories in {plugins_dir}"
+    return True, f"OK plugin_assets: {', '.join(plugins)}"
+
+
+def _check_wifi_llapi_cases(managed_src: Path) -> tuple[bool, str]:
+    """Report whether wifi_llapi D*.yaml cases are discoverable."""
+    cases_dir = managed_src / "plugins" / "wifi_llapi" / "cases"
+    if not cases_dir.exists():
+        return True, f"WARN wifi_llapi_cases: dir not found at {cases_dir}"
+    cases = list(cases_dir.glob("D*.yaml"))
+    if not cases:
+        return True, f"WARN wifi_llapi_cases: no D*.yaml found in {cases_dir}"
+    return True, f"OK wifi_llapi_cases: {len(cases)} discoverable"
+
+
+def _handle_verify_install() -> None:
+    """Handle --verify-install pre-dispatch: report deployment health."""
+    managed_src = _get_managed_src()
+    managed_venv = _get_managed_venv()
+    wrapper_path = _get_wrapper_path()
+    skills_root = _get_skills_root()
+
+    checks = [
+        _check_managed_checkout(managed_src),
+        _check_wrapper(wrapper_path, managed_venv, managed_src),
+        _check_console_script(managed_venv, managed_src),
+        _check_serialwrap_available(),
+        _check_skill_path(skills_root, _SKILL_NAME),
+        _check_git_source(managed_src),
+        _check_version_mirrors(managed_src),
+        _check_plugin_assets(managed_src),
+        _check_wifi_llapi_cases(managed_src),
+    ]
+
+    errors: list[str] = []
+    for ok_flag, msg in checks:
+        if not ok_flag:
+            console.print(f"[bold red]{msg}[/bold red]")
+            errors.append(msg)
+        elif msg.startswith("WARN") or msg.startswith("SKIP"):
+            console.print(f"[yellow]{msg}[/yellow]")
+        else:
+            console.print(f"[bold green]{msg}[/bold green]")
+
+    if errors:
+        raise SystemExit(1)
+
+    console.print("[bold green]verify-install: all checks passed[/bold green]")
+
+
+def _handle_update(ref: str | None) -> None:
+    """Handle --update pre-dispatch: update managed checkout to ref (default: main)."""
+    target_ref = ref or "main"
+    managed_src = _get_managed_src()
+
+    if not (managed_src / ".git").exists():
+        console.print(
+            "[bold red]Managed checkout not found.[/bold red]\n"
+            "Run the managed installer before using testpilot --update.\n"
+            f"  path: {managed_src}",
+        )
+        raise SystemExit(1)
+
+    # Only check for dirty state when the managed checkout actually exists.
+    # Skipping this guard on a nonexistent path would run git status against
+    # the developer's own working tree and produce false positives.
+    status = _git_run(
+        ["git", "status", "--porcelain"],
+        cwd=str(managed_src),
+    )
+    if status.returncode != 0:
+        detail = status.stderr.strip() or "git status failed"
+        console.print(
+            "[bold red]Cannot inspect managed checkout state.[/bold red]\n"
+            f"{detail}\n"
+            f"  path: {managed_src}",
+        )
+        raise SystemExit(status.returncode or 1)
+    if status.stdout.strip():
+        console.print(
+            "[bold red]Managed checkout has uncommitted changes.[/bold red]\n"
+            "Please commit, stash, or resolve local edits before updating.\n"
+            f"  path: {managed_src}",
+        )
+        raise SystemExit(1)
+
+    installer = managed_src / "scripts" / "install.sh"
+    if not installer.exists():
+        console.print(
+            "[bold red]Managed installer not found.[/bold red]\n"
+            f"Expected scripts/install.sh under managed checkout: {installer}",
+        )
+        raise SystemExit(1)
+
+    console.print(f"[bold]Updating TestPilot to ref:[/bold] {target_ref}")
+
+    env = os.environ.copy()
+    env.update(
+        {
+            "TESTPILOT_REF": target_ref,
+            "TESTPILOT_HOME": str(managed_src.parent),
+            "TESTPILOT_BIN_DIR": str(_get_wrapper_path().parent),
+            "TESTPILOT_SKILLS_DIR": str(_get_skills_root()),
+        }
+    )
+
+    with tempfile.TemporaryDirectory(prefix="testpilot-update-") as tmp_dir:
+        installer_copy = Path(tmp_dir) / "install.sh"
+        shutil.copy2(installer, installer_copy)
+        result = subprocess.run(
+            ["bash", str(installer_copy)],
+            cwd=str(managed_src),
+            env=env,
+            text=True,
+        )
+
+    if result.returncode != 0:
+        console.print(f"[bold red]Update failed with exit code {result.returncode}[/bold red]")
+        raise SystemExit(result.returncode)
+
+    console.print("[bold green]Update complete[/bold green]")
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -98,8 +453,23 @@ class HelpfulRunCommand(click.Command):
             raise
 
 
-@click.group()
-@click.version_option(__version__, prog_name="testpilot")
+def _print_version(ctx: click.Context, _param: click.Parameter, value: bool) -> None:
+    """Click callback: print source-ref-aware version string and exit."""
+    if not value or ctx.resilient_parsing:
+        return
+    click.echo(_version_string())
+    ctx.exit()
+
+
+@click.group(invoke_without_command=True)
+@click.option(
+    "--version",
+    is_eager=True,
+    expose_value=False,
+    is_flag=True,
+    callback=_print_version,
+    help="Show version and exit.",
+)
 @click.option("-v", "--verbose", is_flag=True, help="Enable debug logging.")
 @click.option(
     "--root",
@@ -113,13 +483,56 @@ class HelpfulRunCommand(click.Command):
     default=False,
     help="Use Azure OpenAI API. Prompts for endpoint, key, and model interactively.",
 )
+@click.option(
+    "--update",
+    "update_ref",
+    default=None,
+    is_eager=True,
+    expose_value=True,
+    metavar="REF",
+    help="Update managed checkout to REF (default: main) and exit.",
+    is_flag=False,
+    flag_value="main",
+)
+@click.option(
+    "--verify-install",
+    "verify_install",
+    is_flag=True,
+    default=False,
+    is_eager=True,
+    expose_value=True,
+    help="Report managed install health and exit.",
+)
 @click.pass_context
-def main(ctx: click.Context, verbose: bool, root: str | None, azure: bool) -> None:
+def main(
+    ctx: click.Context,
+    verbose: bool,
+    root: str | None,
+    azure: bool,
+    update_ref: str | None,
+    verify_install: bool,
+) -> None:
     """TestPilot — plugin-based test automation for embedded devices."""
+    # Pre-dispatch: --update and --verify-install run before normal routing.
+    if update_ref is not None:
+        _handle_update(update_ref)
+        ctx.exit(0)
+        return
+    if verify_install:
+        _handle_verify_install()
+        ctx.exit(0)
+        return
+
     _setup_logging(verbose)
     ctx.ensure_object(dict)
     ctx.obj["root"] = Path(root) if root else Path(__file__).resolve().parents[2]
     ctx.obj["provider_notice"] = None
+
+    # When invoked without a subcommand (and no pre-dispatch flags), show help.
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
+        ctx.exit(0)
+        return
 
     # --- Authentication: Azure BYOK → GitHub OAuth fallback ---
     provider_config: dict | None = None
@@ -204,6 +617,29 @@ def list_cases(ctx: click.Context, plugin_name: str) -> None:
     console.print(table)
 
 
+def _run_plugin_cases(
+    ctx: click.Context,
+    plugin_name: str,
+    case_ids: tuple[str, ...],
+    dut_fw_ver: str,
+) -> None:
+    """Run plugin cases through the shared normal-run orchestrator path."""
+    orch = _get_orchestrator(ctx, plugin_name)
+    provider_config = ctx.obj.get("provider_config")
+    provider_notice = str(ctx.obj.get("provider_notice") or "")
+    if provider_config and provider_notice == "azure_interactive":
+        console.print("[green]✓ Azure OpenAI authenticated.[/green]")
+    elif provider_config and provider_notice == "azure_env":
+        console.print("[green]✓ Azure OpenAI (from env vars).[/green]")
+    result = orch.run(
+        plugin_name,
+        list(case_ids) if case_ids else None,
+        dut_fw_ver=dut_fw_ver,
+        provider_config=provider_config,
+    )
+    console.print(result)
+
+
 @main.command("run", cls=HelpfulRunCommand)
 @click.argument("plugin_name")
 @click.option("--case", "case_ids", multiple=True, help="Specific case IDs to run.")
@@ -228,20 +664,29 @@ def run_tests(
     Example:
       testpilot run wifi_llapi --case wifi-llapi-D004-kickstation --dut-fw-ver BGW720-B0-403
     """
-    orch = _get_orchestrator(ctx, plugin_name)
-    provider_config = ctx.obj.get("provider_config")
-    provider_notice = str(ctx.obj.get("provider_notice") or "")
-    if provider_config and provider_notice == "azure_interactive":
-        console.print("[green]✓ Azure OpenAI authenticated.[/green]")
-    elif provider_config and provider_notice == "azure_env":
-        console.print("[green]✓ Azure OpenAI (from env vars).[/green]")
-    result = orch.run(
-        plugin_name,
-        list(case_ids) if case_ids else None,
-        dut_fw_ver=dut_fw_ver,
-        provider_config=provider_config,
-    )
-    console.print(result)
+    _run_plugin_cases(ctx, plugin_name, case_ids, dut_fw_ver)
+
+
+@main.command("wifi_llapi")
+@click.option("--case", "case_ids", multiple=True, help="Specific wifi_llapi case IDs to run.")
+@click.option(
+    "--dut-fw-ver",
+    default="DUT-FW-VER",
+    show_default=True,
+    help="DUT firmware version used in report filename.",
+)
+@click.pass_context
+def wifi_llapi_run(
+    ctx: click.Context,
+    case_ids: tuple[str, ...],
+    dut_fw_ver: str,
+) -> None:
+    """Run wifi_llapi tests.
+
+    Usage:
+      testpilot wifi_llapi [--case CASE_ID] [--dut-fw-ver FW_VER]
+    """
+    _run_plugin_cases(ctx, "wifi_llapi", case_ids, dut_fw_ver)
 
 
 @main.group("wifi-llapi")
@@ -584,8 +1029,6 @@ def json_to_html(json_report: str, out: str | None) -> None:
     result = reporter.generate(cases, meta, out_path)
     console.print(f"[green]✓[/green] HTML report: {result}")
 
-
-from testpilot.audit.cli import audit_group
 
 main.add_command(audit_group)
 

@@ -33,7 +33,10 @@ def test_write_template_manifest_prefers_repo_relative_paths(tmp_path: Path) -> 
     assert payload["source_workbook"] == "0401.xlsx"
 
 
-def test_write_template_manifest_falls_back_to_manifest_relative_paths(tmp_path: Path) -> None:
+def test_write_template_manifest_falls_back_to_manifest_relative_paths(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     manifest_dir = tmp_path / "output"
     manifest_path = manifest_dir / "wifi_llapi_template.manifest.json"
     template_path = tmp_path / "shared" / "wifi_llapi_template.xlsx"
@@ -50,6 +53,10 @@ def test_write_template_manifest_falls_back_to_manifest_relative_paths(tmp_path:
         source_sheet="Wifi_LLAPI",
     )
 
+    monkeypatch.setattr(
+        "testpilot.reporting.wifi_llapi_excel._find_git_root",
+        lambda start: None,
+    )
     write_template_manifest(manifest_path, result)
 
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))

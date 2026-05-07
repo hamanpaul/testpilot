@@ -72,3 +72,6 @@ jobs:
 
       - name: Run test suite
         run: uv run pytest -q
+
+      - name: Validate release governance policy
+        run: uv run pytest -q tests/test_release_governance.py

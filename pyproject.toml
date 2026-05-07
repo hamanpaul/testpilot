@@ -1,6 +1,6 @@
 [project]
 name = "testpilot"
-version = "0.2.2"
+version = "0.2.0"
 description = "Plugin-based test automation framework for embedded device verification"
 readme = "README.md"
 license = {text = "MIT"}
@@ -36,3 +36,4 @@ line-length = 100
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "plugins/wifi_llapi/tests", "plugins/brcm_fw_upgrade/tests"]
+pythonpath = ["src"]

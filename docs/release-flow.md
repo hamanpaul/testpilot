@@ -1,7 +1,7 @@
 # TestPilot Versioning and Release Flow
 
 This document defines the repository-level versioning and release process for
-TestPilot starting from the existing tag baseline `v0.1.5`.
+TestPilot starting from the managed install baseline `v0.2.0`.
 
 ## 1. Versioning policy
 
@@ -15,17 +15,18 @@ TestPilot uses Semantic Versioning with git tags in the form `vX.Y.Z`.
 - **Patch (`Z`)**: backward-compatible fixes, documentation corrections, test
   improvements, and release automation maintenance.
 
-`v0.1.5` is the starting baseline for this formalized process.
+`v0.2.0` is the starting baseline for the managed installer/update flow.
 
 ## 2. Canonical version sources
 
-- **Canonical source**: `pyproject.toml` → `[project].version`
+- **Canonical source**: `VERSION`
+- **Packaging mirror**: `pyproject.toml` → `[project].version`
 - **Runtime mirror**: `src/testpilot/__init__.py` → `__version__`
 - **Published identifier**: git tag `vX.Y.Z`
 
-All three must agree for a release. The repo test suite includes a guardrail to
-catch drift between `pyproject.toml` and `src/testpilot/__init__.py`, and the
-release workflow validates that the pushed tag matches the in-repo version.
+All four must agree for a release. The repo test suite and release workflow
+validate that `VERSION`, `pyproject.toml`, `src/testpilot/__init__.py`, and the
+pushed tag stay in sync.
 
 ## 3. Day-to-day pull request expectations
 
@@ -35,6 +36,8 @@ Each PR should use the GitHub PR template and explicitly cover:
 
 - whether `CHANGELOG.md` needs an `Unreleased` entry
 - whether README / docs / AGENTS updates are required
+- whether README CLI help marker blocks governed by `.project-policy.yml` need
+  synchronization
 - what validation was run
 - whether the change has release-note impact
 
@@ -49,13 +52,14 @@ Rule of thumb:
 Prepare releases in a dedicated branch and PR:
 
 1. Branch from `main` as `release/vX.Y.Z`.
-2. Update `pyproject.toml` and `src/testpilot/__init__.py` to `X.Y.Z`.
+2. Update `VERSION`, `pyproject.toml`, and `src/testpilot/__init__.py` to
+   `X.Y.Z`.
 3. Finalize `CHANGELOG.md`:
    - keep a fresh `Unreleased` section at the top
    - move release-ready notes into `## [X.Y.Z]`
 4. Update `README.md`, `docs/release-flow.md`, and `AGENTS.md` if the release
    changes supported workflows, release rules, or operator guidance.
-5. Ensure CI is green and any release-specific checks are complete.
+5. Ensure CI, release version validation, and policy/help sync checks are green.
 6. Merge the release PR into `main`.
 
 Recommended PR title:
@@ -70,9 +74,11 @@ After the release PR is merged:
 2. Push the tag (or create it from GitHub on the target commit).
 3. The tag push triggers `.github/workflows/release.yml`.
 4. The workflow:
-   - verifies tag/version consistency
-   - creates the GitHub Release
-   - uses GitHub auto-generated release notes for the published release page
+    - verifies tag/version consistency
+    - runs the pinned project policy check
+    - runs release governance tests and the full repository test suite
+    - creates the GitHub Release
+    - uses GitHub auto-generated release notes for the published release page
 
 GitHub Releases are the canonical published release notes surface. `CHANGELOG.md`
 remains the curated in-repo history.
@@ -84,14 +90,21 @@ The current release workflow publishes **metadata only**:
 - git tag `vX.Y.Z`
 - GitHub Release page with generated release notes
 
-It does **not** build or upload wheel / sdist / binary assets yet. Consumers
-should therefore deploy from the tagged source tree, for example:
+It does **not** build or upload wheel / sdist / binary assets yet. QC/TEST
+operators should install through the managed installer, which resolves
+`latest-release` to the newest stable `vX.Y.Z` tag by default:
 
 ```bash
-uv pip install "git+https://github.com/hamanpaul/testpilot@vX.Y.Z"
+curl -fsSL https://raw.githubusercontent.com/paulc-arc/testpilot/main/scripts/install.sh | bash
+testpilot --verify-install
 ```
 
-or by checking out the release tag and installing locally.
+For local validation or controlled rollouts, override the managed source/ref:
+
+```bash
+TESTPILOT_REPO_URL=https://github.com/hamanpaul/testpilot.git TESTPILOT_REF=vX.Y.Z bash scripts/install.sh
+testpilot --update vX.Y.Z
+```
 
 ## 6. Release gates
 
@@ -99,12 +112,14 @@ Do not tag a release until all of the following are true:
 
 - the release PR is merged into `main`
 - GitHub Actions CI is green for the release commit
-- `pyproject.toml`, `src/testpilot/__init__.py`, and the intended tag match
+- `VERSION`, `pyproject.toml`, `src/testpilot/__init__.py`, and the intended
+  tag match
 - `CHANGELOG.md` is finalized
 - README / docs / AGENTS updates are merged when user-facing behavior changed
+- `.project-policy.yml` still declares the required CLI help sync marker blocks
 
-At the moment, the minimum automated CI gate is the repo test suite
-(`uv run pytest -q`) via GitHub Actions.
+The minimum automated CI gate is the repo test suite (`uv run pytest -q`) plus
+the release governance tests that validate policy config and release metadata.
 
 ## 7. Hotfixes
 
@@ -112,7 +127,7 @@ Hotfix releases follow the same flow with a patch bump:
 
 1. branch from `main`
 2. fix the issue
-3. prepare the next patch release PR (for example `release/v0.1.6`)
+3. prepare the next patch release PR (for example `release/v0.2.1`)
 4. merge
 5. tag the merged commit
 

@@ -1,5 +1,7 @@
 # TestPilot Development Guidelines
 
+policy_version: 1.0.0
+
 ## Scope
 
 本檔定義本專案在開發/維護時的固定規範，重點是：
@@ -37,21 +39,21 @@ skills/       # repository agent skills, including testpilot-normal-test
 uv pip install -e ".[dev]"
 # configs/testbed.yaml is auto-staged from plugins/<plugin>/testbed.yaml.example
 # whenever a plugin-aware command runs; no manual cp needed.
-python -m testpilot.cli --version
-python -m testpilot.cli list-plugins
-python -m testpilot.cli list-cases wifi_llapi
+testpilot --version
+testpilot list-plugins
+testpilot list-cases wifi_llapi
 python -m testpilot.cli wifi-llapi baseline-qualify --repeat-count 5 --soak-minutes 15
-python -m testpilot.cli run wifi_llapi
+testpilot wifi_llapi
 python -m testpilot.cli wifi-llapi build-template-report --source-xlsx <path>
 uv run pytest -q
 ```
 
 Wifi_llapi reporting guidance:
 
-3. `testpilot wifi-llapi build-template-report --source-xlsx <path>` is a build/audit path. `testpilot run wifi_llapi` must not depend on raw source workbooks.
-4. `wifi_llapi` runtime alignment treats `(source.object, source.api)` as the canonical lookup key into the checked-in template workbook; `D###`, `source.row`, and matching `id` fragments are derived metadata and may be auto-corrected during `testpilot run wifi_llapi`.
+3. `testpilot wifi-llapi build-template-report --source-xlsx <path>` is a build/audit path. `testpilot wifi_llapi` must not depend on raw source workbooks.
+4. `wifi_llapi` runtime alignment treats `(source.object, source.api)` as the canonical lookup key into the checked-in template workbook; `D###`, `source.row`, and matching `id` fragments are derived metadata and may be auto-corrected during `testpilot wifi_llapi`.
 5. If one `(source.object, source.api)` pair maps to multiple template rows, runtime alignment must block that family instead of guessing a row; follow-up cleanup uses the surfaced candidate template rows.
-6. `testpilot run wifi_llapi` may rename case files and rewrite `source.row` / `id` in-place. Review and commit those case diffs together with the corresponding runtime artifacts.
+6. `testpilot wifi_llapi` may rename case files and rewrite `source.row` / `id` in-place. Review and commit those case diffs together with the corresponding runtime artifacts.
 7. Runtime artifact bundles and JSON `alignment_summary.blocked_details` must expose blocked ambiguous families with their candidate template rows so maintainers can reconcile template duplicates offline.
 8. Alignment and audit are separate responsibilities: runtime alignment fixes metadata drift only; audit mode remains the place to change `name`, `steps`, `pass_criteria`, `source.object`, `source.api`, or `aliases`.
 
@@ -63,10 +65,10 @@ Wifi_llapi reporting guidance:
 
 ## Versioning and Release Policy
 
-1. Repository release tags use Semantic Versioning in the form `vX.Y.Z`; the managed baseline for this workflow starts at `v0.1.5`.
-2. Canonical project version lives in `pyproject.toml`; `src/testpilot/__init__.py` is the runtime mirror for `testpilot --version` and must stay identical.
+1. Repository release tags use Semantic Versioning in the form `vX.Y.Z`; the managed baseline for this workflow starts at `v0.2.0`.
+2. Canonical project version lives in `VERSION`; `pyproject.toml` and `src/testpilot/__init__.py` are packaging/runtime mirrors and must stay identical.
 3. User-facing pull requests should update `CHANGELOG.md` under `Unreleased`, or explicitly record why no changelog entry is needed.
-4. Release preparation happens in a dedicated `release/vX.Y.Z` PR that updates version metadata, finalizes `CHANGELOG.md`, and syncs `README.md`, `docs/release-flow.md`, and this `AGENTS.md` when process guidance changes.
+4. Release preparation happens in a dedicated `release/vX.Y.Z` PR that updates version metadata, finalizes `CHANGELOG.md`, and syncs `README.md`, `docs/release-flow.md`, `.project-policy.yml`, and this `AGENTS.md` when process guidance changes.
 5. Only tag merged `main` commits; release tags must be `vX.Y.Z` and match the in-repo version. Tag push is responsible for publishing the GitHub Release.
 6. Prefer GitHub-native controls first: PR template checklist, Actions CI, and tag-triggered Releases. Add extra local rules only where GitHub cannot enforce behavior directly.
 7. Current publication scope is GitHub tag + GitHub Release notes only; do not assume wheel / sdist / binary assets are produced. Installation guidance should point to tagged-source installs until package publication is added.
