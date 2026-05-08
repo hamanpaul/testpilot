@@ -1,5 +1,63 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-08 0506-D006)
+
+> This checkpoint records the `D006 sendBssTransferRequest()` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=1`, `pending=152`, `block=111`, `needs_pass3=0`
+- `D006 sendBssTransferRequest()` 沒有 closure；已標成 `block`，reason=`workbook_pass_but_source_live_btm_authority_conflict`
+- workbook row 6 標成 `Pass / Pass / Pass`，但 workbook G6 自己記錄 BTM transfer 回 `ERROR: call (null) failed with status 1 - unknown error`
+- source survey 找到 MBO / BTM / FT HAL 支援，但沒有找到 source-declared `sendBssTransferRequest()` ODL method；HAL `wifi_setBTMRequest()` 的 public contract 是 `RETURN_OK` / `RETURN_ERR`
+- focused rerun `20260508T220846967896` 跑到 method 本體：6G 回 `[-1]`，5G 與 2.4G 都回 `ERROR: call (null) failed with status 1`
+- 因為 final live result 仍是 `Fail / Fail / Fail`，D006 的 exploratory join-gate edit 不進 commit；case YAML 保持不變
+- next ready single-case Pass3 target: `D009`
+
+</details>
+
+### D006 sendBssTransferRequest() blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+wl -i wl1 status
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.MBOEnable=1"
+ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=25"
+wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+ubus-cli "WiFi.AccessPoint.1.sendBssTransferRequest(mac=2c:59:17:00:19:95,target=2c:59:17:00:04:97,class=1,channel=1,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"
+ubus-cli "WiFi.AccessPoint.3.MBOEnable=1"
+ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=25"
+wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+ubus-cli "WiFi.AccessPoint.3.sendBssTransferRequest(mac=2c:59:17:00:19:96,target=2c:59:17:00:04:85,class=1,channel=36,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"
+ubus-cli "WiFi.AccessPoint.5.MBOEnable=1"
+ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=25"
+wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+ubus-cli "WiFi.AccessPoint.5.sendBssTransferRequest(mac=2c:59:17:00:19:a7,target=2c:59:17:00:04:85,class=1,channel=36,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260508T220846967896
+- report md L26-L28: D006 result_5g/result_6g/result_24g = Fail / Fail / Fail, diagnostic_status=FailTest
+- report md L64-L82: 5G association exists, but sendBssTransferRequest() returns ERROR status 1 and empty string
+- report md L83-L160: 6G association exists, BTM-capable STA evidence includes Extended Capabilities: IW BSS_Transition, method returns [-1]
+- report md L161-L178: 2.4G association exists, but sendBssTransferRequest() returns ERROR status 1 and empty string
+- workbook row 6 G cell also records sendBssTransferRequest() returning ERROR status 1 while the row verdict remains Pass / Pass / Pass
+```
+
 ## Checkpoint summary (2026-05-08 0506-D004)
 
 > This checkpoint records the `D004 kickStation()` 0506-workbook audit closure.
