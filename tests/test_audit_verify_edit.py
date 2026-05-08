@@ -54,6 +54,7 @@ def test_path_allowed_for_pass_criteria_change():
 
 def test_path_allowed_for_steps_command_change():
     assert is_path_allowed("steps[0].command")
+    assert is_path_allowed("steps[0].command[1]")
     assert is_path_allowed("steps[3].capture")
 
 
@@ -182,6 +183,25 @@ def test_check_boundary_passes_steps_command_change(tmp_path):
     before.write_text(_BASE_YAML)
     after.write_text(_BASE_YAML.replace("capture: r1", "capture: r2"))
     check_boundary(before, after)
+
+
+def test_check_boundary_passes_steps_command_list_item_removal(tmp_path):
+    before = tmp_path / "before.yaml"
+    after = tmp_path / "after.yaml"
+    before.write_text(
+        _BASE_YAML.replace(
+            'command: ubus-cli "WiFi.Radio.1.IEEE80211ax.SRGBSSColorBitmap?"',
+            'command:\n      - iw dev wl0 link\n      - wpa_cli -i wl0 status',
+        )
+    )
+    after.write_text(
+        _BASE_YAML.replace(
+            'command: ubus-cli "WiFi.Radio.1.IEEE80211ax.SRGBSSColorBitmap?"',
+            "command:\n      - iw dev wl0 link",
+        )
+    )
+    diffs = check_boundary(before, after)
+    assert diffs == {"steps[0].command[1]"}
 
 
 def test_check_boundary_rejects_source_row_change(tmp_path):

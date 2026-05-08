@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+_CASE_NUMBER_RE = re.compile(r"(?:^|-)D\d{3}(?=$|[-_])", re.IGNORECASE)
+
 
 def safe_int(value: Any, default: int) -> int:
     """Convert *value* to int, falling back to *default*."""
@@ -69,6 +71,14 @@ def case_aliases(case: dict[str, Any]) -> list[str]:
     return aliases
 
 
+def case_d_number(value: str) -> str:
+    """Return the D### selector embedded in a wifi_llapi case id, if any."""
+    match = _CASE_NUMBER_RE.search(value.strip())
+    if not match:
+        return ""
+    return match.group(0).lstrip("-").upper()
+
+
 def case_matches_requested_ids(
     case: dict[str, Any],
     requested_ids: set[str],
@@ -78,7 +88,17 @@ def case_matches_requested_ids(
         return False
     case_ids = {str(case.get("id", "")).strip(), *case_aliases(case)}
     case_ids.discard("")
-    return bool(case_ids & requested_ids)
+    if case_ids & requested_ids:
+        return True
+
+    requested_d_numbers = {
+        token
+        for requested in requested_ids
+        if (token := case_d_number(str(requested)))
+    }
+    if not requested_d_numbers:
+        return False
+    return any(case_d_number(case_id) in requested_d_numbers for case_id in case_ids)
 
 
 def is_wifi_llapi_official_case(case: dict[str, Any]) -> bool:

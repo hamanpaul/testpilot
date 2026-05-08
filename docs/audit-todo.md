@@ -79,7 +79,17 @@
   - do not create ad-hoc acceleration tools/scripts to skip the manual evidence loop
 - I will update YAML and regression tests directly in this repo after a case is proven live.
 
-## Latest repo handoff snapshot（2026-04-15）
+## Latest repo handoff snapshot（2026-05-08 / 0506 workbook）
+
+- active audit RID is `74ada64b-2026-05-07T134956Z` against local-only workbook `audit/0506.xlsx`; current buckets are `confirmed=151`, `applied=1`, `pending=153`, `block=110`, `needs_pass3=0`
+- latest applied/pass3 closure is `D004 kickStation()` via focused run `20260508T212440407797`: the final single-case rerun reports `Pass / Pass / Pass`, `diagnostic_status=Pass`, and `pass after retry (2/2)`
+- D004 YAML change was applied through `testpilot audit verify-edit` / `record` / `decide` / `apply`; the edit only removes redundant `wpa_cli ... status` checks from 5G and 2.4G join steps after live evidence showed `iw dev wl0/wl2 link` plus DUT `wl assoclist` already prove association while `wpa_cli` may remain `ASSOCIATED`
+- lab blocker recovered during D004: DUT process table had lost WiFi/datamodel daemons; a DUT reboot plus serialwrap recovery restored `WiFi.Radio.1.Status="Up"` before final validation
+- active blockers remain the workbook/audit bucket blockers from this RID: `110` blocked cases (`103` ambiguous workbook rows, `7` missing workbook rows); no new D004 blocker remains after the reboot/retry closure
+- next ready single-case Pass3 target is `D006` (`pass3_pending_source_survey_required`); `D005` is already in the confirmed bucket (`pass1_verdict_match`)
+- latest validation commands/results: `PYTHONPATH=src uv run pytest -q tests/test_audit_verify_edit.py` -> `37 passed`; focused `testpilot wifi_llapi --case D004 --dut-fw-ver BGW720-0410-VERIFY` -> `1 passed / 0 failed`
+
+## Previous repo handoff snapshot（2026-04-15）
 
 - latest committed closure is now `D527 SSID WMM AC_VO Stats WmmPacketsSent` via official rerun `20260415T165703228123`
 - workbook authority for the landed D527 case is row `527`; the stale row `394` is retired in favor of workbook-faithful direct `WiFi.SSID.{i}.Stats.WmmPacketsSent.AC_VO?` getters plus explicit `WiFi.SSID.{i}.getSSIDStats()` refresh and `wl0/wl1/wl2 wme_counters` `AC_VO` tx-frame cross-checks

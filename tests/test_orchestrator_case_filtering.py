@@ -47,6 +47,13 @@ def test_case_matches_requested_ids():
     assert Orchestrator._case_matches_requested_ids(case, set()) is False
 
 
+def test_case_matches_requested_ids_accepts_d_number_without_alias():
+    """D### audit/CLI selectors should match row-indexed wifi_llapi IDs."""
+    case = {"id": "wifi-llapi-D004-kickstation"}
+    assert Orchestrator._case_matches_requested_ids(case, {"D004"}) is True
+    assert Orchestrator._case_matches_requested_ids(case, {"d004"}) is True
+
+
 def test_is_wifi_llapi_official_case_d_prefix():
     """Official cases start with D followed by digits."""
     assert Orchestrator._is_wifi_llapi_official_case({"id": "wifi-llapi-D004-kickstation"}) is True

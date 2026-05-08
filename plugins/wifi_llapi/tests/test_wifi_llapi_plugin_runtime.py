@@ -286,6 +286,25 @@ def test_plugin_loads_shared_wifi_band_baselines_yaml():
 
     assert plugin.DEFAULT_BAND_BASELINES["5g"]["ssid"] == "testpilot5G"
     assert plugin.DEFAULT_BAND_BASELINES["5g"]["dut_secret_fields"] == ["KeyPassPhrase"]
+    assert plugin.DEFAULT_BAND_BASELINES["5g"]["dut_pre_start_commands"] == [
+        "ubus-cli WiFi.AccessPoint.1.MultiAPType=None"
+    ]
+    assert plugin.DEFAULT_BAND_BASELINES["5g"]["dut_runtime_config_commands"] == [
+        "sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl0_hapd.conf",
+        "sed -i 's/^wpa_passphrase=.*/wpa_passphrase=00000000/g' /tmp/wl0_hapd.conf",
+        "sed -i 's/^ieee80211be=.*/ieee80211be=0/g' /tmp/wl0_hapd.conf",
+        "sed -i '/^qos_map_set=/d' /tmp/wl0_hapd.conf",
+        "sed -i '/^multi_ap=/d' /tmp/wl0_hapd.conf",
+        "sed -i '/^bss=wl0\\.1$/,$d' /tmp/wl0_hapd.conf",
+    ]
+    assert plugin.DEFAULT_BAND_BASELINES["5g"]["dut_runtime_ready_commands"] == [
+        "grep -q '^ocv=0$' /tmp/wl0_hapd.conf",
+        "grep -q '^wpa_passphrase=00000000$' /tmp/wl0_hapd.conf",
+        '! grep -Eq "^ieee80211be=1$" /tmp/wl0_hapd.conf',
+        '! grep -Eq "^qos_map_set=" /tmp/wl0_hapd.conf',
+        '! grep -Eq "^bss=wl0\\.1$" /tmp/wl0_hapd.conf',
+        '! grep -Eq "^multi_ap=[1-9]" /tmp/wl0_hapd.conf',
+    ]
     assert plugin.DEFAULT_BAND_BASELINES["6g"]["iface"] == "wl1"
     assert plugin.DEFAULT_BAND_BASELINES["6g"]["dut_secret_fields"] == [
         "SAEPassphrase",
@@ -315,6 +334,50 @@ def test_plugin_loads_shared_wifi_band_baselines_yaml():
         "ifconfig {{iface}} up",
     ]
     assert plugin.DEFAULT_BAND_BASELINES["2.4g"]["ssid"] == "testpilot2G"
+    assert plugin.DEFAULT_BAND_BASELINES["2.4g"]["dut_pre_start_commands"] == [
+        "ubus-cli WiFi.AccessPoint.5.MultiAPType=None"
+    ]
+    assert plugin.DEFAULT_BAND_BASELINES["2.4g"]["dut_runtime_config_commands"] == [
+        "sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl2_hapd.conf",
+        "sed -i 's/^ieee80211be=.*/ieee80211be=0/g' /tmp/wl2_hapd.conf",
+        "sed -i '/^qos_map_set=/d' /tmp/wl2_hapd.conf",
+        "sed -i '/^multi_ap=/d' /tmp/wl2_hapd.conf",
+        "sed -i '/^bss=wl2\\.1$/,$d' /tmp/wl2_hapd.conf",
+    ]
+    assert plugin.DEFAULT_BAND_BASELINES["2.4g"]["dut_runtime_ready_commands"] == [
+        "grep -q '^ocv=0$' /tmp/wl2_hapd.conf",
+        '! grep -Eq "^ieee80211be=1$" /tmp/wl2_hapd.conf',
+        '! grep -Eq "^qos_map_set=" /tmp/wl2_hapd.conf',
+        '! grep -Eq "^bss=wl2\\.1$" /tmp/wl2_hapd.conf',
+        '! grep -Eq "^multi_ap=[1-9]" /tmp/wl2_hapd.conf',
+    ]
+
+
+def test_24g_baseline_restarts_hostapd_after_runtime_cleanup():
+    plugin = _load_plugin()
+    dut = _FakeTransport("serial", {})
+    plugin._transports = {"DUT": dut}
+    case = {"id": "wifi-llapi-D004-kickstation", "bands": ["2.4g"]}
+
+    assert plugin._run_sta_band_baseline(case) is True
+    assert "ubus-cli WiFi.AccessPoint.5.MultiAPType=None" in dut.executed_commands
+    assert "sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl2_hapd.conf" in dut.executed_commands
+    assert "sed -i '/^qos_map_set=/d' /tmp/wl2_hapd.conf" in dut.executed_commands
+    assert "sed -i '/^multi_ap=/d' /tmp/wl2_hapd.conf" in dut.executed_commands
+    assert "hostapd -ddt -B /tmp/wl2_hapd.conf" in dut.executed_commands
+
+
+def test_5g_baseline_restarts_hostapd_after_runtime_cleanup():
+    plugin = _load_plugin()
+    dut = _FakeTransport("serial", {})
+    plugin._transports = {"DUT": dut}
+    case = {"id": "wifi-llapi-D004-kickstation", "bands": ["5g"]}
+
+    assert plugin._run_sta_band_baseline(case) is True
+    assert "ubus-cli WiFi.AccessPoint.1.MultiAPType=None" in dut.executed_commands
+    assert "sed -i 's/^wpa_passphrase=.*/wpa_passphrase=00000000/g' /tmp/wl0_hapd.conf" in dut.executed_commands
+    assert "sed -i '/^multi_ap=/d' /tmp/wl0_hapd.conf" in dut.executed_commands
+    assert "hostapd -ddt -B /tmp/wl0_hapd.conf" in dut.executed_commands
 
 
 def test_discover_cases_uses_wifi_llapi_validator(monkeypatch):
@@ -3290,9 +3353,10 @@ def test_pending_method_calibration_cases_use_runtime_supported_contracts():
     assert "kickStation(MACAddress={{assoc_6g.AssocMac6g}})" in d004_commands
     assert "kickStation(MACAddress={{assoc_24g.AssocMac24g}})" in d004_commands
     assert "iw dev wl0 link" in d004_commands
-    assert "wpa_cli -p /var/run/wpa_supplicant -i wl0 status" in d004_commands
+    assert "wpa_cli -p /var/run/wpa_supplicant -i wl0 status" not in d004_commands
+    assert "wpa_cli -p /var/run/wpa_supplicant -i wl1 status" in d004_commands
     assert "iw dev wl2 link" in d004_commands
-    assert "wpa_cli -p /var/run/wpa_supplicant -i wl2 status" in d004_commands
+    assert "wpa_cli -p /var/run/wpa_supplicant -i wl2 status" not in d004_commands
     assert "wl -i wl0 join TestPilot_5G imode bss" not in d004_commands
     assert "wl -i wl2 join TestPilot_24G imode bss" not in d004_commands
     assert any(

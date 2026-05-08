@@ -1,5 +1,64 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-08 0506-D004)
+
+> This checkpoint records the `D004 kickStation()` 0506-workbook audit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=1`, `pending=153`, `block=110`, `needs_pass3=0`
+- `D004 kickStation()` 已完成 closure；focused rerun `20260508T212440407797` 回報 `Pass / Pass / Pass`，`diagnostic_status=Pass`
+- YAML writeback 透過 `testpilot audit verify-edit` / `record` / `decide` / `apply` 完成；只移除 5G 與 2.4G join step 中冗餘的 `wpa_cli ... status`
+- live evidence 顯示 `iw dev wl0/wl2 link` 已 Connected，且 DUT `wl assoclist` 可取得 STA MAC；`wpa_cli` 在 5G/2.4G 可停在 `ASSOCIATED`，不應作為 workbook row 4 的必要 gate
+- D004 過程中曾遇到 DUT WiFi/datamodel daemon 消失；已用 DUT reboot + serialwrap recover 恢復，final validation 已通過
+- next ready single-case Pass3 target: `D006`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D004 | 4 | kickStation() | Pass / Pass / Pass | `20260508_BGW720-0410-VERIFY_wifi_LLAPI_20260508T212440407797.md L64-L187; DUT.log L829-L858; L627-L629` | `STA.log L90-L104; L201-L228; L379-L390` |
+
+### D004 kickStation() alignment evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+wl -i wl1 status
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+ubus-cli "WiFi.AccessPoint.1.kickStation(MACAddress=2c:59:17:00:19:95)"
+wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+ubus-cli "WiFi.AccessPoint.3.kickStation(MACAddress=2c:59:17:00:19:96)"
+wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+ubus-cli "WiFi.AccessPoint.5.kickStation(MACAddress=2c:59:17:00:19:a7)"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260508T212440407797
+- report md L26-L28: D004 result_5g/result_6g/result_24g = Pass / Pass / Pass, diagnostic_status=Pass
+- report md L64-L187: 5G/6G/2.4G command output includes connected STA links, assoc MAC capture, and kickStation() return MACAddress
+- STA.log L90-L104: wl0 connected to testpilot5G
+- STA.log L201-L228: wl1 connected to testpilot6G and wpa_state=COMPLETED
+- STA.log L379-L390: wl2 connected to testpilot2G
+- DUT.log L829-L858: wl0 assoclist captures 2c:59:17:00:19:95 and kickStation() returns the same MACAddress
+- DUT.log L627-L629: wl2 assoclist captures 2C:59:17:00:19:A7 before the 2.4G kick path
+```
+
 ## Checkpoint summary (2026-04-15 early-173)
 
 > This checkpoint records the `D047 SupportedHe160MCS` blocker revalidation rerun.

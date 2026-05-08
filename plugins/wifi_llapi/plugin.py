@@ -2476,9 +2476,12 @@ class Plugin(PluginBase):
                 )
                 return False
 
-        # For 6G: patch ocv=0 into hapd.conf after wld regeneration to prevent mfp_ocv BSS loop.
-        if "6g" in selected_bands:
-            self._apply_6g_ocv_fix(dut, case_id)
+        for band in selected_bands:
+            if band == "6g":
+                # Patch ocv=0 into hapd.conf after wld regeneration to prevent mfp_ocv BSS loop.
+                self._apply_6g_ocv_fix(dut, case_id)
+            else:
+                self._apply_dut_runtime_config(dut, case_id, band)
 
         # Wait for hostapd to reload after DUT config changes.
         self._execute_env_command(dut, "sleep 5", timeout=10.0)
@@ -2580,6 +2583,8 @@ class Plugin(PluginBase):
             self._execute_env_command(dut, "sleep 5", timeout=10.0)
             if band == "6g":
                 self._apply_6g_ocv_fix(dut, case_id)
+            else:
+                self._apply_dut_runtime_config(dut, case_id, band)
             return True
         self._record_runtime_failure(
             case,
@@ -2798,6 +2803,59 @@ class Plugin(PluginBase):
             )
         log.info("[%s] verify_env: %s 6G ocv=0 fix applied, wl1 hostapd restarted", self.name, case_id)
 
+    def _apply_dut_runtime_config(self, dut: Any, case_id: str, band: str) -> None:
+        profile = self._band_baseline_profile(band) or {}
+        iface = str(profile.get("iface", "")).strip()
+        if not iface:
+            return
+        runtime_config_commands = self._profile_command_list(profile, "dut_runtime_config_commands")
+        runtime_ready_commands = self._profile_command_list(profile, "dut_runtime_ready_commands")
+        if not runtime_config_commands and not runtime_ready_commands:
+            return
+
+        conf_path = f"/tmp/{iface}_hapd.conf"
+        for command in runtime_config_commands:
+            result = self._execute_env_command(dut, command, timeout=10.0)
+            if not self._env_command_succeeded(command, result):
+                log.warning(
+                    "[%s] verify_env: %s %s runtime config failed cmd=%s out=%s",
+                    self.name,
+                    case_id,
+                    band,
+                    self._preview_value(command, limit=96),
+                    self._preview_value(self._env_output_text(result)),
+                )
+                return
+
+        if runtime_config_commands:
+            for command in (
+                f"pid=$(pgrep -f '{conf_path}' 2>/dev/null | head -n1); if [ -n \"$pid\" ]; then kill \"$pid\" 2>/dev/null || true; fi",
+                "sleep 2",
+                f"rm -f /var/run/hostapd/{iface} /var/run/hostapd/{iface}.1",
+                f"wl -i {iface} ap 1",
+                f"wl -i {iface} up",
+                f"ifconfig {iface} up",
+                f"hostapd -ddt -B {conf_path}",
+                "sleep 2",
+                f"wl -i {iface} bss up",
+                "sleep 2",
+            ):
+                self._execute_env_command(dut, command, timeout=15.0)
+
+        for command in runtime_ready_commands:
+            result = self._execute_env_command(dut, command, timeout=5.0)
+            if self._env_command_succeeded(command, result):
+                continue
+            log.info(
+                "[%s] verify_env: %s %s runtime ready check failed cmd=%s out=%s",
+                self.name,
+                case_id,
+                band,
+                self._preview_value(command, limit=96),
+                self._preview_value(self._env_output_text(result)),
+            )
+            break
+
     def _bounce_dut_band(
         self,
         case: dict[str, Any],
@@ -2847,6 +2905,8 @@ class Plugin(PluginBase):
             return False
         if band == "6g":
             self._apply_6g_ocv_fix(dut, case_id)
+        else:
+            self._apply_dut_runtime_config(dut, case_id, band)
         return True
 
     def _verify_sta_band_connectivity(self, case: dict[str, Any]) -> bool:

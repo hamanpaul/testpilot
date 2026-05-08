@@ -12,6 +12,22 @@ profiles:
     mfp: Disabled
     dut_secret_fields:
       - KeyPassPhrase
+    dut_pre_start_commands:
+      - ubus-cli WiFi.AccessPoint.1.MultiAPType=None
+    dut_runtime_config_commands:
+      - sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl0_hapd.conf
+      - sed -i 's/^wpa_passphrase=.*/wpa_passphrase=00000000/g' /tmp/wl0_hapd.conf
+      - sed -i 's/^ieee80211be=.*/ieee80211be=0/g' /tmp/wl0_hapd.conf
+      - sed -i '/^qos_map_set=/d' /tmp/wl0_hapd.conf
+      - sed -i '/^multi_ap=/d' /tmp/wl0_hapd.conf
+      - sed -i '/^bss=wl0\.1$/,$d' /tmp/wl0_hapd.conf
+    dut_runtime_ready_commands:
+      - grep -q '^ocv=0$' /tmp/wl0_hapd.conf
+      - grep -q '^wpa_passphrase=00000000$' /tmp/wl0_hapd.conf
+      - '! grep -Eq "^ieee80211be=1$" /tmp/wl0_hapd.conf'
+      - '! grep -Eq "^qos_map_set=" /tmp/wl0_hapd.conf'
+      - '! grep -Eq "^bss=wl0\.1$" /tmp/wl0_hapd.conf'
+      - '! grep -Eq "^multi_ap=[1-9]" /tmp/wl0_hapd.conf'
     sta_global_config:
       - ctrl_interface=/var/run/wpa_supplicant
       - update_config=1
@@ -86,6 +102,20 @@ profiles:
     mfp: Disabled
     dut_secret_fields:
       - KeyPassPhrase
+    dut_pre_start_commands:
+      - ubus-cli WiFi.AccessPoint.5.MultiAPType=None
+    dut_runtime_config_commands:
+      - sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl2_hapd.conf
+      - sed -i 's/^ieee80211be=.*/ieee80211be=0/g' /tmp/wl2_hapd.conf
+      - sed -i '/^qos_map_set=/d' /tmp/wl2_hapd.conf
+      - sed -i '/^multi_ap=/d' /tmp/wl2_hapd.conf
+      - sed -i '/^bss=wl2\.1$/,$d' /tmp/wl2_hapd.conf
+    dut_runtime_ready_commands:
+      - grep -q '^ocv=0$' /tmp/wl2_hapd.conf
+      - '! grep -Eq "^ieee80211be=1$" /tmp/wl2_hapd.conf'
+      - '! grep -Eq "^qos_map_set=" /tmp/wl2_hapd.conf'
+      - '! grep -Eq "^bss=wl2\.1$" /tmp/wl2_hapd.conf'
+      - '! grep -Eq "^multi_ap=[1-9]" /tmp/wl2_hapd.conf'
     sta_global_config:
       - ctrl_interface=/var/run/wpa_supplicant
       - update_config=1

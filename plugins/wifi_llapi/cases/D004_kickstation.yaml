@@ -89,7 +89,6 @@ steps:
   band: 5g
   command:
   - iw dev wl0 link
-  - wpa_cli -p /var/run/wpa_supplicant -i wl0 status
 - id: step2_5g_record_time
   action: exec
   target: DUT
@@ -160,7 +159,6 @@ steps:
   band: 2.4g
   command:
   - iw dev wl2 link
-  - wpa_cli -p /var/run/wpa_supplicant -i wl2 status
 - id: step12_24g_assoc
   action: exec
   target: DUT

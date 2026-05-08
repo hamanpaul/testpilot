@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from testpilot.core.orchestrator import Orchestrator
+from testpilot.core.case_utils import case_d_number
 
 _VERDICT_FIELDS: tuple[tuple[str, str], ...] = (
     ("result_5g", "5g"),
@@ -46,6 +47,10 @@ def _matches_case_id(requested_case_id: str, reported_case_id: str) -> bool:
         requested == reported
         or requested.startswith(f"{reported}-")
         or reported.startswith(f"{requested}-")
+        or (
+            bool(case_d_number(requested_case_id))
+            and case_d_number(requested_case_id) == case_d_number(reported_case_id)
+        )
     )
 
 
