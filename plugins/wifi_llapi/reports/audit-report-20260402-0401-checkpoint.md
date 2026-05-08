@@ -1,5 +1,60 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-08 0506-D009)
+
+> This checkpoint records the `D009 AssociationTime` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=1`, `pending=151`, `block=112`, `needs_pass3=0`
+- `D009 AssociationTime` 沒有 closure；已標成 `block`，reason=`workbook_pass_but_associationtime_absent_on_5g_24g_datamodel`
+- source survey 確認 `AssociatedDevice[].AssociationTime` 在 ODL 宣告為 read-only datetime，`dm_info.c` 將它映射為 `AMXC_VAR_ID_TIMESTAMP`，而 workbook 的 `wl sta_info ... in network` 交叉檢查也有 source parser 支援
+- focused rerun `20260508T222631382165` 先停在 5G redundant `wpa_cli` gate：`iw dev wl0 link` 已 connected，但 `wpa_cli` 仍是 `wpa_state=ASSOCIATED`
+- audit-gated exploratory edit 暫時移除 5G/2.4G redundant `wpa_cli` gate 後，focused rerun `20260508T223619447864` 跑到 API 本體：5G 有 `AssocMac5g=2c:59:17:00:19:95` 與 `ConnectionSeconds5g=7`，但 `WiFi.AccessPoint.1.AssociatedDevice.1.AssociationTime?` 回 object not found；6G 回 timestamp；AP5 AssociatedDevice wildcard 仍 `No data found`
+- 因為 final live result 仍是 `Fail / Fail / Fail`，D009 exploratory join-gate edit 已透過 audit gate 回復；case YAML 保持不變
+- next ready single-case Pass3 target: `D012`
+
+</details>
+
+### D009 AssociationTime blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+wl -i wl1 status
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+STA_MAC=$(wl -i wl0 assoclist | awk 'NR==1{print $2}'); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n 's/.*in network \([0-9][0-9]*\) seconds.*/ConnectionSeconds5g=\1/p'
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.AssociationTime?"
+wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+STA_MAC=$(wl -i wl1 assoclist | awk 'NR==1{print $2}'); [ -n "$STA_MAC" ] && wl -i wl1 sta_info $STA_MAC | sed -n 's/.*in network \([0-9][0-9]*\) seconds.*/ConnectionSeconds6g=\1/p'
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.AssociationTime?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.*.MACAddress?"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260508T223619447864
+- report md L59-L69: 5G STA is connected, DUT driver captures AssocMac5g=2c:59:17:00:19:95 and ConnectionSeconds5g=7, but AssociationTime returns object not found
+- report md L139-L142: 6G captures AssocMac6g=2c:59:17:00:19:96, ConnectionSeconds6g=14, and WiFi.AccessPoint.3.AssociatedDevice.1.AssociationTime="2026-04-28T00:43:20Z"; later 2.4G preparation fails
+- DUT.log L199-L204: AP1 AssociatedDevice wildcard MACAddress query returns No data found while the driver assoclist later exposes the 5G STA
+- DUT.log L617-L626: AP5 AssociatedDevice wildcard MACAddress query returns No data found
+- source citations: tr181-wifi_AccessPoint.odl L684/L711 declares AssociatedDevice and AssociationTime; dm_info.c L266 maps AssociationTime as AMXC_VAR_ID_TIMESTAMP; wlsysutil.c L695/L709 parses wl sta_info in-network age
+```
+
 ## Checkpoint summary (2026-05-08 0506-D006)
 
 > This checkpoint records the `D006 sendBssTransferRequest()` blocker decision.

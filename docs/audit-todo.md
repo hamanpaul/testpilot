@@ -81,14 +81,15 @@
 
 ## Latest repo handoff snapshot（2026-05-08 / 0506 workbook）
 
-- active audit RID is `74ada64b-2026-05-07T134956Z` against local-only workbook `audit/0506.xlsx`; current buckets are `confirmed=151`, `applied=1`, `pending=152`, `block=111`, `needs_pass3=0`
+- active audit RID is `74ada64b-2026-05-07T134956Z` against local-only workbook `audit/0506.xlsx`; current buckets are `confirmed=151`, `applied=1`, `pending=151`, `block=112`, `needs_pass3=0`
 - latest applied/pass3 closure is `D004 kickStation()` via focused run `20260508T212440407797`: the final single-case rerun reports `Pass / Pass / Pass`, `diagnostic_status=Pass`, and `pass after retry (2/2)`
 - D004 YAML change was applied through `testpilot audit verify-edit` / `record` / `decide` / `apply`; the edit only removes redundant `wpa_cli ... status` checks from 5G and 2.4G join steps after live evidence showed `iw dev wl0/wl2 link` plus DUT `wl assoclist` already prove association while `wpa_cli` may remain `ASSOCIATED`
-- latest blocked case is `D006 sendBssTransferRequest()`: workbook row 6 is marked `Pass / Pass / Pass` but its own procedure documents an `ERROR: call (null) failed with status 1` BTM transfer; live rerun `20260508T220846967896` exact-reproduced 5G/2.4G method errors while 6G returned `[-1]`, and source survey found BTM/FT HAL support without a source-declared `sendBssTransferRequest()` ODL method
+- latest blocked case is `D009 AssociationTime`: source declares `AssociatedDevice[].AssociationTime` and maps it as `AMXC_VAR_ID_TIMESTAMP`, but focused rerun `20260508T223619447864` only returned an ISO timestamp for 6G; 5G had `AssocMac5g=2c:59:17:00:19:95` plus `ConnectionSeconds5g=7` while `WiFi.AccessPoint.1.AssociatedDevice.1.AssociationTime?` returned object not found, and AP5 `AssociatedDevice.*.MACAddress?` stayed `No data found`
+- previous blocked case is `D006 sendBssTransferRequest()`: workbook row 6 is marked `Pass / Pass / Pass` but its own procedure documents an `ERROR: call (null) failed with status 1` BTM transfer; live rerun `20260508T220846967896` exact-reproduced 5G/2.4G method errors while 6G returned `[-1]`, and source survey found BTM/FT HAL support without a source-declared `sendBssTransferRequest()` ODL method
 - lab blocker recovered during D004: DUT process table had lost WiFi/datamodel daemons; a DUT reboot plus serialwrap recovery restored `WiFi.Radio.1.Status="Up"` before final validation
-- active blockers now include the workbook/audit bucket blockers from this RID plus D006: `111` blocked cases (`103` ambiguous workbook rows, `7` missing workbook rows, `1` source/live BTM authority conflict); no D004 blocker remains after the reboot/retry closure
-- next ready single-case Pass3 target is `D009` (`pass3_pending_source_survey_required`); `D005` and `D007` are already in the confirmed bucket (`pass1_verdict_match`)
-- latest validation commands/results: `PYTHONPATH=src uv run pytest -q tests/test_audit_verify_edit.py` -> `37 passed`; focused `testpilot wifi_llapi --case D004 --dut-fw-ver BGW720-0410-VERIFY` -> `1 passed / 0 failed`; focused D006 rerun `20260508T220846967896` -> `Fail / Fail / Fail`, blocked as source/live authority conflict
+- active blockers now include the workbook/audit bucket blockers from this RID plus D006/D009: `112` blocked cases (`103` ambiguous workbook rows, `7` missing workbook rows, `2` source/live authority conflicts); no D004 blocker remains after the reboot/retry closure
+- next ready single-case Pass3 target is `D012` (`pass3_pending_source_survey_required`); `D005` and `D007` are already in the confirmed bucket (`pass1_verdict_match`)
+- latest validation commands/results: `PYTHONPATH=src uv run pytest -q tests/test_audit_verify_edit.py` -> `37 passed`; focused `testpilot wifi_llapi --case D004 --dut-fw-ver BGW720-0410-VERIFY` -> `1 passed / 0 failed`; focused D006 rerun `20260508T220846967896` -> `Fail / Fail / Fail`, blocked as source/live authority conflict; focused D009 rerun `20260508T223619447864` -> `Fail / Fail / Fail`, blocked as AssociationTime source/live authority conflict with exploratory YAML reverted
 
 ## Previous repo handoff snapshot（2026-04-15）
 
