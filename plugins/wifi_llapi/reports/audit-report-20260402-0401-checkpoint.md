@@ -1,5 +1,48 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D014)
+
+> This checkpoint records the `D014 ChargeableUserId` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=1`, `pending=148`, `block=115`, `needs_pass3=0`
+- `D014 ChargeableUserId` 沒有 closure；已標成 `block`，reason=`workbook_to_be_tested_skip_but_chargeableuserid_requires_enterprise_radius_and_getter_absent`
+- workbook row 14 不是 Pass row：BCM v4.0.3 是 `To be tested / To be tested / To be tested`，ARC v4.0.3 是 `Skip / Skip / Skip`
+- source survey 確認 `RadiusChargeableUserId` 只適用 Enterprise / RADIUS security mode，`ChargeableUserId` 是 Access-Accept 的 Chargeable-User-Identity attribute 讀值；目前 default WPA2/WPA3-Personal baseline 沒有 source-backed pass-style empty-string oracle
+- focused run `20260509T003124056983` 跑到 authored 5G getter：`wl0 assoclist` 有 `2C:59:17:00:19:95`，但 `WiFi.AccessPoint.1.AssociatedDevice.1.ChargeableUserId?` 回 object not found，而不是 authored case 期待的 `ChargeableUserId=""`
+- 因為 workbook 是 non-pass row，且 live/source 都不支持把它改寫成 pass-style empty-string criteria，D014 不更新 YAML
+- next ready single-case Pass3 target: `D015`
+
+</details>
+
+### D014 ChargeableUserId blocker evidence
+
+**STA 指令**
+
+```sh
+# authored D014 is DUT-side only; environment baseline still uses the standard STA association prepared by testpilot
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ChargeableUserId?"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused run 20260509T003124056983
+- report md L50-L52: AP1 driver assoclist exposes 2C:59:17:00:19:95, but WiFi.AccessPoint.1.AssociatedDevice.1.ChargeableUserId returns object not found
+- report md L55-L57: diagnostic_status=FailTest; pass criteria expected ChargeableUserId="" but actual output was object not found
+- DUT.log L241-L252: DUT-side replay confirms assoclist is present and ChargeableUserId getter returns object not found
+- source citations: wld_accesspoint.odl L745-L749 declares RadiusChargeableUserId for Enterprise/RADIUS; wld_accesspoint.odl L1206-L1208 declares ChargeableUserId as CUI from Access-Accept; wld.h L1863 stores radiusChargeableUserId
+```
+
 ## Checkpoint summary (2026-05-09 0506-D013)
 
 > This checkpoint records the `D013 Capabilities` blocker decision.
