@@ -1,5 +1,62 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D017)
+
+> This checkpoint records the `D017 DownlinkMCS` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=1`, `pending=145`, `block=118`, `needs_pass3=0`
+- `D017 DownlinkMCS` 沒有 closure；已標成 `block`，reason=`associated_device_projection_absent_for_ap1_ap5_despite_driver_assoc`
+- workbook row 17 期待 `Pass / Pass / Pass`，source 也透過 `wld_assocDev_getStats_orf` 掛上 `AssociatedDevice[]` read path，並宣告 `DownlinkMCS` 為 volatile read-only `uint32`
+- first focused run `20260509T014341465259` 先停在 redundant `wpa_cli status` gate：`iw dev wl0 link` 已 connected，但 `wpa_cli` 仍是 `wpa_state=ASSOCIATED`
+- audit-gated exploratory edit 暫時移除 5G/6G/2.4G redundant `wpa_cli` gates 後，focused rerun `20260509T015439739105` 跑到 AP1 prerequisite：`iw dev wl0 link` 已 connected，DUT `wl0 assoclist` 有 `2C:59:17:00:19:95`，但 `WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?` 回 object not found
+- 同一輪環境驗證顯示 AP5 wildcard `AssociatedDevice.*.MACAddress?` 也是 `No data found`，即使 `wl2 assoclist` 有 `2C:59:17:00:19:A7`；AP3 則能 expose `WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress="2C:59:17:00:19:96"`
+- 因為 final live result 仍是 `Fail / Fail / Fail`，D017 exploratory join-gate edit 已透過 audit gate 回復；case YAML 保持不變
+- next ready single-case Pass3 target: `D018`
+
+</details>
+
+### D017 DownlinkMCS blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+wl -i wl1 status
+iw dev wl2 link
+wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkMCS?"
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.*.MACAddress?"
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.*.MACAddress?"
+wl -i wl2 assoclist
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T015439739105
+- report md L43-L57: after removing redundant wpa_cli gates for exploration, D017 reaches AP1 MACAddress prerequisite and fails with object not found before DownlinkMCS can be read
+- DUT.log L199-L206: AP1 AssociatedDevice wildcard returns No data found while wl0 assoclist exposes 2C:59:17:00:19:95
+- DUT.log L429-L432: AP3 AssociatedDevice wildcard exposes WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress="2C:59:17:00:19:96"
+- DUT.log L623-L630: AP5 AssociatedDevice wildcard returns No data found while wl2 assoclist exposes 2C:59:17:00:19:A7
+- DUT.log L825-L836: direct AP1 AssociatedDevice.1.MACAddress getter returns object not found
+- source citations: fs.install/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1417-L1418 declares DownlinkMCS as volatile read-only uint32; wld.h L845/L929 stores and maps DownlinkMCS
+```
+
 ## Checkpoint summary (2026-05-09 0506-D016)
 
 > This checkpoint records the `D016 DownlinkBandwidth` blocker decision.
