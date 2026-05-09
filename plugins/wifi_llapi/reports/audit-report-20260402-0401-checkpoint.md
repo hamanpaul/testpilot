@@ -1,5 +1,59 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D114)
+
+> This checkpoint records the `D114 getStationStats() AvgSignalStrengthByChain` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=84`, `block=155`, `needs_pass3=0`
+- `D114 getStationStats() AvgSignalStrengthByChain` recorded as `avgsignalstrengthbychain_workbook_all_fail_vs_runtime_all_band_pass_semantics_mismatch`
+- workbook row 114 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T210450843542` reported `Pass / Pass / Pass`
+- 5G/6G/2.4G all connected and returned negative integer `AvgSignalStrengthByChain` values: `-26`, `-66`, `-15`
+- current all-band runtime pass semantics do not match workbook all-fail result
+- next ready single-case Pass3 target: `D115`
+
+</details>
+
+### D114 getStationStats() AvgSignalStrengthByChain blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+iw dev wl2 link
+wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.getStationStats()"
+wl -i wl1 assoclist
+ubus-cli "WiFi.AccessPoint.3.getStationStats()"
+wl -i wl2 assoclist
+ubus-cli "WiFi.AccessPoint.5.getStationStats()"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T210450843542
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- workbook row 114 expects Failed/Failed/Failed -> normalized Fail/Fail/Fail
+- 5G: STA wl0 connected to testpilot5G; MACAddress="2C:59:17:00:42:15"; AvgSignalStrengthByChain=-26
+- 6G: STA wl1 connected to testpilot6G; MACAddress="2C:59:17:00:42:16"; AvgSignalStrengthByChain=-66
+- 2.4G: STA wl2 connected to testpilot2G; MACAddress="2C:59:17:00:42:27"; AvgSignalStrengthByChain=-15
+- current YAML treats negative integer values as pass on all bands, which mismatches workbook all-fail semantics
+```
+
 ## Checkpoint summary (2026-05-09 0506-D113)
 
 > This checkpoint records the `D113 getStationStats() AvgSignalStrength` blocker decision.
