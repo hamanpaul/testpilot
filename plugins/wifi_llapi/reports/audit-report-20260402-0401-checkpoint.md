@@ -1,5 +1,52 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D040)
+
+> This checkpoint records the `D040 RxMulticastPacketCount` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=156`, `applied=8`, `pending=123`, `block=128`, `needs_pass3=0`
+- `D040 RxMulticastPacketCount` confirmed without YAML edit，reason=`workbook_normalized_match_setup_failure_no_yaml_edit`
+- workbook row 40 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.RxMulticastPacketCount` 是 volatile read-only uint32；BRCM/WLD header 與 wl utility 也暴露 rx multicast/broadcast packet counter
+- focused run `20260509T164622357153` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 正規化後等同 workbook `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D041`
+
+</details>
+
+### D040 RxMulticastPacketCount confirmed evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+ping -I wl0 -b -c 5 -W 1 192.168.1.255
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RxMulticastPacketCount?"
+wl -i wl0 sta_info "$STA_MAC" | grep 'rx mcast/bcast pkts'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T164622357153
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 40: expected Not Supported/Not Supported/Not Supported -> normalized Fail/Fail/Fail; actual Fail/N/A/N/A -> normalized Fail/Fail/Fail; full_match_count=1, mismatch_case_count=0
+- caveat: getter did not execute; this is accepted only as a workbook-normalized match, and sta_env_setup / bands / topology changes remain outside audit allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1348 declares RxMulticastPacketCount as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L993 declares RxMulticastPacketCount; wld.h L831 exposes RxMulticastPacketCount; wlu_common.c L598 prints rx mcast/bcast pkts from sta->rx_mcast_pkts
+```
+
 ## Checkpoint summary (2026-05-09 0506-D039)
 
 > This checkpoint records the `D039 RxBytes` blocker.
