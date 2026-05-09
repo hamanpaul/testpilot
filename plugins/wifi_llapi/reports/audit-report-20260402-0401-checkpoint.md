@@ -1,5 +1,74 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D438)
+
+> This checkpoint records the `D438 TransitionDisable — WiFi.AccessPoint.{i}.Security.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=12`, `block=203`, `needs_pass3=0`
+- `D438 TransitionDisable — WiFi.AccessPoint.{i}.Security.` recorded as `security_transitiondisable_env_block_6g_dut_bss_down_before_hostapd_transition_disable_check`
+- workbook row 438 latest result is `Pass / Pass / Pass`; workbook validates wildcard `TransitionDisable` values by checking wl0/wl1/wl2 hostapd `transition_disable=1/2/8`
+- focused run `20260510T045531077541` reported `Fail / Fail / Fail` with `diagnostic_status=FailConfig`
+- failure reason: `setup_env` failed before TransitionDisable setter/readback and hostapd backend inspection because DUT BSS readiness stayed `down` (`wl0` then `wl1`)
+- source survey confirms `TransitionDisable` is defined in AccessPoint Security ODL with the workbook options and hostapd/wpa_supplicant sources implement `transition_disable`
+- next ready single-case Pass3 target: `D464`
+
+</details>
+
+### D438 Security TransitionDisable environment blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only Security case; runtime did not require or reach STA operations.
+```
+
+**DUT 指令**
+
+```sh
+# Setup commands executed before the blocker:
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+ubus-cli WiFi.AccessPoint.2.Security.ModeEnabled=WPA2-Personal
+ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
+ubus-cli WiFi.AccessPoint.4.Security.ModeEnabled=WPA3-Personal
+ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal
+ubus-cli WiFi.AccessPoint.6.Security.ModeEnabled=WPA2-Personal
+ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=password
+ubus-cli WiFi.AccessPoint.2.Security.SAEPassphrase=password
+ubus-cli 'WiFi.AccessPoint.3.Security.SAEPassphrase="00000000"'
+ubus-cli 'WiFi.AccessPoint.4.Security.SAEPassphrase="00000000"'
+ubus-cli WiFi.AccessPoint.5.Security.SAEPassphrase=password
+ubus-cli WiFi.AccessPoint.6.Security.SAEPassphrase=password
+ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable="
+wl -i wl0 bss
+wl -i wl1 bss
+
+# Intended workbook replay, not executed in this focused run:
+ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable=WPA3-Personal"
+grep -m1 '^transition_disable=' /tmp/wl0_hapd.conf
+grep -m1 '^transition_disable=' /tmp/wl1_hapd.conf
+grep -m1 '^transition_disable=' /tmp/wl2_hapd.conf
+ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable=SAE-PK"
+ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable=EnhancedOpen"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T045531077541
+- workbook row 438 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailConfig
+- failure snapshot: phase=setup_env, band=6g, device=DUT, reason_code=sta_env_setup_failed, command="wl -i wl1 bss", output="down"
+- runtime failed before TransitionDisable setter/readback and hostapd transition_disable inspection
+- source survey: AccessPoint Security ODL defines TransitionDisable allowed values "", WPA3-Personal, SAE-PK, WPA3-Enterprise, EnhancedOpen; hostapd/wpa_supplicant sources parse and apply transition_disable
+```
+
 ## Checkpoint summary (2026-05-10 0506-D437)
 
 > This checkpoint records the `D437 SAEPassphrase — WiFi.AccessPoint.{i}.Security.` environment blocker.
