@@ -1,5 +1,58 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D426)
+
+> This checkpoint records the `D426 UplinkRateSpec — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=24`, `block=191`, `needs_pass3=0`
+- `D426 UplinkRateSpec — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` recorded as `assocdev_uplinkratespec_env_block_5g_sta_not_connected_before_getter`
+- workbook row 426 latest result is `Pass / Pass / Pass`, after prior workbook notes about PWHM failures and `getStationStats` sync requirements
+- focused run `20260510T041515462889` reported `Fail / N/A / N/A` with `diagnostic_status=FailEnv`
+- failure reason: `env_verify` failed before assoclist/getter commands executed because 5G STA baseline/connect did not stabilize
+- source survey confirms AssociatedDevice `UplinkRateSpec` is exposed in ODL/wld as volatile read-only MCS/rate-spec data
+- next ready single-case Pass3 target: `D427`
+
+</details>
+
+### D426 AssociatedDevice UplinkRateSpec environment blocker evidence
+
+**STA 指令**
+
+```sh
+# Runtime did not reach getter phase; STA baseline failed while trying to connect wl0 to testpilot5G.
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+wl -i wl0 join testpilot5G imode bss
+wl -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+# Intended readback sequence, not executed in this focused run:
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.UplinkRateSpec?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T041515462889
+- workbook row 426 latest result expects Pass/Pass/Pass
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- failure snapshot: phase=verify_env, band=5g, reason_code=sta_band_not_ready, comment="STA band baseline/connect failed"
+- DUT.log L8-L10: wl0 initially reported up, then deterministic baseline was re-applied
+- DUT.log L199-L250: wl0 bss dropped and stayed down across repeated baseline retries
+- STA.log L82-L100: repeated `iw dev wl0 link` returned `Not connected.`
+- STA.log L101-L121: fallback `wl -i wl0 join testpilot5G` still reported `Not associated.`
+- source survey: AssociatedDevice UplinkRateSpec is registered in tr181-wifi_AccessPoint.odl and backed by wld swl_mcs_t upLinkRateSpec / gtSwl_type_mcs
+```
+
 ## Checkpoint summary (2026-05-10 0506-D415)
 
 > This checkpoint records the `D415 RrmOnChannelMaxDuration — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
