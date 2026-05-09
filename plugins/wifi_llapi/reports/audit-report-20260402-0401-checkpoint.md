@@ -1,5 +1,72 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D065)
+
+> This checkpoint records the `D065 BridgeInterface` applied audit correction.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=165`, `applied=9`, `pending=98`, `block=143`, `needs_pass3=0`
+- `D065 BridgeInterface` marked `applied` as `verified_pass_criteria_update_matches_workbook`
+- workbook row 65 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `WiFi.AccessPoint.{i}.BridgeInterface` 是 persistent string，代表 VAP 使用的 bridge interface
+- D064 後 AP1/AP3/AP5 先 rebaseline 到 `wl0/wl1/wl2 bss=up`
+- pre-edit run `20260509T185143736802` confirmed the live data path: AP1/AP3/AP5 getters were `br-lan`, hostapd bridge names were `br-lan`, Linux bridge masters were `br-lan`; only stale pass criteria expected two `bridge=` lines for wl1/wl2 while current files expose one active bridge line
+- audit `verify-edit` accepted the pass-criteria-only change from count `2` to `1` for 6G and 2.4G; `audit apply` updated `plugins/wifi_llapi/cases/D065_bridgeinterface.yaml`
+- post-edit run `20260509T185329151591` passed `Pass / Pass / Pass`, matching workbook row 65
+- next ready single-case Pass3 target: `D066`
+
+</details>
+
+### D065 BridgeInterface applied evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.BridgeInterface?"
+ubus-cli "WiFi.AccessPoint.3.BridgeInterface?"
+ubus-cli "WiFi.AccessPoint.5.BridgeInterface?"
+grep '^bridge=' /tmp/wl0_hapd.conf
+grep '^bridge=' /tmp/wl1_hapd.conf
+grep '^bridge=' /tmp/wl2_hapd.conf
+cat /sys/class/net/wl0/master/uevent
+cat /sys/class/net/wl1/master/uevent
+cat /sys/class/net/wl2/master/uevent
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Pre-edit focused run 20260509T185143736802
+- getters: AP1/AP3/AP5 BridgeInterface all "br-lan"
+- hostapd config: wl0 BridgeConfig5g=br-lan Count=2 Mismatch=0; wl1 BridgeConfig6g=br-lan Count=1 Mismatch=0; wl2 BridgeConfig24g=br-lan Count=1 Mismatch=0
+- bridge masters: BridgeMaster5g=br-lan; BridgeMaster6g=br-lan; BridgeMaster24g=br-lan
+- failure cause: stale criteria expected BridgeConfig6gCount=2 and BridgeConfig24gCount=2 even though current 6G/2.4G files expose one active bridge=br-lan line
+
+Verified edit
+- file: plugins/wifi_llapi/cases/D065_bridgeinterface.yaml
+- allowed scope: pass_criteria only
+- changed config_6g.BridgeConfig6gCount expected value 2 -> 1
+- changed config_24g.BridgeConfig24gCount expected value 2 -> 1
+- verify-edit logged success in audit/runs/74ada64b-2026-05-07T134956Z/wifi_llapi/verify_edit_log.jsonl
+
+Post-edit focused run 20260509T185329151591
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- getters: WiFi.AccessPoint.1/3/5.BridgeInterface="br-lan"
+- hostapd config: BridgeConfig5g=br-lan Count=2 Mismatch=0; BridgeConfig6g=br-lan Count=1 Mismatch=0; BridgeConfig24g=br-lan Count=1 Mismatch=0
+- bridge masters: BridgeMaster5g=br-lan; BridgeMaster6g=br-lan; BridgeMaster24g=br-lan
+- compare against audit/0506.xlsx row 65: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L306-L309 and BRCM mirror tr181-wifi_AccessPoint.odl L159-L161 document and declare BridgeInterface
+```
+
 ## Checkpoint summary (2026-05-09 0506-D064)
 
 > This checkpoint records the `D064 APBridgeDisable` confirmed no-edit decision.

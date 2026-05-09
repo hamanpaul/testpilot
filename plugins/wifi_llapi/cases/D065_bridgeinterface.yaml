@@ -144,9 +144,9 @@ pass_criteria:
     getter.
 - field: config_6g.BridgeConfig6gCount
   operator: equals
-  value: '2'
-  description: wl1 hostapd config should expose two bridge=br-lan lines in the 
-    current dual-BSS file.
+  value: '1'
+  description: wl1 hostapd config should expose the active bridge=br-lan line in
+    the current 6G hostapd file.
 - field: config_6g.BridgeConfig6gMismatch
   operator: equals
   value: '0'
@@ -158,9 +158,9 @@ pass_criteria:
     getter.
 - field: config_24g.BridgeConfig24gCount
   operator: equals
-  value: '2'
-  description: wl2 hostapd config should expose two bridge=br-lan lines in the 
-    current dual-BSS file.
+  value: '1'
+  description: wl2 hostapd config should expose the active bridge=br-lan line in
+    the current 2.4G hostapd file.
 - field: config_24g.BridgeConfig24gMismatch
   operator: equals
   value: '0'
