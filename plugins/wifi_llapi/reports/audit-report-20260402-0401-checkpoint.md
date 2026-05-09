@@ -1,5 +1,58 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D030)
+
+> This checkpoint records the `D030 MUGroupId` applied closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=153`, `applied=5`, `pending=133`, `block=124`, `needs_pass3=0`
+- `D030 MUGroupId` applied through audit `verify-edit` / `record` / `decide` / `apply`，reason=`pass3_align_mugroupid_not_supported_stub_zero_to_fail_shape`
+- workbook row 30 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.MUGroupId` 是 read-only uint32；source comment 說明 group ID `0` 代表 SU transmission
+- focused run before edit `20260509T145819963658` AP1/AP5 都回 `MUGroupId=0`，舊 YAML 報告 `Pass / Pass / Pass`，與 workbook not-supported row 不符
+- focused rerun after edit `20260509T150359521353` 報告 `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- targeted runtime test: `PYTHONPATH=src:plugins/wifi_llapi uv run pytest -q plugins/wifi_llapi/tests/test_wifi_llapi_plugin_runtime.py -k 'pending_not_supported_associateddevice_cases'` -> `2 passed, 1210 deselected`
+- next ready single-case Pass3 target: `D031`
+
+</details>
+
+### D030 MUGroupId applied evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MUGroupId?"
+wl -i wl2 assoclist
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MUGroupId?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun before edit 20260509T145819963658
+- live values: AP1 MUGroupId=0, AP5 MUGroupId=0
+- report shape before edit: Pass / Pass / Pass
+- compare against audit/0506.xlsx row 30: mismatch_case_count=1, expected normalized Fail/Fail/Fail
+
+Focused rerun after edit 20260509T150359521353
+- final: status=Fail, evaluation_verdict=Fail, attempts_used=2, diagnostic_status=FailTest
+- report shape after edit: Fail / Fail / Fail
+- intentional failure snapshot: field=result_5g.MUGroupId, operator=not_equals, expected=0, actual=0
+- compare against audit/0506.xlsx row 30: expected raw Not Supported/Not Supported/Not Supported, expected normalized Fail/Fail/Fail, actual normalized Fail/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1537 declares MUGroupId as read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L887 declares MUGroupId as read-only uint32
+```
+
 ## Checkpoint summary (2026-05-09 0506-D029)
 
 > This checkpoint records the `D029 Mode` confirmation.

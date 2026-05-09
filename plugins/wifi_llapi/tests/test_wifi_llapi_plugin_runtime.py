@@ -4931,7 +4931,7 @@ def test_pending_not_supported_associateddevice_cases_use_supported_contracts():
     assert "wl -i wl2 assoclist" in d030_commands
     assert any(
         criterion["field"] == "result_5g.MUGroupId"
-        and criterion["operator"] == "equals"
+        and criterion["operator"] == "not_equals"
         and str(criterion["value"]) == "0"
         for criterion in d030["pass_criteria"]
     )
@@ -5007,9 +5007,9 @@ def test_pending_not_supported_associateddevice_cases_evaluate_live_examples():
             },
         }
     }
-    assert plugin.evaluate(d030, d030_results) is True
+    assert plugin.evaluate(d030, d030_results) is False
 
-    d030_fail_results = {
+    d030_non_stub_results = {
         "steps": {
             **d030_results["steps"],
             "step2_5g": {
@@ -5019,7 +5019,7 @@ def test_pending_not_supported_associateddevice_cases_evaluate_live_examples():
             },
         }
     }
-    assert plugin.evaluate(d030, d030_fail_results) is False
+    assert plugin.evaluate(d030, d030_non_stub_results) is True
 
 
 def test_pending_mu_stub_cases_use_supported_contracts():
