@@ -1,5 +1,54 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D298)
+
+> This checkpoint records the `D298 startScan() — WiFi.Radio.{i}.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=63`, `block=154`, `needs_pass3=0`
+- `D298 startScan() — WiFi.Radio.{i}.` recorded as `radio_startscan_workbook_pass_all_bands_vs_unknown_error_runtime_fail`
+- workbook row 298 latest ARC/PWHM result is `Pass / Pass / Pass`
+- focused run `20260509T230859939566` reported `Fail / Fail / Fail` with `diagnostic_status=FailTest`
+- all three `WiFi.Radio.{1,2,3}.startScan()` calls returned `ERROR: call (null) failed with status 1 - unknown error`
+- next ready single-case Pass3 target: `D321`
+
+</details>
+
+### D298 Radio startScan blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D298 is a DUT-only startScan() probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.startScan()"
+ubus-cli "WiFi.Radio.2.startScan()"
+ubus-cli "WiFi.Radio.3.startScan()"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T230859939566
+- workbook row 298 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- DUT.log L8-L65:
+  ubus-cli "WiFi.Radio.1.startScan()"
+  ERROR: call (null) failed with status 1 - unknown error
+  ubus-cli "WiFi.Radio.2.startScan()"
+  ERROR: call (null) failed with status 1 - unknown error
+  ubus-cli "WiFi.Radio.3.startScan()"
+  ERROR: call (null) failed with status 1 - unknown error
+- mismatch: workbook pass semantics disagree with live all-band unknown-error result
+```
+
 ## Checkpoint summary (2026-05-09 0506-D295)
 
 > This checkpoint records the `D295 scan() — WiFi.Radio.{i}.` environment blocker.
