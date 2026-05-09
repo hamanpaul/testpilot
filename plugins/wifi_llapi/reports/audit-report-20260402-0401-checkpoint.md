@@ -1,5 +1,66 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D080)
+
+> This checkpoint records the `D080 MaxAssociatedDevices` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=95`, `block=144`, `needs_pass3=0`
+- `D080 MaxAssociatedDevices` recorded as `setter_convergence_result_semantics_mismatch_outside_audit_allowlist`
+- workbook row 80 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `MaxAssociatedDevices` 是 persistent uint32，HAL get/set 透過 `wldm_AccessPoint_MaxAssociatedDevices`，hostapd `maxassoc` 會輸出成 `max_num_sta`
+- focused run `20260509T192942787477` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 each showed getter and hostapd `max_num_sta` converging `32 -> 31 -> 32`
+- current YAML treats setter/config convergence as `Pass / Pass / Pass`, which mismatches normalized workbook `Fail / Fail / Fail`
+- cleanup command `dfa17b41e4bc4bd2a52e7e9fddc80c9a` confirmed AP1/AP3/AP5 `MaxAssociatedDevices=32` and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D081`
+
+</details>
+
+### D080 MaxAssociatedDevices blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.MaxAssociatedDevices?"
+ubus-cli WiFi.AccessPoint.1.MaxAssociatedDevices=31
+grep -n 'max_num_sta=' /tmp/wl0_hapd.conf
+ubus-cli WiFi.AccessPoint.1.MaxAssociatedDevices=32
+ubus-cli "WiFi.AccessPoint.3.MaxAssociatedDevices?"
+ubus-cli WiFi.AccessPoint.3.MaxAssociatedDevices=31
+grep -n 'max_num_sta=' /tmp/wl1_hapd.conf
+ubus-cli WiFi.AccessPoint.3.MaxAssociatedDevices=32
+ubus-cli "WiFi.AccessPoint.5.MaxAssociatedDevices?"
+ubus-cli WiFi.AccessPoint.5.MaxAssociatedDevices=31
+grep -n 'max_num_sta=' /tmp/wl2_hapd.conf
+ubus-cli WiFi.AccessPoint.5.MaxAssociatedDevices=32
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T192942787477
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: BaselineGetterMax5g=32 / BaselineHostapdMax5g=32; set 31 -> AfterTempGetterMax5g=31 / AfterTempHostapdMax5g=31; restore -> AfterRestoreGetterMax5g=32 / AfterRestoreHostapdMax5g=32
+- 6G/AP3: BaselineGetterMax6g=32 / BaselineHostapdMax6g=32; set 31 -> AfterTempGetterMax6g=31 / AfterTempHostapdMax6g=31; restore -> AfterRestoreGetterMax6g=32 / AfterRestoreHostapdMax6g=32
+- 2.4G/AP5: BaselineGetterMax24g=32 / BaselineHostapdMax24g=32; set 31 -> AfterTempGetterMax24g=31 / AfterTempHostapdMax24g=31; restore -> AfterRestoreGetterMax24g=32 / AfterRestoreHostapdMax24g=32
+- compare against audit/0506.xlsx row 80: expected Failed/Failed/Failed -> normalized Fail/Fail/Fail; actual Pass/Pass/Pass
+- cleanup command dfa17b41e4bc4bd2a52e7e9fddc80c9a: AP1/AP3/AP5 MaxAssociatedDevices=32 and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L526 declares MaxAssociatedDevices; wifi_hal.c L6576-L6605 routes get/set through wldm_AccessPoint_MaxAssociatedDevices; hostapd.sh L603-L604 emits max_num_sta
+```
+
 ## Checkpoint summary (2026-05-09 0506-D079)
 
 > This checkpoint records the `D079 MACFiltering.Mode` blocker decision.
