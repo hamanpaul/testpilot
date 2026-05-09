@@ -1,5 +1,55 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D063)
+
+> This checkpoint records the `D063 VhtCapabilities` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=164`, `applied=8`, `pending=100`, `block=143`, `needs_pass3=0`
+- `D063 VhtCapabilities` confirmed as `workbook_normalized_match_no_yaml_edit`
+- workbook row 63 raw value is `Pass / Not Support / Not Support`, normalized to `Pass / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.VhtCapabilities` 是 read-only string，列出 VHT capability tokens
+- focused run `20260509T184359865641` validates the current 5G path: STA wl0 and AP1 AssociatedDevice.1 both resolved to `2c:59:17:00:42:15`; direct getter, snapshot, and driver capture all matched `SGI80,SGI160,SU-BFR,SU-BFE`
+- report shape `Pass / N/A / N/A` normalizes to `Pass / Fail / Fail`, matching workbook row 63; no YAML edit was required
+- next ready single-case Pass3 target: `D064`
+
+</details>
+
+### D063 VhtCapabilities confirmed evidence
+
+**STA 指令**
+
+```sh
+cat /sys/class/net/wl0/address | tr 'A-F' 'a-f' | sed 's/^/StaMac=/'
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.VhtCapabilities?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?"
+wl -i wl0 sta_info "$STA_MAC" | awk '/^[[:space:]]*VHT caps / {line=substr($0, index($0, ":")+2); print "DriverVhtCapsLine=" line; for (i=1;i<=NF;i++) if ($i ~ /^(SGI80|SGI160|SU-BFR|SU-BFE|MU-BFR|MU-BFE)$/) caps[++n]=$i} END {if (n) {out=""; for (i=1;i<=n;i++) out = out (i>1 ? "," : "") caps[i]; print "DriverVhtCapabilities=" out}}'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T184359865641
+- STA identity: StaMac=2c:59:17:00:42:15
+- AP1 association: MACAddress=2c:59:17:00:42:15
+- API evidence: WiFi.AccessPoint.1.AssociatedDevice.1.VhtCapabilities="SGI80,SGI160,SU-BFR,SU-BFE"
+- snapshot evidence: AssocMAC=2c:59:17:00:42:15; AssocVhtCapabilities=SGI80,SGI160,SU-BFR,SU-BFE
+- driver evidence: DriverAssocMac=2c:59:17:00:42:15; DriverVhtCapsLine=LDPC SGI80 SGI160 SU-BFR SU-BFE; DriverVhtCapabilities=SGI80,SGI160,SU-BFR,SU-BFE
+- report shape: Pass / N/A / N/A, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 63: raw expected Pass/Not Support/Not Support; normalized expected Pass/Fail/Fail; actual Pass/N/A/N/A normalizes to Pass/Fail/Fail
+- decision: confirmed no-edit; current 5G-only authored case matches workbook after Not Support/N/A normalization
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1680-L1685 documents and declares VhtCapabilities; BRCM mirror tr181-wifi_AccessPoint.odl L1112 declares VhtCapabilities
+```
+
 ## Checkpoint summary (2026-05-09 0506-D062)
 
 > This checkpoint records the `D062 VendorOUI` blocker.
