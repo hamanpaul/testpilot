@@ -1,5 +1,52 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D385)
+
+> This checkpoint records the `D385 RadCapabilitiesVHTStr — WiFi.Radio.{i}.` workbook/runtime mismatch blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=34`, `block=181`, `needs_pass3=0`
+- `D385 RadCapabilitiesVHTStr — WiFi.Radio.{i}.` recorded as `radio_radcapabilitiesvhtstr_workbook_6g_24g_not_supported_vs_runtime_pass_empty_strings_due_permissive_regex`
+- workbook row 385 latest result is `Pass / Not Supported / Not Supported` (normalized `Pass / Fail / Fail`)
+- focused run `20260510T024524904155` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- mismatch reason: current YAML accepts empty 6G/2.4G strings via `.*`, but workbook latest marks those bands Not Supported because they do not support VHT
+- source survey found no direct `WiFi.Radio.{i}.RadCapabilitiesVHTStr` registration in prpl_brcm; VHT capability masks and DataElements mappings exist but are not the same runtime API
+- next ready single-case Pass3 target: `D406`
+
+</details>
+
+### D385 Radio RadCapabilitiesVHTStr blocker evidence
+
+**STA 指令**
+
+```sh
+# DUT-only getter case; no STA command required
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.RadCapabilitiesVHTStr?"
+ubus-cli "WiFi.Radio.2.RadCapabilitiesVHTStr?"
+ubus-cli "WiFi.Radio.3.RadCapabilitiesVHTStr?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T024524904155
+- workbook row 385 latest result expects Pass/Not Supported/Not Supported (normalized Pass/Fail/Fail)
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21:
+  WiFi.Radio.1.RadCapabilitiesVHTStr="RX_LDPC,SGI_80,SGI_160,SU_BFR,SU_BFE,LINK_ADAPT_CAP"
+  WiFi.Radio.2.RadCapabilitiesVHTStr=""
+  WiFi.Radio.3.RadCapabilitiesVHTStr=""
+- source survey: no direct `WiFi.Radio.{i}.RadCapabilitiesVHTStr` registration in prpl_brcm; DataElements VHTCapabilities mappings are distinct
+```
+
 ## Checkpoint summary (2026-05-10 0506-D363)
 
 > This checkpoint records the `D363 BssColorPartial — WiFi.Radio.{i}.IEEE80211ax.` workbook/runtime mismatch blocker.
