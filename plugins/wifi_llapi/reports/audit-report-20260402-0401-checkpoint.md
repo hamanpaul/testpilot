@@ -1,5 +1,52 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D050)
+
+> This checkpoint records the `D050 SupportedVhtMCS` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=160`, `applied=8`, `pending=113`, `block=134`, `needs_pass3=0`
+- `D050 SupportedVhtMCS` confirmed without YAML edit，reason=`workbook_normalized_match_no_yaml_edit`
+- workbook row 50 raw value is `Pass / Not Supported / Not Supported`, normalized to `Pass / Fail / Fail`
+- focused run `20260509T173558362732` validates current AP1 path: `SupportedVhtMCS` returns `error=4 parameter not found`, sibling Rx/Tx VHT MCS fields return `9,9,9,9`, and driver VHT capability evidence is present
+- report shape `Pass / N/A / N/A` 正規化後等同 workbook `Pass / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D051`
+
+</details>
+
+### D050 SupportedVhtMCS confirmed evidence
+
+**STA 指令**
+
+```sh
+cat /sys/class/net/wl0/address | tr 'a-f' 'A-F' | sed 's/^/StaMac=/'
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedVhtMCS?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.RxSupportedVhtMCS="\([^"]*\)".*/DriverRxSupportedVhtMCS=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxSupportedVhtMCS="\([^"]*\)".*/DriverTxSupportedVhtMCS=\1/p'
+wl -i wl0 sta_info "$STA_MAC" | awk '/VHT caps|MCS SET|VHT SET/'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T173558362732
+- current AP1 path: StaMac=2C:59:17:00:42:15 and AssociatedDevice.1.MACAddress="2C:59:17:00:42:15"
+- SupportedVhtMCS readback: ERROR ... failed (4 - parameter not found); extracted error=4, message=parameter not found
+- sibling evidence: RxSupportedVhtMCS=9,9,9,9; TxSupportedVhtMCS=9,9,9,9; wl0 sta_info exposed VHT caps / MCS SET / VHT SET
+- report shape: Pass / N/A / N/A, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 50: expected Pass/Not Supported/Not Supported normalized Pass/Fail/Fail, actual Pass/N/A/N/A normalized Pass/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- no YAML edit: current authored 5G path plus N/A projections already match workbook normalization
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202 starts AssociatedDevice[]; L1581/L1588 declare Rx/TxSupportedVhtMCS siblings; fs/etc/amx/wld/wld_endpoint.odl L361 declares standalone SupportedVhtMCS under Endpoint
+```
+
 ## Checkpoint summary (2026-05-09 0506-D049)
 
 > This checkpoint records the `D049 SupportedMCS` confirmed no-edit closure.
