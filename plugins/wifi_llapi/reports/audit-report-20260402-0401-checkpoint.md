@@ -1,5 +1,54 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D207)
+
+> This checkpoint records the `D207 ObssCoexistenceEnable — WiFi.Radio.{i}.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=66`, `block=151`, `needs_pass3=0`
+- `D207 ObssCoexistenceEnable — WiFi.Radio.{i}.` recorded as `radio_obsscoexistenceenable_workbook_not_supported_5g_6g_vs_numeric_getter_pass_semantics_mismatch`
+- workbook row 207 marks 5G/6G as `Not Supported` and 2.4G as `Pass`, normalized to `Fail / Fail / Pass`
+- focused run `20260509T225225505345` reported `Pass / Pass / Pass`
+- current YAML only validates getter presence and read 5G/6G disabled values plus 2.4G enabled value
+- next ready single-case Pass3 target: `D294`
+
+</details>
+
+### D207 Radio ObssCoexistenceEnable blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D207 is a DUT-only Radio ObssCoexistenceEnable getter probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.ObssCoexistenceEnable?"
+ubus-cli "WiFi.Radio.2.ObssCoexistenceEnable?"
+ubus-cli "WiFi.Radio.3.ObssCoexistenceEnable?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T225225505345
+- workbook row 207 expects Not Supported / Not Supported / Pass -> normalized Fail/Fail/Pass
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21:
+  ubus-cli "WiFi.Radio.1.ObssCoexistenceEnable?"
+  WiFi.Radio.1.ObssCoexistenceEnable=0
+  ubus-cli "WiFi.Radio.2.ObssCoexistenceEnable?"
+  WiFi.Radio.2.ObssCoexistenceEnable=0
+  ubus-cli "WiFi.Radio.3.ObssCoexistenceEnable?"
+  WiFi.Radio.3.ObssCoexistenceEnable=1
+- mismatch: workbook not-supported semantics for 5G/6G disagree with current numeric-getter pass criteria
+```
+
 ## Checkpoint summary (2026-05-09 0506-D202)
 
 > This checkpoint records the `D202 Interference — WiFi.Radio.{i}.` blocker.
