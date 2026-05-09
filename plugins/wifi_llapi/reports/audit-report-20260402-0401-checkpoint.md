@@ -1,5 +1,54 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D294)
+
+> This checkpoint records the `D294 getNaStationStats() — WiFi.Radio.{i}.NaStaMonitor.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=65`, `block=152`, `needs_pass3=0`
+- `D294 getNaStationStats() — WiFi.Radio.{i}.NaStaMonitor.` recorded as `radio_nastamonitor_getnastationstats_workbook_skip_all_bands_vs_object_not_found_probe_pass_semantics_mismatch`
+- workbook row 294 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T225431238739` reported `Pass / Pass / Pass`
+- current YAML probes `WiFi.EndPoint.1.getNaStationStats()` and treats `object not found` as pass
+- next ready single-case Pass3 target: `D295`
+
+</details>
+
+### D294 Radio NaStaMonitor getNaStationStats blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D294 current YAML is a DUT-only unsupported/object-not-found probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getNaStationStats()"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T225431238739
+- workbook row 294 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L17:
+  ubus-cli "WiFi.EndPoint.1.getNaStationStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getNaStationStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- mismatch: workbook skip/fail semantics disagree with current object-not-found pass criteria
+```
+
 ## Checkpoint summary (2026-05-09 0506-D207)
 
 > This checkpoint records the `D207 ObssCoexistenceEnable — WiFi.Radio.{i}.` blocker.
