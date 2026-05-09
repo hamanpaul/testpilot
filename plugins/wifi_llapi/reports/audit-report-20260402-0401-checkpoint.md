@@ -1,5 +1,51 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D052)
+
+> This checkpoint records the `D052 Tx_RetransmissionsFailed` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=161`, `applied=8`, `pending=111`, `block=135`, `needs_pass3=0`
+- `D052 Tx_RetransmissionsFailed` confirmed without YAML edit，reason=`workbook_normalized_match_setup_failure_no_yaml_edit`
+- workbook row 52 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.Tx_RetransmissionsFailed` 是 volatile read-only uint32；WLD header 也暴露 tx retry-exhausted counter
+- focused run `20260509T174432636601` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 正規化後等同 workbook `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D053`
+
+</details>
+
+### D052 Tx_RetransmissionsFailed confirmed evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Tx_RetransmissionsFailed?"
+wl -i wl0 sta_info "$STA_MAC" | sed -n 's/.*tx pkts retry exhausted: *\([0-9][0-9]*\).*/DriverTxRetransmissionsFailed=\1/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T174432636601
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 52: expected Not Supported/Not Supported/Not Supported normalized Fail/Fail/Fail, actual Fail/N/A/N/A normalized Fail/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- no YAML edit: setup/bands/topology are outside audit allowlist, and workbook Not Supported already closes as fail-shaped
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1391 declares Tx_RetransmissionsFailed as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L1041 declares Tx_RetransmissionsFailed; wld.h L807/L908 expose Tx_RetransmissionsFailed fields
+```
+
 ## Checkpoint summary (2026-05-09 0506-D051)
 
 > This checkpoint records the `D051 Tx_Retransmissions` blocker.
