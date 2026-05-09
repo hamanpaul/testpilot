@@ -1,5 +1,53 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D464)
+
+> This checkpoint records the `D464 NonSRGOffsetValid — WiFi.Radio.{i}.IEEE80211ax.` workbook/runtime mismatch blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=11`, `block=204`, `needs_pass3=0`
+- `D464 NonSRGOffsetValid — WiFi.Radio.{i}.IEEE80211ax.` recorded as `radio_nonsrgoffsetvalid_workbook_latest_fail_all_bands_vs_runtime_pass_zero_getter_redundant_dm_not_backend_verified`
+- workbook row 464 latest result is `Fail / Fail / Fail`; ARC/RD notes this redundant DM is not implemented as expected and suggests driver-level HE options validation
+- focused run `20260510T045836277410` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- mismatch reason: current YAML only validates `NonSRGOffsetValid=0` numeric getter shape on Radio 1/2/3 and does not verify workbook-described backend/redundant behavior
+- source survey found `NonSRGOffsetValid` in wld ODL/data structures and DataElements mappings, but no direct prpl_brcm tr181-wifi registration
+- next ready single-case Pass3 target: `D477`
+
+</details>
+
+### D464 Radio NonSRGOffsetValid mismatch evidence
+
+**STA 指令**
+
+```sh
+# DUT-only Radio getter case; runtime did not require STA operations.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.IEEE80211ax.NonSRGOffsetValid?"
+ubus-cli "WiFi.Radio.2.IEEE80211ax.NonSRGOffsetValid?"
+ubus-cli "WiFi.Radio.3.IEEE80211ax.NonSRGOffsetValid?"
+
+# Workbook backend hint requiring further alignment, not covered by current YAML:
+wl -i wl0 he options
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T045836277410
+- workbook row 464 latest result expects Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21: Radio.1/2/3 NonSRGOffsetValid getters each returned 0
+- current YAML passes because pass_criteria accept regex ^[01]$ only
+- source survey: wld_radio.odl defines NonSRGOffsetValid and states NonSRGOBSSPDMaxOffset is valid only if NonSRGOffsetValid is true; wld_cfg11ax_t carries heNonSRGOffsetValid; no direct prpl_brcm tr181-wifi registration found
+```
+
 ## Checkpoint summary (2026-05-10 0506-D438)
 
 > This checkpoint records the `D438 TransitionDisable — WiFi.AccessPoint.{i}.Security.` environment blocker.
