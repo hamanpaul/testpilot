@@ -1,5 +1,52 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D384)
+
+> This checkpoint records the `D384 RadCapabilitiesHTStr — WiFi.Radio.{i}.` workbook/runtime mismatch blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=37`, `block=178`, `needs_pass3=0`
+- `D384 RadCapabilitiesHTStr — WiFi.Radio.{i}.` recorded as `radio_radcapabilitieshtstr_workbook_6g_not_supported_vs_runtime_pass_empty_6g_due_permissive_regex`
+- workbook row 384 latest result is `Pass / Not Supported / Pass` (normalized `Pass / Fail / Pass`)
+- focused run `20260510T023847051197` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- mismatch reason: current YAML accepts empty 6G string via `.*`, but workbook latest marks 6G Not Supported because 6 GHz does not support HT
+- source survey found no direct `WiFi.Radio.{i}.RadCapabilitiesHTStr` registration in prpl_brcm; only data-element HTCapabilities mappings were found
+- next ready single-case Pass3 target: `D385`
+
+</details>
+
+### D384 Radio RadCapabilitiesHTStr blocker evidence
+
+**STA 指令**
+
+```sh
+# DUT-only getter case; no STA command required
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.RadCapabilitiesHTStr?"
+ubus-cli "WiFi.Radio.2.RadCapabilitiesHTStr?"
+ubus-cli "WiFi.Radio.3.RadCapabilitiesHTStr?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T023847051197
+- workbook row 384 latest result expects Pass/Not Supported/Pass (normalized Pass/Fail/Pass)
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21:
+  WiFi.Radio.1.RadCapabilitiesHTStr="CAP_40,SHORT_GI_20,SHORT_GI_40,MODE_40"
+  WiFi.Radio.2.RadCapabilitiesHTStr=""
+  WiFi.Radio.3.RadCapabilitiesHTStr="CAP_40,SHORT_GI_20,SHORT_GI_40,MODE_40"
+- source survey: no direct `WiFi.Radio.{i}.RadCapabilitiesHTStr` registration in prpl_brcm; data-element HTCapabilities mappings exist elsewhere
+```
+
 ## Checkpoint summary (2026-05-10 0506-D380)
 
 > This checkpoint records the `D380 MultiAPTypesSupported — WiFi.Radio.{i}.` workbook/runtime mismatch blocker.
