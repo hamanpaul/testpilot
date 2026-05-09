@@ -1,5 +1,59 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D099)
+
+> This checkpoint records the `D099 WMMCapability` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=90`, `block=150`, `needs_pass3=0`
+- `D099 WMMCapability` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 99 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `WMMCapability` 是 read-only bool，代表 AP 是否支援 WMM access categories
+- focused run `20260509T202718927662` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 `WMMCapability` returned `1`, and first-BSS hostapd `wmm_enabled=1`
+- cleanup command `61dd7a9e188f4444a510a16dc54d983f` confirmed AP1/AP3/AP5 `WMMCapability=1`, wl0/wl1/wl2 `cap` includes `wme`, hostapd `wmm_enabled=1`, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D100`
+
+</details>
+
+### D099 WMMCapability confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.WMMCapability?'
+grep 'wmm_enabled=' /tmp/wl0_hapd.conf | head -1
+wl -i wl0 cap | grep -o wme
+ubus-cli 'WiFi.AccessPoint.3.WMMCapability?'
+grep 'wmm_enabled=' /tmp/wl1_hapd.conf | head -1
+wl -i wl1 cap | grep -o wme
+ubus-cli 'WiFi.AccessPoint.5.WMMCapability?'
+grep 'wmm_enabled=' /tmp/wl2_hapd.conf | head -1
+wl -i wl2 cap | grep -o wme
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T202718927662, DUT.log L13-L43
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: WMMCapability=1 and HapdWmm=1
+- 6G/AP3: WMMCapability=1 and HapdWmm=1
+- 2.4G/AP5: WMMCapability=1 and HapdWmm=1
+- compare against audit/0506.xlsx row 99: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup command 61dd7a9e188f4444a510a16dc54d983f: AP1/AP3/AP5 WMMCapability=1, wl0/wl1/wl2 cap includes wme, hostapd wmm_enabled=1, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L275-L277 declares WMMCapability semantics
+```
+
 ## Checkpoint summary (2026-05-09 0506-D098)
 
 > This checkpoint records the `D098 WDSEnable` confirmed no-edit decision.
