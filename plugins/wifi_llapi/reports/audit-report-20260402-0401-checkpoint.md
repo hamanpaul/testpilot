@@ -1,5 +1,51 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D049)
+
+> This checkpoint records the `D049 SupportedMCS` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=159`, `applied=8`, `pending=114`, `block=134`, `needs_pass3=0`
+- `D049 SupportedMCS` confirmed without YAML edit，reason=`workbook_normalized_match_setup_failure_no_yaml_edit`
+- workbook row 49 raw value is `Fail / Fail / fail`, normalized to `Fail / Fail / Fail`
+- source declares `SupportedMCS` under AccessPoint AssociatedDevice and Endpoint
+- focused run `20260509T173124241703` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 正規化後等同 workbook `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D050`
+
+</details>
+
+### D049 SupportedMCS confirmed evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedMCS?"
+wl -i wl0 sta_info "$STA_MAC" | awk '/HE caps|MCS SET|HE SET|eht mcs/'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T173124241703
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 49: expected Fail/Fail/fail normalized Fail/Fail/Fail, actual Fail/N/A/N/A normalized Fail/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- no YAML edit: setup/bands/topology are outside audit allowlist, and workbook Fail already closes as fail-shaped
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202 starts AssociatedDevice[]; L1568/L1772 declare SupportedMCS; fs/etc/amx/wld/wld_endpoint.odl L352 declares Endpoint SupportedMCS
+```
+
 ## Checkpoint summary (2026-05-09 0506-D048)
 
 > This checkpoint records the `D048 SupportedHeMCS` confirmed no-edit closure.
