@@ -1,5 +1,70 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D076)
+
+> This checkpoint records the `D076 QoSMapSet` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=169`, `applied=9`, `pending=95`, `block=142`, `needs_pass3=0`
+- `D076 QoSMapSet` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 76 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `IEEE80211u` object 透過 `wld_ap_11u_setConf_ocf` 套用設定；`QoSMapSet` 是 persistent string
+- focused run `20260509T191520022068` reported `Fail / Fail / Fail`
+- attempt 1 captured all bands: baseline getter/config `EMPTY/ABSENT`, requested DSCP map, setter/getter/hostapd collapse to scalar `255`, and restore back to `EMPTY/ABSENT`
+- retry hit a serialwrap selector exception, but the all-band first attempt evidence and final report shape match workbook after normalization
+- AP1/AP3/AP5 were rebaselined afterward, QoSMapSet cleared, and wl0/wl1/wl2 confirmed `up`
+- next ready single-case Pass3 target: `D077`
+
+</details>
+
+### D076 QoSMapSet confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.IEEE80211u.QoSMapSet?"
+ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet="0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255"
+grep '^qos_map_set=' /tmp/wl0_hapd.conf
+ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
+ubus-cli "WiFi.AccessPoint.3.IEEE80211u.QoSMapSet?"
+ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet="0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255"
+grep '^qos_map_set=' /tmp/wl1_hapd.conf
+ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet=
+ubus-cli "WiFi.AccessPoint.5.IEEE80211u.QoSMapSet?"
+ubus-cli WiFi.AccessPoint.5.IEEE80211u.QoSMapSet="0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255"
+grep '^qos_map_set=' /tmp/wl2_hapd.conf
+ubus-cli WiFi.AccessPoint.5.IEEE80211u.QoSMapSet=
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T191520022068
+- report shape: Fail / Fail / Fail, diagnostic_status=Inconclusive
+- attempt 1 5G: QoSMapSet5g=EMPTY; QoSMapSetCfg5g=ABSENT; setter/getter/config collapsed to 255; restore returned EMPTY/ABSENT
+- attempt 1 6G: QoSMapSet6g=EMPTY; QoSMapSetCfg6g=ABSENT; setter/getter/config collapsed to 255; restore returned EMPTY/ABSENT
+- attempt 1 2.4G: QoSMapSet24g=EMPTY; QoSMapSetCfg24g=ABSENT; setter/getter/config collapsed to 255; restore returned EMPTY/ABSENT
+- retry exception: serialwrap selector exception during setup command `ubus-cli WiFi.AccessPoint.5.Enable=1`
+- recovery: serialwrap command c4051e621dc14bc194b25f275f7cdab9 set AP1/AP3/AP5 Enable=1, cleared QoSMapSet on AP1/AP3/AP5, and confirmed wl0=up, wl1=up, wl2=up
+- compare against audit/0506.xlsx row 76: expected Failed/Failed/Failed -> normalized Fail/Fail/Fail; actual Fail/Fail/Fail
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L499-L500 declares IEEE80211u and config event handler; L517 declares QoSMapSet persistent string
+```
+
 ## Checkpoint summary (2026-05-09 0506-D075)
 
 > This checkpoint records the `D075 InterworkingEnable` confirmed no-edit decision.
