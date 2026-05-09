@@ -1,5 +1,64 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D179)
+
+> This checkpoint records the `D179 Ampdu — WiFi.Radio.{i}.DriverConfig.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=69`, `block=148`, `needs_pass3=0`
+- `D179 Ampdu — WiFi.Radio.{i}.DriverConfig.` recorded as `radio_ampdu_workbook_pass_all_bands_blocked_by_sta_band_not_ready_after_5g_set_cleanup_restored`
+- workbook row 179 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- focused run `20260509T222421974209` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: `sta_band_not_ready`; runtime reached `WiFi.Radio.1.DriverConfig.Ampdu=1` then failed to prepare 5G for `step2_ampdu_after_set_5g`
+- cleanup restored `WiFi.Radio.1/2/3.DriverConfig.Ampdu=-1` and confirmed all three getters report `-1`
+- next ready single-case Pass3 target: `D183`
+
+</details>
+
+### D179 Radio DriverConfig Ampdu blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=1
+/etc/init.d/wld_gen start
+ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=-1
+ubus-cli WiFi.Radio.2.DriverConfig.Ampdu=-1
+ubus-cli WiFi.Radio.3.DriverConfig.Ampdu=-1
+ubus-cli "WiFi.Radio.*.DriverConfig.Ampdu?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T222421974209
+- workbook row 179 expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- failure_snapshot: reason_code=sta_band_not_ready, comment=STA band baseline/connect failed
+- DUT.log L659-L668:
+  RequestedAmpdu5g=1
+  ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=1
+  > WiFi.Radio.1.DriverConfig.Ampdu=1
+  WiFi.Radio.1.DriverConfig.Ampdu=1
+  /etc/init.d/wld_gen start
+- STA.log L82-L99 shows initial 5G association to testpilot5G before later env recovery failed
+- cleanup output:
+  WiFi.Radio.1.DriverConfig.Ampdu=-1
+  WiFi.Radio.2.DriverConfig.Ampdu=-1
+  WiFi.Radio.3.DriverConfig.Ampdu=-1
+- blocker: workbook pass cannot be confirmed while STA/BSS baseline is unstable
+```
+
 ## Checkpoint summary (2026-05-09 0506-D178)
 
 > This checkpoint records the `D178 ChannelLoad — WiFi.Radio.{i}.` no-edit confirmation.
