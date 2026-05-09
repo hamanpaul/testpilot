@@ -1,5 +1,51 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D359)
+
+> This checkpoint records the `D359 IsolationEnable — WiFi.AccessPoint.{i}.` no-edit confirmation recheck.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets remain: `confirmed=191`, `applied=9`, `pending=43`, `block=172`, `needs_pass3=0`
+- `D359 IsolationEnable — WiFi.AccessPoint.{i}.` recorded as `ap_isolationenable_workbook_pass_all_bands_runtime_pass_getter_source_bool_supported_no_edit`
+- workbook row 359 latest result is `Pass / Pass / Pass`
+- focused run `20260510T020814423475` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- source survey confirms `IsolationEnable` is defined as a bool in AccessPoint ODL/dm info
+- note: D359 was already pass1-confirmed, so bucket counts did not change
+
+</details>
+
+### D359 AccessPoint IsolationEnable confirmation evidence
+
+**STA 指令**
+
+```sh
+# Current YAML performs DUT getter readback only; workbook STA-to-STA ping isolation flow was not executed in this focused runtime
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.IsolationEnable?"
+ubus-cli "WiFi.AccessPoint.3.IsolationEnable?"
+ubus-cli "WiFi.AccessPoint.5.IsolationEnable?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T020814423475
+- workbook row 359 latest result expects Pass/Pass/Pass
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21:
+  WiFi.AccessPoint.1.IsolationEnable=0
+  WiFi.AccessPoint.3.IsolationEnable=0
+  WiFi.AccessPoint.5.IsolationEnable=0
+- source survey: `tr181-wifi_AccessPoint.odl` defines bool `IsolationEnable`; `dm_info.c` exposes it as `AMXC_VAR_ID_BOOL`
+```
+
 ## Checkpoint summary (2026-05-10 0506-D357)
 
 > This checkpoint records the `D357 csiStats() — WiFi.Radio.{i}.Sensing.` blocker.
