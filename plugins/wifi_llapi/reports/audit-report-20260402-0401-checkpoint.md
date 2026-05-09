@@ -1,5 +1,52 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D360)
+
+> This checkpoint records the `D360 MBOAssocDisallowReason — WiFi.AccessPoint.{i}.` skip-fixture/source-registration blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=36`, `block=179`, `needs_pass3=0`
+- `D360 MBOAssocDisallowReason — WiFi.AccessPoint.{i}.` recorded as `accesspoint_mboassocdisallowreason_workbook_skip_all_vs_yaml_skip_fixture_unsupported_no_direct_dm_registration`
+- workbook row 360 latest result is `Skip / Skip / Skip` (normalized `Fail / Fail / Fail`)
+- focused run `20260510T024141255004` reported `Fail / Fail / Fail` with `diagnostic_status=FailTest`
+- runtime failure reason: YAML is a non-executable `skip` fixture and `step_note` is not captured, so pass criteria cannot be satisfied
+- source survey found `MBOEnable` support plus MBO deny reason enums/function pointer, but no direct `MBOAssocDisallowReason` TR-181 data-model registration in prpl_brcm
+- next ready single-case Pass3 target: `D363`
+
+</details>
+
+### D360 AccessPoint MBOAssocDisallowReason blocker evidence
+
+**STA 指令**
+
+```sh
+# DUT-only skip fixture; no STA command required
+```
+
+**DUT 指令**
+
+```sh
+echo "[skip] non-executable step step_note"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T024141255004
+- workbook row 360 latest result expects Skip/Skip/Skip (normalized Fail/Fail/Fail)
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- failure snapshot:
+  field=step_note
+  operator=equals
+  expected=skip
+  actual="success=True\noutput=[skip] non-executable step step_note\ncaptured={}\nreturncode=0"
+- DUT.log L1-L15 contains only environment gate commands; skip action is not sent to DUT
+- source survey: prpl_brcm exposes MBOEnable but not a direct MBOAssocDisallowReason parameter registration
+```
+
 ## Checkpoint summary (2026-05-10 0506-D384)
 
 > This checkpoint records the `D384 RadCapabilitiesHTStr — WiFi.Radio.{i}.` workbook/runtime mismatch blocker.
