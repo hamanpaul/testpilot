@@ -1,5 +1,64 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D066)
+
+> This checkpoint records the `D066 DiscoveryMethodEnabled=FILS` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=165`, `applied=9`, `pending=98`, `block=143`, `needs_pass3=0`
+- `D066 DiscoveryMethodEnabled=FILS` blocked as `negative_test_result_semantics_mismatch_outside_audit_allowlist`
+- workbook row 66 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `WiFi.AccessPoint.{i}.DiscoveryMethodEnabled` 是 persistent string，default `Default`，target ODL 透過 `wld_ap_validateDiscoveryMethod_pvf` 驗證
+- focused run `20260509T185551380490` confirms the workbook operation-level failure: AP1/AP3/AP5 start at `Default`, standard `FILS` setter is rejected with `invalid value` on all three bands, and getters remain `Default`
+- the current YAML also proves alternate `FILSDiscovery` is accepted and restores all bands to `Default`, so runtime diagnostic is `Pass / Pass / Pass`
+- report shape `Pass / Pass / Pass` mismatches workbook-normalized `Fail / Fail / Fail`; changing this negative-test Pass into workbook Fail would require broader verdict semantics than safe audit-only edits allow
+- next ready single-case Pass3 target: `D067`
+
+</details>
+
+### D066 DiscoveryMethodEnabled=FILS blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"
+ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"
+ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"
+ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=FILS
+ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=FILS
+ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=FILS
+ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=FILSDiscovery
+ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=FILSDiscovery
+ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=FILSDiscovery
+ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=Default
+ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=Default
+ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=Default
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T185551380490
+- default getters: AP1/AP3/AP5 DiscoveryMethodEnabled="Default"
+- standard FILS writes: AP1/AP3/AP5 each returned `ERROR: set ... DiscoveryMethodEnabled failed (10 - invalid value)`
+- after invalid writes: AP1/AP3/AP5 DiscoveryMethodEnabled remained "Default"
+- alternate writes: AP1/AP3/AP5 accepted DiscoveryMethodEnabled="FILSDiscovery"
+- restore: AP1/AP3/AP5 restored DiscoveryMethodEnabled="Default"
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 66: expected Failed/Failed/Failed, normalized Fail/Fail/Fail; actual Pass/Pass/Pass
+- blocker: current YAML treats the expected standard-FILS rejection as a passing negative test; report-result semantics cannot be converted to workbook Fail with only safe audit edits
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L2404-L2406 declares DiscoveryMethodEnabled with default and validation callback; BRCM mirror tr181-wifi_AccessPoint.odl L184-L185 declares the persistent string and default
+```
+
 ## Checkpoint summary (2026-05-09 0506-D065)
 
 > This checkpoint records the `D065 BridgeInterface` applied audit correction.
