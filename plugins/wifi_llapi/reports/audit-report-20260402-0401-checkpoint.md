@@ -1,5 +1,54 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D108)
+
+> This checkpoint records the `D108 UUID` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=84`, `block=155`, `needs_pass3=0`
+- `D108 UUID` recorded as `uuid_mixed_band_result_projection_mismatch_outside_audit_allowlist`
+- workbook row 108 raw value is `Pass / Not Support / Pass`, normalized to `Pass / Fail / Pass`
+- source 宣告 WPS `UUID` is visible in beacon frames, uses hex UUID format, and validates UUID format
+- focused run `20260509T204807540979` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 getters returned the same valid UUID; wl0/wl2 hostapd projected `uuid=`, while wl1/6G had no `uuid=`
+- cleanup command `1161218b4c2b40f9a112b384e8a9afc8` confirmed AP1/AP3/AP5 UUID readbacks, wl0/wl2 `uuid=`, wl1 `NO_UUID`, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D109`
+
+</details>
+
+### D108 UUID blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.WPS.UUID?"
+ubus-cli "WiFi.AccessPoint.3.WPS.UUID?"
+ubus-cli "WiFi.AccessPoint.5.WPS.UUID?"
+grep "^uuid=" /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T204807540979, DUT.log L5-L28
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: UUID5g=47584a4e-464c-f545-f64e-4e4547584a4e; HostapdUuid5g=47584a4e-464c-f545-f64e-4e4547584a4e
+- 6G/AP3: UUID6g=47584a4e-464c-f545-f64e-4e4547584a4e; HostapdUuid6g empty
+- 2.4G/AP5: UUID24g=47584a4e-464c-f545-f64e-4e4547584a4e; HostapdUuid24g=47584a4e-464c-f545-f64e-4e4547584a4e
+- compare against audit/0506.xlsx row 108: expected Pass/Not Support/Pass -> normalized Pass/Fail/Pass; actual Pass/Pass/Pass
+- cleanup command 1161218b4c2b40f9a112b384e8a9afc8: AP1/AP3/AP5 UUID readbacks, wl0/wl2 uuid=, wl1 NO_UUID, and wl0/wl1/wl2 were up
+- source citation: fs/etc/amx/wld/wld_accesspoint.odl L1072-L1083 declares UUID and validates UUID format
+```
+
 ## Checkpoint summary (2026-05-09 0506-D107)
 
 > This checkpoint records the `D107 SelfPIN` confirmed no-edit decision.
