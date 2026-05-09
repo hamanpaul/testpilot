@@ -1,5 +1,71 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D082)
+
+> This checkpoint records the `D082 MultiAPType` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=95`, `block=144`, `needs_pass3=0`
+- `D082 MultiAPType` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 82 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `MultiAPType` 是 persistent string，supported options 包含 `Off` / `FronthaulBSS` / `BackhaulBSS`
+- focused run `20260509T193841525001` reported `Pass / Pass / Pass` after retry
+- AP1/AP3/AP5 exact-closed getter / hostapd `multi_ap` / driver map from dual-role to fronthaul-only and back to dual-role
+- post-run cleanup restored AP1-AP6 to quoted `MultiAPType="FronthaulBSS,BackhaulBSS"` and confirmed wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D083`
+
+</details>
+
+### D082 MultiAPType confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.MultiAPType?"
+ubus-cli WiFi.AccessPoint.1.MultiAPType=FronthaulBSS
+ubus-cli WiFi.AccessPoint.2.MultiAPType=FronthaulBSS
+grep -n '^multi_ap=' /tmp/wl0_hapd.conf
+wl -i wl0 map
+ubus-cli "WiFi.AccessPoint.3.MultiAPType?"
+ubus-cli WiFi.AccessPoint.3.MultiAPType=FronthaulBSS
+ubus-cli WiFi.AccessPoint.4.MultiAPType=FronthaulBSS
+grep -n '^multi_ap=' /tmp/wl1_hapd.conf
+wl -i wl1 map
+ubus-cli "WiFi.AccessPoint.5.MultiAPType?"
+ubus-cli WiFi.AccessPoint.5.MultiAPType=FronthaulBSS
+ubus-cli WiFi.AccessPoint.6.MultiAPType=FronthaulBSS
+grep -n '^multi_ap=' /tmp/wl2_hapd.conf
+wl -i wl2 map
+ubus-cli 'WiFi.AccessPoint.1.MultiAPType="FronthaulBSS,BackhaulBSS"'
+ubus-cli 'WiFi.AccessPoint.2.MultiAPType="FronthaulBSS,BackhaulBSS"'
+ubus-cli 'WiFi.AccessPoint.3.MultiAPType="FronthaulBSS,BackhaulBSS"'
+ubus-cli 'WiFi.AccessPoint.4.MultiAPType="FronthaulBSS,BackhaulBSS"'
+ubus-cli 'WiFi.AccessPoint.5.MultiAPType="FronthaulBSS,BackhaulBSS"'
+ubus-cli 'WiFi.AccessPoint.6.MultiAPType="FronthaulBSS,BackhaulBSS"'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T193841525001
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass, comment=pass after retry (2/2)
+- 5G/AP1: baseline FronthaulBSS,BackhaulBSS / hostapd both count 2 / driver 0x3; set FronthaulBSS -> hostapd fronthaul count 2 / driver 0x1; restore -> dual-role / hostapd both count 2 / driver 0x3
+- 6G/AP3: baseline FronthaulBSS,BackhaulBSS / hostapd both count 2 / driver 0x3; set FronthaulBSS -> hostapd fronthaul count 2 / driver 0x1; restore -> dual-role / hostapd both count 2 / driver 0x3
+- 2.4G/AP5: baseline FronthaulBSS,BackhaulBSS / hostapd both count 2 / driver 0x3; set FronthaulBSS -> hostapd fronthaul count 2 / driver 0x1; restore -> dual-role / hostapd both count 2 / driver 0x3
+- compare against audit/0506.xlsx row 82: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup commands cbbe38e86869488689f07151b7aca3ab / a4213eaf04c8402ba2072ffde13f5f05: AP1-AP6 restored to quoted dual-role and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L367/L370 declares MultiAPType options; defaults L93/L111 use dual-role; hostapd.sh L623 emits multi_ap
+```
+
 ## Checkpoint summary (2026-05-09 0506-D081)
 
 > This checkpoint records the `D081 MBOEnable` confirmed no-edit decision.
