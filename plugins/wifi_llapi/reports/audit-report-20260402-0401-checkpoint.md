@@ -1,5 +1,60 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D103)
+
+> This checkpoint records the `D103 Configured` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=88`, `block=152`, `needs_pass3=0`
+- workbook row `D102 ConfigMethodsSupported` currently has no discoverable official YAML under `plugins/wifi_llapi/cases/`; strict single-case execution therefore continued to `D103`
+- `D103 Configured` recorded as `configured_mixed_band_result_projection_mismatch_outside_audit_allowlist`
+- workbook row 103 raw value is `Pass / Not Support / Pass`, normalized to `Pass / Fail / Pass`
+- source 宣告 WPS `Configured` 是 persistent bool，用於 toggle WPS in unconfigured mode，default true
+- focused run `20260509T203211007093` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 WPS `Configured` getters all returned `1`
+- cleanup command `6ea2ed3845b144dab5752f3caf0b87b0` confirmed AP1/AP3/AP5 `Configured=1`, wl0/wl2 `wps_state=2/2`, wl1 `wps_state=0/0`, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D104`
+
+</details>
+
+### D103 Configured blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.WPS.Configured?'
+grep '^wps_state=' /tmp/wl0_hapd.conf || echo NO_WPS_STATE_5G
+ubus-cli 'WiFi.AccessPoint.3.WPS.Configured?'
+grep '^wps_state=' /tmp/wl1_hapd.conf || echo NO_WPS_STATE_6G
+ubus-cli 'WiFi.AccessPoint.5.WPS.Configured?'
+grep '^wps_state=' /tmp/wl2_hapd.conf || echo NO_WPS_STATE_24G
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T203211007093, DUT.log L13-L31
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: Configured=1
+- 6G/AP3: Configured=1
+- 2.4G/AP5: Configured=1
+- compare against audit/0506.xlsx row 103: expected Pass/Not Support/Pass -> normalized Pass/Fail/Pass; actual Pass/Pass/Pass
+- cleanup command 6ea2ed3845b144dab5752f3caf0b87b0: AP1/AP3/AP5 Configured=1, wl0/wl2 wps_state=2/2, wl1 wps_state=0/0, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1058-L1064 declares WPS Configured
+```
+
 ## Checkpoint summary (2026-05-09 0506-D101)
 
 > This checkpoint records the `D101 ConfigMethodsEnabled` blocker decision.
