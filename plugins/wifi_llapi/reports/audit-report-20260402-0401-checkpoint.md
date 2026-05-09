@@ -1,5 +1,60 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D325)
+
+> This checkpoint records the `D325 DiscardPacketsReceived — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=58`, `block=159`, `needs_pass3=0`
+- `D325 DiscardPacketsReceived — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_discardpacketsreceived_workbook_pass_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 325 latest ARC result is `Pass / Pass / Pass`
+- focused run `20260509T235639893782` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before DiscardPacketsReceived readback because STA band baseline/connect failed and `wl0` BSS stayed down after retries/AP bounce
+- next ready single-case Pass3 target: `D326`
+
+</details>
+
+### D325 SSID Stats DiscardPacketsReceived blocker evidence
+
+**STA 指令**
+
+```sh
+# STA baseline/connect attempted by runtime auto-baseline; no counter traffic step executed
+dmesg -n 1
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss up
+wl -i wl0 bss
+ubus-cli "WiFi.SSID.4.Stats.DiscardPacketsReceived?"
+ubus-cli "WiFi.SSID.6.Stats.DiscardPacketsReceived?"
+ubus-cli "WiFi.SSID.8.Stats.DiscardPacketsReceived?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T235639893782
+- workbook row 325 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before DiscardPacketsReceived readback
+- DUT.log L1308-L1378 and L1527-L1569:
+  wl -i wl0 bss
+  down
+  ... repeated wl0 bss checks ...
+  wl -i wl0 bss up
+  wl -i wl0 bss
+  down
+  WiFi.Radio.1.Enable=1
+- STA.log L1-L4 only contains runtime log-level setup; no STA traffic/readback step executed
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
 ## Checkpoint summary (2026-05-09 0506-D324)
 
 > This checkpoint records the `D324 BytesSent — WiFi.SSID.{i}.Stats.` environment blocker.
