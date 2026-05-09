@@ -1,5 +1,52 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D046)
+
+> This checkpoint records the `D046 SignalStrengthByChain` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=157`, `applied=8`, `pending=117`, `block=133`, `needs_pass3=0`
+- `D046 SignalStrengthByChain` blocked as `sta_env_setup_and_bands_scope_outside_audit_allowlist`
+- workbook row 46 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.SignalStrengthByChain` 是 volatile read-only string；WLD header 也暴露 per-chain SignalStrength array
+- focused run `20260509T171754069137` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 與 workbook tri-band Pass 不符；修復需要改 sta_env_setup / bands / topology 或新增 6G/2.4G steps，超出 audit allowlist
+- next ready single-case Pass3 target: `D047`
+
+</details>
+
+### D046 SignalStrengthByChain blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SignalStrengthByChain?"
+STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
+wl -i wl0 sta_info "$STA_MAC" | grep antenna
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T171754069137
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 46: expected Pass/Pass/Pass, actual Fail/N/A/N/A, mismatch_case_count=1, mismatch bands=5g,6g,2.4g
+- blocker: stale case-local WPA3/SAE setup and checked-in 5G-only scope cannot be repaired through audit verify-edit; sta_env_setup, top-level bands/topology, and adding 6G/2.4G executable steps are outside allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1258 declares SignalStrengthByChain as volatile read-only string; BRCM mirror tr181-wifi_AccessPoint.odl L1069 declares SignalStrengthByChain; wld.h L799/L900 expose per-chain SignalStrength fields
+```
+
 ## Checkpoint summary (2026-05-09 0506-D045)
 
 > This checkpoint records the `D045 SignalStrength` blocker.
