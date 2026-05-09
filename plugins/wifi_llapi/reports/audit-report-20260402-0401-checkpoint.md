@@ -1,5 +1,52 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D363)
+
+> This checkpoint records the `D363 BssColorPartial — WiFi.Radio.{i}.IEEE80211ax.` workbook/runtime mismatch blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=35`, `block=180`, `needs_pass3=0`
+- `D363 BssColorPartial — WiFi.Radio.{i}.IEEE80211ax.` recorded as `radio_bsscolorpartial_workbook_latest_fail_all_bands_vs_runtime_pass_zero_getter_beacon_mismatch_not_verified`
+- workbook row 363 latest result is `Fail / Fail / Fail`
+- focused run `20260510T024333804965` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- mismatch reason: workbook failure is based on beacon HE Operation BSS Color information not matching API, but current YAML only checks numeric getter output
+- source survey found `heBssColorPartial` / `he_bss_color_partial` internals and DataElements `PartialBSSColor`, but no direct prpl_brcm `BssColorPartial` ODL/dm_info registration
+- next ready single-case Pass3 target: `D385`
+
+</details>
+
+### D363 Radio IEEE80211ax BssColorPartial blocker evidence
+
+**STA 指令**
+
+```sh
+# DUT-only getter case; no STA command required
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.IEEE80211ax.BssColorPartial?"
+ubus-cli "WiFi.Radio.2.IEEE80211ax.BssColorPartial?"
+ubus-cli "WiFi.Radio.3.IEEE80211ax.BssColorPartial?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T024333804965
+- workbook row 363 latest result expects Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21:
+  WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
+  WiFi.Radio.2.IEEE80211ax.BssColorPartial=0
+  WiFi.Radio.3.IEEE80211ax.BssColorPartial=0
+- workbook comment says the beacon HE Operation BSS Color Information tag value does not match the API; current YAML does not verify beacon packets
+```
+
 ## Checkpoint summary (2026-05-10 0506-D360)
 
 > This checkpoint records the `D360 MBOAssocDisallowReason — WiFi.AccessPoint.{i}.` skip-fixture/source-registration blocker.
