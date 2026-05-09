@@ -1,5 +1,62 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D083)
+
+> This checkpoint records the `D083 Neighbour` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=95`, `block=144`, `needs_pass3=0`
+- `D083 Neighbour` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 83 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `setNeighbourAP(BSSID, Channel, ...)` 可新增或更新 neighbour，`delNeighbourAP(BSSID)` 可刪除，`Neighbour[]` 物件含 `BSSID` 與 `Channel`
+- focused run `20260509T194420576061` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 each exact-closed `Neighbour` tree empty -> one BSSID/Channel entry -> empty
+- cleanup command `f82d522a632345d685d2e34f529e305a` found no remaining AP1/AP3/AP5 neighbour entries and confirmed wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D084`
+
+</details>
+
+### D083 Neighbour confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli WiFi.AccessPoint.1.? | grep -E 'Neighbour\.[0-9]+\.(BSSID|Channel)'
+ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
+ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
+ubus-cli WiFi.AccessPoint.3.? | grep -E 'Neighbour\.[0-9]+\.(BSSID|Channel)'
+ubus-cli "WiFi.AccessPoint.3.setNeighbourAP(BSSID=11:22:33:44:55:77,Channel=1)"
+ubus-cli "WiFi.AccessPoint.3.delNeighbourAP(BSSID=11:22:33:44:55:77)"
+ubus-cli WiFi.AccessPoint.5.? | grep -E 'Neighbour\.[0-9]+\.(BSSID|Channel)'
+ubus-cli "WiFi.AccessPoint.5.setNeighbourAP(BSSID=11:22:33:44:55:88,Channel=11)"
+ubus-cli "WiFi.AccessPoint.5.delNeighbourAP(BSSID=11:22:33:44:55:88)"
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T194420576061
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: baseline BSSID/Channel counts 0/0; add 11:22:33:44:55:66 channel 36 -> counts 1/1; delete -> counts 0/0 and BSSID/Channel ABSENT
+- 6G/AP3: baseline BSSID/Channel counts 0/0; add 11:22:33:44:55:77 channel 1 -> counts 1/1; delete -> counts 0/0 and BSSID/Channel ABSENT
+- 2.4G/AP5: baseline BSSID/Channel counts 0/0; add 11:22:33:44:55:88 channel 11 -> counts 1/1; delete -> counts 0/0 and BSSID/Channel ABSENT
+- compare against audit/0506.xlsx row 83: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup command f82d522a632345d685d2e34f529e305a: no AP1/AP3/AP5 Neighbour BSSID/Channel remained and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L2301-L2317 declares setNeighbourAP, L2328-L2333 declares delNeighbourAP, L2340/L2348/L2371 declare Neighbour BSSID/Channel fields
+```
+
 ## Checkpoint summary (2026-05-09 0506-D082)
 
 > This checkpoint records the `D082 MultiAPType` confirmed no-edit decision.
