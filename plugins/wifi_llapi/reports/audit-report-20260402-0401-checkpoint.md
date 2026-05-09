@@ -1,5 +1,53 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D047)
+
+> This checkpoint records the `D047 SupportedHe160MCS` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=157`, `applied=8`, `pending=116`, `block=134`, `needs_pass3=0`
+- `D047 SupportedHe160MCS` blocked as `bands_scope_and_source_authority_outside_audit_allowlist`
+- workbook row 47 raw value is `Pass / Pass / Not Supported`, normalized to `Pass / Pass / Fail`
+- source survey finds `RxSupportedHe160MCS` / `TxSupportedHe160MCS` under AccessPoint AssociatedDevice, but standalone `SupportedHe160MCS` is declared under Endpoint, not AccessPoint AssociatedDevice
+- focused run `20260509T172302968586` validates current AP1 path: `SupportedHe160MCS` returns `error=4 parameter not found` while sibling Rx/Tx HE160 MCS fields return `11,11,11,11`
+- report shape `Pass / N/A / N/A` matches 5G and normalized 2.4G, but misses workbook 6G Pass; representing that needs bands/topology or 6G executable-step changes outside audit allowlist
+- next ready single-case Pass3 target: `D048`
+
+</details>
+
+### D047 SupportedHe160MCS blocker evidence
+
+**STA 指令**
+
+```sh
+cat /sys/class/net/wl0/address | tr 'a-f' 'A-F' | sed 's/^/StaMac=/'
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHe160MCS?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.RxSupportedHe160MCS="\([^"]*\)".*/DriverRxSupportedHe160MCS=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxSupportedHe160MCS="\([^"]*\)".*/DriverTxSupportedHe160MCS=\1/p'
+wl -i wl0 sta_info "$STA_MAC" | awk '/HE caps|MCS SET|HE SET/'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T172302968586
+- current AP1 path: StaMac=2C:59:17:00:42:15 and AssociatedDevice.1.MACAddress="2C:59:17:00:42:15"
+- SupportedHe160MCS readback: ERROR ... failed (4 - parameter not found); extracted error=4, message=parameter not found
+- sibling evidence: RxSupportedHe160MCS=11,11,11,11; TxSupportedHe160MCS=11,11,11,11; wl0 sta_info exposed HE caps / MCS SET / HE SET
+- report shape: Pass / N/A / N/A, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 47: expected Pass/Pass/Not Supported, actual Pass/N/A/N/A; only 6g mismatches after normalization
+- blocker: checked-in 5G-only scope cannot produce workbook 6G Pass via audit verify-edit; source also lacks standalone AccessPoint AssociatedDevice SupportedHe160MCS and only exposes Rx/Tx siblings there
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202 starts AssociatedDevice[]; L1609/L1616 declare Rx/TxSupportedHe160MCS siblings; fs/etc/amx/wld/wld_endpoint.odl L377 declares standalone SupportedHe160MCS under Endpoint
+```
+
 ## Checkpoint summary (2026-05-09 0506-D046)
 
 > This checkpoint records the `D046 SignalStrengthByChain` blocker.
