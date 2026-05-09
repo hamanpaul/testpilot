@@ -1,5 +1,59 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D028)
+
+> This checkpoint records the `D028 MaxBandwidthSupported` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=152`, `applied=4`, `pending=135`, `block=124`, `needs_pass3=0`
+- `D028 MaxBandwidthSupported` 沒有 closure；已標成 `block`，reason=`mixed_pass_fail_pass_cannot_be_represented_by_verdict_only_projection_within_audit_yaml_allowlist`
+- workbook row 28 期待 `Pass / Fail / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.MaxBandwidthSupported` 是 read-only string enum
+- focused run `20260509T142937073962` 讀到 AP1 `160MHz`、AP5 `40MHz`，但 6G step 是 skip，因此舊 YAML 報告成 `Pass / Pass / Pass`
+- audit-gated pass_criteria-only 嘗試已通過 `verify-edit` 並套用，但 focused rerun `20260509T143622418113` 證明單一 criterion failure 會讓 verdict=false，報表投影成 `Fail / Fail / Fail`，無法達成 workbook `Pass / Fail / Pass`
+- 因為需要修改 top-level band metadata、6G skip step、或 runtime projection code 才能表達混合結果，這些都超出本輪 audit YAML allowlist；嘗試改動已透過 `verify-edit` / `apply` 回復
+- next ready single-case Pass3 target: `D029`
+
+</details>
+
+### D028 MaxBandwidthSupported blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported?"
+echo "[skip] non-executable step step3_6g"
+wl -i wl2 assoclist
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MaxBandwidthSupported?"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun before attempted edit: 20260509T142937073962
+- live values: AP1 MaxBandwidthSupported="160MHz", AP5 MaxBandwidthSupported="40MHz"
+- authored 6G step: [skip] non-executable step step3_6g
+- report shape: Pass / Pass / Pass, mismatch with workbook row 28 Pass / Fail / Pass
+
+Focused rerun after audit-gated pass_criteria-only attempt: 20260509T143622418113
+- final: status=Fail, evaluation_verdict=Fail, attempts_used=2, diagnostic_status=FailTest
+- report shape: Fail / Fail / Fail
+- failure snapshot: field=result_6g.MaxBandwidthSupported, operator=equals, expected=20MHz, actual aggregate output from AP1/AP5 only
+- conclusion: current verdict-only case_band_results cannot express Pass / Fail / Pass through an allowed pass_criteria edit
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1448 declares MaxBandwidthSupported as read-only string enum
+```
+
 ## Checkpoint summary (2026-05-09 0506-D026)
 
 > This checkpoint records the `D026 LinkBandwidth` blocker decision.
