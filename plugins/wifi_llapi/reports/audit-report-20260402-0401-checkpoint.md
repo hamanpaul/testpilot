@@ -1,5 +1,65 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D086)
+
+> This checkpoint records the `D086 MFPConfig` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=93`, `block=146`, `needs_pass3=0`
+- `D086 MFPConfig` recorded as `mixed_mfp_result_semantics_mismatch_outside_audit_allowlist`
+- workbook row 86 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `Security.MFPConfig` 是 persistent string，允許 `Disabled` / `Optional` / `Required`；Broadcom integration 以 `convert_security_mfp()` 在 prpl 字串與 BDK MFP 值間轉換
+- focused runs `20260509T195510937023` and `20260509T195647808632` both reported `Pass / Pass / Pass`
+- immediate evidence saw AP1/AP5 getter and hostapd MFP at `Disabled`, while AP3 getter was `Disabled` but hostapd stayed `SAE` + `Required`
+- settled cleanup command `c64dcd174c9e4f918da16b5dbc1edb0e` showed AP3 getter drifted to `Required`, wl0/wl2 hostapd had duplicate `ieee80211w=1` then `0`, wl1 stayed `SAE`/`Required`, and wl0/wl1/wl2 were `up`
+- next ready single-case Pass3 target: `D087`
+
+</details>
+
+### D086 MFPConfig blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
+ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+ubus-cli "WiFi.AccessPoint.1.Security.MFPConfig?"
+grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl0_hapd.conf || true
+ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"
+ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Disabled
+ubus-cli "WiFi.AccessPoint.3.Security.MFPConfig?"
+grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl1_hapd.conf || true
+ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"
+ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled
+ubus-cli "WiFi.AccessPoint.5.Security.MFPConfig?"
+grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl2_hapd.conf || true
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T195647808632
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1 immediate: ModeEnabled=WPA2-Personal, GetterMfpConfig=Disabled, HostapdKeyMgmt=WPA-PSK, HostapdMfpConfig=Disabled, HostapdMfpRaw=0
+- 6G/AP3 immediate: ModeEnabled=WPA3-Personal, GetterMfpConfig=Disabled, HostapdKeyMgmt=SAE, HostapdMfpConfig=Required, HostapdMfpRaw=2
+- 2.4G/AP5 immediate: ModeEnabled=WPA2-Personal, GetterMfpConfig=Disabled, HostapdKeyMgmt=WPA-PSK, HostapdMfpConfig=Disabled, HostapdMfpRaw=0
+- compare against audit/0506.xlsx row 86: expected Failed/Failed/Failed -> normalized Fail/Fail/Fail; actual Pass/Pass/Pass
+- settled cleanup command c64dcd174c9e4f918da16b5dbc1edb0e: AP3 getter drifted to Required, wl0/wl2 hostapd had duplicate ieee80211w=1 then 0, wl1 stayed SAE/ieee80211w=2, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L775-L778 declares MFPConfig enum; userspace/public/libs/prpl_brcm/mods/mod-wifi/wifi_ap.c L579-L605 maps MFP values, L1029-L1047 handles set, and L1228-L1234 handles get
+```
+
 ## Checkpoint summary (2026-05-09 0506-D085)
 
 > This checkpoint records the `D085 KeyPassPhrase` confirmed no-edit decision.
