@@ -1,5 +1,67 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D494)
+
+> This checkpoint records the `D494 VHTCapabilities — WiFi.Radio.{i}.VHTCapabilities` workbook mixed-support confirmation.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=192`, `applied=9`, `pending=4`, `block=210`, `needs_pass3=0`
+- `D494 VHTCapabilities` recorded as `radio_vhtcapabilities_workbook_mixed_support_confirmed_by_live_protected_5g_and_6g_24g_parameter_not_found`
+- workbook row 494 latest result is `Pass / Not Supported / Not Supported`; the row notes 5G protected base64 VHTCapabilities and 6G/2.4G `parameter not found`
+- focused run `20260510T051636443985` reported `Pass / Pass / Pass` for the executable YAML shape with `diagnostic_status=Pass`
+- source survey confirms VHT capability base64 handling in data-elements/wldataeld while no direct plain `WiFi.Radio.{i}.VHTCapabilities` ODL surface was found
+- next ready single-case Pass3 target: `D496`
+
+</details>
+
+### D494 Radio VHTCapabilities mixed-support evidence
+
+**STA 指令**
+
+```sh
+# N/A (AP-only case; no STA transport used)
+```
+
+**DUT 指令**
+
+```sh
+OUT=$(ubus-cli "protected;WiFi.Radio.1.VHTCapabilities?" 2>&1 || true)
+printf '%s\n' "$OUT"
+printf '%s\n' "$OUT" | sed -n 's/.*WiFi.Radio.1.VHTCapabilities="\([^"]*\)"/VHTCapabilities=\1/p'
+OUT=$(ubus-cli "WiFi.Radio.2.VHTCapabilities?" 2>&1 || true)
+printf '%s\n' "$OUT"
+printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p'
+printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
+OUT=$(ubus-cli "WiFi.Radio.3.VHTCapabilities?" 2>&1 || true)
+printf '%s\n' "$OUT"
+printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p'
+printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260510T051636443985_DUT.log L17-L25
+> WiFi.Radio.1.VHTCapabilities?
+WiFi.Radio.1.VHTCapabilities="dliDDw=="
+VHTCapabilities=dliDDw==
+
+20260510T051636443985_DUT.log L38-L43
+> WiFi.Radio.2.VHTCapabilities?
+ERROR: get WiFi.Radio.2.VHTCapabilities failed (4 - parameter not found)
+error=4
+message=parameter not found
+
+20260510T051636443985_DUT.log L56-L61
+> WiFi.Radio.3.VHTCapabilities?
+ERROR: get WiFi.Radio.3.VHTCapabilities failed (4 - parameter not found)
+error=4
+message=parameter not found
+```
+
 ## Checkpoint summary (2026-05-10 0506-D490)
 
 > This checkpoint records the `D490 WmmFailedbytesSent.AC_BE — WiFi.Radio.{i}.Stats.WmmFailedbytesSent.` stale getRadioStats/parser blocker.
