@@ -5056,9 +5056,12 @@ def test_pending_mu_stub_cases_use_supported_contracts():
         }
         exp5, exp6, exp24 = _mu_rr[filename]
         assert _has_assoc_mac_regex(case_data, "assoc_5g.AssocMac5g")
+        expected_5g_operator = (
+            "not_equals" if filename == "D031_mumimotxpktscount.yaml" else "equals"
+        )
         assert any(
             criterion["field"] == f"result_5g.{api_name}"
-            and criterion["operator"] == "equals"
+            and criterion["operator"] == expected_5g_operator
             and str(criterion["value"]) == "0"
             for criterion in case_data["pass_criteria"]
         )
@@ -5107,6 +5110,21 @@ def test_pending_mu_stub_cases_evaluate_live_examples():
                 },
             }
         }
+        if filename == "D031_mumimotxpktscount.yaml":
+            assert plugin.evaluate(case_data, pass_results) is False
+            non_stub_results = {
+                "steps": {
+                    **pass_results["steps"],
+                    "step2_5g": {
+                        "success": True,
+                        "output": f'[\n  {{\n    "WiFi.AccessPoint.1.AssociatedDevice.1.{api_name}": 1\n  }}\n]\n',
+                        "timing": 0.01,
+                    },
+                }
+            }
+            assert plugin.evaluate(case_data, non_stub_results) is True
+            continue
+
         assert plugin.evaluate(case_data, pass_results) is True
 
         fail_results = {
