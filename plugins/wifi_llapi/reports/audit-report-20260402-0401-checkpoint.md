@@ -1,5 +1,58 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D428)
+
+> This checkpoint records the `D428 Channel — WiFi.AccessPoint.{i}.Neighbour.{i}.` environment/config blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=22`, `block=193`, `needs_pass3=0`
+- `D428 Channel — WiFi.AccessPoint.{i}.Neighbour.{i}.` recorded as `neighbour_channel_env_block_5g_dut_bss_down_before_neighbour_lifecycle`
+- workbook row 428 latest result is `Pass / Pass / Pass`; the row has no extra step text but aligns with the same AP Neighbour lifecycle as D427
+- focused run `20260510T042900844659` reported `Fail / Fail / Fail` with `diagnostic_status=FailConfig`
+- failure reason: `setup_env` failed before Neighbour baseline/add/delete commands executed because DUT `wl0` BSS stayed `down`
+- source survey confirms AP neighbour metadata is modeled in `wld_apNeighbour_t` and related neighbour/RRM API structures
+- next ready single-case Pass3 target: `D429`
+
+</details>
+
+### D428 AccessPoint Neighbour Channel environment blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only case; runtime did not require or reach STA operations.
+```
+
+**DUT 指令**
+
+```sh
+# Setup commands executed before the blocker:
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+wl -i wl0 bss
+
+# Intended Neighbour lifecycle, not executed in this focused run:
+ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
+ubus-cli WiFi.AccessPoint.1.? | grep -E 'Neighbour\.[0-9]+\.(BSSID|Channel)'
+ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T042900844659
+- workbook row 428 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailConfig
+- failure snapshot: phase=setup_env, band=5g, device=DUT, reason_code=sta_env_setup_failed, command="wl -i wl0 bss", output="down"
+- DUT.log L3-L23: AP1/AP3/AP5 Enable=1 succeeded, then `wl -i wl0 bss` returned `down`
+- DUT.log L24-L44: second setup attempt repeated AP Enable=1 and `wl -i wl0 bss` still returned `down`
+- source survey: `wld_apNeighbour_t` carries channel plus bssid/SSID/information/operatingClass/phyType/NAS/R0KH/R1KH/colocatedAp metadata; workbook row 428 validates Neighbour Channel support through the same setNeighbourAP readback lifecycle
+```
+
 ## Checkpoint summary (2026-05-10 0506-D427)
 
 > This checkpoint records the `D427 BSSID — WiFi.AccessPoint.{i}.Neighbour.{i}.` environment/config blocker.
