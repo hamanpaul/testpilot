@@ -1,5 +1,49 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D022)
+
+> This checkpoint records the `D022 HtCapabilities` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=4`, `pending=140`, `block=120`, `needs_pass3=0`
+- `D022 HtCapabilities` 沒有 closure；已標成 `block`，reason=`stale_custom_5g_sta_env_setup_fails_before_htcapabilities_read`
+- workbook row 22 期待 `Pass / Not Supported / Pass`；source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，並宣告 `AssociatedDevice.HtCapabilities` / `ProbeReqCaps.HtCapabilities` 為 read-only string
+- focused run `20260509T135805800882` 兩個 attempts 都沒有進入 case steps；全部停在 `setup_env` 的 stale custom 5G WPA3 path，STA `iw dev wl0 link` 回 `Not connected`
+- 因為需要修改的是 `sta_env_setup`，不屬於 audit `verify-edit` allowlist（只允許 steps command/capture、verification_command、pass_criteria），本輪不 bypass audit gate，改記 blocker
+- next ready single-case Pass3 target: `D023`
+
+</details>
+
+### D022 HtCapabilities blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.HtCapabilities?"
+wl -i wl0 sta_info <STA_MAC> | grep "HT caps"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T135805800882
+- final: status=Fail, evaluation_verdict=Fail, attempts_used=2, diagnostic_status=FailEnv
+- attempt 1 failure_snapshot: phase=setup_env, reason_code=sta_band_link_failed, device=STA, band=5g, command="iw dev wl0 link", output="Not connected.", field_name=sta_env_setup, index=48
+- attempt 2 failure_snapshot: phase=setup_env, reason_code=sta_band_link_failed, device=STA, band=5g, command="iw dev wl0 link", output="Not connected.", field_name=sta_env_setup, index=48
+- compare against audit/0506.xlsx: actual_norm Fail/Fail/Fail mismatches expected_norm Pass/Fail/Pass
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1677 declares AssociatedDevice.HtCapabilities; L1881 declares ProbeReqCaps.HtCapabilities
+```
+
 ## Checkpoint summary (2026-05-09 0506-D021)
 
 > This checkpoint records the `D021 HeCapabilities` blocker decision.
