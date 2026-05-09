@@ -1,5 +1,65 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D085)
+
+> This checkpoint records the `D085 KeyPassPhrase` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=94`, `block=145`, `needs_pass3=0`
+- `D085 KeyPassPhrase` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 85 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `Security.KeyPassPhrase` 是 persistent string；寫入後會立即產生 `PreSharedKey`，並由 `wld_ap_validateKeyPassPhrase_pvf` 驗證
+- focused run `20260509T195011352332` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 getter and hostapd `wpa_passphrase` exact-closed `00000000 -> 0689388783 -> 00000000` when the leading-zero workbook value was quoted
+- cleanup command `fb84a6f9896d4f888ee2760b10672d86` confirmed AP1/AP3/AP5 getters and wl0/wl1/wl2 hostapd passphrases restored to `00000000`, with wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D086`
+
+</details>
+
+### D085 KeyPassPhrase confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.Security.KeyPassPhrase?"
+grep -m1 '^wpa_passphrase=' /tmp/wl0_hapd.conf || true
+ubus-cli 'WiFi.AccessPoint.1.Security.KeyPassPhrase="0689388783"'
+ubus-cli 'WiFi.AccessPoint.1.Security.KeyPassPhrase="00000000"'
+ubus-cli "WiFi.AccessPoint.3.Security.KeyPassPhrase?"
+grep -m1 '^wpa_passphrase=' /tmp/wl1_hapd.conf || true
+ubus-cli 'WiFi.AccessPoint.3.Security.KeyPassPhrase="0689388783"'
+ubus-cli 'WiFi.AccessPoint.3.Security.KeyPassPhrase="00000000"'
+ubus-cli "WiFi.AccessPoint.5.Security.KeyPassPhrase?"
+grep -m1 '^wpa_passphrase=' /tmp/wl2_hapd.conf || true
+ubus-cli 'WiFi.AccessPoint.5.Security.KeyPassPhrase="0689388783"'
+ubus-cli 'WiFi.AccessPoint.5.Security.KeyPassPhrase="00000000"'
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T195011352332
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: getter and hostapd wpa_passphrase exact-closed 00000000 -> 0689388783 -> 00000000
+- 6G/AP3: getter and hostapd wpa_passphrase exact-closed 00000000 -> 0689388783 -> 00000000
+- 2.4G/AP5: getter and hostapd wpa_passphrase exact-closed 00000000 -> 0689388783 -> 00000000
+- compare against audit/0506.xlsx row 85: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup command fb84a6f9896d4f888ee2760b10672d86: AP1/AP3/AP5 KeyPassPhrase=00000000, wl0/wl1/wl2 hostapd wpa_passphrase=00000000, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L604-L606 documents KeyPassPhrase writing PreSharedKey, L624-L627 declares length guidance and validation callback
+```
+
 ## Checkpoint summary (2026-05-09 0506-D084)
 
 > This checkpoint records the `D084 EncryptionMode` blocker decision.
