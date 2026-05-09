@@ -1,5 +1,63 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D064)
+
+> This checkpoint records the `D064 APBridgeDisable` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=165`, `applied=8`, `pending=99`, `block=143`, `needs_pass3=0`
+- `D064 APBridgeDisable` confirmed as `workbook_normalized_fail_match_no_yaml_edit`
+- workbook row 64 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `WiFi.AccessPoint.{i}.APBridgeDisable` 是 persistent bool，用於 disable same-VAP bridged traffic
+- focused run `20260509T184702760336` captures the unsupported 5G AP1 toggle path: getter turned on to `1`, driver `ap_isolate` rose to `1`, hostapd config still had two `ap_isolate=0` lines, reset getter returned `0`, driver `ap_isolate` stayed `1`, and `wl0 bss` ended `down`
+- report shape `Fail / N/A / N/A` normalizes to `Fail / Fail / Fail`, matching workbook row 64; no YAML edit was required
+- note: AP1 may need normal 5G rebaseline before the next AP case because D064 intentionally left wl0 BSS down during unsupported-toggle validation
+- next ready single-case Pass3 target: `D065`
+
+</details>
+
+### D064 APBridgeDisable confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli WiFi.AccessPoint.1.APBridgeDisable=1
+ubus-cli "WiFi.AccessPoint.1.APBridgeDisable?"
+wl -i wl0 ap_isolate
+grep '^ap_isolate=' /tmp/wl0_hapd.conf
+ubus-cli WiFi.AccessPoint.1.APBridgeDisable=0
+ubus-cli "WiFi.AccessPoint.1.APBridgeDisable?"
+wl -i wl0 ap_isolate
+wl -i wl0 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T184702760336
+- set on: WiFi.AccessPoint.1.APBridgeDisable=1
+- getter on: WiFi.AccessPoint.1.APBridgeDisable=1
+- driver on: DriverApIsolateOn=1
+- hostapd config after on: HostapdApIsolate=0; HostapdApIsolate=0; HostapdApIsolateZeroCount=2
+- set off: WiFi.AccessPoint.1.APBridgeDisable=0
+- getter off: WiFi.AccessPoint.1.APBridgeDisable=0
+- driver off: DriverApIsolateOff=1
+- BSS state: DriverBssState=down
+- final report shape: Fail / N/A / N/A, diagnostic_status=FailConfig; second retry setup_env failed at `wl -i wl0 bss` => `down`
+- compare against audit/0506.xlsx row 64: raw expected Failed/Failed/Failed; normalized expected Fail/Fail/Fail; actual Fail/N/A/N/A normalizes to Fail/Fail/Fail
+- decision: confirmed no-edit; current fail-shaped evidence matches workbook Failed rows after normalization
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L301-L304 and BRCM mirror tr181-wifi_AccessPoint.odl L163-L166 document and declare APBridgeDisable
+```
+
 ## Checkpoint summary (2026-05-09 0506-D063)
 
 > This checkpoint records the `D063 VhtCapabilities` confirmed no-edit decision.
