@@ -1,5 +1,62 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D336)
+
+> This checkpoint records the `D336 UnicastPacketsSent — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=49`, `block=168`, `needs_pass3=0`
+- `D336 UnicastPacketsSent — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_unicastpacketssent_workbook_pass_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 336 latest Brcm result is `Pass / Pass / Pass`
+- focused run `20260510T013357191036` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before UnicastPacketsSent readback because STA band baseline/connect failed, DUT `wl0` and `wl2` BSS readiness failed through retries/AP bounce, and 6G OCV/hostapd remediation did not stabilize `wl1`
+- next ready single-case Pass3 target: `D337`
+
+</details>
+
+### D336 SSID Stats UnicastPacketsSent blocker evidence
+
+**STA 指令**
+
+```sh
+# STA baseline/connect attempted by runtime auto-baseline; no UnicastPacketsSent traffic/readback step executed
+dmesg -n 1
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss
+wl -i wl2 bss
+ubus-cli WiFi.Radio.1.Enable=1
+ubus-cli "WiFi.SSID.4.Stats.UnicastPacketsSent?"
+ubus-cli "WiFi.SSID.6.Stats.UnicastPacketsSent?"
+ubus-cli "WiFi.SSID.8.Stats.UnicastPacketsSent?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T013357191036
+- workbook row 336 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before UnicastPacketsSent readback
+- DUT.log report range L2-L2044:
+  wl -i wl0 bss
+  down
+  WiFi.Radio.1.Enable=1
+  ... AP.1 bounce / hostapd restart attempts ...
+  wl -i wl2 bss
+  down
+  ... AP.5 bounce / BSS readiness retries ...
+  6G OCV/hostapd remediation did not stabilize wl1
+- STA.log L1-L2 only contains runtime log-level setup; no STA traffic/readback step executed
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
 ## Checkpoint summary (2026-05-10 0506-D335)
 
 > This checkpoint records the `D335 UnicastPacketsReceived — WiFi.SSID.{i}.Stats.` environment blocker.
