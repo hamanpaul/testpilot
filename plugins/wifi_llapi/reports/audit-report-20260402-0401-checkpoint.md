@@ -1,5 +1,63 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D370)
+
+> This checkpoint records the `D370 Active — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=42`, `block=173`, `needs_pass3=0`
+- `D370 Active — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` recorded as `assocdev_active_workbook_pass_all_bands_blocked_by_sta_band_not_ready_before_active_readback`
+- workbook row 370 latest result is `Pass / Pass / Pass`
+- focused run `20260510T021304619423` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: `verify_env` failed before AssociatedDevice Active readback because STA band baseline/connect failed, DUT `wl0` BSS stayed down through retries/AP bounce, and 6G OCV remediation did not stabilize `wl1`
+- source survey confirms AssociatedDevice `Active` is a read-only bool in AccessPoint ODL/dm info
+- next ready single-case Pass3 target: `D371`
+
+</details>
+
+### D370 AssociatedDevice Active blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+iw dev wl2 link
+wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Active?"
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"
+wl -i wl1 assoclist
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.Active?"
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"
+wl -i wl2 assoclist
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Active?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T021304619423
+- workbook row 370 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env, reason_code=sta_band_not_ready, device=STA, bands=5g/6g/2.4g
+- remediation history: builtin-fallback sta_band_rebaseline attempted but failed
+- DUT log interval: L4-L1935
+- STA log interval: L1-L192
+- observed from runtime log: STA 5G verify and sta_5g_driver verify failed repeatedly; 6G OCV fix did not stabilize wl1; DUT wl0 BSS stayed down through retry/AP bounce before AssociatedDevice readback
+```
+
 ## Checkpoint summary (2026-05-10 0506-D364)
 
 > This checkpoint records the `D364 NonSRGOBSSPDMaxOffset — WiFi.Radio.{i}.IEEE80211ax.` no-edit confirmation recheck.
