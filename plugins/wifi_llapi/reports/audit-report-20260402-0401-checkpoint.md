@@ -1,5 +1,74 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D092)
+
+> This checkpoint records the `D092 WEPKey` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=90`, `block=150`, `needs_pass3=0`
+- `D092 WEPKey` recorded as `wepkey_mixed_band_result_projection_mismatch_outside_audit_allowlist`
+- workbook row 92 raw value is `Pass / Not Support / Pass`, normalized to `Pass / Fail / Pass`
+- source 宣告 `Security.WEPKey` 只用於 `ModeEnabled=WEP-64/WEP-128`，且 read note 表示讀取時應回空字串
+- focused run `20260509T201224534820` reported `Pass / Pass / Pass`
+- AP1/AP5 support `WEP-128`, accepted/read back `WEPKey=AABBCCDDEEFF0`, and produced hostapd `wep_key0=41414242434344444545464630`
+- AP3/6G showed `ModesSupported=None,WPA3-Personal,OWE`, stayed `WPA3-Personal`, and had no hostapd `wep_key`
+- cleanup command `af5cdb0c4fdd4daf9284c04da799b345` confirmed no WEP lines on wl0/wl1/wl2 and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D093`
+
+</details>
+
+### D092 WEPKey blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.Security.ModesSupported?'
+ubus-cli 'WiFi.AccessPoint.1.Security.ModeEnabled?'
+grep -im1 '^wep_key' /tmp/wl0_hapd.conf || echo ABSENT
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WEP-128
+ubus-cli WiFi.AccessPoint.1.Security.WEPKey=AABBCCDDEEFF0
+ubus-cli 'WiFi.AccessPoint.1.Security.WEPKey?'
+ubus-cli WiFi.AccessPoint.1.Security.WEPKey=123456789ABCD
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+ubus-cli 'WiFi.AccessPoint.3.Security.ModesSupported?'
+ubus-cli 'WiFi.AccessPoint.3.Security.ModeEnabled?'
+grep -im1 '^wep_key' /tmp/wl1_hapd.conf || echo ABSENT
+ubus-cli 'WiFi.AccessPoint.5.Security.ModesSupported?'
+ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WEP-128
+ubus-cli WiFi.AccessPoint.5.Security.WEPKey=AABBCCDDEEFF0
+ubus-cli 'WiFi.AccessPoint.5.Security.WEPKey?'
+ubus-cli WiFi.AccessPoint.5.Security.WEPKey=123456789ABCD
+ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal
+grep -i wep /tmp/wl0_hapd.conf || echo NO_WEP_LINES_5G
+grep -i wep /tmp/wl1_hapd.conf || echo NO_WEP_LINES_6G
+grep -i wep /tmp/wl2_hapd.conf || echo NO_WEP_LINES_24G
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T201224534820, DUT.log L13-L234
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: ModesSupported includes WEP-128; ModeEnabled WPA2-Personal -> WEP-128; WEPKey readback AABBCCDDEEFF0; hostapd wep_key0=41414242434344444545464630; restored WPA2-Personal with no wep_key lines
+- 6G/AP3: ModesSupported=None,WPA3-Personal,OWE; ModeEnabled stayed WPA3-Personal; no wep_key before/after unsupported branch
+- 2.4G/AP5: ModesSupported includes WEP-128; ModeEnabled WPA2-Personal -> WEP-128; WEPKey readback AABBCCDDEEFF0; hostapd wep_key0=41414242434344444545464630; restored WPA2-Personal with no wep_key lines
+- compare against audit/0506.xlsx row 92: expected Pass/Not Support/Pass -> normalized Pass/Fail/Pass; actual Pass/Pass/Pass
+- cleanup command af5cdb0c4fdd4daf9284c04da799b345: no WEP lines on wl0/wl1/wl2, wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L588-L599 declares WEPKey and WEP-only semantics
+```
+
 ## Checkpoint summary (2026-05-09 0506-D091)
 
 > This checkpoint records the `D091 SHA256Enable` blocker decision.
