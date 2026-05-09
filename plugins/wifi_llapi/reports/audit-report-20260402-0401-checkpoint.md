@@ -1,5 +1,70 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D178)
+
+> This checkpoint records the `D178 ChannelLoad — WiFi.Radio.{i}.` no-edit confirmation.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=70`, `block=147`, `needs_pass3=0`
+- `D178 ChannelLoad — WiFi.Radio.{i}.` recorded as `workbook_failed_all_bands_matches_runtime_channelload_missing_airload_fields_no_yaml_edit`
+- workbook row 178 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T222208189135` reported `Fail / Fail / Fail`
+- live output produced survey-derived values for 5G and 2.4G but no corresponding `AirLoad` / `ChannelLoad` fields; 6G produced aligned values (`66 / 66 / 66`)
+- next ready single-case Pass3 target: `D179`
+
+</details>
+
+### D178 Radio ChannelLoad confirmed no-edit evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D178 is a DUT-only Radio ChannelLoad cross-check
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.getRadioAirStats()"
+ubus-cli "WiFi.Radio.1.ChannelLoad?"
+iw dev wl0 survey dump
+ubus-cli "WiFi.Radio.2.getRadioAirStats()"
+ubus-cli "WiFi.Radio.2.ChannelLoad?"
+iw dev wl1 survey dump
+ubus-cli "WiFi.Radio.3.getRadioAirStats()"
+ubus-cli "WiFi.Radio.3.ChannelLoad?"
+iw dev wl2 survey dump
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T222208189135
+- workbook row 178 expects Failed/Failed/Failed -> normalized Fail/Fail/Fail
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- DUT.log L134-L138:
+  sh /tmp/_tp_cmd.sh; rm -f /tmp/_tp_cmd.sh
+  SurveyActiveMs5g=57
+  SurveyBusyMs5g=51
+  SurveyChannelLoad5g=89
+- DUT.log L165-L171:
+  sh /tmp/_tp_cmd.sh; rm -f /tmp/_tp_cmd.sh
+  AirLoad6g=66
+  ChannelLoad6g=66
+  SurveyActiveMs6g=27
+  SurveyBusyMs6g=18
+  SurveyChannelLoad6g=66
+- DUT.log L198-L202:
+  sh /tmp/_tp_cmd.sh; rm -f /tmp/_tp_cmd.sh
+  SurveyActiveMs24g=285
+  SurveyBusyMs24g=275
+  SurveyChannelLoad24g=96
+- normalized workbook fail matches runtime fail; no YAML edit
+```
+
 ## Checkpoint summary (2026-05-09 0506-D152)
 
 > This checkpoint records the `D152 PairingInProgress — WiFi.EndPoint.{i}.WPS.` blocker.
