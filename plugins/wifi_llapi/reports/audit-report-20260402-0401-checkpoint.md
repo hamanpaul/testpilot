@@ -1,5 +1,61 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D101)
+
+> This checkpoint records the `D101 ConfigMethodsEnabled` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=89`, `block=151`, `needs_pass3=0`
+- workbook row `D100 WMMEnable` currently has no discoverable official YAML under `plugins/wifi_llapi/cases/`; strict single-case execution therefore continued to `D101`
+- `D101 ConfigMethodsEnabled` recorded as `configmethodsenabled_mixed_band_result_projection_mismatch_outside_audit_allowlist`
+- workbook row 101 raw value is `Pass / Failed / Pass`, normalized to `Pass / Fail / Pass`
+- source 宣告 WPS `ConfigMethodsEnabled` 是 persistent string，其值必須是 supported methods 的成員
+- focused run `20260509T202941226334` reported `Pass / Pass / Pass`
+- AP1/AP5 returned `PhysicalPushButton,VirtualPushButton` and hostapd `config_methods=physical_push_button virtual_push_button`
+- AP3/6G returned `None` and had no hostapd `config_methods` under WPA3/WPS-not-supported baseline
+- cleanup command `a37341a8f2864e8197036da67661bdd8` confirmed the same AP1/AP3/AP5 state and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D102`
+
+</details>
+
+### D101 ConfigMethodsEnabled blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.WPS.ConfigMethodsEnabled?'
+grep '^config_methods=' /tmp/wl0_hapd.conf || echo NO_CFG_METHODS_5G
+ubus-cli 'WiFi.AccessPoint.3.WPS.ConfigMethodsEnabled?'
+grep '^config_methods=' /tmp/wl1_hapd.conf || echo NO_CFG_METHODS_6G
+ubus-cli 'WiFi.AccessPoint.5.WPS.ConfigMethodsEnabled?'
+grep '^config_methods=' /tmp/wl2_hapd.conf || echo NO_CFG_METHODS_24G
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T202941226334, DUT.log L15-L49
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: CfgEnabled=PhysicalPushButton,VirtualPushButton; HapdCfg=physical_push_button virtual_push_button
+- 6G/AP3: CfgEnabled=None; HapdCfg empty / no config_methods under WPA3 WPS-not-supported baseline
+- 2.4G/AP5: CfgEnabled=PhysicalPushButton,VirtualPushButton; HapdCfg=physical_push_button virtual_push_button
+- compare against audit/0506.xlsx row 101: expected Pass/Failed/Pass -> normalized Pass/Fail/Pass; actual Pass/Pass/Pass
+- cleanup command a37341a8f2864e8197036da67661bdd8: AP1/AP5 retained config_methods, AP3 retained None/no config_methods, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L980-L986 declares ConfigMethodsEnabled
+```
+
 ## Checkpoint summary (2026-05-09 0506-D099)
 
 > This checkpoint records the `D099 WMMCapability` confirmed no-edit decision.
