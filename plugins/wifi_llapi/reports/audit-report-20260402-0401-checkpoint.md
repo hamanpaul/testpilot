@@ -1,5 +1,61 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D089)
+
+> This checkpoint records the `D089 PreSharedKey` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=92`, `block=148`, `needs_pass3=0`
+- `D089 PreSharedKey` recorded as `presharedkey_result_semantics_mismatch_outside_audit_allowlist`
+- workbook row 89 raw value is `failed / Not Support / failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `Security.PreSharedKey` 是 64-char hex PSK；寫 `KeyPassPhrase` 會產生 `PreSharedKey`，且讀取時應回傳空字串
+- focused run `20260509T200445418275` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 northbound `PreSharedKey` setter/readback accepted the 64-char hex value and restored to empty
+- cleanup command `7b365c9675d14a88bdc01e776482be05` confirmed AP1/AP3/AP5 `PreSharedKey=""`, `KeyPassPhrase=00000000`, no hostapd `wpa_psk=` lines, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D090`
+
+</details>
+
+### D089 PreSharedKey blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.Security.PreSharedKey?'
+ubus-cli 'WiFi.AccessPoint.1.Security.PreSharedKey="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"'
+ubus-cli 'WiFi.AccessPoint.1.Security.PreSharedKey=""'
+ubus-cli 'WiFi.AccessPoint.3.Security.PreSharedKey?'
+ubus-cli 'WiFi.AccessPoint.3.Security.PreSharedKey="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"'
+ubus-cli 'WiFi.AccessPoint.3.Security.PreSharedKey=""'
+ubus-cli 'WiFi.AccessPoint.5.Security.PreSharedKey?'
+ubus-cli 'WiFi.AccessPoint.5.Security.PreSharedKey="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"'
+ubus-cli 'WiFi.AccessPoint.5.Security.PreSharedKey=""'
+grep -E '^(wpa_psk|wpa_passphrase|sae_password)=' /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf || true
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T200445418275
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- AP1/AP3/AP5: PreSharedKey baseline empty, setter accepted a1b2...a1b2, getter read back the 64-char value, restore returned empty
+- compare against audit/0506.xlsx row 89: expected failed/Not Support/failed -> normalized Fail/Fail/Fail; actual Pass/Pass/Pass
+- cleanup command 7b365c9675d14a88bdc01e776482be05: AP1/AP3/AP5 PreSharedKey="", KeyPassPhrase=00000000, no hostapd wpa_psk lines, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L601-L611 documents PreSharedKey PSK semantics, readback empty behavior, and validation callback
+```
+
 ## Checkpoint summary (2026-05-09 0506-D088)
 
 > This checkpoint records the `D088 ModesSupported` blocker decision.
