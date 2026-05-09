@@ -1,5 +1,56 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D094)
+
+> This checkpoint records the `D094 Status` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=90`, `block=150`, `needs_pass3=0`
+- `D094 Status` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 94 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 AP `Status` 是 read-only enum：`Disabled` / `Enabled` / `Error_Misconfigured` / `Error`
+- focused run `20260509T201907376086` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 `Status` returned `Enabled`, and wl0/wl1/wl2 driver BSS returned `up`
+- cleanup command `1943a4f0a0064391bf021c8940b6a404` confirmed AP1/AP3/AP5 `Status="Enabled"` and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D095`
+
+</details>
+
+### D094 Status confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.Status?'
+wl -i wl0 bss
+ubus-cli 'WiFi.AccessPoint.3.Status?'
+wl -i wl1 bss
+ubus-cli 'WiFi.AccessPoint.5.Status?'
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T201907376086, DUT.log L5-L25
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: Status=Enabled and DriverBss=up
+- 6G/AP3: Status=Enabled and DriverBss=up
+- 2.4G/AP5: Status=Enabled and DriverBss=up
+- compare against audit/0506.xlsx row 94: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup command 1943a4f0a0064391bf021c8940b6a404: AP1/AP3/AP5 Status=Enabled and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L221-L235 declares AP Status enum
+```
+
 ## Checkpoint summary (2026-05-09 0506-D093)
 
 > This checkpoint records the `D093 SSIDAdvertisementEnabled` confirmed no-edit decision.
