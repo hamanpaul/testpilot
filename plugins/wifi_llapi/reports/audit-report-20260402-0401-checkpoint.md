@@ -1,5 +1,55 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D478)
+
+> This checkpoint records the `D478 WmmBytesReceived.AC_BE — WiFi.Radio.{i}.Stats.WmmBytesReceived.` DM/driver counter mismatch blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=9`, `block=206`, `needs_pass3=0`
+- `D478 WmmBytesReceived.AC_BE — WiFi.Radio.{i}.Stats.WmmBytesReceived.` recorded as `radio_stats_wmmbytesreceived_ac_be_workbook_pass_vs_runtime_fail_dm_mismatch_driver_wme_rx_bytes`
+- workbook row 478 latest result is `Pass / Pass / Pass`; workbook validates Radio Stats AC_BE rx bytes against wl0/wl1/wl2 `wme_counters`
+- focused run `20260510T050516938854` reported `Fail / Fail / Fail` with `diagnostic_status=FailTest`
+- failure reason: DM getters returned `0/3414/0`, while driver AC_BE rx bytes returned `11018/3414/1140`; 5G and 2.4G did not match
+- source survey confirms WMM byte counters are modeled as `WmmBytesReceived[WLD_AC_MAX]` with `WLD_AC_BE` in wld stats structures/ODL
+- next ready single-case Pass3 target: `D481`
+
+</details>
+
+### D478 Radio Stats WmmBytesReceived AC_BE mismatch evidence
+
+**STA 指令**
+
+```sh
+# DUT-only Radio Stats counter case; runtime did not require STA operations.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.Stats.WmmBytesReceived.AC_BE?"
+wl -i wl0 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmBytesReceived5g="$5}'
+ubus-cli "WiFi.Radio.2.Stats.WmmBytesReceived.AC_BE?"
+wl -i wl1 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmBytesReceived6g="$5}'
+ubus-cli "WiFi.Radio.3.Stats.WmmBytesReceived.AC_BE?"
+wl -i wl2 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmBytesReceived24g="$5}'
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T050516938854
+- workbook row 478 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- DUT.log L8-L16 and L40-L48: Radio.1 WmmBytesReceived.AC_BE=0 while wl0 AC_BE rx bytes=11018
+- DUT.log L17-L25 and L49-L57: Radio.2 WmmBytesReceived.AC_BE=3414 and wl1 AC_BE rx bytes=3414
+- DUT.log L26-L34 and L58-L66: Radio.3 WmmBytesReceived.AC_BE=0 while wl2 AC_BE rx bytes=1140
+- failure snapshot: field=direct_5g.AC_BE, operator=equals, expected=11018, actual=0
+- source survey: wld_radio.odl defines WmmBytesReceived.AC_BE; wld_types.h carries WmmBytesReceived[WLD_AC_MAX] and WLD_AC_BE
+```
+
 ## Checkpoint summary (2026-05-10 0506-D477)
 
 > This checkpoint records the `D477 UnknownProtoPacketsReceived — WiFi.Radio.{i}.Stats.` DM/driver counter mismatch blocker.
