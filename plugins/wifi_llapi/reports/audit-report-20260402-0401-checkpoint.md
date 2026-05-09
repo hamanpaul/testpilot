@@ -1,5 +1,53 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D041)
+
+> This checkpoint records the `D041 RxPacketCount` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=156`, `applied=8`, `pending=122`, `block=129`, `needs_pass3=0`
+- `D041 RxPacketCount` blocked as `sta_env_setup_and_bands_scope_outside_audit_allowlist`
+- workbook row 41 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.RxPacketCount` 是 volatile read-only uint32；BRCM/WLD header 與 nl80211 HAL 也暴露 rx packet counter
+- focused run `20260509T165053136045` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`；remediation submit 在 `wpa_cli terminate` 發生 serialwrap command failed
+- report shape `Fail / N/A / N/A` 與 workbook tri-band Pass 不符；修復需要改 sta_env_setup / bands / topology 或新增 6G/2.4G steps，超出 audit allowlist
+- next ready single-case Pass3 target: `D042`
+
+</details>
+
+### D041 RxPacketCount blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+ping -I wl0 -c 8 -s 1400 -W 1 <resolved DUT br-lan IPv4>
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RxPacketCount?"
+iw dev wl0 station dump | awk '/Station|rx packets:/'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T165053136045
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.`
+- remediation evidence: builtin fallback attempted setup recovery, but serialwrap submit failed for `wpa_cli terminate 2>/dev/null || true`
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 41: expected Pass/Pass/Pass, actual Fail/N/A/N/A, mismatch_case_count=1, mismatch bands=5g,6g,2.4g
+- blocker: stale case-local WPA3/SAE setup and checked-in 5G-only scope cannot be repaired through audit verify-edit; sta_env_setup, top-level bands/topology, and adding 6G/2.4G executable steps are outside allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1323 declares RxPacketCount as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L1004 declares RxPacketCount; wld.h L825 exposes RxPacketCount; rdk_nl80211_hal.c L885 reads rx_tot_pkts into rx_packets
+```
+
 ## Checkpoint summary (2026-05-09 0506-D040)
 
 > This checkpoint records the `D040 RxMulticastPacketCount` confirmed no-edit closure.
