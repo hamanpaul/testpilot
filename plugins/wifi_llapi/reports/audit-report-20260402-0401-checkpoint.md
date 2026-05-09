@@ -1,5 +1,56 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D485)
+
+> This checkpoint records the `D485 WmmBytesSent.AC_VO — WiFi.Radio.{i}.Stats.WmmBytesSent.` stale getRadioStats/parser blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=6`, `block=209`, `needs_pass3=0`
+- `D485 WmmBytesSent.AC_VO — WiFi.Radio.{i}.Stats.WmmBytesSent.` recorded as `radio_stats_wmmbytessent_ac_vo_workbook_pass_vs_runtime_fail_getradiostats_ac_vo_stats_no_output`
+- workbook row 485 latest result is `Pass / Pass / Pass`; workbook validates Radio Stats AC_VO tx bytes against wl0/wl1/wl2 `wme_counters`
+- focused run `20260510T051141706088` reported `Fail / Fail / Fail` with `diagnostic_status=FailTest`
+- failure reason: current YAML runs `ubus-cli "WiFi.Radio.{i}.getRadioStats()" | grep AC_VO_Stats`; this produced no output, so `stats_5g.WmmBytesSent` was empty
+- source survey confirms `WmmBytesSent.AC_VO` is modeled in wld ODL/types
+- next ready single-case Pass3 target: `D490`
+
+</details>
+
+### D485 Radio Stats WmmBytesSent AC_VO no-output evidence
+
+**STA 指令**
+
+```sh
+# DUT-only Radio Stats counter case; runtime did not require STA operations.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.getRadioStats()" | grep AC_VO_Stats
+ubus-cli "WiFi.Radio.2.getRadioStats()" | grep AC_VO_Stats
+ubus-cli "WiFi.Radio.3.getRadioStats()" | grep AC_VO_Stats
+
+# Workbook backend expectation, not reached by current YAML:
+ubus-cli "WiFi.Radio.*.Stats.WmmBytesSent.AC_VO?"
+wl -i wl0 wme_counters
+wl -i wl1 wme_counters
+wl -i wl2 wme_counters
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T051141706088
+- workbook row 485 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- DUT.log L8-L13 and L19-L24: all three getRadioStats | grep AC_VO_Stats commands produced no output
+- failure snapshot: field=stats_5g.WmmBytesSent, operator=regex, expected=^\d+$, actual=""
+- source survey: wld_radio.odl defines WmmBytesSent.AC_VO; wld_types.h carries WmmBytesSent[WLD_AC_MAX] and WLD_AC_VO
+```
+
 ## Checkpoint summary (2026-05-10 0506-D482)
 
 > This checkpoint records the `D482 WmmBytesSent.AC_BE — WiFi.Radio.{i}.Stats.WmmBytesSent.` stale getRadioStats/parser blocker.
