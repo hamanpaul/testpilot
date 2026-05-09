@@ -1,5 +1,51 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D025)
+
+> This checkpoint records the `D025 LastDataUplinkRate` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=152`, `applied=4`, `pending=137`, `block=122`, `needs_pass3=0`
+- `D025 LastDataUplinkRate` 沒有 closure；已標成 `block`，reason=`stale_custom_5g_sta_env_setup_fails_before_lastdatauplinkrate_read`
+- workbook row 25 期待 `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.LastDataUplinkRate` 是 `%volatile %read-only uint32`
+- focused run `20260509T141740408903` 三次 attempts 都沒有進入 case steps；全部停在 `setup_env` 的 stale custom 5G WPA3 path，STA `iw dev wl0 link` 回 `Not connected`
+- runner 的 builtin `sta_band_rebaseline` remediation 已嘗試但失敗；需要修的是 `sta_env_setup`，不屬於 audit `verify-edit` allowlist，因此本輪記 blocker
+- next ready single-case Pass3 target: `D026`
+
+</details>
+
+### D025 LastDataUplinkRate blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataUplinkRate?"
+STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
+wl -i wl0 sta_info $STA_MAC | grep "rate of last rx pkt"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T141740408903
+- final: status=Fail, evaluation_verdict=Fail, attempts_used=3, diagnostic_status=FailEnv
+- attempt failures: phase=setup_env, reason_code=sta_band_link_failed, device=STA, band=5g, command="iw dev wl0 link", output="Not connected.", field_name=sta_env_setup, index=48
+- builtin remediation: sta_band_rebaseline attempted between attempts and failed
+- compare against audit/0506.xlsx row 25: expected_norm Pass/Pass/Pass, actual Fail/Fail/Fail, match=False
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1231 declares LastDataUplinkRate as volatile read-only uint32
+```
+
 ## Checkpoint summary (2026-05-09 0506-D024)
 
 > This checkpoint records the `D024 LastDataDownlinkRate` blocker decision.
