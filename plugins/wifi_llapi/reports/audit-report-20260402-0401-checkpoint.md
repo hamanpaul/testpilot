@@ -1,5 +1,51 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D038)
+
+> This checkpoint records the `D038 Rx_Retransmissions` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=155`, `applied=8`, `pending=125`, `block=127`, `needs_pass3=0`
+- `D038 Rx_Retransmissions` confirmed without YAML edit，reason=`workbook_normalized_match_setup_failure_no_yaml_edit`
+- workbook row 38 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.Rx_Retransmissions` 是 volatile read-only uint32；BRCM/WLD header 與 nl80211 HAL 也暴露 rx retry counter
+- focused run `20260509T163520123849` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 正規化後等同 workbook `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D039`
+
+</details>
+
+### D038 Rx_Retransmissions confirmed evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Rx_Retransmissions?"
+wl -i wl0 sta_info "$STA_MAC" | grep 'rx total pkts retried'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T163520123849
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 38: expected Not Supported/Not Supported/Not Supported -> normalized Fail/Fail/Fail; actual Fail/N/A/N/A -> normalized Fail/Fail/Fail; full_match_count=1, mismatch_case_count=0
+- caveat: getter did not execute; this is accepted only as a workbook-normalized match, and sta_env_setup / bands / topology changes remain outside audit allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1375 declares Rx_Retransmissions as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L1026 declares Rx_Retransmissions; wld.h L805 exposes Rx_Retransmissions; rdk_nl80211_hal.c L891 reads rx_pkts_retried into rx_retries
+```
+
 ## Checkpoint summary (2026-05-09 0506-D037)
 
 > This checkpoint records the `D037 Retransmissions` blocker.
