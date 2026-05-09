@@ -1,5 +1,49 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D147)
+
+> This checkpoint records the `D147 SSID — WiFi.EndPoint.{i}.Profile.WPS.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=188`, `applied=9`, `pending=73`, `block=145`, `needs_pass3=0`
+- `D147 SSID — WiFi.EndPoint.{i}.Profile.WPS.` recorded as `endpoint_profile_wps_ssid_workbook_skip_all_bands_vs_unsupported_probe_pass_semantics_mismatch`
+- workbook row 147 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T221641232496` reported `Pass / Pass / Pass`
+- live probe returned `No data found` for `WiFi.EndPoint.?`; current YAML treats missing EndPoint tree as expected unsupported behavior
+- next ready single-case Pass3 target: `D148`
+
+</details>
+
+### D147 EndPoint Profile WPS SSID blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D147 is a DUT-only EndPoint tree probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T221641232496
+- workbook row 147 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L11:
+  ubus-cli "WiFi.EndPoint.?"
+  > WiFi.EndPoint.?
+  No data found
+- mismatch: workbook skip/fail semantics disagree with YAML unsupported-probe pass semantics
+```
+
 ## Checkpoint summary (2026-05-09 0506-D146)
 
 > This checkpoint records the `D146 WEPKey — WiFi.EndPoint.{i}.Profile.WPS.Security.` blocker.
