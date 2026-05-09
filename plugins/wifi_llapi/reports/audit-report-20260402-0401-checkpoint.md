@@ -1,5 +1,54 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D406)
+
+> This checkpoint records the `D406 MultipleRetryCount — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=33`, `block=182`, `needs_pass3=0`
+- `D406 MultipleRetryCount — WiFi.SSID.{i}.Stats.` recorded as `ssid_multipleretrycount_env_block_sta_band_not_ready_before_runtime_readback`
+- workbook row 406 latest result is `Pass / Pass / Pass`
+- focused run `20260510T024724514939` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: `env_verify` failed before case commands executed because 5G BSS/STA baseline did not stabilize after retries and AP bounce
+- source survey confirms `MultipleRetryCount` is an exposed SSID Stats parameter and maps to Broadcom `txretrie`
+- next ready single-case Pass3 target: `D408`
+
+</details>
+
+### D406 SSID Stats MultipleRetryCount environment blocker evidence
+
+**STA 指令**
+
+```sh
+# Runtime did not reach STA traffic/readback phase; env_verify failed first.
+```
+
+**DUT 指令**
+
+```sh
+# Intended readback sequence, not executed in this focused run:
+ubus-cli "WiFi.SSID.4.Stats.MultipleRetryCount?"
+ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n "s/^[[:space:]]*MultipleRetryCount = \\([0-9][0-9]*\\).*/GetSSIDStatsMultipleRetryCount5g=\\1/p"
+wl -i wl0 if_counters | sed -n "s/.*txretrie \\([0-9][0-9]*\\).*/DriverMultipleRetryCount5g=\\1/p"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T024724514939
+- workbook row 406 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- failure snapshot: phase=verify_env, reason_code=sta_band_not_ready, comment="STA band baseline/connect failed"
+- DUT.log L8-L10: initial wl0 bss readback was down
+- DUT.log L1320-L1326: wl0 bss stayed down across retries
+- DUT.log L1496-L1508: wl0 eventually came up after hostapd/AP bounce, but later STA verification still failed
+- STA.log L1-L4 contains only environment setup prompt; runtime never reached case readback commands
+- source survey: SSID Stats MultipleRetryCount is registered in tr181-wifi_SSID.odl/dm_info.c and maps to Broadcom ifstats txretrie
+```
+
 ## Checkpoint summary (2026-05-10 0506-D385)
 
 > This checkpoint records the `D385 RadCapabilitiesVHTStr — WiFi.Radio.{i}.` workbook/runtime mismatch blocker.
