@@ -1,5 +1,59 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D415)
+
+> This checkpoint records the `D415 RrmOnChannelMaxDuration — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=25`, `block=190`, `needs_pass3=0`
+- `D415 RrmOnChannelMaxDuration — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` recorded as `assocdev_rrmonchannelmaxduration_env_block_5g_sta_not_connected_before_getter`
+- workbook row 415 latest result is `Pass / Pass / Pass`
+- focused run `20260510T040504331324` reported `Fail / N/A / N/A` with `diagnostic_status=FailEnv`
+- failure reason: `env_verify` failed before assoclist/getter commands executed because 5G STA baseline/connect did not stabilize
+- source survey confirms AssociatedDevice `RrmOnChannelMaxDuration` is exposed in ODL/wld as read-only RRM duration data
+- next ready single-case Pass3 target: `D426`
+
+</details>
+
+### D415 AssociatedDevice RrmOnChannelMaxDuration environment blocker evidence
+
+**STA 指令**
+
+```sh
+# Runtime did not reach getter phase; STA baseline failed while trying to connect wl0 to testpilot5G.
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+wl -i wl0 join testpilot5G imode bss
+wl -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+# Intended readback sequence, not executed in this focused run:
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RrmOnChannelMaxDuration?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T040504331324
+- workbook row 415 latest result expects Pass/Pass/Pass
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- failure snapshot: phase=verify_env, band=5g, reason_code=sta_band_not_ready, comment="STA band baseline/connect failed"
+- DUT.log L8-L10: initial wl0 bss readback was down
+- DUT.log L202-L244: wl0 bss stayed down across repeated baseline retries
+- DUT.log L939-L955: AP.1 was re-enabled and hostapd config repaired during recovery
+- STA.log L82-L100: repeated `iw dev wl0 link` returned `Not connected.`
+- STA.log L101-L121: fallback `wl -i wl0 join testpilot5G` still reported `Not associated.`
+- source survey: AssociatedDevice RrmOnChannelMaxDuration is registered in tr181-wifi_AccessPoint.odl and backed by wld/swl RRM duration fields
+```
+
 ## Checkpoint summary (2026-05-10 0506-D414)
 
 > This checkpoint records the `D414 RrmOffChannelMaxDuration — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
