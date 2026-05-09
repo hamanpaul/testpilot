@@ -1,5 +1,64 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D071)
+
+> This checkpoint records the `D071 FTOverDSEnable` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=98`, `block=142`, `needs_pass3=0`
+- `D071 FTOverDSEnable` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 71 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `IEEE80211r` object 透過 `wld_ap_11r_setConf_ocf` 套用設定；`Enabled` 具 validate callback；`FTOverDSEnable` 是 persistent bool default `false`
+- focused run `20260509T190605711605` enabled IEEE80211r prerequisites on AP1/AP3/AP5, set MobilityDomain=4660, verified hostapd `mobility_domain=3412`, toggled `FTOverDSEnable` to `1` and back to `0`, and hostapd `ft_over_ds` followed on all bands
+- cleanup restored MobilityDomain=0 and IEEE80211r.Enabled=0 on AP1/AP3/AP5
+- report shape `Pass / Pass / Pass` matches workbook row 71
+- next ready single-case Pass3 target: `D072`
+
+</details>
+
+### D071 FTOverDSEnable confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=1
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=4660
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable=1
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable=0
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=1
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=4660
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable=1
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable=0
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.Enabled=1
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=4660
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable=1
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable=0
+grep '^mobility_domain=' /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf
+grep '^ft_over_ds=' /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T190605711605
+- AP1/AP3/AP5 prerequisites: IEEE80211r.Enabled=1; MobilityDomain=4660; hostapd mobility_domain=3412; ft_over_ds initially 0
+- set path: FTOverDSEnable=1 read back on AP1/AP3/AP5; hostapd ft_over_ds=1 on wl0/wl1/wl2
+- restore path: FTOverDSEnable=0 read back on AP1/AP3/AP5; hostapd ft_over_ds=0 on wl0/wl1/wl2
+- cleanup: AP1/AP3/AP5 MobilityDomain=0 and IEEE80211r.Enabled=0
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 71: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L452-L453 declares IEEE80211r and config event handler; L459-L460 declares/validates Enabled; L469-L470 declares FTOverDSEnable default false
+```
+
 ## Checkpoint summary (2026-05-09 0506-D070)
 
 > This checkpoint records the `D070 Enable` confirmed no-edit decision.
