@@ -1,5 +1,59 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D337)
+
+> This checkpoint records the `D337 UnknownProtoPacketsReceived — WiFi.SSID.{i}.Stats.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=48`, `block=169`, `needs_pass3=0`
+- `D337 UnknownProtoPacketsReceived — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_unknownprotopacketsreceived_workbook_not_supported_all_bands_blocked_by_sta_band_not_ready_and_yaml_driver_mapping_mismatch`
+- workbook row 337 latest ARC result is `Not Supported / Not Supported / Not Supported`, normalized `Fail / Fail / Fail`
+- focused run `20260510T014613409484` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before UnknownProtoPacketsReceived readback because STA band baseline/connect failed, `wl0` BSS stayed down through retries/AP bounce, and 6G OCV/hostapd remediation did not stabilize `wl1`
+- source survey note: active SSID mapping uses `rxunknownprotopkts`, while current YAML driver cross-check uses `rxbadprotopkts`
+- next ready single-case Pass3 target: `D352`
+
+</details>
+
+### D337 SSID Stats UnknownProtoPacketsReceived blocker evidence
+
+**STA 指令**
+
+```sh
+# STA baseline/connect attempted by runtime auto-baseline; no UnknownProtoPacketsReceived readback step executed
+dmesg -n 1
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss
+ubus-cli WiFi.Radio.1.Enable=1
+ubus-cli "WiFi.SSID.4.Stats.UnknownProtoPacketsReceived?"
+ubus-cli "WiFi.SSID.6.Stats.UnknownProtoPacketsReceived?"
+ubus-cli "WiFi.SSID.8.Stats.UnknownProtoPacketsReceived?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T014613409484
+- workbook row 337 latest result is Not Supported/Not Supported/Not Supported, normalized Fail/Fail/Fail
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before UnknownProtoPacketsReceived readback
+- DUT.log report range L4-L2048:
+  wl -i wl0 bss
+  down
+  WiFi.Radio.1.Enable=1
+  ... AP.1 bounce / hostapd restart attempts ...
+  6G OCV/hostapd remediation did not stabilize wl1
+- STA.log L1-L5 only contains runtime log-level setup; no STA traffic/readback step executed
+- source survey: `whm_brcm_api_ext.c` maps SSID UnknownProtoPacketsReceived from `ifstats->rxunknownprotopkts`; current YAML uses `rxbadprotopkts`
+```
+
 ## Checkpoint summary (2026-05-10 0506-D336)
 
 > This checkpoint records the `D336 UnicastPacketsSent — WiFi.SSID.{i}.Stats.` environment blocker.
