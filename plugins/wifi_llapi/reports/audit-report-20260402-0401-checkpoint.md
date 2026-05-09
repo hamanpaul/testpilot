@@ -1,5 +1,70 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D327)
+
+> This checkpoint records the `D327 ErrorsReceived — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=56`, `block=161`, `needs_pass3=0`
+- `D327 ErrorsReceived — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_errorsreceived_workbook_skip_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 327 latest ARC result is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260510T001901434799` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before ErrorsReceived readback because STA band baseline/connect failed, STA `wl0` stayed not connected/not associated, and DUT band readiness was unstable across wl0/wl1/wl2
+- next ready single-case Pass3 target: `D328`
+
+</details>
+
+### D327 SSID Stats ErrorsReceived blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+wl -i wl0 join testpilot5G imode bss
+wl -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+ubus-cli "WiFi.SSID.4.Stats.ErrorsReceived?"
+ubus-cli "WiFi.SSID.6.Stats.ErrorsReceived?"
+ubus-cli "WiFi.SSID.8.Stats.ErrorsReceived?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T001901434799
+- workbook row 327 latest result is Skip/Skip/Skip, normalized Fail/Fail/Fail
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before ErrorsReceived readback
+- STA.log L82-L121:
+  iw dev wl0 link
+  Not connected.
+  wl -i wl0 join testpilot5G imode bss
+  wl -i wl0 status
+  Not associated. Last associated with SSID: ""
+- DUT.log L1048-L1135:
+  wl -i wl0 bss
+  up
+  wl -i wl1 bss
+  down/up during retries
+  wl -i wl2 bss
+  down ... later up
+  __testpilot_env_gate__
+  wl -i wl0 bss
+  down
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
 ## Checkpoint summary (2026-05-10 0506-D326)
 
 > This checkpoint records the `D326 DiscardPacketsSent — WiFi.SSID.{i}.Stats.` environment blocker.
