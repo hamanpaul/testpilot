@@ -1,5 +1,53 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D053)
+
+> This checkpoint records the `D053 TxBytes` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=161`, `applied=8`, `pending=110`, `block=136`, `needs_pass3=0`
+- `D053 TxBytes` blocked as `tri_band_txbytes_delta_blocker_outside_audit_allowlist`
+- workbook row 53 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.TxBytes` 是 volatile read-only uint64；BRCM mirror 與 WLD header 也暴露 TxBytes counter
+- focused run `20260509T175009646089` reached same-STA AssociatedDevice getters; 5G `TxBytes` increased from `0` to `782`, but 6G and 2.4G stayed `0 -> 0` after bounded ping triggers
+- report shape `Fail / Fail / Fail` 與 workbook tri-band Pass 不符；修復 6G/2.4G traffic trigger 或 oracle path 超出目前 audit-safe YAML-only allowlist
+- next ready single-case Pass3 target: `D054`
+
+</details>
+
+### D053 TxBytes blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+cat /sys/class/net/wl0/address | tr 'a-f' 'A-F' | sed 's/^/StaMac=/'
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxBytes?"
+ping -I br-lan -c 20 -s 1400 -W 1 "$STA_IP"
+wl -i wl0 sta_info "$STA_MAC" | sed -n 's/.*tx bytes: *\([0-9][0-9]*\).*/DriverTxBytes=\1/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T175009646089
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1360 declares TxBytes as volatile read-only uint64; BRCM mirror tr181-wifi_AccessPoint.odl L977 declares TxBytes; wld.h L828/L917 expose TxBytes fields
+- live getter evidence: same-STA AssociatedDevice matches resolved for AP1/AP3/AP5
+- 5G TxBytes delta: 0 -> 782
+- 6G TxBytes delta: 0 -> 0; 2.4G TxBytes delta: 0 -> 0 after bounded ping triggers
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- compare against audit/0506.xlsx row 53: expected Pass/Pass/Pass, actual Fail/Fail/Fail, full_match_count=0, mismatch_case_count=1, mismatch bands=5g,6g,2.4g
+- blocker: current lab trigger/oracle path cannot produce required 6G/2.4G TxBytes deltas, and repairing traffic generation or changing band-specific executable flow is outside audit-safe YAML-only allowlist
+```
+
 ## Checkpoint summary (2026-05-09 0506-D052)
 
 > This checkpoint records the `D052 Tx_RetransmissionsFailed` confirmed no-edit closure.
