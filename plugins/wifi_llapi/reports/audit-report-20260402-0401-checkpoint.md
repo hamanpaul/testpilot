@@ -1,5 +1,73 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D075)
+
+> This checkpoint records the `D075 InterworkingEnable` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=168`, `applied=9`, `pending=96`, `block=142`, `needs_pass3=0`
+- `D075 InterworkingEnable` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 75 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `IEEE80211u` object 透過 `wld_ap_11u_setConf_ocf` 套用設定；`InterworkingEnable` 是 persistent bool default `false`
+- focused run `20260509T191225540540` reported `Fail / Fail / Fail`
+- attempt 1 showed AP1/AP3/AP5 northbound getter accepted `InterworkingEnable` `0 -> 1 -> 0`, but hostapd projection did not satisfy the expected count: `interworking=1` stayed `0` after setter, and restore left stale/mixed counts
+- attempt 2 setup saw `wl1 bss=down`; AP1/AP3/AP5 were rebaselined afterward and wl0/wl1/wl2 confirmed `up`
+- report shape `Fail / Fail / Fail` matches workbook row 75 after normalization
+- next ready single-case Pass3 target: `D076`
+
+</details>
+
+### D075 InterworkingEnable confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable?"
+grep -c '^interworking=1$' /tmp/wl0_hapd.conf
+grep -c '^interworking=0$' /tmp/wl0_hapd.conf
+ubus-cli WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable=1
+ubus-cli WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable=0
+ubus-cli "WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable?"
+grep -c '^interworking=1$' /tmp/wl1_hapd.conf
+grep -c '^interworking=0$' /tmp/wl1_hapd.conf
+ubus-cli WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable=1
+ubus-cli WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable=0
+ubus-cli "WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable?"
+grep -c '^interworking=1$' /tmp/wl2_hapd.conf
+grep -c '^interworking=0$' /tmp/wl2_hapd.conf
+ubus-cli WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable=1
+ubus-cli WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable=0
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T191225540540
+- report shape: Fail / Fail / Fail, diagnostic_status=FailConfig
+- attempt 1 5G: Interworking5g=0 baseline; after setter Interworking5g=1 but Interworking5gOneCount=0 / ZeroCount=1 / TotalCount=2; expected one `interworking=1`
+- attempt 1 6G: Interworking6g=0 baseline; after setter Interworking6g=1 but Interworking6gOneCount=0 / ZeroCount=1 / TotalCount=2
+- attempt 1 2.4G: Interworking24g=0 baseline; after setter Interworking24g=1 but Interworking24gOneCount=0 / ZeroCount=1 / TotalCount=2
+- restore side effect: later counts showed stale/mixed interworking lines, and attempt 2 setup saw wl1 bss down
+- recovery: serialwrap command a958e1c3a0da4adaacf5ce847b9b123c set AP1/AP3/AP5 Enable=1 and confirmed wl0=up, wl1=up, wl2=up
+- compare against audit/0506.xlsx row 75: expected Failed/Failed/Failed -> normalized Fail/Fail/Fail; actual Fail/Fail/Fail
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L499-L500 declares IEEE80211u and config event handler; L505-L506 declares InterworkingEnable default false
+```
+
 ## Checkpoint summary (2026-05-09 0506-D072)
 
 > This checkpoint records the `D072 MobilityDomain` confirmed no-edit decision.
