@@ -1,5 +1,64 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D499)
+
+> This checkpoint records the `D499 WmmBytesReceived.AC_VO — WiFi.SSID.{i}.Stats.WmmBytesReceived.AC_VO` live confirmation.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=194`, `applied=9`, `pending=2`, `block=210`, `needs_pass3=0`
+- `D499 WmmBytesReceived.AC_VO` recorded as `ssid_stats_wmmbytesreceived_ac_vo_workbook_pass_confirmed_by_live_getssidstats_direct_and_driver_counters`
+- workbook row 499 latest result is `Pass / Pass / Pass`
+- focused run `20260510T052235572937` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- all three bands matched getSSIDStats, direct `WiFi.SSID.{i}.Stats.WmmBytesReceived.AC_VO`, and wl driver AC_VO rx bytes: `5g=74735`, `6g=15552`, `2.4g=35796`
+- source survey confirms Broadcom interface stats copy `wmm_rxbytes[ac]` into `WmmBytesReceived[ac]` and VAP stats copy/aggregate that field
+- next ready single-case Pass3 target: `D520`
+
+</details>
+
+### D499 SSID Stats WmmBytesReceived AC_VO evidence
+
+**STA 指令**
+
+```sh
+# N/A (AP-side counter readback; no STA transport command was executed by this case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n '/WmmBytesReceived = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmBytesReceived5g=\1/p'
+ubus-cli "WiFi.SSID.4.Stats.WmmBytesReceived.AC_VO?"
+wl -i wl0 wme_counters | grep -A2 '^AC_VO:' | awk '/rx frames:/ {print "DriverWmmBytesReceived5g="$5}'
+ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n '/WmmBytesReceived = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmBytesReceived6g=\1/p'
+ubus-cli "WiFi.SSID.6.Stats.WmmBytesReceived.AC_VO?"
+wl -i wl1 wme_counters | grep -A2 '^AC_VO:' | awk '/rx frames:/ {print "DriverWmmBytesReceived6g="$5}'
+ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n '/WmmBytesReceived = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmBytesReceived24g=\1/p'
+ubus-cli "WiFi.SSID.8.Stats.WmmBytesReceived.AC_VO?"
+wl -i wl2 wme_counters | grep -A2 '^AC_VO:' | awk '/rx frames:/ {print "DriverWmmBytesReceived24g="$5}'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260510T052235572937_DUT.log L14-L25
+GetSSIDStatsWmmBytesReceived5g=74735
+WiFi.SSID.4.Stats.WmmBytesReceived.AC_VO=74735
+DriverWmmBytesReceived5g=74735
+
+20260510T052235572937_DUT.log L32-L43
+GetSSIDStatsWmmBytesReceived6g=15552
+WiFi.SSID.6.Stats.WmmBytesReceived.AC_VO=15552
+DriverWmmBytesReceived6g=15552
+
+20260510T052235572937_DUT.log L50-L61
+GetSSIDStatsWmmBytesReceived24g=35796
+WiFi.SSID.8.Stats.WmmBytesReceived.AC_VO=35796
+DriverWmmBytesReceived24g=35796
+```
+
 ## Checkpoint summary (2026-05-10 0506-D496)
 
 > This checkpoint records the `D496 WmmBytesReceived.AC_BE — WiFi.SSID.{i}.Stats.WmmBytesReceived.AC_BE` live confirmation.
