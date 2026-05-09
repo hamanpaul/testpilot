@@ -1,5 +1,65 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D087)
+
+> This checkpoint records the `D087 ModeEnabled` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=93`, `block=146`, `needs_pass3=0`
+- `D087 ModeEnabled` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 87 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `Security.ModeEnabled` 是 persistent string，並以 enum 驗證 security mode，其中包含 `WPA3-Personal`
+- focused run `20260509T195936303264` reported `Pass / Pass / Pass`
+- AP1/AP5 exact-closed `WPA2-Personal` / `WPA-PSK` -> `WPA3-Personal` / `SAE` / `ieee80211w=2` -> restored `WPA2-Personal`
+- AP3 stayed on the documented `WPA3-Personal` / `SAE` / `ieee80211w=2` baseline
+- cleanup command `e4a1d967e1884295a2176883b074f3f4` confirmed AP1/AP3/AP5 `ModeEnabled` restored to `WPA2-Personal` / `WPA3-Personal` / `WPA2-Personal`, with wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D088`
+
+</details>
+
+### D087 ModeEnabled confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
+grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl0_hapd.conf || true
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"
+grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl1_hapd.conf || true
+ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
+ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"
+grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl2_hapd.conf || true
+ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA3-Personal
+ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T195936303264
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: baseline WPA2-Personal / WPA-PSK / ieee80211w=0; after setter WPA3-Personal / SAE / ieee80211w=2; restored WPA2-Personal / WPA-PSK
+- 6G/AP3: baseline WPA3-Personal / SAE / ieee80211w=2; setter kept WPA3-Personal / SAE / ieee80211w=2; restore no-op kept WPA3-Personal
+- 2.4G/AP5: baseline WPA2-Personal / WPA-PSK / ieee80211w=0; after setter WPA3-Personal / SAE / ieee80211w=2; restored WPA2-Personal / WPA-PSK
+- compare against audit/0506.xlsx row 87: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup command e4a1d967e1884295a2176883b074f3f4: AP1/AP3/AP5 ModeEnabled restored to WPA2-Personal/WPA3-Personal/WPA2-Personal and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L752-L760 declares ModeEnabled semantics/default and enum validation, including WPA3-Personal in the enum continuation
+```
+
 ## Checkpoint summary (2026-05-09 0506-D086)
 
 > This checkpoint records the `D086 MFPConfig` blocker decision.
