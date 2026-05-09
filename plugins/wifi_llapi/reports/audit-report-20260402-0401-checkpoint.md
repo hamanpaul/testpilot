@@ -1,5 +1,52 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D055)
+
+> This checkpoint records the `D055 TxMulticastPacketCount` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=162`, `applied=8`, `pending=108`, `block=137`, `needs_pass3=0`
+- `D055 TxMulticastPacketCount` confirmed without YAML edit，reason=`workbook_normalized_match_setup_exception_no_yaml_edit`
+- workbook row 55 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.TxMulticastPacketCount` 是 volatile read-only uint32；WLD header 也暴露 TxMulticastPacketCount
+- focused run `20260509T181102060063` 未到 getter；attempt 1 在 case-local `sta_env_setup[48]` 的 `iw dev wl0 link` 回 `Not connected.`，attempt 2 在 setup 階段遇到 serialwrap command submit exception
+- report shape `Fail / N/A / N/A` 正規化後等同 workbook `Fail / Fail / Fail`
+- next ready single-case Pass3 target: `D056`
+
+</details>
+
+### D055 TxMulticastPacketCount confirmed evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount?"
+wl -i wl0 sta_info "$STA_MAC" | sed -n 's/^[[:space:]]*tx mcast\/bcast pkts: \([0-9][0-9]*\).*/DriverTxMulticastPacketCount=\1/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T181102060063
+- setup failure: attempt 1 sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.`
+- setup exception: attempt 2 serialwrap command submit failed during `ubus-cli WiFi.SSID.4.SSID=TestPilot_BTM`
+- report shape: Fail / N/A / N/A, diagnostic_status=Inconclusive
+- compare against audit/0506.xlsx row 55: expected Not Supported/Not Supported/Not Supported normalized Fail/Fail/Fail, actual Fail/N/A/N/A normalized Fail/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- no YAML edit: workbook Not Supported already closes as fail-shaped; setup and multicast traffic generation remain outside the audit allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1355 declares TxMulticastPacketCount as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L999 declares TxMulticastPacketCount; wld.h L832/L921 expose TxMulticastPacketCount fields
+```
+
 ## Checkpoint summary (2026-05-09 0506-D054)
 
 > This checkpoint records the `D054 TxErrors` blocker.
