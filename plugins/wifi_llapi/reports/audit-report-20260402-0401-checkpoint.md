@@ -1,5 +1,50 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-09 0506-D035)
+
+> This checkpoint records the `D035 OperatingStandard` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=153`, `applied=8`, `pending=128`, `block=126`, `needs_pass3=0`
+- `D035 OperatingStandard` blocked as `bands_scope_outside_audit_allowlist`
+- workbook row 35 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.OperatingStandard` 是 read-only string
+- focused run `20260509T161815557366` 5G path 通過：wl0 assoclist `2C:59:17:00:42:15`，AP1 `OperatingStandard="ax"`
+- 報表仍是 `Pass / N/A / N/A`，因為 case 目前是 5G-only 且只有 AP1/wl0 steps；補 6G/2.4G 需要改 top-level bands/topology 或新增 steps，超出 audit `verify-edit` allowlist
+- next ready single-case Pass3 target: `D036`
+
+</details>
+
+### D035 OperatingStandard blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.OperatingStandard?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T161815557366
+- wl0 assoclist: 2C:59:17:00:42:15
+- AP1 AssociatedDevice.1.OperatingStandard="ax"
+- report shape: Pass / N/A / N/A
+- compare against audit/0506.xlsx row 35: expected Pass/Pass/Pass, actual Pass/N/A/N/A, mismatch_case_count=1, mismatch bands=6g,2.4g
+- blocker: checked-in case is 5G-only and audit verify-edit cannot change top-level bands/topology or add missing 6G/2.4G executable steps
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1463 declares OperatingStandard as read-only string; BRCM mirror tr181-wifi_AccessPoint.odl L943 declares OperatingStandard as read-only string
+```
+
 ## Checkpoint summary (2026-05-09 0506-D034)
 
 > This checkpoint records the `D034 Noise` blocker.
