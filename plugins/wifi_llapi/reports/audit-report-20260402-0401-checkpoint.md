@@ -15,7 +15,7 @@
 - all three bands matched getSSIDStats, direct `WiFi.SSID.{i}.Stats.WmmPacketsReceived.AC_VO`, and wl driver AC_VO rx frames: `5g=546`, `6g=110`, `2.4g=261`
 - source survey confirms Broadcom interface stats copy `wmm_rxpkts[ac]` into `WmmPacketsReceived[ac]` and VAP stats copy/aggregate that field
 - all RID pending cases are resolved; next phase is three-round full-run validation
-- full-run validation round 1 completed as `20260510T052920947066`: `415` cases, `196` pass cases, `219` failed cases (`FailEnv=102`, `FailConfig=45`, `FailTest=71`, `Inconclusive=1`), result fingerprint `6fe54b29da2f810e36dce530d25159eed33d1e3d3e0e210bd0f7a11ea5052c64`; full-run validation round 2 is in progress as `20260510T223227695670`, latest completed trace has advanced through `d485-getradiostats-wmm-bytessent-ac_vo` (`FailTest`), and in-flight case `d486-radio-stats-wmmfailedbytesreceived-ac_be` is retrying `verify_env`; three-round result comparison is not complete yet
+- full-run validation round 1 completed as `20260510T052920947066`: `415` cases, `196` pass cases, `219` failed cases (`FailEnv=102`, `FailConfig=45`, `FailTest=71`, `Inconclusive=1`), result fingerprint `6fe54b29da2f810e36dce530d25159eed33d1e3d3e0e210bd0f7a11ea5052c64`; full-run validation round 2 is in progress as `20260510T223227695670`, latest completed trace has advanced through `d486-radio-stats-wmmfailedbytesreceived-ac_be` (`Pass`), and in-flight case `d487-radio-stats-wmmfailedbytesreceived-ac_bk` is retrying `verify_env`; three-round result comparison is not complete yet
 
 </details>
 
