@@ -19,7 +19,7 @@ ALLOWED_PATH_PREFIXES: tuple[str, ...] = (
     "pass_criteria[",
 )
 _MISSING = object()
-_STEP_EDIT_RE = re.compile(r"^steps\[\d+\]\.(command|capture)$")
+_STEP_EDIT_RE = re.compile(r"^steps\[\d+\]\.(capture|command(?:\[\d+\])?)$")
 
 
 class BoundaryViolation(Exception):

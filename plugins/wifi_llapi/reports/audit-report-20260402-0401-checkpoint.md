@@ -1,5 +1,10618 @@
 # Wifi_LLAPI audit report checkpoint (0401 workbook)
 
+## Checkpoint summary (2026-05-10 0506-D523)
+
+> This checkpoint records the `D523 WmmPacketsReceived.AC_VO — WiFi.SSID.{i}.Stats.WmmPacketsReceived.AC_VO` live confirmation and pending-zero audit status.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=196`, `applied=9`, `pending=0`, `block=210`, `needs_pass3=0`
+- `D523 WmmPacketsReceived.AC_VO` recorded as `ssid_stats_wmmpacketsreceived_ac_vo_workbook_pass_confirmed_by_live_getssidstats_direct_and_driver_counters`
+- workbook row 523 latest result is `Pass / Pass / Pass`
+- focused run `20260510T052714623449` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- all three bands matched getSSIDStats, direct `WiFi.SSID.{i}.Stats.WmmPacketsReceived.AC_VO`, and wl driver AC_VO rx frames: `5g=546`, `6g=110`, `2.4g=261`
+- source survey confirms Broadcom interface stats copy `wmm_rxpkts[ac]` into `WmmPacketsReceived[ac]` and VAP stats copy/aggregate that field
+- all RID pending cases are resolved; next phase is three-round full-run validation
+- full-run validation round 1 completed as `20260510T052920947066`: `415` cases, `196` pass cases, `219` failed cases (`FailEnv=102`, `FailConfig=45`, `FailTest=71`, `Inconclusive=1`), result fingerprint `6fe54b29da2f810e36dce530d25159eed33d1e3d3e0e210bd0f7a11ea5052c64`; full-run validation round 2 completed as `20260510T223227695670`: `415` cases, `218` pass cases, `197` failed cases (`FailEnv=91`, `FailConfig=33`, `FailTest=72`, `Inconclusive=1`), case-result digest `60e90bef709e621dbd885fbe58f87079d0405cae7a2e41eaee2ecd6f48a30b1e`; full-run validation round 3 completed as `20260511T124016695921`: `415` cases, `199` pass cases, `216` failed cases (`FailEnv=103`, `FailConfig=39`, `FailTest=71`, `Inconclusive=3`), case-result digest `969935c822e960782ecd83b978045c6850bf9286da1554d48ffb04d40a8fc280`; full-run validation round 4 completed as `20260512T042535633840`: `415` cases, `217` pass cases, `198` failed cases (`FailEnv=90`, `FailConfig=36`, `FailTest=72`, `PassAfterRemediation=2`), case-result digest `a631d112d02470fa771c2613ca7443cead82e55d9d48a0b29ff5b69ef76625b9`; full-run validation round 5 completed as `20260512T200714643917`: `415` cases, `10` pass cases, `405` failed cases (`FailEnv=404`, `FailTest=1`), case-result digest `3ed65b5f68dd28fa4d49d59838f85288e5ddf3c13c4a78d24ae794491946332a`; full-run validation round 6 completed as `20260512T214939436789`: `415` cases, `0` pass cases, `415` failed cases (`FailEnv=415`), case-result digest `f5ccd2c758a3e0d4f07609ba93b0a3bb84693f4bbc34136592db2edd682a18af`; full-run validation round 7 completed as `20260512T220353215553`: `415` cases, `0` pass cases, `415` failed cases (`FailEnv=415`), case-result digest `f5ccd2c758a3e0d4f07609ba93b0a3bb84693f4bbc34136592db2edd682a18af`; full-run validation round 8 completed as `20260512T221805571789`: `415` cases, `0` pass cases, `415` failed cases (`FailEnv=415`), case-result digest `f5ccd2c758a3e0d4f07609ba93b0a3bb84693f4bbc34136592db2edd682a18af`; round 7 vs round 8 differ by `0` case-status diffs, but rounds 6 through 8 are now known to be an environment-only UART/TTY detach plateau (`415` `FailEnv`, COM0/COM1 `transport_connect_failed`) and must not be counted as a valid LLAPI full-run gate. After tty reattach and baseline recovery, rerun full `wifi_llapi` on the restored baseline before treating the audit as full-run validated.
+
+</details>
+
+### D523 SSID Stats WmmPacketsReceived AC_VO evidence
+
+**STA 指令**
+
+```sh
+# N/A (AP-side counter readback; no STA transport command was executed by this case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n '/WmmPacketsReceived = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsReceived5g=\1/p'
+ubus-cli "WiFi.SSID.4.Stats.WmmPacketsReceived.AC_VO?"
+wl -i wl0 wme_counters | grep -A2 '^AC_VO:' | awk '/rx frames:/ {print "DriverWmmPacketsReceived5g="$3}'
+ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n '/WmmPacketsReceived = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsReceived6g=\1/p'
+ubus-cli "WiFi.SSID.6.Stats.WmmPacketsReceived.AC_VO?"
+wl -i wl1 wme_counters | grep -A2 '^AC_VO:' | awk '/rx frames:/ {print "DriverWmmPacketsReceived6g="$3}'
+ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n '/WmmPacketsReceived = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsReceived24g=\1/p'
+ubus-cli "WiFi.SSID.8.Stats.WmmPacketsReceived.AC_VO?"
+wl -i wl2 wme_counters | grep -A2 '^AC_VO:' | awk '/rx frames:/ {print "DriverWmmPacketsReceived24g="$3}'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260510T052714623449_DUT.log L14-L25
+GetSSIDStatsWmmPacketsReceived5g=546
+WiFi.SSID.4.Stats.WmmPacketsReceived.AC_VO=546
+DriverWmmPacketsReceived5g=546
+
+20260510T052714623449_DUT.log L32-L43
+GetSSIDStatsWmmPacketsReceived6g=110
+WiFi.SSID.6.Stats.WmmPacketsReceived.AC_VO=110
+DriverWmmPacketsReceived6g=110
+
+20260510T052714623449_DUT.log L50-L61
+GetSSIDStatsWmmPacketsReceived24g=261
+WiFi.SSID.8.Stats.WmmPacketsReceived.AC_VO=261
+DriverWmmPacketsReceived24g=261
+```
+
+## Checkpoint summary (2026-05-10 0506-D520)
+
+> This checkpoint records the `D520 WmmPacketsReceived.AC_BE — WiFi.SSID.{i}.Stats.WmmPacketsReceived.AC_BE` live confirmation.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=195`, `applied=9`, `pending=1`, `block=210`, `needs_pass3=0`
+- `D520 WmmPacketsReceived.AC_BE` recorded as `ssid_stats_wmmpacketsreceived_ac_be_workbook_pass_confirmed_by_live_getssidstats_direct_and_driver_counters`
+- workbook row 520 latest result is `Pass / Pass / Pass`
+- focused run `20260510T052452358840` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- all three bands matched getSSIDStats, direct `WiFi.SSID.{i}.Stats.WmmPacketsReceived.AC_BE`, and wl driver AC_BE rx frames: `5g=68`, `6g=3`, `2.4g=1`
+- source survey confirms Broadcom interface stats copy `wmm_rxpkts[ac]` into `WmmPacketsReceived[ac]` and VAP stats copy/aggregate that field
+- next ready single-case Pass3 target: `D523`
+
+</details>
+
+### D520 SSID Stats WmmPacketsReceived AC_BE evidence
+
+**STA 指令**
+
+```sh
+# N/A (AP-side counter readback; no STA transport command was executed by this case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n '/WmmPacketsReceived = {/,/}/s/^[[:space:]]*AC_BE = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsReceived5g=\1/p'
+ubus-cli "WiFi.SSID.4.Stats.WmmPacketsReceived.AC_BE?"
+wl -i wl0 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmPacketsReceived5g="$3}'
+ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n '/WmmPacketsReceived = {/,/}/s/^[[:space:]]*AC_BE = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsReceived6g=\1/p'
+ubus-cli "WiFi.SSID.6.Stats.WmmPacketsReceived.AC_BE?"
+wl -i wl1 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmPacketsReceived6g="$3}'
+ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n '/WmmPacketsReceived = {/,/}/s/^[[:space:]]*AC_BE = \([0-9][0-9]*\).*/GetSSIDStatsWmmPacketsReceived24g=\1/p'
+ubus-cli "WiFi.SSID.8.Stats.WmmPacketsReceived.AC_BE?"
+wl -i wl2 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmPacketsReceived24g="$3}'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260510T052452358840_DUT.log L14-L25
+GetSSIDStatsWmmPacketsReceived5g=68
+WiFi.SSID.4.Stats.WmmPacketsReceived.AC_BE=68
+DriverWmmPacketsReceived5g=68
+
+20260510T052452358840_DUT.log L32-L43
+GetSSIDStatsWmmPacketsReceived6g=3
+WiFi.SSID.6.Stats.WmmPacketsReceived.AC_BE=3
+DriverWmmPacketsReceived6g=3
+
+20260510T052452358840_DUT.log L50-L61
+GetSSIDStatsWmmPacketsReceived24g=1
+WiFi.SSID.8.Stats.WmmPacketsReceived.AC_BE=1
+DriverWmmPacketsReceived24g=1
+```
+
+## Checkpoint summary (2026-05-10 0506-D499)
+
+> This checkpoint records the `D499 WmmBytesReceived.AC_VO — WiFi.SSID.{i}.Stats.WmmBytesReceived.AC_VO` live confirmation.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=194`, `applied=9`, `pending=2`, `block=210`, `needs_pass3=0`
+- `D499 WmmBytesReceived.AC_VO` recorded as `ssid_stats_wmmbytesreceived_ac_vo_workbook_pass_confirmed_by_live_getssidstats_direct_and_driver_counters`
+- workbook row 499 latest result is `Pass / Pass / Pass`
+- focused run `20260510T052235572937` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- all three bands matched getSSIDStats, direct `WiFi.SSID.{i}.Stats.WmmBytesReceived.AC_VO`, and wl driver AC_VO rx bytes: `5g=74735`, `6g=15552`, `2.4g=35796`
+- source survey confirms Broadcom interface stats copy `wmm_rxbytes[ac]` into `WmmBytesReceived[ac]` and VAP stats copy/aggregate that field
+- next ready single-case Pass3 target: `D520`
+
+</details>
+
+### D499 SSID Stats WmmBytesReceived AC_VO evidence
+
+**STA 指令**
+
+```sh
+# N/A (AP-side counter readback; no STA transport command was executed by this case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n '/WmmBytesReceived = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmBytesReceived5g=\1/p'
+ubus-cli "WiFi.SSID.4.Stats.WmmBytesReceived.AC_VO?"
+wl -i wl0 wme_counters | grep -A2 '^AC_VO:' | awk '/rx frames:/ {print "DriverWmmBytesReceived5g="$5}'
+ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n '/WmmBytesReceived = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmBytesReceived6g=\1/p'
+ubus-cli "WiFi.SSID.6.Stats.WmmBytesReceived.AC_VO?"
+wl -i wl1 wme_counters | grep -A2 '^AC_VO:' | awk '/rx frames:/ {print "DriverWmmBytesReceived6g="$5}'
+ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n '/WmmBytesReceived = {/,/}/s/^[[:space:]]*AC_VO = \([0-9][0-9]*\).*/GetSSIDStatsWmmBytesReceived24g=\1/p'
+ubus-cli "WiFi.SSID.8.Stats.WmmBytesReceived.AC_VO?"
+wl -i wl2 wme_counters | grep -A2 '^AC_VO:' | awk '/rx frames:/ {print "DriverWmmBytesReceived24g="$5}'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260510T052235572937_DUT.log L14-L25
+GetSSIDStatsWmmBytesReceived5g=74735
+WiFi.SSID.4.Stats.WmmBytesReceived.AC_VO=74735
+DriverWmmBytesReceived5g=74735
+
+20260510T052235572937_DUT.log L32-L43
+GetSSIDStatsWmmBytesReceived6g=15552
+WiFi.SSID.6.Stats.WmmBytesReceived.AC_VO=15552
+DriverWmmBytesReceived6g=15552
+
+20260510T052235572937_DUT.log L50-L61
+GetSSIDStatsWmmBytesReceived24g=35796
+WiFi.SSID.8.Stats.WmmBytesReceived.AC_VO=35796
+DriverWmmBytesReceived24g=35796
+```
+
+## Checkpoint summary (2026-05-10 0506-D496)
+
+> This checkpoint records the `D496 WmmBytesReceived.AC_BE — WiFi.SSID.{i}.Stats.WmmBytesReceived.AC_BE` live confirmation.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=193`, `applied=9`, `pending=3`, `block=210`, `needs_pass3=0`
+- `D496 WmmBytesReceived.AC_BE` recorded as `ssid_stats_wmmbytesreceived_ac_be_workbook_pass_confirmed_by_live_getssidstats_direct_and_driver_counters`
+- workbook row 496 latest result is `Pass / Pass / Pass`
+- focused run `20260510T052024722866` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- all three bands matched getSSIDStats, direct `WiFi.SSID.{i}.Stats.WmmBytesReceived.AC_BE`, and wl driver AC_BE rx bytes: `5g=11018`, `6g=3414`, `2.4g=1140`
+- source survey confirms Broadcom interface stats copy `wmm_rxbytes[ac]` into `WmmBytesReceived[ac]` and VAP stats copy/aggregate that field
+- next ready single-case Pass3 target: `D499`
+
+</details>
+
+### D496 SSID Stats WmmBytesReceived AC_BE evidence
+
+**STA 指令**
+
+```sh
+# N/A (AP-side counter readback; no STA transport command was executed by this case)
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n '/WmmBytesReceived = {/,/}/s/^[[:space:]]*AC_BE = \([0-9][0-9]*\).*/GetSSIDStatsWmmBytesReceived5g=\1/p'
+ubus-cli "WiFi.SSID.4.Stats.WmmBytesReceived.AC_BE?"
+wl -i wl0 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmBytesReceived5g="$5}'
+ubus-cli "WiFi.SSID.6.getSSIDStats()" | sed -n '/WmmBytesReceived = {/,/}/s/^[[:space:]]*AC_BE = \([0-9][0-9]*\).*/GetSSIDStatsWmmBytesReceived6g=\1/p'
+ubus-cli "WiFi.SSID.6.Stats.WmmBytesReceived.AC_BE?"
+wl -i wl1 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmBytesReceived6g="$5}'
+ubus-cli "WiFi.SSID.8.getSSIDStats()" | sed -n '/WmmBytesReceived = {/,/}/s/^[[:space:]]*AC_BE = \([0-9][0-9]*\).*/GetSSIDStatsWmmBytesReceived24g=\1/p'
+ubus-cli "WiFi.SSID.8.Stats.WmmBytesReceived.AC_BE?"
+wl -i wl2 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmBytesReceived24g="$5}'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260510T052024722866_DUT.log L14-L25
+GetSSIDStatsWmmBytesReceived5g=11018
+WiFi.SSID.4.Stats.WmmBytesReceived.AC_BE=11018
+DriverWmmBytesReceived5g=11018
+
+20260510T052024722866_DUT.log L32-L43
+GetSSIDStatsWmmBytesReceived6g=3414
+WiFi.SSID.6.Stats.WmmBytesReceived.AC_BE=3414
+DriverWmmBytesReceived6g=3414
+
+20260510T052024722866_DUT.log L50-L61
+GetSSIDStatsWmmBytesReceived24g=1140
+WiFi.SSID.8.Stats.WmmBytesReceived.AC_BE=1140
+DriverWmmBytesReceived24g=1140
+```
+
+## Checkpoint summary (2026-05-10 0506-D494)
+
+> This checkpoint records the `D494 VHTCapabilities — WiFi.Radio.{i}.VHTCapabilities` workbook mixed-support confirmation.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=192`, `applied=9`, `pending=4`, `block=210`, `needs_pass3=0`
+- `D494 VHTCapabilities` recorded as `radio_vhtcapabilities_workbook_mixed_support_confirmed_by_live_protected_5g_and_6g_24g_parameter_not_found`
+- workbook row 494 latest result is `Pass / Not Supported / Not Supported`; the row notes 5G protected base64 VHTCapabilities and 6G/2.4G `parameter not found`
+- focused run `20260510T051636443985` reported `Pass / Pass / Pass` for the executable YAML shape with `diagnostic_status=Pass`
+- source survey confirms VHT capability base64 handling in data-elements/wldataeld while no direct plain `WiFi.Radio.{i}.VHTCapabilities` ODL surface was found
+- next ready single-case Pass3 target: `D496`
+
+</details>
+
+### D494 Radio VHTCapabilities mixed-support evidence
+
+**STA 指令**
+
+```sh
+# N/A (AP-only case; no STA transport used)
+```
+
+**DUT 指令**
+
+```sh
+OUT=$(ubus-cli "protected;WiFi.Radio.1.VHTCapabilities?" 2>&1 || true)
+printf '%s\n' "$OUT"
+printf '%s\n' "$OUT" | sed -n 's/.*WiFi.Radio.1.VHTCapabilities="\([^"]*\)"/VHTCapabilities=\1/p'
+OUT=$(ubus-cli "WiFi.Radio.2.VHTCapabilities?" 2>&1 || true)
+printf '%s\n' "$OUT"
+printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p'
+printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
+OUT=$(ubus-cli "WiFi.Radio.3.VHTCapabilities?" 2>&1 || true)
+printf '%s\n' "$OUT"
+printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/error=\1/p'
+printf '%s\n' "$OUT" | sed -n 's/.*failed (\([0-9][0-9]*\) - \(.*\))/message=\2/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+20260510T051636443985_DUT.log L17-L25
+> WiFi.Radio.1.VHTCapabilities?
+WiFi.Radio.1.VHTCapabilities="dliDDw=="
+VHTCapabilities=dliDDw==
+
+20260510T051636443985_DUT.log L38-L43
+> WiFi.Radio.2.VHTCapabilities?
+ERROR: get WiFi.Radio.2.VHTCapabilities failed (4 - parameter not found)
+error=4
+message=parameter not found
+
+20260510T051636443985_DUT.log L56-L61
+> WiFi.Radio.3.VHTCapabilities?
+ERROR: get WiFi.Radio.3.VHTCapabilities failed (4 - parameter not found)
+error=4
+message=parameter not found
+```
+
+## Checkpoint summary (2026-05-10 0506-D490)
+
+> This checkpoint records the `D490 WmmFailedbytesSent.AC_BE — WiFi.Radio.{i}.Stats.WmmFailedbytesSent.` stale getRadioStats/parser blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=5`, `block=210`, `needs_pass3=0`
+- `D490 WmmFailedbytesSent.AC_BE — WiFi.Radio.{i}.Stats.WmmFailedbytesSent.` recorded as `radio_stats_wmmfailedbytessent_ac_be_workbook_pass_vs_runtime_fail_getradiostats_ac_be_stats_no_output`
+- workbook row 490 latest result is `Pass / Pass / Pass`; workbook points to wl0/wl1/wl2 `wme_counters` AC_BE tx/failed byte evidence
+- focused run `20260510T051349642107` reported `Fail / Fail / Fail` with `diagnostic_status=FailTest`
+- failure reason: current YAML runs `ubus-cli "WiFi.Radio.{i}.getRadioStats()" | grep AC_BE_Stats`; this produced no output, so `stats_5g.WmmFailedbytesSent` was empty
+- source survey confirms WMM failed bytes-sent counters are modeled in wld ODL/types
+- next ready single-case Pass3 target: `D494`
+
+</details>
+
+### D490 Radio Stats WmmFailedbytesSent AC_BE no-output evidence
+
+**STA 指令**
+
+```sh
+# DUT-only Radio Stats counter case; runtime did not require STA operations.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.getRadioStats()" | grep AC_BE_Stats
+ubus-cli "WiFi.Radio.2.getRadioStats()" | grep AC_BE_Stats
+ubus-cli "WiFi.Radio.3.getRadioStats()" | grep AC_BE_Stats
+
+# Workbook backend expectation, not reached by current YAML:
+wl -i wl0 wme_counters | grep -A2 "AC_BE" | grep -E 'tx frames|rx frames'
+wl -i wl1 wme_counters | grep -A2 "AC_BE" | grep -E 'tx frames|rx frames'
+wl -i wl2 wme_counters | grep -A2 "AC_BE" | grep -E 'tx frames|rx frames'
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T051349642107
+- workbook row 490 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- DUT.log L8-L13 and L19-L24: all three getRadioStats | grep AC_BE_Stats commands produced no output
+- failure snapshot: field=stats_5g.WmmFailedbytesSent, operator=regex, expected=^\d+$, actual=""
+- source survey: wld_radio.odl defines WMM failed sent byte counters; wld_types.h carries WmmFailedBytesSent[WLD_AC_MAX] and WLD_AC_BE
+```
+
+## Checkpoint summary (2026-05-10 0506-D485)
+
+> This checkpoint records the `D485 WmmBytesSent.AC_VO — WiFi.Radio.{i}.Stats.WmmBytesSent.` stale getRadioStats/parser blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=6`, `block=209`, `needs_pass3=0`
+- `D485 WmmBytesSent.AC_VO — WiFi.Radio.{i}.Stats.WmmBytesSent.` recorded as `radio_stats_wmmbytessent_ac_vo_workbook_pass_vs_runtime_fail_getradiostats_ac_vo_stats_no_output`
+- workbook row 485 latest result is `Pass / Pass / Pass`; workbook validates Radio Stats AC_VO tx bytes against wl0/wl1/wl2 `wme_counters`
+- focused run `20260510T051141706088` reported `Fail / Fail / Fail` with `diagnostic_status=FailTest`
+- failure reason: current YAML runs `ubus-cli "WiFi.Radio.{i}.getRadioStats()" | grep AC_VO_Stats`; this produced no output, so `stats_5g.WmmBytesSent` was empty
+- source survey confirms `WmmBytesSent.AC_VO` is modeled in wld ODL/types
+- next ready single-case Pass3 target: `D490`
+
+</details>
+
+### D485 Radio Stats WmmBytesSent AC_VO no-output evidence
+
+**STA 指令**
+
+```sh
+# DUT-only Radio Stats counter case; runtime did not require STA operations.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.getRadioStats()" | grep AC_VO_Stats
+ubus-cli "WiFi.Radio.2.getRadioStats()" | grep AC_VO_Stats
+ubus-cli "WiFi.Radio.3.getRadioStats()" | grep AC_VO_Stats
+
+# Workbook backend expectation, not reached by current YAML:
+ubus-cli "WiFi.Radio.*.Stats.WmmBytesSent.AC_VO?"
+wl -i wl0 wme_counters
+wl -i wl1 wme_counters
+wl -i wl2 wme_counters
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T051141706088
+- workbook row 485 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- DUT.log L8-L13 and L19-L24: all three getRadioStats | grep AC_VO_Stats commands produced no output
+- failure snapshot: field=stats_5g.WmmBytesSent, operator=regex, expected=^\d+$, actual=""
+- source survey: wld_radio.odl defines WmmBytesSent.AC_VO; wld_types.h carries WmmBytesSent[WLD_AC_MAX] and WLD_AC_VO
+```
+
+## Checkpoint summary (2026-05-10 0506-D482)
+
+> This checkpoint records the `D482 WmmBytesSent.AC_BE — WiFi.Radio.{i}.Stats.WmmBytesSent.` stale getRadioStats/parser blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=7`, `block=208`, `needs_pass3=0`
+- `D482 WmmBytesSent.AC_BE — WiFi.Radio.{i}.Stats.WmmBytesSent.` recorded as `radio_stats_wmmbytessent_ac_be_workbook_pass_vs_runtime_fail_getradiostats_ac_be_stats_no_output`
+- workbook row 482 latest result is `Pass / Pass / Pass`; workbook validates Radio Stats AC_BE tx bytes against wl0/wl1/wl2 `wme_counters`
+- focused run `20260510T050937399943` reported `Fail / Fail / Fail` with `diagnostic_status=FailTest`
+- failure reason: current YAML runs `ubus-cli "WiFi.Radio.{i}.getRadioStats()" | grep AC_BE_Stats`; this produced no output, so `stats_5g.WmmBytesSent` was empty
+- source survey confirms `WmmBytesSent.AC_BE` is modeled in wld ODL/types
+- next ready single-case Pass3 target: `D485`
+
+</details>
+
+### D482 Radio Stats WmmBytesSent AC_BE no-output evidence
+
+**STA 指令**
+
+```sh
+# DUT-only Radio Stats counter case; runtime did not require STA operations.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.getRadioStats()" | grep AC_BE_Stats
+ubus-cli "WiFi.Radio.2.getRadioStats()" | grep AC_BE_Stats
+ubus-cli "WiFi.Radio.3.getRadioStats()" | grep AC_BE_Stats
+
+# Workbook backend expectation, not reached by current YAML:
+ubus-cli "WiFi.Radio.*.Stats.WmmBytesSent.AC_BE?"
+wl -i wl0 wme_counters
+wl -i wl1 wme_counters
+wl -i wl2 wme_counters
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T050937399943
+- workbook row 482 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- DUT.log L8-L13 and L19-L24: all three getRadioStats | grep AC_BE_Stats commands produced no output
+- failure snapshot: field=stats_5g.WmmBytesSent, operator=regex, expected=^\d+$, actual=""
+- source survey: wld_radio.odl defines WmmBytesSent.AC_BE; wld_types.h carries WmmBytesSent[WLD_AC_MAX] and WLD_AC_BE
+```
+
+## Checkpoint summary (2026-05-10 0506-D481)
+
+> This checkpoint records the `D481 WmmBytesReceived.AC_VO — WiFi.Radio.{i}.Stats.WmmBytesReceived.` stale getRadioStats/parser blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=8`, `block=207`, `needs_pass3=0`
+- `D481 WmmBytesReceived.AC_VO — WiFi.Radio.{i}.Stats.WmmBytesReceived.` recorded as `radio_stats_wmmbytesreceived_ac_vo_workbook_pass_vs_runtime_fail_getradiostats_ac_vo_stats_no_output`
+- workbook row 481 latest result is `Pass / Pass / Pass`; workbook validates Radio Stats AC_VO rx bytes against wl0/wl1/wl2 `wme_counters`
+- focused run `20260510T050727160363` reported `Fail / Fail / Fail` with `diagnostic_status=FailTest`
+- failure reason: current YAML runs `ubus-cli "WiFi.Radio.{i}.getRadioStats()" | grep AC_VO_Stats`; this produced no output, so `stats_5g.WmmBytesReceived` was empty
+- source survey confirms `WmmBytesReceived.AC_VO` is modeled in wld ODL/types
+- next ready single-case Pass3 target: `D482`
+
+</details>
+
+### D481 Radio Stats WmmBytesReceived AC_VO no-output evidence
+
+**STA 指令**
+
+```sh
+# DUT-only Radio Stats counter case; runtime did not require STA operations.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.getRadioStats()" | grep AC_VO_Stats
+ubus-cli "WiFi.Radio.2.getRadioStats()" | grep AC_VO_Stats
+ubus-cli "WiFi.Radio.3.getRadioStats()" | grep AC_VO_Stats
+
+# Workbook backend expectation, not reached by current YAML:
+ubus-cli "WiFi.Radio.*.?" | grep WmmBytesReceived.AC_VO
+wl -i wl0 wme_counters
+wl -i wl1 wme_counters
+wl -i wl2 wme_counters
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T050727160363
+- workbook row 481 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- DUT.log L8-L13 and L19-L24: all three getRadioStats | grep AC_VO_Stats commands produced no output
+- failure snapshot: field=stats_5g.WmmBytesReceived, operator=regex, expected=^\d+$, actual=""
+- source survey: wld_radio.odl defines WmmBytesReceived.AC_VO; wld_types.h carries WmmBytesReceived[WLD_AC_MAX] and WLD_AC_VO
+```
+
+## Checkpoint summary (2026-05-10 0506-D478)
+
+> This checkpoint records the `D478 WmmBytesReceived.AC_BE — WiFi.Radio.{i}.Stats.WmmBytesReceived.` DM/driver counter mismatch blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=9`, `block=206`, `needs_pass3=0`
+- `D478 WmmBytesReceived.AC_BE — WiFi.Radio.{i}.Stats.WmmBytesReceived.` recorded as `radio_stats_wmmbytesreceived_ac_be_workbook_pass_vs_runtime_fail_dm_mismatch_driver_wme_rx_bytes`
+- workbook row 478 latest result is `Pass / Pass / Pass`; workbook validates Radio Stats AC_BE rx bytes against wl0/wl1/wl2 `wme_counters`
+- focused run `20260510T050516938854` reported `Fail / Fail / Fail` with `diagnostic_status=FailTest`
+- failure reason: DM getters returned `0/3414/0`, while driver AC_BE rx bytes returned `11018/3414/1140`; 5G and 2.4G did not match
+- source survey confirms WMM byte counters are modeled as `WmmBytesReceived[WLD_AC_MAX]` with `WLD_AC_BE` in wld stats structures/ODL
+- next ready single-case Pass3 target: `D481`
+
+</details>
+
+### D478 Radio Stats WmmBytesReceived AC_BE mismatch evidence
+
+**STA 指令**
+
+```sh
+# DUT-only Radio Stats counter case; runtime did not require STA operations.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.Stats.WmmBytesReceived.AC_BE?"
+wl -i wl0 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmBytesReceived5g="$5}'
+ubus-cli "WiFi.Radio.2.Stats.WmmBytesReceived.AC_BE?"
+wl -i wl1 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmBytesReceived6g="$5}'
+ubus-cli "WiFi.Radio.3.Stats.WmmBytesReceived.AC_BE?"
+wl -i wl2 wme_counters | grep -A2 '^AC_BE:' | awk '/rx frames:/ {print "DriverWmmBytesReceived24g="$5}'
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T050516938854
+- workbook row 478 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- DUT.log L8-L16 and L40-L48: Radio.1 WmmBytesReceived.AC_BE=0 while wl0 AC_BE rx bytes=11018
+- DUT.log L17-L25 and L49-L57: Radio.2 WmmBytesReceived.AC_BE=3414 and wl1 AC_BE rx bytes=3414
+- DUT.log L26-L34 and L58-L66: Radio.3 WmmBytesReceived.AC_BE=0 while wl2 AC_BE rx bytes=1140
+- failure snapshot: field=direct_5g.AC_BE, operator=equals, expected=11018, actual=0
+- source survey: wld_radio.odl defines WmmBytesReceived.AC_BE; wld_types.h carries WmmBytesReceived[WLD_AC_MAX] and WLD_AC_BE
+```
+
+## Checkpoint summary (2026-05-10 0506-D477)
+
+> This checkpoint records the `D477 UnknownProtoPacketsReceived — WiFi.Radio.{i}.Stats.` DM/driver counter mismatch blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=10`, `block=205`, `needs_pass3=0`
+- `D477 UnknownProtoPacketsReceived — WiFi.Radio.{i}.Stats.` recorded as `radio_stats_unknownprotopacketsreceived_workbook_pass_vs_runtime_fail_dm_zero_mismatch_driver_rxbadproto`
+- workbook row 477 latest result is `Pass / Pass / Pass`; workbook validates the Radio Stats DM counter against wl0/wl1/wl2 `rxbadproto`
+- focused run `20260510T050121708437` reported `Fail / Fail / Fail` with `diagnostic_status=FailTest`
+- failure reason: DM getters returned `0/0/0`, while driver `rxbadproto` returned `18/0/1`; the 5G equality criterion failed with expected `18`, actual `0`
+- source survey confirms `UnknownProtoPacketsReceived` is declared in Radio Stats ODL, registered in `dm_info.c`, and carried by wld stats structures
+- next ready single-case Pass3 target: `D478`
+
+</details>
+
+### D477 Radio Stats UnknownProtoPacketsReceived mismatch evidence
+
+**STA 指令**
+
+```sh
+# DUT-only Radio Stats counter case; runtime did not require STA operations.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.Stats.UnknownProtoPacketsReceived?"
+wl -i wl0 counters | awk '{for(i=1;i<=NF;i++) if($i=="rxbadproto") print "DriverUnknownProtoPacketsReceived5g="$(i+1)}'
+ubus-cli "WiFi.Radio.2.Stats.UnknownProtoPacketsReceived?"
+wl -i wl1 counters | awk '{for(i=1;i<=NF;i++) if($i=="rxbadproto") print "DriverUnknownProtoPacketsReceived6g="$(i+1)}'
+ubus-cli "WiFi.Radio.3.Stats.UnknownProtoPacketsReceived?"
+wl -i wl2 counters | awk '{for(i=1;i<=NF;i++) if($i=="rxbadproto") print "DriverUnknownProtoPacketsReceived24g="$(i+1)}'
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T050121708437
+- workbook row 477 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- DUT.log L8-L16 and L40-L48: Radio.1 UnknownProtoPacketsReceived=0 while wl0 rxbadproto=18
+- DUT.log L17-L25 and L49-L57: Radio.2 UnknownProtoPacketsReceived=0 while wl1 rxbadproto=0
+- DUT.log L26-L34 and L58-L66: Radio.3 UnknownProtoPacketsReceived=0 while wl2 rxbadproto=1
+- failure snapshot: field=direct_5g.UnknownProtoPacketsReceived, operator=equals, expected=18, actual=0
+- source survey: tr181-wifi_Radio.odl declares the volatile read-only counter; dm_info.c registers it; wld_types.h carries UnknownProtoPacketsReceived in wld_stats_t / X_WLD_STATS
+```
+
+## Checkpoint summary (2026-05-10 0506-D464)
+
+> This checkpoint records the `D464 NonSRGOffsetValid — WiFi.Radio.{i}.IEEE80211ax.` workbook/runtime mismatch blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=11`, `block=204`, `needs_pass3=0`
+- `D464 NonSRGOffsetValid — WiFi.Radio.{i}.IEEE80211ax.` recorded as `radio_nonsrgoffsetvalid_workbook_latest_fail_all_bands_vs_runtime_pass_zero_getter_redundant_dm_not_backend_verified`
+- workbook row 464 latest result is `Fail / Fail / Fail`; ARC/RD notes this redundant DM is not implemented as expected and suggests driver-level HE options validation
+- focused run `20260510T045836277410` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- mismatch reason: current YAML only validates `NonSRGOffsetValid=0` numeric getter shape on Radio 1/2/3 and does not verify workbook-described backend/redundant behavior
+- source survey found `NonSRGOffsetValid` in wld ODL/data structures and DataElements mappings, but no direct prpl_brcm tr181-wifi registration
+- next ready single-case Pass3 target: `D477`
+
+</details>
+
+### D464 Radio NonSRGOffsetValid mismatch evidence
+
+**STA 指令**
+
+```sh
+# DUT-only Radio getter case; runtime did not require STA operations.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.IEEE80211ax.NonSRGOffsetValid?"
+ubus-cli "WiFi.Radio.2.IEEE80211ax.NonSRGOffsetValid?"
+ubus-cli "WiFi.Radio.3.IEEE80211ax.NonSRGOffsetValid?"
+
+# Workbook backend hint requiring further alignment, not covered by current YAML:
+wl -i wl0 he options
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T045836277410
+- workbook row 464 latest result expects Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21: Radio.1/2/3 NonSRGOffsetValid getters each returned 0
+- current YAML passes because pass_criteria accept regex ^[01]$ only
+- source survey: wld_radio.odl defines NonSRGOffsetValid and states NonSRGOBSSPDMaxOffset is valid only if NonSRGOffsetValid is true; wld_cfg11ax_t carries heNonSRGOffsetValid; no direct prpl_brcm tr181-wifi registration found
+```
+
+## Checkpoint summary (2026-05-10 0506-D438)
+
+> This checkpoint records the `D438 TransitionDisable — WiFi.AccessPoint.{i}.Security.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=12`, `block=203`, `needs_pass3=0`
+- `D438 TransitionDisable — WiFi.AccessPoint.{i}.Security.` recorded as `security_transitiondisable_env_block_6g_dut_bss_down_before_hostapd_transition_disable_check`
+- workbook row 438 latest result is `Pass / Pass / Pass`; workbook validates wildcard `TransitionDisable` values by checking wl0/wl1/wl2 hostapd `transition_disable=1/2/8`
+- focused run `20260510T045531077541` reported `Fail / Fail / Fail` with `diagnostic_status=FailConfig`
+- failure reason: `setup_env` failed before TransitionDisable setter/readback and hostapd backend inspection because DUT BSS readiness stayed `down` (`wl0` then `wl1`)
+- source survey confirms `TransitionDisable` is defined in AccessPoint Security ODL with the workbook options and hostapd/wpa_supplicant sources implement `transition_disable`
+- next ready single-case Pass3 target: `D464`
+
+</details>
+
+### D438 Security TransitionDisable environment blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only Security case; runtime did not require or reach STA operations.
+```
+
+**DUT 指令**
+
+```sh
+# Setup commands executed before the blocker:
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+ubus-cli WiFi.AccessPoint.2.Security.ModeEnabled=WPA2-Personal
+ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
+ubus-cli WiFi.AccessPoint.4.Security.ModeEnabled=WPA3-Personal
+ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal
+ubus-cli WiFi.AccessPoint.6.Security.ModeEnabled=WPA2-Personal
+ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=password
+ubus-cli WiFi.AccessPoint.2.Security.SAEPassphrase=password
+ubus-cli 'WiFi.AccessPoint.3.Security.SAEPassphrase="00000000"'
+ubus-cli 'WiFi.AccessPoint.4.Security.SAEPassphrase="00000000"'
+ubus-cli WiFi.AccessPoint.5.Security.SAEPassphrase=password
+ubus-cli WiFi.AccessPoint.6.Security.SAEPassphrase=password
+ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable="
+wl -i wl0 bss
+wl -i wl1 bss
+
+# Intended workbook replay, not executed in this focused run:
+ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable=WPA3-Personal"
+grep -m1 '^transition_disable=' /tmp/wl0_hapd.conf
+grep -m1 '^transition_disable=' /tmp/wl1_hapd.conf
+grep -m1 '^transition_disable=' /tmp/wl2_hapd.conf
+ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable=SAE-PK"
+ubus-cli "WiFi.AccessPoint.*.Security.TransitionDisable=EnhancedOpen"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T045531077541
+- workbook row 438 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailConfig
+- failure snapshot: phase=setup_env, band=6g, device=DUT, reason_code=sta_env_setup_failed, command="wl -i wl1 bss", output="down"
+- runtime failed before TransitionDisable setter/readback and hostapd transition_disable inspection
+- source survey: AccessPoint Security ODL defines TransitionDisable allowed values "", WPA3-Personal, SAE-PK, WPA3-Enterprise, EnhancedOpen; hostapd/wpa_supplicant sources parse and apply transition_disable
+```
+
+## Checkpoint summary (2026-05-10 0506-D437)
+
+> This checkpoint records the `D437 SAEPassphrase — WiFi.AccessPoint.{i}.Security.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=13`, `block=202`, `needs_pass3=0`
+- `D437 SAEPassphrase — WiFi.AccessPoint.{i}.Security.` recorded as `security_saepassphrase_env_block_5g_dut_bss_down_before_hostapd_sae_password_check`
+- workbook row 437 latest result is `Pass / Pass / Pass`; workbook validates wildcard WPA3-Personal + SAEPassphrase by checking wl0/wl1/wl2 hostapd `sae_password=1234567890`
+- focused run `20260510T045208415030` reported `Fail / Fail / Fail` with `diagnostic_status=FailConfig`
+- failure reason: `setup_env` failed before SAE setter/readback and hostapd backend inspection because DUT `wl0` BSS stayed `down`
+- source survey confirms `SAEPassphrase` is defined as a WPA3/WPA2-WPA3 passphrase and registered in `dm_info.c`
+- next ready single-case Pass3 target: `D438`
+
+</details>
+
+### D437 Security SAEPassphrase environment blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only Security case; runtime did not require or reach STA operations.
+```
+
+**DUT 指令**
+
+```sh
+# Setup commands executed before the blocker:
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+ubus-cli WiFi.AccessPoint.2.Security.ModeEnabled=WPA2-Personal
+ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
+ubus-cli WiFi.AccessPoint.4.Security.ModeEnabled=WPA3-Personal
+ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal
+ubus-cli WiFi.AccessPoint.6.Security.ModeEnabled=WPA2-Personal
+ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=password
+ubus-cli WiFi.AccessPoint.2.Security.SAEPassphrase=password
+ubus-cli 'WiFi.AccessPoint.3.Security.SAEPassphrase="00000000"'
+ubus-cli 'WiFi.AccessPoint.4.Security.SAEPassphrase="00000000"'
+ubus-cli WiFi.AccessPoint.5.Security.SAEPassphrase=password
+ubus-cli WiFi.AccessPoint.6.Security.SAEPassphrase=password
+wl -i wl0 bss
+
+# Intended workbook replay, not executed in this focused run:
+ubus-cli "WiFi.AccessPoint.*.Security.ModeEnabled=WPA3-Personal"
+ubus-cli "WiFi.AccessPoint.*.Security.SAEPassphrase=1234567890"
+grep -m1 '^sae_password=' /tmp/wl0_hapd.conf
+grep -m1 '^sae_password=' /tmp/wl1_hapd.conf
+grep -m1 '^sae_password=' /tmp/wl2_hapd.conf
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T045208415030
+- workbook row 437 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailConfig
+- failure snapshot: phase=setup_env, band=5g, device=DUT, reason_code=sta_env_setup_failed, command="wl -i wl0 bss", output="down"
+- runtime failed before SAEPassphrase setter/readback and hostapd sae_password inspection
+- source survey: `tr181-wifi_AccessPoint.odl` defines Security.SAEPassphrase for WPA3/WPA2-WPA3; `dm_info.c` registers SAEPassphrase as a Security string
+```
+
+## Checkpoint summary (2026-05-10 0506-D436)
+
+> This checkpoint records the `D436 OWETransitionInterface — WiFi.AccessPoint.{i}.Security.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=14`, `block=201`, `needs_pass3=0`
+- `D436 OWETransitionInterface — WiFi.AccessPoint.{i}.Security.` recorded as `security_owetransitioninterface_env_block_5g_dut_bss_down_before_not_supported_backend_check`
+- workbook row 436 latest result is `Not Supported / Not Supported / Not Supported`; workbook notes pWHM accepts the TR-181 value but hostapd configs do not expose `owe_transition_ifname`
+- focused run `20260510T044738959632` reported `Fail / Fail / Fail` with `diagnostic_status=Inconclusive`
+- failure reason: `setup_env` failed before OWE setter/readback and hostapd backend inspection because DUT `wl0` BSS stayed `down`
+- source survey confirms `OWETransitionInterface` is defined as a persistent Security string and hostapd has `owe_transition_ifname` config handling
+- next ready single-case Pass3 target: `D437`
+
+</details>
+
+### D436 Security OWETransitionInterface environment blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only Security case; runtime did not require or reach STA operations.
+```
+
+**DUT 指令**
+
+```sh
+# Setup commands executed before the blocker:
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+ubus-cli WiFi.AccessPoint.1.Security.OWETransitionInterface=
+ubus-cli WiFi.AccessPoint.3.Security.OWETransitionInterface=
+ubus-cli WiFi.AccessPoint.5.Security.OWETransitionInterface=
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+ubus-cli WiFi.AccessPoint.2.Security.ModeEnabled=WPA2-Personal
+wl -i wl0 bss
+
+# Intended backend Not Supported check, not executed in this focused run:
+ubus-cli WiFi.AccessPoint.1.Security.OWETransitionInterface=DEFAULT_WL1_1
+ubus-cli WiFi.AccessPoint.3.Security.OWETransitionInterface=DEFAULT_WL0_1
+ubus-cli WiFi.AccessPoint.5.Security.OWETransitionInterface=DEFAULT_WL0_1
+grep -m1 '^owe_transition_ifname=' /tmp/wl0_hapd.conf
+grep -m1 '^owe_transition_ifname=' /tmp/wl1_hapd.conf
+grep -m1 '^owe_transition_ifname=' /tmp/wl2_hapd.conf
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T044738959632
+- workbook row 436 latest result expects Not Supported/Not Supported/Not Supported
+- report shape: Fail / Fail / Fail, diagnostic_status=Inconclusive
+- failure snapshot: phase=exception, comment includes serialwrap command failed for `wl -i wl0 bss`
+- DUT.log L3-L49: AP1/AP3/AP5 Enable=1, OWETransitionInterface reset, and AP1/AP2 WPA2-Personal restore succeeded
+- DUT.log L51-L53: first `wl -i wl0 bss` returned `down`
+- DUT.log L72-L104: second setup attempt repeated reset/restore and `wl -i wl0 bss` still returned `down`
+- source survey: `tr181-wifi_AccessPoint.odl` defines persistent `OWETransitionInterface`; hostapd sources include `owe_transition_ifname` config handling, matching workbook backend-inspection focus
+```
+
+## Checkpoint summary (2026-05-10 0506-D435)
+
+> This checkpoint records the `D435 SSID — WiFi.AccessPoint.{i}.Neighbour.{i}.` environment/config blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=15`, `block=200`, `needs_pass3=0`
+- `D435 SSID — WiFi.AccessPoint.{i}.Neighbour.{i}.` recorded as `neighbour_ssid_env_block_5g_dut_bss_down_before_neighbour_lifecycle`
+- workbook row 435 latest result is `Pass / Pass / Pass`; the row has no extra step text but aligns with the same AP Neighbour lifecycle as D427-D434
+- focused run `20260510T044516039680` reported `Fail / Fail / Fail` with `diagnostic_status=FailConfig`
+- failure reason: `setup_env` failed before Neighbour baseline/add/delete commands executed because DUT `wl0` BSS stayed `down`
+- source survey confirms AP neighbour metadata is modeled in `wld_apNeighbour_t`, including `ssid`
+- next ready single-case Pass3 target: `D436`
+
+</details>
+
+### D435 AccessPoint Neighbour SSID environment blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only case; runtime did not require or reach STA operations.
+```
+
+**DUT 指令**
+
+```sh
+# Setup commands executed before the blocker:
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+wl -i wl0 bss
+
+# Intended Neighbour lifecycle, not executed in this focused run:
+ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
+ubus-cli WiFi.AccessPoint.1.? | grep 'Neighbour.'
+ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T044516039680
+- workbook row 435 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailConfig
+- failure snapshot: phase=setup_env, band=5g, device=DUT, reason_code=sta_env_setup_failed, command="wl -i wl0 bss", output="down"
+- DUT.log L3-L23: AP1/AP3/AP5 Enable=1 succeeded, then `wl -i wl0 bss` returned `down`
+- DUT.log L24-L44: second setup attempt repeated AP Enable=1 and `wl -i wl0 bss` still returned `down`
+- source survey: `wld_apNeighbour_t` carries ssid plus bssid/channel/information/operatingClass/phyType/NAS/R0KH/R1KH/colocatedAp metadata; workbook row 435 validates Neighbour SSID support through the same setNeighbourAP readback lifecycle
+```
+
+## Checkpoint summary (2026-05-10 0506-D434)
+
+> This checkpoint records the `D434 R0KHKey — WiFi.AccessPoint.{i}.Neighbour.{i}.` environment/config blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=16`, `block=199`, `needs_pass3=0`
+- `D434 R0KHKey — WiFi.AccessPoint.{i}.Neighbour.{i}.` recorded as `neighbour_r0khkey_env_block_5g_dut_bss_down_before_neighbour_lifecycle`
+- workbook row 434 latest result is `Pass / Pass / Pass`; the row has no extra step text but aligns with the same AP Neighbour lifecycle as D427-D433
+- focused run `20260510T044259712403` reported `Fail / Fail / Fail` with `diagnostic_status=FailConfig`
+- failure reason: `setup_env` failed before Neighbour baseline/add/delete commands executed because DUT `wl0` BSS stayed `down`
+- source survey confirms AP neighbour metadata is modeled in `wld_apNeighbour_t`, including `r0khkey`
+- next ready single-case Pass3 target: `D435`
+
+</details>
+
+### D434 AccessPoint Neighbour R0KHKey environment blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only case; runtime did not require or reach STA operations.
+```
+
+**DUT 指令**
+
+```sh
+# Setup commands executed before the blocker:
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+wl -i wl0 bss
+
+# Intended Neighbour lifecycle, not executed in this focused run:
+ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
+ubus-cli WiFi.AccessPoint.1.? | grep 'Neighbour.'
+ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T044259712403
+- workbook row 434 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailConfig
+- failure snapshot: phase=setup_env, band=5g, device=DUT, reason_code=sta_env_setup_failed, command="wl -i wl0 bss", output="down"
+- DUT.log L3-L23: AP1/AP3/AP5 Enable=1 succeeded, then `wl -i wl0 bss` returned `down`
+- DUT.log L24-L44: second setup attempt repeated AP Enable=1 and `wl -i wl0 bss` still returned `down`
+- source survey: `wld_apNeighbour_t` carries r0khkey plus bssid/channel/SSID/information/operatingClass/phyType/NAS/R1KH/colocatedAp metadata; workbook row 434 validates Neighbour R0KHKey support through the same setNeighbourAP readback lifecycle
+```
+
+## Checkpoint summary (2026-05-10 0506-D433)
+
+> This checkpoint records the `D433 PhyType — WiFi.AccessPoint.{i}.Neighbour.{i}.` environment/config blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=17`, `block=198`, `needs_pass3=0`
+- `D433 PhyType — WiFi.AccessPoint.{i}.Neighbour.{i}.` recorded as `neighbour_phytype_env_block_5g_dut_bss_down_before_neighbour_lifecycle`
+- workbook row 433 latest result is `Pass / Pass / Pass`; the row has no extra step text but aligns with the same AP Neighbour lifecycle as D427-D432
+- focused run `20260510T044045409936` reported `Fail / Fail / Fail` with `diagnostic_status=FailConfig`
+- failure reason: `setup_env` failed before Neighbour baseline/add/delete commands executed because DUT `wl0` BSS stayed `down`
+- source survey confirms AP neighbour metadata is modeled in `wld_apNeighbour_t`, including `phyType`
+- next ready single-case Pass3 target: `D434`
+
+</details>
+
+### D433 AccessPoint Neighbour PhyType environment blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only case; runtime did not require or reach STA operations.
+```
+
+**DUT 指令**
+
+```sh
+# Setup commands executed before the blocker:
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+wl -i wl0 bss
+
+# Intended Neighbour lifecycle, not executed in this focused run:
+ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
+ubus-cli WiFi.AccessPoint.1.? | grep 'Neighbour.'
+ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T044045409936
+- workbook row 433 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailConfig
+- failure snapshot: phase=setup_env, band=5g, device=DUT, reason_code=sta_env_setup_failed, command="wl -i wl0 bss", output="down"
+- DUT.log L3-L23: AP1/AP3/AP5 Enable=1 succeeded, then `wl -i wl0 bss` returned `down`
+- DUT.log L24-L44: second setup attempt repeated AP Enable=1 and `wl -i wl0 bss` still returned `down`
+- source survey: `wld_apNeighbour_t` carries phyType plus bssid/channel/SSID/information/operatingClass/NAS/R0KH/R1KH/colocatedAp metadata; workbook row 433 validates Neighbour PhyType support through the same setNeighbourAP readback lifecycle
+```
+
+## Checkpoint summary (2026-05-10 0506-D432)
+
+> This checkpoint records the `D432 OperatingClass — WiFi.AccessPoint.{i}.Neighbour.{i}.` environment/config blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=18`, `block=197`, `needs_pass3=0`
+- `D432 OperatingClass — WiFi.AccessPoint.{i}.Neighbour.{i}.` recorded as `neighbour_operatingclass_env_block_5g_dut_bss_down_before_neighbour_lifecycle`
+- workbook row 432 latest result is `Pass / Pass / Pass`; the row has no extra step text but aligns with the same AP Neighbour lifecycle as D427-D431
+- focused run `20260510T043817675085` reported `Fail / Fail / Fail` with `diagnostic_status=FailConfig`
+- failure reason: `setup_env` failed before Neighbour baseline/add/delete commands executed because DUT `wl0` BSS stayed `down`
+- source survey confirms AP neighbour metadata is modeled in `wld_apNeighbour_t`, including `operatingClass`
+- next ready single-case Pass3 target: `D433`
+
+</details>
+
+### D432 AccessPoint Neighbour OperatingClass environment blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only case; runtime did not require or reach STA operations.
+```
+
+**DUT 指令**
+
+```sh
+# Setup commands executed before the blocker:
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+wl -i wl0 bss
+
+# Intended Neighbour lifecycle, not executed in this focused run:
+ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
+ubus-cli WiFi.AccessPoint.1.? | grep 'Neighbour.'
+ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T043817675085
+- workbook row 432 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailConfig
+- failure snapshot: phase=setup_env, band=5g, device=DUT, reason_code=sta_env_setup_failed, command="wl -i wl0 bss", output="down"
+- DUT.log L3-L23: AP1/AP3/AP5 Enable=1 succeeded, then `wl -i wl0 bss` returned `down`
+- DUT.log L24-L44: second setup attempt repeated AP Enable=1 and `wl -i wl0 bss` still returned `down`
+- source survey: `wld_apNeighbour_t` carries operatingClass plus bssid/channel/SSID/information/phyType/NAS/R0KH/R1KH/colocatedAp metadata; workbook row 432 validates Neighbour OperatingClass support through the same setNeighbourAP readback lifecycle
+```
+
+## Checkpoint summary (2026-05-10 0506-D431)
+
+> This checkpoint records the `D431 NASIdentifier — WiFi.AccessPoint.{i}.Neighbour.{i}.` environment/config blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=19`, `block=196`, `needs_pass3=0`
+- `D431 NASIdentifier — WiFi.AccessPoint.{i}.Neighbour.{i}.` recorded as `neighbour_nasidentifier_env_block_5g_dut_bss_down_before_neighbour_lifecycle`
+- workbook row 431 latest result is `Pass / Pass / Pass`; the row has no extra step text but aligns with the same AP Neighbour lifecycle as D427-D430
+- focused run `20260510T043601880025` reported `Fail / Fail / Fail` with `diagnostic_status=FailConfig`
+- failure reason: `setup_env` failed before Neighbour baseline/add/delete commands executed because DUT `wl0` BSS stayed `down`
+- source survey confirms AP neighbour metadata is modeled in `wld_apNeighbour_t`, including `nasIdentifier`
+- next ready single-case Pass3 target: `D432`
+
+</details>
+
+### D431 AccessPoint Neighbour NASIdentifier environment blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only case; runtime did not require or reach STA operations.
+```
+
+**DUT 指令**
+
+```sh
+# Setup commands executed before the blocker:
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+wl -i wl0 bss
+
+# Intended Neighbour lifecycle, not executed in this focused run:
+ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
+ubus-cli WiFi.AccessPoint.1.? | grep 'Neighbour.'
+ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T043601880025
+- workbook row 431 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailConfig
+- failure snapshot: phase=setup_env, band=5g, device=DUT, reason_code=sta_env_setup_failed, command="wl -i wl0 bss", output="down"
+- DUT.log L3-L23: AP1/AP3/AP5 Enable=1 succeeded, then `wl -i wl0 bss` returned `down`
+- DUT.log L24-L44: second setup attempt repeated AP Enable=1 and `wl -i wl0 bss` still returned `down`
+- source survey: `wld_apNeighbour_t` carries nasIdentifier plus bssid/channel/SSID/information/operatingClass/phyType/R0KH/R1KH/colocatedAp metadata; workbook row 431 validates Neighbour NASIdentifier support through the same setNeighbourAP readback lifecycle
+```
+
+## Checkpoint summary (2026-05-10 0506-D430)
+
+> This checkpoint records the `D430 Information — WiFi.AccessPoint.{i}.Neighbour.{i}.` environment/config blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=20`, `block=195`, `needs_pass3=0`
+- `D430 Information — WiFi.AccessPoint.{i}.Neighbour.{i}.` recorded as `neighbour_information_env_block_5g_dut_bss_down_before_neighbour_lifecycle`
+- workbook row 430 latest result is `Pass / Pass / Pass`; the row has no extra step text but aligns with the same AP Neighbour lifecycle as D427-D429
+- focused run `20260510T043342196395` reported `Fail / Fail / Fail` with `diagnostic_status=FailConfig`
+- failure reason: `setup_env` failed before Neighbour baseline/add/delete commands executed because DUT `wl0` BSS stayed `down`
+- source survey confirms AP neighbour metadata is modeled in `wld_apNeighbour_t`, including `information`
+- next ready single-case Pass3 target: `D431`
+
+</details>
+
+### D430 AccessPoint Neighbour Information environment blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only case; runtime did not require or reach STA operations.
+```
+
+**DUT 指令**
+
+```sh
+# Setup commands executed before the blocker:
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+wl -i wl0 bss
+
+# Intended Neighbour lifecycle, not executed in this focused run:
+ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
+ubus-cli WiFi.AccessPoint.1.? | grep 'Neighbour.'
+ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T043342196395
+- workbook row 430 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailConfig
+- failure snapshot: phase=setup_env, band=5g, device=DUT, reason_code=sta_env_setup_failed, command="wl -i wl0 bss", output="down"
+- DUT.log L3-L23: AP1/AP3/AP5 Enable=1 succeeded, then `wl -i wl0 bss` returned `down`
+- DUT.log L24-L44: second setup attempt repeated AP Enable=1 and `wl -i wl0 bss` still returned `down`
+- source survey: `wld_apNeighbour_t` carries information plus bssid/channel/SSID/operatingClass/phyType/NAS/R0KH/R1KH/colocatedAp metadata; workbook row 430 validates Neighbour Information support through the same setNeighbourAP readback lifecycle
+```
+
+## Checkpoint summary (2026-05-10 0506-D429)
+
+> This checkpoint records the `D429 ColocatedAP — WiFi.AccessPoint.{i}.Neighbour.{i}.` environment/config blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=21`, `block=194`, `needs_pass3=0`
+- `D429 ColocatedAP — WiFi.AccessPoint.{i}.Neighbour.{i}.` recorded as `neighbour_colocatedap_env_block_5g_dut_bss_down_before_neighbour_lifecycle`
+- workbook row 429 latest result is `Pass / Pass / Pass`; the row has no extra step text but aligns with the same AP Neighbour lifecycle as D427-D428
+- focused run `20260510T043123141596` reported `Fail / Fail / Fail` with `diagnostic_status=FailConfig`
+- failure reason: `setup_env` failed before Neighbour baseline/add/delete commands executed because DUT `wl0` BSS stayed `down`
+- source survey confirms AP neighbour metadata is modeled in `wld_apNeighbour_t`, including `colocatedAp`
+- next ready single-case Pass3 target: `D430`
+
+</details>
+
+### D429 AccessPoint Neighbour ColocatedAP environment blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only case; runtime did not require or reach STA operations.
+```
+
+**DUT 指令**
+
+```sh
+# Setup commands executed before the blocker:
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+wl -i wl0 bss
+
+# Intended Neighbour lifecycle, not executed in this focused run:
+ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
+ubus-cli WiFi.AccessPoint.1.? | grep -E 'Neighbour\.[0-9]+\.(BSSID|Channel|ColocatedAP)'
+ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T043123141596
+- workbook row 429 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailConfig
+- failure snapshot: phase=setup_env, band=5g, device=DUT, reason_code=sta_env_setup_failed, command="wl -i wl0 bss", output="down"
+- DUT.log L3-L23: AP1/AP3/AP5 Enable=1 succeeded, then `wl -i wl0 bss` returned `down`
+- DUT.log L24-L44: second setup attempt repeated AP Enable=1 and `wl -i wl0 bss` still returned `down`
+- source survey: `wld_apNeighbour_t` carries colocatedAp plus bssid/channel/SSID/information/operatingClass/phyType/NAS/R0KH/R1KH metadata; workbook row 429 validates Neighbour ColocatedAP support through the same setNeighbourAP readback lifecycle
+```
+
+## Checkpoint summary (2026-05-10 0506-D428)
+
+> This checkpoint records the `D428 Channel — WiFi.AccessPoint.{i}.Neighbour.{i}.` environment/config blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=22`, `block=193`, `needs_pass3=0`
+- `D428 Channel — WiFi.AccessPoint.{i}.Neighbour.{i}.` recorded as `neighbour_channel_env_block_5g_dut_bss_down_before_neighbour_lifecycle`
+- workbook row 428 latest result is `Pass / Pass / Pass`; the row has no extra step text but aligns with the same AP Neighbour lifecycle as D427
+- focused run `20260510T042900844659` reported `Fail / Fail / Fail` with `diagnostic_status=FailConfig`
+- failure reason: `setup_env` failed before Neighbour baseline/add/delete commands executed because DUT `wl0` BSS stayed `down`
+- source survey confirms AP neighbour metadata is modeled in `wld_apNeighbour_t` and related neighbour/RRM API structures
+- next ready single-case Pass3 target: `D429`
+
+</details>
+
+### D428 AccessPoint Neighbour Channel environment blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only case; runtime did not require or reach STA operations.
+```
+
+**DUT 指令**
+
+```sh
+# Setup commands executed before the blocker:
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+wl -i wl0 bss
+
+# Intended Neighbour lifecycle, not executed in this focused run:
+ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
+ubus-cli WiFi.AccessPoint.1.? | grep -E 'Neighbour\.[0-9]+\.(BSSID|Channel)'
+ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T042900844659
+- workbook row 428 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailConfig
+- failure snapshot: phase=setup_env, band=5g, device=DUT, reason_code=sta_env_setup_failed, command="wl -i wl0 bss", output="down"
+- DUT.log L3-L23: AP1/AP3/AP5 Enable=1 succeeded, then `wl -i wl0 bss` returned `down`
+- DUT.log L24-L44: second setup attempt repeated AP Enable=1 and `wl -i wl0 bss` still returned `down`
+- source survey: `wld_apNeighbour_t` carries channel plus bssid/SSID/information/operatingClass/phyType/NAS/R0KH/R1KH/colocatedAp metadata; workbook row 428 validates Neighbour Channel support through the same setNeighbourAP readback lifecycle
+```
+
+## Checkpoint summary (2026-05-10 0506-D427)
+
+> This checkpoint records the `D427 BSSID — WiFi.AccessPoint.{i}.Neighbour.{i}.` environment/config blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=23`, `block=192`, `needs_pass3=0`
+- `D427 BSSID — WiFi.AccessPoint.{i}.Neighbour.{i}.` recorded as `neighbour_bssid_env_block_5g_dut_bss_down_before_neighbour_lifecycle`
+- workbook row 427 latest result is `Pass / Pass / Pass`; workbook procedure adds a Neighbour AP entry, then reads `WiFi.AccessPoint.1.Neighbour.1.BSSID`
+- focused run `20260510T042359927930` reported `Fail / Fail / Fail` with `diagnostic_status=FailConfig`
+- failure reason: `setup_env` failed before Neighbour baseline/add/delete commands executed because DUT `wl0` BSS stayed `down`
+- source survey confirms AP neighbour metadata is modeled in `wld_apNeighbour_t` and related neighbour/RRM API structures
+- next ready single-case Pass3 target: `D428`
+
+</details>
+
+### D427 AccessPoint Neighbour BSSID environment blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only case; runtime did not require or reach STA operations.
+```
+
+**DUT 指令**
+
+```sh
+# Setup commands executed before the blocker:
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+wl -i wl0 bss
+
+# Intended Neighbour lifecycle, not executed in this focused run:
+ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
+ubus-cli WiFi.AccessPoint.1.? | grep -E 'Neighbour\.[0-9]+\.(BSSID|Channel)'
+ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T042359927930
+- workbook row 427 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailConfig
+- failure snapshot: phase=setup_env, band=5g, device=DUT, reason_code=sta_env_setup_failed, command="wl -i wl0 bss", output="down"
+- DUT.log L3-L23: AP1/AP3/AP5 Enable=1 succeeded, then `wl -i wl0 bss` returned `down`
+- DUT.log L24-L44: second setup attempt repeated AP Enable=1 and `wl -i wl0 bss` still returned `down`
+- source survey: `wld_apNeighbour_t` carries bssid/channel/SSID/information/operatingClass/phyType/NAS/R0KH/R1KH/colocatedAp metadata; workbook validates setNeighbourAP readback of Neighbour.1.BSSID
+```
+
+## Checkpoint summary (2026-05-10 0506-D426)
+
+> This checkpoint records the `D426 UplinkRateSpec — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=24`, `block=191`, `needs_pass3=0`
+- `D426 UplinkRateSpec — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` recorded as `assocdev_uplinkratespec_env_block_5g_sta_not_connected_before_getter`
+- workbook row 426 latest result is `Pass / Pass / Pass`, after prior workbook notes about PWHM failures and `getStationStats` sync requirements
+- focused run `20260510T041515462889` reported `Fail / N/A / N/A` with `diagnostic_status=FailEnv`
+- failure reason: `env_verify` failed before assoclist/getter commands executed because 5G STA baseline/connect did not stabilize
+- source survey confirms AssociatedDevice `UplinkRateSpec` is exposed in ODL/wld as volatile read-only MCS/rate-spec data
+- next ready single-case Pass3 target: `D427`
+
+</details>
+
+### D426 AssociatedDevice UplinkRateSpec environment blocker evidence
+
+**STA 指令**
+
+```sh
+# Runtime did not reach getter phase; STA baseline failed while trying to connect wl0 to testpilot5G.
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+wl -i wl0 join testpilot5G imode bss
+wl -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+# Intended readback sequence, not executed in this focused run:
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.UplinkRateSpec?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T041515462889
+- workbook row 426 latest result expects Pass/Pass/Pass
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- failure snapshot: phase=verify_env, band=5g, reason_code=sta_band_not_ready, comment="STA band baseline/connect failed"
+- DUT.log L8-L10: wl0 initially reported up, then deterministic baseline was re-applied
+- DUT.log L199-L250: wl0 bss dropped and stayed down across repeated baseline retries
+- STA.log L82-L100: repeated `iw dev wl0 link` returned `Not connected.`
+- STA.log L101-L121: fallback `wl -i wl0 join testpilot5G` still reported `Not associated.`
+- source survey: AssociatedDevice UplinkRateSpec is registered in tr181-wifi_AccessPoint.odl and backed by wld swl_mcs_t upLinkRateSpec / gtSwl_type_mcs
+```
+
+## Checkpoint summary (2026-05-10 0506-D415)
+
+> This checkpoint records the `D415 RrmOnChannelMaxDuration — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=25`, `block=190`, `needs_pass3=0`
+- `D415 RrmOnChannelMaxDuration — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` recorded as `assocdev_rrmonchannelmaxduration_env_block_5g_sta_not_connected_before_getter`
+- workbook row 415 latest result is `Pass / Pass / Pass`
+- focused run `20260510T040504331324` reported `Fail / N/A / N/A` with `diagnostic_status=FailEnv`
+- failure reason: `env_verify` failed before assoclist/getter commands executed because 5G STA baseline/connect did not stabilize
+- source survey confirms AssociatedDevice `RrmOnChannelMaxDuration` is exposed in ODL/wld as read-only RRM duration data
+- next ready single-case Pass3 target: `D426`
+
+</details>
+
+### D415 AssociatedDevice RrmOnChannelMaxDuration environment blocker evidence
+
+**STA 指令**
+
+```sh
+# Runtime did not reach getter phase; STA baseline failed while trying to connect wl0 to testpilot5G.
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+wl -i wl0 join testpilot5G imode bss
+wl -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+# Intended readback sequence, not executed in this focused run:
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RrmOnChannelMaxDuration?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T040504331324
+- workbook row 415 latest result expects Pass/Pass/Pass
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- failure snapshot: phase=verify_env, band=5g, reason_code=sta_band_not_ready, comment="STA band baseline/connect failed"
+- DUT.log L8-L10: initial wl0 bss readback was down
+- DUT.log L202-L244: wl0 bss stayed down across repeated baseline retries
+- DUT.log L939-L955: AP.1 was re-enabled and hostapd config repaired during recovery
+- STA.log L82-L100: repeated `iw dev wl0 link` returned `Not connected.`
+- STA.log L101-L121: fallback `wl -i wl0 join testpilot5G` still reported `Not associated.`
+- source survey: AssociatedDevice RrmOnChannelMaxDuration is registered in tr181-wifi_AccessPoint.odl and backed by wld/swl RRM duration fields
+```
+
+## Checkpoint summary (2026-05-10 0506-D414)
+
+> This checkpoint records the `D414 RrmOffChannelMaxDuration — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=26`, `block=189`, `needs_pass3=0`
+- `D414 RrmOffChannelMaxDuration — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` recorded as `assocdev_rrmoffchannelmaxduration_env_block_5g_sta_not_connected_before_getter`
+- workbook row 414 latest result is `Pass / Pass / Pass`
+- focused run `20260510T035636814268` reported `Fail / N/A / N/A` with `diagnostic_status=FailEnv`
+- failure reason: `env_verify` failed before assoclist/getter commands executed because 5G STA baseline/connect did not stabilize
+- source survey confirms AssociatedDevice `RrmOffChannelMaxDuration` is exposed in ODL/wld as read-only RRM duration data
+- next ready single-case Pass3 target: `D415`
+
+</details>
+
+### D414 AssociatedDevice RrmOffChannelMaxDuration environment blocker evidence
+
+**STA 指令**
+
+```sh
+# Runtime did not reach getter phase; STA baseline failed while trying to connect wl0 to testpilot5G.
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+wl -i wl0 join testpilot5G imode bss
+wl -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+# Intended readback sequence, not executed in this focused run:
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RrmOffChannelMaxDuration?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T035636814268
+- workbook row 414 latest result expects Pass/Pass/Pass
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- failure snapshot: phase=verify_env, band=5g, reason_code=sta_band_not_ready, comment="STA band baseline/connect failed"
+- DUT.log L8-L10: initial wl0 bss readback was down
+- DUT.log L199-L229: wl0 bss stayed down with only transient up/down edge before AP recovery
+- DUT.log L889-L916: later recovery attempt still kept wl0 bss down
+- STA.log L82-L100: repeated `iw dev wl0 link` returned `Not connected.`
+- STA.log L101-L121: fallback `wl -i wl0 join testpilot5G` still reported `Not associated.`
+- source survey: AssociatedDevice RrmOffChannelMaxDuration is registered in tr181-wifi_AccessPoint.odl and backed by wld/swl RRM duration fields
+```
+
+## Checkpoint summary (2026-05-10 0506-D413)
+
+> This checkpoint records the `D413 RrmCapabilities — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=27`, `block=188`, `needs_pass3=0`
+- `D413 RrmCapabilities — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` recorded as `assocdev_rrmcapabilities_env_block_5g_sta_not_connected_before_getter`
+- workbook row 413 latest result is `Pass / Pass / Pass`
+- focused run `20260510T034732432174` reported `Fail / N/A / N/A` with `diagnostic_status=FailEnv`
+- failure reason: `env_verify` failed before assoclist/getter commands executed because 5G STA baseline/connect did not stabilize
+- source survey confirms AssociatedDevice `RrmCapabilities` is exposed in ODL/wld as read-only station capability data
+- next ready single-case Pass3 target: `D414`
+
+</details>
+
+### D413 AssociatedDevice RrmCapabilities environment blocker evidence
+
+**STA 指令**
+
+```sh
+# Runtime did not reach getter phase; STA baseline failed while trying to connect wl0 to testpilot5G.
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+wl -i wl0 join testpilot5G imode bss
+wl -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+# Intended readback sequence, not executed in this focused run:
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RrmCapabilities?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T034732432174
+- workbook row 413 latest result expects Pass/Pass/Pass
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- failure snapshot: phase=verify_env, band=5g, reason_code=sta_band_not_ready, comment="STA band baseline/connect failed"
+- DUT.log L8-L10: initial wl0 bss readback was down
+- DUT.log L198-L218: wl0 bss briefly reached up then returned down before baseline succeeded
+- DUT.log L910-L945: AP.1 was re-enabled and hostapd restarted during recovery
+- STA.log L82-L100: repeated `iw dev wl0 link` returned `Not connected.`
+- STA.log L101-L121: fallback `wl -i wl0 join testpilot5G` still reported `Not associated.`
+- source survey: AssociatedDevice RrmCapabilities is registered in tr181-wifi_AccessPoint.odl and backed by wld/swl RRM capability structures
+```
+
+## Checkpoint summary (2026-05-10 0506-D412)
+
+> This checkpoint records the `D412 MaxUplinkRateSupported — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=28`, `block=187`, `needs_pass3=0`
+- `D412 MaxUplinkRateSupported — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` recorded as `assocdev_maxuplinkratesupported_env_block_5g_sta_not_connected_before_getter`
+- workbook row 412 latest result is `Pass / Pass / Pass`
+- focused run `20260510T033812724059` reported `Fail / N/A / N/A` with `diagnostic_status=FailEnv`
+- failure reason: `env_verify` failed before assoclist/getter commands executed because 5G STA baseline/connect did not stabilize
+- source survey confirms AssociatedDevice `MaxUplinkRateSupported` is exposed in ODL/wld as read-only uint32 max-rate data
+- next ready single-case Pass3 target: `D413`
+
+</details>
+
+### D412 AssociatedDevice MaxUplinkRateSupported environment blocker evidence
+
+**STA 指令**
+
+```sh
+# Runtime did not reach getter phase; STA baseline failed while trying to connect wl0 to testpilot5G.
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+wl -i wl0 join testpilot5G imode bss
+wl -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+# Intended readback sequence, not executed in this focused run:
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MaxUplinkRateSupported?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T033812724059
+- workbook row 412 latest result expects Pass/Pass/Pass
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- failure snapshot: phase=verify_env, band=5g, reason_code=sta_band_not_ready, comment="STA band baseline/connect failed"
+- DUT.log L8-L10: initial wl0 bss readback was down
+- DUT.log L199-L245: wl0 bss remained down across 5G baseline retries
+- DUT.log L927-L940: AP.1 was re-enabled and hostapd config repaired before later retry still failed
+- STA.log L82-L100: repeated `iw dev wl0 link` returned `Not connected.`
+- STA.log L101-L121: fallback `wl -i wl0 join testpilot5G` still reported `Not associated.`
+- source survey: AssociatedDevice MaxUplinkRateSupported is registered in tr181-wifi_AccessPoint.odl and wld/swl max-rate structures
+```
+
+## Checkpoint summary (2026-05-10 0506-D411)
+
+> This checkpoint records the `D411 MaxTxSpatialStreamsSupported — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=29`, `block=186`, `needs_pass3=0`
+- `D411 MaxTxSpatialStreamsSupported — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` recorded as `assocdev_maxtxspatialstreamssupported_env_block_5g_sta_not_connected_before_getter`
+- workbook row 411 latest result is `Pass / Pass / Pass`
+- focused run `20260510T032843958707` reported `Fail / N/A / N/A` with `diagnostic_status=FailEnv`
+- failure reason: `env_verify` failed before assoclist/getter commands executed because 5G STA baseline/connect did not stabilize
+- source survey confirms AssociatedDevice `MaxTxSpatialStreamsSupported` is exposed in ODL/wld as read-only maximum capability data
+- next ready single-case Pass3 target: `D412`
+
+</details>
+
+### D411 AssociatedDevice MaxTxSpatialStreamsSupported environment blocker evidence
+
+**STA 指令**
+
+```sh
+# Runtime did not reach getter phase; STA baseline failed while trying to connect wl0 to testpilot5G.
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+wl -i wl0 join testpilot5G imode bss
+wl -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+# Intended readback sequence, not executed in this focused run:
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MaxTxSpatialStreamsSupported?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T032843958707
+- workbook row 411 latest result expects Pass/Pass/Pass
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- failure snapshot: phase=verify_env, band=5g, reason_code=sta_band_not_ready, comment="STA band baseline/connect failed"
+- DUT.log L8-L10: initial wl0 bss readback was down
+- DUT.log L199-L239 and L905-L927: wl0 bss remained down across retries, with only a transient up/down edge
+- STA.log L82-L100: repeated `iw dev wl0 link` returned `Not connected.`
+- STA.log L101-L119: fallback `wl -i wl0 join testpilot5G` still reported `Not associated.`
+- source survey: AssociatedDevice MaxTxSpatialStreamsSupported is registered in tr181-wifi_AccessPoint.odl and wld capability structures
+```
+
+## Checkpoint summary (2026-05-10 0506-D410)
+
+> This checkpoint records the `D410 MaxRxSpatialStreamsSupported — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=30`, `block=185`, `needs_pass3=0`
+- `D410 MaxRxSpatialStreamsSupported — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` recorded as `assocdev_maxrxspatialstreamssupported_env_block_5g_sta_not_connected_before_getter`
+- workbook row 410 latest result is `Pass / Pass / Pass`
+- focused run `20260510T031914816313` reported `Fail / N/A / N/A` with `diagnostic_status=FailEnv`
+- failure reason: `env_verify` failed before assoclist/getter commands executed because 5G STA baseline/connect did not stabilize
+- source survey confirms AssociatedDevice `MaxRxSpatialStreamsSupported` is exposed in ODL/wld as read-only maximum capability data
+- next ready single-case Pass3 target: `D411`
+
+</details>
+
+### D410 AssociatedDevice MaxRxSpatialStreamsSupported environment blocker evidence
+
+**STA 指令**
+
+```sh
+# Runtime did not reach getter phase; STA baseline failed while trying to connect wl0 to testpilot5G.
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+# Intended readback sequence, not executed in this focused run:
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MaxRxSpatialStreamsSupported?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T031914816313
+- workbook row 410 latest result expects Pass/Pass/Pass
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- failure snapshot: phase=verify_env, band=5g, reason_code=sta_band_not_ready, comment="STA band baseline/connect failed"
+- DUT.log L8-L10: initial wl0 bss readback was down
+- DUT.log L200-L233: wl0 bss stayed unstable/down during baseline verification
+- STA.log L82-L100: repeated `iw dev wl0 link` returned `Not connected.`
+- source survey: AssociatedDevice MaxRxSpatialStreamsSupported is registered in tr181-wifi_AccessPoint.odl and wld capability structures
+```
+
+## Checkpoint summary (2026-05-10 0506-D409)
+
+> This checkpoint records the `D409 MaxDownlinkRateSupported — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=31`, `block=184`, `needs_pass3=0`
+- `D409 MaxDownlinkRateSupported — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` recorded as `assocdev_maxdownlinkratesupported_env_block_5g_sta_not_connected_before_getter`
+- workbook row 409 latest result is `Pass / Pass / Pass`
+- focused run `20260510T030855019726` reported `Fail / N/A / N/A` with `diagnostic_status=FailEnv`
+- failure reason: `env_verify` failed before assoclist/getter commands executed because 5G STA baseline/connect did not stabilize
+- source survey confirms AssociatedDevice `MaxDownlinkRateSupported` is exposed in ODL/wld and backed by station `sta_info` / Max Rate data
+- next ready single-case Pass3 target: `D410`
+
+</details>
+
+### D409 AssociatedDevice MaxDownlinkRateSupported environment blocker evidence
+
+**STA 指令**
+
+```sh
+# Runtime did not reach getter phase; STA baseline failed while trying to connect wl0 to testpilot5G.
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+# Intended readback sequence, not executed in this focused run:
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MaxDownlinkRateSupported?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T030855019726
+- workbook row 409 latest result expects Pass/Pass/Pass
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- failure snapshot: phase=verify_env, band=5g, reason_code=sta_band_not_ready, comment="STA band baseline/connect failed"
+- DUT.log L8-L10: initial wl0 bss readback was down
+- DUT.log L232-L282: wl0 bss stayed down across retries before AP bounce
+- STA.log L82-L100: repeated `iw dev wl0 link` returned `Not connected.`
+- source survey: AssociatedDevice MaxDownlinkRateSupported is registered in tr181-wifi_AccessPoint.odl and backed by wld/mod-whm-brcm station rate data
+```
+
+## Checkpoint summary (2026-05-10 0506-D408)
+
+> This checkpoint records the `D408 DownlinkRateSpec — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=32`, `block=183`, `needs_pass3=0`
+- `D408 DownlinkRateSpec — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` recorded as `assocdev_downlinkratespec_env_block_5g_sta_not_connected_before_getter`
+- workbook row 408 latest result is `Pass / Pass / Pass`
+- focused run `20260510T030033509131` reported `Fail / N/A / N/A` with `diagnostic_status=FailEnv`
+- failure reason: `env_verify` failed before assoclist/getter commands executed because 5G STA baseline/connect did not stabilize
+- source survey confirms AssociatedDevice `DownlinkRateSpec` is exposed in ODL and backed by station rate spec data
+- next ready single-case Pass3 target: `D409`
+
+</details>
+
+### D408 AssociatedDevice DownlinkRateSpec environment blocker evidence
+
+**STA 指令**
+
+```sh
+# Runtime did not reach getter phase; STA baseline failed while trying to connect wl0 to testpilot5G.
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+# Intended readback sequence, not executed in this focused run:
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkRateSpec?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T030033509131
+- workbook row 408 latest result expects Pass/Pass/Pass
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- failure snapshot: phase=verify_env, band=5g, reason_code=sta_band_not_ready, comment="STA band baseline/connect failed"
+- DUT.log L8-L10: initial wl0 bss readback was down
+- DUT.log L200-L250: wl0 bss stayed down across retries before AP bounce
+- STA.log L82-L100: repeated `iw dev wl0 link` returned `Not connected.`
+- source survey: AssociatedDevice DownlinkRateSpec is registered in tr181-wifi_AccessPoint.odl and station rate spec is available via wld/mod-whm-brcm sta_info path
+```
+
+## Checkpoint summary (2026-05-10 0506-D406)
+
+> This checkpoint records the `D406 MultipleRetryCount — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=33`, `block=182`, `needs_pass3=0`
+- `D406 MultipleRetryCount — WiFi.SSID.{i}.Stats.` recorded as `ssid_multipleretrycount_env_block_sta_band_not_ready_before_runtime_readback`
+- workbook row 406 latest result is `Pass / Pass / Pass`
+- focused run `20260510T024724514939` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: `env_verify` failed before case commands executed because 5G BSS/STA baseline did not stabilize after retries and AP bounce
+- source survey confirms `MultipleRetryCount` is an exposed SSID Stats parameter and maps to Broadcom `txretrie`
+- next ready single-case Pass3 target: `D408`
+
+</details>
+
+### D406 SSID Stats MultipleRetryCount environment blocker evidence
+
+**STA 指令**
+
+```sh
+# Runtime did not reach STA traffic/readback phase; env_verify failed first.
+```
+
+**DUT 指令**
+
+```sh
+# Intended readback sequence, not executed in this focused run:
+ubus-cli "WiFi.SSID.4.Stats.MultipleRetryCount?"
+ubus-cli "WiFi.SSID.4.getSSIDStats()" | sed -n "s/^[[:space:]]*MultipleRetryCount = \\([0-9][0-9]*\\).*/GetSSIDStatsMultipleRetryCount5g=\\1/p"
+wl -i wl0 if_counters | sed -n "s/.*txretrie \\([0-9][0-9]*\\).*/DriverMultipleRetryCount5g=\\1/p"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T024724514939
+- workbook row 406 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- failure snapshot: phase=verify_env, reason_code=sta_band_not_ready, comment="STA band baseline/connect failed"
+- DUT.log L8-L10: initial wl0 bss readback was down
+- DUT.log L1320-L1326: wl0 bss stayed down across retries
+- DUT.log L1496-L1508: wl0 eventually came up after hostapd/AP bounce, but later STA verification still failed
+- STA.log L1-L4 contains only environment setup prompt; runtime never reached case readback commands
+- source survey: SSID Stats MultipleRetryCount is registered in tr181-wifi_SSID.odl/dm_info.c and maps to Broadcom ifstats txretrie
+```
+
+## Checkpoint summary (2026-05-10 0506-D385)
+
+> This checkpoint records the `D385 RadCapabilitiesVHTStr — WiFi.Radio.{i}.` workbook/runtime mismatch blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=34`, `block=181`, `needs_pass3=0`
+- `D385 RadCapabilitiesVHTStr — WiFi.Radio.{i}.` recorded as `radio_radcapabilitiesvhtstr_workbook_6g_24g_not_supported_vs_runtime_pass_empty_strings_due_permissive_regex`
+- workbook row 385 latest result is `Pass / Not Supported / Not Supported` (normalized `Pass / Fail / Fail`)
+- focused run `20260510T024524904155` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- mismatch reason: current YAML accepts empty 6G/2.4G strings via `.*`, but workbook latest marks those bands Not Supported because they do not support VHT
+- source survey found no direct `WiFi.Radio.{i}.RadCapabilitiesVHTStr` registration in prpl_brcm; VHT capability masks and DataElements mappings exist but are not the same runtime API
+- next ready single-case Pass3 target: `D406`
+
+</details>
+
+### D385 Radio RadCapabilitiesVHTStr blocker evidence
+
+**STA 指令**
+
+```sh
+# DUT-only getter case; no STA command required
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.RadCapabilitiesVHTStr?"
+ubus-cli "WiFi.Radio.2.RadCapabilitiesVHTStr?"
+ubus-cli "WiFi.Radio.3.RadCapabilitiesVHTStr?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T024524904155
+- workbook row 385 latest result expects Pass/Not Supported/Not Supported (normalized Pass/Fail/Fail)
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21:
+  WiFi.Radio.1.RadCapabilitiesVHTStr="RX_LDPC,SGI_80,SGI_160,SU_BFR,SU_BFE,LINK_ADAPT_CAP"
+  WiFi.Radio.2.RadCapabilitiesVHTStr=""
+  WiFi.Radio.3.RadCapabilitiesVHTStr=""
+- source survey: no direct `WiFi.Radio.{i}.RadCapabilitiesVHTStr` registration in prpl_brcm; DataElements VHTCapabilities mappings are distinct
+```
+
+## Checkpoint summary (2026-05-10 0506-D363)
+
+> This checkpoint records the `D363 BssColorPartial — WiFi.Radio.{i}.IEEE80211ax.` workbook/runtime mismatch blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=35`, `block=180`, `needs_pass3=0`
+- `D363 BssColorPartial — WiFi.Radio.{i}.IEEE80211ax.` recorded as `radio_bsscolorpartial_workbook_latest_fail_all_bands_vs_runtime_pass_zero_getter_beacon_mismatch_not_verified`
+- workbook row 363 latest result is `Fail / Fail / Fail`
+- focused run `20260510T024333804965` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- mismatch reason: workbook failure is based on beacon HE Operation BSS Color information not matching API, but current YAML only checks numeric getter output
+- source survey found `heBssColorPartial` / `he_bss_color_partial` internals and DataElements `PartialBSSColor`, but no direct prpl_brcm `BssColorPartial` ODL/dm_info registration
+- next ready single-case Pass3 target: `D385`
+
+</details>
+
+### D363 Radio IEEE80211ax BssColorPartial blocker evidence
+
+**STA 指令**
+
+```sh
+# DUT-only getter case; no STA command required
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.IEEE80211ax.BssColorPartial?"
+ubus-cli "WiFi.Radio.2.IEEE80211ax.BssColorPartial?"
+ubus-cli "WiFi.Radio.3.IEEE80211ax.BssColorPartial?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T024333804965
+- workbook row 363 latest result expects Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21:
+  WiFi.Radio.1.IEEE80211ax.BssColorPartial=0
+  WiFi.Radio.2.IEEE80211ax.BssColorPartial=0
+  WiFi.Radio.3.IEEE80211ax.BssColorPartial=0
+- workbook comment says the beacon HE Operation BSS Color Information tag value does not match the API; current YAML does not verify beacon packets
+```
+
+## Checkpoint summary (2026-05-10 0506-D360)
+
+> This checkpoint records the `D360 MBOAssocDisallowReason — WiFi.AccessPoint.{i}.` skip-fixture/source-registration blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=36`, `block=179`, `needs_pass3=0`
+- `D360 MBOAssocDisallowReason — WiFi.AccessPoint.{i}.` recorded as `accesspoint_mboassocdisallowreason_workbook_skip_all_vs_yaml_skip_fixture_unsupported_no_direct_dm_registration`
+- workbook row 360 latest result is `Skip / Skip / Skip` (normalized `Fail / Fail / Fail`)
+- focused run `20260510T024141255004` reported `Fail / Fail / Fail` with `diagnostic_status=FailTest`
+- runtime failure reason: YAML is a non-executable `skip` fixture and `step_note` is not captured, so pass criteria cannot be satisfied
+- source survey found `MBOEnable` support plus MBO deny reason enums/function pointer, but no direct `MBOAssocDisallowReason` TR-181 data-model registration in prpl_brcm
+- next ready single-case Pass3 target: `D363`
+
+</details>
+
+### D360 AccessPoint MBOAssocDisallowReason blocker evidence
+
+**STA 指令**
+
+```sh
+# DUT-only skip fixture; no STA command required
+```
+
+**DUT 指令**
+
+```sh
+echo "[skip] non-executable step step_note"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T024141255004
+- workbook row 360 latest result expects Skip/Skip/Skip (normalized Fail/Fail/Fail)
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- failure snapshot:
+  field=step_note
+  operator=equals
+  expected=skip
+  actual="success=True\noutput=[skip] non-executable step step_note\ncaptured={}\nreturncode=0"
+- DUT.log L1-L15 contains only environment gate commands; skip action is not sent to DUT
+- source survey: prpl_brcm exposes MBOEnable but not a direct MBOAssocDisallowReason parameter registration
+```
+
+## Checkpoint summary (2026-05-10 0506-D384)
+
+> This checkpoint records the `D384 RadCapabilitiesHTStr — WiFi.Radio.{i}.` workbook/runtime mismatch blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=37`, `block=178`, `needs_pass3=0`
+- `D384 RadCapabilitiesHTStr — WiFi.Radio.{i}.` recorded as `radio_radcapabilitieshtstr_workbook_6g_not_supported_vs_runtime_pass_empty_6g_due_permissive_regex`
+- workbook row 384 latest result is `Pass / Not Supported / Pass` (normalized `Pass / Fail / Pass`)
+- focused run `20260510T023847051197` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- mismatch reason: current YAML accepts empty 6G string via `.*`, but workbook latest marks 6G Not Supported because 6 GHz does not support HT
+- source survey found no direct `WiFi.Radio.{i}.RadCapabilitiesHTStr` registration in prpl_brcm; only data-element HTCapabilities mappings were found
+- next ready single-case Pass3 target: `D385`
+
+</details>
+
+### D384 Radio RadCapabilitiesHTStr blocker evidence
+
+**STA 指令**
+
+```sh
+# DUT-only getter case; no STA command required
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.RadCapabilitiesHTStr?"
+ubus-cli "WiFi.Radio.2.RadCapabilitiesHTStr?"
+ubus-cli "WiFi.Radio.3.RadCapabilitiesHTStr?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T023847051197
+- workbook row 384 latest result expects Pass/Not Supported/Pass (normalized Pass/Fail/Pass)
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21:
+  WiFi.Radio.1.RadCapabilitiesHTStr="CAP_40,SHORT_GI_20,SHORT_GI_40,MODE_40"
+  WiFi.Radio.2.RadCapabilitiesHTStr=""
+  WiFi.Radio.3.RadCapabilitiesHTStr="CAP_40,SHORT_GI_20,SHORT_GI_40,MODE_40"
+- source survey: no direct `WiFi.Radio.{i}.RadCapabilitiesHTStr` registration in prpl_brcm; data-element HTCapabilities mappings exist elsewhere
+```
+
+## Checkpoint summary (2026-05-10 0506-D380)
+
+> This checkpoint records the `D380 MultiAPTypesSupported — WiFi.Radio.{i}.` workbook/runtime mismatch blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=38`, `block=177`, `needs_pass3=0`
+- `D380 MultiAPTypesSupported — WiFi.Radio.{i}.` recorded as `radio_multiaptypessupported_workbook_latest_skip_all_bands_vs_runtime_pass_hardcoded_getter`
+- workbook row 380 latest result is `skip / skip / skip` (normalized `Fail / Fail / Fail`)
+- focused run `20260510T023632814529` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- mismatch reason: current YAML accepts non-empty getter output, but workbook latest marks Skip and says this prpl-specific parameter is hardcoded in pWHM
+- source survey found Radio ODL declaration but no `dm_info.c` radio entry or direct Broadcom Radio.MultiAPTypesSupported vendor mapping
+- next ready single-case Pass3 target: `D384`
+
+</details>
+
+### D380 Radio MultiAPTypesSupported blocker evidence
+
+**STA 指令**
+
+```sh
+# DUT-only getter case; no STA command required
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.MultiAPTypesSupported?"
+ubus-cli "WiFi.Radio.2.MultiAPTypesSupported?"
+ubus-cli "WiFi.Radio.3.MultiAPTypesSupported?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T023632814529
+- workbook row 380 latest result expects skip/skip/skip (normalized Fail/Fail/Fail)
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21:
+  WiFi.Radio.1.MultiAPTypesSupported="FronthaulBSS,BackhaulBSS,BackhaulSTA"
+  WiFi.Radio.2.MultiAPTypesSupported="FronthaulBSS,BackhaulBSS,BackhaulSTA"
+  WiFi.Radio.3.MultiAPTypesSupported="FronthaulBSS,BackhaulBSS,BackhaulSTA"
+- source survey: `tr181-wifi_Radio.odl` defines read-only `MultiAPTypesSupported`; no `dm_info.c` radio entry or direct Broadcom Radio.MultiAPTypesSupported vendor mapping was found
+```
+
+## Checkpoint summary (2026-05-10 0506-D379)
+
+> This checkpoint records the `D379 MCS — WiFi.Radio.{i}.` workbook/runtime mismatch blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=39`, `block=176`, `needs_pass3=0`
+- `D379 MCS — WiFi.Radio.{i}.` recorded as `radio_mcs_workbook_latest_skip_all_bands_vs_runtime_pass_zero_getter_no_direct_vendor_radio_mcs_mapping`
+- workbook row 379 latest result is `Skip / Skip / Skip` (normalized `Fail / Fail / Fail`)
+- focused run `20260510T023427785873` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- mismatch reason: current YAML accepts numeric getter output, but readback was `0` for all radios while workbook latest marks Skip and notes MCS should remain auto
+- source survey found MCS ODL/dm_info support but no direct Broadcom Radio.MCS vendor setter/getter mapping beyond rate-info MCS parsing
+- next ready single-case Pass3 target: `D380`
+
+</details>
+
+### D379 Radio MCS blocker evidence
+
+**STA 指令**
+
+```sh
+# DUT-only getter case; no STA command required
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.MCS?"
+ubus-cli "WiFi.Radio.2.MCS?"
+ubus-cli "WiFi.Radio.3.MCS?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T023427785873
+- workbook row 379 latest result expects Skip/Skip/Skip (normalized Fail/Fail/Fail)
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21:
+  WiFi.Radio.1.MCS=0
+  WiFi.Radio.2.MCS=0
+  WiFi.Radio.3.MCS=0
+- source survey: `tr181-wifi_Radio.odl` defines `MCS` as int32 default -1; `dm_info.c` exposes it; Broadcom source only showed rate-info MCS parsing, not a direct Radio.MCS vendor mapping
+```
+
+## Checkpoint summary (2026-05-10 0506-D377)
+
+> This checkpoint records the `D377 MaxBitRate — WiFi.Radio.{i}.` workbook/runtime mismatch blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=40`, `block=175`, `needs_pass3=0`
+- `D377 MaxBitRate — WiFi.Radio.{i}.` recorded as `radio_maxbitrate_workbook_latest_not_supported_all_bands_vs_runtime_pass_zero_getter_source_implemented`
+- workbook row 377 latest result is `Not Supported / Not Supported / Not Supported` (normalized `Fail / Fail / Fail`)
+- focused run `20260510T023214763350` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- mismatch reason: current YAML accepts numeric getter output, but readback was `0` for all radios while workbook latest marks Not Supported and notes MaxBitRate should not be zero
+- source survey found MaxBitRate ODL/dm_info support and Broadcom `whm_brcm_rad_get_maxbitrate` implementation via `WLC_GET_MAX_RATE`
+- next ready single-case Pass3 target: `D379`
+
+</details>
+
+### D377 Radio MaxBitRate blocker evidence
+
+**STA 指令**
+
+```sh
+# DUT-only getter case; no STA command required
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.MaxBitRate?"
+ubus-cli "WiFi.Radio.2.MaxBitRate?"
+ubus-cli "WiFi.Radio.3.MaxBitRate?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T023214763350
+- workbook row 377 latest result expects Not Supported/Not Supported/Not Supported (normalized Fail/Fail/Fail)
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21:
+  WiFi.Radio.1.MaxBitRate=0
+  WiFi.Radio.2.MaxBitRate=0
+  WiFi.Radio.3.MaxBitRate=0
+- source survey: `tr181-wifi_Radio.odl` defines read-only uint32 `MaxBitRate`; `dm_info.c` exposes it; `whm_brcm_rad_get_maxbitrate` uses `WLC_GET_MAX_RATE` and converts 500Kbps units to Mbps
+```
+
+## Checkpoint summary (2026-05-10 0506-D371)
+
+> This checkpoint records the `D371 DisassociationTime — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=41`, `block=174`, `needs_pass3=0`
+- `D371 DisassociationTime — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` recorded as `assocdev_disassociationtime_workbook_pass_all_bands_blocked_by_5g_sta_not_ready_before_readback`
+- workbook row 371 latest result is `Pass / Pass / Pass`
+- focused run `20260510T022257881269` reported `Fail / N/A / N/A` with `diagnostic_status=FailEnv`
+- failure reason: `verify_env` failed before assoclist or DisassociationTime readback because 5G STA could not associate and DUT `wl0` BSS readiness failed through retry/AP bounce
+- source survey confirms ODL defines AssociatedDevice `DisassociationTime` as a read-only datetime; generic `dm_info.c` AssociatedDevice list currently stops at `Active`
+- next ready single-case Pass3 target: `D377`
+
+</details>
+
+### D371 AssociatedDevice DisassociationTime blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DisassociationTime?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T022257881269
+- workbook row 371 latest result expects Pass/Pass/Pass
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env, reason_code=sta_band_not_ready, device=STA, band=5g
+- remediation history: builtin-fallback sta_band_rebaseline attempted but failed
+- DUT log interval: L1-L1195
+- STA log interval: L1-L541
+- observed from runtime log: DUT wl0 BSS readiness failed through retry/AP bounce; STA wl0 repeatedly reported Not connected before DisassociationTime readback
+```
+
+## Checkpoint summary (2026-05-10 0506-D370)
+
+> This checkpoint records the `D370 Active — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=42`, `block=173`, `needs_pass3=0`
+- `D370 Active — WiFi.AccessPoint.{i}.AssociatedDevice.{i}.` recorded as `assocdev_active_workbook_pass_all_bands_blocked_by_sta_band_not_ready_before_active_readback`
+- workbook row 370 latest result is `Pass / Pass / Pass`
+- focused run `20260510T021304619423` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: `verify_env` failed before AssociatedDevice Active readback because STA band baseline/connect failed, DUT `wl0` BSS stayed down through retries/AP bounce, and 6G OCV remediation did not stabilize `wl1`
+- source survey confirms AssociatedDevice `Active` is a read-only bool in AccessPoint ODL/dm info
+- next ready single-case Pass3 target: `D371`
+
+</details>
+
+### D370 AssociatedDevice Active blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+iw dev wl2 link
+wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Active?"
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"
+wl -i wl1 assoclist
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.Active?"
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"
+wl -i wl2 assoclist
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Active?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T021304619423
+- workbook row 370 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env, reason_code=sta_band_not_ready, device=STA, bands=5g/6g/2.4g
+- remediation history: builtin-fallback sta_band_rebaseline attempted but failed
+- DUT log interval: L4-L1935
+- STA log interval: L1-L192
+- observed from runtime log: STA 5G verify and sta_5g_driver verify failed repeatedly; 6G OCV fix did not stabilize wl1; DUT wl0 BSS stayed down through retry/AP bounce before AssociatedDevice readback
+```
+
+## Checkpoint summary (2026-05-10 0506-D364)
+
+> This checkpoint records the `D364 NonSRGOBSSPDMaxOffset — WiFi.Radio.{i}.IEEE80211ax.` no-edit confirmation recheck.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets remain: `confirmed=191`, `applied=9`, `pending=43`, `block=172`, `needs_pass3=0`
+- `D364 NonSRGOBSSPDMaxOffset — WiFi.Radio.{i}.IEEE80211ax.` recorded as `ieee80211ax_nonsrgobsspdmaxoffset_workbook_latest_pass_runtime_pass_source_maps_nsrg_pdmax_no_edit`
+- workbook row 364 latest ARC result is `Pass / Pass / Pass`
+- focused run `20260510T021040636675` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- source survey maps `heSprNonSrgObssPdMaxOffset` to driver `sr_config nsrg_pdmax` with negated value in ioctl/vendor paths
+- note: D364 was already pass1-confirmed, so bucket counts did not change
+
+</details>
+
+### D364 IEEE80211ax NonSRGOBSSPDMaxOffset confirmation evidence
+
+**STA 指令**
+
+```sh
+# DUT-only getter case; no STA command required
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset?"
+ubus-cli "WiFi.Radio.2.IEEE80211ax.NonSRGOBSSPDMaxOffset?"
+ubus-cli "WiFi.Radio.3.IEEE80211ax.NonSRGOBSSPDMaxOffset?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T021040636675
+- workbook row 364 latest result expects Pass/Pass/Pass
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21:
+  WiFi.Radio.1.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
+  WiFi.Radio.2.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
+  WiFi.Radio.3.IEEE80211ax.NonSRGOBSSPDMaxOffset=0
+- source survey: `whm_brcm_api_ext*.c` maps `heSprNonSrgObssPdMaxOffset` to `sr_config nsrg_pdmax` and negates the value before driver/vendor set
+```
+
+## Checkpoint summary (2026-05-10 0506-D359)
+
+> This checkpoint records the `D359 IsolationEnable — WiFi.AccessPoint.{i}.` no-edit confirmation recheck.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets remain: `confirmed=191`, `applied=9`, `pending=43`, `block=172`, `needs_pass3=0`
+- `D359 IsolationEnable — WiFi.AccessPoint.{i}.` recorded as `ap_isolationenable_workbook_pass_all_bands_runtime_pass_getter_source_bool_supported_no_edit`
+- workbook row 359 latest result is `Pass / Pass / Pass`
+- focused run `20260510T020814423475` reported `Pass / Pass / Pass` with `diagnostic_status=Pass`
+- source survey confirms `IsolationEnable` is defined as a bool in AccessPoint ODL/dm info
+- note: D359 was already pass1-confirmed, so bucket counts did not change
+
+</details>
+
+### D359 AccessPoint IsolationEnable confirmation evidence
+
+**STA 指令**
+
+```sh
+# Current YAML performs DUT getter readback only; workbook STA-to-STA ping isolation flow was not executed in this focused runtime
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.IsolationEnable?"
+ubus-cli "WiFi.AccessPoint.3.IsolationEnable?"
+ubus-cli "WiFi.AccessPoint.5.IsolationEnable?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T020814423475
+- workbook row 359 latest result expects Pass/Pass/Pass
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21:
+  WiFi.AccessPoint.1.IsolationEnable=0
+  WiFi.AccessPoint.3.IsolationEnable=0
+  WiFi.AccessPoint.5.IsolationEnable=0
+- source survey: `tr181-wifi_AccessPoint.odl` defines bool `IsolationEnable`; `dm_info.c` exposes it as `AMXC_VAR_ID_BOOL`
+```
+
+## Checkpoint summary (2026-05-10 0506-D357)
+
+> This checkpoint records the `D357 csiStats() — WiFi.Radio.{i}.Sensing.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=43`, `block=172`, `needs_pass3=0`
+- `D357 csiStats() — WiFi.Radio.{i}.Sensing.` recorded as `sensing_csistats_workbook_latest_pass_all_bands_vs_skip_fixture_runtime_fail_source_supports_counters`
+- workbook row 357 latest result is `Pass / Pass / Pass` after earlier `Failed / Failed / Failed`
+- focused run `20260510T020621009979` reported `Fail / N/A / N/A` with `diagnostic_status=FailTest`
+- failure reason: current YAML is a skip fixture with unsupported `skip` operator instead of executing reset/add/enable/csiStats verification
+- source survey found `whm_brcm_radcsi_updateStats`, `mfn_wrad_sensing_csiStats`, and csimon_state counter mapping in `whm_brcm_api_ext*.c`
+- next ready single-case Pass3 target: `D359`
+
+</details>
+
+### D357 Sensing csiStats blocker evidence
+
+**STA 指令**
+
+```sh
+# DUT-only skip fixture; STA CSI client setup and traffic are not exercised by current YAML
+```
+
+**DUT 指令**
+
+```sh
+echo "[skip] non-executable step step_5g_skip"
+ubus-cli "WiFi.Radio.*.Sensing.csiStats()"
+ubus-cli "WiFi.Radio.1.Sensing.resetStats()"
+ubus-cli "WiFi.Radio.1.Sensing.addClient(MACAddress='34:19:4D:A4:B5:09', MonitorInterval=100)"
+ubus-cli WiFi.Radio.1.Sensing.Enable=true
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T020621009979
+- workbook row 357 latest result expects Pass/Pass/Pass
+- report shape: Fail / N/A / N/A, diagnostic_status=FailTest
+- JSON failure snapshot: evaluate pass_criteria_not_satisfied, field=skip, operator=skip
+- DUT.log L1-L15:
+  __testpilot_env_gate__
+  dmesg -n 1
+- source survey: `whm_brcm_rad_csi.c` registers `mfn_wrad_sensing_csiStats`; `whm_brcm_api_ext*.c` maps csimon_state counters into csiStats fields; current YAML does not execute the workbook reset/add/enable/csiStats flow
+```
+
+## Checkpoint summary (2026-05-10 0506-D356)
+
+> This checkpoint records the `D356 delClient() — WiFi.Radio.{i}.Sensing.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=44`, `block=171`, `needs_pass3=0`
+- `D356 delClient() — WiFi.Radio.{i}.Sensing.` recorded as `sensing_delclient_workbook_pass_all_bands_vs_skip_fixture_runtime_fail_source_supports_delclient`
+- workbook row 356 latest result is `Pass / Pass / Pass`
+- focused run `20260510T020434495610` reported `Fail / N/A / N/A` with `diagnostic_status=FailTest`
+- failure reason: current YAML is a skip fixture with unsupported `skip` operator instead of executing workbook delClient/csiStats verification
+- source survey found `whm_brcm_radcsi_delClient` and `mfn_wrad_sensing_delClient`
+- next ready single-case Pass3 target: `D357`
+
+</details>
+
+### D356 Sensing delClient blocker evidence
+
+**STA 指令**
+
+```sh
+# DUT-only skip fixture; STA CSI client setup is not exercised by current YAML
+```
+
+**DUT 指令**
+
+```sh
+echo "[skip] non-executable step step_5g_skip"
+ubus-cli "WiFi.Radio.*.Sensing.delClient(MACAddress='a0:29:42:60:23:be')"
+ubus-cli "WiFi.Radio.*.Sensing.delClient(MACAddress='00:00:00:00:00:00')"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T020434495610
+- workbook row 356 latest result expects Pass/Pass/Pass
+- report shape: Fail / N/A / N/A, diagnostic_status=FailTest
+- JSON failure snapshot: evaluate pass_criteria_not_satisfied, field=skip, operator=skip
+- DUT.log L3-L17:
+  __testpilot_env_gate__
+  dmesg -n 1
+- source survey: `whm_brcm_rad_csi.c` implements `whm_brcm_radcsi_delClient` and registers `mfn_wrad_sensing_delClient`; current YAML does not execute the workbook method or csiStats follow-up
+```
+
+## Checkpoint summary (2026-05-10 0506-D355)
+
+> This checkpoint records the `D355 addClient() — WiFi.Radio.{i}.Sensing.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=45`, `block=170`, `needs_pass3=0`
+- `D355 addClient() — WiFi.Radio.{i}.Sensing.` recorded as `sensing_addclient_workbook_pass_all_bands_vs_skip_fixture_runtime_fail_source_supports_addclient`
+- workbook row 355 latest result is `Pass / Pass / Pass`
+- focused run `20260510T020144100256` reported `Fail / N/A / N/A` with `diagnostic_status=FailTest`
+- failure reason: current YAML is a skip fixture with unsupported `skip` operator instead of executing the workbook addClient method
+- source survey found `whm_brcm_radcsi_addClient`, `mfn_wrad_sensing_addClient`, and monitor interval mapping in `whm_brcm_api_ext*.c`
+- next ready single-case Pass3 target: `D356`
+
+</details>
+
+### D355 Sensing addClient blocker evidence
+
+**STA 指令**
+
+```sh
+# DUT-only skip fixture; STA CSI client setup is not exercised by current YAML
+```
+
+**DUT 指令**
+
+```sh
+echo "[skip] non-executable step step_5g_skip"
+ubus-cli "WiFi.Radio.1.Sensing.addClient(MACAddress='A0:29:42:60:23:BD', MonitorInterval=100)"
+ubus-cli "WiFi.Radio.2.Sensing.addClient(MACAddress='00:90:4C:55:20:A8', MonitorInterval=1000)"
+ubus-cli "WiFi.Radio.3.Sensing.addClient(MACAddress='8A:10:18:1E:D9:14', MonitorInterval=1000)"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T020144100256
+- workbook row 355 latest result expects Pass/Pass/Pass
+- report shape: Fail / N/A / N/A, diagnostic_status=FailTest
+- JSON failure snapshot: evaluate pass_criteria_not_satisfied, field=skip, operator=skip
+- DUT.log L1-L16:
+  __testpilot_env_gate__
+  dmesg -n 1
+- source survey: `whm_brcm_rad_csi.c` implements `whm_brcm_radcsi_addClient` and registers `mfn_wrad_sensing_addClient`; current YAML does not execute the workbook method
+```
+
+## Checkpoint summary (2026-05-10 0506-D353)
+
+> This checkpoint records the `D353 stopBgDfsClear() — WiFi.wps_DefParam.` no-edit confirmation.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=191`, `applied=9`, `pending=46`, `block=169`, `needs_pass3=0`
+- `D353 stopBgDfsClear() — WiFi.wps_DefParam.` confirmed as `stopbgdfsclear_workbook_fail_all_bands_runtime_fail_no_exported_odl_method_no_edit`
+- workbook row 353 latest ARC result is `Fail / Fail / Fail`
+- focused run `20260510T015921312121` reported `Fail / N/A / N/A`, normalized `Fail / Fail / Fail`, with `diagnostic_status=FailTest`
+- source survey found no exported plugin ODL registration for `WiFi.Radio.{i}.ChannelMgt.BgDfs.stopBgDfsClear`; vendor bgdfs helper hooks exist under `whm_brcm_dfs.c`
+- next ready single-case Pass3 target: `D355`
+
+</details>
+
+### D353 stopBgDfsClear no-edit evidence
+
+**STA 指令**
+
+```sh
+# DUT-only skip fixture; STA is not used
+```
+
+**DUT 指令**
+
+```sh
+echo "[skip] non-executable step step_5g_skip"
+ubus-cli "WiFi.Radio.1.ChannelMgt.BgDfs.stopBgDfsClear()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T015921312121
+- workbook row 353 latest ARC result is Fail/Fail/Fail
+- report shape: Fail / N/A / N/A, normalized Fail / Fail / Fail, diagnostic_status=FailTest
+- JSON failure snapshot: evaluate pass_criteria_not_satisfied, field=skip, operator=skip
+- DUT.log L1-L16:
+  __testpilot_env_gate__
+  dmesg -n 1
+- source survey: no `stopBgDfsClear` or `WiFi.Radio.{i}.ChannelMgt.BgDfs.stopBgDfsClear` ODL registration found under `plugins`; `whm_brcm_dfs.c` contains vendor bgdfs stop helper
+```
+
+## Checkpoint summary (2026-05-10 0506-D352)
+
+> This checkpoint records the `D352 startBgDfsClear() — WiFi.wps_DefParam.` no-edit confirmation.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=190`, `applied=9`, `pending=47`, `block=169`, `needs_pass3=0`
+- `D352 startBgDfsClear() — WiFi.wps_DefParam.` confirmed as `startbgdfsclear_workbook_fail_all_bands_runtime_fail_no_exported_odl_method_no_edit`
+- workbook row 352 latest ARC result is `Fail / Fail / Fail`
+- focused run `20260510T015707022759` reported `Fail / N/A / N/A`, normalized `Fail / Fail / Fail`, with `diagnostic_status=FailTest`
+- source survey found no exported plugin ODL registration for `WiFi.Radio.{i}.ChannelMgt.BgDfs.startBgDfsClear`; vendor bgdfs helper hooks exist under `whm_brcm_dfs.c`
+- next ready single-case Pass3 target: `D353`
+
+</details>
+
+### D352 startBgDfsClear no-edit evidence
+
+**STA 指令**
+
+```sh
+# DUT-only skip fixture; STA is not used
+```
+
+**DUT 指令**
+
+```sh
+echo "[skip] non-executable step step_5g_skip"
+ubus-cli "WiFi.Radio.1.ChannelMgt.BgDfs.startBgDfsClear(channel:int, bandwidth:int):void"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T015707022759
+- workbook row 352 latest ARC result is Fail/Fail/Fail
+- report shape: Fail / N/A / N/A, normalized Fail / Fail / Fail, diagnostic_status=FailTest
+- JSON failure snapshot: evaluate pass_criteria_not_satisfied, field=skip, operator=skip
+- DUT.log L1-L15:
+  __testpilot_env_gate__
+  dmesg -n 1
+- source survey: no `startBgDfsClear` or `WiFi.Radio.{i}.ChannelMgt.BgDfs.startBgDfsClear` ODL registration found under `plugins`; `whm_brcm_dfs.c` contains vendor bgdfs helper hooks
+```
+
+## Checkpoint summary (2026-05-10 0506-D337)
+
+> This checkpoint records the `D337 UnknownProtoPacketsReceived — WiFi.SSID.{i}.Stats.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=48`, `block=169`, `needs_pass3=0`
+- `D337 UnknownProtoPacketsReceived — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_unknownprotopacketsreceived_workbook_not_supported_all_bands_blocked_by_sta_band_not_ready_and_yaml_driver_mapping_mismatch`
+- workbook row 337 latest ARC result is `Not Supported / Not Supported / Not Supported`, normalized `Fail / Fail / Fail`
+- focused run `20260510T014613409484` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before UnknownProtoPacketsReceived readback because STA band baseline/connect failed, `wl0` BSS stayed down through retries/AP bounce, and 6G OCV/hostapd remediation did not stabilize `wl1`
+- source survey note: active SSID mapping uses `rxunknownprotopkts`, while current YAML driver cross-check uses `rxbadprotopkts`
+- next ready single-case Pass3 target: `D352`
+
+</details>
+
+### D337 SSID Stats UnknownProtoPacketsReceived blocker evidence
+
+**STA 指令**
+
+```sh
+# STA baseline/connect attempted by runtime auto-baseline; no UnknownProtoPacketsReceived readback step executed
+dmesg -n 1
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss
+ubus-cli WiFi.Radio.1.Enable=1
+ubus-cli "WiFi.SSID.4.Stats.UnknownProtoPacketsReceived?"
+ubus-cli "WiFi.SSID.6.Stats.UnknownProtoPacketsReceived?"
+ubus-cli "WiFi.SSID.8.Stats.UnknownProtoPacketsReceived?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T014613409484
+- workbook row 337 latest result is Not Supported/Not Supported/Not Supported, normalized Fail/Fail/Fail
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before UnknownProtoPacketsReceived readback
+- DUT.log report range L4-L2048:
+  wl -i wl0 bss
+  down
+  WiFi.Radio.1.Enable=1
+  ... AP.1 bounce / hostapd restart attempts ...
+  6G OCV/hostapd remediation did not stabilize wl1
+- STA.log L1-L5 only contains runtime log-level setup; no STA traffic/readback step executed
+- source survey: `whm_brcm_api_ext.c` maps SSID UnknownProtoPacketsReceived from `ifstats->rxunknownprotopkts`; current YAML uses `rxbadprotopkts`
+```
+
+## Checkpoint summary (2026-05-10 0506-D336)
+
+> This checkpoint records the `D336 UnicastPacketsSent — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=49`, `block=168`, `needs_pass3=0`
+- `D336 UnicastPacketsSent — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_unicastpacketssent_workbook_pass_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 336 latest Brcm result is `Pass / Pass / Pass`
+- focused run `20260510T013357191036` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before UnicastPacketsSent readback because STA band baseline/connect failed, DUT `wl0` and `wl2` BSS readiness failed through retries/AP bounce, and 6G OCV/hostapd remediation did not stabilize `wl1`
+- next ready single-case Pass3 target: `D337`
+
+</details>
+
+### D336 SSID Stats UnicastPacketsSent blocker evidence
+
+**STA 指令**
+
+```sh
+# STA baseline/connect attempted by runtime auto-baseline; no UnicastPacketsSent traffic/readback step executed
+dmesg -n 1
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss
+wl -i wl2 bss
+ubus-cli WiFi.Radio.1.Enable=1
+ubus-cli "WiFi.SSID.4.Stats.UnicastPacketsSent?"
+ubus-cli "WiFi.SSID.6.Stats.UnicastPacketsSent?"
+ubus-cli "WiFi.SSID.8.Stats.UnicastPacketsSent?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T013357191036
+- workbook row 336 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before UnicastPacketsSent readback
+- DUT.log report range L2-L2044:
+  wl -i wl0 bss
+  down
+  WiFi.Radio.1.Enable=1
+  ... AP.1 bounce / hostapd restart attempts ...
+  wl -i wl2 bss
+  down
+  ... AP.5 bounce / BSS readiness retries ...
+  6G OCV/hostapd remediation did not stabilize wl1
+- STA.log L1-L2 only contains runtime log-level setup; no STA traffic/readback step executed
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
+## Checkpoint summary (2026-05-10 0506-D335)
+
+> This checkpoint records the `D335 UnicastPacketsReceived — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=50`, `block=167`, `needs_pass3=0`
+- `D335 UnicastPacketsReceived — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_unicastpacketsreceived_workbook_pass_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 335 latest Brcm result is `Pass / Pass / Pass`
+- focused run `20260510T012340974240` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before UnicastPacketsReceived readback because STA band baseline/connect failed, STA `wl0` stayed not connected/not associated, `wl0` BSS stayed down through retries/AP bounce, and 6G OCV/hostapd remediation did not stabilize `wl1`
+- next ready single-case Pass3 target: `D336`
+
+</details>
+
+### D335 SSID Stats UnicastPacketsReceived blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+wl -i wl0 join testpilot5G imode bss
+wl -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss
+ubus-cli WiFi.Radio.1.Enable=1
+ubus-cli "WiFi.SSID.4.Stats.UnicastPacketsReceived?"
+ubus-cli "WiFi.SSID.6.Stats.UnicastPacketsReceived?"
+ubus-cli "WiFi.SSID.8.Stats.UnicastPacketsReceived?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T012340974240
+- workbook row 335 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before UnicastPacketsReceived readback
+- STA.log L82-L121:
+  iw dev wl0 link
+  Not connected.
+  wl -i wl0 join testpilot5G imode bss
+  wl -i wl0 status
+  Not associated. Last associated with SSID: ""
+- DUT.log L1-L1783:
+  wl -i wl0 bss
+  down
+  WiFi.Radio.1.Enable=1
+  ... repeated AP.1 bounce / hostapd restart attempts ...
+  6G OCV/hostapd remediation did not stabilize wl1
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
+## Checkpoint summary (2026-05-10 0506-D333)
+
+> This checkpoint records the `D333 PacketsSent — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=51`, `block=166`, `needs_pass3=0`
+- `D333 PacketsSent — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_packetssent_workbook_pass_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 333 latest ARC result is `Pass / Pass / Pass`
+- focused run `20260510T011136275097` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before PacketsSent readback because STA band baseline/connect failed, `wl0` BSS stayed down through retries/AP bounce, and 6G OCV/hostapd remediation did not stabilize `wl1`
+- next ready single-case Pass3 target: `D335`
+
+</details>
+
+### D333 SSID Stats PacketsSent blocker evidence
+
+**STA 指令**
+
+```sh
+# STA baseline/connect attempted by runtime auto-baseline; no PacketsSent traffic/readback step executed
+dmesg -n 1
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss
+ubus-cli WiFi.Radio.1.Enable=1
+ubus-cli "WiFi.SSID.4.Stats.PacketsSent?"
+ubus-cli "WiFi.SSID.6.Stats.PacketsSent?"
+ubus-cli "WiFi.SSID.8.Stats.PacketsSent?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T011136275097
+- workbook row 333 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before PacketsSent readback
+- DUT.log report range L1-L2070:
+  wl -i wl0 bss
+  down
+  WiFi.Radio.1.Enable=1
+  ... repeated AP.1 bounce / hostapd restart attempts ...
+  6G OCV/hostapd remediation did not stabilize wl1
+- STA.log L1-L6 only contains runtime log-level setup; no STA traffic/readback step executed
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
+## Checkpoint summary (2026-05-10 0506-D332)
+
+> This checkpoint records the `D332 PacketsReceived — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=52`, `block=165`, `needs_pass3=0`
+- `D332 PacketsReceived — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_packetsreceived_workbook_pass_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 332 latest ARC result is `Pass / Pass / Pass`
+- focused run `20260510T010054226775` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before PacketsReceived readback because STA band baseline/connect failed, STA `wl0` stayed not connected/not associated, and DUT `wl0` BSS stayed down through retries/AP bounce
+- next ready single-case Pass3 target: `D333`
+
+</details>
+
+### D332 SSID Stats PacketsReceived blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+wl -i wl0 join testpilot5G imode bss
+wl -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss
+ubus-cli WiFi.Radio.1.Enable=1
+ubus-cli "WiFi.SSID.4.Stats.PacketsReceived?"
+ubus-cli "WiFi.SSID.6.Stats.PacketsReceived?"
+ubus-cli "WiFi.SSID.8.Stats.PacketsReceived?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T010054226775
+- workbook row 332 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before PacketsReceived readback
+- STA.log L82-L121:
+  iw dev wl0 link
+  Not connected.
+  wl -i wl0 join testpilot5G imode bss
+  wl -i wl0 status
+  Not associated. Last associated with SSID: ""
+- DUT.log L4-L1846:
+  wl -i wl0 bss
+  down
+  WiFi.Radio.1.Enable=1
+  ... repeated AP.1 bounce / hostapd restart attempts ...
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
+## Checkpoint summary (2026-05-10 0506-D331)
+
+> This checkpoint records the `D331 MulticastPacketsSent — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=53`, `block=164`, `needs_pass3=0`
+- `D331 MulticastPacketsSent — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_multicastpacketssent_workbook_pass_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 331 latest ARC result is `Pass / Pass / Pass`
+- focused run `20260510T004954526486` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before MulticastPacketsSent readback because STA band baseline/connect failed, STA `wl0` stayed not connected/not associated, and BSS readiness failed across retries
+- next ready single-case Pass3 target: `D332`
+
+</details>
+
+### D331 SSID Stats MulticastPacketsSent blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+wl -i wl0 join testpilot5G imode bss
+wl -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss
+ubus-cli WiFi.Radio.1.Enable=1
+ubus-cli "WiFi.SSID.4.Stats.MulticastPacketsSent?"
+ubus-cli "WiFi.SSID.6.Stats.MulticastPacketsSent?"
+ubus-cli "WiFi.SSID.8.Stats.MulticastPacketsSent?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T004954526486
+- workbook row 331 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before MulticastPacketsSent readback
+- STA.log L82-L121:
+  iw dev wl0 link
+  Not connected.
+  wl -i wl0 join testpilot5G imode bss
+  wl -i wl0 status
+  Not associated. Last associated with SSID: ""
+- DUT.log L3-L1612:
+  wl -i wl0 bss
+  down
+  WiFi.Radio.1.Enable=1
+  ... BSS readiness retries/remediation ...
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
+## Checkpoint summary (2026-05-10 0506-D330)
+
+> This checkpoint records the `D330 MulticastPacketsReceived — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=54`, `block=163`, `needs_pass3=0`
+- `D330 MulticastPacketsReceived — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_multicastpacketsreceived_workbook_pass_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 330 latest ARC result is `Pass / Pass / Pass`
+- focused run `20260510T004021851913` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before MulticastPacketsReceived readback because STA band baseline/connect failed, DUT `wl0` BSS stayed down through retries/AP bounce, and runtime later failed `sta_5g` / `sta_5g_driver` verification attempts
+- next ready single-case Pass3 target: `D331`
+
+</details>
+
+### D330 SSID Stats MulticastPacketsReceived blocker evidence
+
+**STA 指令**
+
+```sh
+# STA baseline/connect attempted by runtime auto-baseline; no multicast traffic step executed
+dmesg -n 1
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss
+ubus-cli WiFi.Radio.1.Enable=1
+ubus-cli "WiFi.SSID.4.Stats.MulticastPacketsReceived?"
+ubus-cli "WiFi.SSID.6.Stats.MulticastPacketsReceived?"
+ubus-cli "WiFi.SSID.8.Stats.MulticastPacketsReceived?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T004021851913
+- workbook row 330 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before MulticastPacketsReceived readback
+- DUT.log report range L1-L2083:
+  wl -i wl0 bss
+  down
+  WiFi.Radio.1.Enable=1
+  ... repeated AP.1 bounce / hostapd restart attempts ...
+- STA.log L1-L5 only contains runtime log-level setup; no STA multicast/readback step executed
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
+## Checkpoint summary (2026-05-10 0506-D328)
+
+> This checkpoint records the `D328 ErrorsSent — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=55`, `block=162`, `needs_pass3=0`
+- `D328 ErrorsSent — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_errorssent_workbook_pass_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 328 latest ARC result is `Pass / Pass / Pass`
+- focused run `20260510T002831745819` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before ErrorsSent readback because STA band baseline/connect failed, DUT `wl0` BSS stayed down through retries/AP bounce, and runtime later failed `sta_5g` / `sta_5g_driver` verification attempts
+- next ready single-case Pass3 target: `D330`
+
+</details>
+
+### D328 SSID Stats ErrorsSent blocker evidence
+
+**STA 指令**
+
+```sh
+# STA baseline/connect attempted by runtime auto-baseline; no counter traffic step executed
+dmesg -n 1
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss
+ubus-cli WiFi.Radio.1.Enable=1
+ubus-cli "WiFi.SSID.4.Stats.ErrorsSent?"
+ubus-cli "WiFi.SSID.6.Stats.ErrorsSent?"
+ubus-cli "WiFi.SSID.8.Stats.ErrorsSent?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T002831745819
+- workbook row 328 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before ErrorsSent readback
+- DUT.log report range L4-L2040:
+  wl -i wl0 bss
+  down
+  WiFi.Radio.1.Enable=1
+  ... repeated AP.1 bounce / hostapd restart attempts ...
+- STA.log L1-L5 only contains runtime log-level setup; no STA traffic/readback step executed
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
+## Checkpoint summary (2026-05-10 0506-D327)
+
+> This checkpoint records the `D327 ErrorsReceived — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=56`, `block=161`, `needs_pass3=0`
+- `D327 ErrorsReceived — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_errorsreceived_workbook_skip_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 327 latest ARC result is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260510T001901434799` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before ErrorsReceived readback because STA band baseline/connect failed, STA `wl0` stayed not connected/not associated, and DUT band readiness was unstable across wl0/wl1/wl2
+- next ready single-case Pass3 target: `D328`
+
+</details>
+
+### D327 SSID Stats ErrorsReceived blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+wl -i wl0 join testpilot5G imode bss
+wl -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+ubus-cli "WiFi.SSID.4.Stats.ErrorsReceived?"
+ubus-cli "WiFi.SSID.6.Stats.ErrorsReceived?"
+ubus-cli "WiFi.SSID.8.Stats.ErrorsReceived?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T001901434799
+- workbook row 327 latest result is Skip/Skip/Skip, normalized Fail/Fail/Fail
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before ErrorsReceived readback
+- STA.log L82-L121:
+  iw dev wl0 link
+  Not connected.
+  wl -i wl0 join testpilot5G imode bss
+  wl -i wl0 status
+  Not associated. Last associated with SSID: ""
+- DUT.log L1048-L1135:
+  wl -i wl0 bss
+  up
+  wl -i wl1 bss
+  down/up during retries
+  wl -i wl2 bss
+  down ... later up
+  __testpilot_env_gate__
+  wl -i wl0 bss
+  down
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
+## Checkpoint summary (2026-05-10 0506-D326)
+
+> This checkpoint records the `D326 DiscardPacketsSent — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=57`, `block=160`, `needs_pass3=0`
+- `D326 DiscardPacketsSent — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_discardpacketssent_workbook_pass_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 326 latest ARC result is `Pass / Pass / Pass`
+- focused run `20260510T000752363283` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before DiscardPacketsSent readback because STA band baseline/connect failed, DUT `wl0` BSS stayed down, and STA `wl0` stayed not connected/not associated
+- next ready single-case Pass3 target: `D327`
+
+</details>
+
+### D326 SSID Stats DiscardPacketsSent blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+iw dev wl0 link
+wl -i wl0 join testpilot5G imode bss
+wl -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss up
+wl -i wl0 bss
+ubus-cli "WiFi.SSID.4.Stats.DiscardPacketsSent?"
+ubus-cli "WiFi.SSID.6.Stats.DiscardPacketsSent?"
+ubus-cli "WiFi.SSID.8.Stats.DiscardPacketsSent?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260510T000752363283
+- workbook row 326 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before DiscardPacketsSent readback
+- STA.log L82-L121:
+  iw dev wl0 link
+  Not connected.
+  wl -i wl0 join testpilot5G imode bss
+  wl -i wl0 status
+  Not associated. Last associated with SSID: ""
+- DUT.log L1278-L1333 and L1347-L1368:
+  wl -i wl0 bss
+  down
+  ... repeated wl0 bss checks ...
+  ubus-cli WiFi.Radio.1.Enable=1
+  --wl0 FSM DONE--
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
+## Checkpoint summary (2026-05-09 0506-D325)
+
+> This checkpoint records the `D325 DiscardPacketsReceived — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=58`, `block=159`, `needs_pass3=0`
+- `D325 DiscardPacketsReceived — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_discardpacketsreceived_workbook_pass_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 325 latest ARC result is `Pass / Pass / Pass`
+- focused run `20260509T235639893782` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before DiscardPacketsReceived readback because STA band baseline/connect failed and `wl0` BSS stayed down after retries/AP bounce
+- next ready single-case Pass3 target: `D326`
+
+</details>
+
+### D325 SSID Stats DiscardPacketsReceived blocker evidence
+
+**STA 指令**
+
+```sh
+# STA baseline/connect attempted by runtime auto-baseline; no counter traffic step executed
+dmesg -n 1
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss up
+wl -i wl0 bss
+ubus-cli "WiFi.SSID.4.Stats.DiscardPacketsReceived?"
+ubus-cli "WiFi.SSID.6.Stats.DiscardPacketsReceived?"
+ubus-cli "WiFi.SSID.8.Stats.DiscardPacketsReceived?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T235639893782
+- workbook row 325 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before DiscardPacketsReceived readback
+- DUT.log L1308-L1378 and L1527-L1569:
+  wl -i wl0 bss
+  down
+  ... repeated wl0 bss checks ...
+  wl -i wl0 bss up
+  wl -i wl0 bss
+  down
+  WiFi.Radio.1.Enable=1
+- STA.log L1-L4 only contains runtime log-level setup; no STA traffic/readback step executed
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
+## Checkpoint summary (2026-05-09 0506-D324)
+
+> This checkpoint records the `D324 BytesSent — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=59`, `block=158`, `needs_pass3=0`
+- `D324 BytesSent — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_bytessent_workbook_pass_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 324 latest Brcm result is `Pass / Pass / Pass`
+- focused run `20260509T234503549206` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before BytesSent readback because STA band baseline/connect failed and `wl0` BSS stayed down after retries/AP bounce
+- next ready single-case Pass3 target: `D325`
+
+</details>
+
+### D324 SSID Stats BytesSent blocker evidence
+
+**STA 指令**
+
+```sh
+# STA baseline/connect attempted by runtime auto-baseline; no counter traffic step executed
+dmesg -n 1
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss up
+wl -i wl0 bss
+ubus-cli "WiFi.SSID.4.Stats.BytesSent?"
+ubus-cli "WiFi.SSID.6.Stats.BytesSent?"
+ubus-cli "WiFi.SSID.8.Stats.BytesSent?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T234503549206
+- workbook row 324 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before BytesSent readback
+- DUT.log L1314-L1375 and L1520-L1578:
+  wl -i wl0 bss
+  down
+  ... repeated wl0 bss checks ...
+  wl -i wl0 bss up
+  wl -i wl0 bss
+  down
+  WiFi.Radio.1.Enable=1
+- STA.log L1-L4 only contains runtime log-level setup; no STA traffic/readback step executed
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
+## Checkpoint summary (2026-05-09 0506-D323)
+
+> This checkpoint records the `D323 BytesReceived — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=60`, `block=157`, `needs_pass3=0`
+- `D323 BytesReceived — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_bytesreceived_workbook_pass_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 323 latest pWHM/Brcm result is `Pass / Pass / Pass`
+- focused run `20260509T233341447761` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before BytesReceived readback because STA band baseline/connect failed and `wl0` BSS stayed down after retries/AP bounce
+- next ready single-case Pass3 target: `D324` inventory check
+
+</details>
+
+### D323 SSID Stats BytesReceived blocker evidence
+
+**STA 指令**
+
+```sh
+# STA baseline/connect attempted by runtime auto-baseline; no counter traffic step executed
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+wl -i wl0 join testpilot5G imode bss
+wl -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss up
+wl -i wl0 bss
+ubus-cli "WiFi.SSID.4.Stats.BytesReceived?"
+ubus-cli "WiFi.SSID.6.Stats.BytesReceived?"
+ubus-cli "WiFi.SSID.8.Stats.BytesReceived?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T233341447761
+- workbook row 323 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before BytesReceived readback
+- STA.log L82-L121:
+  iw dev wl0 link
+  Not connected.
+  wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+  OK
+  wl -i wl0 status
+  Not associated. Last associated with SSID: ""
+- DUT.log L1055-L1118 and L1260-L1318:
+  wl -i wl0 bss
+  down
+  ... repeated wl0 bss checks ...
+  wl -i wl0 bss up
+  wl -i wl0 bss
+  down
+  WiFi.Radio.1.Enable=1
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
+## Checkpoint summary (2026-05-09 0506-D322)
+
+> This checkpoint records the `D322 BroadcastPacketsSent — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=61`, `block=156`, `needs_pass3=0`
+- `D322 BroadcastPacketsSent — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_broadcastpacketssent_workbook_pass_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 322 latest pWHM/Brcm result is `Pass / Pass / Pass`
+- focused run `20260509T232257539885` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before counter readback because STA band baseline/connect failed and `wl0` BSS stayed down after retries/AP bounce
+- next ready single-case Pass3 target: `D323`
+
+</details>
+
+### D322 SSID Stats BroadcastPacketsSent blocker evidence
+
+**STA 指令**
+
+```sh
+# STA baseline/connect attempted by runtime auto-baseline; no counter traffic step executed
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss up
+wl -i wl0 bss
+ubus-cli "WiFi.SSID.4.Stats.BroadcastPacketsSent?"
+ubus-cli "WiFi.SSID.6.Stats.BroadcastPacketsSent?"
+ubus-cli "WiFi.SSID.8.Stats.BroadcastPacketsSent?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T232257539885
+- workbook row 322 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before counter readback
+- DUT.log L1490-L1548:
+  wl -i wl0 bss up
+  wl -i wl0 bss
+  down
+  ... repeated wl0 bss checks ...
+  wl -i wl0 bss
+  down
+  ubus-cli WiFi.Radio.1.Enable=1
+  WiFi.Radio.1.Enable=1
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
+## Checkpoint summary (2026-05-09 0506-D321)
+
+> This checkpoint records the `D321 BroadcastPacketsReceived — WiFi.SSID.{i}.Stats.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=62`, `block=155`, `needs_pass3=0`
+- `D321 BroadcastPacketsReceived — WiFi.SSID.{i}.Stats.` recorded as `ssid_stats_broadcastpacketsreceived_workbook_pass_all_bands_blocked_by_sta_band_not_ready`
+- workbook row 321 latest pWHM/Brcm result is `Pass / Pass / Pass`
+- focused run `20260509T231118234152` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: env gate failed before counter readback because STA band baseline/connect failed and `wl0` BSS stayed down after retries/AP bounce
+- next ready single-case Pass3 target: `D322`
+
+</details>
+
+### D321 SSID Stats BroadcastPacketsReceived blocker evidence
+
+**STA 指令**
+
+```sh
+# STA baseline/connect attempted by runtime auto-baseline; no counter traffic step executed
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 bss up
+wl -i wl0 bss
+ubus-cli "WiFi.SSID.4.Stats.BroadcastPacketsReceived?"
+ubus-cli "WiFi.SSID.6.Stats.BroadcastPacketsReceived?"
+ubus-cli "WiFi.SSID.8.Stats.BroadcastPacketsReceived?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T231118234152
+- workbook row 321 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- JSON failure snapshot: verify_env sta_band_not_ready before counter readback
+- DUT.log L1494-L1552:
+  wl -i wl0 bss up
+  wl -i wl0 bss
+  down
+  ... repeated wl0 bss checks ...
+  wl -i wl0 bss
+  down
+  ubus-cli WiFi.Radio.1.Enable=1
+  WiFi.Radio.1.Enable=1
+- runtime remediation attempted sta_band_rebaseline/AP bounce but did not restore STA band readiness
+```
+
+## Checkpoint summary (2026-05-09 0506-D298)
+
+> This checkpoint records the `D298 startScan() — WiFi.Radio.{i}.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=63`, `block=154`, `needs_pass3=0`
+- `D298 startScan() — WiFi.Radio.{i}.` recorded as `radio_startscan_workbook_pass_all_bands_vs_unknown_error_runtime_fail`
+- workbook row 298 latest ARC/PWHM result is `Pass / Pass / Pass`
+- focused run `20260509T230859939566` reported `Fail / Fail / Fail` with `diagnostic_status=FailTest`
+- all three `WiFi.Radio.{1,2,3}.startScan()` calls returned `ERROR: call (null) failed with status 1 - unknown error`
+- next ready single-case Pass3 target: `D321`
+
+</details>
+
+### D298 Radio startScan blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D298 is a DUT-only startScan() probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.startScan()"
+ubus-cli "WiFi.Radio.2.startScan()"
+ubus-cli "WiFi.Radio.3.startScan()"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T230859939566
+- workbook row 298 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- DUT.log L8-L65:
+  ubus-cli "WiFi.Radio.1.startScan()"
+  ERROR: call (null) failed with status 1 - unknown error
+  ubus-cli "WiFi.Radio.2.startScan()"
+  ERROR: call (null) failed with status 1 - unknown error
+  ubus-cli "WiFi.Radio.3.startScan()"
+  ERROR: call (null) failed with status 1 - unknown error
+- mismatch: workbook pass semantics disagree with live all-band unknown-error result
+```
+
+## Checkpoint summary (2026-05-09 0506-D295)
+
+> This checkpoint records the `D295 scan() — WiFi.Radio.{i}.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=64`, `block=153`, `needs_pass3=0`
+- `D295 scan() — WiFi.Radio.{i}.` recorded as `radio_scan_workbook_pass_all_bands_blocked_by_bss_not_ready_before_scan_steps`
+- workbook row 295 latest ARC/PWHM result is `Pass / Pass / Pass`
+- focused run `20260509T225620590656` reported `Fail / Fail / Fail` with `diagnostic_status=FailTest`
+- failure reason: no `ScanCheck5g=ok` was produced because BSS readiness stayed unstable before scan checks completed
+- next ready single-case Pass3 target: `D298`
+
+</details>
+
+### D295 Radio scan blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 set type managed
+ifconfig wl0 up
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.scan()"
+ubus-cli "WiFi.Radio.2.scan()"
+ubus-cli "WiFi.Radio.3.scan()"
+wl -i wl0 escanresults
+wl -i wl1 escanresults
+wl -i wl2 escanresults
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T225620590656
+- workbook row 295 latest result expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- JSON failure snapshot: result_5g expected ScanCheck5g=ok, actual ""
+- DUT.log L1357-L1428:
+  wl -i wl0 bss
+  up
+  wl -i wl1 bss
+  down
+  ... repeated wl1 down checks ...
+  /etc/init.d/wld_gen start
+  --wl0 FSM DONE--
+  --wl2 FSM DONE--
+  --wl1 FSM DONE--
+- run did not reach a successful scan/cache cross-check before BSS readiness failed
+```
+
+## Checkpoint summary (2026-05-09 0506-D294)
+
+> This checkpoint records the `D294 getNaStationStats() — WiFi.Radio.{i}.NaStaMonitor.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=65`, `block=152`, `needs_pass3=0`
+- `D294 getNaStationStats() — WiFi.Radio.{i}.NaStaMonitor.` recorded as `radio_nastamonitor_getnastationstats_workbook_skip_all_bands_vs_object_not_found_probe_pass_semantics_mismatch`
+- workbook row 294 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T225431238739` reported `Pass / Pass / Pass`
+- current YAML probes `WiFi.EndPoint.1.getNaStationStats()` and treats `object not found` as pass
+- next ready single-case Pass3 target: `D295`
+
+</details>
+
+### D294 Radio NaStaMonitor getNaStationStats blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D294 current YAML is a DUT-only unsupported/object-not-found probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getNaStationStats()"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T225431238739
+- workbook row 294 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L17:
+  ubus-cli "WiFi.EndPoint.1.getNaStationStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getNaStationStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- mismatch: workbook skip/fail semantics disagree with current object-not-found pass criteria
+```
+
+## Checkpoint summary (2026-05-09 0506-D207)
+
+> This checkpoint records the `D207 ObssCoexistenceEnable — WiFi.Radio.{i}.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=66`, `block=151`, `needs_pass3=0`
+- `D207 ObssCoexistenceEnable — WiFi.Radio.{i}.` recorded as `radio_obsscoexistenceenable_workbook_not_supported_5g_6g_vs_numeric_getter_pass_semantics_mismatch`
+- workbook row 207 marks 5G/6G as `Not Supported` and 2.4G as `Pass`, normalized to `Fail / Fail / Pass`
+- focused run `20260509T225225505345` reported `Pass / Pass / Pass`
+- current YAML only validates getter presence and read 5G/6G disabled values plus 2.4G enabled value
+- next ready single-case Pass3 target: `D294`
+
+</details>
+
+### D207 Radio ObssCoexistenceEnable blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D207 is a DUT-only Radio ObssCoexistenceEnable getter probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.ObssCoexistenceEnable?"
+ubus-cli "WiFi.Radio.2.ObssCoexistenceEnable?"
+ubus-cli "WiFi.Radio.3.ObssCoexistenceEnable?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T225225505345
+- workbook row 207 expects Not Supported / Not Supported / Pass -> normalized Fail/Fail/Pass
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21:
+  ubus-cli "WiFi.Radio.1.ObssCoexistenceEnable?"
+  WiFi.Radio.1.ObssCoexistenceEnable=0
+  ubus-cli "WiFi.Radio.2.ObssCoexistenceEnable?"
+  WiFi.Radio.2.ObssCoexistenceEnable=0
+  ubus-cli "WiFi.Radio.3.ObssCoexistenceEnable?"
+  WiFi.Radio.3.ObssCoexistenceEnable=1
+- mismatch: workbook not-supported semantics for 5G/6G disagree with current numeric-getter pass criteria
+```
+
+## Checkpoint summary (2026-05-09 0506-D202)
+
+> This checkpoint records the `D202 Interference — WiFi.Radio.{i}.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=67`, `block=150`, `needs_pass3=0`
+- `D202 Interference — WiFi.Radio.{i}.` recorded as `radio_interference_workbook_failed_all_bands_vs_numeric_getter_pass_semantics_mismatch`
+- workbook row 202 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T224945638600` reported `Pass / Pass / Pass`
+- current YAML only checks numeric getter presence and read all three radios as `Interference=0`
+- next ready single-case Pass3 target: `D207`
+
+</details>
+
+### D202 Radio Interference blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D202 is a DUT-only Radio Interference getter probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.Interference?"
+ubus-cli "WiFi.Radio.2.Interference?"
+ubus-cli "WiFi.Radio.3.Interference?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T224945638600
+- workbook row 202 expects Failed/Failed/Failed -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L21:
+  ubus-cli "WiFi.Radio.1.Interference?"
+  WiFi.Radio.1.Interference=0
+  ubus-cli "WiFi.Radio.2.Interference?"
+  WiFi.Radio.2.Interference=0
+  ubus-cli "WiFi.Radio.3.Interference?"
+  WiFi.Radio.3.Interference=0
+- mismatch: workbook fail semantics disagree with current numeric-getter pass criteria
+```
+
+## Checkpoint summary (2026-05-09 0506-D183)
+
+> This checkpoint records the `D183 TPCMode — WiFi.Radio.{i}.DriverConfig.` environment blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=68`, `block=149`, `needs_pass3=0`
+- `D183 TPCMode — WiFi.Radio.{i}.DriverConfig.` recorded as `radio_tpcmode_to_be_test_blocked_by_sta_5g_link_failed_before_test_steps_cleanup_auto_confirmed`
+- workbook row 183 raw value is `To be test / To be test / To be test`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T223759148880` reported `Fail / N/A / N/A` with `diagnostic_status=FailEnv`
+- failure reason: `sta_band_link_failed`; setup failed on STA 5G `iw dev wl0 link` returning `Not connected.`
+- cleanup restored `WiFi.Radio.1.DriverConfig.TPCMode=Auto` and confirmed getter reports `Auto`
+- next ready single-case Pass3 target: `D202`
+
+</details>
+
+### D183 Radio DriverConfig TPCMode blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
+ubus-cli "WiFi.Radio.1.DriverConfig.TPCMode?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T223759148880
+- workbook row 183 expects To be test/To be test/To be test -> normalized Fail/Fail/Fail
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- failure_snapshot: reason_code=sta_band_link_failed, command=iw dev wl0 link, output=Not connected.
+- STA.log L59-L66:
+  wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+  iw dev wl0 link
+  Not connected.
+- DUT.log L1425-L1429:
+  ubus-cli WiFi.Radio.1.DriverConfig.TPCMode=Auto
+  WiFi.Radio.1.DriverConfig.TPCMode="Auto"
+- cleanup output confirmed:
+  WiFi.Radio.1.DriverConfig.TPCMode="Auto"
+- blocker: setup never reached TPCMode behavior verification, so workbook intent remains unconfirmed
+```
+
+## Checkpoint summary (2026-05-09 0506-D179)
+
+> This checkpoint records the `D179 Ampdu — WiFi.Radio.{i}.DriverConfig.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=69`, `block=148`, `needs_pass3=0`
+- `D179 Ampdu — WiFi.Radio.{i}.DriverConfig.` recorded as `radio_ampdu_workbook_pass_all_bands_blocked_by_sta_band_not_ready_after_5g_set_cleanup_restored`
+- workbook row 179 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- focused run `20260509T222421974209` reported `Fail / Fail / Fail` with `diagnostic_status=FailEnv`
+- failure reason: `sta_band_not_ready`; runtime reached `WiFi.Radio.1.DriverConfig.Ampdu=1` then failed to prepare 5G for `step2_ampdu_after_set_5g`
+- cleanup restored `WiFi.Radio.1/2/3.DriverConfig.Ampdu=-1` and confirmed all three getters report `-1`
+- next ready single-case Pass3 target: `D183`
+
+</details>
+
+### D179 Radio DriverConfig Ampdu blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=1
+/etc/init.d/wld_gen start
+ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=-1
+ubus-cli WiFi.Radio.2.DriverConfig.Ampdu=-1
+ubus-cli WiFi.Radio.3.DriverConfig.Ampdu=-1
+ubus-cli "WiFi.Radio.*.DriverConfig.Ampdu?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T222421974209
+- workbook row 179 expects Pass/Pass/Pass
+- report shape: Fail / Fail / Fail, diagnostic_status=FailEnv
+- failure_snapshot: reason_code=sta_band_not_ready, comment=STA band baseline/connect failed
+- DUT.log L659-L668:
+  RequestedAmpdu5g=1
+  ubus-cli WiFi.Radio.1.DriverConfig.Ampdu=1
+  > WiFi.Radio.1.DriverConfig.Ampdu=1
+  WiFi.Radio.1.DriverConfig.Ampdu=1
+  /etc/init.d/wld_gen start
+- STA.log L82-L99 shows initial 5G association to testpilot5G before later env recovery failed
+- cleanup output:
+  WiFi.Radio.1.DriverConfig.Ampdu=-1
+  WiFi.Radio.2.DriverConfig.Ampdu=-1
+  WiFi.Radio.3.DriverConfig.Ampdu=-1
+- blocker: workbook pass cannot be confirmed while STA/BSS baseline is unstable
+```
+
+## Checkpoint summary (2026-05-09 0506-D178)
+
+> This checkpoint records the `D178 ChannelLoad — WiFi.Radio.{i}.` no-edit confirmation.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=189`, `applied=9`, `pending=70`, `block=147`, `needs_pass3=0`
+- `D178 ChannelLoad — WiFi.Radio.{i}.` recorded as `workbook_failed_all_bands_matches_runtime_channelload_missing_airload_fields_no_yaml_edit`
+- workbook row 178 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T222208189135` reported `Fail / Fail / Fail`
+- live output produced survey-derived values for 5G and 2.4G but no corresponding `AirLoad` / `ChannelLoad` fields; 6G produced aligned values (`66 / 66 / 66`)
+- next ready single-case Pass3 target: `D179`
+
+</details>
+
+### D178 Radio ChannelLoad confirmed no-edit evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D178 is a DUT-only Radio ChannelLoad cross-check
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.getRadioAirStats()"
+ubus-cli "WiFi.Radio.1.ChannelLoad?"
+iw dev wl0 survey dump
+ubus-cli "WiFi.Radio.2.getRadioAirStats()"
+ubus-cli "WiFi.Radio.2.ChannelLoad?"
+iw dev wl1 survey dump
+ubus-cli "WiFi.Radio.3.getRadioAirStats()"
+ubus-cli "WiFi.Radio.3.ChannelLoad?"
+iw dev wl2 survey dump
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T222208189135
+- workbook row 178 expects Failed/Failed/Failed -> normalized Fail/Fail/Fail
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- DUT.log L134-L138:
+  sh /tmp/_tp_cmd.sh; rm -f /tmp/_tp_cmd.sh
+  SurveyActiveMs5g=57
+  SurveyBusyMs5g=51
+  SurveyChannelLoad5g=89
+- DUT.log L165-L171:
+  sh /tmp/_tp_cmd.sh; rm -f /tmp/_tp_cmd.sh
+  AirLoad6g=66
+  ChannelLoad6g=66
+  SurveyActiveMs6g=27
+  SurveyBusyMs6g=18
+  SurveyChannelLoad6g=66
+- DUT.log L198-L202:
+  sh /tmp/_tp_cmd.sh; rm -f /tmp/_tp_cmd.sh
+  SurveyActiveMs24g=285
+  SurveyBusyMs24g=275
+  SurveyChannelLoad24g=96
+- normalized workbook fail matches runtime fail; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D152)
+
+> This checkpoint records the `D152 PairingInProgress — WiFi.EndPoint.{i}.WPS.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=188`, `applied=9`, `pending=71`, `block=147`, `needs_pass3=0`
+- `D152 PairingInProgress — WiFi.EndPoint.{i}.WPS.` recorded as `endpoint_wps_pairinginprogress_workbook_skip_all_bands_vs_unsupported_probe_pass_semantics_mismatch`
+- workbook row 152 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T221954504209` reported `Pass / Pass / Pass`
+- live probe returned `No data found` for `WiFi.EndPoint.?`; current YAML treats missing EndPoint tree as expected unsupported behavior
+- inventory note: rows `D149`-`D151` have no discoverable official YAML files under `plugins/wifi_llapi/cases`; rows `D153`-`D173` are not pending discoverable cases in this RID
+- next ready single-case Pass3 target: `D178`
+
+</details>
+
+### D152 EndPoint WPS PairingInProgress blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D152 is a DUT-only EndPoint tree probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T221954504209
+- workbook row 152 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L11:
+  ubus-cli "WiFi.EndPoint.?"
+  > WiFi.EndPoint.?
+  No data found
+- mismatch: workbook skip/fail semantics disagree with YAML unsupported-probe pass semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D148)
+
+> This checkpoint records the `D148 Status — WiFi.EndPoint.{i}.Profile.WPS.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=188`, `applied=9`, `pending=72`, `block=146`, `needs_pass3=0`
+- `D148 Status — WiFi.EndPoint.{i}.Profile.WPS.` recorded as `endpoint_profile_wps_status_workbook_skip_all_bands_vs_unsupported_probe_pass_semantics_mismatch`
+- workbook row 148 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T221811994045` reported `Pass / Pass / Pass`
+- live probe returned `No data found` for `WiFi.EndPoint.?`; current YAML treats missing EndPoint tree as expected unsupported behavior
+- next ready single-case Pass3 target: `D149` inventory check
+
+</details>
+
+### D148 EndPoint Profile WPS Status blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D148 is a DUT-only EndPoint tree probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T221811994045
+- workbook row 148 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L11:
+  ubus-cli "WiFi.EndPoint.?"
+  > WiFi.EndPoint.?
+  No data found
+- mismatch: workbook skip/fail semantics disagree with YAML unsupported-probe pass semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D147)
+
+> This checkpoint records the `D147 SSID — WiFi.EndPoint.{i}.Profile.WPS.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=188`, `applied=9`, `pending=73`, `block=145`, `needs_pass3=0`
+- `D147 SSID — WiFi.EndPoint.{i}.Profile.WPS.` recorded as `endpoint_profile_wps_ssid_workbook_skip_all_bands_vs_unsupported_probe_pass_semantics_mismatch`
+- workbook row 147 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T221641232496` reported `Pass / Pass / Pass`
+- live probe returned `No data found` for `WiFi.EndPoint.?`; current YAML treats missing EndPoint tree as expected unsupported behavior
+- next ready single-case Pass3 target: `D148`
+
+</details>
+
+### D147 EndPoint Profile WPS SSID blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D147 is a DUT-only EndPoint tree probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T221641232496
+- workbook row 147 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L11:
+  ubus-cli "WiFi.EndPoint.?"
+  > WiFi.EndPoint.?
+  No data found
+- mismatch: workbook skip/fail semantics disagree with YAML unsupported-probe pass semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D146)
+
+> This checkpoint records the `D146 WEPKey — WiFi.EndPoint.{i}.Profile.WPS.Security.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=188`, `applied=9`, `pending=74`, `block=144`, `needs_pass3=0`
+- `D146 WEPKey — WiFi.EndPoint.{i}.Profile.WPS.Security.` recorded as `endpoint_profile_wps_security_wepkey_workbook_skip_all_bands_vs_unsupported_probe_pass_semantics_mismatch`
+- workbook row 146 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T221503539639` reported `Pass / Pass / Pass`
+- live probe returned `No data found` for `WiFi.EndPoint.?`; current YAML treats missing EndPoint tree as expected unsupported behavior
+- next ready single-case Pass3 target: `D147`
+
+</details>
+
+### D146 EndPoint Profile WPS Security WEPKey blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D146 is a DUT-only EndPoint tree probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T221503539639
+- workbook row 146 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L11:
+  ubus-cli "WiFi.EndPoint.?"
+  > WiFi.EndPoint.?
+  No data found
+- mismatch: workbook skip/fail semantics disagree with YAML unsupported-probe pass semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D145)
+
+> This checkpoint records the `D145 PreSharedKey — WiFi.EndPoint.{i}.Profile.WPS.Security.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=188`, `applied=9`, `pending=75`, `block=143`, `needs_pass3=0`
+- `D145 PreSharedKey — WiFi.EndPoint.{i}.Profile.WPS.Security.` recorded as `endpoint_profile_wps_security_presharedkey_workbook_skip_all_bands_vs_unsupported_probe_pass_semantics_mismatch`
+- workbook row 145 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T221247859239` reported `Pass / Pass / Pass`
+- live probe returned `No data found` for `WiFi.EndPoint.?`; current YAML treats missing EndPoint tree as expected unsupported behavior
+- next ready single-case Pass3 target: `D146`
+
+</details>
+
+### D145 EndPoint Profile WPS Security PreSharedKey blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D145 is a DUT-only EndPoint tree probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T221247859239
+- workbook row 145 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L11:
+  ubus-cli "WiFi.EndPoint.?"
+  > WiFi.EndPoint.?
+  No data found
+- mismatch: workbook skip/fail semantics disagree with YAML unsupported-probe pass semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D144)
+
+> This checkpoint records the `D144 ModeEnabled — WiFi.EndPoint.{i}.Profile.WPS.Security.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=188`, `applied=9`, `pending=76`, `block=142`, `needs_pass3=0`
+- `D144 ModeEnabled — WiFi.EndPoint.{i}.Profile.WPS.Security.` recorded as `endpoint_profile_wps_security_modeenabled_workbook_skip_all_bands_vs_unsupported_probe_pass_semantics_mismatch`
+- workbook row 144 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T221052478892` reported `Pass / Pass / Pass`
+- live probe returned `No data found` for `WiFi.EndPoint.?`; current YAML treats missing EndPoint tree as expected unsupported behavior
+- next ready single-case Pass3 target: `D145`
+
+</details>
+
+### D144 EndPoint Profile WPS Security ModeEnabled blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D144 is a DUT-only EndPoint tree probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T221052478892
+- workbook row 144 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L11:
+  ubus-cli "WiFi.EndPoint.?"
+  > WiFi.EndPoint.?
+  No data found
+- mismatch: workbook skip/fail semantics disagree with YAML unsupported-probe pass semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D143)
+
+> This checkpoint records the `D143 MFPConfig — WiFi.EndPoint.{i}.Profile.WPS.Security.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=188`, `applied=9`, `pending=77`, `block=141`, `needs_pass3=0`
+- `D143 MFPConfig — WiFi.EndPoint.{i}.Profile.WPS.Security.` recorded as `endpoint_profile_wps_security_mfpconfig_workbook_skip_all_bands_vs_unsupported_probe_pass_semantics_mismatch`
+- workbook row 143 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T220902581523` reported `Pass / Pass / Pass`
+- live probe returned `No data found` for `WiFi.EndPoint.?`; current YAML treats missing EndPoint tree as expected unsupported behavior
+- next ready single-case Pass3 target: `D144`
+
+</details>
+
+### D143 EndPoint Profile WPS Security MFPConfig blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D143 is a DUT-only EndPoint tree probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T220902581523
+- workbook row 143 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L11:
+  ubus-cli "WiFi.EndPoint.?"
+  > WiFi.EndPoint.?
+  No data found
+- mismatch: workbook skip/fail semantics disagree with YAML unsupported-probe pass semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D142)
+
+> This checkpoint records the `D142 KeyPassPhrase — WiFi.EndPoint.{i}.Profile.WPS.Security.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=188`, `applied=9`, `pending=78`, `block=140`, `needs_pass3=0`
+- `D142 KeyPassPhrase — WiFi.EndPoint.{i}.Profile.WPS.Security.` recorded as `endpoint_profile_wps_security_keypassphrase_workbook_skip_all_bands_vs_unsupported_probe_pass_semantics_mismatch`
+- workbook row 142 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T220707747234` reported `Pass / Pass / Pass`
+- live probe returned `No data found` for `WiFi.EndPoint.?`; current YAML treats missing EndPoint tree as expected unsupported behavior
+- next ready single-case Pass3 target: `D143`
+
+</details>
+
+### D142 EndPoint Profile WPS Security KeyPassPhrase blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D142 is a DUT-only EndPoint tree probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T220707747234
+- workbook row 142 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L11:
+  ubus-cli "WiFi.EndPoint.?"
+  > WiFi.EndPoint.?
+  No data found
+- mismatch: workbook skip/fail semantics disagree with YAML unsupported-probe pass semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D141)
+
+> This checkpoint records the `D141 ForceBSSID — WiFi.EndPoint.{i}.Profile.WPS.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=188`, `applied=9`, `pending=79`, `block=139`, `needs_pass3=0`
+- `D141 ForceBSSID — WiFi.EndPoint.{i}.Profile.WPS.` recorded as `endpoint_profile_wps_forcebssid_workbook_skip_all_bands_vs_unsupported_probe_pass_semantics_mismatch`
+- workbook row 141 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T220516363441` reported `Pass / Pass / Pass`
+- live probe returned `No data found` for `WiFi.EndPoint.?`; current YAML treats missing EndPoint tree as expected unsupported behavior
+- next ready single-case Pass3 target: `D142`
+
+</details>
+
+### D141 EndPoint Profile WPS ForceBSSID blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D141 is a DUT-only EndPoint tree probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T220516363441
+- workbook row 141 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L11:
+  ubus-cli "WiFi.EndPoint.?"
+  > WiFi.EndPoint.?
+  No data found
+- mismatch: workbook skip/fail semantics disagree with YAML unsupported-probe pass semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D140)
+
+> This checkpoint records the `D140 Enable — WiFi.EndPoint.{i}.Profile.WPS.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=188`, `applied=9`, `pending=80`, `block=138`, `needs_pass3=0`
+- `D140 Enable — WiFi.EndPoint.{i}.Profile.WPS.` recorded as `endpoint_profile_wps_enable_workbook_skip_all_bands_vs_unsupported_probe_pass_semantics_mismatch`
+- workbook row 140 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T220333316014` reported `Pass / Pass / Pass`
+- live probe returned `No data found` for `WiFi.EndPoint.?`; current YAML treats missing EndPoint tree as expected unsupported behavior
+- next ready single-case Pass3 target: `D141`
+
+</details>
+
+### D140 EndPoint Profile WPS Enable blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D140 is a DUT-only EndPoint tree probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T220333316014
+- workbook row 140 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L11:
+  ubus-cli "WiFi.EndPoint.?"
+  > WiFi.EndPoint.?
+  No data found
+- mismatch: workbook skip/fail semantics disagree with YAML unsupported-probe pass semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D139)
+
+> This checkpoint records the `D139 MultiAPEnable — WiFi.EndPoint.{i}.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=188`, `applied=9`, `pending=81`, `block=137`, `needs_pass3=0`
+- `D139 MultiAPEnable — WiFi.EndPoint.{i}.` recorded as `endpoint_multiapenable_workbook_skip_all_bands_vs_unsupported_probe_pass_semantics_mismatch`
+- workbook row 139 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T220136118027` reported `Pass / Pass / Pass`
+- live probe returned `No data found` for `WiFi.EndPoint.?`; current YAML treats missing EndPoint tree as expected unsupported behavior
+- next ready single-case Pass3 target: `D140`
+
+</details>
+
+### D139 MultiAPEnable blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D139 is a DUT-only EndPoint tree probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T220136118027
+- workbook row 139 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L11:
+  ubus-cli "WiFi.EndPoint.?"
+  > WiFi.EndPoint.?
+  No data found
+- mismatch: workbook skip/fail semantics disagree with YAML unsupported-probe pass semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D138)
+
+> This checkpoint records the `D138 IntfName — WiFi.EndPoint.{i}.` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=188`, `applied=9`, `pending=82`, `block=136`, `needs_pass3=0`
+- `D138 IntfName — WiFi.EndPoint.{i}.` recorded as `endpoint_intfname_workbook_skip_all_bands_vs_unsupported_probe_pass_semantics_mismatch`
+- workbook row 138 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T215931133076` reported `Pass / Pass / Pass`
+- live probe returned `No data found` for `WiFi.EndPoint.?`; current YAML treats missing EndPoint tree as expected unsupported behavior
+- next ready single-case Pass3 target: `D139`
+
+</details>
+
+### D138 IntfName blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D138 is a DUT-only EndPoint tree probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.?"
+```
+
+**判定 blocker 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T215931133076
+- workbook row 138 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- DUT.log L8-L11:
+  ubus-cli "WiFi.EndPoint.?"
+  > WiFi.EndPoint.?
+  No data found
+- mismatch: workbook skip/fail semantics disagree with YAML unsupported-probe pass semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D137)
+
+> This checkpoint records the `D137 getStats() TxPacketCount — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=188`, `applied=9`, `pending=83`, `block=135`, `needs_pass3=0`
+- `D137 getStats() TxPacketCount — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 137 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T215746533717` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D138`
+
+</details>
+
+### D137 getStats() TxPacketCount confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D137 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T215746533717
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 137 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L8-L17 and L24-L33:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D136)
+
+> This checkpoint records the `D136 getStats() TxBytes — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=187`, `applied=9`, `pending=83`, `block=136`, `needs_pass3=0`
+- `D136 getStats() TxBytes — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 136 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T215601512951` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D137`
+
+</details>
+
+### D136 getStats() TxBytes confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D136 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T215601512951
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 136 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L8-L17 and L24-L33:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D135)
+
+> This checkpoint records the `D135 getStats() Tx_Retransmissions — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=186`, `applied=9`, `pending=83`, `block=137`, `needs_pass3=0`
+- `D135 getStats() Tx_Retransmissions — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 135 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T215418932232` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D136`
+
+</details>
+
+### D135 getStats() Tx_Retransmissions confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D135 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T215418932232
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 135 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L8-L17 and L24-L33:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D134)
+
+> This checkpoint records the `D134 getStats() SupportedMCS — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=185`, `applied=9`, `pending=83`, `block=138`, `needs_pass3=0`
+- `D134 getStats() SupportedMCS — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 134 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T215235149280` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D135`
+
+</details>
+
+### D134 getStats() SupportedMCS confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D134 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T215235149280
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 134 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L8-L17 and L24-L33:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D133)
+
+> This checkpoint records the `D133 getStats() SecurityModeEnabled — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=184`, `applied=9`, `pending=83`, `block=139`, `needs_pass3=0`
+- `D133 getStats() SecurityModeEnabled — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 133 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T215051099430` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D134`
+
+</details>
+
+### D133 getStats() SecurityModeEnabled confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D133 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T215051099430
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 133 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L8-L17 and L24-L33:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D132)
+
+> This checkpoint records the `D132 getStats() RxPacketCount — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=183`, `applied=9`, `pending=83`, `block=140`, `needs_pass3=0`
+- `D132 getStats() RxPacketCount — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 132 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T214911989746` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D133`
+
+</details>
+
+### D132 getStats() RxPacketCount confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D132 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T214911989746
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 132 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L8-L17 and L24-L33:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D131)
+
+> This checkpoint records the `D131 getStats() RxBytes — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=182`, `applied=9`, `pending=83`, `block=141`, `needs_pass3=0`
+- `D131 getStats() RxBytes — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 131 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T214724811248` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D132`
+
+</details>
+
+### D131 getStats() RxBytes confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D131 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T214724811248
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 131 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L8-L17 and L24-L33:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D130)
+
+> This checkpoint records the `D130 getStats() Rx_Retransmissions — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=181`, `applied=9`, `pending=83`, `block=142`, `needs_pass3=0`
+- `D130 getStats() Rx_Retransmissions — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 130 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T214547437355` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D131`
+
+</details>
+
+### D130 getStats() Rx_Retransmissions confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D130 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T214547437355
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 130 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L8-L17 and L24-L33:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D129)
+
+> This checkpoint records the `D129 getStats() RSSI — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=180`, `applied=9`, `pending=83`, `block=143`, `needs_pass3=0`
+- `D129 getStats() RSSI — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 129 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T214330103171` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D130`
+
+</details>
+
+### D129 getStats() RSSI confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D129 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T214330103171
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 129 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L5-L14 and L21-L30:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D128)
+
+> This checkpoint records the `D128 getStats() Retransmissions — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=179`, `applied=9`, `pending=83`, `block=144`, `needs_pass3=0`
+- `D128 getStats() Retransmissions — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 128 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T214147279743` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D129`
+
+</details>
+
+### D128 getStats() Retransmissions confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D128 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T214147279743
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 128 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L5-L14 and L21-L30:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D127)
+
+> This checkpoint records the `D127 getStats() OperatingStandard — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=178`, `applied=9`, `pending=83`, `block=145`, `needs_pass3=0`
+- `D127 getStats() OperatingStandard — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 127 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T214008214377` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D128`
+
+</details>
+
+### D127 getStats() OperatingStandard confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D127 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T214008214377
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 127 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L5-L14 and L21-L30:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D126)
+
+> This checkpoint records the `D126 getStats() Noise — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=177`, `applied=9`, `pending=83`, `block=146`, `needs_pass3=0`
+- `D126 getStats() Noise — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 126 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T213829582823` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D127`
+
+</details>
+
+### D126 getStats() Noise confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D126 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T213829582823
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 126 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L5-L14 and L21-L30:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D125)
+
+> This checkpoint records the `D125 getStats() MaxTxSpatialStreamsSupported — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=176`, `applied=9`, `pending=83`, `block=147`, `needs_pass3=0`
+- `D125 getStats() MaxTxSpatialStreamsSupported — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 125 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T213650193115` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D126`
+
+</details>
+
+### D125 getStats() MaxTxSpatialStreamsSupported confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D125 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T213650193115
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 125 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L5-L14 and L21-L30:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D124)
+
+> This checkpoint records the `D124 getStats() MaxRxSpatialStreamsSupported — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=175`, `applied=9`, `pending=83`, `block=148`, `needs_pass3=0`
+- `D124 getStats() MaxRxSpatialStreamsSupported — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 124 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T213512617827` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D125`
+
+</details>
+
+### D124 getStats() MaxRxSpatialStreamsSupported confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D124 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T213512617827
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 124 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L5-L14 and L21-L30:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D123)
+
+> This checkpoint records the `D123 getStats() LinkBandwidth — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=174`, `applied=9`, `pending=83`, `block=149`, `needs_pass3=0`
+- `D123 getStats() LinkBandwidth — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 123 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T213333752414` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D124`
+
+</details>
+
+### D123 getStats() LinkBandwidth confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D123 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T213333752414
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 123 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L5-L14 and L21-L30:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D122)
+
+> This checkpoint records the `D122 getStats() LastDataUplinkRate — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=173`, `applied=9`, `pending=83`, `block=150`, `needs_pass3=0`
+- `D122 getStats() LastDataUplinkRate — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 122 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T213156154398` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D123`
+
+</details>
+
+### D122 getStats() LastDataUplinkRate confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D122 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T213156154398
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 122 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L5-L14 and L21-L30:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D121)
+
+> This checkpoint records the `D121 getStats() LastDataDownlinkRate — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=172`, `applied=9`, `pending=83`, `block=151`, `needs_pass3=0`
+- `D121 getStats() LastDataDownlinkRate — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 121 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T213016091317` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D122`
+
+</details>
+
+### D121 getStats() LastDataDownlinkRate confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D121 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T213016091317
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 121 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L5-L14 and L21-L30:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D120)
+
+> This checkpoint records the `D120 getStats() HtCapabilities — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=171`, `applied=9`, `pending=83`, `block=152`, `needs_pass3=0`
+- `D120 getStats() HtCapabilities — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 120 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T212832282259` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D121`
+
+</details>
+
+### D120 getStats() HtCapabilities confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D120 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T212832282259
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 120 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L5-L14 and L21-L30:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D119)
+
+> This checkpoint records the `D119 getStats() HeCapabilities — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=170`, `applied=9`, `pending=83`, `block=153`, `needs_pass3=0`
+- `D119 getStats() HeCapabilities — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_endpoint_getstats_object_not_found_fail_no_yaml_edit`
+- workbook row 119 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T212623561978` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D120` inventory check
+
+</details>
+
+### D119 getStats() HeCapabilities confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D119 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T212623561978
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 119 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L5-L14 and L21-L30:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D118)
+
+> This checkpoint records the `D118 getStats() EncryptionMode — WiFi.EndPoint.{i}.` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=169`, `applied=9`, `pending=83`, `block=154`, `needs_pass3=0`
+- `D118 getStats() EncryptionMode — WiFi.EndPoint.{i}.` recorded as `workbook_skip_all_bands_matches_runtime_object_not_found_fail_no_yaml_edit`
+- workbook row 118 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T212431974716` reported `Fail / Fail / Fail`
+- live probe returned `ERROR: call (null) failed with status 2 - object not found` for `WiFi.EndPoint.1.getStats()`
+- next ready single-case Pass3 target: `D119`
+
+</details>
+
+### D118 getStats() EncryptionMode confirmed evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D118 is a DUT-only EndPoint getStats probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.1.getStats()"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T212431974716
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 118 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L5-L14 and L21-L30:
+  ubus-cli "WiFi.EndPoint.1.getStats()"
+  ERROR: call (null) failed with status 2 - object not found
+  WiFi.EndPoint.1.getStats() returned
+  [
+      "",
+      {
+      }
+  ]
+- runtime fail shape matches workbook skip/fail semantics; no YAML edit
+```
+
+## Checkpoint summary (2026-05-09 0506-D117)
+
+> This checkpoint records the `D117 Enable — WiFi.EndPoint.{i}.` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=168`, `applied=9`, `pending=83`, `block=155`, `needs_pass3=0`
+- workbook row `D116 ConnectionStatus` has no discoverable official YAML under `plugins/wifi_llapi/cases/`, so strict single-case execution continued to `D117`
+- `D117 Enable — WiFi.EndPoint.{i}.` recorded as `endpoint_enable_workbook_skip_all_bands_vs_unsupported_probe_pass_semantics_mismatch`
+- workbook row 117 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T212227731774` reported `Pass / Pass / Pass`
+- live probe returned `No data found` for `WiFi.EndPoint.?`; current YAML treats missing EndPoint tree as expected unsupported behavior and therefore passes
+- source survey: `tr181-wifi_definition.odl` declares `WiFi.EndPoint[]`, and `tr181-wifi_EndPoint.odl` selects `WiFi.EndPoint`, but the live BGW720 gateway exposes no EndPoint instances
+- next ready single-case Pass3 target: `D118`
+
+</details>
+
+### D117 Enable WiFi.EndPoint blocker evidence
+
+**STA 指令**
+
+```sh
+# no STA command; D117 is a DUT-only EndPoint tree probe
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.EndPoint.?"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T212227731774
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- workbook row 117 expects Skip/Skip/Skip -> normalized Fail/Fail/Fail
+- DUT.log L5-L8:
+  ubus-cli "WiFi.EndPoint.?"
+  > WiFi.EndPoint.?
+  No data found
+- current YAML treats unsupported WiFi.EndPoint tree as pass, which mismatches workbook skip/fail semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D115)
+
+> This checkpoint records the `D115 getStationStats() ConnectionDuration` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=168`, `applied=9`, `pending=84`, `block=154`, `needs_pass3=0`
+- `D115 getStationStats() ConnectionDuration` recorded as `workbook_pass_all_bands_matches_runtime_connectionduration_no_yaml_edit`
+- workbook row 115 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- focused run `20260509T211329658554` reported `Pass / Pass / Pass`
+- live counters increased across repeated reads: 5G `6 -> 9`, 6G `13 -> 17`, 2.4G `10 -> 13`
+- driver in-network seconds remained greater than or equal to the later LLAPI value: 5G `11`, 6G `19`, 2.4G `15`
+- next ready single-case Pass3 target: D116 inventory check, then `D117` if no official D116 YAML exists
+
+</details>
+
+### D115 getStationStats() ConnectionDuration confirmed evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+iw dev wl2 link
+wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.getStationStats()"
+sleep 3
+ubus-cli "WiFi.AccessPoint.1.getStationStats()"
+wl -i wl0 sta_info 2C:59:17:00:42:15 | grep "in network"
+wl -i wl1 assoclist
+ubus-cli "WiFi.AccessPoint.3.getStationStats()"
+sleep 3
+ubus-cli "WiFi.AccessPoint.3.getStationStats()"
+wl -i wl1 sta_info 2C:59:17:00:42:16 | grep "in network"
+wl -i wl2 assoclist
+ubus-cli "WiFi.AccessPoint.5.getStationStats()"
+sleep 3
+ubus-cli "WiFi.AccessPoint.5.getStationStats()"
+wl -i wl2 sta_info 2C:59:17:00:42:27 | grep "in network"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T211329658554
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- workbook row 115 expects Pass/Pass/Pass -> normalized Pass/Pass/Pass
+- 5G: STA wl0 connected to testpilot5G; MACAddress="2C:59:17:00:42:15"; ConnectionDuration 6 -> 9; DriverConnectionSeconds5g=11
+- 6G: STA wl1 connected to testpilot6G; MACAddress="2C:59:17:00:42:16"; ConnectionDuration 13 -> 17; DriverConnectionSeconds6g=19
+- 2.4G: STA wl2 connected to testpilot2G; MACAddress="2C:59:17:00:42:27"; ConnectionDuration 10 -> 13; DriverConnectionSeconds24g=15
+```
+
+## Checkpoint summary (2026-05-09 0506-D114)
+
+> This checkpoint records the `D114 getStationStats() AvgSignalStrengthByChain` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=84`, `block=155`, `needs_pass3=0`
+- `D114 getStationStats() AvgSignalStrengthByChain` recorded as `avgsignalstrengthbychain_workbook_all_fail_vs_runtime_all_band_pass_semantics_mismatch`
+- workbook row 114 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T210450843542` reported `Pass / Pass / Pass`
+- 5G/6G/2.4G all connected and returned negative integer `AvgSignalStrengthByChain` values: `-26`, `-66`, `-15`
+- current all-band runtime pass semantics do not match workbook all-fail result
+- next ready single-case Pass3 target: `D115`
+
+</details>
+
+### D114 getStationStats() AvgSignalStrengthByChain blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+iw dev wl2 link
+wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.getStationStats()"
+wl -i wl1 assoclist
+ubus-cli "WiFi.AccessPoint.3.getStationStats()"
+wl -i wl2 assoclist
+ubus-cli "WiFi.AccessPoint.5.getStationStats()"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T210450843542
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- workbook row 114 expects Failed/Failed/Failed -> normalized Fail/Fail/Fail
+- 5G: STA wl0 connected to testpilot5G; MACAddress="2C:59:17:00:42:15"; AvgSignalStrengthByChain=-26
+- 6G: STA wl1 connected to testpilot6G; MACAddress="2C:59:17:00:42:16"; AvgSignalStrengthByChain=-66
+- 2.4G: STA wl2 connected to testpilot2G; MACAddress="2C:59:17:00:42:27"; AvgSignalStrengthByChain=-15
+- current YAML treats negative integer values as pass on all bands, which mismatches workbook all-fail semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D113)
+
+> This checkpoint records the `D113 getStationStats() AvgSignalStrength` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=84`, `block=155`, `needs_pass3=0`
+- `D113 getStationStats() AvgSignalStrength` recorded as `avgsignalstrength_workbook_all_fail_vs_yaml_integer_presence_pass_scope_mismatch`
+- workbook row 113 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- focused run `20260509T210227174794` reported `Pass / N/A / N/A`
+- official YAML is scoped to 5G only and treats integer presence as pass; 5G observed `AvgSignalStrength=0`
+- workbook command output contrasts `AvgSignalStrength=0` with non-zero driver `smoothed rssi`, so current pass semantics do not match workbook all-fail result
+- next ready single-case Pass3 target: `D114`
+
+</details>
+
+### D113 getStationStats() AvgSignalStrength blocker evidence
+
+**STA 指令**
+
+```sh
+# testpilot setup_env connected STA wl0 to DUT 5G SSID testpilot5G.
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.getStationStats()"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T210227174794, DUT.log L204-L242
+- report shape: Pass / N/A / N/A, diagnostic_status=Pass
+- workbook row 113 expects Failed/Failed/Failed -> normalized Fail/Fail/Fail
+- assoclist 2C:59:17:00:42:15
+- AvgSignalStrength = 0
+- AvgSignalStrengthByChain = -26
+- MACAddress = "2C:59:17:00:42:15"
+- current 5G-only YAML treats integer presence as pass, which mismatches workbook all-fail semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D112)
+
+> This checkpoint records the `D112 getStationStats() AuthenticationState` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=84`, `block=155`, `needs_pass3=0`
+- `D112 getStationStats() AuthenticationState` recorded as `getstationstats_authenticationstate_workbook_all_bands_vs_yaml_5g_only_scope_mismatch`
+- workbook row 112 raw value is `Pass / Pass / Pass`
+- focused run `20260509T205911940785` reported `Pass / N/A / N/A`
+- official YAML is scoped to 5G only; 5G passed after retry with `assoclist 2C:59:17:00:42:15` and `AuthenticationState=1`
+- attempt 1 saw transient `AuthenticationState=0`; retry settled to workbook-expected 5G value
+- 6G/2.4G workbook pass expectations are not projected by this 5G-only topology case
+- next ready single-case Pass3 target: `D113`
+
+</details>
+
+### D112 getStationStats() AuthenticationState blocker evidence
+
+**STA 指令**
+
+```sh
+# testpilot setup_env connected STA wl0 to DUT 5G SSID testpilot5G.
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.getStationStats()"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T205911940785, DUT.log L511-L549
+- report shape: Pass / N/A / N/A, diagnostic_status=Pass
+- workbook row 112 expects Pass/Pass/Pass
+- assoclist 2C:59:17:00:42:15
+- AuthenticationState = 1
+- MACAddress = "2C:59:17:00:42:15"
+- first attempt showed AuthenticationState = 0 at DUT.log L219, then retry passed
+- current official YAML bands list is 5g only, so 6G/2.4G workbook pass expectations are not represented
+```
+
+## Checkpoint summary (2026-05-09 0506-D111)
+
+> This checkpoint records the `D111 getStationStats() AssociationTime` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=84`, `block=155`, `needs_pass3=0`
+- `D111 getStationStats() AssociationTime` recorded as `getstationstats_associationtime_workbook_all_bands_vs_yaml_5g_only_scope_mismatch`
+- workbook row 111 raw value is `Pass / Pass / Pass`
+- focused run `20260509T205644065287` reported `Pass / N/A / N/A`
+- official YAML is scoped to 5G only; 5G passed with `assoclist 2C:59:17:00:42:15` and `AssociationTime="2026-04-23T10:50:21Z"`
+- 6G/2.4G workbook pass expectations are not projected by this 5G-only topology case
+- next ready single-case Pass3 target: `D112`
+
+</details>
+
+### D111 getStationStats() AssociationTime blocker evidence
+
+**STA 指令**
+
+```sh
+# testpilot setup_env connected STA wl0 to DUT 5G SSID testpilot5G.
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.getStationStats()"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T205644065287, DUT.log L204-L242
+- report shape: Pass / N/A / N/A, diagnostic_status=Pass
+- workbook row 111 expects Pass/Pass/Pass
+- assoclist 2C:59:17:00:42:15
+- AssociationTime = "2026-04-23T10:50:21Z"
+- MACAddress = "2C:59:17:00:42:15"
+- current official YAML bands list is 5g only, so 6G/2.4G workbook pass expectations are not represented
+```
+
+## Checkpoint summary (2026-05-09 0506-D110)
+
+> This checkpoint records the `D110 getStationStats() Active` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=84`, `block=155`, `needs_pass3=0`
+- `D110 getStationStats() Active` recorded as `getstationstats_active_workbook_all_bands_vs_yaml_5g_only_scope_mismatch`
+- workbook row 110 raw value is `Pass / Pass / Pass`
+- focused run `20260509T205249281684` reported `Pass / N/A / N/A`
+- official YAML is scoped to 5G only; 5G passed after retry with STA MAC `2C:59:17:00:42:15`, `TopLevelActive=1`, `StatsMatchesAssoc=1`, and `DriverAuthorized=1`
+- 6G/2.4G workbook pass expectations are not projected by this 5G-only topology case
+- next ready single-case Pass3 target: `D111`
+
+</details>
+
+### D110 getStationStats() Active blocker evidence
+
+**STA 指令**
+
+```sh
+# testpilot setup_env connected STA wl0 to DUT 5G SSID testpilot5G.
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.getStationStats()"
+wl -i wl0 sta_info "$(wl -i wl0 assoclist | awk 'NR==1 {print $2}')"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T205249281684, DUT.log L461-L494
+- report shape: Pass / N/A / N/A, diagnostic_status=Pass
+- workbook row 110 expects Pass/Pass/Pass
+- AssocMac=2C:59:17:00:42:15
+- StationStatsMac=2C:59:17:00:42:15
+- TopLevelActive=1
+- StatsMatchesAssoc=1
+- DriverStateLine=_state:_AUTHENTICATED_ASSOCIATED_AUTHORIZED
+- DriverAuthorized=1
+- current official YAML bands list is 5g only, so 6G/2.4G workbook pass expectations are not represented
+```
+
+## Checkpoint summary (2026-05-09 0506-D109)
+
+> This checkpoint records the `D109 getStationStats()` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=84`, `block=155`, `needs_pass3=0`
+- `D109 getStationStats()` recorded as `getstationstats_workbook_all_bands_vs_yaml_5g_only_scope_mismatch`
+- workbook row 109 raw value is `Pass / Pass / Pass`
+- focused run `20260509T205009364221` reported `Pass / N/A / N/A`
+- official YAML is scoped to 5G only; 5G passed with STA MAC `2C:59:17:00:42:15`, `TopLevelActive=1`, and `StatsMatchesAssoc=1`
+- 6G/2.4G workbook pass expectations are not projected by this 5G-only topology case
+- next ready single-case Pass3 target: `D110`
+
+</details>
+
+### D109 getStationStats() blocker evidence
+
+**STA 指令**
+
+```sh
+# testpilot setup_env connected STA wl0 to DUT 5G SSID testpilot5G.
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.getStationStats()"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T205009364221, DUT.log L204-L225
+- report shape: Pass / N/A / N/A, diagnostic_status=Pass
+- workbook row 109 expects Pass/Pass/Pass
+- AssocMac=2C:59:17:00:42:15
+- StationStatsMac=2C:59:17:00:42:15
+- TopLevelActive=1
+- StatsMatchesAssoc=1
+- current official YAML bands list is 5g only, so 6G/2.4G workbook pass expectations are not represented
+```
+
+## Checkpoint summary (2026-05-09 0506-D108)
+
+> This checkpoint records the `D108 UUID` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=84`, `block=155`, `needs_pass3=0`
+- `D108 UUID` recorded as `uuid_mixed_band_result_projection_mismatch_outside_audit_allowlist`
+- workbook row 108 raw value is `Pass / Not Support / Pass`, normalized to `Pass / Fail / Pass`
+- source 宣告 WPS `UUID` is visible in beacon frames, uses hex UUID format, and validates UUID format
+- focused run `20260509T204807540979` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 getters returned the same valid UUID; wl0/wl2 hostapd projected `uuid=`, while wl1/6G had no `uuid=`
+- cleanup command `1161218b4c2b40f9a112b384e8a9afc8` confirmed AP1/AP3/AP5 UUID readbacks, wl0/wl2 `uuid=`, wl1 `NO_UUID`, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D109`
+
+</details>
+
+### D108 UUID blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.WPS.UUID?"
+ubus-cli "WiFi.AccessPoint.3.WPS.UUID?"
+ubus-cli "WiFi.AccessPoint.5.WPS.UUID?"
+grep "^uuid=" /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T204807540979, DUT.log L5-L28
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: UUID5g=47584a4e-464c-f545-f64e-4e4547584a4e; HostapdUuid5g=47584a4e-464c-f545-f64e-4e4547584a4e
+- 6G/AP3: UUID6g=47584a4e-464c-f545-f64e-4e4547584a4e; HostapdUuid6g empty
+- 2.4G/AP5: UUID24g=47584a4e-464c-f545-f64e-4e4547584a4e; HostapdUuid24g=47584a4e-464c-f545-f64e-4e4547584a4e
+- compare against audit/0506.xlsx row 108: expected Pass/Not Support/Pass -> normalized Pass/Fail/Pass; actual Pass/Pass/Pass
+- cleanup command 1161218b4c2b40f9a112b384e8a9afc8: AP1/AP3/AP5 UUID readbacks, wl0/wl2 uuid=, wl1 NO_UUID, and wl0/wl1/wl2 were up
+- source citation: fs/etc/amx/wld/wld_accesspoint.odl L1072-L1083 declares UUID and validates UUID format
+```
+
+## Checkpoint summary (2026-05-09 0506-D107)
+
+> This checkpoint records the `D107 SelfPIN` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=85`, `block=154`, `needs_pass3=0`
+- workbook row `D106 RelayCredentialsEnable` currently has no discoverable official YAML under `plugins/wifi_llapi/cases/`; strict single-case execution therefore continued to `D107`
+- `D107 SelfPIN` confirmed as `workbook_to_be_test_normalized_fail_matches_runtime_fail_no_yaml_edit`
+- workbook row 107 raw value is `To be test / To be test / To be test`, normalized to `Fail / Fail / Fail`
+- source notes SelfPIN is randomly generated and not guaranteed constant between generateSelfPIN calls
+- focused run `20260509T204523534438` reported `Fail / Fail / Fail`
+- runtime returns quoted `SelfPIN` strings, while current capture expects unquoted numeric values and captured empty fields
+- cleanup command `05816c9eec2c4bfd80636d5d24c1add2` confirmed AP1/AP3/AP5 `SelfPIN="54836242"`, no hostapd `ap_pin`, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D108`
+
+</details>
+
+### D107 SelfPIN confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.WPS.SelfPIN?"
+ubus-cli "WiFi.AccessPoint.3.WPS.SelfPIN?"
+ubus-cli "WiFi.AccessPoint.5.WPS.SelfPIN?"
+grep "ap_pin" /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T204523534438, DUT.log L5-L177
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- workbook row 107 raw To be test/To be test/To be test normalizes to Fail/Fail/Fail; actual Fail/Fail/Fail
+- runtime setter echoes quoted SelfPIN strings, but current capture grep expected unquoted numeric SelfPIN=... and captured empty values
+- cleanup command 05816c9eec2c4bfd80636d5d24c1add2: AP1/AP3/AP5 SelfPIN="54836242", no hostapd ap_pin lines, and wl0/wl1/wl2 were up
+- source citation: fs/etc/amx/wld/wld_accesspoint.odl L1001-L1008 describes SelfPIN as randomly generated and not guaranteed constant
+```
+
+## Checkpoint summary (2026-05-09 0506-D105)
+
+> This checkpoint records the `D105 PairingInProgress` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=86`, `block=154`, `needs_pass3=0`
+- `D105 PairingInProgress` recorded as `pairinginprogress_requires_longer_hostapd_settle_and_mixed_band_projection_outside_audit_allowlist`
+- workbook row 105 raw value is `Pass / Not Support / Pass`, normalized to `Pass / Fail / Pass`
+- source 宣告 `InitiateWPSPBC()` returns `Success`, `Error_Not_Ready`, `Error_Timeout`, or `Error_Other`; `PairingInProgress` means WPS pairing is busy after pushButton and before completion/timer expiry
+- focused run `20260509T203909166409` reported `Fail / Fail / Fail`
+- AP1/AP5 PBC was attempted after only 2s hostapd settle and returned `Error_Not_Ready`; AP3/6G returned `Error_Other`; all PairingInProgress values stayed `0`
+- manual cross-checks `e78bdb05509e4d6db8e09018ab698914` and `c5326761dfd9409dbc56413f9a55b1ac` showed AP1/AP5 pass after an 8s settle: `InitiateWPSPBC()` returned `Success` and `PairingInProgress=1`
+- cleanup command `8ade1cede964448ba23413cd631ecc13` reset AP1/AP3/AP5 `WPS.Enable=0`, `PairingInProgress=0`, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D106`
+
+</details>
+
+### D105 PairingInProgress blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.WPS.Enable=1"
+sleep 8
+ubus-cli "WiFi.AccessPoint.1.WPS.InitiateWPSPBC()"
+ubus-cli "WiFi.AccessPoint.1.WPS.PairingInProgress?"
+ubus-cli "WiFi.AccessPoint.1.WPS.cancelWPSPairing()"
+ubus-cli "WiFi.AccessPoint.1.WPS.Enable=0"
+ubus-cli "WiFi.AccessPoint.5.WPS.Enable=1"
+sleep 8
+ubus-cli "WiFi.AccessPoint.5.WPS.InitiateWPSPBC()"
+ubus-cli "WiFi.AccessPoint.5.WPS.PairingInProgress?"
+ubus-cli "WiFi.AccessPoint.5.WPS.cancelWPSPairing()"
+ubus-cli "WiFi.AccessPoint.5.WPS.Enable=0"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T203909166409, DUT.log L5-L153 and L159-L307
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- focused 5G/AP1: InitiateWPSPBC() returned Error_Not_Ready after 2s settle; PairingInProgress5g=0
+- focused 6G/AP3: InitiateWPSPBC() returned Error_Other; PairingInProgress6g=0
+- focused 2.4G/AP5: InitiateWPSPBC() returned Error_Not_Ready after 2s settle; PairingInProgress24g=0
+- manual command e78bdb05509e4d6db8e09018ab698914: after 8s settle AP1 wps_state=2, InitiateWPSPBC() returned Success, PairingInProgress=1, then restored Enable=0
+- manual command c5326761dfd9409dbc56413f9a55b1ac: after 8s settle AP5 wps_state=2, InitiateWPSPBC() returned Success, PairingInProgress=1, then restored Enable=0
+- cleanup command 8ade1cede964448ba23413cd631ecc13: AP1/AP3/AP5 WPS.Enable=0, PairingInProgress=0, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1010-L1018 defines InitiateWPSPBC status values; L1066-L1070 defines PairingInProgress
+```
+
+## Checkpoint summary (2026-05-09 0506-D104)
+
+> This checkpoint records the `D104 Enable` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=87`, `block=153`, `needs_pass3=0`
+- `D104 Enable` recorded as `wps_enable_workbook_all_fail_vs_runtime_diagnostic_pass_outside_audit_allowlist`
+- workbook row 104 raw value is `Failed / Not Support / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 WPS `Enable` 是 persistent bool，default false；實作將 Enable 對應到 `<ifname>_wps_mode` enabled/disabled 並觸發 hostapd action
+- focused run `20260509T203431300992` reported `Pass / Pass / Pass`
+- AP1/AP5 WPS `Enable` exact-closed `0 -> 1 -> 0` with hostapd `wps_state` `0 -> 2 -> 0`; AP3/6G accepted getter/setter but hostapd `wps_state` stayed `0`
+- cleanup command `8b363d42f4ed4bafbc282201384d8f91` reset AP1/AP3/AP5 `WPS.Enable=0`, confirmed first hostapd `wps_state=0` on wl0/wl1/wl2, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D105`
+
+</details>
+
+### D104 Enable blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.WPS.Enable=0"
+ubus-cli "WiFi.AccessPoint.1.WPS.Enable=1"
+ubus-cli "WiFi.AccessPoint.1.WPS.Enable=0"
+ubus-cli "WiFi.AccessPoint.3.WPS.Enable=0"
+ubus-cli "WiFi.AccessPoint.3.WPS.Enable=1"
+ubus-cli "WiFi.AccessPoint.3.WPS.Enable=0"
+ubus-cli "WiFi.AccessPoint.5.WPS.Enable=0"
+ubus-cli "WiFi.AccessPoint.5.WPS.Enable=1"
+ubus-cli "WiFi.AccessPoint.5.WPS.Enable=0"
+grep 'wps_state=' /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T203431300992, DUT.log L5-L154
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: Enable 0 -> 1 -> 0; wps_state 0 -> 2 -> 0
+- 6G/AP3: Enable 0 -> 1 -> 0; wps_state stayed 0
+- 2.4G/AP5: Enable 0 -> 1 -> 0; wps_state 0 -> 2 -> 0
+- compare against audit/0506.xlsx row 104: expected Failed/Not Support/Failed -> normalized Fail/Fail/Fail; actual Pass/Pass/Pass
+- cleanup command 8b363d42f4ed4bafbc282201384d8f91: AP1/AP3/AP5 WPS.Enable=0, first hostapd wps_state=0 on wl0/wl1/wl2, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L942-L947 declares WPS Enable; wldm_lib_wifi.c L13254-L13305 maps Enable to <ifname>_wps_mode; wldm_lib.c L4418-L4424 applies hostapd action
+```
+
+## Checkpoint summary (2026-05-09 0506-D103)
+
+> This checkpoint records the `D103 Configured` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=88`, `block=152`, `needs_pass3=0`
+- workbook row `D102 ConfigMethodsSupported` currently has no discoverable official YAML under `plugins/wifi_llapi/cases/`; strict single-case execution therefore continued to `D103`
+- `D103 Configured` recorded as `configured_mixed_band_result_projection_mismatch_outside_audit_allowlist`
+- workbook row 103 raw value is `Pass / Not Support / Pass`, normalized to `Pass / Fail / Pass`
+- source 宣告 WPS `Configured` 是 persistent bool，用於 toggle WPS in unconfigured mode，default true
+- focused run `20260509T203211007093` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 WPS `Configured` getters all returned `1`
+- cleanup command `6ea2ed3845b144dab5752f3caf0b87b0` confirmed AP1/AP3/AP5 `Configured=1`, wl0/wl2 `wps_state=2/2`, wl1 `wps_state=0/0`, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D104`
+
+</details>
+
+### D103 Configured blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.WPS.Configured?'
+grep '^wps_state=' /tmp/wl0_hapd.conf || echo NO_WPS_STATE_5G
+ubus-cli 'WiFi.AccessPoint.3.WPS.Configured?'
+grep '^wps_state=' /tmp/wl1_hapd.conf || echo NO_WPS_STATE_6G
+ubus-cli 'WiFi.AccessPoint.5.WPS.Configured?'
+grep '^wps_state=' /tmp/wl2_hapd.conf || echo NO_WPS_STATE_24G
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T203211007093, DUT.log L13-L31
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: Configured=1
+- 6G/AP3: Configured=1
+- 2.4G/AP5: Configured=1
+- compare against audit/0506.xlsx row 103: expected Pass/Not Support/Pass -> normalized Pass/Fail/Pass; actual Pass/Pass/Pass
+- cleanup command 6ea2ed3845b144dab5752f3caf0b87b0: AP1/AP3/AP5 Configured=1, wl0/wl2 wps_state=2/2, wl1 wps_state=0/0, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1058-L1064 declares WPS Configured
+```
+
+## Checkpoint summary (2026-05-09 0506-D101)
+
+> This checkpoint records the `D101 ConfigMethodsEnabled` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=89`, `block=151`, `needs_pass3=0`
+- workbook row `D100 WMMEnable` currently has no discoverable official YAML under `plugins/wifi_llapi/cases/`; strict single-case execution therefore continued to `D101`
+- `D101 ConfigMethodsEnabled` recorded as `configmethodsenabled_mixed_band_result_projection_mismatch_outside_audit_allowlist`
+- workbook row 101 raw value is `Pass / Failed / Pass`, normalized to `Pass / Fail / Pass`
+- source 宣告 WPS `ConfigMethodsEnabled` 是 persistent string，其值必須是 supported methods 的成員
+- focused run `20260509T202941226334` reported `Pass / Pass / Pass`
+- AP1/AP5 returned `PhysicalPushButton,VirtualPushButton` and hostapd `config_methods=physical_push_button virtual_push_button`
+- AP3/6G returned `None` and had no hostapd `config_methods` under WPA3/WPS-not-supported baseline
+- cleanup command `a37341a8f2864e8197036da67661bdd8` confirmed the same AP1/AP3/AP5 state and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D102`
+
+</details>
+
+### D101 ConfigMethodsEnabled blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.WPS.ConfigMethodsEnabled?'
+grep '^config_methods=' /tmp/wl0_hapd.conf || echo NO_CFG_METHODS_5G
+ubus-cli 'WiFi.AccessPoint.3.WPS.ConfigMethodsEnabled?'
+grep '^config_methods=' /tmp/wl1_hapd.conf || echo NO_CFG_METHODS_6G
+ubus-cli 'WiFi.AccessPoint.5.WPS.ConfigMethodsEnabled?'
+grep '^config_methods=' /tmp/wl2_hapd.conf || echo NO_CFG_METHODS_24G
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T202941226334, DUT.log L15-L49
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: CfgEnabled=PhysicalPushButton,VirtualPushButton; HapdCfg=physical_push_button virtual_push_button
+- 6G/AP3: CfgEnabled=None; HapdCfg empty / no config_methods under WPA3 WPS-not-supported baseline
+- 2.4G/AP5: CfgEnabled=PhysicalPushButton,VirtualPushButton; HapdCfg=physical_push_button virtual_push_button
+- compare against audit/0506.xlsx row 101: expected Pass/Failed/Pass -> normalized Pass/Fail/Pass; actual Pass/Pass/Pass
+- cleanup command a37341a8f2864e8197036da67661bdd8: AP1/AP5 retained config_methods, AP3 retained None/no config_methods, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L980-L986 declares ConfigMethodsEnabled
+```
+
+## Checkpoint summary (2026-05-09 0506-D099)
+
+> This checkpoint records the `D099 WMMCapability` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=90`, `block=150`, `needs_pass3=0`
+- `D099 WMMCapability` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 99 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `WMMCapability` 是 read-only bool，代表 AP 是否支援 WMM access categories
+- focused run `20260509T202718927662` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 `WMMCapability` returned `1`, and first-BSS hostapd `wmm_enabled=1`
+- cleanup command `61dd7a9e188f4444a510a16dc54d983f` confirmed AP1/AP3/AP5 `WMMCapability=1`, wl0/wl1/wl2 `cap` includes `wme`, hostapd `wmm_enabled=1`, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D100`
+
+</details>
+
+### D099 WMMCapability confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.WMMCapability?'
+grep 'wmm_enabled=' /tmp/wl0_hapd.conf | head -1
+wl -i wl0 cap | grep -o wme
+ubus-cli 'WiFi.AccessPoint.3.WMMCapability?'
+grep 'wmm_enabled=' /tmp/wl1_hapd.conf | head -1
+wl -i wl1 cap | grep -o wme
+ubus-cli 'WiFi.AccessPoint.5.WMMCapability?'
+grep 'wmm_enabled=' /tmp/wl2_hapd.conf | head -1
+wl -i wl2 cap | grep -o wme
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T202718927662, DUT.log L13-L43
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: WMMCapability=1 and HapdWmm=1
+- 6G/AP3: WMMCapability=1 and HapdWmm=1
+- 2.4G/AP5: WMMCapability=1 and HapdWmm=1
+- compare against audit/0506.xlsx row 99: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup command 61dd7a9e188f4444a510a16dc54d983f: AP1/AP3/AP5 WMMCapability=1, wl0/wl1/wl2 cap includes wme, hostapd wmm_enabled=1, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L275-L277 declares WMMCapability semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D098)
+
+> This checkpoint records the `D098 WDSEnable` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=90`, `block=150`, `needs_pass3=0`
+- workbook rows `D096 UAPSDEnable` and `D097 VendorIEs` currently have no discoverable official YAML under `plugins/wifi_llapi/cases/`; strict single-case execution therefore continued to `D098`
+- `D098 WDSEnable` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 98 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `WDSEnable` 是 persistent bool for WDS 4MAC mode；Broadcom setter/getter path maps it to driver `dwds`
+- focused run `20260509T202340125875` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 getter and driver `dwds` exact-closed `0 -> 1 -> 0`
+- cleanup command `8207b7892f794173bd4e205e9bb70b73` confirmed AP1/AP3/AP5 `WDSEnable=0`, wl0/wl1/wl2 `dwds=0`, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D099`
+
+</details>
+
+### D098 WDSEnable confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.WDSEnable?'
+wl -i wl0 dwds
+ubus-cli WiFi.AccessPoint.1.WDSEnable=1
+ubus-cli WiFi.AccessPoint.1.WDSEnable=0
+ubus-cli 'WiFi.AccessPoint.3.WDSEnable?'
+wl -i wl1 dwds
+ubus-cli WiFi.AccessPoint.3.WDSEnable=1
+ubus-cli WiFi.AccessPoint.3.WDSEnable=0
+ubus-cli 'WiFi.AccessPoint.5.WDSEnable?'
+wl -i wl2 dwds
+ubus-cli WiFi.AccessPoint.5.WDSEnable=1
+ubus-cli WiFi.AccessPoint.5.WDSEnable=0
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T202340125875, DUT.log L8-L126
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: Baseline=0, DriverBaseline=0, AfterSet=1, DriverAfterSet=1, AfterRestore=0, DriverAfterRestore=0
+- 6G/AP3: Baseline=0, DriverBaseline=0, AfterSet=1, DriverAfterSet=1, AfterRestore=0, DriverAfterRestore=0
+- 2.4G/AP5: Baseline=0, DriverBaseline=0, AfterSet=1, DriverAfterSet=1, AfterRestore=0, DriverAfterRestore=0
+- compare against audit/0506.xlsx row 98: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup command 8207b7892f794173bd4e205e9bb70b73: AP1/AP3/AP5 WDSEnable=0, wl0/wl1/wl2 dwds=0, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L336-L342 declares WDSEnable; wifi_ap.c L912-L923 maps setter to KEY_BDK_DWDS; wifi_ap.c L1357-L1365 maps BDK DWDS back to WDSEnable
+```
+
+## Checkpoint summary (2026-05-09 0506-D095)
+
+> This checkpoint records the `D095 UAPSDCapability` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=90`, `block=150`, `needs_pass3=0`
+- `D095 UAPSDCapability` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 95 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `UAPSDCapability` 是 read-only bool，代表 AP 是否支援 WMM U-APSD；U-APSD support implies WMM support
+- focused run `20260509T202107729534` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 `UAPSDCapability` returned `1`; hostapd `uapsd_advertisement_enabled=0` and driver `wme_apsd=0` stayed as operational enablement state
+- cleanup command `1133af0f1bfb4261a76f820dc6359691` confirmed AP1/AP3/AP5 `UAPSDCapability=1`, wl0/wl1/wl2 `cap` includes `wme`, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D096`
+
+</details>
+
+### D095 UAPSDCapability confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.UAPSDCapability?'
+grep 'uapsd_advertisement_enabled=' /tmp/wl0_hapd.conf | head -1
+wl -i wl0 wme_apsd
+wl -i wl0 cap | grep -o wme
+ubus-cli 'WiFi.AccessPoint.3.UAPSDCapability?'
+grep 'uapsd_advertisement_enabled=' /tmp/wl1_hapd.conf | head -1
+wl -i wl1 wme_apsd
+wl -i wl1 cap | grep -o wme
+ubus-cli 'WiFi.AccessPoint.5.UAPSDCapability?'
+grep 'uapsd_advertisement_enabled=' /tmp/wl2_hapd.conf | head -1
+wl -i wl2 wme_apsd
+wl -i wl2 cap | grep -o wme
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T202107729534, DUT.log L13-L52
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: UAPSDCapability=1, HapdUapsd=0, DriverWmeApsd=0
+- 6G/AP3: UAPSDCapability=1, HapdUapsd=0, DriverWmeApsd=0
+- 2.4G/AP5: UAPSDCapability=1, HapdUapsd=0, DriverWmeApsd=0
+- compare against audit/0506.xlsx row 95: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup command 1133af0f1bfb4261a76f820dc6359691: AP1/AP3/AP5 UAPSDCapability=1, wl0/wl1/wl2 cap includes wme, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L278-L281 declares UAPSDCapability semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D094)
+
+> This checkpoint records the `D094 Status` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=90`, `block=150`, `needs_pass3=0`
+- `D094 Status` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 94 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 AP `Status` 是 read-only enum：`Disabled` / `Enabled` / `Error_Misconfigured` / `Error`
+- focused run `20260509T201907376086` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 `Status` returned `Enabled`, and wl0/wl1/wl2 driver BSS returned `up`
+- cleanup command `1943a4f0a0064391bf021c8940b6a404` confirmed AP1/AP3/AP5 `Status="Enabled"` and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D095`
+
+</details>
+
+### D094 Status confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.Status?'
+wl -i wl0 bss
+ubus-cli 'WiFi.AccessPoint.3.Status?'
+wl -i wl1 bss
+ubus-cli 'WiFi.AccessPoint.5.Status?'
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T201907376086, DUT.log L5-L25
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: Status=Enabled and DriverBss=up
+- 6G/AP3: Status=Enabled and DriverBss=up
+- 2.4G/AP5: Status=Enabled and DriverBss=up
+- compare against audit/0506.xlsx row 94: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup command 1943a4f0a0064391bf021c8940b6a404: AP1/AP3/AP5 Status=Enabled and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L221-L235 declares AP Status enum
+```
+
+## Checkpoint summary (2026-05-09 0506-D093)
+
+> This checkpoint records the `D093 SSIDAdvertisementEnabled` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=90`, `block=150`, `needs_pass3=0`
+- `D093 SSIDAdvertisementEnabled` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 93 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `SSIDAdvertisementEnabled` 是 persistent bool，表示 beacon 是否包含 SSID name
+- focused run `20260509T201626604191` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 getters all stayed `1`, and hostapd first-BSS `ignore_broadcast_ssid` stayed `0`
+- cleanup command `e44ac69aa03944cab3171f994b7dbd33` confirmed AP1/AP3/AP5 `SSIDAdvertisementEnabled=1`, wl0/wl1/wl2 `ignore_broadcast_ssid=0/0`, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D094`
+
+</details>
+
+### D093 SSIDAdvertisementEnabled confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.SSIDAdvertisementEnabled?'
+grep 'ignore_broadcast_ssid=' /tmp/wl0_hapd.conf | head -1
+ubus-cli WiFi.AccessPoint.1.SSIDAdvertisementEnabled=1
+ubus-cli 'WiFi.AccessPoint.3.SSIDAdvertisementEnabled?'
+grep 'ignore_broadcast_ssid=' /tmp/wl1_hapd.conf | head -1
+ubus-cli WiFi.AccessPoint.3.SSIDAdvertisementEnabled=1
+ubus-cli 'WiFi.AccessPoint.5.SSIDAdvertisementEnabled?'
+grep 'ignore_broadcast_ssid=' /tmp/wl2_hapd.conf | head -1
+ubus-cli WiFi.AccessPoint.5.SSIDAdvertisementEnabled=1
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T201626604191, DUT.log L15-L183
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: BaselineAdv=1, BaselineHapd=0, GetterAdv=1, HapdAfterSet=0, RestoredAdv=1, RestoredHapd=0
+- 6G/AP3: BaselineAdv=1, BaselineHapd=0, GetterAdv=1, HapdAfterSet=0, RestoredAdv=1, RestoredHapd=0
+- 2.4G/AP5: BaselineAdv=1, BaselineHapd=0, GetterAdv=1, HapdAfterSet=0, RestoredAdv=1, RestoredHapd=0
+- compare against audit/0506.xlsx row 93: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup command e44ac69aa03944cab3171f994b7dbd33: AP1/AP3/AP5 SSIDAdvertisementEnabled=1, wl0/wl1/wl2 ignore_broadcast_ssid=0/0, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L264-L268 declares SSIDAdvertisementEnabled
+```
+
+## Checkpoint summary (2026-05-09 0506-D092)
+
+> This checkpoint records the `D092 WEPKey` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=90`, `block=150`, `needs_pass3=0`
+- `D092 WEPKey` recorded as `wepkey_mixed_band_result_projection_mismatch_outside_audit_allowlist`
+- workbook row 92 raw value is `Pass / Not Support / Pass`, normalized to `Pass / Fail / Pass`
+- source 宣告 `Security.WEPKey` 只用於 `ModeEnabled=WEP-64/WEP-128`，且 read note 表示讀取時應回空字串
+- focused run `20260509T201224534820` reported `Pass / Pass / Pass`
+- AP1/AP5 support `WEP-128`, accepted/read back `WEPKey=AABBCCDDEEFF0`, and produced hostapd `wep_key0=41414242434344444545464630`
+- AP3/6G showed `ModesSupported=None,WPA3-Personal,OWE`, stayed `WPA3-Personal`, and had no hostapd `wep_key`
+- cleanup command `af5cdb0c4fdd4daf9284c04da799b345` confirmed no WEP lines on wl0/wl1/wl2 and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D093`
+
+</details>
+
+### D092 WEPKey blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.Security.ModesSupported?'
+ubus-cli 'WiFi.AccessPoint.1.Security.ModeEnabled?'
+grep -im1 '^wep_key' /tmp/wl0_hapd.conf || echo ABSENT
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WEP-128
+ubus-cli WiFi.AccessPoint.1.Security.WEPKey=AABBCCDDEEFF0
+ubus-cli 'WiFi.AccessPoint.1.Security.WEPKey?'
+ubus-cli WiFi.AccessPoint.1.Security.WEPKey=123456789ABCD
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+ubus-cli 'WiFi.AccessPoint.3.Security.ModesSupported?'
+ubus-cli 'WiFi.AccessPoint.3.Security.ModeEnabled?'
+grep -im1 '^wep_key' /tmp/wl1_hapd.conf || echo ABSENT
+ubus-cli 'WiFi.AccessPoint.5.Security.ModesSupported?'
+ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WEP-128
+ubus-cli WiFi.AccessPoint.5.Security.WEPKey=AABBCCDDEEFF0
+ubus-cli 'WiFi.AccessPoint.5.Security.WEPKey?'
+ubus-cli WiFi.AccessPoint.5.Security.WEPKey=123456789ABCD
+ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal
+grep -i wep /tmp/wl0_hapd.conf || echo NO_WEP_LINES_5G
+grep -i wep /tmp/wl1_hapd.conf || echo NO_WEP_LINES_6G
+grep -i wep /tmp/wl2_hapd.conf || echo NO_WEP_LINES_24G
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T201224534820, DUT.log L13-L234
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: ModesSupported includes WEP-128; ModeEnabled WPA2-Personal -> WEP-128; WEPKey readback AABBCCDDEEFF0; hostapd wep_key0=41414242434344444545464630; restored WPA2-Personal with no wep_key lines
+- 6G/AP3: ModesSupported=None,WPA3-Personal,OWE; ModeEnabled stayed WPA3-Personal; no wep_key before/after unsupported branch
+- 2.4G/AP5: ModesSupported includes WEP-128; ModeEnabled WPA2-Personal -> WEP-128; WEPKey readback AABBCCDDEEFF0; hostapd wep_key0=41414242434344444545464630; restored WPA2-Personal with no wep_key lines
+- compare against audit/0506.xlsx row 92: expected Pass/Not Support/Pass -> normalized Pass/Fail/Pass; actual Pass/Pass/Pass
+- cleanup command af5cdb0c4fdd4daf9284c04da799b345: no WEP lines on wl0/wl1/wl2, wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L588-L599 declares WEPKey and WEP-only semantics
+```
+
+## Checkpoint summary (2026-05-09 0506-D091)
+
+> This checkpoint records the `D091 SHA256Enable` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=91`, `block=149`, `needs_pass3=0`
+- `D091 SHA256Enable` recorded as `sha256enable_result_semantics_mismatch_outside_audit_allowlist`
+- workbook row 91 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `Security.SHA256Enable` 是 persistent bool，用於 extra WPA-key encryption protection；Broadcom integration 有對應 set/get handler
+- focused run `20260509T200954775983` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 accepted `SHA256Enable=1`, getters read back `1`, hostapd `wpa_key_mgmt` stayed unchanged without SHA256 suffix, and restore returned getters to `0`
+- cleanup command `bb276791cb4340f9b1d5f24339a74059` confirmed AP1/AP3/AP5 `SHA256Enable=0`, hostapd key-mgmt baseline, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D092`
+
+</details>
+
+### D091 SHA256Enable blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.Security.SHA256Enable?'
+grep '^wpa_key_mgmt=' /tmp/wl0_hapd.conf
+ubus-cli WiFi.AccessPoint.1.Security.SHA256Enable=1
+ubus-cli WiFi.AccessPoint.1.Security.SHA256Enable=0
+ubus-cli 'WiFi.AccessPoint.3.Security.SHA256Enable?'
+grep '^wpa_key_mgmt=' /tmp/wl1_hapd.conf
+ubus-cli WiFi.AccessPoint.3.Security.SHA256Enable=1
+ubus-cli WiFi.AccessPoint.3.Security.SHA256Enable=0
+ubus-cli 'WiFi.AccessPoint.5.Security.SHA256Enable?'
+grep '^wpa_key_mgmt=' /tmp/wl2_hapd.conf
+ubus-cli WiFi.AccessPoint.5.Security.SHA256Enable=1
+ubus-cli WiFi.AccessPoint.5.Security.SHA256Enable=0
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T200954775983
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: baseline SHA256Enable=0 and wpa_key_mgmt=WPA-PSK; setter/readback=1 but hostapd stayed WPA-PSK; restore=0
+- 6G/AP3: baseline SHA256Enable=0 and wpa_key_mgmt=SAE; setter/readback=1 but hostapd stayed SAE; restore=0
+- 2.4G/AP5: baseline SHA256Enable=0 and wpa_key_mgmt=WPA-PSK; setter/readback=1 but hostapd stayed WPA-PSK; restore=0
+- compare against audit/0506.xlsx row 91: expected Failed/Failed/Failed -> normalized Fail/Fail/Fail; actual Pass/Pass/Pass
+- cleanup command bb276791cb4340f9b1d5f24339a74059: AP1/AP3/AP5 SHA256Enable=0, key-mgmt baseline remained WPA-PSK/SAE/WPA-PSK, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L693-L695 declares SHA256Enable; userspace/public/libs/prpl_brcm/mods/mod-wifi/wifi_ap.c L1077-L1088 handles set
+```
+
+## Checkpoint summary (2026-05-09 0506-D090)
+
+> This checkpoint records the `D090 RekeyingInterval` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=92`, `block=148`, `needs_pass3=0`
+- `D090 RekeyingInterval` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 90 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `Security.RekeyingInterval` 是 persistent uint32，用於 WPA/WPA2/Mixed key re-generation interval
+- focused run `20260509T200718296244` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 getter and wl0/wl1/wl2 hostapd `wpa_group_rekey` exact-closed `0 -> 0 -> 0`
+- cleanup command `0ea144664e3141b6b16cbe86c9272fdc` confirmed AP1/AP3/AP5 `RekeyingInterval=0`, wl0/wl1/wl2 `wpa_group_rekey=0`, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D091`
+
+</details>
+
+### D090 RekeyingInterval confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.Security.RekeyingInterval?'
+grep '^wpa_group_rekey=' /tmp/wl0_hapd.conf
+ubus-cli WiFi.AccessPoint.1.Security.RekeyingInterval=0
+ubus-cli 'WiFi.AccessPoint.3.Security.RekeyingInterval?'
+grep '^wpa_group_rekey=' /tmp/wl1_hapd.conf
+ubus-cli WiFi.AccessPoint.3.Security.RekeyingInterval=0
+ubus-cli 'WiFi.AccessPoint.5.Security.RekeyingInterval?'
+grep '^wpa_group_rekey=' /tmp/wl2_hapd.conf
+ubus-cli WiFi.AccessPoint.5.Security.RekeyingInterval=0
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T200718296244
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: baseline getter=0 and hostapd wpa_group_rekey=0; after setter getter=0 and hostapd=0; restore kept 0
+- 6G/AP3: baseline getter=0 and hostapd wpa_group_rekey=0; after setter getter=0 and hostapd=0; restore kept 0
+- 2.4G/AP5: baseline getter=0 and hostapd wpa_group_rekey=0; after setter getter=0 and hostapd=0; restore kept 0
+- compare against audit/0506.xlsx row 90: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup command 0ea144664e3141b6b16cbe86c9272fdc: AP1/AP3/AP5 RekeyingInterval=0, wl0/wl1/wl2 wpa_group_rekey=0, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L630-L636 declares RekeyingInterval semantics/default
+```
+
+## Checkpoint summary (2026-05-09 0506-D089)
+
+> This checkpoint records the `D089 PreSharedKey` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=92`, `block=148`, `needs_pass3=0`
+- `D089 PreSharedKey` recorded as `presharedkey_result_semantics_mismatch_outside_audit_allowlist`
+- workbook row 89 raw value is `failed / Not Support / failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `Security.PreSharedKey` 是 64-char hex PSK；寫 `KeyPassPhrase` 會產生 `PreSharedKey`，且讀取時應回傳空字串
+- focused run `20260509T200445418275` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 northbound `PreSharedKey` setter/readback accepted the 64-char hex value and restored to empty
+- cleanup command `7b365c9675d14a88bdc01e776482be05` confirmed AP1/AP3/AP5 `PreSharedKey=""`, `KeyPassPhrase=00000000`, no hostapd `wpa_psk=` lines, and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D090`
+
+</details>
+
+### D089 PreSharedKey blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli 'WiFi.AccessPoint.1.Security.PreSharedKey?'
+ubus-cli 'WiFi.AccessPoint.1.Security.PreSharedKey="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"'
+ubus-cli 'WiFi.AccessPoint.1.Security.PreSharedKey=""'
+ubus-cli 'WiFi.AccessPoint.3.Security.PreSharedKey?'
+ubus-cli 'WiFi.AccessPoint.3.Security.PreSharedKey="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"'
+ubus-cli 'WiFi.AccessPoint.3.Security.PreSharedKey=""'
+ubus-cli 'WiFi.AccessPoint.5.Security.PreSharedKey?'
+ubus-cli 'WiFi.AccessPoint.5.Security.PreSharedKey="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"'
+ubus-cli 'WiFi.AccessPoint.5.Security.PreSharedKey=""'
+grep -E '^(wpa_psk|wpa_passphrase|sae_password)=' /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf || true
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T200445418275
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- AP1/AP3/AP5: PreSharedKey baseline empty, setter accepted a1b2...a1b2, getter read back the 64-char value, restore returned empty
+- compare against audit/0506.xlsx row 89: expected failed/Not Support/failed -> normalized Fail/Fail/Fail; actual Pass/Pass/Pass
+- cleanup command 7b365c9675d14a88bdc01e776482be05: AP1/AP3/AP5 PreSharedKey="", KeyPassPhrase=00000000, no hostapd wpa_psk lines, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L601-L611 documents PreSharedKey PSK semantics, readback empty behavior, and validation callback
+```
+
+## Checkpoint summary (2026-05-09 0506-D088)
+
+> This checkpoint records the `D088 ModesSupported` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=93`, `block=147`, `needs_pass3=0`
+- `D088 ModesSupported` recorded as `modessupported_24g_result_semantics_mismatch_outside_audit_allowlist`
+- workbook row 88 raw value is `Pass / Pass / Failed`, normalized to `Pass / Pass / Fail`
+- source 宣告 `Security.ModesSupported` 是 read-only string
+- focused run `20260509T200241880802` reported `Pass / Pass / Pass`
+- AP1/AP5 expose the full mode list including WPA/WPA2/WPA3/Enterprise/OWE; AP3 exposes the 6G-restricted `None,WPA3-Personal,OWE` list
+- setter attempts on AP1/AP3/AP5 all failed with read-only error 15
+- cleanup command `a24ed563fac045c1b36b6b90f731794b` confirmed the same getter lists and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D089`
+
+</details>
+
+### D088 ModesSupported blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only read-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.Security.ModesSupported?"
+ubus-cli WiFi.AccessPoint.1.Security.ModesSupported=WPA3-Personal
+ubus-cli "WiFi.AccessPoint.3.Security.ModesSupported?"
+ubus-cli WiFi.AccessPoint.3.Security.ModesSupported=WPA3-Personal
+ubus-cli "WiFi.AccessPoint.5.Security.ModesSupported?"
+ubus-cli WiFi.AccessPoint.5.Security.ModesSupported=WPA3-Personal
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T200241880802
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: ModesSupported=None,WEP-64,WEP-128,WEP-128iv,WPA-Personal,WPA2-Personal,WPA-WPA2-Personal,WPA3-Personal,WPA2-WPA3-Personal,WPA-Enterprise,WPA2-Enterprise,WPA-WPA2-Enterprise,OWE; setter failed error=15 read-only
+- 6G/AP3: ModesSupported=None,WPA3-Personal,OWE; setter failed error=15 read-only
+- 2.4G/AP5: ModesSupported=None,WEP-64,WEP-128,WEP-128iv,WPA-Personal,WPA2-Personal,WPA-WPA2-Personal,WPA3-Personal,WPA2-WPA3-Personal,WPA-Enterprise,WPA2-Enterprise,WPA-WPA2-Enterprise,OWE; setter failed error=15 read-only
+- compare against audit/0506.xlsx row 88: expected Pass/Pass/Failed -> normalized Pass/Pass/Fail; actual Pass/Pass/Pass
+- cleanup command a24ed563fac045c1b36b6b90f731794b: same getter lists remained and wl0/wl1/wl2 were up
+- source citation: fs/etc/amx/wld/wld_accesspoint.odl L564 declares ModesSupported as read-only
+```
+
+## Checkpoint summary (2026-05-09 0506-D087)
+
+> This checkpoint records the `D087 ModeEnabled` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=93`, `block=146`, `needs_pass3=0`
+- `D087 ModeEnabled` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 87 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `Security.ModeEnabled` 是 persistent string，並以 enum 驗證 security mode，其中包含 `WPA3-Personal`
+- focused run `20260509T195936303264` reported `Pass / Pass / Pass`
+- AP1/AP5 exact-closed `WPA2-Personal` / `WPA-PSK` -> `WPA3-Personal` / `SAE` / `ieee80211w=2` -> restored `WPA2-Personal`
+- AP3 stayed on the documented `WPA3-Personal` / `SAE` / `ieee80211w=2` baseline
+- cleanup command `e4a1d967e1884295a2176883b074f3f4` confirmed AP1/AP3/AP5 `ModeEnabled` restored to `WPA2-Personal` / `WPA3-Personal` / `WPA2-Personal`, with wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D088`
+
+</details>
+
+### D087 ModeEnabled confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
+grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl0_hapd.conf || true
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
+ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA2-Personal
+ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"
+grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl1_hapd.conf || true
+ubus-cli WiFi.AccessPoint.3.Security.ModeEnabled=WPA3-Personal
+ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"
+grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl2_hapd.conf || true
+ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA3-Personal
+ubus-cli WiFi.AccessPoint.5.Security.ModeEnabled=WPA2-Personal
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T195936303264
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: baseline WPA2-Personal / WPA-PSK / ieee80211w=0; after setter WPA3-Personal / SAE / ieee80211w=2; restored WPA2-Personal / WPA-PSK
+- 6G/AP3: baseline WPA3-Personal / SAE / ieee80211w=2; setter kept WPA3-Personal / SAE / ieee80211w=2; restore no-op kept WPA3-Personal
+- 2.4G/AP5: baseline WPA2-Personal / WPA-PSK / ieee80211w=0; after setter WPA3-Personal / SAE / ieee80211w=2; restored WPA2-Personal / WPA-PSK
+- compare against audit/0506.xlsx row 87: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup command e4a1d967e1884295a2176883b074f3f4: AP1/AP3/AP5 ModeEnabled restored to WPA2-Personal/WPA3-Personal/WPA2-Personal and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L752-L760 declares ModeEnabled semantics/default and enum validation, including WPA3-Personal in the enum continuation
+```
+
+## Checkpoint summary (2026-05-09 0506-D086)
+
+> This checkpoint records the `D086 MFPConfig` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=93`, `block=146`, `needs_pass3=0`
+- `D086 MFPConfig` recorded as `mixed_mfp_result_semantics_mismatch_outside_audit_allowlist`
+- workbook row 86 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `Security.MFPConfig` 是 persistent string，允許 `Disabled` / `Optional` / `Required`；Broadcom integration 以 `convert_security_mfp()` 在 prpl 字串與 BDK MFP 值間轉換
+- focused runs `20260509T195510937023` and `20260509T195647808632` both reported `Pass / Pass / Pass`
+- immediate evidence saw AP1/AP5 getter and hostapd MFP at `Disabled`, while AP3 getter was `Disabled` but hostapd stayed `SAE` + `Required`
+- settled cleanup command `c64dcd174c9e4f918da16b5dbc1edb0e` showed AP3 getter drifted to `Required`, wl0/wl2 hostapd had duplicate `ieee80211w=1` then `0`, wl1 stayed `SAE`/`Required`, and wl0/wl1/wl2 were `up`
+- next ready single-case Pass3 target: `D087`
+
+</details>
+
+### D086 MFPConfig blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
+ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled
+ubus-cli "WiFi.AccessPoint.1.Security.MFPConfig?"
+grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl0_hapd.conf || true
+ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"
+ubus-cli WiFi.AccessPoint.3.Security.MFPConfig=Disabled
+ubus-cli "WiFi.AccessPoint.3.Security.MFPConfig?"
+grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl1_hapd.conf || true
+ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"
+ubus-cli WiFi.AccessPoint.5.Security.MFPConfig=Disabled
+ubus-cli "WiFi.AccessPoint.5.Security.MFPConfig?"
+grep -E '^(wpa_key_mgmt|ieee80211w)' /tmp/wl2_hapd.conf || true
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T195647808632
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1 immediate: ModeEnabled=WPA2-Personal, GetterMfpConfig=Disabled, HostapdKeyMgmt=WPA-PSK, HostapdMfpConfig=Disabled, HostapdMfpRaw=0
+- 6G/AP3 immediate: ModeEnabled=WPA3-Personal, GetterMfpConfig=Disabled, HostapdKeyMgmt=SAE, HostapdMfpConfig=Required, HostapdMfpRaw=2
+- 2.4G/AP5 immediate: ModeEnabled=WPA2-Personal, GetterMfpConfig=Disabled, HostapdKeyMgmt=WPA-PSK, HostapdMfpConfig=Disabled, HostapdMfpRaw=0
+- compare against audit/0506.xlsx row 86: expected Failed/Failed/Failed -> normalized Fail/Fail/Fail; actual Pass/Pass/Pass
+- settled cleanup command c64dcd174c9e4f918da16b5dbc1edb0e: AP3 getter drifted to Required, wl0/wl2 hostapd had duplicate ieee80211w=1 then 0, wl1 stayed SAE/ieee80211w=2, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L775-L778 declares MFPConfig enum; userspace/public/libs/prpl_brcm/mods/mod-wifi/wifi_ap.c L579-L605 maps MFP values, L1029-L1047 handles set, and L1228-L1234 handles get
+```
+
+## Checkpoint summary (2026-05-09 0506-D085)
+
+> This checkpoint records the `D085 KeyPassPhrase` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=94`, `block=145`, `needs_pass3=0`
+- `D085 KeyPassPhrase` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 85 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `Security.KeyPassPhrase` 是 persistent string；寫入後會立即產生 `PreSharedKey`，並由 `wld_ap_validateKeyPassPhrase_pvf` 驗證
+- focused run `20260509T195011352332` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 getter and hostapd `wpa_passphrase` exact-closed `00000000 -> 0689388783 -> 00000000` when the leading-zero workbook value was quoted
+- cleanup command `fb84a6f9896d4f888ee2760b10672d86` confirmed AP1/AP3/AP5 getters and wl0/wl1/wl2 hostapd passphrases restored to `00000000`, with wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D086`
+
+</details>
+
+### D085 KeyPassPhrase confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.Security.KeyPassPhrase?"
+grep -m1 '^wpa_passphrase=' /tmp/wl0_hapd.conf || true
+ubus-cli 'WiFi.AccessPoint.1.Security.KeyPassPhrase="0689388783"'
+ubus-cli 'WiFi.AccessPoint.1.Security.KeyPassPhrase="00000000"'
+ubus-cli "WiFi.AccessPoint.3.Security.KeyPassPhrase?"
+grep -m1 '^wpa_passphrase=' /tmp/wl1_hapd.conf || true
+ubus-cli 'WiFi.AccessPoint.3.Security.KeyPassPhrase="0689388783"'
+ubus-cli 'WiFi.AccessPoint.3.Security.KeyPassPhrase="00000000"'
+ubus-cli "WiFi.AccessPoint.5.Security.KeyPassPhrase?"
+grep -m1 '^wpa_passphrase=' /tmp/wl2_hapd.conf || true
+ubus-cli 'WiFi.AccessPoint.5.Security.KeyPassPhrase="0689388783"'
+ubus-cli 'WiFi.AccessPoint.5.Security.KeyPassPhrase="00000000"'
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T195011352332
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: getter and hostapd wpa_passphrase exact-closed 00000000 -> 0689388783 -> 00000000
+- 6G/AP3: getter and hostapd wpa_passphrase exact-closed 00000000 -> 0689388783 -> 00000000
+- 2.4G/AP5: getter and hostapd wpa_passphrase exact-closed 00000000 -> 0689388783 -> 00000000
+- compare against audit/0506.xlsx row 85: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup command fb84a6f9896d4f888ee2760b10672d86: AP1/AP3/AP5 KeyPassPhrase=00000000, wl0/wl1/wl2 hostapd wpa_passphrase=00000000, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L604-L606 documents KeyPassPhrase writing PreSharedKey, L624-L627 declares length guidance and validation callback
+```
+
+## Checkpoint summary (2026-05-09 0506-D084)
+
+> This checkpoint records the `D084 EncryptionMode` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=94`, `block=145`, `needs_pass3=0`
+- `D084 EncryptionMode` recorded as `hardcoded_default_result_semantics_mismatch_outside_audit_allowlist`
+- workbook row 84 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `Security.EncryptionMode` 是 persistent string，default `Default`，enum 為 `Default` / `AES` / `TKIP` / `TKIP-AES`
+- focused run `20260509T194710374291` reported `Pass / Pass / Pass` after retry
+- AP1/AP3/AP5 all returned hardcoded `EncryptionMode=Default` while hostapd exposed real WPA-PSK/SAE + CCMP security state
+- current YAML treats that hardcoded-default diagnostic as `Pass / Pass / Pass`, which mismatches normalized workbook `Fail / Fail / Fail`
+- cleanup command `0742771d156644939173334a82dcb966` confirmed wl0/wl1/wl2 `up` and AP1/AP3/AP5 getters still `Default`
+- next ready single-case Pass3 target: `D085`
+
+</details>
+
+### D084 EncryptionMode blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.Security.ModeEnabled?"
+ubus-cli "WiFi.AccessPoint.1.Security.EncryptionMode?"
+grep -Ei '^(wpa_key_mgmt|wpa_pairwise|rsn_pairwise|sae_password|wep_key)' /tmp/wl0_hapd.conf || true
+ubus-cli "WiFi.AccessPoint.3.Security.ModeEnabled?"
+ubus-cli "WiFi.AccessPoint.3.Security.EncryptionMode?"
+grep -Ei '^(wpa_key_mgmt|wpa_pairwise|rsn_pairwise|sae_password|wep_key)' /tmp/wl1_hapd.conf || true
+ubus-cli "WiFi.AccessPoint.5.Security.ModeEnabled?"
+ubus-cli "WiFi.AccessPoint.5.Security.EncryptionMode?"
+grep -Ei '^(wpa_key_mgmt|wpa_pairwise|rsn_pairwise|sae_password|wep_key)' /tmp/wl2_hapd.conf || true
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T194710374291
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass, comment=pass after retry (2/2)
+- 5G/AP1: ModeEnabled5g=WPA2-Personal, EncryptionMode5g=Default, HostapdKeyMgmt5g=WPA-PSK, HostapdPairwise5g=CCMP, HostapdRsnPairwise5g=CCMP
+- 6G/AP3: ModeEnabled6g=WPA3-Personal, EncryptionMode6g=Default, HostapdKeyMgmt6g=SAE, HostapdPairwise6g=CCMP, HostapdRsnPairwise6g=CCMP
+- 2.4G/AP5: ModeEnabled24g=WPA2-Personal, EncryptionMode24g=Default, HostapdKeyMgmt24g=WPA-PSK, HostapdPairwise24g=CCMP, HostapdRsnPairwise24g=CCMP
+- compare against audit/0506.xlsx row 84: expected Failed/Failed/Failed -> normalized Fail/Fail/Fail; actual Pass/Pass/Pass
+- cleanup command 0742771d156644939173334a82dcb966: wl0/wl1/wl2 were up and AP1/AP3/AP5 EncryptionMode remained Default
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L540 declares Security object; L690-L691 declares EncryptionMode default and enum
+```
+
+## Checkpoint summary (2026-05-09 0506-D083)
+
+> This checkpoint records the `D083 Neighbour` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=95`, `block=144`, `needs_pass3=0`
+- `D083 Neighbour` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 83 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `setNeighbourAP(BSSID, Channel, ...)` 可新增或更新 neighbour，`delNeighbourAP(BSSID)` 可刪除，`Neighbour[]` 物件含 `BSSID` 與 `Channel`
+- focused run `20260509T194420576061` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 each exact-closed `Neighbour` tree empty -> one BSSID/Channel entry -> empty
+- cleanup command `f82d522a632345d685d2e34f529e305a` found no remaining AP1/AP3/AP5 neighbour entries and confirmed wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D084`
+
+</details>
+
+### D083 Neighbour confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli WiFi.AccessPoint.1.? | grep -E 'Neighbour\.[0-9]+\.(BSSID|Channel)'
+ubus-cli "WiFi.AccessPoint.1.setNeighbourAP(BSSID=11:22:33:44:55:66,Channel=36)"
+ubus-cli "WiFi.AccessPoint.1.delNeighbourAP(BSSID=11:22:33:44:55:66)"
+ubus-cli WiFi.AccessPoint.3.? | grep -E 'Neighbour\.[0-9]+\.(BSSID|Channel)'
+ubus-cli "WiFi.AccessPoint.3.setNeighbourAP(BSSID=11:22:33:44:55:77,Channel=1)"
+ubus-cli "WiFi.AccessPoint.3.delNeighbourAP(BSSID=11:22:33:44:55:77)"
+ubus-cli WiFi.AccessPoint.5.? | grep -E 'Neighbour\.[0-9]+\.(BSSID|Channel)'
+ubus-cli "WiFi.AccessPoint.5.setNeighbourAP(BSSID=11:22:33:44:55:88,Channel=11)"
+ubus-cli "WiFi.AccessPoint.5.delNeighbourAP(BSSID=11:22:33:44:55:88)"
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T194420576061
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: baseline BSSID/Channel counts 0/0; add 11:22:33:44:55:66 channel 36 -> counts 1/1; delete -> counts 0/0 and BSSID/Channel ABSENT
+- 6G/AP3: baseline BSSID/Channel counts 0/0; add 11:22:33:44:55:77 channel 1 -> counts 1/1; delete -> counts 0/0 and BSSID/Channel ABSENT
+- 2.4G/AP5: baseline BSSID/Channel counts 0/0; add 11:22:33:44:55:88 channel 11 -> counts 1/1; delete -> counts 0/0 and BSSID/Channel ABSENT
+- compare against audit/0506.xlsx row 83: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup command f82d522a632345d685d2e34f529e305a: no AP1/AP3/AP5 Neighbour BSSID/Channel remained and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L2301-L2317 declares setNeighbourAP, L2328-L2333 declares delNeighbourAP, L2340/L2348/L2371 declare Neighbour BSSID/Channel fields
+```
+
+## Checkpoint summary (2026-05-09 0506-D082)
+
+> This checkpoint records the `D082 MultiAPType` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=95`, `block=144`, `needs_pass3=0`
+- `D082 MultiAPType` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 82 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `MultiAPType` 是 persistent string，supported options 包含 `Off` / `FronthaulBSS` / `BackhaulBSS`
+- focused run `20260509T193841525001` reported `Pass / Pass / Pass` after retry
+- AP1/AP3/AP5 exact-closed getter / hostapd `multi_ap` / driver map from dual-role to fronthaul-only and back to dual-role
+- post-run cleanup restored AP1-AP6 to quoted `MultiAPType="FronthaulBSS,BackhaulBSS"` and confirmed wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D083`
+
+</details>
+
+### D082 MultiAPType confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.MultiAPType?"
+ubus-cli WiFi.AccessPoint.1.MultiAPType=FronthaulBSS
+ubus-cli WiFi.AccessPoint.2.MultiAPType=FronthaulBSS
+grep -n '^multi_ap=' /tmp/wl0_hapd.conf
+wl -i wl0 map
+ubus-cli "WiFi.AccessPoint.3.MultiAPType?"
+ubus-cli WiFi.AccessPoint.3.MultiAPType=FronthaulBSS
+ubus-cli WiFi.AccessPoint.4.MultiAPType=FronthaulBSS
+grep -n '^multi_ap=' /tmp/wl1_hapd.conf
+wl -i wl1 map
+ubus-cli "WiFi.AccessPoint.5.MultiAPType?"
+ubus-cli WiFi.AccessPoint.5.MultiAPType=FronthaulBSS
+ubus-cli WiFi.AccessPoint.6.MultiAPType=FronthaulBSS
+grep -n '^multi_ap=' /tmp/wl2_hapd.conf
+wl -i wl2 map
+ubus-cli 'WiFi.AccessPoint.1.MultiAPType="FronthaulBSS,BackhaulBSS"'
+ubus-cli 'WiFi.AccessPoint.2.MultiAPType="FronthaulBSS,BackhaulBSS"'
+ubus-cli 'WiFi.AccessPoint.3.MultiAPType="FronthaulBSS,BackhaulBSS"'
+ubus-cli 'WiFi.AccessPoint.4.MultiAPType="FronthaulBSS,BackhaulBSS"'
+ubus-cli 'WiFi.AccessPoint.5.MultiAPType="FronthaulBSS,BackhaulBSS"'
+ubus-cli 'WiFi.AccessPoint.6.MultiAPType="FronthaulBSS,BackhaulBSS"'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T193841525001
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass, comment=pass after retry (2/2)
+- 5G/AP1: baseline FronthaulBSS,BackhaulBSS / hostapd both count 2 / driver 0x3; set FronthaulBSS -> hostapd fronthaul count 2 / driver 0x1; restore -> dual-role / hostapd both count 2 / driver 0x3
+- 6G/AP3: baseline FronthaulBSS,BackhaulBSS / hostapd both count 2 / driver 0x3; set FronthaulBSS -> hostapd fronthaul count 2 / driver 0x1; restore -> dual-role / hostapd both count 2 / driver 0x3
+- 2.4G/AP5: baseline FronthaulBSS,BackhaulBSS / hostapd both count 2 / driver 0x3; set FronthaulBSS -> hostapd fronthaul count 2 / driver 0x1; restore -> dual-role / hostapd both count 2 / driver 0x3
+- compare against audit/0506.xlsx row 82: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- cleanup commands cbbe38e86869488689f07151b7aca3ab / a4213eaf04c8402ba2072ffde13f5f05: AP1-AP6 restored to quoted dual-role and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L367/L370 declares MultiAPType options; defaults L93/L111 use dual-role; hostapd.sh L623 emits multi_ap
+```
+
+## Checkpoint summary (2026-05-09 0506-D081)
+
+> This checkpoint records the `D081 MBOEnable` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=95`, `block=144`, `needs_pass3=0`
+- `D081 MBOEnable` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 81 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `MBOEnable` 是 persistent bool，default `false`
+- active Broadcom module getter 透過 `wl -i <if> mbo ap_enable` 讀取 driver 狀態，setter 透過 `wl -i <if> mbo ap_enable <1/0>` 寫入
+- focused run `20260509T193513034994` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 each exact-closed getter and direct driver readback `0 -> 1 -> 0`
+- next ready single-case Pass3 target: `D082`
+
+</details>
+
+### D081 MBOEnable confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.MBOEnable?"
+wl -i wl0 mbo ap_enable
+ubus-cli WiFi.AccessPoint.1.MBOEnable=1
+ubus-cli WiFi.AccessPoint.1.MBOEnable=0
+ubus-cli "WiFi.AccessPoint.3.MBOEnable?"
+wl -i wl1 mbo ap_enable
+ubus-cli WiFi.AccessPoint.3.MBOEnable=1
+ubus-cli WiFi.AccessPoint.3.MBOEnable=0
+ubus-cli "WiFi.AccessPoint.5.MBOEnable?"
+wl -i wl2 mbo ap_enable
+ubus-cli WiFi.AccessPoint.5.MBOEnable=1
+ubus-cli WiFi.AccessPoint.5.MBOEnable=0
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T193513034994
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: BaselineGetterMbo5g=0 / BaselineDriverMbo5g=0; set -> AfterEnableGetterMbo5g=1 / AfterEnableDriverMbo5g=1; restore -> AfterRestoreGetterMbo5g=0 / AfterRestoreDriverMbo5g=0
+- 6G/AP3: BaselineGetterMbo6g=0 / BaselineDriverMbo6g=0; set -> AfterEnableGetterMbo6g=1 / AfterEnableDriverMbo6g=1; restore -> AfterRestoreGetterMbo6g=0 / AfterRestoreDriverMbo6g=0
+- 2.4G/AP5: BaselineGetterMbo24g=0 / BaselineDriverMbo24g=0; set -> AfterEnableGetterMbo24g=1 / AfterEnableDriverMbo24g=1; restore -> AfterRestoreGetterMbo24g=0 / AfterRestoreDriverMbo24g=0
+- compare against audit/0506.xlsx row 81: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L348-L349 declares MBOEnable default false; wifi_ap.c L446 reads `wl -i <if> mbo ap_enable`; wifi_ap.c L978 writes `wl -i <if> mbo ap_enable <1/0>`; wifi_ap.c L1215 returns getter value
+```
+
+## Checkpoint summary (2026-05-09 0506-D080)
+
+> This checkpoint records the `D080 MaxAssociatedDevices` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=95`, `block=144`, `needs_pass3=0`
+- `D080 MaxAssociatedDevices` recorded as `setter_convergence_result_semantics_mismatch_outside_audit_allowlist`
+- workbook row 80 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `MaxAssociatedDevices` 是 persistent uint32，HAL get/set 透過 `wldm_AccessPoint_MaxAssociatedDevices`，hostapd `maxassoc` 會輸出成 `max_num_sta`
+- focused run `20260509T192942787477` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 each showed getter and hostapd `max_num_sta` converging `32 -> 31 -> 32`
+- current YAML treats setter/config convergence as `Pass / Pass / Pass`, which mismatches normalized workbook `Fail / Fail / Fail`
+- cleanup command `dfa17b41e4bc4bd2a52e7e9fddc80c9a` confirmed AP1/AP3/AP5 `MaxAssociatedDevices=32` and wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D081`
+
+</details>
+
+### D080 MaxAssociatedDevices blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.MaxAssociatedDevices?"
+ubus-cli WiFi.AccessPoint.1.MaxAssociatedDevices=31
+grep -n 'max_num_sta=' /tmp/wl0_hapd.conf
+ubus-cli WiFi.AccessPoint.1.MaxAssociatedDevices=32
+ubus-cli "WiFi.AccessPoint.3.MaxAssociatedDevices?"
+ubus-cli WiFi.AccessPoint.3.MaxAssociatedDevices=31
+grep -n 'max_num_sta=' /tmp/wl1_hapd.conf
+ubus-cli WiFi.AccessPoint.3.MaxAssociatedDevices=32
+ubus-cli "WiFi.AccessPoint.5.MaxAssociatedDevices?"
+ubus-cli WiFi.AccessPoint.5.MaxAssociatedDevices=31
+grep -n 'max_num_sta=' /tmp/wl2_hapd.conf
+ubus-cli WiFi.AccessPoint.5.MaxAssociatedDevices=32
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T192942787477
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: BaselineGetterMax5g=32 / BaselineHostapdMax5g=32; set 31 -> AfterTempGetterMax5g=31 / AfterTempHostapdMax5g=31; restore -> AfterRestoreGetterMax5g=32 / AfterRestoreHostapdMax5g=32
+- 6G/AP3: BaselineGetterMax6g=32 / BaselineHostapdMax6g=32; set 31 -> AfterTempGetterMax6g=31 / AfterTempHostapdMax6g=31; restore -> AfterRestoreGetterMax6g=32 / AfterRestoreHostapdMax6g=32
+- 2.4G/AP5: BaselineGetterMax24g=32 / BaselineHostapdMax24g=32; set 31 -> AfterTempGetterMax24g=31 / AfterTempHostapdMax24g=31; restore -> AfterRestoreGetterMax24g=32 / AfterRestoreHostapdMax24g=32
+- compare against audit/0506.xlsx row 80: expected Failed/Failed/Failed -> normalized Fail/Fail/Fail; actual Pass/Pass/Pass
+- cleanup command dfa17b41e4bc4bd2a52e7e9fddc80c9a: AP1/AP3/AP5 MaxAssociatedDevices=32 and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L526 declares MaxAssociatedDevices; wifi_hal.c L6576-L6605 routes get/set through wldm_AccessPoint_MaxAssociatedDevices; hostapd.sh L603-L604 emits max_num_sta
+```
+
+## Checkpoint summary (2026-05-09 0506-D079)
+
+> This checkpoint records the `D079 MACFiltering.Mode` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=168`, `applied=9`, `pending=95`, `block=143`, `needs_pass3=0`
+- `D079 MACFiltering.Mode` recorded as `negative_setter_result_semantics_mismatch_outside_audit_allowlist`
+- workbook row 79 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `MACFiltering.Mode` 是 persistent string enum `Off` / `WhiteList` / `BlackList`，default `Off`
+- focused run `20260509T192618351158` rebuilt workbook baseline: AP1 `WhiteList` + `macaddr_acl=1` + accept ACL; AP3/AP5 `BlackList` + `macaddr_acl=0` + deny ACL
+- `Mode=Off` setter returned `invalid value` on AP1/AP3/AP5, and getter/hostapd ACL state remained unchanged
+- current YAML treats that expected rejection as `Pass / Pass / Pass`, which mismatches normalized workbook `Fail / Fail / Fail`
+- cleanup removed the probe MAC entries, restored modes to `Off`, and confirmed wl0/wl1/wl2 `up`
+- next ready single-case Pass3 target: `D080`
+
+</details>
+
+### D079 MACFiltering.Mode blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.MACFiltering.Mode?"
+ubus-cli WiFi.AccessPoint.1.MACFiltering.Mode=Off
+grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl0_hapd.conf
+ubus-cli "WiFi.AccessPoint.3.MACFiltering.Mode?"
+ubus-cli WiFi.AccessPoint.3.MACFiltering.Mode=Off
+grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl1_hapd.conf
+ubus-cli "WiFi.AccessPoint.5.MACFiltering.Mode?"
+ubus-cli WiFi.AccessPoint.5.MACFiltering.Mode=Off
+grep -nE '^(macaddr_acl|accept_mac_file|deny_mac_file)=' /tmp/wl2_hapd.conf
+ubus-cli "WiFi.AccessPoint.1.MACFiltering.delEntry(mac=62:2F:B8:66:BB:82)"
+ubus-cli "WiFi.AccessPoint.3.MACFiltering.delEntry(mac=FA:DD:AC:24:5A:B4)"
+ubus-cli "WiFi.AccessPoint.5.MACFiltering.delEntry(mac=FA:A0:DF:91:47:7C)"
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T192618351158
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1 baseline: BaselineMode5g=WhiteList, BaselineMacaddrAcl5g=1, BaselineAclState5g=accept
+- 5G/AP1 Off setter: ERROR invalid value; AfterMode5g=WhiteList, AfterMacaddrAcl5g=1, AfterAclState5g=accept
+- 6G/AP3 baseline: BaselineMode6g=BlackList, BaselineMacaddrAcl6g=0, BaselineAclState6g=deny
+- 6G/AP3 Off setter: ERROR invalid value; AfterMode6g=BlackList, AfterMacaddrAcl6g=0, AfterAclState6g=deny
+- 2.4G/AP5 baseline: BaselineMode24g=BlackList, BaselineMacaddrAcl24g=0, BaselineAclState24g=deny
+- 2.4G/AP5 Off setter: ERROR invalid value; AfterMode24g=BlackList, AfterMacaddrAcl24g=0, AfterAclState24g=deny
+- compare against audit/0506.xlsx row 79: expected Failed/Failed/Failed -> normalized Fail/Fail/Fail; actual Pass/Pass/Pass
+- cleanup command da2c1ef58ad243e5ba2055d0d0122b4c / 0fc090b0f17f4caab45faafdcf1093a4: removed probe MAC entries, modes read back Off, and wl0/wl1/wl2 were up
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L799-L814 declares MACFiltering.Mode enum and default
+```
+
+## Checkpoint summary (2026-05-09 0506-D078)
+
+> This checkpoint records the `D078 MACFiltering.Entry` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=169`, `applied=9`, `pending=95`, `block=142`, `needs_pass3=0`
+- `D078 MACFiltering.Entry` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 78 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `MACFiltering.Entry` 是 persistent object，含 `MACAddress`，並透過 `addEntry` / `delEntry` 操作維護
+- focused run `20260509T192241409396` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 each started Entry empty, addEntry created one Entry with the requested MAC, and delEntry restored EntryCount/alias/MAC to empty
+- next ready single-case Pass3 target: `D079`
+
+</details>
+
+### D078 MACFiltering.Entry confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.MACFiltering.Entry.?"
+ubus-cli "WiFi.AccessPoint.1.MACFiltering.addEntry(mac=62:2F:B8:66:BB:82)"
+ubus-cli "WiFi.AccessPoint.1.MACFiltering.delEntry(mac=62:2F:B8:66:BB:82)"
+ubus-cli "WiFi.AccessPoint.3.MACFiltering.Entry.?"
+ubus-cli "WiFi.AccessPoint.3.MACFiltering.addEntry(mac=FA:DD:AC:24:5A:B4)"
+ubus-cli "WiFi.AccessPoint.3.MACFiltering.delEntry(mac=FA:DD:AC:24:5A:B4)"
+ubus-cli "WiFi.AccessPoint.5.MACFiltering.Entry.?"
+ubus-cli "WiFi.AccessPoint.5.MACFiltering.addEntry(mac=FA:A0:DF:91:47:7C)"
+ubus-cli "WiFi.AccessPoint.5.MACFiltering.delEntry(mac=FA:A0:DF:91:47:7C)"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T192241409396
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: EntryCount5g=0 / Alias=EMPTY / Mac=EMPTY; addEntry 62:2F:B8:66:BB:82 -> EntryCount5g=1 / Alias=cpe-Entry-7 / Mac=62:2F:B8:66:BB:82; delEntry -> empty/count 0
+- 6G/AP3: EntryCount6g=0 / Alias=EMPTY / Mac=EMPTY; addEntry FA:DD:AC:24:5A:B4 -> EntryCount6g=1 / Alias=cpe-Entry-6 / Mac=FA:DD:AC:24:5A:B4; delEntry -> empty/count 0
+- 2.4G/AP5: EntryCount24g=0 / Alias=EMPTY / Mac=EMPTY; addEntry FA:A0:DF:91:47:7C -> EntryCount24g=1 / Alias=cpe-Entry-6 / Mac=FA:A0:DF:91:47:7C; delEntry -> empty/count 0
+- compare against audit/0506.xlsx row 78: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L799/L819/L826 declare MACFiltering.Entry; L868/L876 declare addEntry/delEntry
+```
+
+## Checkpoint summary (2026-05-09 0506-D077)
+
+> This checkpoint records the `D077 MACFilterAddressList` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=169`, `applied=9`, `pending=95`, `block=142`, `needs_pass3=0`
+- `D077 MACFilterAddressList` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 77 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `MACFilterAddressList` 是 persistent string 並套用 address-list validation；`MACFiltering.Entry` 透過 `addEntry` / `delEntry` 維護 MACAddress entries
+- focused run `20260509T191923718941` reported `Pass / Pass / Pass`
+- AP1/AP3/AP5 each started empty/count `0`, addEntry populated both `MACFilterAddressList` and `MACFiltering.Entry`, and delEntry restored both surfaces to empty/count `0`
+- next ready single-case Pass3 target: `D078`
+
+</details>
+
+### D077 MACFilterAddressList confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.MACFilterAddressList?"
+ubus-cli "WiFi.AccessPoint.1.MACFiltering.addEntry(mac=62:2F:B8:66:BB:82)"
+ubus-cli "WiFi.AccessPoint.1.MACFiltering.delEntry(mac=62:2F:B8:66:BB:82)"
+ubus-cli "WiFi.AccessPoint.3.MACFilterAddressList?"
+ubus-cli "WiFi.AccessPoint.3.MACFiltering.addEntry(mac=FA:DD:AC:24:5A:B4)"
+ubus-cli "WiFi.AccessPoint.3.MACFiltering.delEntry(mac=FA:DD:AC:24:5A:B4)"
+ubus-cli "WiFi.AccessPoint.5.MACFilterAddressList?"
+ubus-cli "WiFi.AccessPoint.5.MACFiltering.addEntry(mac=FA:A0:DF:91:47:7C)"
+ubus-cli "WiFi.AccessPoint.5.MACFiltering.delEntry(mac=FA:A0:DF:91:47:7C)"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T191923718941
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- 5G/AP1: list EMPTY and EntryCount5g=0; addEntry 62:2F:B8:66:BB:82 -> MACFilterAddressList5g=62:2F:B8:66:BB:82 and EntryCount5g=1; delEntry -> EMPTY/count 0
+- 6G/AP3: list EMPTY and EntryCount6g=0; addEntry FA:DD:AC:24:5A:B4 -> MACFilterAddressList6g=FA:DD:AC:24:5A:B4 and EntryCount6g=1; delEntry -> EMPTY/count 0
+- 2.4G/AP5: list EMPTY and EntryCount24g=0; addEntry FA:A0:DF:91:47:7C -> MACFilterAddressList24g=FA:A0:DF:91:47:7C and EntryCount24g=1; delEntry -> EMPTY/count 0
+- compare against audit/0506.xlsx row 77: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L425-L426 declares MACFilterAddressList validation; L799/L819/L826 declare MACFiltering.Entry; L868/L876 declare addEntry/delEntry
+```
+
+## Checkpoint summary (2026-05-09 0506-D076)
+
+> This checkpoint records the `D076 QoSMapSet` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=169`, `applied=9`, `pending=95`, `block=142`, `needs_pass3=0`
+- `D076 QoSMapSet` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 76 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `IEEE80211u` object 透過 `wld_ap_11u_setConf_ocf` 套用設定；`QoSMapSet` 是 persistent string
+- focused run `20260509T191520022068` reported `Fail / Fail / Fail`
+- attempt 1 captured all bands: baseline getter/config `EMPTY/ABSENT`, requested DSCP map, setter/getter/hostapd collapse to scalar `255`, and restore back to `EMPTY/ABSENT`
+- retry hit a serialwrap selector exception, but the all-band first attempt evidence and final report shape match workbook after normalization
+- AP1/AP3/AP5 were rebaselined afterward, QoSMapSet cleared, and wl0/wl1/wl2 confirmed `up`
+- next ready single-case Pass3 target: `D077`
+
+</details>
+
+### D076 QoSMapSet confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.IEEE80211u.QoSMapSet?"
+ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet="0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255"
+grep '^qos_map_set=' /tmp/wl0_hapd.conf
+ubus-cli WiFi.AccessPoint.1.IEEE80211u.QoSMapSet=
+ubus-cli "WiFi.AccessPoint.3.IEEE80211u.QoSMapSet?"
+ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet="0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255"
+grep '^qos_map_set=' /tmp/wl1_hapd.conf
+ubus-cli WiFi.AccessPoint.3.IEEE80211u.QoSMapSet=
+ubus-cli "WiFi.AccessPoint.5.IEEE80211u.QoSMapSet?"
+ubus-cli WiFi.AccessPoint.5.IEEE80211u.QoSMapSet="0,7,8,15,255,25 5,255,255,255,255,16,23,24,31,255,255"
+grep '^qos_map_set=' /tmp/wl2_hapd.conf
+ubus-cli WiFi.AccessPoint.5.IEEE80211u.QoSMapSet=
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T191520022068
+- report shape: Fail / Fail / Fail, diagnostic_status=Inconclusive
+- attempt 1 5G: QoSMapSet5g=EMPTY; QoSMapSetCfg5g=ABSENT; setter/getter/config collapsed to 255; restore returned EMPTY/ABSENT
+- attempt 1 6G: QoSMapSet6g=EMPTY; QoSMapSetCfg6g=ABSENT; setter/getter/config collapsed to 255; restore returned EMPTY/ABSENT
+- attempt 1 2.4G: QoSMapSet24g=EMPTY; QoSMapSetCfg24g=ABSENT; setter/getter/config collapsed to 255; restore returned EMPTY/ABSENT
+- retry exception: serialwrap selector exception during setup command `ubus-cli WiFi.AccessPoint.5.Enable=1`
+- recovery: serialwrap command c4051e621dc14bc194b25f275f7cdab9 set AP1/AP3/AP5 Enable=1, cleared QoSMapSet on AP1/AP3/AP5, and confirmed wl0=up, wl1=up, wl2=up
+- compare against audit/0506.xlsx row 76: expected Failed/Failed/Failed -> normalized Fail/Fail/Fail; actual Fail/Fail/Fail
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L499-L500 declares IEEE80211u and config event handler; L517 declares QoSMapSet persistent string
+```
+
+## Checkpoint summary (2026-05-09 0506-D075)
+
+> This checkpoint records the `D075 InterworkingEnable` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=168`, `applied=9`, `pending=96`, `block=142`, `needs_pass3=0`
+- `D075 InterworkingEnable` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 75 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `IEEE80211u` object 透過 `wld_ap_11u_setConf_ocf` 套用設定；`InterworkingEnable` 是 persistent bool default `false`
+- focused run `20260509T191225540540` reported `Fail / Fail / Fail`
+- attempt 1 showed AP1/AP3/AP5 northbound getter accepted `InterworkingEnable` `0 -> 1 -> 0`, but hostapd projection did not satisfy the expected count: `interworking=1` stayed `0` after setter, and restore left stale/mixed counts
+- attempt 2 setup saw `wl1 bss=down`; AP1/AP3/AP5 were rebaselined afterward and wl0/wl1/wl2 confirmed `up`
+- report shape `Fail / Fail / Fail` matches workbook row 75 after normalization
+- next ready single-case Pass3 target: `D076`
+
+</details>
+
+### D075 InterworkingEnable confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable?"
+grep -c '^interworking=1$' /tmp/wl0_hapd.conf
+grep -c '^interworking=0$' /tmp/wl0_hapd.conf
+ubus-cli WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable=1
+ubus-cli WiFi.AccessPoint.1.IEEE80211u.InterworkingEnable=0
+ubus-cli "WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable?"
+grep -c '^interworking=1$' /tmp/wl1_hapd.conf
+grep -c '^interworking=0$' /tmp/wl1_hapd.conf
+ubus-cli WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable=1
+ubus-cli WiFi.AccessPoint.3.IEEE80211u.InterworkingEnable=0
+ubus-cli "WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable?"
+grep -c '^interworking=1$' /tmp/wl2_hapd.conf
+grep -c '^interworking=0$' /tmp/wl2_hapd.conf
+ubus-cli WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable=1
+ubus-cli WiFi.AccessPoint.5.IEEE80211u.InterworkingEnable=0
+ubus-cli WiFi.AccessPoint.1.Enable=1
+ubus-cli WiFi.AccessPoint.3.Enable=1
+ubus-cli WiFi.AccessPoint.5.Enable=1
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T191225540540
+- report shape: Fail / Fail / Fail, diagnostic_status=FailConfig
+- attempt 1 5G: Interworking5g=0 baseline; after setter Interworking5g=1 but Interworking5gOneCount=0 / ZeroCount=1 / TotalCount=2; expected one `interworking=1`
+- attempt 1 6G: Interworking6g=0 baseline; after setter Interworking6g=1 but Interworking6gOneCount=0 / ZeroCount=1 / TotalCount=2
+- attempt 1 2.4G: Interworking24g=0 baseline; after setter Interworking24g=1 but Interworking24gOneCount=0 / ZeroCount=1 / TotalCount=2
+- restore side effect: later counts showed stale/mixed interworking lines, and attempt 2 setup saw wl1 bss down
+- recovery: serialwrap command a958e1c3a0da4adaacf5ce847b9b123c set AP1/AP3/AP5 Enable=1 and confirmed wl0=up, wl1=up, wl2=up
+- compare against audit/0506.xlsx row 75: expected Failed/Failed/Failed -> normalized Fail/Fail/Fail; actual Fail/Fail/Fail
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L499-L500 declares IEEE80211u and config event handler; L505-L506 declares InterworkingEnable default false
+```
+
+## Checkpoint summary (2026-05-09 0506-D072)
+
+> This checkpoint records the `D072 MobilityDomain` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=167`, `applied=9`, `pending=97`, `block=142`, `needs_pass3=0`
+- `D072 MobilityDomain` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 72 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `IEEE80211r` object 透過 `wld_ap_11r_setConf_ocf` 套用設定；`Enabled` 具 validate callback；`MobilityDomain` 是 persistent `uint16`，range `0..65535`，default `0`
+- focused run `20260509T190944484633` enabled IEEE80211r on AP1/AP3/AP5, confirmed initial `MobilityDomain=0`, set/read back `MobilityDomain=27476`, and verified hostapd `mobility_domain=546B` plus exactly one `ft_over_ds=0` on wl0/wl1/wl2
+- cleanup restored MobilityDomain=0 and IEEE80211r.Enabled=0 on AP1/AP3/AP5
+- report shape `Pass / Pass / Pass` matches workbook row 72
+- workbook rows D073/D074 have no discoverable checked-in YAML case; next ready single-case Pass3 target: `D075`
+
+</details>
+
+### D072 MobilityDomain confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=1
+ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain?"
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=27476
+grep -m1 '^mobility_domain=' /tmp/wl0_hapd.conf
+grep -c '^ft_over_ds=0$' /tmp/wl0_hapd.conf
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=0
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=0
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=1
+ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain?"
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=27476
+grep -m1 '^mobility_domain=' /tmp/wl1_hapd.conf
+grep -c '^ft_over_ds=0$' /tmp/wl1_hapd.conf
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=0
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=0
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.Enabled=1
+ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain?"
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=27476
+grep -m1 '^mobility_domain=' /tmp/wl2_hapd.conf
+grep -c '^ft_over_ds=0$' /tmp/wl2_hapd.conf
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=0
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.Enabled=0
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T190944484633
+- AP1/AP3/AP5 start path: IEEE80211r.Enabled=1 and MobilityDomain=0 before setter
+- set path: MobilityDomain=27476 read back on AP1/AP3/AP5
+- hostapd projection: MobilityDomainCfg5g=546B, MobilityDomainCfg6g=546B, MobilityDomainCfg24g=546B
+- FT-over-DS default projection: FtOverDs5gZeroCount=1 / TotalCount=1; FtOverDs6gZeroCount=1 / TotalCount=1; FtOverDs24gZeroCount=1 / TotalCount=1
+- cleanup: AP1/AP3/AP5 MobilityDomain=0 and IEEE80211r.Enabled=0
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 72: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L452-L453 declares IEEE80211r and config event handler; L459 declares Enabled; L489-L491 declares MobilityDomain uint16 range/default
+```
+
+## Checkpoint summary (2026-05-09 0506-D071)
+
+> This checkpoint records the `D071 FTOverDSEnable` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=98`, `block=142`, `needs_pass3=0`
+- `D071 FTOverDSEnable` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 71 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `IEEE80211r` object 透過 `wld_ap_11r_setConf_ocf` 套用設定；`Enabled` 具 validate callback；`FTOverDSEnable` 是 persistent bool default `false`
+- focused run `20260509T190605711605` enabled IEEE80211r prerequisites on AP1/AP3/AP5, set MobilityDomain=4660, verified hostapd `mobility_domain=3412`, toggled `FTOverDSEnable` to `1` and back to `0`, and hostapd `ft_over_ds` followed on all bands
+- cleanup restored MobilityDomain=0 and IEEE80211r.Enabled=0 on AP1/AP3/AP5
+- report shape `Pass / Pass / Pass` matches workbook row 71
+- next ready single-case Pass3 target: `D072`
+
+</details>
+
+### D071 FTOverDSEnable confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.Enabled=1
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=4660
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable=1
+ubus-cli WiFi.AccessPoint.1.IEEE80211r.FTOverDSEnable=0
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.Enabled=1
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=4660
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable=1
+ubus-cli WiFi.AccessPoint.3.IEEE80211r.FTOverDSEnable=0
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.Enabled=1
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=4660
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable=1
+ubus-cli WiFi.AccessPoint.5.IEEE80211r.FTOverDSEnable=0
+grep '^mobility_domain=' /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf
+grep '^ft_over_ds=' /tmp/wl0_hapd.conf /tmp/wl1_hapd.conf /tmp/wl2_hapd.conf
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T190605711605
+- AP1/AP3/AP5 prerequisites: IEEE80211r.Enabled=1; MobilityDomain=4660; hostapd mobility_domain=3412; ft_over_ds initially 0
+- set path: FTOverDSEnable=1 read back on AP1/AP3/AP5; hostapd ft_over_ds=1 on wl0/wl1/wl2
+- restore path: FTOverDSEnable=0 read back on AP1/AP3/AP5; hostapd ft_over_ds=0 on wl0/wl1/wl2
+- cleanup: AP1/AP3/AP5 MobilityDomain=0 and IEEE80211r.Enabled=0
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 71: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L452-L453 declares IEEE80211r and config event handler; L459-L460 declares/validates Enabled; L469-L470 declares FTOverDSEnable default false
+```
+
+## Checkpoint summary (2026-05-09 0506-D070)
+
+> This checkpoint records the `D070 Enable` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=98`, `block=142`, `needs_pass3=0`
+- workbook row D069 has no discoverable checked-in YAML case under `plugins/wifi_llapi/cases`, so strict official-case mode continued to `D070`
+- `D070 Enable` confirmed as `workbook_match_no_yaml_edit`
+- workbook row 70 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `WiFi.AccessPoint.{i}.Enable` enables/disables the AccessPoint
+- focused run `20260509T190342475018` confirmed AP1/AP3/AP5 `Enable=1` and wl0/wl1/wl2 BSS all `up`
+- report shape `Pass / Pass / Pass` matches workbook row 70
+- next ready single-case Pass3 target: `D071`
+
+</details>
+
+### D070 Enable confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.Enable?"
+ubus-cli "WiFi.AccessPoint.3.Enable?"
+ubus-cli "WiFi.AccessPoint.5.Enable?"
+wl -i wl0 bss
+wl -i wl1 bss
+wl -i wl2 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T190342475018
+- 5G: Enable5g=1; DriverBss5g=up
+- 6G: Enable6g=1; DriverBss6g=up
+- 2.4G: Enable24g=1; DriverBss24g=up
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 70: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- decision: confirmed no-edit
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L330-L331 documents and declares Enable; BRCM mirror tr181-wifi_AccessPoint.odl L62-L64 documents and declares Enable
+```
+
+## Checkpoint summary (2026-05-09 0506-D068)
+
+> This checkpoint records the `D068 DiscoveryMethodEnabled=RNR` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=166`, `applied=9`, `pending=98`, `block=142`, `needs_pass3=0`
+- `D068 DiscoveryMethodEnabled=RNR` confirmed as `workbook_normalized_fail_match_no_yaml_edit`
+- workbook row 68 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `WiFi.AccessPoint.{i}.DiscoveryMethodEnabled` 是 persistent string，default `Default`，target ODL 透過 `wld_ap_validateDiscoveryMethod_pvf` 驗證
+- focused run `20260509T190039858564` shows AP1/AP3/AP5 accepted and read back `RNR`, but hostapd configs exposed zero `rnr=` lines on wl0/wl1/wl2 after the RNR writes
+- report shape `Fail / Fail / Fail` matches workbook-normalized `Fail / Fail / Fail`; all bands were restored to `Default`
+- next ready single-case Pass3 target: `D069`
+
+</details>
+
+### D068 DiscoveryMethodEnabled=RNR confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"
+ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"
+ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"
+ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=RNR
+ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=RNR
+ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=RNR
+awk '/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print enabled+0, disabled+0, total+0}' /tmp/wl0_hapd.conf
+awk '/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print enabled+0, disabled+0, total+0}' /tmp/wl1_hapd.conf
+awk '/^rnr=/{if ($0=="rnr=1") enabled++; if ($0=="rnr=0") disabled++; total++} END {print enabled+0, disabled+0, total+0}' /tmp/wl2_hapd.conf
+ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=Default
+ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=Default
+ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=Default
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T190039858564
+- default getters: AP1/AP3/AP5 DiscoveryMethodEnabled="Default"
+- RNR writes: AP1/AP3/AP5 accepted and read back DiscoveryMethodEnabled="RNR"
+- hostapd config after RNR: wl0 RnrEnabled5gCount=0 RnrDisabled5gCount=0 RnrTotal5gCount=0; wl1 RnrEnabled6gCount=0 RnrDisabled6gCount=0 RnrTotal6gCount=0; wl2 RnrEnabled24gCount=0 RnrDisabled24gCount=0 RnrTotal24gCount=0
+- restore: AP1/AP3/AP5 restored DiscoveryMethodEnabled="Default"; wl1 still had zero rnr lines after restore
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- compare against audit/0506.xlsx row 68: expected Failed/Failed/Failed, normalized Fail/Fail/Fail; actual Fail/Fail/Fail
+- decision: confirmed no-edit; current fail-shaped evidence matches workbook Failed rows after normalization
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L2404-L2406 declares DiscoveryMethodEnabled with default and validation callback; BRCM mirror tr181-wifi_AccessPoint.odl L184-L185 declares the persistent string and default
+```
+
+## Checkpoint summary (2026-05-09 0506-D067)
+
+> This checkpoint records the `D067 DiscoveryMethodEnabled=UPR` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=165`, `applied=9`, `pending=98`, `block=143`, `needs_pass3=0`
+- `D067 DiscoveryMethodEnabled=UPR` blocked as `mixed_band_result_semantics_mismatch_outside_audit_allowlist`
+- workbook row 67 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `WiFi.AccessPoint.{i}.DiscoveryMethodEnabled` 是 persistent string，default `Default`，target ODL 透過 `wld_ap_validateDiscoveryMethod_pvf` 驗證
+- focused run `20260509T185821324735` shows mixed live behavior: AP1/AP5 reject standard `UPR` with `invalid value` and remain `Default`, but AP3 accepts `UPR` and reads back `UPR`
+- the current YAML treats this mixed-band observation as a passing diagnostic and restores all bands to `Default`, so runtime diagnostic is `Pass / Pass / Pass`
+- report shape `Pass / Pass / Pass` mismatches workbook-normalized `Fail / Fail / Fail`; AP3 live acceptance also contradicts workbook all-band Failed expectation
+- next ready single-case Pass3 target: `D068`
+
+</details>
+
+### D067 DiscoveryMethodEnabled=UPR blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"
+ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"
+ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"
+ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=UPR
+ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=UPR
+ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=UPR
+ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"
+ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"
+ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"
+ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=Default
+ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=Default
+ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=Default
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T185821324735
+- default getters: AP1/AP3/AP5 DiscoveryMethodEnabled="Default"
+- UPR writes: AP1 rejected with invalid value; AP3 accepted DiscoveryMethodEnabled="UPR"; AP5 rejected with invalid value
+- after UPR writes: AP1="Default"; AP3="UPR"; AP5="Default"
+- restore: AP1/AP3/AP5 restored DiscoveryMethodEnabled="Default"
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 67: expected Failed/Failed/Failed, normalized Fail/Fail/Fail; actual Pass/Pass/Pass
+- blocker: live 6G accepts UPR and current YAML treats the mixed-band behavior as Pass; workbook all-band Failed needs oracle/result-semantics reconciliation outside safe audit edits
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L2404-L2406 declares DiscoveryMethodEnabled with default and validation callback; BRCM mirror tr181-wifi_AccessPoint.odl L184-L185 declares the persistent string and default
+```
+
+## Checkpoint summary (2026-05-09 0506-D066)
+
+> This checkpoint records the `D066 DiscoveryMethodEnabled=FILS` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=165`, `applied=9`, `pending=98`, `block=143`, `needs_pass3=0`
+- `D066 DiscoveryMethodEnabled=FILS` blocked as `negative_test_result_semantics_mismatch_outside_audit_allowlist`
+- workbook row 66 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `WiFi.AccessPoint.{i}.DiscoveryMethodEnabled` 是 persistent string，default `Default`，target ODL 透過 `wld_ap_validateDiscoveryMethod_pvf` 驗證
+- focused run `20260509T185551380490` confirms the workbook operation-level failure: AP1/AP3/AP5 start at `Default`, standard `FILS` setter is rejected with `invalid value` on all three bands, and getters remain `Default`
+- the current YAML also proves alternate `FILSDiscovery` is accepted and restores all bands to `Default`, so runtime diagnostic is `Pass / Pass / Pass`
+- report shape `Pass / Pass / Pass` mismatches workbook-normalized `Fail / Fail / Fail`; changing this negative-test Pass into workbook Fail would require broader verdict semantics than safe audit-only edits allow
+- next ready single-case Pass3 target: `D067`
+
+</details>
+
+### D066 DiscoveryMethodEnabled=FILS blocker evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.DiscoveryMethodEnabled?"
+ubus-cli "WiFi.AccessPoint.3.DiscoveryMethodEnabled?"
+ubus-cli "WiFi.AccessPoint.5.DiscoveryMethodEnabled?"
+ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=FILS
+ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=FILS
+ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=FILS
+ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=FILSDiscovery
+ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=FILSDiscovery
+ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=FILSDiscovery
+ubus-cli WiFi.AccessPoint.1.DiscoveryMethodEnabled=Default
+ubus-cli WiFi.AccessPoint.3.DiscoveryMethodEnabled=Default
+ubus-cli WiFi.AccessPoint.5.DiscoveryMethodEnabled=Default
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T185551380490
+- default getters: AP1/AP3/AP5 DiscoveryMethodEnabled="Default"
+- standard FILS writes: AP1/AP3/AP5 each returned `ERROR: set ... DiscoveryMethodEnabled failed (10 - invalid value)`
+- after invalid writes: AP1/AP3/AP5 DiscoveryMethodEnabled remained "Default"
+- alternate writes: AP1/AP3/AP5 accepted DiscoveryMethodEnabled="FILSDiscovery"
+- restore: AP1/AP3/AP5 restored DiscoveryMethodEnabled="Default"
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 66: expected Failed/Failed/Failed, normalized Fail/Fail/Fail; actual Pass/Pass/Pass
+- blocker: current YAML treats the expected standard-FILS rejection as a passing negative test; report-result semantics cannot be converted to workbook Fail with only safe audit edits
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L2404-L2406 declares DiscoveryMethodEnabled with default and validation callback; BRCM mirror tr181-wifi_AccessPoint.odl L184-L185 declares the persistent string and default
+```
+
+## Checkpoint summary (2026-05-09 0506-D065)
+
+> This checkpoint records the `D065 BridgeInterface` applied audit correction.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=165`, `applied=9`, `pending=98`, `block=143`, `needs_pass3=0`
+- `D065 BridgeInterface` marked `applied` as `verified_pass_criteria_update_matches_workbook`
+- workbook row 65 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `WiFi.AccessPoint.{i}.BridgeInterface` 是 persistent string，代表 VAP 使用的 bridge interface
+- D064 後 AP1/AP3/AP5 先 rebaseline 到 `wl0/wl1/wl2 bss=up`
+- pre-edit run `20260509T185143736802` confirmed the live data path: AP1/AP3/AP5 getters were `br-lan`, hostapd bridge names were `br-lan`, Linux bridge masters were `br-lan`; only stale pass criteria expected two `bridge=` lines for wl1/wl2 while current files expose one active bridge line
+- audit `verify-edit` accepted the pass-criteria-only change from count `2` to `1` for 6G and 2.4G; `audit apply` updated `plugins/wifi_llapi/cases/D065_bridgeinterface.yaml`
+- post-edit run `20260509T185329151591` passed `Pass / Pass / Pass`, matching workbook row 65
+- next ready single-case Pass3 target: `D066`
+
+</details>
+
+### D065 BridgeInterface applied evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.BridgeInterface?"
+ubus-cli "WiFi.AccessPoint.3.BridgeInterface?"
+ubus-cli "WiFi.AccessPoint.5.BridgeInterface?"
+grep '^bridge=' /tmp/wl0_hapd.conf
+grep '^bridge=' /tmp/wl1_hapd.conf
+grep '^bridge=' /tmp/wl2_hapd.conf
+cat /sys/class/net/wl0/master/uevent
+cat /sys/class/net/wl1/master/uevent
+cat /sys/class/net/wl2/master/uevent
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Pre-edit focused run 20260509T185143736802
+- getters: AP1/AP3/AP5 BridgeInterface all "br-lan"
+- hostapd config: wl0 BridgeConfig5g=br-lan Count=2 Mismatch=0; wl1 BridgeConfig6g=br-lan Count=1 Mismatch=0; wl2 BridgeConfig24g=br-lan Count=1 Mismatch=0
+- bridge masters: BridgeMaster5g=br-lan; BridgeMaster6g=br-lan; BridgeMaster24g=br-lan
+- failure cause: stale criteria expected BridgeConfig6gCount=2 and BridgeConfig24gCount=2 even though current 6G/2.4G files expose one active bridge=br-lan line
+
+Verified edit
+- file: plugins/wifi_llapi/cases/D065_bridgeinterface.yaml
+- allowed scope: pass_criteria only
+- changed config_6g.BridgeConfig6gCount expected value 2 -> 1
+- changed config_24g.BridgeConfig24gCount expected value 2 -> 1
+- verify-edit logged success in audit/runs/74ada64b-2026-05-07T134956Z/wifi_llapi/verify_edit_log.jsonl
+
+Post-edit focused run 20260509T185329151591
+- report shape: Pass / Pass / Pass, diagnostic_status=Pass
+- getters: WiFi.AccessPoint.1/3/5.BridgeInterface="br-lan"
+- hostapd config: BridgeConfig5g=br-lan Count=2 Mismatch=0; BridgeConfig6g=br-lan Count=1 Mismatch=0; BridgeConfig24g=br-lan Count=1 Mismatch=0
+- bridge masters: BridgeMaster5g=br-lan; BridgeMaster6g=br-lan; BridgeMaster24g=br-lan
+- compare against audit/0506.xlsx row 65: expected Pass/Pass/Pass; actual Pass/Pass/Pass
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L306-L309 and BRCM mirror tr181-wifi_AccessPoint.odl L159-L161 document and declare BridgeInterface
+```
+
+## Checkpoint summary (2026-05-09 0506-D064)
+
+> This checkpoint records the `D064 APBridgeDisable` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=165`, `applied=8`, `pending=99`, `block=143`, `needs_pass3=0`
+- `D064 APBridgeDisable` confirmed as `workbook_normalized_fail_match_no_yaml_edit`
+- workbook row 64 raw value is `Failed / Failed / Failed`, normalized to `Fail / Fail / Fail`
+- source 宣告 `WiFi.AccessPoint.{i}.APBridgeDisable` 是 persistent bool，用於 disable same-VAP bridged traffic
+- focused run `20260509T184702760336` captures the unsupported 5G AP1 toggle path: getter turned on to `1`, driver `ap_isolate` rose to `1`, hostapd config still had two `ap_isolate=0` lines, reset getter returned `0`, driver `ap_isolate` stayed `1`, and `wl0 bss` ended `down`
+- report shape `Fail / N/A / N/A` normalizes to `Fail / Fail / Fail`, matching workbook row 64; no YAML edit was required
+- note: AP1 may need normal 5G rebaseline before the next AP case because D064 intentionally left wl0 BSS down during unsupported-toggle validation
+- next ready single-case Pass3 target: `D065`
+
+</details>
+
+### D064 APBridgeDisable confirmed evidence
+
+**STA 指令**
+
+```sh
+# AP-only checkpoint; no STA command was required.
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli WiFi.AccessPoint.1.APBridgeDisable=1
+ubus-cli "WiFi.AccessPoint.1.APBridgeDisable?"
+wl -i wl0 ap_isolate
+grep '^ap_isolate=' /tmp/wl0_hapd.conf
+ubus-cli WiFi.AccessPoint.1.APBridgeDisable=0
+ubus-cli "WiFi.AccessPoint.1.APBridgeDisable?"
+wl -i wl0 ap_isolate
+wl -i wl0 bss
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T184702760336
+- set on: WiFi.AccessPoint.1.APBridgeDisable=1
+- getter on: WiFi.AccessPoint.1.APBridgeDisable=1
+- driver on: DriverApIsolateOn=1
+- hostapd config after on: HostapdApIsolate=0; HostapdApIsolate=0; HostapdApIsolateZeroCount=2
+- set off: WiFi.AccessPoint.1.APBridgeDisable=0
+- getter off: WiFi.AccessPoint.1.APBridgeDisable=0
+- driver off: DriverApIsolateOff=1
+- BSS state: DriverBssState=down
+- final report shape: Fail / N/A / N/A, diagnostic_status=FailConfig; second retry setup_env failed at `wl -i wl0 bss` => `down`
+- compare against audit/0506.xlsx row 64: raw expected Failed/Failed/Failed; normalized expected Fail/Fail/Fail; actual Fail/N/A/N/A normalizes to Fail/Fail/Fail
+- decision: confirmed no-edit; current fail-shaped evidence matches workbook Failed rows after normalization
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L301-L304 and BRCM mirror tr181-wifi_AccessPoint.odl L163-L166 document and declare APBridgeDisable
+```
+
+## Checkpoint summary (2026-05-09 0506-D063)
+
+> This checkpoint records the `D063 VhtCapabilities` confirmed no-edit decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=164`, `applied=8`, `pending=100`, `block=143`, `needs_pass3=0`
+- `D063 VhtCapabilities` confirmed as `workbook_normalized_match_no_yaml_edit`
+- workbook row 63 raw value is `Pass / Not Support / Not Support`, normalized to `Pass / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.VhtCapabilities` 是 read-only string，列出 VHT capability tokens
+- focused run `20260509T184359865641` validates the current 5G path: STA wl0 and AP1 AssociatedDevice.1 both resolved to `2c:59:17:00:42:15`; direct getter, snapshot, and driver capture all matched `SGI80,SGI160,SU-BFR,SU-BFE`
+- report shape `Pass / N/A / N/A` normalizes to `Pass / Fail / Fail`, matching workbook row 63; no YAML edit was required
+- next ready single-case Pass3 target: `D064`
+
+</details>
+
+### D063 VhtCapabilities confirmed evidence
+
+**STA 指令**
+
+```sh
+cat /sys/class/net/wl0/address | tr 'A-F' 'a-f' | sed 's/^/StaMac=/'
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.VhtCapabilities?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?"
+wl -i wl0 sta_info "$STA_MAC" | awk '/^[[:space:]]*VHT caps / {line=substr($0, index($0, ":")+2); print "DriverVhtCapsLine=" line; for (i=1;i<=NF;i++) if ($i ~ /^(SGI80|SGI160|SU-BFR|SU-BFE|MU-BFR|MU-BFE)$/) caps[++n]=$i} END {if (n) {out=""; for (i=1;i<=n;i++) out = out (i>1 ? "," : "") caps[i]; print "DriverVhtCapabilities=" out}}'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T184359865641
+- STA identity: StaMac=2c:59:17:00:42:15
+- AP1 association: MACAddress=2c:59:17:00:42:15
+- API evidence: WiFi.AccessPoint.1.AssociatedDevice.1.VhtCapabilities="SGI80,SGI160,SU-BFR,SU-BFE"
+- snapshot evidence: AssocMAC=2c:59:17:00:42:15; AssocVhtCapabilities=SGI80,SGI160,SU-BFR,SU-BFE
+- driver evidence: DriverAssocMac=2c:59:17:00:42:15; DriverVhtCapsLine=LDPC SGI80 SGI160 SU-BFR SU-BFE; DriverVhtCapabilities=SGI80,SGI160,SU-BFR,SU-BFE
+- report shape: Pass / N/A / N/A, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 63: raw expected Pass/Not Support/Not Support; normalized expected Pass/Fail/Fail; actual Pass/N/A/N/A normalizes to Pass/Fail/Fail
+- decision: confirmed no-edit; current 5G-only authored case matches workbook after Not Support/N/A normalization
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1680-L1685 documents and declares VhtCapabilities; BRCM mirror tr181-wifi_AccessPoint.odl L1112 declares VhtCapabilities
+```
+
+## Checkpoint summary (2026-05-09 0506-D062)
+
+> This checkpoint records the `D062 VendorOUI` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=163`, `applied=8`, `pending=101`, `block=143`, `needs_pass3=0`
+- `D062 VendorOUI` blocked as `bands_scope_outside_audit_allowlist`
+- workbook row 62 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.VendorOUI` 是 read-only OUI-list string
+- focused run `20260509T184101776306` validates the current 5G path: STA wl0 and AP1 AssociatedDevice.1 both resolved to `2c:59:17:00:42:15`; direct getter, snapshot, and driver capture all matched `00:90:4C,00:10:18,00:50:F2`
+- report shape `Pass / N/A / N/A` 與 workbook tri-band Pass 不符；新增 6G/2.4G executable coverage 或修改 top-level bands/topology 超出 audit allowlist
+- next ready single-case Pass3 target: `D063`
+
+</details>
+
+### D062 VendorOUI blocker evidence
+
+**STA 指令**
+
+```sh
+cat /sys/class/net/wl0/address | tr 'A-F' 'a-f' | sed 's/^/StaMac=/'
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?"
+wl -i wl0 sta_info "$STA_MAC" | awk '/^[[:space:]]*VENDOR OUI VALUE\[[0-9]+\]/ {oui[++n]=$NF} END {if (n) {print "DriverVendorOUICount=" n; list=""; for (i=1;i<=n;i++) list = list (i>1 ? "," : "") oui[i]; print "DriverVendorOUIList=" list}}'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T184101776306
+- STA identity: StaMac=2c:59:17:00:42:15
+- AP1 association: MACAddress=2c:59:17:00:42:15
+- API evidence: WiFi.AccessPoint.1.AssociatedDevice.1.VendorOUI="00:90:4C,00:10:18,00:50:F2"
+- snapshot evidence: AssocMAC=2c:59:17:00:42:15; AssocVendorOUI=00:90:4C,00:10:18,00:50:F2
+- driver evidence: DriverAssocMac=2c:59:17:00:42:15; DriverVendorOUICount=3; DriverVendorOUIList=00:90:4C,00:10:18,00:50:F2
+- report shape: Pass / N/A / N/A, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 62: expected Pass/Pass/Pass, actual Pass/N/A/N/A, mismatch_case_count=1, mismatch bands=6g,2.4g
+- blocker: current 5G-only authored case is valid for AP1 but cannot represent workbook tri-band Pass without bands/topology or 6G/2.4G executable-step changes outside audit allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1634 documents OUI-list format; L1637 declares VendorOUI as read-only string; BRCM mirror tr181-wifi_AccessPoint.odl L1104 declares VendorOUI
+```
+
+## Checkpoint summary (2026-05-09 0506-D061)
+
+> This checkpoint records the `D061 UplinkShortGuard` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=163`, `applied=8`, `pending=102`, `block=142`, `needs_pass3=0`
+- `D061 UplinkShortGuard` blocked as `bands_scope_outside_audit_allowlist`
+- workbook row 61 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.UplinkShortGuard` 是 volatile read-only bool；WLD header 也暴露 UplinkShortGuard
+- focused run `20260509T183612306374` validates the current 5G path: AP1 AssociatedDevice.1 remained `2C:59:17:00:42:15`, `UplinkShortGuard=1`, and driver GI `1.6us` parsed `DriverUplinkShortGuard=1`
+- report shape `Pass / N/A / N/A` 與 workbook tri-band Pass 不符；新增 6G/2.4G executable coverage 或修改 top-level bands/topology 超出 audit allowlist
+- next ready single-case Pass3 target: `D062`
+
+</details>
+
+### D061 UplinkShortGuard blocker evidence
+
+**STA 指令**
+
+```sh
+ifconfig wl0 192.168.1.3 netmask 255.255.255.0 up
+ping -I wl0 -c 8 -W 1 192.168.1.1
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?"
+wl -i wl0 sta_info "$STA_MAC" | sed -n '/rx nrate/,+1p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T183612306374
+- AP1 association: AssociatedDevice.1.MACAddress="2C:59:17:00:42:15"
+- trigger: STA wl0 ping sent 8 packets to 192.168.1.1
+- API evidence: UplinkShortGuard=1
+- driver evidence: rx nrate / he mcs 7 Nss 4 Tx Exp 0 bw20 ldpc 2xLTF GI 1.6us auto; DriverUplinkShortGuardGI=1.6us; DriverUplinkShortGuard=1
+- report shape: Pass / N/A / N/A, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 61: expected Pass/Pass/Pass, actual Pass/N/A/N/A, mismatch_case_count=1, mismatch bands=6g,2.4g
+- blocker: current 5G-only authored case is valid for AP1 but cannot represent workbook tri-band Pass without bands/topology or 6G/2.4G executable-step changes outside audit allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1412 declares UplinkShortGuard as volatile read-only bool; BRCM mirror tr181-wifi_AccessPoint.odl L1091 declares UplinkShortGuard; wld.h L843/L928 expose UplinkShortGuard fields
+```
+
+## Checkpoint summary (2026-05-09 0506-D060)
+
+> This checkpoint records the `D060 UplinkMCS` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=163`, `applied=8`, `pending=103`, `block=141`, `needs_pass3=0`
+- `D060 UplinkMCS` blocked as `bands_scope_outside_audit_allowlist`
+- workbook row 60 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.UplinkMCS` 是 volatile read-only uint32；WLD header 也暴露 UplinkMCS
+- focused run `20260509T183228754680` validates the current 5G path: AP1 AssociatedDevice.1 remained `2C:59:17:00:42:15`, `UplinkMCS=7`, and driver `rx nrate` parsed `DriverUplinkMCS=7`
+- report shape `Pass / N/A / N/A` 與 workbook tri-band Pass 不符；新增 6G/2.4G executable coverage 或修改 top-level bands/topology 超出 audit allowlist
+- next ready single-case Pass3 target: `D061`
+
+</details>
+
+### D060 UplinkMCS blocker evidence
+
+**STA 指令**
+
+```sh
+ifconfig wl0 192.168.1.3 netmask 255.255.255.0 up
+ping -I wl0 -c 8 -W 1 192.168.1.1
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?"
+wl -i wl0 sta_info "$STA_MAC" | sed -n '/rx nrate/,+1p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T183228754680
+- AP1 association: AssociatedDevice.1.MACAddress="2C:59:17:00:42:15"
+- trigger: STA wl0 ping sent 8 packets to 192.168.1.1
+- API evidence: UplinkMCS=7
+- driver evidence: rx nrate / he mcs 7 Nss 4 Tx Exp 0 bw20 ldpc 2xLTF GI 1.6us auto; DriverUplinkMCS=7
+- report shape: Pass / N/A / N/A, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 60: expected Pass/Pass/Pass, actual Pass/N/A/N/A, mismatch_case_count=1, mismatch bands=6g,2.4g
+- blocker: current 5G-only authored case is valid for AP1 but cannot represent workbook tri-band Pass without bands/topology or 6G/2.4G executable-step changes outside audit allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1406 declares UplinkMCS as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L1094 declares UplinkMCS; wld.h L841/L926 expose UplinkMCS fields
+```
+
+## Checkpoint summary (2026-05-09 0506-D059)
+
+> This checkpoint records the `D059 UplinkBandwidth` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=163`, `applied=8`, `pending=104`, `block=140`, `needs_pass3=0`
+- `D059 UplinkBandwidth` blocked as `bands_scope_outside_audit_allowlist`
+- workbook row 59 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.UplinkBandwidth` 是 volatile read-only uint32；WLD header 也暴露 UplinkBandwidth
+- focused run `20260509T182916092906` validates the current 5G path: AP1 AssociatedDevice.1 remained `2C:59:17:00:42:15`, `UplinkBandwidth=20`, and driver `rx nrate` parsed `DriverUplinkBandwidth=20`
+- report shape `Pass / N/A / N/A` 與 workbook tri-band Pass 不符；新增 6G/2.4G executable coverage 或修改 top-level bands/topology 超出 audit allowlist
+- next ready single-case Pass3 target: `D060`
+
+</details>
+
+### D059 UplinkBandwidth blocker evidence
+
+**STA 指令**
+
+```sh
+ifconfig wl0 192.168.1.3 netmask 255.255.255.0 up
+ping -I wl0 -c 8 -W 1 192.168.1.1
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?"
+wl -i wl0 sta_info "$STA_MAC" | sed -n '/rx nrate/,+1p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T182916092906
+- AP1 association: AssociatedDevice.1.MACAddress="2C:59:17:00:42:15"
+- trigger: STA wl0 ping sent 8 packets to 192.168.1.1
+- API evidence: UplinkBandwidth=20
+- driver evidence: rx nrate / he mcs 4 Nss 4 Tx Exp 0 bw20 ldpc 2xLTF GI 1.6us auto; DriverUplinkBandwidth=20
+- report shape: Pass / N/A / N/A, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 59: expected Pass/Pass/Pass, actual Pass/N/A/N/A, mismatch_case_count=1, mismatch bands=6g,2.4g
+- blocker: current 5G-only authored case is valid for AP1 but cannot represent workbook tri-band Pass without bands/topology or 6G/2.4G executable-step changes outside audit allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1409 declares UplinkBandwidth as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L1088 declares UplinkBandwidth; wld.h L842/L927 expose UplinkBandwidth fields
+```
+
+## Checkpoint summary (2026-05-09 0506-D058)
+
+> This checkpoint records the `D058 UNIIBandsCapabilities` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=163`, `applied=8`, `pending=105`, `block=139`, `needs_pass3=0`
+- `D058 UNIIBandsCapabilities` blocked as `sta_env_setup_and_tri_band_uniibands_scope_outside_audit_allowlist`
+- workbook row 58 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.UNIIBandsCapabilities` 是 read-only string，列舉 U-NII capability values
+- focused run `20260509T182432280364` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`，retry/remediation 後仍失敗
+- report shape `Fail / N/A / N/A` 與 workbook tri-band Pass 不符；修復 stale STA setup 與 tri-band UNIIBands coverage 超出 audit allowlist
+- next ready single-case Pass3 target: `D059`
+
+</details>
+
+### D058 UNIIBandsCapabilities blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.UNIIBandsCapabilities?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T182432280364
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 58: expected Pass/Pass/Pass, actual Fail/N/A/N/A, mismatch_case_count=1, mismatch bands=5g,6g,2.4g
+- blocker: checked-in 5G-only stale WPA3 setup and 5G-only UNIIBands sampling cannot be repaired through audit verify-edit; sta_env_setup, top-level bands/topology, and adding 6G/2.4G executable coverage are outside allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1757-L1760 declares UNIIBandsCapabilities read-only U-NII capability string; BRCM mirror tr181-wifi_AccessPoint.odl L1082/L1085 declares the same capability
+```
+
+## Checkpoint summary (2026-05-09 0506-D057)
+
+> This checkpoint records the `D057 TxUnicastPacketCount` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=163`, `applied=8`, `pending=106`, `block=138`, `needs_pass3=0`
+- `D057 TxUnicastPacketCount` confirmed without YAML edit，reason=`workbook_normalized_match_no_yaml_edit`
+- workbook row 57 raw value is `Fail / Fail / Fail`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.TxUnicastPacketCount` 是 volatile read-only uint32；WLD header 也暴露 TxUnicastPacketCount
+- focused run `20260509T181956090658` reached the 5G live getter: STA stayed `wpa_state=COMPLETED` on `testpilot5G`, AP1 AssociatedDevice.1 matched STA `2c:59:17:00:42:15`, and trigger transmitted 8 packets
+- `TxUnicastPacketCount` remained `0 -> 0` and report shape `Fail / N/A / N/A` 正規化後等同 workbook `Fail / Fail / Fail`
+- next ready single-case Pass3 target: `D058`
+
+</details>
+
+### D057 TxUnicastPacketCount confirmed evidence
+
+**STA 指令**
+
+```sh
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+cat /sys/class/net/wl0/address
+ifconfig wl0 192.168.1.3 netmask 255.255.255.0 up
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxUnicastPacketCount?"
+ping -I br-lan -c 8 -W 1 192.168.1.3
+wl -i wl0 sta_info "$STA_MAC" | sed -n 's/^[[:space:]]*tx ucast pkts: \([0-9][0-9]*\).*/DriverTxUnicastPacketCount=\1/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T181956090658
+- STA: ssid=testpilot5G, key_mgmt=WPA2-PSK, wpa_state=COMPLETED, StaMac=2c:59:17:00:42:15, StaIp=192.168.1.3
+- AP1 association: AssociatedDevice.1.MACAddress=2c:59:17:00:42:15
+- trigger: 8 packets transmitted from DUT br-lan to STA IP
+- API evidence: TxUnicastPacketCount remained 0 -> 0; failure_snapshot reason_code=delta_zero for api_before_5g.TxUnicastPacketCount to api_after_5g.TxUnicastPacketCount
+- report shape: Fail / N/A / N/A, diagnostic_status=FailTest
+- compare against audit/0506.xlsx row 57: expected Fail/Fail/Fail, actual Fail/N/A/N/A normalized Fail/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- no YAML edit: live fail-shaped getter evidence matches workbook Fail semantics
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1341 declares TxUnicastPacketCount as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L1021 declares TxUnicastPacketCount; wld.h L830/L919 expose TxUnicastPacketCount fields
+```
+
+## Checkpoint summary (2026-05-09 0506-D056)
+
+> This checkpoint records the `D056 TxPacketCount` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=162`, `applied=8`, `pending=107`, `block=138`, `needs_pass3=0`
+- `D056 TxPacketCount` blocked as `sta_env_setup_and_tri_band_txpacketcount_scope_outside_audit_allowlist`
+- workbook row 56 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.TxPacketCount` 是 volatile read-only uint32；WLD header 也暴露 TxPacketCount
+- focused run `20260509T181539285123` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`，retry/remediation 後仍失敗
+- report shape `Fail / N/A / N/A` 與 workbook tri-band Pass 不符；修復 stale STA setup 與 tri-band TxPacketCount traffic coverage 超出 audit allowlist
+- next ready single-case Pass3 target: `D057`
+
+</details>
+
+### D056 TxPacketCount blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxPacketCount?"
+wl -i wl0 sta_info "$STA_MAC" | sed -n 's/^[[:space:]]*tx total pkts: \([0-9][0-9]*\).*/DriverTxPacketCount=\1/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T181539285123
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 56: expected Pass/Pass/Pass, actual Fail/N/A/N/A, mismatch_case_count=1, mismatch bands=5g,6g,2.4g
+- blocker: checked-in 5G-only stale WPA3 setup and 5G-only downlink trigger semantics cannot be repaired through audit verify-edit; sta_env_setup, top-level bands/topology, and adding 6G/2.4G executable traffic steps are outside allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1328 declares TxPacketCount as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L1009 declares TxPacketCount; wld.h L826/L915 expose TxPacketCount fields
+```
+
+## Checkpoint summary (2026-05-09 0506-D055)
+
+> This checkpoint records the `D055 TxMulticastPacketCount` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=162`, `applied=8`, `pending=108`, `block=137`, `needs_pass3=0`
+- `D055 TxMulticastPacketCount` confirmed without YAML edit，reason=`workbook_normalized_match_setup_exception_no_yaml_edit`
+- workbook row 55 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.TxMulticastPacketCount` 是 volatile read-only uint32；WLD header 也暴露 TxMulticastPacketCount
+- focused run `20260509T181102060063` 未到 getter；attempt 1 在 case-local `sta_env_setup[48]` 的 `iw dev wl0 link` 回 `Not connected.`，attempt 2 在 setup 階段遇到 serialwrap command submit exception
+- report shape `Fail / N/A / N/A` 正規化後等同 workbook `Fail / Fail / Fail`
+- next ready single-case Pass3 target: `D056`
+
+</details>
+
+### D055 TxMulticastPacketCount confirmed evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxMulticastPacketCount?"
+wl -i wl0 sta_info "$STA_MAC" | sed -n 's/^[[:space:]]*tx mcast\/bcast pkts: \([0-9][0-9]*\).*/DriverTxMulticastPacketCount=\1/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T181102060063
+- setup failure: attempt 1 sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.`
+- setup exception: attempt 2 serialwrap command submit failed during `ubus-cli WiFi.SSID.4.SSID=TestPilot_BTM`
+- report shape: Fail / N/A / N/A, diagnostic_status=Inconclusive
+- compare against audit/0506.xlsx row 55: expected Not Supported/Not Supported/Not Supported normalized Fail/Fail/Fail, actual Fail/N/A/N/A normalized Fail/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- no YAML edit: workbook Not Supported already closes as fail-shaped; setup and multicast traffic generation remain outside the audit allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1355 declares TxMulticastPacketCount as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L999 declares TxMulticastPacketCount; wld.h L832/L921 expose TxMulticastPacketCount fields
+```
+
+## Checkpoint summary (2026-05-09 0506-D054)
+
+> This checkpoint records the `D054 TxErrors` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=161`, `applied=8`, `pending=109`, `block=137`, `needs_pass3=0`
+- `D054 TxErrors` blocked as `sta_env_setup_and_tri_band_txerrors_trigger_outside_audit_allowlist`
+- workbook row 54 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.TxErrors` 是 volatile read-only uint32；WLD header 將 `TxFailures` 映射到 TR-181 `TxErrors`
+- focused run `20260509T180628144176` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`，retry/remediation 後仍失敗
+- report shape `Fail / N/A / N/A` 與 workbook tri-band Pass 不符；修復 stale STA setup 與 tri-band TxErrors trigger coverage 超出 audit allowlist
+- next ready single-case Pass3 target: `D055`
+
+</details>
+
+### D054 TxErrors blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxErrors?"
+wl -i wl0 sta_info "$STA_MAC" | sed -n 's/^[[:space:]]*tx failures: \([0-9][0-9]*\).*/DriverTxErrors=\1/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T180628144176
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 54: expected Pass/Pass/Pass, actual Fail/N/A/N/A, mismatch_case_count=1, mismatch bands=5g,6g,2.4g
+- blocker: checked-in 5G-only stale WPA3 setup plus manual/external TxErrors trigger semantics cannot be repaired through audit verify-edit; sta_env_setup, top-level bands/topology, and adding 6G/2.4G executable trigger steps are outside allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1370 declares TxErrors as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L987 declares TxErrors; wld.h L833/L922 map TxFailures to TxErrors
+```
+
+## Checkpoint summary (2026-05-09 0506-D053)
+
+> This checkpoint records the `D053 TxBytes` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=161`, `applied=8`, `pending=110`, `block=136`, `needs_pass3=0`
+- `D053 TxBytes` blocked as `tri_band_txbytes_delta_blocker_outside_audit_allowlist`
+- workbook row 53 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.TxBytes` 是 volatile read-only uint64；BRCM mirror 與 WLD header 也暴露 TxBytes counter
+- focused run `20260509T175009646089` reached same-STA AssociatedDevice getters; 5G `TxBytes` increased from `0` to `782`, but 6G and 2.4G stayed `0 -> 0` after bounded ping triggers
+- report shape `Fail / Fail / Fail` 與 workbook tri-band Pass 不符；修復 6G/2.4G traffic trigger 或 oracle path 超出目前 audit-safe YAML-only allowlist
+- next ready single-case Pass3 target: `D054`
+
+</details>
+
+### D053 TxBytes blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+cat /sys/class/net/wl0/address | tr 'a-f' 'A-F' | sed 's/^/StaMac=/'
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.TxBytes?"
+ping -I br-lan -c 20 -s 1400 -W 1 "$STA_IP"
+wl -i wl0 sta_info "$STA_MAC" | sed -n 's/.*tx bytes: *\([0-9][0-9]*\).*/DriverTxBytes=\1/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T175009646089
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1360 declares TxBytes as volatile read-only uint64; BRCM mirror tr181-wifi_AccessPoint.odl L977 declares TxBytes; wld.h L828/L917 expose TxBytes fields
+- live getter evidence: same-STA AssociatedDevice matches resolved for AP1/AP3/AP5
+- 5G TxBytes delta: 0 -> 782
+- 6G TxBytes delta: 0 -> 0; 2.4G TxBytes delta: 0 -> 0 after bounded ping triggers
+- report shape: Fail / Fail / Fail, diagnostic_status=FailTest
+- compare against audit/0506.xlsx row 53: expected Pass/Pass/Pass, actual Fail/Fail/Fail, full_match_count=0, mismatch_case_count=1, mismatch bands=5g,6g,2.4g
+- blocker: current lab trigger/oracle path cannot produce required 6G/2.4G TxBytes deltas, and repairing traffic generation or changing band-specific executable flow is outside audit-safe YAML-only allowlist
+```
+
+## Checkpoint summary (2026-05-09 0506-D052)
+
+> This checkpoint records the `D052 Tx_RetransmissionsFailed` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=161`, `applied=8`, `pending=111`, `block=135`, `needs_pass3=0`
+- `D052 Tx_RetransmissionsFailed` confirmed without YAML edit，reason=`workbook_normalized_match_setup_failure_no_yaml_edit`
+- workbook row 52 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.Tx_RetransmissionsFailed` 是 volatile read-only uint32；WLD header 也暴露 tx retry-exhausted counter
+- focused run `20260509T174432636601` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 正規化後等同 workbook `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D053`
+
+</details>
+
+### D052 Tx_RetransmissionsFailed confirmed evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Tx_RetransmissionsFailed?"
+wl -i wl0 sta_info "$STA_MAC" | sed -n 's/.*tx pkts retry exhausted: *\([0-9][0-9]*\).*/DriverTxRetransmissionsFailed=\1/p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T174432636601
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 52: expected Not Supported/Not Supported/Not Supported normalized Fail/Fail/Fail, actual Fail/N/A/N/A normalized Fail/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- no YAML edit: setup/bands/topology are outside audit allowlist, and workbook Not Supported already closes as fail-shaped
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1391 declares Tx_RetransmissionsFailed as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L1041 declares Tx_RetransmissionsFailed; wld.h L807/L908 expose Tx_RetransmissionsFailed fields
+```
+
+## Checkpoint summary (2026-05-09 0506-D051)
+
+> This checkpoint records the `D051 Tx_Retransmissions` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=160`, `applied=8`, `pending=112`, `block=135`, `needs_pass3=0`
+- `D051 Tx_Retransmissions` blocked as `sta_env_setup_and_bands_scope_outside_audit_allowlist`
+- workbook row 51 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.Tx_Retransmissions` 是 volatile read-only uint32；WLD header 也暴露 tx retransmission counter
+- focused run `20260509T173910187245` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 與 workbook tri-band Pass 不符；修復需要改 sta_env_setup / bands / topology 或新增 6G/2.4G steps，超出 audit allowlist
+- next ready single-case Pass3 target: `D052`
+
+</details>
+
+### D051 Tx_Retransmissions blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Tx_Retransmissions?"
+wl -i wl0 sta_info "$STA_MAC" | sed -n 's/.*tx pkts retries: *\([0-9][0-9]*\).*/DriverTxRetransmissions=\1/p'
+ping -I br-lan -c 20 -s 1400 -W 1 "$STA_IP"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T173910187245
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 51: expected Pass/Pass/Pass, actual Fail/N/A/N/A, mismatch_case_count=1, mismatch bands=5g,6g,2.4g
+- blocker: stale case-local WPA3/SAE setup and checked-in 5G-only scope cannot be repaired through audit verify-edit; sta_env_setup, top-level bands/topology, and adding 6G/2.4G executable steps are outside allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1386 declares Tx_Retransmissions as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L1031 declares Tx_Retransmissions; wld.h L806/L907 expose Tx_Retransmissions fields
+```
+
+## Checkpoint summary (2026-05-09 0506-D050)
+
+> This checkpoint records the `D050 SupportedVhtMCS` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=160`, `applied=8`, `pending=113`, `block=134`, `needs_pass3=0`
+- `D050 SupportedVhtMCS` confirmed without YAML edit，reason=`workbook_normalized_match_no_yaml_edit`
+- workbook row 50 raw value is `Pass / Not Supported / Not Supported`, normalized to `Pass / Fail / Fail`
+- focused run `20260509T173558362732` validates current AP1 path: `SupportedVhtMCS` returns `error=4 parameter not found`, sibling Rx/Tx VHT MCS fields return `9,9,9,9`, and driver VHT capability evidence is present
+- report shape `Pass / N/A / N/A` 正規化後等同 workbook `Pass / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D051`
+
+</details>
+
+### D050 SupportedVhtMCS confirmed evidence
+
+**STA 指令**
+
+```sh
+cat /sys/class/net/wl0/address | tr 'a-f' 'A-F' | sed 's/^/StaMac=/'
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedVhtMCS?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.RxSupportedVhtMCS="\([^"]*\)".*/DriverRxSupportedVhtMCS=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxSupportedVhtMCS="\([^"]*\)".*/DriverTxSupportedVhtMCS=\1/p'
+wl -i wl0 sta_info "$STA_MAC" | awk '/VHT caps|MCS SET|VHT SET/'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T173558362732
+- current AP1 path: StaMac=2C:59:17:00:42:15 and AssociatedDevice.1.MACAddress="2C:59:17:00:42:15"
+- SupportedVhtMCS readback: ERROR ... failed (4 - parameter not found); extracted error=4, message=parameter not found
+- sibling evidence: RxSupportedVhtMCS=9,9,9,9; TxSupportedVhtMCS=9,9,9,9; wl0 sta_info exposed VHT caps / MCS SET / VHT SET
+- report shape: Pass / N/A / N/A, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 50: expected Pass/Not Supported/Not Supported normalized Pass/Fail/Fail, actual Pass/N/A/N/A normalized Pass/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- no YAML edit: current authored 5G path plus N/A projections already match workbook normalization
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202 starts AssociatedDevice[]; L1581/L1588 declare Rx/TxSupportedVhtMCS siblings; fs/etc/amx/wld/wld_endpoint.odl L361 declares standalone SupportedVhtMCS under Endpoint
+```
+
+## Checkpoint summary (2026-05-09 0506-D049)
+
+> This checkpoint records the `D049 SupportedMCS` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=159`, `applied=8`, `pending=114`, `block=134`, `needs_pass3=0`
+- `D049 SupportedMCS` confirmed without YAML edit，reason=`workbook_normalized_match_setup_failure_no_yaml_edit`
+- workbook row 49 raw value is `Fail / Fail / fail`, normalized to `Fail / Fail / Fail`
+- source declares `SupportedMCS` under AccessPoint AssociatedDevice and Endpoint
+- focused run `20260509T173124241703` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 正規化後等同 workbook `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D050`
+
+</details>
+
+### D049 SupportedMCS confirmed evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedMCS?"
+wl -i wl0 sta_info "$STA_MAC" | awk '/HE caps|MCS SET|HE SET|eht mcs/'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T173124241703
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 49: expected Fail/Fail/fail normalized Fail/Fail/Fail, actual Fail/N/A/N/A normalized Fail/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- no YAML edit: setup/bands/topology are outside audit allowlist, and workbook Fail already closes as fail-shaped
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202 starts AssociatedDevice[]; L1568/L1772 declare SupportedMCS; fs/etc/amx/wld/wld_endpoint.odl L352 declares Endpoint SupportedMCS
+```
+
+## Checkpoint summary (2026-05-09 0506-D048)
+
+> This checkpoint records the `D048 SupportedHeMCS` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=158`, `applied=8`, `pending=115`, `block=134`, `needs_pass3=0`
+- `D048 SupportedHeMCS` confirmed without YAML edit，reason=`workbook_normalized_match_setup_failure_no_yaml_edit`
+- workbook row 48 raw value is `Skip / Skip / Skip`, normalized to `Fail / Fail / Fail`
+- source survey finds `RxSupportedHeMCS` / `TxSupportedHeMCS` under AccessPoint AssociatedDevice, but standalone `SupportedHeMCS` is declared under Endpoint
+- focused run `20260509T172641475345` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 正規化後等同 workbook `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D049`
+
+</details>
+
+### D048 SupportedHeMCS confirmed evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHeMCS?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.RxSupportedHeMCS="\([^"]*\)".*/DriverRxSupportedHeMCS=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxSupportedHeMCS="\([^"]*\)".*/DriverTxSupportedHeMCS=\1/p'
+wl -i wl0 sta_info "$STA_MAC"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T172641475345
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 48: expected Skip/Skip/Skip normalized Fail/Fail/Fail, actual Fail/N/A/N/A normalized Fail/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- no YAML edit: setup/bands/topology are outside audit allowlist, and workbook Skip already closes as fail-shaped
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202 starts AssociatedDevice[]; L1595/L1602 declare Rx/TxSupportedHeMCS siblings; fs/etc/amx/wld/wld_endpoint.odl L369 declares standalone SupportedHeMCS under Endpoint
+```
+
+## Checkpoint summary (2026-05-09 0506-D047)
+
+> This checkpoint records the `D047 SupportedHe160MCS` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=157`, `applied=8`, `pending=116`, `block=134`, `needs_pass3=0`
+- `D047 SupportedHe160MCS` blocked as `bands_scope_and_source_authority_outside_audit_allowlist`
+- workbook row 47 raw value is `Pass / Pass / Not Supported`, normalized to `Pass / Pass / Fail`
+- source survey finds `RxSupportedHe160MCS` / `TxSupportedHe160MCS` under AccessPoint AssociatedDevice, but standalone `SupportedHe160MCS` is declared under Endpoint, not AccessPoint AssociatedDevice
+- focused run `20260509T172302968586` validates current AP1 path: `SupportedHe160MCS` returns `error=4 parameter not found` while sibling Rx/Tx HE160 MCS fields return `11,11,11,11`
+- report shape `Pass / N/A / N/A` matches 5G and normalized 2.4G, but misses workbook 6G Pass; representing that needs bands/topology or 6G executable-step changes outside audit allowlist
+- next ready single-case Pass3 target: `D048`
+
+</details>
+
+### D047 SupportedHe160MCS blocker evidence
+
+**STA 指令**
+
+```sh
+cat /sys/class/net/wl0/address | tr 'a-f' 'A-F' | sed 's/^/StaMac=/'
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SupportedHe160MCS?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.?" | sed -n 's/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.RxSupportedHe160MCS="\([^"]*\)".*/DriverRxSupportedHe160MCS=\1/p; s/^WiFi\.AccessPoint\.1\.AssociatedDevice\.1\.TxSupportedHe160MCS="\([^"]*\)".*/DriverTxSupportedHe160MCS=\1/p'
+wl -i wl0 sta_info "$STA_MAC" | awk '/HE caps|MCS SET|HE SET/'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T172302968586
+- current AP1 path: StaMac=2C:59:17:00:42:15 and AssociatedDevice.1.MACAddress="2C:59:17:00:42:15"
+- SupportedHe160MCS readback: ERROR ... failed (4 - parameter not found); extracted error=4, message=parameter not found
+- sibling evidence: RxSupportedHe160MCS=11,11,11,11; TxSupportedHe160MCS=11,11,11,11; wl0 sta_info exposed HE caps / MCS SET / HE SET
+- report shape: Pass / N/A / N/A, diagnostic_status=Pass
+- compare against audit/0506.xlsx row 47: expected Pass/Pass/Not Supported, actual Pass/N/A/N/A; only 6g mismatches after normalization
+- blocker: checked-in 5G-only scope cannot produce workbook 6G Pass via audit verify-edit; source also lacks standalone AccessPoint AssociatedDevice SupportedHe160MCS and only exposes Rx/Tx siblings there
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202 starts AssociatedDevice[]; L1609/L1616 declare Rx/TxSupportedHe160MCS siblings; fs/etc/amx/wld/wld_endpoint.odl L377 declares standalone SupportedHe160MCS under Endpoint
+```
+
+## Checkpoint summary (2026-05-09 0506-D046)
+
+> This checkpoint records the `D046 SignalStrengthByChain` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=157`, `applied=8`, `pending=117`, `block=133`, `needs_pass3=0`
+- `D046 SignalStrengthByChain` blocked as `sta_env_setup_and_bands_scope_outside_audit_allowlist`
+- workbook row 46 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.SignalStrengthByChain` 是 volatile read-only string；WLD header 也暴露 per-chain SignalStrength array
+- focused run `20260509T171754069137` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 與 workbook tri-band Pass 不符；修復需要改 sta_env_setup / bands / topology 或新增 6G/2.4G steps，超出 audit allowlist
+- next ready single-case Pass3 target: `D047`
+
+</details>
+
+### D046 SignalStrengthByChain blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SignalStrengthByChain?"
+STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
+wl -i wl0 sta_info "$STA_MAC" | grep antenna
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T171754069137
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 46: expected Pass/Pass/Pass, actual Fail/N/A/N/A, mismatch_case_count=1, mismatch bands=5g,6g,2.4g
+- blocker: stale case-local WPA3/SAE setup and checked-in 5G-only scope cannot be repaired through audit verify-edit; sta_env_setup, top-level bands/topology, and adding 6G/2.4G executable steps are outside allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1258 declares SignalStrengthByChain as volatile read-only string; BRCM mirror tr181-wifi_AccessPoint.odl L1069 declares SignalStrengthByChain; wld.h L799/L900 expose per-chain SignalStrength fields
+```
+
+## Checkpoint summary (2026-05-09 0506-D045)
+
+> This checkpoint records the `D045 SignalStrength` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=157`, `applied=8`, `pending=118`, `block=132`, `needs_pass3=0`
+- `D045 SignalStrength` blocked as `sta_env_setup_and_bands_scope_outside_audit_allowlist`
+- workbook row 45 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.SignalStrength` 是 volatile read-only int32；WLD header 也暴露 SignalStrength / RSSI field
+- focused run `20260509T171052571857` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 與 workbook tri-band Pass 不符；修復需要改 sta_env_setup / bands / topology 或新增 6G/2.4G steps，超出 audit allowlist
+- next ready single-case Pass3 target: `D046`
+
+</details>
+
+### D045 SignalStrength blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SignalStrength?"
+iw dev wl0 station dump | awk '/Station|signal:/'
+wl -i wl0 sta_info "$STA_MAC" | awk '/smoothed rssi|average rssi|last rx data frame/'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T171052571857
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 45: expected Pass/Pass/Pass, actual Fail/N/A/N/A, mismatch_case_count=1, mismatch bands=5g,6g,2.4g
+- blocker: stale case-local WPA3/SAE setup and checked-in 5G-only scope cannot be repaired through audit verify-edit; sta_env_setup, top-level bands/topology, and adding 6G/2.4G executable steps are outside allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1240 declares SignalStrength as volatile read-only int32; BRCM mirror tr181-wifi_AccessPoint.odl L720 declares SignalStrength; wld.h L790 and L2037 expose SignalStrength fields
+```
+
+## Checkpoint summary (2026-05-09 0506-D044)
+
+> This checkpoint records the `D044 SignalNoiseRatio` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=157`, `applied=8`, `pending=119`, `block=131`, `needs_pass3=0`
+- `D044 SignalNoiseRatio` blocked as `sta_env_setup_and_bands_scope_outside_audit_allowlist`
+- workbook row 44 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.SignalNoiseRatio` 是 volatile read-only int32；WLD header 也暴露 SNR field
+- focused run `20260509T170435114720` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 與 workbook tri-band Pass 不符；修復需要改 sta_env_setup / bands / topology 或新增 6G/2.4G steps，超出 audit allowlist
+- next ready single-case Pass3 target: `D045`
+
+</details>
+
+### D044 SignalNoiseRatio blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SignalNoiseRatio?"
+iw dev wl0 station dump | awk '/Station|signal:/'
+wl -i wl0 sta_info "$STA_MAC" | awk '/per antenna noise floor:/'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T170435114720
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 44: expected Pass/Pass/Pass, actual Fail/N/A/N/A, mismatch_case_count=1, mismatch bands=5g,6g,2.4g
+- blocker: stale case-local WPA3/SAE setup and checked-in 5G-only scope cannot be repaired through audit verify-edit; sta_env_setup, top-level bands/topology, and adding 6G/2.4G executable steps are outside allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1311 declares SignalNoiseRatio as volatile read-only int32; BRCM mirror tr181-wifi_AccessPoint.odl L1060 declares SignalNoiseRatio; wld.h L803 exposes SignalNoiseRatio
+```
+
+## Checkpoint summary (2026-05-09 0506-D043)
+
+> This checkpoint records the `D043 SecurityModeEnabled` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=157`, `applied=8`, `pending=120`, `block=130`, `needs_pass3=0`
+- `D043 SecurityModeEnabled` blocked as `sta_env_setup_and_bands_scope_outside_audit_allowlist`
+- workbook row 43 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.SecurityModeEnabled` 是 read-only string enum
+- focused run `20260509T170000262307` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`；remediation submit 在 `ubus-cli WiFi.Radio.1.OperatingStandards=ax` 發生 serialwrap command failed
+- report shape `Fail / N/A / N/A` 與 workbook tri-band Pass 不符；修復需要改 sta_env_setup / bands / topology 或新增 6G/2.4G steps，超出 audit allowlist
+- next ready single-case Pass3 target: `D044`
+
+</details>
+
+### D043 SecurityModeEnabled blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.SecurityModeEnabled?"
+wl -i wl0 sta_info "$STA_MAC" | awk '/auth:/'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T170000262307
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.`
+- remediation evidence: builtin fallback attempted setup recovery, but serialwrap submit failed for `ubus-cli WiFi.Radio.1.OperatingStandards=ax`
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 43: expected Pass/Pass/Pass, actual Fail/N/A/N/A, mismatch_case_count=1, mismatch bands=5g,6g,2.4g
+- blocker: stale case-local WPA3/SAE setup and checked-in 5G-only scope cannot be repaired through audit verify-edit; sta_env_setup, top-level bands/topology, and adding 6G/2.4G executable steps are outside allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1643 declares SecurityModeEnabled as read-only string; BRCM mirror tr181-wifi_AccessPoint.odl L1047 declares SecurityModeEnabled
+```
+
+## Checkpoint summary (2026-05-09 0506-D042)
+
+> This checkpoint records the `D042 RxUnicastPacketCount` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=157`, `applied=8`, `pending=121`, `block=129`, `needs_pass3=0`
+- `D042 RxUnicastPacketCount` confirmed without YAML edit，reason=`workbook_normalized_match_setup_failure_no_yaml_edit`
+- workbook row 42 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.RxUnicastPacketCount` 是 volatile read-only uint32；BRCM/WLD header 與 wl utility 也暴露 rx unicast packet counter
+- focused run `20260509T165528909672` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 正規化後等同 workbook `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D043`
+
+</details>
+
+### D042 RxUnicastPacketCount confirmed evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+ping -I wl0 -c 8 -s 1400 -W 1 <resolved DUT br-lan IPv4>
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RxUnicastPacketCount?"
+wl -i wl0 sta_info "$STA_MAC" | grep 'rx ucast pkts'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T165528909672
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 42: expected Not Supported/Not Supported/Not Supported -> normalized Fail/Fail/Fail; actual Fail/N/A/N/A -> normalized Fail/Fail/Fail; full_match_count=1, mismatch_case_count=0
+- caveat: getter did not execute; this is accepted only as a workbook-normalized match, and sta_env_setup / bands / topology changes remain outside audit allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1334 declares RxUnicastPacketCount as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L1015 declares RxUnicastPacketCount; wld.h L829 exposes RxUnicastPacketCount; wlu_common.c L596 prints rx ucast pkts from sta->rx_ucast_pkts
+```
+
+## Checkpoint summary (2026-05-09 0506-D041)
+
+> This checkpoint records the `D041 RxPacketCount` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=156`, `applied=8`, `pending=122`, `block=129`, `needs_pass3=0`
+- `D041 RxPacketCount` blocked as `sta_env_setup_and_bands_scope_outside_audit_allowlist`
+- workbook row 41 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.RxPacketCount` 是 volatile read-only uint32；BRCM/WLD header 與 nl80211 HAL 也暴露 rx packet counter
+- focused run `20260509T165053136045` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`；remediation submit 在 `wpa_cli terminate` 發生 serialwrap command failed
+- report shape `Fail / N/A / N/A` 與 workbook tri-band Pass 不符；修復需要改 sta_env_setup / bands / topology 或新增 6G/2.4G steps，超出 audit allowlist
+- next ready single-case Pass3 target: `D042`
+
+</details>
+
+### D041 RxPacketCount blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+ping -I wl0 -c 8 -s 1400 -W 1 <resolved DUT br-lan IPv4>
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RxPacketCount?"
+iw dev wl0 station dump | awk '/Station|rx packets:/'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T165053136045
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.`
+- remediation evidence: builtin fallback attempted setup recovery, but serialwrap submit failed for `wpa_cli terminate 2>/dev/null || true`
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 41: expected Pass/Pass/Pass, actual Fail/N/A/N/A, mismatch_case_count=1, mismatch bands=5g,6g,2.4g
+- blocker: stale case-local WPA3/SAE setup and checked-in 5G-only scope cannot be repaired through audit verify-edit; sta_env_setup, top-level bands/topology, and adding 6G/2.4G executable steps are outside allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1323 declares RxPacketCount as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L1004 declares RxPacketCount; wld.h L825 exposes RxPacketCount; rdk_nl80211_hal.c L885 reads rx_tot_pkts into rx_packets
+```
+
+## Checkpoint summary (2026-05-09 0506-D040)
+
+> This checkpoint records the `D040 RxMulticastPacketCount` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=156`, `applied=8`, `pending=123`, `block=128`, `needs_pass3=0`
+- `D040 RxMulticastPacketCount` confirmed without YAML edit，reason=`workbook_normalized_match_setup_failure_no_yaml_edit`
+- workbook row 40 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.RxMulticastPacketCount` 是 volatile read-only uint32；BRCM/WLD header 與 wl utility 也暴露 rx multicast/broadcast packet counter
+- focused run `20260509T164622357153` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 正規化後等同 workbook `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D041`
+
+</details>
+
+### D040 RxMulticastPacketCount confirmed evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+ping -I wl0 -b -c 5 -W 1 192.168.1.255
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RxMulticastPacketCount?"
+wl -i wl0 sta_info "$STA_MAC" | grep 'rx mcast/bcast pkts'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T164622357153
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 40: expected Not Supported/Not Supported/Not Supported -> normalized Fail/Fail/Fail; actual Fail/N/A/N/A -> normalized Fail/Fail/Fail; full_match_count=1, mismatch_case_count=0
+- caveat: getter did not execute; this is accepted only as a workbook-normalized match, and sta_env_setup / bands / topology changes remain outside audit allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1348 declares RxMulticastPacketCount as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L993 declares RxMulticastPacketCount; wld.h L831 exposes RxMulticastPacketCount; wlu_common.c L598 prints rx mcast/bcast pkts from sta->rx_mcast_pkts
+```
+
+## Checkpoint summary (2026-05-09 0506-D039)
+
+> This checkpoint records the `D039 RxBytes` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=155`, `applied=8`, `pending=124`, `block=128`, `needs_pass3=0`
+- `D039 RxBytes` blocked as `sta_env_setup_and_bands_scope_outside_audit_allowlist`
+- workbook row 39 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.RxBytes` 是 volatile read-only uint64；BRCM/WLD header 與 nl80211 HAL 也暴露 rx byte counter
+- focused run `20260509T164049419758` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 與 workbook tri-band Pass 不符；修復需要改 sta_env_setup / bands / topology 或新增 6G/2.4G steps，超出 audit allowlist
+- next ready single-case Pass3 target: `D040`
+
+</details>
+
+### D039 RxBytes blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+ping -I wl0 -c 8 -s 1400 -W 1 <resolved DUT br-lan IPv4>
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.RxBytes?"
+iw dev wl0 station dump | awk '/Station|rx bytes:/'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T164049419758
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 39: expected Pass/Pass/Pass, actual Fail/N/A/N/A, mismatch_case_count=1, mismatch bands=5g,6g,2.4g
+- blocker: stale case-local WPA3/SAE setup and checked-in 5G-only scope cannot be repaired through audit verify-edit; sta_env_setup, top-level bands/topology, and adding 6G/2.4G executable steps are outside allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1365 declares RxBytes as volatile read-only uint64; BRCM mirror tr181-wifi_AccessPoint.odl L982 declares RxBytes; wld.h L827 exposes RxBytes; rdk_nl80211_hal.c L883 reads rx_tot_bytes into rx_bytes
+```
+
+## Checkpoint summary (2026-05-09 0506-D038)
+
+> This checkpoint records the `D038 Rx_Retransmissions` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=155`, `applied=8`, `pending=125`, `block=127`, `needs_pass3=0`
+- `D038 Rx_Retransmissions` confirmed without YAML edit，reason=`workbook_normalized_match_setup_failure_no_yaml_edit`
+- workbook row 38 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.Rx_Retransmissions` 是 volatile read-only uint32；BRCM/WLD header 與 nl80211 HAL 也暴露 rx retry counter
+- focused run `20260509T163520123849` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 正規化後等同 workbook `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D039`
+
+</details>
+
+### D038 Rx_Retransmissions confirmed evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Rx_Retransmissions?"
+wl -i wl0 sta_info "$STA_MAC" | grep 'rx total pkts retried'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T163520123849
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 38: expected Not Supported/Not Supported/Not Supported -> normalized Fail/Fail/Fail; actual Fail/N/A/N/A -> normalized Fail/Fail/Fail; full_match_count=1, mismatch_case_count=0
+- caveat: getter did not execute; this is accepted only as a workbook-normalized match, and sta_env_setup / bands / topology changes remain outside audit allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1375 declares Rx_Retransmissions as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L1026 declares Rx_Retransmissions; wld.h L805 exposes Rx_Retransmissions; rdk_nl80211_hal.c L891 reads rx_pkts_retried into rx_retries
+```
+
+## Checkpoint summary (2026-05-09 0506-D037)
+
+> This checkpoint records the `D037 Retransmissions` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=154`, `applied=8`, `pending=126`, `block=127`, `needs_pass3=0`
+- `D037 Retransmissions` blocked as `sta_env_setup_and_bands_scope_outside_audit_allowlist`
+- workbook row 37 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.Retransmissions` 是 volatile read-only uint32
+- focused run `20260509T162754634038` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 與 workbook tri-band Pass 不符；修復需要改 sta_env_setup / bands / topology 或新增 6G/2.4G steps，超出 audit allowlist
+- next ready single-case Pass3 target: `D038`
+
+</details>
+
+### D037 Retransmissions blocker evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Retransmissions?"
+wl -i wl0 sta_info "$STA_MAC" | grep 'tx pkts retries'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T162754634038
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 37: expected Pass/Pass/Pass, actual Fail/N/A/N/A, mismatch_case_count=1, mismatch bands=5g,6g,2.4g
+- blocker: stale case-local WPA3/SAE setup and checked-in 5G-only scope cannot be repaired through audit verify-edit; sta_env_setup, top-level bands/topology, and adding 6G/2.4G executable steps are outside allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1295 declares Retransmissions as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L737 declares Retransmissions as volatile read-only uint32
+```
+
+## Checkpoint summary (2026-05-09 0506-D036)
+
+> This checkpoint records the `D036 PowerSave` confirmed no-edit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=154`, `applied=8`, `pending=127`, `block=126`, `needs_pass3=0`
+- `D036 PowerSave` confirmed without YAML edit，reason=`workbook_normalized_match_setup_failure_no_yaml_edit`
+- workbook row 36 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.PowerSave` 是 volatile read-only bool
+- focused run `20260509T162145736993` 未到 getter；case-local WPA3/SAE `sta_env_setup[48]` 在 `iw dev wl0 link` 回 `Not connected.`
+- report shape `Fail / N/A / N/A` 正規化後等同 workbook `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D037`
+
+</details>
+
+### D036 PowerSave confirmed evidence
+
+**STA 指令**
+
+```sh
+wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.PowerSave?"
+STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T162145736993
+- setup failure: sta_env_setup[48] target=STA command `iw dev wl0 link` returned `Not connected.` after retries
+- report shape: Fail / N/A / N/A, diagnostic_status=FailEnv
+- compare against audit/0506.xlsx row 36: expected raw Not Supported/Not Supported/Not Supported, normalized Fail/Fail/Fail; actual normalized Fail/Fail/Fail; full_match_count=1, mismatch_case_count=0
+- caveat: getter did not execute; no YAML edit was applied because sta_env_setup, bands, and topology are outside audit verify-edit allowlist
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1469 declares PowerSave as volatile read-only bool; BRCM mirror tr181-wifi_AccessPoint.odl L949 declares PowerSave as volatile read-only bool
+```
+
+## Checkpoint summary (2026-05-09 0506-D035)
+
+> This checkpoint records the `D035 OperatingStandard` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=153`, `applied=8`, `pending=128`, `block=126`, `needs_pass3=0`
+- `D035 OperatingStandard` blocked as `bands_scope_outside_audit_allowlist`
+- workbook row 35 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.OperatingStandard` 是 read-only string
+- focused run `20260509T161815557366` 5G path 通過：wl0 assoclist `2C:59:17:00:42:15`，AP1 `OperatingStandard="ax"`
+- 報表仍是 `Pass / N/A / N/A`，因為 case 目前是 5G-only 且只有 AP1/wl0 steps；補 6G/2.4G 需要改 top-level bands/topology 或新增 steps，超出 audit `verify-edit` allowlist
+- next ready single-case Pass3 target: `D036`
+
+</details>
+
+### D035 OperatingStandard blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.OperatingStandard?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T161815557366
+- wl0 assoclist: 2C:59:17:00:42:15
+- AP1 AssociatedDevice.1.OperatingStandard="ax"
+- report shape: Pass / N/A / N/A
+- compare against audit/0506.xlsx row 35: expected Pass/Pass/Pass, actual Pass/N/A/N/A, mismatch_case_count=1, mismatch bands=6g,2.4g
+- blocker: checked-in case is 5G-only and audit verify-edit cannot change top-level bands/topology or add missing 6G/2.4G executable steps
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1463 declares OperatingStandard as read-only string; BRCM mirror tr181-wifi_AccessPoint.odl L943 declares OperatingStandard as read-only string
+```
+
+## Checkpoint summary (2026-05-09 0506-D034)
+
+> This checkpoint records the `D034 Noise` blocker.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=153`, `applied=8`, `pending=129`, `block=125`, `needs_pass3=0`
+- `D034 Noise` blocked as `bands_scope_outside_audit_allowlist`
+- workbook row 34 raw value is `Pass / Pass / Pass`, normalized to `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.Noise` 是 volatile read-only int32
+- focused run `20260509T161431860530` 5G path 通過：AP1 `Noise=-100`，same-STA wl0 `DriverNoise=-100`
+- 報表仍是 `Pass / N/A / N/A`，因為 case 目前是 5G-only (`bands: ["5g"]`) 且只有 AP1/wl0 steps；補 6G/2.4G 需要改 top-level bands/topology 或新增 steps，超出 audit `verify-edit` allowlist
+- next ready single-case Pass3 target: `D035`
+
+</details>
+
+### D034 Noise blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Noise?"
+STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p'); STA_MAC_LOWER=$(echo "$STA_MAC" | tr 'A-F' 'a-f'); wl -i wl0 sta_info "$STA_MAC_LOWER" | grep noise
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T161431860530
+- AP1 AssociatedDevice.1.MACAddress="2C:59:17:00:42:15"
+- AP1 AssociatedDevice.1.Noise=-100
+- wl0 sta_info same-STA DriverNoise=-100, DriverNoiseMin=-102, DriverNoiseMax=-98
+- report shape: Pass / N/A / N/A
+- compare against audit/0506.xlsx row 34: expected Pass/Pass/Pass, actual Pass/N/A/N/A, mismatch_case_count=1, mismatch bands=6g,2.4g
+- blocker: checked-in case is 5G-only (`bands: ["5g"]`) and audit verify-edit cannot change top-level bands/topology or add missing 6G/2.4G executable steps
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1315 declares AssociatedDevice.Noise as volatile read-only int32; BRCM mirror tr181-wifi_AccessPoint.odl L727 declares Noise as volatile read-only int32
+```
+
+## Checkpoint summary (2026-05-09 0506-D033)
+
+> This checkpoint records the `D033 MUUserPositionId` applied closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=153`, `applied=8`, `pending=130`, `block=124`, `needs_pass3=0`
+- `D033 MUUserPositionId` applied through audit `verify-edit` / `record` / `decide` / `apply`，reason=`align_muuserpositionid_stub_zero_to_workbook_not_supported_fail_shape`
+- workbook row 33 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.MUUserPositionId` 是 read-only uint32
+- focused run before edit `20260509T155553753481` AP1/AP5 都回 `MUUserPositionId=0`，舊 YAML 報告 `Pass / Pass / Pass`，與 workbook not-supported row 不符
+- focused rerun after edit `20260509T160100399319` 報告 `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D034`
+
+</details>
+
+### D033 MUUserPositionId applied evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MUUserPositionId?"
+wl -i wl2 assoclist
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MUUserPositionId?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun before edit 20260509T155553753481
+- live values: AP1 MUUserPositionId=0, AP5 MUUserPositionId=0
+- report shape before edit: Pass / Pass / Pass
+- compare against audit/0506.xlsx row 33: mismatch_case_count=1, expected normalized Fail/Fail/Fail
+
+Focused rerun after edit 20260509T160100399319
+- final: status=Fail, evaluation_verdict=Fail, diagnostic_status=FailTest
+- report shape after edit: Fail / Fail / Fail
+- intentional failure snapshot: field=result_5g.MUUserPositionId, operator=not_equals, expected=0, actual=0
+- compare against audit/0506.xlsx row 33: expected raw Not Supported/Not Supported/Not Supported, expected normalized Fail/Fail/Fail, actual normalized Fail/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1545 declares MUUserPositionId as read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L907 declares MUUserPositionId as read-only uint32
+```
+
+## Checkpoint summary (2026-05-09 0506-D032)
+
+> This checkpoint records the `D032 MUMimoTxPktsPercentage` applied closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=153`, `applied=7`, `pending=131`, `block=124`, `needs_pass3=0`
+- `D032 MUMimoTxPktsPercentage` applied through audit `verify-edit` / `record` / `decide` / `apply`，reason=`align_mumimotxpktspercentage_stub_zero_to_workbook_not_supported_fail_shape`
+- workbook row 32 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.MUMimoTxPktsPercentage` 是 volatile read-only uint32 percentage
+- focused run before edit `20260509T153606658129` AP1/AP5 都回 `MUMimoTxPktsPercentage=0`，舊 YAML 報告 `Pass / Pass / Pass`，與 workbook not-supported row 不符
+- focused rerun after edit `20260509T154108053180` 報告 `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D033`
+
+</details>
+
+### D032 MUMimoTxPktsPercentage applied evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MUMimoTxPktsPercentage?"
+wl -i wl2 assoclist
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MUMimoTxPktsPercentage?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun before edit 20260509T153606658129
+- live values: AP1 MUMimoTxPktsPercentage=0, AP5 MUMimoTxPktsPercentage=0
+- report shape before edit: Pass / Pass / Pass
+- compare against audit/0506.xlsx row 32: mismatch_case_count=1, expected normalized Fail/Fail/Fail
+
+Focused rerun after edit 20260509T154108053180
+- final: status=Fail, evaluation_verdict=Fail, diagnostic_status=FailTest
+- report shape after edit: Fail / Fail / Fail
+- intentional failure snapshot: field=result_5g.MUMimoTxPktsPercentage, operator=not_equals, expected=0, actual=0
+- compare against audit/0506.xlsx row 32: expected raw Not Supported/Not Supported/Not Supported, expected normalized Fail/Fail/Fail, actual normalized Fail/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1562 declares MUMimoTxPktsPercentage as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L899 declares MUMimoTxPktsPercentage as volatile read-only uint32
+```
+
+## Checkpoint summary (2026-05-09 0506-D031)
+
+> This checkpoint records the `D031 MUMimoTxPktsCount` applied closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=153`, `applied=6`, `pending=132`, `block=124`, `needs_pass3=0`
+- `D031 MUMimoTxPktsCount` applied through audit `verify-edit` / `record` / `decide` / `apply`，reason=`align_mumimotxpktscount_stub_zero_to_workbook_not_supported_fail_shape`
+- workbook row 31 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.MUMimoTxPktsCount` 是 volatile read-only uint32 counter
+- focused run before edit `20260509T151826609691` AP1/AP5 都回 `MUMimoTxPktsCount=0`，舊 YAML 報告 `Pass / Pass / Pass`，與 workbook not-supported row 不符
+- focused rerun after edit `20260509T152300969648` 報告 `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D032`
+
+</details>
+
+### D031 MUMimoTxPktsCount applied evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MUMimoTxPktsCount?"
+wl -i wl2 assoclist
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MUMimoTxPktsCount?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun before edit 20260509T151826609691
+- live values: AP1 MUMimoTxPktsCount=0, AP5 MUMimoTxPktsCount=0
+- report shape before edit: Pass / Pass / Pass
+- compare against audit/0506.xlsx row 31: mismatch_case_count=1, expected normalized Fail/Fail/Fail
+
+Focused rerun after edit 20260509T152300969648
+- final: status=Fail, evaluation_verdict=Fail, attempts_used=2, diagnostic_status=FailTest
+- report shape after edit: Fail / Fail / Fail
+- intentional failure snapshot: field=result_5g.MUMimoTxPktsCount, operator=not_equals, expected=0, actual=0
+- compare against audit/0506.xlsx row 31: expected raw Not Supported/Not Supported/Not Supported, expected normalized Fail/Fail/Fail, actual normalized Fail/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1556 declares MUMimoTxPktsCount as volatile read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L893 declares MUMimoTxPktsCount as volatile read-only uint32
+```
+
+## Checkpoint summary (2026-05-09 0506-D030)
+
+> This checkpoint records the `D030 MUGroupId` applied closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=153`, `applied=5`, `pending=133`, `block=124`, `needs_pass3=0`
+- `D030 MUGroupId` applied through audit `verify-edit` / `record` / `decide` / `apply`，reason=`pass3_align_mugroupid_not_supported_stub_zero_to_fail_shape`
+- workbook row 30 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.MUGroupId` 是 read-only uint32；source comment 說明 group ID `0` 代表 SU transmission
+- focused run before edit `20260509T145819963658` AP1/AP5 都回 `MUGroupId=0`，舊 YAML 報告 `Pass / Pass / Pass`，與 workbook not-supported row 不符
+- focused rerun after edit `20260509T150359521353` 報告 `Fail / Fail / Fail`，compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- targeted runtime test: `PYTHONPATH=src:plugins/wifi_llapi uv run pytest -q plugins/wifi_llapi/tests/test_wifi_llapi_plugin_runtime.py -k 'pending_not_supported_associateddevice_cases'` -> `2 passed, 1210 deselected`
+- next ready single-case Pass3 target: `D031`
+
+</details>
+
+### D030 MUGroupId applied evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MUGroupId?"
+wl -i wl2 assoclist
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MUGroupId?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun before edit 20260509T145819963658
+- live values: AP1 MUGroupId=0, AP5 MUGroupId=0
+- report shape before edit: Pass / Pass / Pass
+- compare against audit/0506.xlsx row 30: mismatch_case_count=1, expected normalized Fail/Fail/Fail
+
+Focused rerun after edit 20260509T150359521353
+- final: status=Fail, evaluation_verdict=Fail, attempts_used=2, diagnostic_status=FailTest
+- report shape after edit: Fail / Fail / Fail
+- intentional failure snapshot: field=result_5g.MUGroupId, operator=not_equals, expected=0, actual=0
+- compare against audit/0506.xlsx row 30: expected raw Not Supported/Not Supported/Not Supported, expected normalized Fail/Fail/Fail, actual normalized Fail/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1537 declares MUGroupId as read-only uint32; BRCM mirror tr181-wifi_AccessPoint.odl L887 declares MUGroupId as read-only uint32
+```
+
+## Checkpoint summary (2026-05-09 0506-D029)
+
+> This checkpoint records the `D029 Mode` confirmation.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=153`, `applied=4`, `pending=134`, `block=124`, `needs_pass3=0`
+- `D029 Mode` confirmed without YAML edits，reason=`pass3_live_not_supported_matches_workbook_normalized_fail_fail_fail`
+- workbook row 29 raw value is `Not Supported / Not Supported / Not Supported`, normalized to `Fail / Fail / Fail`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`；AssociatedDevice table 有 `EncryptionMode` / `MLOMode` 等相鄰 leaf，但沒有 plain `Mode` leaf
+- focused run `20260509T144816405748` AP1/AP5 `Mode?` 都回 `ERROR: get ... failed (4 - parameter not found)`
+- compare against `audit/0506.xlsx`: `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D030`
+
+</details>
+
+### D029 Mode confirmation evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Mode?"
+wl -i wl2 assoclist
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Mode?"
+```
+
+**判定 pass-through 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T144816405748
+- final: status=Fail, evaluation_verdict=Fail, attempts_used=2, diagnostic_status=FailTest
+- report shape: Fail / Fail / Fail
+- live output: ERROR: get WiFi.AccessPoint.1.AssociatedDevice.1.Mode failed (4 - parameter not found)
+- live output: ERROR: get WiFi.AccessPoint.5.AssociatedDevice.1.Mode failed (4 - parameter not found)
+- compare against audit/0506.xlsx row 29: expected raw Not Supported/Not Supported/Not Supported, expected normalized Fail/Fail/Fail, actual normalized Fail/Fail/Fail, full_match_count=1, mismatch_case_count=0
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1666 and L1714 show adjacent AssociatedDevice leaves EncryptionMode and MLOMode, with no plain Mode leaf in that table span
+```
+
+## Checkpoint summary (2026-05-09 0506-D028)
+
+> This checkpoint records the `D028 MaxBandwidthSupported` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=152`, `applied=4`, `pending=135`, `block=124`, `needs_pass3=0`
+- `D028 MaxBandwidthSupported` 沒有 closure；已標成 `block`，reason=`mixed_pass_fail_pass_cannot_be_represented_by_verdict_only_projection_within_audit_yaml_allowlist`
+- workbook row 28 期待 `Pass / Fail / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.MaxBandwidthSupported` 是 read-only string enum
+- focused run `20260509T142937073962` 讀到 AP1 `160MHz`、AP5 `40MHz`，但 6G step 是 skip，因此舊 YAML 報告成 `Pass / Pass / Pass`
+- audit-gated pass_criteria-only 嘗試已通過 `verify-edit` 並套用，但 focused rerun `20260509T143622418113` 證明單一 criterion failure 會讓 verdict=false，報表投影成 `Fail / Fail / Fail`，無法達成 workbook `Pass / Fail / Pass`
+- 因為需要修改 top-level band metadata、6G skip step、或 runtime projection code 才能表達混合結果，這些都超出本輪 audit YAML allowlist；嘗試改動已透過 `verify-edit` / `apply` 回復
+- next ready single-case Pass3 target: `D029`
+
+</details>
+
+### D028 MaxBandwidthSupported blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MaxBandwidthSupported?"
+echo "[skip] non-executable step step3_6g"
+wl -i wl2 assoclist
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MaxBandwidthSupported?"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun before attempted edit: 20260509T142937073962
+- live values: AP1 MaxBandwidthSupported="160MHz", AP5 MaxBandwidthSupported="40MHz"
+- authored 6G step: [skip] non-executable step step3_6g
+- report shape: Pass / Pass / Pass, mismatch with workbook row 28 Pass / Fail / Pass
+
+Focused rerun after audit-gated pass_criteria-only attempt: 20260509T143622418113
+- final: status=Fail, evaluation_verdict=Fail, attempts_used=2, diagnostic_status=FailTest
+- report shape: Fail / Fail / Fail
+- failure snapshot: field=result_6g.MaxBandwidthSupported, operator=equals, expected=20MHz, actual aggregate output from AP1/AP5 only
+- conclusion: current verdict-only case_band_results cannot express Pass / Fail / Pass through an allowed pass_criteria edit
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1448 declares MaxBandwidthSupported as read-only string enum
+```
+
+## Checkpoint summary (2026-05-09 0506-D026)
+
+> This checkpoint records the `D026 LinkBandwidth` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=152`, `applied=4`, `pending=136`, `block=123`, `needs_pass3=0`
+- `D026 LinkBandwidth` 沒有 closure；已標成 `block`，reason=`stale_custom_5g_sta_env_setup_fails_before_linkbandwidth_read`
+- workbook row 26 期待 `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.LinkBandwidth` 是 read-only enum string
+- focused run `20260509T142404424038` 三次 attempts 都沒有進入 case steps；全部停在 `setup_env` 的 stale custom 5G WPA3 path，STA `iw dev wl0 link` 回 `Not connected`
+- runner 的 builtin `sta_band_rebaseline` remediation 已嘗試但失敗；需要修的是 `sta_env_setup`，不屬於 audit `verify-edit` allowlist，因此本輪記 blocker
+- next ready single-case Pass3 target: `D027`
+
+</details>
+
+### D026 LinkBandwidth blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.Radio.1.OperatingChannelBandwidth?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LinkBandwidth?"
+STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
+wl -i wl0 sta_info $STA_MAC | grep "link bandwidth"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T142404424038
+- final: status=Fail, evaluation_verdict=Fail, attempts_used=3, diagnostic_status=FailEnv
+- attempt failures: phase=setup_env, reason_code=sta_band_link_failed, device=STA, band=5g, command="iw dev wl0 link", output="Not connected.", field_name=sta_env_setup, index=48
+- builtin remediation: sta_band_rebaseline attempted between attempts and failed
+- compare against audit/0506.xlsx row 26: expected_norm Pass/Pass/Pass, actual Fail/Fail/Fail, match=False
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1657 declares LinkBandwidth as read-only enum string
+```
+
+## Checkpoint summary (2026-05-09 0506-D025)
+
+> This checkpoint records the `D025 LastDataUplinkRate` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=152`, `applied=4`, `pending=137`, `block=122`, `needs_pass3=0`
+- `D025 LastDataUplinkRate` 沒有 closure；已標成 `block`，reason=`stale_custom_5g_sta_env_setup_fails_before_lastdatauplinkrate_read`
+- workbook row 25 期待 `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.LastDataUplinkRate` 是 `%volatile %read-only uint32`
+- focused run `20260509T141740408903` 三次 attempts 都沒有進入 case steps；全部停在 `setup_env` 的 stale custom 5G WPA3 path，STA `iw dev wl0 link` 回 `Not connected`
+- runner 的 builtin `sta_band_rebaseline` remediation 已嘗試但失敗；需要修的是 `sta_env_setup`，不屬於 audit `verify-edit` allowlist，因此本輪記 blocker
+- next ready single-case Pass3 target: `D026`
+
+</details>
+
+### D025 LastDataUplinkRate blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataUplinkRate?"
+STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
+wl -i wl0 sta_info $STA_MAC | grep "rate of last rx pkt"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T141740408903
+- final: status=Fail, evaluation_verdict=Fail, attempts_used=3, diagnostic_status=FailEnv
+- attempt failures: phase=setup_env, reason_code=sta_band_link_failed, device=STA, band=5g, command="iw dev wl0 link", output="Not connected.", field_name=sta_env_setup, index=48
+- builtin remediation: sta_band_rebaseline attempted between attempts and failed
+- compare against audit/0506.xlsx row 25: expected_norm Pass/Pass/Pass, actual Fail/Fail/Fail, match=False
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1231 declares LastDataUplinkRate as volatile read-only uint32
+```
+
+## Checkpoint summary (2026-05-09 0506-D024)
+
+> This checkpoint records the `D024 LastDataDownlinkRate` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=152`, `applied=4`, `pending=138`, `block=121`, `needs_pass3=0`
+- `D024 LastDataDownlinkRate` 沒有 closure；已標成 `block`，reason=`stale_custom_5g_sta_env_setup_fails_before_lastdatadownlinkrate_read`
+- workbook row 24 期待 `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.LastDataDownlinkRate` 是 `%volatile %read-only uint32`
+- focused run `20260509T141220311003` 三次 attempts 都沒有進入 case steps；全部停在 `setup_env` 的 stale custom 5G WPA3 path，STA `iw dev wl0 link` 回 `Not connected`
+- runner 的 builtin `sta_band_rebaseline` remediation 已嘗試但失敗；需要修的是 `sta_env_setup`，不屬於 audit `verify-edit` allowlist，因此本輪記 blocker
+- next ready single-case Pass3 target: `D025`
+
+</details>
+
+### D024 LastDataDownlinkRate blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.LastDataDownlinkRate?"
+STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?" | sed -n 's/.*MACAddress="\([^"]*\)".*/\1/p')
+wl -i wl0 sta_info $STA_MAC | grep "rate of last tx pkt"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T141220311003
+- final: status=Fail, evaluation_verdict=Fail, attempts_used=3, diagnostic_status=FailEnv
+- attempt failures: phase=setup_env, reason_code=sta_band_link_failed, device=STA, band=5g, command="iw dev wl0 link", output="Not connected.", field_name=sta_env_setup, index=48
+- builtin remediation: sta_band_rebaseline attempted between attempts and failed
+- compare against audit/0506.xlsx row 24: expected_norm Pass/Pass/Pass, actual Fail/Fail/Fail, match=False
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1224 declares LastDataDownlinkRate as volatile read-only uint32
+```
+
+## Checkpoint summary (2026-05-09 0506-D023)
+
+> This checkpoint records the `D023 Inactive` pass-through confirmation.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=152`, `applied=4`, `pending=139`, `block=120`, `needs_pass3=0`
+- `D023 Inactive` 已確認，不需要 YAML edit；reason=`live_focus_run_matches_workbook_pass_without_yaml_edit`
+- workbook row 23 期待 `Pass / Pass / Pass`
+- source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.Inactive` 是 `%volatile %read-only uint32`
+- focused run `20260509T140358666257` 完成 5G / 6G / 2.4G 三個 band，runtime result 為 `Pass / Pass / Pass`，和 workbook-normalized expected 完全相符
+- next ready single-case Pass3 target: `D024`
+
+</details>
+
+### D023 Inactive confirmed evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+wl -i wl1 status
+iw dev wl2 link
+wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Inactive?"
+wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.Inactive?"
+wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Inactive?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T140358666257
+- result: 5G=Pass, 6G=Pass, 2.4G=Pass, diagnostic_status=Pass
+- AP1/wl0: AssocMac5g=2c:59:17:00:42:15, WiFi.AccessPoint.1.AssociatedDevice.1.Inactive=4
+- AP3/wl1: AssocMac6g=2c:59:17:00:42:16, WiFi.AccessPoint.3.AssociatedDevice.1.Inactive=9
+- AP5/wl2: AssocMac24g=2c:59:17:00:42:27, WiFi.AccessPoint.5.AssociatedDevice.1.Inactive=3
+- compare against audit/0506.xlsx row 23: expected_norm Pass/Pass/Pass, actual Pass/Pass/Pass, match=True
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1319 declares Inactive as volatile read-only uint32
+```
+
+## Checkpoint summary (2026-05-09 0506-D022)
+
+> This checkpoint records the `D022 HtCapabilities` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=4`, `pending=140`, `block=120`, `needs_pass3=0`
+- `D022 HtCapabilities` 沒有 closure；已標成 `block`，reason=`stale_custom_5g_sta_env_setup_fails_before_htcapabilities_read`
+- workbook row 22 期待 `Pass / Not Supported / Pass`；source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，並宣告 `AssociatedDevice.HtCapabilities` / `ProbeReqCaps.HtCapabilities` 為 read-only string
+- focused run `20260509T135805800882` 兩個 attempts 都沒有進入 case steps；全部停在 `setup_env` 的 stale custom 5G WPA3 path，STA `iw dev wl0 link` 回 `Not connected`
+- 因為需要修改的是 `sta_env_setup`，不屬於 audit `verify-edit` allowlist（只允許 steps command/capture、verification_command、pass_criteria），本輪不 bypass audit gate，改記 blocker
+- next ready single-case Pass3 target: `D023`
+
+</details>
+
+### D022 HtCapabilities blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.HtCapabilities?"
+wl -i wl0 sta_info <STA_MAC> | grep "HT caps"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T135805800882
+- final: status=Fail, evaluation_verdict=Fail, attempts_used=2, diagnostic_status=FailEnv
+- attempt 1 failure_snapshot: phase=setup_env, reason_code=sta_band_link_failed, device=STA, band=5g, command="iw dev wl0 link", output="Not connected.", field_name=sta_env_setup, index=48
+- attempt 2 failure_snapshot: phase=setup_env, reason_code=sta_band_link_failed, device=STA, band=5g, command="iw dev wl0 link", output="Not connected.", field_name=sta_env_setup, index=48
+- compare against audit/0506.xlsx: actual_norm Fail/Fail/Fail mismatches expected_norm Pass/Fail/Pass
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1677 declares AssociatedDevice.HtCapabilities; L1881 declares ProbeReqCaps.HtCapabilities
+```
+
+## Checkpoint summary (2026-05-09 0506-D021)
+
+> This checkpoint records the `D021 HeCapabilities` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=4`, `pending=141`, `block=119`, `needs_pass3=0`
+- `D021 HeCapabilities` 沒有 closure；已標成 `block`，reason=`stale_custom_5g_sta_env_setup_fails_before_hecapabilities_read`
+- workbook row 21 期待 `Pass / Pass / Pass`；source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，並宣告 `AssociatedDevice.HeCapabilities` / `ProbeReqCaps.HeCapabilities` 為 read-only string
+- focused run `20260509T135216383757` 兩個 attempts 都沒有進入 case steps；全部停在 `setup_env` 的 stale custom 5G WPA3 path，STA `iw dev wl0 link` 回 `Not connected`
+- 因為需要修改的是 `sta_env_setup`，不屬於 audit `verify-edit` allowlist（只允許 steps command/capture、verification_command、pass_criteria），本輪不 bypass audit gate，改記 blocker
+- next ready single-case Pass3 target: `D022`
+
+</details>
+
+### D021 HeCapabilities blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.HeCapabilities?"
+wl -i wl0 sta_info <STA_MAC> | grep "HE caps"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T135216383757
+- final: status=Fail, evaluation_verdict=Fail, attempts_used=2, diagnostic_status=FailEnv
+- attempt 1 failure_snapshot: phase=setup_env, reason_code=sta_band_link_failed, device=STA, band=5g, command="iw dev wl0 link", output="Not connected.", field_name=sta_env_setup, index=48
+- attempt 2 failure_snapshot: phase=setup_env, reason_code=sta_band_link_failed, device=STA, band=5g, command="iw dev wl0 link", output="Not connected.", field_name=sta_env_setup, index=48
+- compare against audit/0506.xlsx: actual_norm Fail/Fail/Fail mismatches expected_norm Pass/Pass/Pass
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1693 declares AssociatedDevice.HeCapabilities; L1897 declares ProbeReqCaps.HeCapabilities
+```
+
+## Checkpoint summary (2026-05-09 0506-D020)
+
+> This checkpoint records the `D020 FrequencyCapabilities` closure decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=4`, `pending=142`, `block=118`, `needs_pass3=0`
+- `D020 FrequencyCapabilities` 已 closure；reason=`pass3_frequencycapabilities_same_sta_driver_equality`
+- workbook row 20 期待 `Pass / Pass / Pass`；source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，並宣告 `AssociatedDevice.FrequencyCapabilities` / `ProbeReqCaps.FrequencyCapabilities` 為 read-only string
+- focused pre-edit rerun `20260509T132327693106` 兩次都跑完 tri-band steps，但舊 YAML 還期待 AP1/AP5 getter 為 empty，因此停在 `result_5g.FrequencyCapabilities`：expected empty、actual `5GHz`
+- live evidence 顯示 same-STA driver-normalized frequency capability 與 LLAPI getter 已一致：AP1=`5GHz`、AP3=`6GHz`、AP5=`2.4GHz`
+- audit-gated proposal 只更新 AP1/AP5 stale empty criteria，改成 LLAPI getter 必須等於 same-STA driver-normalized value；AP3 既有 `6GHz` criterion 保持不變
+- focused post-apply rerun `20260509T133802129550` completed with `Pass / Pass / Pass`, `diagnostic_status=Pass`, `pass_count=1`, `fail_count=0`; compare against `audit/0506.xlsx` reports `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D021`
+
+</details>
+
+### D020 FrequencyCapabilities closure evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+wl -i wl1 status
+iw dev wl2 link
+wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+wl -i wl0 sta_info <STA_MAC> | grep "Frequency Bands Supported"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.FrequencyCapabilities?"
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"
+wl -i wl1 sta_info <STA_MAC> | grep "Frequency Bands Supported"
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.FrequencyCapabilities?"
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"
+wl -i wl2 sta_info <STA_MAC> | grep "Frequency Bands Supported"
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.FrequencyCapabilities?"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T133802129550
+- final: status=Pass, evaluation_verdict=Pass, attempts_used=1, diagnostic_status=Pass
+- AP1: MACAddress=2C:59:17:00:42:15, DriverFrequencyBandsRaw5g=5G, DriverFrequencyCapabilities5g=5GHz, FrequencyCapabilities=5GHz
+- AP3: MACAddress=2C:59:17:00:42:16, DriverFrequencyBandsRaw6g=6G, DriverFrequencyCapabilities6g=6GHz, FrequencyCapabilities=6GHz
+- AP5: MACAddress=2C:59:17:00:42:27, DriverFrequencyBandsRaw24g=2.4G, DriverFrequencyCapabilities24g=2.4GHz, FrequencyCapabilities=2.4GHz
+- compare against audit/0506.xlsx: actual_norm Pass/Pass/Pass matches expected_norm Pass/Pass/Pass
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1751 declares AssociatedDevice.FrequencyCapabilities; L1936 declares ProbeReqCaps.FrequencyCapabilities
+```
+
+## Checkpoint summary (2026-05-09 0506-D019)
+
+> This checkpoint records the `D019 EncryptionMode` workbook-fail closure decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=3`, `pending=143`, `block=118`, `needs_pass3=0`
+- `D019 EncryptionMode` 已 closure；reason=`pass3_encryptionmode_default_vs_driver_aes_fail_shape`
+- workbook row 19 期待 `Fail / Fail / Fail`；source 宣告 `AssociatedDevice[]` read path 透過 `wld_assocDev_getStats_orf`，且 `AssociatedDevice.EncryptionMode` / `ProbeReqCaps.EncryptionMode` 都是 read-only enum string，default 為 `Default`
+- focused pre-edit rerun `20260509T130527389559` 仍是舊的 pass-shaped verdict：只接受 AP3 `EncryptionMode=Default`，因此回報 `Pass`
+- manual serialwrap probe 確認同一個 AP3 associated STA：STA 端 `key_mgmt=SAE` / `pairwise_cipher=CCMP`，DUT 端 `EncryptionMode=Default` / `ProbeReqCaps.EncryptionMode=Default`，但 `wl -i wl1 sta_info <STA_MAC>` 回 `auth: WPA3-SAE-PSK` 與 `crypto: AES_CCM`
+- audit-gated proposal 保留既有 6G setup，將 final criterion 改為 `result.EncryptionMode == result.DriverEncryptionMode6g`；live value 是 `Default != AES`，所以 closure 形狀符合 workbook Fail
+- focused post-apply rerun `20260509T131313248941` completed with workbook-normalized `Fail / Fail / Fail`, `diagnostic_status=FailTest`, `pass_count=0`, `fail_count=1`; compare against `audit/0506.xlsx` reports `full_match_count=1`, `mismatch_case_count=0`
+- next ready single-case Pass3 target: `D020`
+
+</details>
+
+### D019 EncryptionMode closure evidence
+
+**STA 指令**
+
+```sh
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl1 assoclist
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.EncryptionMode?"
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ProbeReqCaps.EncryptionMode?"
+wl -i wl1 sta_info <STA_MAC> | grep -E "auth:|crypto:"
+```
+
+**判定 fail-shape closure 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T131313248941
+- attempt 1/2 and 2/2 both failed only at result.EncryptionMode: expected AES, actual Default
+- STA output: key_mgmt=SAE, pairwise_cipher=CCMP, wpa_state=COMPLETED, address=2c:59:17:00:42:16
+- DUT output: AssocMAC=2C:59:17:00:42:16
+- DUT output: EncryptionMode=Default, ProbeReqCapsEncryptionMode=Default, DriverAuth6g=WPA3-SAE-PSK, DriverCrypto6g=AES_CCM, DriverEncryptionMode6g=AES
+- final: status=Fail, evaluation_verdict=Fail, attempts_used=2, diagnostic_status=FailTest
+- compare against audit/0506.xlsx: actual_norm Fail/Fail/Fail matches expected_norm Fail/Fail/Fail
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1666-L1668 declares AssociatedDevice.EncryptionMode default Default; L1766/L1870-L1872 declare ProbeReqCaps.EncryptionMode default Default
+```
+
+## Checkpoint summary (2026-05-09 0506-D018)
+
+> This checkpoint records the `D018 DownlinkShortGuard` closure decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=2`, `pending=144`, `block=118`, `needs_pass3=0`
+- `D018 DownlinkShortGuard` 已 closure；reason=`pass3_legacy_no_gi_downlink_shortguard`
+- workbook row 18 期待 `Pass / Pass / Pass`；source 宣告 `DownlinkShortGuard` 是 downlink short guard interval 是否 applied 的 volatile read-only boolean
+- focused pre-edit rerun `20260509T122857918120` 兩次都走到 evaluation，失敗點只剩 `driver_shortguard_5g.DriverDownlinkShortGuardGI5g` 為空；manual serialwrap probe 同步確認 AP1 live getter 為 `DownlinkShortGuard=0`，`wl0 sta_info` 的 `tx nrate` 是 legacy rate 且沒有 GI token
+- audit-gated proposal 將 legacy/no-GI tx-rate evidence normalize 成 `DriverDownlinkShortGuard=0`，同時保留 same-STA MAC equality 與 LLAPI/driver boolean equality
+- focused post-apply rerun `20260509T124429838816` completed with `Pass / Pass / Pass`, `diagnostic_status=Pass`, `pass_count=1`, `fail_count=0`
+- next ready single-case Pass3 target: `D019`
+
+</details>
+
+### D018 DownlinkShortGuard closure evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+wl -i wl1 status
+iw dev wl2 link
+wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkShortGuard?"
+wl -i wl0 sta_info <STA_MAC> | sed -n '/tx nrate/,+1p'
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.DownlinkShortGuard?"
+wl -i wl1 sta_info <STA_MAC> | sed -n '/tx nrate/,+1p'
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.DownlinkShortGuard?"
+wl -i wl2 sta_info <STA_MAC> | sed -n '/tx nrate/,+1p'
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T124429838816
+- report md L28: D018 row reports Pass / Pass / Pass with overall Pass
+- report md L83-L89: AP1 MACAddress=2C:59:17:00:42:15, DownlinkShortGuard=1, DriverDownlinkShortGuardGI5g=1.6us, DriverDownlinkShortGuard5g=1
+- report md L141-L147: AP3 MACAddress=2C:59:17:00:42:16, DownlinkShortGuard=1, DriverDownlinkShortGuardGI6g=1.6us, DriverDownlinkShortGuard6g=1
+- report md L167-L173: AP5 MACAddress=2C:59:17:00:42:27, DownlinkShortGuard=0, DriverDownlinkShortGuardGI24g=LEGACY_NO_GI, DriverDownlinkShortGuard24g=0
+- report md L176/L182: diagnostic_status=Pass and overall_status=Pass
+- source citations: fs/etc/amx/wld/wld_accesspoint.odl L1423-L1424 declares DownlinkShortGuard as the downlink short-guard boolean; swl_common_mcs.h L117-L124 declares guard interval enum values including 400/800/1600/3200
+```
+
+## Checkpoint summary (2026-05-09 0506-D017)
+
+> This checkpoint records the `D017 DownlinkMCS` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=1`, `pending=145`, `block=118`, `needs_pass3=0`
+- `D017 DownlinkMCS` 沒有 closure；已標成 `block`，reason=`associated_device_projection_absent_for_ap1_ap5_despite_driver_assoc`
+- workbook row 17 期待 `Pass / Pass / Pass`，source 也透過 `wld_assocDev_getStats_orf` 掛上 `AssociatedDevice[]` read path，並宣告 `DownlinkMCS` 為 volatile read-only `uint32`
+- first focused run `20260509T014341465259` 先停在 redundant `wpa_cli status` gate：`iw dev wl0 link` 已 connected，但 `wpa_cli` 仍是 `wpa_state=ASSOCIATED`
+- audit-gated exploratory edit 暫時移除 5G/6G/2.4G redundant `wpa_cli` gates 後，focused rerun `20260509T015439739105` 跑到 AP1 prerequisite：`iw dev wl0 link` 已 connected，DUT `wl0 assoclist` 有 `2C:59:17:00:19:95`，但 `WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?` 回 object not found
+- 同一輪環境驗證顯示 AP5 wildcard `AssociatedDevice.*.MACAddress?` 也是 `No data found`，即使 `wl2 assoclist` 有 `2C:59:17:00:19:A7`；AP3 則能 expose `WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress="2C:59:17:00:19:96"`
+- 因為 final live result 仍是 `Fail / Fail / Fail`，D017 exploratory join-gate edit 已透過 audit gate 回復；case YAML 保持不變
+- next ready single-case Pass3 target: `D018`
+
+</details>
+
+### D017 DownlinkMCS blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+wl -i wl1 status
+iw dev wl2 link
+wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkMCS?"
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.*.MACAddress?"
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.*.MACAddress?"
+wl -i wl2 assoclist
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T015439739105
+- report md L43-L57: after removing redundant wpa_cli gates for exploration, D017 reaches AP1 MACAddress prerequisite and fails with object not found before DownlinkMCS can be read
+- DUT.log L199-L206: AP1 AssociatedDevice wildcard returns No data found while wl0 assoclist exposes 2C:59:17:00:19:95
+- DUT.log L429-L432: AP3 AssociatedDevice wildcard exposes WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress="2C:59:17:00:19:96"
+- DUT.log L623-L630: AP5 AssociatedDevice wildcard returns No data found while wl2 assoclist exposes 2C:59:17:00:19:A7
+- DUT.log L825-L836: direct AP1 AssociatedDevice.1.MACAddress getter returns object not found
+- source citations: fs.install/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1417-L1418 declares DownlinkMCS as volatile read-only uint32; wld.h L845/L929 stores and maps DownlinkMCS
+```
+
+## Checkpoint summary (2026-05-09 0506-D016)
+
+> This checkpoint records the `D016 DownlinkBandwidth` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=1`, `pending=146`, `block=117`, `needs_pass3=0`
+- `D016 DownlinkBandwidth` 沒有 closure；已標成 `block`，reason=`associated_device_projection_absent_for_ap1_ap5_despite_driver_assoc`
+- workbook row 16 期待 `Pass / Pass / Pass`，source 也透過 `wld_assocDev_getStats_orf` 掛上 `AssociatedDevice[]` read path，並宣告 `DownlinkBandwidth` 為 volatile read-only `uint32`
+- first focused run `20260509T011627888558` 先停在 redundant `wpa_cli status` gate：`iw dev wl0 link` 已 connected，但 `wpa_cli` 仍是 `wpa_state=ASSOCIATED`
+- audit-gated exploratory edit 暫時移除 5G/6G/2.4G redundant `wpa_cli` gates 後，focused rerun `20260509T012522496535` 跑到 AP1 prerequisite：`iw dev wl0 link` 已 connected，DUT `wl0 assoclist` 有 `2C:59:17:00:19:95`，但 `WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?` 回 object not found
+- 同一輪環境驗證顯示 AP5 wildcard `AssociatedDevice.*.MACAddress?` 也是 `No data found`，即使 `wl2 assoclist` 有 `2C:59:17:00:19:A7`；AP3 則能 expose `WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress="2C:59:17:00:19:96"`
+- 因為 final live result 仍是 `Fail / Fail / Fail`，D016 exploratory join-gate edit 已透過 audit gate 回復；case YAML 保持不變
+- next ready single-case Pass3 target: `D017`
+
+</details>
+
+### D016 DownlinkBandwidth blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+wl -i wl1 status
+iw dev wl2 link
+wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.DownlinkBandwidth?"
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.*.MACAddress?"
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.*.MACAddress?"
+wl -i wl2 assoclist
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T012522496535
+- report md L43-L57: after removing redundant wpa_cli gates for exploration, D016 reaches AP1 MACAddress prerequisite and fails with object not found before DownlinkBandwidth can be read
+- DUT.log L199-L206: AP1 AssociatedDevice wildcard returns No data found while wl0 assoclist exposes 2C:59:17:00:19:95
+- DUT.log L429-L432: AP3 AssociatedDevice wildcard exposes WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress="2C:59:17:00:19:96"
+- DUT.log L623-L630: AP5 AssociatedDevice wildcard returns No data found while wl2 assoclist exposes 2C:59:17:00:19:A7
+- DUT.log L825-L836: direct AP1 AssociatedDevice.1.MACAddress getter returns object not found
+- source citations: fs.install/etc/amx/wld/wld_accesspoint.odl L1202-L1203 wires AssociatedDevice[] reads through wld_assocDev_getStats_orf; L1420-L1421 declares DownlinkBandwidth as volatile read-only uint32; wld.h L846 stores DownlinkBandwidth in MHz
+```
+
+## Checkpoint summary (2026-05-09 0506-D015)
+
+> This checkpoint records the `D015 ConnectionDuration` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=1`, `pending=147`, `block=116`, `needs_pass3=0`
+- `D015 ConnectionDuration` 沒有 closure；已標成 `block`，reason=`associated_device_projection_absent_for_ap1_ap5_despite_driver_assoc`
+- workbook row 15 期待 `Pass / Pass / Pass`，source 也宣告 `AssociatedDevice.ConnectionDuration` 為 volatile read-only `uint32`
+- first focused run `20260509T004634351516` 先停在 redundant `wpa_cli status` gate：`iw dev wl0 link` 已 connected，但 `wpa_cli` 仍是 `wpa_state=ASSOCIATED`
+- audit-gated exploratory edit 暫時移除 5G/6G/2.4G redundant `wpa_cli` gates 後，focused rerun `20260509T005741505140` 跑到 AP1 prerequisite：`iw dev wl0 link` 已 connected，DUT `wl0 assoclist` 有 `2C:59:17:00:19:95`，但 `WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?` 回 object not found
+- 同一輪環境驗證顯示 AP5 wildcard `AssociatedDevice.*.MACAddress?` 也是 `No data found`，即使 `wl2 assoclist` 有 `2C:59:17:00:19:A7`；AP3 則能 expose `WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress="2C:59:17:00:19:96"`
+- 因為 final live result 仍是 `Fail / Fail / Fail`，D015 exploratory join-gate edit 已透過 audit gate 回復；case YAML 保持不變
+- next ready single-case Pass3 target: `D016`
+
+</details>
+
+### D015 ConnectionDuration blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+wl -i wl1 status
+iw dev wl2 link
+wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"
+wl -i wl0 assoclist
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.*.MACAddress?"
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.*.MACAddress?"
+wl -i wl2 assoclist
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T005741505140
+- report md L44-L57: after removing redundant wpa_cli gates for exploration, D015 reaches AP1 MACAddress prerequisite and fails with object not found
+- DUT.log L199-L208: AP1 AssociatedDevice wildcard returns No data found while wl0 assoclist exposes 2C:59:17:00:19:95
+- DUT.log L429-L437: AP3 AssociatedDevice wildcard exposes WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress="2C:59:17:00:19:96"
+- DUT.log L654-L667: AP5 AssociatedDevice wildcard returns No data found while wl2 assoclist exposes 2C:59:17:00:19:A7
+- DUT.log L864-L875: direct AP1 AssociatedDevice.1.MACAddress getter returns object not found
+- source citations: tr181-wifi_AccessPoint.odl L792 and fs/etc/amx/wld/wld_accesspoint.odl L1496 declare ConnectionDuration as volatile read-only uint32; wifi_hal.c L8332/L8353 uses associated-device diagnostics from wldm_AccessPoint_AssociatedDevice()
+```
+
+## Checkpoint summary (2026-05-09 0506-D014)
+
+> This checkpoint records the `D014 ChargeableUserId` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=1`, `pending=148`, `block=115`, `needs_pass3=0`
+- `D014 ChargeableUserId` 沒有 closure；已標成 `block`，reason=`workbook_to_be_tested_skip_but_chargeableuserid_requires_enterprise_radius_and_getter_absent`
+- workbook row 14 不是 Pass row：BCM v4.0.3 是 `To be tested / To be tested / To be tested`，ARC v4.0.3 是 `Skip / Skip / Skip`
+- source survey 確認 `RadiusChargeableUserId` 只適用 Enterprise / RADIUS security mode，`ChargeableUserId` 是 Access-Accept 的 Chargeable-User-Identity attribute 讀值；目前 default WPA2/WPA3-Personal baseline 沒有 source-backed pass-style empty-string oracle
+- focused run `20260509T003124056983` 跑到 authored 5G getter：`wl0 assoclist` 有 `2C:59:17:00:19:95`，但 `WiFi.AccessPoint.1.AssociatedDevice.1.ChargeableUserId?` 回 object not found，而不是 authored case 期待的 `ChargeableUserId=""`
+- 因為 workbook 是 non-pass row，且 live/source 都不支持把它改寫成 pass-style empty-string criteria，D014 不更新 YAML
+- next ready single-case Pass3 target: `D015`
+
+</details>
+
+### D014 ChargeableUserId blocker evidence
+
+**STA 指令**
+
+```sh
+# authored D014 is DUT-side only; environment baseline still uses the standard STA association prepared by testpilot
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist | head -1
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.ChargeableUserId?"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused run 20260509T003124056983
+- report md L50-L52: AP1 driver assoclist exposes 2C:59:17:00:19:95, but WiFi.AccessPoint.1.AssociatedDevice.1.ChargeableUserId returns object not found
+- report md L55-L57: diagnostic_status=FailTest; pass criteria expected ChargeableUserId="" but actual output was object not found
+- DUT.log L241-L252: DUT-side replay confirms assoclist is present and ChargeableUserId getter returns object not found
+- source citations: wld_accesspoint.odl L745-L749 declares RadiusChargeableUserId for Enterprise/RADIUS; wld_accesspoint.odl L1206-L1208 declares ChargeableUserId as CUI from Access-Accept; wld.h L1863 stores radiusChargeableUserId
+```
+
+## Checkpoint summary (2026-05-09 0506-D013)
+
+> This checkpoint records the `D013 Capabilities` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=1`, `pending=149`, `block=114`, `needs_pass3=0`
+- `D013 Capabilities` 沒有 closure；已標成 `block`，reason=`workbook_pass_but_capabilities_absent_on_5g_and_6g_env_not_ready`
+- source survey 確認 `AssociatedDevice[].Capabilities` 是 read-only station capability string，不是 workbook transcript 看起來像 setter 的 AP-local writable 值
+- focused rerun `20260508T235255033703` 先停在 5G redundant `wpa_cli` gate：`iw dev wl0 link` 已 connected，但 `wpa_cli` 仍是 `wpa_state=ASSOCIATED`
+- audit-gated exploratory edit 暫時移除 5G/2.4G redundant `wpa_cli` gate 後，focused rerun `20260509T000344316109` 跑到 5G API 本體：5G 有 `AssocMac5g=2c:59:17:00:19:95` 與 `DriverRrmCapability5g=0x32`，但 `WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities?` 回 object not found；之後 6G pre-step 環境準備失敗，reason=`sta_band_not_ready`
+- 因為 final live result 仍是 `Fail / Fail / Fail`，D013 exploratory join-gate edit 已透過 audit gate 回復；case YAML 保持不變
+- next ready single-case Pass3 target: `D014`
+
+</details>
+
+### D013 Capabilities blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+wl -i wl1 status
+iw dev wl2 link
+wpa_cli -p /var/run/wpa_supplicant -i wl2 status
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+STA_MAC=$(wl -i wl0 assoclist | awk 'NR==1{print $2}'); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n 's/^RRM capability = \(0x[0-9A-Fa-f]\+\).*/DriverRrmCapability5g=\1/p'
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities?"
+wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.Capabilities?"
+wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.Capabilities?"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260509T000344316109
+- report md L55-L65: 5G STA is connected, DUT driver captures AssocMac5g=2c:59:17:00:19:95 and DriverRrmCapability5g=0x32, but WiFi.AccessPoint.1.AssociatedDevice.1.Capabilities returns object not found
+- report md L66-L71: 6G preparation fails before step5_6g_sta_join with reason_code sta_band_not_ready
+- DUT.log L982-L1005: DUT-side assoclist/getter replay confirms the same AP1 Capabilities object-not-found shape
+- source citations: tr181-wifi_AccessPoint.odl L684 declares AssociatedDevice[] read-only; L773-L780 declares Capabilities as station capabilities / read-only string; local_wl_access.c L715-L720 publishes station capability fields; whm_brcm_api_ext.c L78-L85 declares RRM capability parsing constants
+```
+
+## Checkpoint summary (2026-05-08 0506-D012)
+
+> This checkpoint records the `D012 AvgSignalStrengthByChain` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=1`, `pending=150`, `block=113`, `needs_pass3=0`
+- `D012 AvgSignalStrengthByChain` 沒有 closure；已標成 `block`，reason=`workbook_pass_but_avgsignalstrengthbychain_absent_on_5g_24g_datamodel`
+- source survey 確認 `AvgSignalStrengthByChain` 在 ODL 宣告為 volatile read-only `int32`，Broadcom glue 由 WLD station path 填入 `AvgSignalStrengthByChain`，底層 station info 保留 per-chain RSSI 並可平均成 scalar
+- focused rerun `20260508T230809042650` 先停在 5G redundant `wpa_cli` gate：`iw dev wl0 link` 已 connected，但 `wpa_cli` 仍是 `wpa_state=ASSOCIATED`
+- audit-gated exploratory edit 暫時移除 5G/2.4G redundant `wpa_cli` gate 後，focused rerun `20260508T231739051988` 跑到 API 本體：5G 有 `AssocMac5g=2c:59:17:00:19:95` 但 `WiFi.AccessPoint.1.AssociatedDevice.1.AvgSignalStrengthByChain?` 回 object not found；6G 回 `WiFi.AccessPoint.3.AssociatedDevice.1.AvgSignalStrengthByChain=-60`；2.4G 有 `AssocMac24g=2c:59:17:00:19:a7` 但 `WiFi.AccessPoint.5.AssociatedDevice.1.AvgSignalStrengthByChain?` 回 object not found
+- 因為 final live result 仍是 `Fail / Fail / Fail`，D012 exploratory join-gate edit 已透過 audit gate 回復；case YAML 保持不變
+- next ready single-case Pass3 target: `D013`
+
+</details>
+
+### D012 AvgSignalStrengthByChain blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+wl -i wl1 status
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.AvgSignalStrengthByChain?"
+wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.AvgSignalStrengthByChain?"
+wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.AvgSignalStrengthByChain?"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260508T231739051988
+- report md L59-L69: 5G STA is connected and DUT driver captures AssocMac5g=2c:59:17:00:19:95, but WiFi.AccessPoint.1.AssociatedDevice.1.AvgSignalStrengthByChain returns object not found
+- report md L139-L141: 6G returns WiFi.AccessPoint.3.AssociatedDevice.1.AvgSignalStrengthByChain=-60
+- report md L145-L152: 2.4G STA is connected and DUT driver captures AssocMac24g=2c:59:17:00:19:a7, but WiFi.AccessPoint.5.AssociatedDevice.1.AvgSignalStrengthByChain returns object not found
+- source citations: tr181-wifi_AccessPoint.odl L762-L770 declares AvgSignalStrengthByChain as volatile read-only int32; whm_brcm_rad_mlo.c L326-L329 assigns pAD->AvgSignalStrengthByChain; whm_brcm_api_ext.c L359-L389 copies sta_info per-chain RSSI; wl_cfg80211.c L6241-L6257 averages chain RSSI into signal_avg
+```
+
+## Checkpoint summary (2026-05-08 0506-D009)
+
+> This checkpoint records the `D009 AssociationTime` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=1`, `pending=151`, `block=112`, `needs_pass3=0`
+- `D009 AssociationTime` 沒有 closure；已標成 `block`，reason=`workbook_pass_but_associationtime_absent_on_5g_24g_datamodel`
+- source survey 確認 `AssociatedDevice[].AssociationTime` 在 ODL 宣告為 read-only datetime，`dm_info.c` 將它映射為 `AMXC_VAR_ID_TIMESTAMP`，而 workbook 的 `wl sta_info ... in network` 交叉檢查也有 source parser 支援
+- focused rerun `20260508T222631382165` 先停在 5G redundant `wpa_cli` gate：`iw dev wl0 link` 已 connected，但 `wpa_cli` 仍是 `wpa_state=ASSOCIATED`
+- audit-gated exploratory edit 暫時移除 5G/2.4G redundant `wpa_cli` gate 後，focused rerun `20260508T223619447864` 跑到 API 本體：5G 有 `AssocMac5g=2c:59:17:00:19:95` 與 `ConnectionSeconds5g=7`，但 `WiFi.AccessPoint.1.AssociatedDevice.1.AssociationTime?` 回 object not found；6G 回 timestamp；AP5 AssociatedDevice wildcard 仍 `No data found`
+- 因為 final live result 仍是 `Fail / Fail / Fail`，D009 exploratory join-gate edit 已透過 audit gate 回復；case YAML 保持不變
+- next ready single-case Pass3 target: `D012`
+
+</details>
+
+### D009 AssociationTime blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+wpa_cli -p /var/run/wpa_supplicant -i wl0 status
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+wl -i wl1 status
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+STA_MAC=$(wl -i wl0 assoclist | awk 'NR==1{print $2}'); [ -n "$STA_MAC" ] && wl -i wl0 sta_info $STA_MAC | sed -n 's/.*in network \([0-9][0-9]*\) seconds.*/ConnectionSeconds5g=\1/p'
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.AssociationTime?"
+wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+STA_MAC=$(wl -i wl1 assoclist | awk 'NR==1{print $2}'); [ -n "$STA_MAC" ] && wl -i wl1 sta_info $STA_MAC | sed -n 's/.*in network \([0-9][0-9]*\) seconds.*/ConnectionSeconds6g=\1/p'
+ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.AssociationTime?"
+ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"
+ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.*.MACAddress?"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260508T223619447864
+- report md L59-L69: 5G STA is connected, DUT driver captures AssocMac5g=2c:59:17:00:19:95 and ConnectionSeconds5g=7, but AssociationTime returns object not found
+- report md L139-L142: 6G captures AssocMac6g=2c:59:17:00:19:96, ConnectionSeconds6g=14, and WiFi.AccessPoint.3.AssociatedDevice.1.AssociationTime="2026-04-28T00:43:20Z"; later 2.4G preparation fails
+- DUT.log L199-L204: AP1 AssociatedDevice wildcard MACAddress query returns No data found while the driver assoclist later exposes the 5G STA
+- DUT.log L617-L626: AP5 AssociatedDevice wildcard MACAddress query returns No data found
+- source citations: tr181-wifi_AccessPoint.odl L684/L711 declares AssociatedDevice and AssociationTime; dm_info.c L266 maps AssociationTime as AMXC_VAR_ID_TIMESTAMP; wlsysutil.c L695/L709 parses wl sta_info in-network age
+```
+
+## Checkpoint summary (2026-05-08 0506-D006)
+
+> This checkpoint records the `D006 sendBssTransferRequest()` blocker decision.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=1`, `pending=152`, `block=111`, `needs_pass3=0`
+- `D006 sendBssTransferRequest()` 沒有 closure；已標成 `block`，reason=`workbook_pass_but_source_live_btm_authority_conflict`
+- workbook row 6 標成 `Pass / Pass / Pass`，但 workbook G6 自己記錄 BTM transfer 回 `ERROR: call (null) failed with status 1 - unknown error`
+- source survey 找到 MBO / BTM / FT HAL 支援，但沒有找到 source-declared `sendBssTransferRequest()` ODL method；HAL `wifi_setBTMRequest()` 的 public contract 是 `RETURN_OK` / `RETURN_ERR`
+- focused rerun `20260508T220846967896` 跑到 method 本體：6G 回 `[-1]`，5G 與 2.4G 都回 `ERROR: call (null) failed with status 1`
+- 因為 final live result 仍是 `Fail / Fail / Fail`，D006 的 exploratory join-gate edit 不進 commit；case YAML 保持不變
+- next ready single-case Pass3 target: `D009`
+
+</details>
+
+### D006 sendBssTransferRequest() blocker evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+wl -i wl1 status
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+ubus-cli "WiFi.AccessPoint.1.MBOEnable=1"
+ubus-cli "WiFi.AccessPoint.1.IEEE80211r.MobilityDomain=25"
+wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+ubus-cli "WiFi.AccessPoint.1.sendBssTransferRequest(mac=2c:59:17:00:19:95,target=2c:59:17:00:04:97,class=1,channel=1,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"
+ubus-cli "WiFi.AccessPoint.3.MBOEnable=1"
+ubus-cli "WiFi.AccessPoint.3.IEEE80211r.MobilityDomain=25"
+wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+ubus-cli "WiFi.AccessPoint.3.sendBssTransferRequest(mac=2c:59:17:00:19:96,target=2c:59:17:00:04:85,class=1,channel=36,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"
+ubus-cli "WiFi.AccessPoint.5.MBOEnable=1"
+ubus-cli "WiFi.AccessPoint.5.IEEE80211r.MobilityDomain=25"
+wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+ubus-cli "WiFi.AccessPoint.5.sendBssTransferRequest(mac=2c:59:17:00:19:a7,target=2c:59:17:00:04:85,class=1,channel=36,wait=0,retries=1,validity=10,disassoc=1,bssidInfo=0)"
+```
+
+**判定 block 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260508T220846967896
+- report md L26-L28: D006 result_5g/result_6g/result_24g = Fail / Fail / Fail, diagnostic_status=FailTest
+- report md L64-L82: 5G association exists, but sendBssTransferRequest() returns ERROR status 1 and empty string
+- report md L83-L160: 6G association exists, BTM-capable STA evidence includes Extended Capabilities: IW BSS_Transition, method returns [-1]
+- report md L161-L178: 2.4G association exists, but sendBssTransferRequest() returns ERROR status 1 and empty string
+- workbook row 6 G cell also records sendBssTransferRequest() returning ERROR status 1 while the row verdict remains Pass / Pass / Pass
+```
+
+## Checkpoint summary (2026-05-08 0506-D004)
+
+> This checkpoint records the `D004 kickStation()` 0506-workbook audit closure.
+
+<details>
+<summary>Checkpoint status (zh-tw)</summary>
+
+- active audit RID: `74ada64b-2026-05-07T134956Z`
+- current buckets: `confirmed=151`, `applied=1`, `pending=153`, `block=110`, `needs_pass3=0`
+- `D004 kickStation()` 已完成 closure；focused rerun `20260508T212440407797` 回報 `Pass / Pass / Pass`，`diagnostic_status=Pass`
+- YAML writeback 透過 `testpilot audit verify-edit` / `record` / `decide` / `apply` 完成；只移除 5G 與 2.4G join step 中冗餘的 `wpa_cli ... status`
+- live evidence 顯示 `iw dev wl0/wl2 link` 已 Connected，且 DUT `wl assoclist` 可取得 STA MAC；`wpa_cli` 在 5G/2.4G 可停在 `ASSOCIATED`，不應作為 workbook row 4 的必要 gate
+- D004 過程中曾遇到 DUT WiFi/datamodel daemon 消失；已用 DUT reboot + serialwrap recover 恢復，final validation 已通過
+- next ready single-case Pass3 target: `D006`
+
+</details>
+
+### Per-case 摘要表（zh-tw）
+
+| case id | workbook row | API 名稱 | verdict | DUT log interval | STA log interval |
+| --- | ---: | --- | --- | --- | --- |
+| D004 | 4 | kickStation() | Pass / Pass / Pass | `20260508_BGW720-0410-VERIFY_wifi_LLAPI_20260508T212440407797.md L64-L187; DUT.log L829-L858; L627-L629` | `STA.log L90-L104; L201-L228; L379-L390` |
+
+### D004 kickStation() alignment evidence
+
+**STA 指令**
+
+```sh
+iw dev wl0 link
+iw dev wl1 link
+wpa_cli -p /var/run/wpa_supplicant -i wl1 status
+wl -i wl1 status
+iw dev wl2 link
+```
+
+**DUT 指令**
+
+```sh
+wl -i wl0 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac5g=\1/p'
+ubus-cli "WiFi.AccessPoint.1.kickStation(MACAddress=2c:59:17:00:19:95)"
+wl -i wl1 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac6g=\1/p'
+ubus-cli "WiFi.AccessPoint.3.kickStation(MACAddress=2c:59:17:00:19:96)"
+wl -i wl2 assoclist | tr 'A-F' 'a-f' | sed -n 's/^assoclist \([^ ]*\).*$/AssocMac24g=\1/p'
+ubus-cli "WiFi.AccessPoint.5.kickStation(MACAddress=2c:59:17:00:19:a7)"
+```
+
+**判定 pass 的 log 摘錄 / log 區間**
+
+```text
+Focused rerun 20260508T212440407797
+- report md L26-L28: D004 result_5g/result_6g/result_24g = Pass / Pass / Pass, diagnostic_status=Pass
+- report md L64-L187: 5G/6G/2.4G command output includes connected STA links, assoc MAC capture, and kickStation() return MACAddress
+- STA.log L90-L104: wl0 connected to testpilot5G
+- STA.log L201-L228: wl1 connected to testpilot6G and wpa_state=COMPLETED
+- STA.log L379-L390: wl2 connected to testpilot2G
+- DUT.log L829-L858: wl0 assoclist captures 2c:59:17:00:19:95 and kickStation() returns the same MACAddress
+- DUT.log L627-L629: wl2 assoclist captures 2C:59:17:00:19:A7 before the 2.4G kick path
+```
+
 ## Checkpoint summary (2026-04-15 early-173)
 
 > This checkpoint records the `D047 SupportedHe160MCS` blocker revalidation rerun.

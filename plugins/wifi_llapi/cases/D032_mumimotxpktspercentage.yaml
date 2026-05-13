@@ -85,10 +85,9 @@ pass_criteria:
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$
   description: "5G -- MUMimoTxPktsPercentage readback 前必須先確認 wl0 STA 已關聯"
 - field: result_5g.MUMimoTxPktsPercentage
-  operator: equals
+  operator: not_equals
   value: 0
-  description: "5G -- stub returns 0; MU-MIMO Tx percentage is not hardware-backed
-    on this platform"
+  description: "5G -- workbook row 32 is Not Supported; live value 0 is only the non-MU/stub percentage, so this must remain fail-shaped."
 - field: assoc_24g.AssocMac24g
   operator: regex
   value: (?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$

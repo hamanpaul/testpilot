@@ -90,6 +90,43 @@ def test_run_one_case_projects_wifi_llapi_json(monkeypatch: pytest.MonkeyPatch, 
     assert result.error is None
 
 
+def test_run_one_case_matches_full_wifi_llapi_id_from_d_number(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    json_report = tmp_path / "report.json"
+    json_report.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "case_id": "wifi-llapi-D004-kickstation",
+                        "result_5g": "Pass",
+                        "result_6g": "Pass",
+                        "result_24g": "Pass",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    class FakeOrchestrator:
+        def __init__(self, *, project_root: Path):
+            assert project_root == tmp_path
+
+        def run(self, plugin: str, case_ids: list[str]) -> dict[str, str]:
+            assert plugin == "wifi_llapi"
+            assert case_ids == ["D004"]
+            return {"json_report_path": str(json_report)}
+
+    monkeypatch.setattr(runner_facade, "Orchestrator", FakeOrchestrator)
+
+    result = run_one_case_for_audit("wifi_llapi", "D004", repo_root=tmp_path)
+
+    assert result.verdict_per_band == {"5g": "Pass", "6g": "Pass", "2.4g": "Pass"}
+    assert result.error is None
+
+
 def test_run_one_case_returns_error_when_case_missing(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     json_report = tmp_path / "report.json"
     json_report.write_text(

@@ -231,8 +231,9 @@ pass_criteria:
   value: '5GHz'
   description: "5G: driver single-band support must normalize to 5GHz."
 - field: result_5g.FrequencyCapabilities
-  operator: empty
-  description: "5G: current live getter remains empty on AP1 for the associated STA."
+  operator: equals
+  reference: driver_frequency_5g.DriverFrequencyCapabilities5g
+  description: "5G: current live getter must match same-STA driver-normalized frequency capability."
 - field: assoc_6g.MACAddress
   operator: regex
   value: '(?i)^([0-9a-f]{2}:){5}[0-9a-f]{2}$'
@@ -272,9 +273,10 @@ pass_criteria:
   value: '2.4GHz'
   description: "2.4G: driver single-band support must normalize to 2.4GHz."
 - field: result_24g.FrequencyCapabilities
-  operator: empty
-  description: "2.4G: current live getter remains empty on AP5 for the associated
-    STA."
+  operator: equals
+  reference: driver_frequency_24g.DriverFrequencyCapabilities24g
+  description: "2.4G: current live getter must match same-STA driver-normalized
+    frequency capability."
 
 verification_command:
 - 'DUT# ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.FrequencyCapabilities?"'
@@ -283,4 +285,3 @@ verification_command:
 - 'DUT# wl -i wl0 sta_info <STA_MAC> | grep "Frequency Bands Supported"'
 - 'DUT# wl -i wl1 sta_info <STA_MAC> | grep "Frequency Bands Supported"'
 - 'DUT# wl -i wl2 sta_info <STA_MAC> | grep "Frequency Bands Supported"'
-

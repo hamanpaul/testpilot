@@ -139,7 +139,19 @@ steps:
 - id: step3
   action: exec
   target: DUT
-  command: ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.EncryptionMode?"
+  command: >-
+    STA_MAC=$(wl -i wl1 assoclist | awk 'NR==1{print $2}');
+    ENC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.EncryptionMode?" | sed -n 's/.*EncryptionMode="\([^"]*\)".*/\1/p');
+    PROBE_ENC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ProbeReqCaps.EncryptionMode?" | sed -n 's/.*EncryptionMode="\([^"]*\)".*/\1/p');
+    INFO=$(wl -i wl1 sta_info $STA_MAC | grep -E 'auth:|crypto:');
+    AUTH=$(printf '%s\n' "$INFO" | sed -n 's/.*auth: *//p' | head -n1);
+    CRYPTO=$(printf '%s\n' "$INFO" | sed -n 's/.*crypto: *//p' | head -n1);
+    case "$CRYPTO" in AES_CCM|CCMP) DRIVER_ENC=AES ;; TKIP) DRIVER_ENC=TKIP ;; TKIP+AES|AES+TKIP) DRIVER_ENC=TKIP-AES ;; *) DRIVER_ENC=${CRYPTO:-UNKNOWN_CRYPTO} ;; esac;
+    printf 'EncryptionMode=%s\n' "$ENC";
+    printf 'ProbeReqCapsEncryptionMode=%s\n' "$PROBE_ENC";
+    printf 'DriverAuth6g=%s\n' "$AUTH";
+    printf 'DriverCrypto6g=%s\n' "$CRYPTO";
+    printf 'DriverEncryptionMode6g=%s\n' "$DRIVER_ENC"
   depends_on: step2
   capture: result
 pass_criteria:
@@ -154,12 +166,13 @@ pass_criteria:
     assoclist.
 - field: result.EncryptionMode
   operator: equals
-  value: Default
-  description: EncryptionMode should stay Default; do not replace it with driver
-    auth/crypto strings.
+  reference: result.DriverEncryptionMode6g
+  description: Workbook row 19 is Fail-shaped because LLAPI Default does not
+    match the driver-normalized AES encryption mode.
 verification_command:
 - wpa_cli -p /var/run/wpa_supplicant -i wl1 status
 - wl -i wl1 assoclist
 - STA_MAC=$(wl -i wl1 assoclist | awk 'NR==1{print $2}')
 - 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.EncryptionMode?"'
+- 'ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.ProbeReqCaps.EncryptionMode?"'
 - 'wl -i wl1 sta_info $STA_MAC | grep -E "auth:|crypto:"'

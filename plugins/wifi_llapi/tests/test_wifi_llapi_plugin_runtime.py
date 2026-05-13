@@ -286,6 +286,25 @@ def test_plugin_loads_shared_wifi_band_baselines_yaml():
 
     assert plugin.DEFAULT_BAND_BASELINES["5g"]["ssid"] == "testpilot5G"
     assert plugin.DEFAULT_BAND_BASELINES["5g"]["dut_secret_fields"] == ["KeyPassPhrase"]
+    assert plugin.DEFAULT_BAND_BASELINES["5g"]["dut_pre_start_commands"] == [
+        "ubus-cli WiFi.AccessPoint.1.MultiAPType=None"
+    ]
+    assert plugin.DEFAULT_BAND_BASELINES["5g"]["dut_runtime_config_commands"] == [
+        "sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl0_hapd.conf",
+        "sed -i 's/^wpa_passphrase=.*/wpa_passphrase=00000000/g' /tmp/wl0_hapd.conf",
+        "sed -i 's/^ieee80211be=.*/ieee80211be=0/g' /tmp/wl0_hapd.conf",
+        "sed -i '/^qos_map_set=/d' /tmp/wl0_hapd.conf",
+        "sed -i '/^multi_ap=/d' /tmp/wl0_hapd.conf",
+        "sed -i '/^bss=wl0\\.1$/,$d' /tmp/wl0_hapd.conf",
+    ]
+    assert plugin.DEFAULT_BAND_BASELINES["5g"]["dut_runtime_ready_commands"] == [
+        "grep -q '^ocv=0$' /tmp/wl0_hapd.conf",
+        "grep -q '^wpa_passphrase=00000000$' /tmp/wl0_hapd.conf",
+        '! grep -Eq "^ieee80211be=1$" /tmp/wl0_hapd.conf',
+        '! grep -Eq "^qos_map_set=" /tmp/wl0_hapd.conf',
+        '! grep -Eq "^bss=wl0\\.1$" /tmp/wl0_hapd.conf',
+        '! grep -Eq "^multi_ap=[1-9]" /tmp/wl0_hapd.conf',
+    ]
     assert plugin.DEFAULT_BAND_BASELINES["6g"]["iface"] == "wl1"
     assert plugin.DEFAULT_BAND_BASELINES["6g"]["dut_secret_fields"] == [
         "SAEPassphrase",
@@ -315,6 +334,50 @@ def test_plugin_loads_shared_wifi_band_baselines_yaml():
         "ifconfig {{iface}} up",
     ]
     assert plugin.DEFAULT_BAND_BASELINES["2.4g"]["ssid"] == "testpilot2G"
+    assert plugin.DEFAULT_BAND_BASELINES["2.4g"]["dut_pre_start_commands"] == [
+        "ubus-cli WiFi.AccessPoint.5.MultiAPType=None"
+    ]
+    assert plugin.DEFAULT_BAND_BASELINES["2.4g"]["dut_runtime_config_commands"] == [
+        "sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl2_hapd.conf",
+        "sed -i 's/^ieee80211be=.*/ieee80211be=0/g' /tmp/wl2_hapd.conf",
+        "sed -i '/^qos_map_set=/d' /tmp/wl2_hapd.conf",
+        "sed -i '/^multi_ap=/d' /tmp/wl2_hapd.conf",
+        "sed -i '/^bss=wl2\\.1$/,$d' /tmp/wl2_hapd.conf",
+    ]
+    assert plugin.DEFAULT_BAND_BASELINES["2.4g"]["dut_runtime_ready_commands"] == [
+        "grep -q '^ocv=0$' /tmp/wl2_hapd.conf",
+        '! grep -Eq "^ieee80211be=1$" /tmp/wl2_hapd.conf',
+        '! grep -Eq "^qos_map_set=" /tmp/wl2_hapd.conf',
+        '! grep -Eq "^bss=wl2\\.1$" /tmp/wl2_hapd.conf',
+        '! grep -Eq "^multi_ap=[1-9]" /tmp/wl2_hapd.conf',
+    ]
+
+
+def test_24g_baseline_restarts_hostapd_after_runtime_cleanup():
+    plugin = _load_plugin()
+    dut = _FakeTransport("serial", {})
+    plugin._transports = {"DUT": dut}
+    case = {"id": "wifi-llapi-D004-kickstation", "bands": ["2.4g"]}
+
+    assert plugin._run_sta_band_baseline(case) is True
+    assert "ubus-cli WiFi.AccessPoint.5.MultiAPType=None" in dut.executed_commands
+    assert "sed -i '/^ocv=/d; /^ieee80211w=/a ocv=0' /tmp/wl2_hapd.conf" in dut.executed_commands
+    assert "sed -i '/^qos_map_set=/d' /tmp/wl2_hapd.conf" in dut.executed_commands
+    assert "sed -i '/^multi_ap=/d' /tmp/wl2_hapd.conf" in dut.executed_commands
+    assert "hostapd -ddt -B /tmp/wl2_hapd.conf" in dut.executed_commands
+
+
+def test_5g_baseline_restarts_hostapd_after_runtime_cleanup():
+    plugin = _load_plugin()
+    dut = _FakeTransport("serial", {})
+    plugin._transports = {"DUT": dut}
+    case = {"id": "wifi-llapi-D004-kickstation", "bands": ["5g"]}
+
+    assert plugin._run_sta_band_baseline(case) is True
+    assert "ubus-cli WiFi.AccessPoint.1.MultiAPType=None" in dut.executed_commands
+    assert "sed -i 's/^wpa_passphrase=.*/wpa_passphrase=00000000/g' /tmp/wl0_hapd.conf" in dut.executed_commands
+    assert "sed -i '/^multi_ap=/d' /tmp/wl0_hapd.conf" in dut.executed_commands
+    assert "hostapd -ddt -B /tmp/wl0_hapd.conf" in dut.executed_commands
 
 
 def test_discover_cases_uses_wifi_llapi_validator(monkeypatch):
@@ -2911,10 +2974,14 @@ def test_pre_skip_aligned_manual_cases_avoid_stale_sample_values():
     assert case_band_results(d019, True) == _expected_case_band_results(d019, True)
     assert "EncryptionMode?" in d019["hlapi_command"]
     assert "EncryptionMode=AES" not in d019["hlapi_command"]
+    d019_commands = "\n".join(str(step.get("command", "")) for step in d019["steps"])
+    assert 'WiFi.AccessPoint.3.AssociatedDevice.1.ProbeReqCaps.EncryptionMode?' in d019_commands
+    assert 'DriverCrypto6g=%s' in d019_commands
+    assert 'DriverEncryptionMode6g=%s' in d019_commands
     assert any(
         criterion["field"] == "result.EncryptionMode"
         and criterion["operator"] == "equals"
-        and criterion["value"] == "Default"
+        and criterion["reference"] == "result.DriverEncryptionMode6g"
         for criterion in d019["pass_criteria"]
     )
 
@@ -3290,9 +3357,10 @@ def test_pending_method_calibration_cases_use_runtime_supported_contracts():
     assert "kickStation(MACAddress={{assoc_6g.AssocMac6g}})" in d004_commands
     assert "kickStation(MACAddress={{assoc_24g.AssocMac24g}})" in d004_commands
     assert "iw dev wl0 link" in d004_commands
-    assert "wpa_cli -p /var/run/wpa_supplicant -i wl0 status" in d004_commands
+    assert "wpa_cli -p /var/run/wpa_supplicant -i wl0 status" not in d004_commands
+    assert "wpa_cli -p /var/run/wpa_supplicant -i wl1 status" in d004_commands
     assert "iw dev wl2 link" in d004_commands
-    assert "wpa_cli -p /var/run/wpa_supplicant -i wl2 status" in d004_commands
+    assert "wpa_cli -p /var/run/wpa_supplicant -i wl2 status" not in d004_commands
     assert "wl -i wl0 join TestPilot_5G imode bss" not in d004_commands
     assert "wl -i wl2 join TestPilot_24G imode bss" not in d004_commands
     assert any(
@@ -4173,8 +4241,16 @@ def test_pending_boolean_and_frequency_cases_use_supported_contracts():
     assert "DriverDownlinkShortGuard6g=" in d018_commands
     assert "DriverDownlinkShortGuardGI24g=" in d018_commands
     assert "DriverDownlinkShortGuard24g=" in d018_commands
-    assert "sed -n '/tx nrate/{n;s/.*GI \\([^ ]*\\).*/\\1/p;}'" in d018_commands
-    assert 'case "$GI" in 0.4us|0.8us|1.6us) echo DriverDownlinkShortGuard5g=1 ;; 3.2us) echo DriverDownlinkShortGuard5g=0 ;; *) echo DriverDownlinkShortGuard5g=UNKNOWN_GI:$GI ;; esac' in d018_commands
+    assert "TX_INFO=$(wl -i wl0 sta_info $STA_MAC_LOWER | sed -n '/tx nrate/,+1p')" in d018_commands
+    assert 'DriverDownlinkShortGuardGI5g=${GI:-LEGACY_NO_GI}' in d018_commands
+    assert 'DriverDownlinkRate5g="$RATE"' in d018_commands
+    assert 'case "$GI" in 0.4us|0.8us|1.6us) echo DriverDownlinkShortGuard5g=1 ;; 3.2us|"") echo DriverDownlinkShortGuard5g=0 ;; *) echo DriverDownlinkShortGuard5g=UNKNOWN_GI:$GI ;; esac' in d018_commands
+    assert any(
+        criterion["field"] == "driver_shortguard_5g.DriverDownlinkShortGuardGI5g"
+        and criterion["operator"] == "regex"
+        and criterion["value"] == "^([0-9.]+us|LEGACY_NO_GI)$"
+        for criterion in d018["pass_criteria"]
+    )
     assert any(
         criterion["field"] == "result_5g.DownlinkShortGuard"
         and criterion["operator"] == "equals"
@@ -4230,7 +4306,8 @@ def test_pending_boolean_and_frequency_cases_use_supported_contracts():
     )
     assert any(
         criterion["field"] == "result_5g.FrequencyCapabilities"
-        and criterion["operator"] == "empty"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "driver_frequency_5g.DriverFrequencyCapabilities5g"
         for criterion in d020["pass_criteria"]
     )
     assert any(
@@ -4241,7 +4318,8 @@ def test_pending_boolean_and_frequency_cases_use_supported_contracts():
     )
     assert any(
         criterion["field"] == "result_24g.FrequencyCapabilities"
-        and criterion["operator"] == "empty"
+        and criterion["operator"] == "equals"
+        and criterion["reference"] == "driver_frequency_24g.DriverFrequencyCapabilities24g"
         for criterion in d020["pass_criteria"]
     )
 
@@ -4584,8 +4662,8 @@ def test_pending_boolean_and_frequency_cases_evaluate_live_examples():
             },
             "step4_5g_get": {
                 "success": True,
-                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.FrequencyCapabilities=""',
-                "captured": {"FrequencyCapabilities": ""},
+                "output": 'WiFi.AccessPoint.1.AssociatedDevice.1.FrequencyCapabilities="5GHz"',
+                "captured": {"FrequencyCapabilities": "5GHz"},
                 "timing": 0.01,
             },
             "step6_6g_assoc": {
@@ -4628,8 +4706,8 @@ def test_pending_boolean_and_frequency_cases_evaluate_live_examples():
             },
             "step12_24g_get": {
                 "success": True,
-                "output": 'WiFi.AccessPoint.5.AssociatedDevice.1.FrequencyCapabilities=""',
-                "captured": {"FrequencyCapabilities": ""},
+                "output": 'WiFi.AccessPoint.5.AssociatedDevice.1.FrequencyCapabilities="2.4GHz"',
+                "captured": {"FrequencyCapabilities": "2.4GHz"},
                 "timing": 0.01,
             },
         }
@@ -4853,7 +4931,7 @@ def test_pending_not_supported_associateddevice_cases_use_supported_contracts():
     assert "wl -i wl2 assoclist" in d030_commands
     assert any(
         criterion["field"] == "result_5g.MUGroupId"
-        and criterion["operator"] == "equals"
+        and criterion["operator"] == "not_equals"
         and str(criterion["value"]) == "0"
         for criterion in d030["pass_criteria"]
     )
@@ -4929,9 +5007,9 @@ def test_pending_not_supported_associateddevice_cases_evaluate_live_examples():
             },
         }
     }
-    assert plugin.evaluate(d030, d030_results) is True
+    assert plugin.evaluate(d030, d030_results) is False
 
-    d030_fail_results = {
+    d030_non_stub_results = {
         "steps": {
             **d030_results["steps"],
             "step2_5g": {
@@ -4941,7 +5019,7 @@ def test_pending_not_supported_associateddevice_cases_evaluate_live_examples():
             },
         }
     }
-    assert plugin.evaluate(d030, d030_fail_results) is False
+    assert plugin.evaluate(d030, d030_non_stub_results) is True
 
 
 def test_pending_mu_stub_cases_use_supported_contracts():
@@ -4973,14 +5051,22 @@ def test_pending_mu_stub_cases_use_supported_contracts():
         assert case_data["llapi_support"] == "Not Supported"
         _mu_rr = {
             "D031_mumimotxpktscount.yaml": ("Fail", "Fail", "Fail"),
-            "D032_mumimotxpktspercentage.yaml": ("Not Supported", "Not Supported", "Not Supported"),
-            "D033_muuserpositionid.yaml": ("Not Supported", "Not Supported", "Not Supported"),
+            "D032_mumimotxpktspercentage.yaml": ("Fail", "Fail", "Fail"),
+            "D033_muuserpositionid.yaml": ("Fail", "Fail", "Fail"),
         }
         exp5, exp6, exp24 = _mu_rr[filename]
         assert _has_assoc_mac_regex(case_data, "assoc_5g.AssocMac5g")
+        fail_shaped_zero_cases = {
+            "D031_mumimotxpktscount.yaml",
+            "D032_mumimotxpktspercentage.yaml",
+            "D033_muuserpositionid.yaml",
+        }
+        expected_5g_operator = (
+            "not_equals" if filename in fail_shaped_zero_cases else "equals"
+        )
         assert any(
             criterion["field"] == f"result_5g.{api_name}"
-            and criterion["operator"] == "equals"
+            and criterion["operator"] == expected_5g_operator
             and str(criterion["value"]) == "0"
             for criterion in case_data["pass_criteria"]
         )
@@ -5029,6 +5115,25 @@ def test_pending_mu_stub_cases_evaluate_live_examples():
                 },
             }
         }
+        if filename in {
+            "D031_mumimotxpktscount.yaml",
+            "D032_mumimotxpktspercentage.yaml",
+            "D033_muuserpositionid.yaml",
+        }:
+            assert plugin.evaluate(case_data, pass_results) is False
+            non_stub_results = {
+                "steps": {
+                    **pass_results["steps"],
+                    "step2_5g": {
+                        "success": True,
+                        "output": f'[\n  {{\n    "WiFi.AccessPoint.1.AssociatedDevice.1.{api_name}": 1\n  }}\n]\n',
+                        "timing": 0.01,
+                    },
+                }
+            }
+            assert plugin.evaluate(case_data, non_stub_results) is True
+            continue
+
         assert plugin.evaluate(case_data, pass_results) is True
 
         fail_results = {
@@ -8313,12 +8418,12 @@ def test_d065_bridgeinterface_evaluate_live_examples():
             },
             "step5_6g_config": {
                 "success": True,
-                "output": "BridgeConfig6g=br-lan\nBridgeConfig6gCount=2\nBridgeConfig6gMismatch=0",
+                "output": "BridgeConfig6g=br-lan\nBridgeConfig6gCount=1\nBridgeConfig6gMismatch=0",
                 "timing": 0.01,
             },
             "step6_24g_config": {
                 "success": True,
-                "output": "BridgeConfig24g=br-lan\nBridgeConfig24gCount=2\nBridgeConfig24gMismatch=0",
+                "output": "BridgeConfig24g=br-lan\nBridgeConfig24gCount=1\nBridgeConfig24gMismatch=0",
                 "timing": 0.01,
             },
             "step7_bridge_state": {
@@ -8353,7 +8458,7 @@ def test_d065_bridgeinterface_evaluate_live_examples():
             **d065_results["steps"],
             "step5_6g_config": {
                 "success": True,
-                "output": "BridgeConfig6g=br-lan\nBridgeConfig6gCount=1\nBridgeConfig6gMismatch=0",
+                "output": "BridgeConfig6g=br-lan\nBridgeConfig6gCount=2\nBridgeConfig6gMismatch=0",
                 "timing": 0.01,
             },
         }

@@ -119,11 +119,13 @@ steps:
   band: 5g
   command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.1.MACAddress?"
     | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC"
-    | tr ''A-F'' ''a-f''); GI=$(wl -i wl0 sta_info $STA_MAC_LOWER | sed -n ''/tx nrate/{n;s/.*GI
-    \([^ ]*\).*/\1/p;}''); [ -n "$STA_MAC" ] && echo DriverAssocMac5g=$STA_MAC &&
-    echo DriverDownlinkShortGuardGI5g=$GI && case "$GI" in 0.4us|0.8us|1.6us) echo
-    DriverDownlinkShortGuard5g=1 ;; 3.2us) echo DriverDownlinkShortGuard5g=0 ;; *)
-    echo DriverDownlinkShortGuard5g=UNKNOWN_GI:$GI ;; esac'
+    | tr ''A-F'' ''a-f''); TX_INFO=$(wl -i wl0 sta_info $STA_MAC_LOWER | sed -n ''/tx
+    nrate/,+1p''); GI=$(printf ''%s\n'' "$TX_INFO" | sed -n ''s/.*GI \([^ ]*\).*/\1/p'');
+    RATE=$(printf ''%s\n'' "$TX_INFO" | tail -n +2); [ -n "$STA_MAC" ] && echo
+    DriverAssocMac5g=$STA_MAC && echo DriverDownlinkShortGuardGI5g=${GI:-LEGACY_NO_GI}
+    && echo DriverDownlinkRate5g="$RATE" && case "$GI" in 0.4us|0.8us|1.6us)
+    echo DriverDownlinkShortGuard5g=1 ;; 3.2us|"") echo DriverDownlinkShortGuard5g=0
+    ;; *) echo DriverDownlinkShortGuard5g=UNKNOWN_GI:$GI ;; esac'
   depends_on: step3_5g_get
   capture: driver_shortguard_5g
 - id: step5_6g_sta_join
@@ -154,11 +156,13 @@ steps:
   band: 6g
   command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.3.AssociatedDevice.1.MACAddress?"
     | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC"
-    | tr ''A-F'' ''a-f''); GI=$(wl -i wl1 sta_info $STA_MAC_LOWER | sed -n ''/tx nrate/{n;s/.*GI
-    \([^ ]*\).*/\1/p;}''); [ -n "$STA_MAC" ] && echo DriverAssocMac6g=$STA_MAC &&
-    echo DriverDownlinkShortGuardGI6g=$GI && case "$GI" in 0.4us|0.8us|1.6us) echo
-    DriverDownlinkShortGuard6g=1 ;; 3.2us) echo DriverDownlinkShortGuard6g=0 ;; *)
-    echo DriverDownlinkShortGuard6g=UNKNOWN_GI:$GI ;; esac'
+    | tr ''A-F'' ''a-f''); TX_INFO=$(wl -i wl1 sta_info $STA_MAC_LOWER | sed -n ''/tx
+    nrate/,+1p''); GI=$(printf ''%s\n'' "$TX_INFO" | sed -n ''s/.*GI \([^ ]*\).*/\1/p'');
+    RATE=$(printf ''%s\n'' "$TX_INFO" | tail -n +2); [ -n "$STA_MAC" ] && echo
+    DriverAssocMac6g=$STA_MAC && echo DriverDownlinkShortGuardGI6g=${GI:-LEGACY_NO_GI}
+    && echo DriverDownlinkRate6g="$RATE" && case "$GI" in 0.4us|0.8us|1.6us)
+    echo DriverDownlinkShortGuard6g=1 ;; 3.2us|"") echo DriverDownlinkShortGuard6g=0
+    ;; *) echo DriverDownlinkShortGuard6g=UNKNOWN_GI:$GI ;; esac'
   depends_on: step7_6g_get
   capture: driver_shortguard_6g
 - id: step9_24g_sta_join
@@ -188,11 +192,13 @@ steps:
   band: 2.4g
   command: 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?"
     | sed -n ''s/.*MACAddress="\([^"]*\)".*/\1/p''); STA_MAC_LOWER=$(echo "$STA_MAC"
-    | tr ''A-F'' ''a-f''); GI=$(wl -i wl2 sta_info $STA_MAC_LOWER | sed -n ''/tx nrate/{n;s/.*GI
-    \([^ ]*\).*/\1/p;}''); [ -n "$STA_MAC" ] && echo DriverAssocMac24g=$STA_MAC &&
-    echo DriverDownlinkShortGuardGI24g=$GI && case "$GI" in 0.4us|0.8us|1.6us) echo
-    DriverDownlinkShortGuard24g=1 ;; 3.2us) echo DriverDownlinkShortGuard24g=0 ;;
-    *) echo DriverDownlinkShortGuard24g=UNKNOWN_GI:$GI ;; esac'
+    | tr ''A-F'' ''a-f''); TX_INFO=$(wl -i wl2 sta_info $STA_MAC_LOWER | sed -n ''/tx
+    nrate/,+1p''); GI=$(printf ''%s\n'' "$TX_INFO" | sed -n ''s/.*GI \([^ ]*\).*/\1/p'');
+    RATE=$(printf ''%s\n'' "$TX_INFO" | tail -n +2); [ -n "$STA_MAC" ] && echo
+    DriverAssocMac24g=$STA_MAC && echo DriverDownlinkShortGuardGI24g=${GI:-LEGACY_NO_GI}
+    && echo DriverDownlinkRate24g="$RATE" && case "$GI" in 0.4us|0.8us|1.6us)
+    echo DriverDownlinkShortGuard24g=1 ;; 3.2us|"") echo DriverDownlinkShortGuard24g=0
+    ;; *) echo DriverDownlinkShortGuard24g=UNKNOWN_GI:$GI ;; esac'
   depends_on: step11_24g_get
   capture: driver_shortguard_24g
 
@@ -211,9 +217,9 @@ pass_criteria:
   description: "5G: driver downlink sampling must target the same STA as AssociatedDevice.1."
 - field: driver_shortguard_5g.DriverDownlinkShortGuardGI5g
   operator: regex
-  value: '^[0-9.]+us$'
-  description: "5G: wl0 sta_info tx nrate must emit a concrete GI token for the same
-    STA."
+  value: '^([0-9.]+us|LEGACY_NO_GI)$'
+  description: "5G: wl0 sta_info tx nrate must emit either a concrete GI token or
+    legacy/no-GI evidence for the same STA."
 - field: driver_shortguard_5g.DriverDownlinkShortGuard5g
   operator: regex
   value: '^[0-1]$'
@@ -238,9 +244,9 @@ pass_criteria:
   description: "6G: driver downlink sampling must target the same STA as AssociatedDevice.1."
 - field: driver_shortguard_6g.DriverDownlinkShortGuardGI6g
   operator: regex
-  value: '^[0-9.]+us$'
-  description: "6G: wl1 sta_info tx nrate must emit a concrete GI token for the same
-    STA."
+  value: '^([0-9.]+us|LEGACY_NO_GI)$'
+  description: "6G: wl1 sta_info tx nrate must emit either a concrete GI token or
+    legacy/no-GI evidence for the same STA."
 - field: driver_shortguard_6g.DriverDownlinkShortGuard6g
   operator: regex
   value: '^[0-1]$'
@@ -265,9 +271,9 @@ pass_criteria:
   description: "2.4G: driver downlink sampling must target the same STA as AssociatedDevice.1."
 - field: driver_shortguard_24g.DriverDownlinkShortGuardGI24g
   operator: regex
-  value: '^[0-9.]+us$'
-  description: "2.4G: wl2 sta_info tx nrate must emit a concrete GI token for the
-    same STA."
+  value: '^([0-9.]+us|LEGACY_NO_GI)$'
+  description: "2.4G: wl2 sta_info tx nrate must emit either a concrete GI token
+    or legacy/no-GI evidence for the same STA."
 - field: driver_shortguard_24g.DriverDownlinkShortGuard24g
   operator: regex
   value: '^[0-1]$'
@@ -295,4 +301,3 @@ verification_command:
 - 'STA_MAC=$(ubus-cli "WiFi.AccessPoint.5.AssociatedDevice.1.MACAddress?" | sed -n
   ''s/.*MACAddress="\([^"]*\)".*/\1/p'')'
 - 'wl -i wl2 sta_info $STA_MAC | grep -A 1 "tx nrate"'
-
