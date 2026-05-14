@@ -498,3 +498,72 @@ def test_write_summary_sheet_fallback_policy_version(tmp_path: Path) -> None:
     wb = load_workbook(p)
     assert wb["Summary"]["B1"].value == SUMMARY_POLICY_VERSION
     wb.close()
+
+
+# ---------------------------------------------------------------------------
+# Task 2 quality fixes
+# ---------------------------------------------------------------------------
+
+def test_write_summary_sheet_closes_on_save_error(tmp_path: Path, monkeypatch) -> None:
+    """wb.close() must be called even when wb.save() raises."""
+    from unittest.mock import MagicMock
+    from testpilot.reporting import wifi_llapi_excel
+
+    fake_wb = MagicMock()
+    fake_wb.sheetnames = []
+    fake_wb.save.side_effect = OSError("disk full")
+
+    monkeypatch.setattr(wifi_llapi_excel, "load_workbook", lambda *a, **kw: fake_wb)
+
+    with pytest.raises(OSError, match="disk full"):
+        write_summary_sheet(tmp_path / "x.xlsx", {"band_category": []})
+
+    fake_wb.close.assert_called_once()
+
+
+def test_write_summary_sheet_k_column_result_empty(tmp_path: Path) -> None:
+    """Column K (result empty) must reflect unbucketed count, not hard-coded 0."""
+    p = tmp_path / "template.xlsx"
+    _create_template_with_summary(p)
+    payload = {
+        "band_category": [
+            {
+                "band_key": "result_5g",
+                "band_label": "5G",
+                "category": "WiFi.AccessPoint",
+                "total_items": 2,
+                "tested_items": 1,
+                "pass": 1,
+                "fail": 0,
+                "to_be_tested": 0,
+                "not_supported": 0,
+                "skip": 0,
+                "pass_rate": 1.0,
+                "progress": 0.5,
+            }
+        ],
+    }
+    write_summary_sheet(p, payload)
+    wb = load_workbook(p, data_only=False)
+    # total_items=2, pass=1, rest=0 → 1 unbucketed; expect formula string
+    assert wb["Summary"]["K4"].value == "=C4-SUM(E4:I4)"
+    wb.close()
+
+
+def test_validate_wifi_llapi_template_missing_wifi_sheet(tmp_path: Path) -> None:
+    """Missing Wifi_LLAPI sheet must raise TemplateValidationError."""
+    p = tmp_path / "template.xlsx"
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Summary"
+    summary_headers = [
+        "Module", "Object Category", "Total Items", "Tested Items",
+        "Pass", "Fail", "To be tested", "Not Supported", "Skip",
+        "Pass Rate", "result empty", "Progress",
+    ]
+    for col_idx, h in enumerate(summary_headers, start=1):
+        ws.cell(row=2, column=col_idx).value = h
+    wb.save(p)
+    wb.close()
+    with pytest.raises(TemplateValidationError, match="missing sheet: Wifi_LLAPI"):
+        validate_wifi_llapi_report_template(p)

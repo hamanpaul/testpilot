@@ -783,6 +783,7 @@ def write_summary_sheet(
     - Row 3: column headers
     - Row 4+: one row per entry in ``summary_payload["band_category"]``
     """
+    # Deferred to avoid circular dependency: wifi_llapi_excel ← wifi_llapi_summary.
     from testpilot.reporting.wifi_llapi_summary import SUMMARY_POLICY_VERSION  # noqa: PLC0415
 
     path = Path(report_xlsx)
@@ -821,9 +822,11 @@ def write_summary_sheet(
         ws.cell(row=r, column=8).value = row_data.get("not_supported", 0)
         ws.cell(row=r, column=9).value = row_data.get("skip", 0)
         ws.cell(row=r, column=10).value = f"=IFERROR(E{r}/SUM(E{r}:G{r}),0)"
-        ws.cell(row=r, column=11).value = 0
+        ws.cell(row=r, column=11).value = f"=C{r}-SUM(E{r}:I{r})"
         ws.cell(row=r, column=12).value = f"=IFERROR(D{r}/C{r},0)"
 
-    wb.save(path)
-    wb.close()
+    try:
+        wb.save(path)
+    finally:
+        wb.close()
     return path
