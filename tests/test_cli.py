@@ -1020,3 +1020,11 @@ def test_wifi_llapi_reproject_summary_cli(tmp_path: Path, monkeypatch) -> None:
     assert result.exit_code == 0, result.output
     assert (out_dir / "out-report.xlsx").exists(), result.output
     assert (out_dir / "out-report.json").exists(), result.output
+
+    # stdout must be valid JSON with key fields
+    import re
+    clean = re.sub(r"\x1b\[[0-9;]*m", "", result.output)
+    payload = json.loads(clean)
+    assert payload["status"] == "ok"
+    assert "report_path" in payload
+    assert "summary" in payload

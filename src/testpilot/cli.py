@@ -1033,7 +1033,7 @@ def rewrite_yaml_commands(
 @click.option(
     "--output-stem",
     default=None,
-    help="Filename stem for XLSX and companion reports.",
+    help="Filename stem for XLSX and companion reports. Defaults to 'reproject-report'.",
 )
 @click.pass_context
 def reproject_summary(
