@@ -422,3 +422,45 @@ class TestEdgeCases:
         assert "#DADCE0" in text
         # Dark canvas for code blocks
         assert "#3C3D41" in text
+
+
+# ---------------------------------------------------------------------------
+# Task 4 – hybrid summary in HTML
+# ---------------------------------------------------------------------------
+
+_PRECOMPUTED_SUMMARY: dict[str, Any] = {
+    "policy_version": "wifi_llapi_summary_v1",
+    "band_category": [
+        {
+            "band_key": "result_5g",
+            "band_label": "5G",
+            "category": "WiFi.AccessPoint",
+            "total_items": 2,
+            "tested_items": 1,
+            "pass": 1,
+            "fail": 0,
+            "to_be_tested": 1,
+            "not_supported": 0,
+            "skip": 0,
+            "pass_rate": 1.0,
+            "progress": 0.5,
+        },
+    ],
+    "bucket_totals": {},
+    "raw_totals": {},
+    "diagnostic_status": {},
+    "per_case": [],
+}
+
+
+def test_html_reporter_renders_hybrid_summary(tmp_path: Path) -> None:
+    meta_with_summary: dict[str, Any] = {
+        **_META,
+        "wifi_llapi_summary": _PRECOMPUTED_SUMMARY,
+    }
+    out = tmp_path / "report.html"
+    HtmlReporter().generate(_CASES, meta_with_summary, out)
+    text = out.read_text(encoding="utf-8")
+    assert "WiFi LLAPI Hybrid Summary" in text
+    assert "WiFi.AccessPoint" in text
+    assert "To be tested" in text

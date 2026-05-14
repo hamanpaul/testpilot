@@ -237,3 +237,101 @@ class TestGenerateReports:
         paths = generate_reports([], _META, tmp_path)
         assert len(paths) == 2
         assert all(p.exists() for p in paths)
+
+
+# ---------------------------------------------------------------------------
+# Task 4 – precomputed wifi_llapi_summary
+# ---------------------------------------------------------------------------
+
+_PRECOMPUTED_SUMMARY: dict[str, Any] = {
+    "policy_version": "wifi_llapi_summary_v1",
+    "band_category": [
+        {
+            "band_key": "result_5g",
+            "band_label": "5G",
+            "category": "WiFi.AccessPoint",
+            "total_items": 2,
+            "tested_items": 2,
+            "pass": 1,
+            "fail": 1,
+            "to_be_tested": 0,
+            "not_supported": 0,
+            "skip": 0,
+            "pass_rate": 0.5,
+            "progress": 1.0,
+        },
+        {
+            "band_key": "result_5g",
+            "band_label": "5G",
+            "category": "WiFi.EndPoint",
+            "total_items": 0,
+            "tested_items": 0,
+            "pass": 0,
+            "fail": 0,
+            "to_be_tested": 0,
+            "not_supported": 0,
+            "skip": 0,
+            "pass_rate": None,
+            "progress": None,
+        },
+    ],
+    "bucket_totals": {
+        "result_5g": {
+            "band_key": "result_5g",
+            "band_label": "5G",
+            "total_items": 2,
+            "tested_items": 2,
+            "pass": 1,
+            "fail": 1,
+            "to_be_tested": 0,
+            "not_supported": 0,
+            "skip": 0,
+            "pass_rate": 0.5,
+            "progress": 1.0,
+        },
+    },
+    "raw_totals": {"result_5g": {"Pass": 1, "Fail": 1}},
+    "diagnostic_status": {},
+    "per_case": [],
+}
+
+
+def test_json_reporter_uses_precomputed_wifi_llapi_summary(
+    tmp_path: Path,
+) -> None:
+    meta_with_summary: dict[str, Any] = {
+        **_META,
+        "wifi_llapi_summary": _PRECOMPUTED_SUMMARY,
+    }
+    out = tmp_path / "report.json"
+    JsonReporter().generate(_CASES, meta_with_summary, out)
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    summary = payload["summary"]
+    assert summary["policy_version"] == "wifi_llapi_summary_v1"
+    # band_category row for 5G/WiFi.AccessPoint: pass=1, fail=1 → pass_rate=0.5
+    bc_rows: list[dict[str, Any]] = summary["band_category"]
+    ap_5g = next(
+        (r for r in bc_rows if r["band_key"] == "result_5g" and r["category"] == "WiFi.AccessPoint"),
+        None,
+    )
+    assert ap_5g is not None
+    assert ap_5g["pass"] == 1
+    assert ap_5g["fail"] == 1
+
+
+def test_markdown_reporter_renders_hybrid_summary(tmp_path: Path) -> None:
+    meta_with_summary: dict[str, Any] = {
+        **_META,
+        "wifi_llapi_summary": _PRECOMPUTED_SUMMARY,
+    }
+    out = tmp_path / "report.md"
+    MarkdownReporter().generate(_CASES, meta_with_summary, out)
+    text = out.read_text(encoding="utf-8")
+    assert "## WiFi LLAPI Hybrid summary" in text
+    # Table header contains band/category/count columns
+    assert "Band" in text
+    assert "Category" in text
+    assert "Pass Rate" in text
+    # Row for 5G/WiFi.AccessPoint with pass_rate 50.00%
+    assert "50.00%" in text
+    assert "WiFi.AccessPoint" in text

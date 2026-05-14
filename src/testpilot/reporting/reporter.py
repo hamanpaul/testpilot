@@ -62,6 +62,27 @@ def _pass_rate(case_counts: Mapping[str, int]) -> float | None:
     return int(case_counts.get("pass_cases", 0)) / denominator
 
 
+def _precomputed_wifi_llapi_summary(
+    meta: Mapping[str, Any],
+) -> dict[str, Any] | None:
+    """Return the precomputed wifi_llapi summary from *meta* when present."""
+    val = meta.get("wifi_llapi_summary")
+    if isinstance(val, dict):
+        return dict(val)
+    return None
+
+
+def _summary_payload(
+    case_results: Sequence[Mapping[str, Any]],
+    meta: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Return precomputed summary from *meta* or fall back to _summarise."""
+    precomputed = _precomputed_wifi_llapi_summary(meta)
+    if precomputed is not None:
+        return precomputed
+    return _summarise(case_results)
+
+
 def _summarise(case_results: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     """Aggregate pass / fail / not_supported / error counts across bands."""
     counter: Counter[str] = Counter()
@@ -212,10 +233,11 @@ class MarkdownReporter:
         output_path: Path,
     ) -> Path:
         lines: list[str] = []
-        summary = _summarise(case_results)
+        summary = _summary_payload(case_results, meta)
         self._write_header(lines, meta)
         self._write_timing(lines, meta, case_results)
         self._write_suite_summary(lines, summary)
+        self._write_wifi_llapi_hybrid_summary(lines, summary)
         self._write_summary_table(lines, case_results)
         self._write_per_case_timing(lines, case_results)
         self._write_case_details(lines, case_results)
@@ -235,6 +257,51 @@ class MarkdownReporter:
             if key in meta:
                 label = key.replace("_", " ").title()
                 lines.append(f"- **{label}**: {meta[key]}")
+        lines.append("")
+
+    @staticmethod
+    def _write_wifi_llapi_hybrid_summary(
+        lines: list[str],
+        summary: Mapping[str, Any],
+    ) -> None:
+        """Render the WiFi LLAPI hybrid band/category summary table.
+
+        No-ops gracefully when *summary* lacks a ``band_category`` sequence.
+        """
+        band_category = summary.get("band_category")
+        if not band_category or not isinstance(band_category, (list, tuple)):
+            return
+
+        lines.append("## WiFi LLAPI Hybrid summary")
+        lines.append("")
+        lines.append(
+            "| Band | Category | Total | Tested | Pass | Fail"
+            " | To be tested | Not Supported | Skip | Pass Rate |"
+        )
+        lines.append(
+            "|------|----------|-------|--------|------|------"
+            "|--------------|---------------|------|-----------|"
+        )
+        for row in band_category:
+            band = (
+                row.get("band_label")
+                or row.get("band")
+                or row.get("band_key")
+                or ""
+            )
+            category = row.get("category", "")
+            total = row.get("total_items", 0)
+            tested = row.get("tested_items", 0)
+            pass_ = row.get("pass", 0)
+            fail = row.get("fail", 0)
+            tbt = row.get("to_be_tested", 0)
+            ns = row.get("not_supported", 0)
+            skip = row.get("skip", 0)
+            pr = _format_percent(row.get("pass_rate"))
+            lines.append(
+                f"| {band} | {category} | {total} | {tested}"
+                f" | {pass_} | {fail} | {tbt} | {ns} | {skip} | {pr} |"
+            )
         lines.append("")
 
     @staticmethod
@@ -409,7 +476,7 @@ class JsonReporter:
         payload: dict[str, Any] = {
             "meta": dict(meta),
             "cases": [dict(c) for c in case_results],
-            "summary": _summarise(case_results),
+            "summary": _summary_payload(case_results, meta),
         }
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(
