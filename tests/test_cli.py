@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 import textwrap
 from importlib.util import module_from_spec, spec_from_file_location
@@ -974,7 +975,7 @@ def _make_cli_template_xlsx(path: Path) -> None:
 
 
 def test_wifi_llapi_reproject_summary_cli(tmp_path: Path, monkeypatch) -> None:
-    """wifi-llapi reproject-summary exits 0 and emits xlsx + json artifacts."""
+    """wifi-llapi reproject-summary exits 0 and emits xlsx + md + html + json artifacts."""
     _clear_provider_env(monkeypatch)
 
     # Set up fake repo root with template in expected location
@@ -1019,10 +1020,11 @@ def test_wifi_llapi_reproject_summary_cli(tmp_path: Path, monkeypatch) -> None:
 
     assert result.exit_code == 0, result.output
     assert (out_dir / "out-report.xlsx").exists(), result.output
+    assert (out_dir / "out-report.md").exists(), result.output
+    assert (out_dir / "out-report.html").exists(), result.output
     assert (out_dir / "out-report.json").exists(), result.output
 
     # stdout must be valid JSON with key fields
-    import re
     clean = re.sub(r"\x1b\[[0-9;]*m", "", result.output)
     payload = json.loads(clean)
     assert payload["status"] == "ok"
