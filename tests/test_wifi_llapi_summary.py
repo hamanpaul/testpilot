@@ -105,6 +105,27 @@ def test_extract_fail_reason_prefers_reason_code_then_comment_then_phase() -> No
     assert extract_fail_reason(phase_last) == "verify env"
 
 
+def test_extract_fail_reason_prefers_case_comment_before_bare_phase() -> None:
+    # snapshot has only phase; case-level comment should win over bare phase
+    case = {
+        "failure_snapshot": {"phase": "evaluate"},
+        "comment": "pass criteria not satisfied",
+    }
+    assert extract_fail_reason(case) == "pass criteria not satisfied"
+
+    # diagnostic_status wins over case comment (per priority order)
+    case_with_diag = {
+        "failure_snapshot": {"phase": "evaluate"},
+        "diagnostic_status": "FailCriteria",
+        "comment": "pass criteria not satisfied",
+    }
+    assert extract_fail_reason(case_with_diag) == "FailCriteria"
+
+    # phase is used only when no other info available
+    case_phase_only = {"failure_snapshot": {"phase": "evaluate"}}
+    assert extract_fail_reason(case_phase_only) == "evaluate"
+
+
 def test_classify_band_result_reprojects_env_and_config_failures_to_to_be_tested() -> None:
     env_case = _make_case(
         "D001",

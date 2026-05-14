@@ -85,7 +85,7 @@ def extract_fail_reason(case: Mapping[str, Any]) -> str:
     snapshot = case.get("failure_snapshot")
     if not isinstance(snapshot, Mapping):
         snapshot = {}
-    for key in ("reason_code", "comment", "phase"):
+    for key in ("reason_code", "comment"):
         value = _display_text(snapshot.get(key))
         if value:
             return value
@@ -93,6 +93,9 @@ def extract_fail_reason(case: Mapping[str, Any]) -> str:
         value = _display_text(case.get(key))
         if value:
             return value
+    phase = _display_text(snapshot.get("phase"))
+    if phase:
+        return phase
     return ""
 
 
