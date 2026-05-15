@@ -92,16 +92,22 @@ def _make_template_xlsx(path: Path) -> None:
     ws_sum["B3"] = "WiFi.AccessPoint"
     ws_sum["C3"] = "=SUM(D3,K3)"
     ws_sum["D3"] = "=SUM(E3:I3)"
-    ws_sum["E3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$I:$I,E$2)'
-    ws_sum["F3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$I:$I,F$2)'
-    ws_sum["G3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$I:$I,G$2)'
-    ws_sum["H3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$I:$I,H$2)'
-    ws_sum["I3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$I:$I,I$2)'
+    ws_sum["E3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,E$2)'
+    ws_sum["F3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,F$2)'
+    ws_sum["G3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,G$2)'
+    ws_sum["H3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,H$2)'
+    ws_sum["I3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,I$2)+COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,"N/A")'
     ws_sum["J3"] = "=IFERROR(E3/SUM(E3:G3),0)"
     ws_sum["J3"].number_format = "0.00%"
     ws_sum["K3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$I:$I,"")'
     ws_sum["L3"] = "=IFERROR(D3/C3,0)"
     ws_sum["L3"].number_format = "0.00%"
+    ws_sum["A9"] = "WiFi 6g"
+    ws_sum["B9"] = "WiFi.AccessPoint"
+    ws_sum["F9"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B9&"*",Wifi_LLAPI!$O:$O,F$2)'
+    ws_sum["A15"] = "WiFi 2.4g"
+    ws_sum["B15"] = "WiFi.AccessPoint"
+    ws_sum["F15"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B15&"*",Wifi_LLAPI!$P:$P,F$2)'
 
     # Wifi_LLAPI sheet
     ws = wb.create_sheet("Wifi_LLAPI")
@@ -119,6 +125,12 @@ def _make_template_xlsx(path: Path) -> None:
     ws["K3"] = "WiFi 2.4G"
     ws["L3"] = "Tester"
     ws["M3"] = "Comment"
+    ws["N3"] = "Summary Bucket WiFi 5G"
+    ws["O3"] = "Summary Bucket WiFi 6G"
+    ws["P3"] = "Summary Bucket WiFi 2.4G"
+    ws.column_dimensions["N"].hidden = True
+    ws.column_dimensions["O"].hidden = True
+    ws.column_dimensions["P"].hidden = True
     # Data rows (object + api columns)
     ws["A4"] = "WiFi.AccessPoint.1."
     ws["C4"] = "getSomeAPI"
@@ -176,12 +188,18 @@ def test_reproject_creates_isolated_artifacts_and_preserves_source(
     assert str(ws.cell(row=4, column=11).value or "") == "Not Supported"  # K = result_24g
     # M = extract_fail_reason(D001): reason_code "sta_band_not_ready" → "sta band not ready"
     assert ws.cell(row=4, column=13).value == extract_fail_reason(_D001)
+    assert ws.cell(row=4, column=14).value == "Pass"
+    assert ws.cell(row=4, column=15).value == "To be tested"
+    assert ws.cell(row=4, column=16).value == "Not Supported"
 
     # D002 at row 5
     assert str(ws.cell(row=5, column=9).value or "") == "Fail"   # I = result_5g
     assert str(ws.cell(row=5, column=10).value or "") == "Skip"  # J = result_6g
     assert str(ws.cell(row=5, column=11).value or "") == "N/A"   # K = result_24g
     assert ws.cell(row=5, column=13).value == extract_fail_reason(_D002)
+    assert ws.cell(row=5, column=14).value == "Fail"
+    assert ws.cell(row=5, column=15).value == "Skip"
+    assert ws.cell(row=5, column=16).value == "N/A"
     wb.close()
 
     # Summary sheet remains template-owned: style, merged ranges, formulas, and
@@ -192,7 +210,9 @@ def test_reproject_creates_isolated_artifacts_and_preserves_source(
     assert ws_sum["C1"].value == "Detailed Statistics by Object"
     assert ws_sum["C1"].fill.fill_type == "solid"
     assert ws_sum["C3"].value == "=SUM(D3,K3)"
-    assert ws_sum["E3"].value.startswith("=COUNTIFS(Wifi_LLAPI!")
+    assert ws_sum["E3"].value == (
+        '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,E$2)'
+    )
     assert ws_sum["J3"].value == "=IFERROR(E3/SUM(E3:G3),0)"
     assert ws_sum["J3"].number_format == "0.00%"
     assert ws_sum["L3"].number_format == "0.00%"

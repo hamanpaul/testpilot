@@ -161,6 +161,9 @@ The reproject flow:
 4. Fill `Wifi_LLAPI!G/H/I/J/K/L/M` from JSON case data:
    - `I/J/K` keep raw band verdicts.
    - `M` receives fail reasoning.
+   - hidden `N/O/P` receive projected summary buckets so env/setup/counter-zero
+     raw `Fail` results are counted as `To be tested`, while pass-criteria
+     mismatch remains `Fail`.
 5. Leave the `Summary` sheet untouched so its template formulas calculate from
    `Wifi_LLAPI` after workbook recalculation.
 6. Generate Markdown, HTML, and JSON reports from the same summary model.
@@ -206,6 +209,8 @@ Offline tests only for the first implementation:
    - `.xlsx`, `.md`, `.html`, and `.json` are created
    - `Wifi_LLAPI!I/J/K` keep raw verdicts
    - `Wifi_LLAPI!M` contains fail reasoning for failed cases
+   - hidden `Wifi_LLAPI!N/O/P` projected buckets exclude env/setup/counter-zero
+     causes from the Summary `Fail` count
    - `Summary` preserves template styles, merged ranges, percent formats, and formulas
      linked to `Wifi_LLAPI`
 

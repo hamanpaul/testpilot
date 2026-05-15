@@ -9,6 +9,7 @@ This module keeps report layout compatible with the reference
 
 from __future__ import annotations
 
+from copy import copy
 from dataclasses import dataclass, field
 from datetime import date
 import json
@@ -35,6 +36,16 @@ RESULT_HEADERS_BY_COLUMN = {
 }
 TESTER_HEADER = "Tester"
 COMMENT_HEADER = "Comment"
+SUMMARY_BUCKET_HEADERS = {
+    "N": "Summary Bucket WiFi 5G",
+    "O": "Summary Bucket WiFi 6G",
+    "P": "Summary Bucket WiFi 2.4G",
+}
+SUMMARY_BUCKET_COLUMNS = (
+    ("result_5g", "N"),
+    ("result_6g", "O"),
+    ("result_24g", "P"),
+)
 SUMMARY_SHEET_NAME = "Summary"
 SUMMARY_HEADERS: tuple[str, ...] = (
     "Module",
@@ -298,7 +309,7 @@ def _trim_sheet_to_max_column(ws, max_col_idx: int) -> None:
             del ws.column_dimensions[col_letter]
 
 
-def _set_cell_value_safe(ws, row: int, col: str, value: str) -> None:
+def _set_cell_value_safe(ws, row: int, col: str, value: str | None) -> None:
     """Set worksheet cell value with merged-cell fallback.
 
     Some source rows in Wifi_LLAPI map to vertically merged result cells.
@@ -339,6 +350,53 @@ def _normalize_template_headers(ws) -> None:
     ws.cell(row=3, column=11).value = RESULT_HEADERS_BY_COLUMN["K"]
     ws.cell(row=3, column=12).value = TESTER_HEADER
     ws.cell(row=3, column=13).value = COMMENT_HEADER
+    _ensure_summary_bucket_columns(ws)
+
+
+def _ensure_summary_bucket_columns(ws) -> None:
+    for column, header in SUMMARY_BUCKET_HEADERS.items():
+        ws[f"{column}3"] = header
+        ws.column_dimensions[column].hidden = True
+
+
+def _copy_summary_sheet_from_existing_template(wb, template_path: Path) -> None:
+    if not template_path.exists():
+        return
+
+    existing_wb = load_workbook(template_path, data_only=False)
+    try:
+        if SUMMARY_SHEET_NAME not in existing_wb.sheetnames:
+            return
+
+        if SUMMARY_SHEET_NAME in wb.sheetnames:
+            del wb[SUMMARY_SHEET_NAME]
+        src_ws = existing_wb[SUMMARY_SHEET_NAME]
+        dst_ws = wb.create_sheet(SUMMARY_SHEET_NAME, 0)
+        dst_ws.sheet_format = copy(src_ws.sheet_format)
+        dst_ws.sheet_properties = copy(src_ws.sheet_properties)
+        dst_ws.freeze_panes = src_ws.freeze_panes
+
+        for row in src_ws.iter_rows():
+            for src_cell in row:
+                dst_cell = dst_ws[src_cell.coordinate]
+                dst_cell.value = src_cell.value
+                if src_cell.has_style:
+                    dst_cell._style = copy(src_cell._style)
+                if src_cell.number_format:
+                    dst_cell.number_format = src_cell.number_format
+                if src_cell.hyperlink:
+                    dst_cell._hyperlink = copy(src_cell.hyperlink)
+                if src_cell.comment:
+                    dst_cell.comment = copy(src_cell.comment)
+
+        for merged in src_ws.merged_cells.ranges:
+            dst_ws.merge_cells(str(merged))
+        for key, dim in src_ws.column_dimensions.items():
+            dst_ws.column_dimensions[key] = copy(dim)
+        for key, dim in src_ws.row_dimensions.items():
+            dst_ws.row_dimensions[key] = copy(dim)
+    finally:
+        existing_wb.close()
 
 
 def _truncate_comment(text: str | None, limit: int = 200) -> str:
@@ -348,6 +406,20 @@ def _truncate_comment(text: str | None, limit: int = 200) -> str:
     if len(value) <= limit:
         return value
     return value[: max(limit - 3, 0)] + "..."
+
+
+def _summary_bucket_for(item: WifiLlapiCaseResult, band_key: str) -> str:
+    from testpilot.reporting.wifi_llapi_summary import classify_band_result  # noqa: PLC0415
+
+    case_context = {
+        "result_5g": item.result_5g,
+        "result_6g": item.result_6g,
+        "result_24g": item.result_24g,
+        "diagnostic_status": item.diagnostic_status,
+        "failure_snapshot": item.failure_snapshot or {},
+        "comment": item.comment,
+    }
+    return classify_band_result(getattr(item, band_key), case_context).bucket
 
 
 def build_template_from_source(
@@ -393,6 +465,7 @@ def build_template_from_source(
                 continue
             cell.value = None
 
+    _copy_summary_sheet_from_existing_template(wb, out_path)
     wb.save(out_path)
     wb.close()
 
@@ -473,6 +546,10 @@ def fill_case_results(
     wb = load_workbook(path)
     ws = _get_sheet(wb, sheet_name)
 
+    for column, header in SUMMARY_BUCKET_HEADERS.items():
+        ws[f"{column}3"] = header
+        ws.column_dimensions[column].hidden = True
+
     for item in case_results:
         if item.source_row <= 0:
             continue
@@ -484,6 +561,8 @@ def fill_case_results(
         _set_cell_value_safe(ws, row, "K", item.result_24g)
         _set_cell_value_safe(ws, row, "L", item.tester)
         _set_cell_value_safe(ws, row, "M", _truncate_comment(item.comment))
+        for band_key, column in SUMMARY_BUCKET_COLUMNS:
+            _set_cell_value_safe(ws, row, column, _summary_bucket_for(item, band_key))
 
     wb.save(path)
     wb.close()
@@ -728,6 +807,18 @@ def validate_wifi_llapi_report_template(
                 f"got M1='{m1_val}', M3='{m3_val}'"
             )
 
+        for col_letter, expected_header in SUMMARY_BUCKET_HEADERS.items():
+            actual = normalize_text(ws[f"{col_letter}3"].value)
+            if actual != expected_header:
+                raise TemplateValidationError(
+                    f"summary bucket header mismatch at {DEFAULT_SHEET_NAME}!{col_letter}3: "
+                    f"expected '{expected_header}', got '{actual}'"
+                )
+            if ws.column_dimensions[col_letter].hidden is not True:
+                raise TemplateValidationError(
+                    f"summary bucket column must be hidden: {DEFAULT_SHEET_NAME}!{col_letter}:{col_letter}"
+                )
+
         summary_ws = wb[SUMMARY_SHEET_NAME]
         required = {"Module", "Total Items", "Pass", "Fail", "Progress"}
 
@@ -742,6 +833,25 @@ def validate_wifi_llapi_report_template(
                 f"Summary sheet missing required headers in row 2 or 3; "
                 f"expected columns: {SUMMARY_HEADERS}"
             )
+
+        required_fail_formulas = {
+            "F3": "N",
+            "F9": "O",
+            "F15": "P",
+        }
+        for cell_ref, bucket_col in required_fail_formulas.items():
+            formula = normalize_text(summary_ws[cell_ref].value)
+            if not formula.startswith("="):
+                raise TemplateValidationError(
+                    f"Summary fail formula missing at {SUMMARY_SHEET_NAME}!{cell_ref}: "
+                    f"expected formula referencing Wifi_LLAPI!${bucket_col}:${bucket_col}"
+                )
+            expected_ref = f"Wifi_LLAPI!${bucket_col}:${bucket_col}"
+            if expected_ref not in formula:
+                raise TemplateValidationError(
+                    f"Summary fail formula at {SUMMARY_SHEET_NAME}!{cell_ref} must reference "
+                    f"{expected_ref}, got '{formula}'"
+                )
 
         return {"summary_sheet": SUMMARY_SHEET_NAME, "wifi_sheet": DEFAULT_SHEET_NAME}
     finally:

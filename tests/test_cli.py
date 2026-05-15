@@ -955,7 +955,13 @@ def _make_cli_template_xlsx(path: Path) -> None:
         "Pass Rate", "result empty", "Progress",
     ]
     for col_idx, header in enumerate(headers, start=1):
-        ws_sum.cell(row=3, column=col_idx).value = header
+        ws_sum.cell(row=2, column=col_idx).value = header
+    ws_sum["B3"] = "WiFi.AccessPoint"
+    ws_sum["F3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,F$2)'
+    ws_sum["B9"] = "WiFi.AccessPoint"
+    ws_sum["F9"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B9&"*",Wifi_LLAPI!$O:$O,F$2)'
+    ws_sum["B15"] = "WiFi.AccessPoint"
+    ws_sum["F15"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B15&"*",Wifi_LLAPI!$P:$P,F$2)'
 
     ws = wb.create_sheet("Wifi_LLAPI")
     ws["A1"] = "Object"
@@ -969,6 +975,12 @@ def _make_cli_template_xlsx(path: Path) -> None:
     ws["K3"] = "WiFi 2.4G"
     ws["L3"] = "Tester"
     ws["M3"] = "Comment"
+    ws["N3"] = "Summary Bucket WiFi 5G"
+    ws["O3"] = "Summary Bucket WiFi 6G"
+    ws["P3"] = "Summary Bucket WiFi 2.4G"
+    ws.column_dimensions["N"].hidden = True
+    ws.column_dimensions["O"].hidden = True
+    ws.column_dimensions["P"].hidden = True
     ws["A4"] = "WiFi.AccessPoint.1."
     ws["C4"] = "getSomeAPI"
     wb.save(path)

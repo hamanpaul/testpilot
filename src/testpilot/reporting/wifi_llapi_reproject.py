@@ -115,6 +115,11 @@ def reproject_wifi_llapi_report(
             comment=extract_fail_reason(case),
             tester=str(case.get("tester", "testpilot")),
             diagnostic_status=str(case.get("diagnostic_status", "")),
+            failure_snapshot=(
+                case.get("failure_snapshot")
+                if isinstance(case.get("failure_snapshot"), dict)
+                else None
+            ),
         )
         case_results_typed.append(cr)
 

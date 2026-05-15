@@ -19,6 +19,9 @@ preparation.
   D336-aligned `D276` unicast-sent extractor.
 - `wifi-llapi reproject-summary` now preserves the styled template `Summary`
   sheet and relies on its formulas to calculate from `Wifi_LLAPI` report data.
+- The `wifi_llapi` Excel `Summary` sheet now counts `Fail` from hidden
+  projected summary buckets, so environment/setup/counter-zero failures remain
+  outside the pass-criteria failure count.
 
 ### Added
 

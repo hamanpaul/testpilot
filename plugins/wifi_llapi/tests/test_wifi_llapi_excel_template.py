@@ -87,8 +87,8 @@ def test_build_template_from_source(tmp_path: Path):
     wb = load_workbook(template)
     assert wb.sheetnames == ["Wifi_LLAPI"]
     ws = wb["Wifi_LLAPI"]
-    assert ws.max_column == 13
-    assert get_column_letter(ws.max_column) == "M"
+    assert ws.max_column == 16
+    assert get_column_letter(ws.max_column) == "P"
     assert all(r.max_col <= 13 for r in ws.merged_cells.ranges)
     assert ws["I2"].value == "Result"
     assert ws["L2"].value == "Tester"
@@ -97,12 +97,55 @@ def test_build_template_from_source(tmp_path: Path):
     assert ws["K3"].value == "WiFi 2.4G"
     assert ws["L3"].value == "Tester"
     assert ws["M3"].value == COMMENT_HEADER
+    assert ws["N3"].value == "Summary Bucket WiFi 5G"
+    assert ws["O3"].value == "Summary Bucket WiFi 6G"
+    assert ws["P3"].value == "Summary Bucket WiFi 2.4G"
+    assert ws.column_dimensions["N"].hidden is True
+    assert ws.column_dimensions["O"].hidden is True
+    assert ws.column_dimensions["P"].hidden is True
     assert "S" not in ws.column_dimensions
     assert "AB" not in ws.column_dimensions
     assert ws["C4"].value == "kickStation()"
     assert ws["C5"].value == "scan()"
     for cell in ("G4", "H4", "I4", "J4", "K4", "L4", "M4", "G5", "H5", "I5", "J5", "K5", "L5", "M5"):
         assert ws[cell].value is None
+    wb.close()
+
+
+def test_build_template_from_source_preserves_existing_summary_contract(tmp_path: Path):
+    source = tmp_path / "source.xlsx"
+    template = tmp_path / "wifi_llapi_template.xlsx"
+    _create_source_xlsx(source)
+    _create_template_with_summary(template)
+
+    wb_before = load_workbook(template, data_only=False)
+    before = (
+        wb_before["Summary"]["C1"].value,
+        wb_before["Summary"]["F3"].value,
+        wb_before["Summary"]["J3"].number_format,
+        [str(rng) for rng in wb_before["Summary"].merged_cells.ranges],
+    )
+    wb_before.close()
+
+    build_template_from_source(source, template)
+
+    wb = load_workbook(template, data_only=False)
+    assert wb.sheetnames == ["Summary", "Wifi_LLAPI"]
+    ws_summary = wb["Summary"]
+    after = (
+        ws_summary["C1"].value,
+        ws_summary["F3"].value,
+        ws_summary["J3"].number_format,
+        [str(rng) for rng in ws_summary.merged_cells.ranges],
+    )
+    assert after == before
+    ws_wifi = wb["Wifi_LLAPI"]
+    assert ws_wifi["N3"].value == "Summary Bucket WiFi 5G"
+    assert ws_wifi["O3"].value == "Summary Bucket WiFi 6G"
+    assert ws_wifi["P3"].value == "Summary Bucket WiFi 2.4G"
+    assert ws_wifi.column_dimensions["N"].hidden is True
+    assert ws_wifi.column_dimensions["O"].hidden is True
+    assert ws_wifi.column_dimensions["P"].hidden is True
     wb.close()
 
 
@@ -338,16 +381,22 @@ def test_repo_template_summary_is_formula_driven_and_styled():
 
     assert ws["C3"].value == '=COUNTIF(Wifi_LLAPI!$A:$A,$B3&"*")'
     assert ws["E3"].value == (
-        '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$I:$I,E$2)'
+        '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,E$2)'
+    )
+    assert ws["F3"].value == (
+        '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,F$2)'
+    )
+    assert ws["G3"].value == (
+        '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,G$2)'
     )
     assert ws["H3"].value == (
-        '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$I:$I,H$2)'
+        '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,H$2)'
         '+COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$E:$E,'
-        '"Not Supported",Wifi_LLAPI!$I:$I,"")'
+        '"Not Supported",Wifi_LLAPI!$N:$N,"")'
     )
     assert ws["I3"].value == (
-        '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$I:$I,I$2)'
-        '+COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$I:$I,"N/A")'
+        '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,I$2)'
+        '+COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,"N/A")'
     )
     assert ws["J3"].value == "=IFERROR(E3/SUM(E3:G3),0)"
     assert ws["L3"].value == "=IFERROR(D3/C3,0)"
@@ -355,10 +404,10 @@ def test_repo_template_summary_is_formula_driven_and_styled():
     assert ws["L3"].number_format == "0.00%"
 
     assert ws["E9"].value == (
-        '=COUNTIFS(Wifi_LLAPI!$A:$A,$B9&"*",Wifi_LLAPI!$J:$J,E$2)'
+        '=COUNTIFS(Wifi_LLAPI!$A:$A,$B9&"*",Wifi_LLAPI!$O:$O,E$2)'
     )
     assert ws["E15"].value == (
-        '=COUNTIFS(Wifi_LLAPI!$A:$A,$B15&"*",Wifi_LLAPI!$K:$K,E$2)'
+        '=COUNTIFS(Wifi_LLAPI!$A:$A,$B15&"*",Wifi_LLAPI!$P:$P,E$2)'
     )
     assert ws["C8"].value == "=SUM(C3:C7)"
     assert ws["J8"].value == "=IFERROR(E8/SUM(E8:G8),0)"
@@ -371,6 +420,16 @@ def test_repo_template_summary_is_formula_driven_and_styled():
     assert ws["P6"].value == "=IFERROR(SUM(E20:G20)/C20,0)"
     for cell in ("O4", "P4", "O5", "P5", "O6", "P6"):
         assert ws[cell].number_format == "0.00%"
+    wb.close()
+
+    wb = load_workbook(template, data_only=False)
+    ws_wifi = wb["Wifi_LLAPI"]
+    assert ws_wifi["N3"].value == "Summary Bucket WiFi 5G"
+    assert ws_wifi["O3"].value == "Summary Bucket WiFi 6G"
+    assert ws_wifi["P3"].value == "Summary Bucket WiFi 2.4G"
+    assert ws_wifi.column_dimensions["N"].hidden is True
+    assert ws_wifi.column_dimensions["O"].hidden is True
+    assert ws_wifi.column_dimensions["P"].hidden is True
     wb.close()
 
 
@@ -392,6 +451,34 @@ def _create_template_with_summary(path: Path) -> None:
     ]
     for col_idx, h in enumerate(summary_headers, start=1):
         ws_summary.cell(row=2, column=col_idx).value = h
+    ws_summary["C1"] = "Detailed Statistics by Object"
+    ws_summary.merge_cells("A3:A8")
+    ws_summary["A3"] = "WiFi 5g"
+    ws_summary["B3"] = "WiFi.AccessPoint"
+    ws_summary["C3"] = '=COUNTIF(Wifi_LLAPI!$A:$A,$B3&"*")'
+    ws_summary["D3"] = "=SUM(E3:I3)"
+    ws_summary["E3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,E$2)'
+    ws_summary["F3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,F$2)'
+    ws_summary["G3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,G$2)'
+    ws_summary["H3"] = (
+        '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,H$2)'
+        '+COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$E:$E,'
+        '"Not Supported",Wifi_LLAPI!$N:$N,"")'
+    )
+    ws_summary["I3"] = (
+        '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,I$2)'
+        '+COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,"N/A")'
+    )
+    ws_summary["J3"] = "=IFERROR(E3/SUM(E3:G3),0)"
+    ws_summary["L3"] = "=IFERROR(D3/C3,0)"
+    ws_summary["J3"].number_format = "0.00%"
+    ws_summary["L3"].number_format = "0.00%"
+    ws_summary["A9"] = "WiFi 6g"
+    ws_summary["B9"] = "WiFi.AccessPoint"
+    ws_summary["F9"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B9&"*",Wifi_LLAPI!$O:$O,F$2)'
+    ws_summary["A15"] = "WiFi 2.4g"
+    ws_summary["B15"] = "WiFi.AccessPoint"
+    ws_summary["F15"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B15&"*",Wifi_LLAPI!$P:$P,F$2)'
 
     ws_wifi = wb.create_sheet("Wifi_LLAPI")
     row1_headers = [
@@ -405,6 +492,13 @@ def _create_template_with_summary(path: Path) -> None:
     ws_wifi["I3"] = "WiFi 5G"
     ws_wifi["J3"] = "WiFi 6G"
     ws_wifi["K3"] = "WiFi 2.4G"
+    ws_wifi["M3"] = "Comment"
+    ws_wifi["N3"] = "Summary Bucket WiFi 5G"
+    ws_wifi["O3"] = "Summary Bucket WiFi 6G"
+    ws_wifi["P3"] = "Summary Bucket WiFi 2.4G"
+    ws_wifi.column_dimensions["N"].hidden = True
+    ws_wifi.column_dimensions["O"].hidden = True
+    ws_wifi.column_dimensions["P"].hidden = True
     ws_wifi["A4"] = "WiFi.AccessPoint.{i}."
     ws_wifi["C4"] = "kickStation()"
     ws_wifi["A5"] = "WiFi.DataElements.Network.Device.{i}."
@@ -419,6 +513,30 @@ def test_validate_wifi_llapi_template_accepts_valid(tmp_path: Path) -> None:
     _create_template_with_summary(p)
     result = validate_wifi_llapi_report_template(p)
     assert result == {"summary_sheet": "Summary", "wifi_sheet": "Wifi_LLAPI"}
+
+
+def test_validate_wifi_llapi_template_rejects_missing_summary_bucket_columns(tmp_path: Path) -> None:
+    p = tmp_path / "template.xlsx"
+    _create_template_with_summary(p)
+    wb = load_workbook(p)
+    wb["Wifi_LLAPI"]["N3"] = None
+    wb.save(p)
+    wb.close()
+
+    with pytest.raises(TemplateValidationError, match="Summary Bucket WiFi 5G"):
+        validate_wifi_llapi_report_template(p)
+
+
+def test_validate_wifi_llapi_template_rejects_raw_result_summary_fail_formula(tmp_path: Path) -> None:
+    p = tmp_path / "template.xlsx"
+    _create_template_with_summary(p)
+    wb = load_workbook(p)
+    wb["Summary"]["F3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$I:$I,F$2)'
+    wb.save(p)
+    wb.close()
+
+    with pytest.raises(TemplateValidationError, match=r"Summary.*F3.*N"):
+        validate_wifi_llapi_report_template(p)
 
 
 def test_validate_wifi_llapi_template_missing_summary_sheet(tmp_path: Path) -> None:
@@ -524,9 +642,9 @@ def test_validate_wifi_llapi_template_missing_comment_column(tmp_path: Path) -> 
     """M1 and M3 both lacking 'Comment' must raise TemplateValidationError."""
     p = tmp_path / "template.xlsx"
     _create_template_with_summary(p)
-    # Clear M1 (M3 is already blank in the helper)
     wb = load_workbook(p)
     wb["Wifi_LLAPI"]["M1"] = None
+    wb["Wifi_LLAPI"]["M3"] = None
     wb.save(p)
     wb.close()
     with pytest.raises(TemplateValidationError, match=r"[Cc]omment"):
