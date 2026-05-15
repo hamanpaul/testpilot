@@ -67,11 +67,11 @@ def test_version_file_matches_runtime() -> None:
     assert _version_file_version() == _runtime_version()
 
 
-def test_all_versions_are_0_2_0() -> None:
-    """Migration target: VERSION, pyproject.toml, and __init__.py must all be 0.2.0."""
-    assert _version_file_version() == "0.2.0"
-    assert _pyproject_version() == "0.2.0"
-    assert _runtime_version() == "0.2.0"
+def test_all_versions_are_0_2_1() -> None:
+    """Release target: VERSION, pyproject.toml, and __init__.py must all be 0.2.1."""
+    assert _version_file_version() == "0.2.1"
+    assert _pyproject_version() == "0.2.1"
+    assert _runtime_version() == "0.2.1"
 
 
 # --- Task 1.1: source-ref-aware testpilot --version ---
@@ -99,7 +99,7 @@ def test_version_output_branch_format() -> None:
         result = runner.invoke(main, ["--version"])
 
     assert result.exit_code == 0
-    assert re.search(r"TestPilot 0\.2\.0 \(main@abcdef1\)", result.output)
+    assert re.search(r"TestPilot 0\.2\.1 \(main@abcdef1\)", result.output)
 
 
 def test_version_git_commands_use_source_checkout_cwd() -> None:
@@ -148,7 +148,7 @@ def test_version_output_tag_format() -> None:
             _R.stdout = ""
         elif "describe" in cmd and "--tags" in cmd:
             _R.returncode = 0
-            _R.stdout = "v0.2.0\n"
+            _R.stdout = "v0.2.1\n"
         elif "rev-parse" in cmd and "--short" in cmd:
             _R.stdout = "2f7caf8\n"
         else:
@@ -160,7 +160,7 @@ def test_version_output_tag_format() -> None:
         result = runner.invoke(main, ["--version"])
 
     assert result.exit_code == 0
-    assert re.search(r"TestPilot 0\.2\.0 \(v0\.2\.0@2f7caf8\)", result.output)
+    assert re.search(r"TestPilot 0\.2\.1 \(v0\.2\.1@2f7caf8\)", result.output)
 
 
 def test_version_output_detached_head_format() -> None:
@@ -181,7 +181,7 @@ def test_version_output_detached_head_format() -> None:
         result = runner.invoke(main, ["--version"])
 
     assert result.exit_code == 0
-    assert re.search(r"TestPilot 0\.2\.0 \(commit@deadbee\)", result.output)
+    assert re.search(r"TestPilot 0\.2\.1 \(commit@deadbee\)", result.output)
 
 
 def test_version_output_when_git_absent() -> None:
@@ -198,4 +198,4 @@ def test_version_output_when_git_absent() -> None:
         result = runner.invoke(main, ["--version"])
 
     assert result.exit_code == 0
-    assert re.search(r"TestPilot 0\.2\.0 \(commit@unknown\)", result.output)
+    assert re.search(r"TestPilot 0\.2\.1 \(commit@unknown\)", result.output)

@@ -9,6 +9,8 @@ preparation.
 
 ## [Unreleased]
 
+## [0.2.1]
+
 ### Changed
 
 - The canonical project version is now `VERSION`; `pyproject.toml` and

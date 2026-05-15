@@ -5,6 +5,11 @@ import argparse
 from pathlib import Path
 import sys
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SRC_ROOT = PROJECT_ROOT / "src"
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
+
 from testpilot.reporting.wifi_llapi_inventory import (
     apply_wifi_llapi_inventory_reconcile_plan,
     build_wifi_llapi_inventory_reconcile_plan,
@@ -12,7 +17,7 @@ from testpilot.reporting.wifi_llapi_inventory import (
 
 
 def _project_root() -> Path:
-    return Path(__file__).resolve().parents[1]
+    return PROJECT_ROOT
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
