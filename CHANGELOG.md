@@ -17,6 +17,19 @@ preparation.
   now use multiband delta contracts backed by source-aligned radio driver
   formulas, including deterministic broadcast/multicast triggers and the
   D336-aligned `D276` unicast-sent extractor.
+- `wifi-llapi reproject-summary` now preserves the styled template `Summary`
+  sheet and relies on its formulas to calculate from `Wifi_LLAPI` report data.
+- The `wifi_llapi` Excel `Summary` sheet now counts `Fail` from hidden
+  projected summary buckets, so environment/setup/counter-zero failures remain
+  outside the pass-criteria failure count.
+- The `wifi_llapi` Excel `Summary` bucket formerly shown as `To be tested` is
+  now shown as `To be confirmed`, and Summary Pass Rate formulas divide by
+  `Pass + Fail` only.
+- Reprojected wifi_llapi HTML and Markdown reports now retain the top-level
+  suite KPI counts while also using the template-aligned Summary bucket data.
+- Reprojected wifi_llapi reports now align text-report KPI totals to the current
+  official `plugins/wifi_llapi/cases/D*.yaml` inventory, excluding stale cases
+  that only exist in older source JSON bundles.
 
 ### Added
 

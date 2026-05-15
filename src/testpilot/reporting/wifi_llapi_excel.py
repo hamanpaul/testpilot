@@ -9,6 +9,7 @@ This module keeps report layout compatible with the reference
 
 from __future__ import annotations
 
+from copy import copy
 from dataclasses import dataclass, field
 from datetime import date
 import json
@@ -35,6 +36,32 @@ RESULT_HEADERS_BY_COLUMN = {
 }
 TESTER_HEADER = "Tester"
 COMMENT_HEADER = "Comment"
+SUMMARY_BUCKET_HEADERS = {
+    "N": "Summary Bucket WiFi 5G",
+    "O": "Summary Bucket WiFi 6G",
+    "P": "Summary Bucket WiFi 2.4G",
+}
+SUMMARY_BUCKET_COLUMNS = (
+    ("result_5g", "N"),
+    ("result_6g", "O"),
+    ("result_24g", "P"),
+)
+SUMMARY_SHEET_NAME = "Summary"
+SUMMARY_HEADERS: tuple[str, ...] = (
+    "Module",
+    "Object Category",
+    "Total Items",
+    "Tested Items",
+    "Pass",
+    "Fail",
+    "To be confirmed",
+    "Not Supported",
+    "Skip",
+    "Pass Rate",
+    "result empty",
+    "Progress",
+)
+SUMMARY_PASS_RATE_ROWS: tuple[int, ...] = tuple(range(3, 21))
 DEFAULT_CLEAR_COLUMNS = (
     "G",   # Test steps
     "H",   # Driver-level verified command output
@@ -48,6 +75,10 @@ DATA_START_ROW = 4
 EMPTY_STREAK_STOP = 200
 MAX_SCAN_ROWS = 5000
 _PROMPT_PREFIX_RE = re.compile(r"^(?:root@[^:]+:[^#\n]*#\s*|[>$#]\s*)")
+
+
+class TemplateValidationError(ValueError):
+    """Raised when an Excel template does not match the expected layout."""
 
 
 @dataclass(slots=True)
@@ -279,7 +310,7 @@ def _trim_sheet_to_max_column(ws, max_col_idx: int) -> None:
             del ws.column_dimensions[col_letter]
 
 
-def _set_cell_value_safe(ws, row: int, col: str, value: str) -> None:
+def _set_cell_value_safe(ws, row: int, col: str, value: str | None) -> None:
     """Set worksheet cell value with merged-cell fallback.
 
     Some source rows in Wifi_LLAPI map to vertically merged result cells.
@@ -320,6 +351,53 @@ def _normalize_template_headers(ws) -> None:
     ws.cell(row=3, column=11).value = RESULT_HEADERS_BY_COLUMN["K"]
     ws.cell(row=3, column=12).value = TESTER_HEADER
     ws.cell(row=3, column=13).value = COMMENT_HEADER
+    _ensure_summary_bucket_columns(ws)
+
+
+def _ensure_summary_bucket_columns(ws) -> None:
+    for column, header in SUMMARY_BUCKET_HEADERS.items():
+        ws[f"{column}3"] = header
+        ws.column_dimensions[column].hidden = True
+
+
+def _copy_summary_sheet_from_existing_template(wb, template_path: Path) -> None:
+    if not template_path.exists():
+        return
+
+    existing_wb = load_workbook(template_path, data_only=False)
+    try:
+        if SUMMARY_SHEET_NAME not in existing_wb.sheetnames:
+            return
+
+        if SUMMARY_SHEET_NAME in wb.sheetnames:
+            del wb[SUMMARY_SHEET_NAME]
+        src_ws = existing_wb[SUMMARY_SHEET_NAME]
+        dst_ws = wb.create_sheet(SUMMARY_SHEET_NAME, 0)
+        dst_ws.sheet_format = copy(src_ws.sheet_format)
+        dst_ws.sheet_properties = copy(src_ws.sheet_properties)
+        dst_ws.freeze_panes = src_ws.freeze_panes
+
+        for row in src_ws.iter_rows():
+            for src_cell in row:
+                dst_cell = dst_ws[src_cell.coordinate]
+                dst_cell.value = src_cell.value
+                if src_cell.has_style:
+                    dst_cell._style = copy(src_cell._style)
+                if src_cell.number_format:
+                    dst_cell.number_format = src_cell.number_format
+                if src_cell.hyperlink:
+                    dst_cell._hyperlink = copy(src_cell.hyperlink)
+                if src_cell.comment:
+                    dst_cell.comment = copy(src_cell.comment)
+
+        for merged in src_ws.merged_cells.ranges:
+            dst_ws.merge_cells(str(merged))
+        for key, dim in src_ws.column_dimensions.items():
+            dst_ws.column_dimensions[key] = copy(dim)
+        for key, dim in src_ws.row_dimensions.items():
+            dst_ws.row_dimensions[key] = copy(dim)
+    finally:
+        existing_wb.close()
 
 
 def _truncate_comment(text: str | None, limit: int = 200) -> str:
@@ -329,6 +407,20 @@ def _truncate_comment(text: str | None, limit: int = 200) -> str:
     if len(value) <= limit:
         return value
     return value[: max(limit - 3, 0)] + "..."
+
+
+def _summary_bucket_for(item: WifiLlapiCaseResult, band_key: str) -> str:
+    from testpilot.reporting.wifi_llapi_summary import classify_band_result  # noqa: PLC0415
+
+    case_context = {
+        "result_5g": item.result_5g,
+        "result_6g": item.result_6g,
+        "result_24g": item.result_24g,
+        "diagnostic_status": item.diagnostic_status,
+        "failure_snapshot": item.failure_snapshot or {},
+        "comment": item.comment,
+    }
+    return classify_band_result(getattr(item, band_key), case_context).bucket
 
 
 def build_template_from_source(
@@ -374,6 +466,7 @@ def build_template_from_source(
                 continue
             cell.value = None
 
+    _copy_summary_sheet_from_existing_template(wb, out_path)
     wb.save(out_path)
     wb.close()
 
@@ -454,6 +547,10 @@ def fill_case_results(
     wb = load_workbook(path)
     ws = _get_sheet(wb, sheet_name)
 
+    for column, header in SUMMARY_BUCKET_HEADERS.items():
+        ws[f"{column}3"] = header
+        ws.column_dimensions[column].hidden = True
+
     for item in case_results:
         if item.source_row <= 0:
             continue
@@ -465,6 +562,8 @@ def fill_case_results(
         _set_cell_value_safe(ws, row, "K", item.result_24g)
         _set_cell_value_safe(ws, row, "L", item.tester)
         _set_cell_value_safe(ws, row, "M", _truncate_comment(item.comment))
+        for band_key, column in SUMMARY_BUCKET_COLUMNS:
+            _set_cell_value_safe(ws, row, column, _summary_bucket_for(item, band_key))
 
     wb.save(path)
     wb.close()
@@ -656,3 +755,207 @@ def fill_skip_markers(report_xlsx: Path, skipped: list[object]) -> None:
     finally:
         wb.save(path)
         wb.close()
+
+
+def validate_wifi_llapi_report_template(
+    template_xlsx: Path | str,
+) -> dict[str, str]:
+    """Validate Excel template shape and return sheet name mapping.
+
+    Returns ``{"summary_sheet": "Summary", "wifi_sheet": "Wifi_LLAPI"}`` on success.
+    Raises :exc:`TemplateValidationError` for any structural mismatch.
+    """
+    path = Path(template_xlsx)
+    wb = load_workbook(path)
+    try:
+        for sheet_name in (SUMMARY_SHEET_NAME, DEFAULT_SHEET_NAME):
+            if sheet_name not in wb.sheetnames:
+                raise TemplateValidationError(f"missing sheet: {sheet_name}")
+
+        ws = wb[DEFAULT_SHEET_NAME]
+        for col, expected in RESULT_HEADERS_BY_COLUMN.items():
+            col_idx = _to_col_idx(col)
+            actual = normalize_text(ws.cell(row=3, column=col_idx).value)
+            if actual != normalize_text(expected):
+                raise TemplateValidationError(
+                    f"result header mismatch at {DEFAULT_SHEET_NAME}!{col}3: "
+                    f"expected '{expected}', got '{actual}'"
+                )
+
+        # Validate required column-1 headers (substring match).
+        _col1_checks: tuple[tuple[str, int, str], ...] = (
+            ("A", 1, "Object"),
+            ("E", 1, "LLAPI"),
+            ("L", 1, "Tester"),
+        )
+        for col_letter, row_num, expected_text in _col1_checks:
+            col_idx = _to_col_idx(col_letter)
+            actual = normalize_text(ws.cell(row=row_num, column=col_idx).value)
+            if expected_text.lower() not in actual.lower():
+                raise TemplateValidationError(
+                    f"column header mismatch at {DEFAULT_SHEET_NAME}!{col_letter}{row_num}: "
+                    f"expected to contain '{expected_text}', got '{actual}'"
+                )
+
+        # M1 or M3 must contain the comment/fail-reason header.
+        m_col_idx = _to_col_idx("M")
+        m1_val = normalize_text(ws.cell(row=1, column=m_col_idx).value)
+        m3_val = normalize_text(ws.cell(row=3, column=m_col_idx).value)
+        if COMMENT_HEADER.lower() not in m1_val.lower() and COMMENT_HEADER.lower() not in m3_val.lower():
+            raise TemplateValidationError(
+                f"comment/fail-reason column header missing: "
+                f"expected '{COMMENT_HEADER}' in {DEFAULT_SHEET_NAME}!M1 or M3, "
+                f"got M1='{m1_val}', M3='{m3_val}'"
+            )
+
+        for col_letter, expected_header in SUMMARY_BUCKET_HEADERS.items():
+            actual = normalize_text(ws[f"{col_letter}3"].value)
+            if actual != expected_header:
+                raise TemplateValidationError(
+                    f"summary bucket header mismatch at {DEFAULT_SHEET_NAME}!{col_letter}3: "
+                    f"expected '{expected_header}', got '{actual}'"
+                )
+            if ws.column_dimensions[col_letter].hidden is not True:
+                raise TemplateValidationError(
+                    f"summary bucket column must be hidden: {DEFAULT_SHEET_NAME}!{col_letter}:{col_letter}"
+                )
+
+        summary_ws = wb[SUMMARY_SHEET_NAME]
+        required = {"Module", "Total Items", "Pass", "Fail", "To be confirmed", "Progress"}
+
+        def _header_set(row_num: int) -> set[str]:
+            return {
+                normalize_text(summary_ws.cell(row=row_num, column=c).value)
+                for c in range(1, len(SUMMARY_HEADERS) + 1)
+            }
+
+        if not (required <= _header_set(2) or required <= _header_set(3)):
+            raise TemplateValidationError(
+                f"Summary sheet missing required headers in row 2 or 3; "
+                f"expected columns: {SUMMARY_HEADERS}"
+            )
+
+        for row in summary_ws.iter_rows():
+            for cell in row:
+                if "To be tested" in normalize_text(cell.value):
+                    raise TemplateValidationError(
+                        f"Summary sheet contains stale bucket label at {SUMMARY_SHEET_NAME}!{cell.coordinate}: "
+                        "expected 'To be confirmed'"
+                    )
+
+        required_fail_formulas = {
+            "F3": "N",
+            "F9": "O",
+            "F15": "P",
+        }
+        for cell_ref, bucket_col in required_fail_formulas.items():
+            formula = normalize_text(summary_ws[cell_ref].value)
+            if not formula.startswith("="):
+                raise TemplateValidationError(
+                    f"Summary fail formula missing at {SUMMARY_SHEET_NAME}!{cell_ref}: "
+                    f"expected formula referencing Wifi_LLAPI!${bucket_col}:${bucket_col}"
+                )
+            expected_ref = f"Wifi_LLAPI!${bucket_col}:${bucket_col}"
+            if expected_ref not in formula:
+                raise TemplateValidationError(
+                    f"Summary fail formula at {SUMMARY_SHEET_NAME}!{cell_ref} must reference "
+                    f"{expected_ref}, got '{formula}'"
+                )
+
+        for row_number in SUMMARY_PASS_RATE_ROWS:
+            cell_ref = f"J{row_number}"
+            formula = normalize_text(summary_ws[cell_ref].value).replace("$", "")
+            expected = f"=IFERROR(E{row_number}/SUM(E{row_number}:F{row_number}),0)"
+            if formula != expected:
+                raise TemplateValidationError(
+                    f"Summary pass-rate formula at {SUMMARY_SHEET_NAME}!{cell_ref} must be "
+                    f"'{expected}', got '{summary_ws[cell_ref].value}'"
+                )
+
+        return {"summary_sheet": SUMMARY_SHEET_NAME, "wifi_sheet": DEFAULT_SHEET_NAME}
+    finally:
+        wb.close()
+
+
+def read_wifi_llapi_template_objects(
+    template_xlsx: Path | str,
+    sheet_name: str = DEFAULT_SHEET_NAME,
+) -> dict[int, str]:
+    """Return a row-number → object-prefix mapping from the template worksheet.
+
+    Blank object-prefix cells carry the previous non-empty value forward.
+    """
+    path = Path(template_xlsx)
+    wb = load_workbook(path, read_only=True, data_only=True)
+    ws = _get_sheet(wb, sheet_name)
+    out: dict[int, str] = {}
+    current_object = ""
+    for row, obj, _api in _iter_source_object_api_rows(
+        ws, DATA_START_ROW, EMPTY_STREAK_STOP, MAX_SCAN_ROWS
+    ):
+        obj_norm = normalize_text(obj)
+        if obj_norm:
+            current_object = obj_norm
+        out[row] = current_object
+    wb.close()
+    return out
+
+
+def write_summary_sheet(
+    report_xlsx: Path | str,
+    summary_payload: dict[str, object],
+) -> Path:
+    """Write (or overwrite) the Summary sheet in *report_xlsx* from *summary_payload*.
+
+    Layout:
+    - Row 1: policy marker ("Summary Policy", policy_version)
+    - Row 3: column headers
+    - Row 4+: one row per entry in ``summary_payload["band_category"]``
+    """
+    # Deferred to avoid circular dependency: wifi_llapi_excel ← wifi_llapi_summary.
+    from testpilot.reporting.wifi_llapi_summary import SUMMARY_POLICY_VERSION  # noqa: PLC0415
+
+    path = Path(report_xlsx)
+    wb = load_workbook(path)
+
+    if SUMMARY_SHEET_NAME in wb.sheetnames:
+        insert_idx = wb.sheetnames.index(SUMMARY_SHEET_NAME)
+        del wb[SUMMARY_SHEET_NAME]
+        ws = wb.create_sheet(SUMMARY_SHEET_NAME, insert_idx)
+    else:
+        ws = wb.create_sheet(SUMMARY_SHEET_NAME, 0)
+
+    policy_version = summary_payload.get("policy_version") or SUMMARY_POLICY_VERSION
+    ws.cell(row=1, column=1).value = "Summary Policy"
+    ws.cell(row=1, column=2).value = policy_version
+
+    for col_idx, header in enumerate(SUMMARY_HEADERS, start=1):
+        ws.cell(row=3, column=col_idx).value = header
+
+    band_category = summary_payload.get("band_category", [])
+    for offset, row_data in enumerate(band_category):
+        r = 4 + offset
+        label = (
+            row_data.get("band_label")
+            or row_data.get("band")
+            or row_data.get("band_key")
+            or ""
+        )
+        ws.cell(row=r, column=1).value = label
+        ws.cell(row=r, column=2).value = row_data.get("category", "")
+        ws.cell(row=r, column=3).value = row_data.get("total_items", 0)
+        ws.cell(row=r, column=4).value = row_data.get("tested_items", 0)
+        ws.cell(row=r, column=5).value = row_data.get("pass", 0)
+        ws.cell(row=r, column=6).value = row_data.get("fail", 0)
+        ws.cell(row=r, column=7).value = row_data.get("to_be_tested", 0)
+        ws.cell(row=r, column=8).value = row_data.get("not_supported", 0)
+        ws.cell(row=r, column=9).value = row_data.get("skip", 0)
+        ws.cell(row=r, column=10).value = f"=IFERROR(E{r}/SUM(E{r}:F{r}),0)"
+        ws.cell(row=r, column=11).value = f"=C{r}-SUM(E{r}:I{r})"
+        ws.cell(row=r, column=12).value = f"=IFERROR(D{r}/C{r},0)"
+
+    try:
+        wb.save(path)
+    finally:
+        wb.close()
+    return path

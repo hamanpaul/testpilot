@@ -1008,6 +1008,74 @@ def rewrite_yaml_commands(
     click.echo(json.dumps(preview, indent=2, ensure_ascii=False))
 
 
+@wifi_llapi_group.command("reproject-summary")
+@click.option(
+    "--source-json",
+    required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help="Path to existing JSON result bundle (read-only; never modified).",
+)
+@click.option(
+    "--template-xlsx",
+    default=None,
+    type=click.Path(exists=True, dir_okay=False),
+    help=(
+        "Path to checked-in Excel template. "
+        "Defaults to <root>/plugins/wifi_llapi/reports/templates/wifi_llapi_template.xlsx."
+    ),
+)
+@click.option(
+    "--out-dir",
+    default=None,
+    type=click.Path(file_okay=False),
+    help="Target output directory. Must not exist or must be empty.",
+)
+@click.option(
+    "--output-stem",
+    default=None,
+    help="Filename stem for XLSX and companion reports. Defaults to 'reproject-report'.",
+)
+@click.pass_context
+def reproject_summary(
+    ctx: click.Context,
+    source_json: str,
+    template_xlsx: str | None,
+    out_dir: str | None,
+    output_stem: str | None,
+) -> None:
+    """Reproject an existing JSON artifact into a fresh summary report workbook.
+
+    reproject-summary is offline-only; reads existing JSON artifact, validates
+    checked-in template workbook, writes a new report folder without rerunning
+    DUT/STA tests or modifying source run folder.
+    """
+    from testpilot.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
+
+    root: Path = ctx.obj["root"]
+    resolved_template = (
+        Path(template_xlsx)
+        if template_xlsx
+        else root / "plugins" / "wifi_llapi" / "reports" / "templates" / "wifi_llapi_template.xlsx"
+    )
+    kwargs: dict = {
+        "source_json": Path(source_json),
+        "template_xlsx": resolved_template,
+    }
+    if out_dir is not None:
+        kwargs["out_dir"] = Path(out_dir)
+    if output_stem is not None:
+        kwargs["output_stem"] = output_stem
+    try:
+        result = reproject_wifi_llapi_report(**kwargs)
+    except (FileExistsError, OSError, ValueError, TypeError) as exc:
+        raise click.ClickException(str(exc)) from exc
+    serializable = {
+        k: str(v) if isinstance(v, Path) else v
+        for k, v in result.items()
+    }
+    console.print_json(data=serializable)
+
+
 @wifi_llapi_group.command("json-to-html")
 @click.argument("json_report", type=click.Path(exists=True, dir_okay=False))
 @click.option(

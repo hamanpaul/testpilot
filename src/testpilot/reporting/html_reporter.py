@@ -19,7 +19,7 @@ from testpilot.reporting.reporter import (
     _format_percent,
     _overall_status,
     _suite_timing_rows,
-    _summarise,
+    _summary_payload,
 )
 
 # ---------------------------------------------------------------------------
@@ -238,7 +238,7 @@ class HtmlReporter:
         meta: Mapping[str, Any],
         output_path: Path,
     ) -> Path:
-        summary = _summarise(case_results)
+        summary = _summary_payload(case_results, meta)
         artifact_dir = output_path.parent
         parts: list[str] = []
         parts.append(self._doc_open(meta))
@@ -246,6 +246,7 @@ class HtmlReporter:
         parts.append(self._summary_table(case_results))
         parts.append(self._timing_section(meta, case_results))
         parts.append(self._suite_summary_section(summary))
+        parts.append(self._hybrid_summary_section(summary))
         parts.append(self._per_case_timing(case_results))
         parts.append(self._case_details(case_results, artifact_dir))
         parts.append(self._doc_close())
@@ -443,6 +444,54 @@ class HtmlReporter:
             for k, v in sorted(diag.items()):
                 lines.append(f"<tr><td>{_esc(k)}</td><td class='num'>{v}</td></tr>")
             lines.append("</tbody></table>")
+        return "\n".join(lines)
+
+    # -- wifi llapi hybrid summary ------------------------------------------
+
+    @staticmethod
+    def _hybrid_summary_section(summary: Mapping[str, Any]) -> str:
+        """Render WiFi LLAPI hybrid band/category summary table.
+
+        No-ops gracefully when *summary* lacks a ``band_category`` sequence.
+        """
+        band_category = summary.get("band_category")
+        if not band_category or not isinstance(band_category, (list, tuple)):
+            return ""
+
+        lines = [
+            "<h2>WiFi LLAPI Hybrid Summary</h2>",
+            "<table><thead><tr>",
+            "<th>Band</th><th>Category</th><th>Total</th><th>Tested</th>",
+            "<th>Pass</th><th>Fail</th><th>To be confirmed</th>",
+            "<th>Not Supported</th><th>Skip</th><th>Pass Rate</th>",
+            "</tr></thead><tbody>",
+        ]
+        for row in band_category:
+            band = _esc(
+                row.get("band_label")
+                or row.get("band")
+                or row.get("band_key")
+                or ""
+            )
+            category = _esc(row.get("category", ""))
+            total = _esc(row.get("total_items", 0))
+            tested = _esc(row.get("tested_items", 0))
+            pass_ = _esc(row.get("pass", 0))
+            fail = _esc(row.get("fail", 0))
+            tbt = _esc(row.get("to_be_tested", 0))
+            ns = _esc(row.get("not_supported", 0))
+            skip = _esc(row.get("skip", 0))
+            pr = _esc(_format_percent(row.get("pass_rate")))
+            lines.append(
+                f"<tr>"
+                f"<td>{band}</td><td>{category}</td>"
+                f"<td class='num'>{total}</td><td class='num'>{tested}</td>"
+                f"<td class='num'>{pass_}</td><td class='num'>{fail}</td>"
+                f"<td class='num'>{tbt}</td><td class='num'>{ns}</td>"
+                f"<td class='num'>{skip}</td><td class='num'>{pr}</td>"
+                f"</tr>"
+            )
+        lines.append("</tbody></table>")
         return "\n".join(lines)
 
     # -- per-case timing ----------------------------------------------------

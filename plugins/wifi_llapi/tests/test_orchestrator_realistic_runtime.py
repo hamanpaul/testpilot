@@ -764,7 +764,12 @@ def test_realistic_runtime_covers_hooks_and_report_outputs(tmp_path: Path, monke
     assert ws["J4"].value == "N/A"
     assert ws["K4"].value == "N/A"
     assert ws["L4"].value == "testpilot"
-    assert ws.max_column == 13
+    assert ws["N4"].value == "Fail"
+    assert ws["O4"].value == "N/A"
+    assert ws["P4"].value == "N/A"
+    assert ws.column_dimensions["N"].hidden is True
+    assert ws.column_dimensions["O"].hidden is True
+    assert ws.column_dimensions["P"].hidden is True
 
     assert ws["G5"].value == 'ubus-cli "WiFi.Radio.1.getRadioStats()"'
     assert PASS_TOKEN in str(ws["H5"].value)
@@ -773,6 +778,9 @@ def test_realistic_runtime_covers_hooks_and_report_outputs(tmp_path: Path, monke
     assert ws["J5"].value == "Pass"
     assert ws["K5"].value == "N/A"
     assert ws["L5"].value == "testpilot"
+    assert ws["N5"].value == "N/A"
+    assert ws["O5"].value == "Pass"
+    assert ws["P5"].value == "N/A"
 
     meta = wb["_meta"]
     assert meta["B2"].value == "FW-IT-REALISTIC-1"

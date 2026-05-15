@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import re
 import sys
 import textwrap
 from importlib.util import module_from_spec, spec_from_file_location
 import json
 from pathlib import Path
 from typing import Any
+
+from openpyxl import Workbook
 
 from click.testing import CliRunner
 
@@ -937,3 +940,110 @@ def test_baseline_qualify_stages_wifi_llapi_testbed_before_qualify(monkeypatch) 
 
     assert result.exit_code == 0, result.output
     assert any(plugin == "wifi_llapi" for _, plugin, _ in captured), captured
+
+
+def _make_cli_template_xlsx(path: Path) -> None:
+    """Minimal template compatible with Task 2 validator (Summary + Wifi_LLAPI sheets)."""
+    wb = Workbook()
+    default_sheet = wb.active
+    wb.remove(default_sheet)
+
+    ws_sum = wb.create_sheet("Summary")
+    headers = [
+        "Module", "Object Category", "Total Items", "Tested Items",
+        "Pass", "Fail", "To be confirmed", "Not Supported", "Skip",
+        "Pass Rate", "result empty", "Progress",
+    ]
+    for col_idx, header in enumerate(headers, start=1):
+        ws_sum.cell(row=2, column=col_idx).value = header
+    ws_sum["B3"] = "WiFi.AccessPoint"
+    ws_sum["F3"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B3&"*",Wifi_LLAPI!$N:$N,F$2)'
+    ws_sum["J3"] = "=IFERROR(E3/SUM(E3:F3),0)"
+    ws_sum["B9"] = "WiFi.AccessPoint"
+    ws_sum["F9"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B9&"*",Wifi_LLAPI!$O:$O,F$2)'
+    ws_sum["J9"] = "=IFERROR(E9/SUM(E9:F9),0)"
+    ws_sum["B15"] = "WiFi.AccessPoint"
+    ws_sum["F15"] = '=COUNTIFS(Wifi_LLAPI!$A:$A,$B15&"*",Wifi_LLAPI!$P:$P,F$2)'
+    ws_sum["J15"] = "=IFERROR(E15/SUM(E15:F15),0)"
+    for row in range(3, 21):
+        ws_sum[f"J{row}"] = f"=IFERROR(E{row}/SUM(E{row}:F{row}),0)"
+
+    ws = wb.create_sheet("Wifi_LLAPI")
+    ws["A1"] = "Object"
+    ws["E1"] = "LLAPI test steps"
+    ws["L1"] = "Tester"
+    ws["M1"] = "Comment"
+    ws.merge_cells(start_row=2, end_row=2, start_column=9, end_column=11)
+    ws.cell(row=2, column=9).value = "Result"
+    ws["I3"] = "WiFi 5G"
+    ws["J3"] = "WiFi 6G"
+    ws["K3"] = "WiFi 2.4G"
+    ws["L3"] = "Tester"
+    ws["M3"] = "Comment"
+    ws["N3"] = "Summary Bucket WiFi 5G"
+    ws["O3"] = "Summary Bucket WiFi 6G"
+    ws["P3"] = "Summary Bucket WiFi 2.4G"
+    ws.column_dimensions["N"].hidden = True
+    ws.column_dimensions["O"].hidden = True
+    ws.column_dimensions["P"].hidden = True
+    ws["A4"] = "WiFi.AccessPoint.1."
+    ws["C4"] = "getSomeAPI"
+    wb.save(path)
+
+
+def test_wifi_llapi_reproject_summary_cli(tmp_path: Path, monkeypatch) -> None:
+    """wifi-llapi reproject-summary exits 0 and emits xlsx + md + html + json artifacts."""
+    _clear_provider_env(monkeypatch)
+
+    # Set up fake repo root with template in expected location
+    template_dir = tmp_path / "plugins" / "wifi_llapi" / "reports" / "templates"
+    template_dir.mkdir(parents=True)
+    template_path = template_dir / "wifi_llapi_template.xlsx"
+    _make_cli_template_xlsx(template_path)
+
+    # Write a minimal source JSON with one wifi_llapi case
+    source_json_path = tmp_path / "source_run.json"
+    source_data: dict[str, Any] = {
+        "meta": {"title": "cli test run", "plugin": "wifi_llapi"},
+        "cases": [
+            {
+                "case_id": "D001",
+                "source_row": 4,
+                "executed_test_command": "wl status",
+                "command_output": "ok",
+                "result_5g": "Pass",
+                "result_6g": "Pass",
+                "result_24g": "Pass",
+                "diagnostic_status": "Pass",
+                "comment": "",
+            }
+        ],
+    }
+    source_json_path.write_text(json.dumps(source_data), encoding="utf-8")
+
+    out_dir = tmp_path / "out"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "--root", str(tmp_path),
+            "wifi-llapi", "reproject-summary",
+            "--source-json", str(source_json_path),
+            "--out-dir", str(out_dir),
+            "--output-stem", "out-report",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert (out_dir / "out-report.xlsx").exists(), result.output
+    assert (out_dir / "out-report.md").exists(), result.output
+    assert (out_dir / "out-report.html").exists(), result.output
+    assert (out_dir / "out-report.json").exists(), result.output
+
+    # stdout must be valid JSON with key fields
+    clean = re.sub(r"\x1b\[[0-9;]*m", "", result.output)
+    payload = json.loads(clean)
+    assert payload["status"] == "ok"
+    assert "report_path" in payload
+    assert "summary" in payload

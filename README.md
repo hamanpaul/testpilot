@@ -316,6 +316,11 @@ python scripts/compare_0401_answers.py \
 testpilot wifi-llapi json-to-html \
   plugins/wifi_llapi/reports/<artifact_name>/<artifact_name>.json
 
+# Reproject an existing JSON artifact into a fresh workbook (offline-only);
+# Wifi_LLAPI is filled from JSON, while Summary style/formulas stay template-owned.
+testpilot wifi-llapi reproject-summary \
+  --source-json plugins/wifi_llapi/reports/<artifact_name>/<artifact_name>.json
+
 # With Azure OpenAI
 testpilot --azure wifi_llapi --dut-fw-ver BGW720-B0-403
 ```
@@ -346,6 +351,7 @@ Baseline experiment authority and current lab findings live in `docs/wifi-baseli
 | Internal diagnostics | `md` | Human-readable summary with per-case commands, output, log line references, and diagnostic status |
 | Structured data | `json` | Machine-readable with summary stats, diagnostic status, remediation history, and log line numbers |
 | Local HTML diagnostic | `html` | Self-contained review/share output emitted as a first-class artifact alongside `md` / `json` on every `wifi_llapi` run; `wifi-llapi json-to-html` remains available for post-processing existing JSON files |
+| Offline summary reproject | `xlsx` + `md` + `html` + `json` | `wifi-llapi reproject-summary` reads an existing JSON artifact, validates the checked-in template workbook, fills `Wifi_LLAPI` raw results plus hidden projected summary buckets, and leaves the styled `Summary` sheet to calculate from template formulas in a new report folder without rerunning DUT/STA tests or modifying the source run folder |
 | UART RAW log | `DUT.log` / `STA.log` | serialwrap WAL decoded for the complete current report run, bounded by that run's WAL sequence range |
 
 Per-run output location: `plugins/wifi_llapi/reports/<artifact_name>/`
@@ -893,6 +899,10 @@ python scripts/compare_0401_answers.py \
 testpilot wifi-llapi json-to-html \
   plugins/wifi_llapi/reports/<artifact_name>/<artifact_name>.json
 
+# 離線重新投影既有 JSON artifact；只填 Wifi_LLAPI，Summary 保留 template 樣式與公式
+testpilot wifi-llapi reproject-summary \
+  --source-json plugins/wifi_llapi/reports/<artifact_name>/<artifact_name>.json
+
 # 使用 Azure OpenAI
 testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
 ```
@@ -907,6 +917,7 @@ testpilot --azure run wifi_llapi --dut-fw-ver BGW720-B0-403
 | 內部診斷 | `md` | 人可讀摘要，含 per-case 指令、輸出、log 行號引用與 diagnostic status |
 | 結構化資料 | `json` | 機器可讀，含 summary 統計、diagnostic status、remediation history 與 log 行號 |
 | 本地 HTML 診斷 | `html` | 每次 `wifi_llapi` run 與 `md` / `json` 一起自動產出的 self-contained 檢視／分享格式；`wifi-llapi json-to-html` 仍保留作為對既有 JSON 的 post-processing 入口 |
+| 離線 summary 重新投影 | `xlsx` + `md` + `html` + `json` | `wifi-llapi reproject-summary` 讀取既有 JSON artifact、驗證 repo 內已提交的 template workbook，填入 `Wifi_LLAPI` raw result 與隱藏的 summary bucket，讓已套樣式的 `Summary` sheet 透過 template 公式自行計算，並在新資料夾寫出報告，不重跑 DUT/STA 測試也不修改來源 run 資料夾 |
 | UART RAW log | `DUT.log` / `STA.log` | serialwrap WAL 解碼，per-run DUT/STA 原始 UART 通訊記錄 |
 
 每次執行的輸出位置：`plugins/wifi_llapi/reports/<artifact_name>/`
