@@ -27,6 +27,9 @@ preparation.
   `Pass + Fail` only.
 - Reprojected wifi_llapi HTML and Markdown reports now retain the top-level
   suite KPI counts while also using the template-aligned Summary bucket data.
+- Reprojected wifi_llapi reports now align text-report KPI totals to the current
+  official `plugins/wifi_llapi/cases/D*.yaml` inventory, excluding stale cases
+  that only exist in older source JSON bundles.
 
 ### Added
 

@@ -9,9 +9,13 @@ directory.
 from __future__ import annotations
 
 import json
+import re
+from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
+
+import yaml
 
 from testpilot.reporting.wifi_llapi_excel import (
     ReportMeta,
@@ -28,6 +32,109 @@ from testpilot.reporting.wifi_llapi_summary import (
     extract_fail_reason,
 )
 from testpilot.reporting.reporter import generate_reports
+
+
+_D_NUMBER_RE = re.compile(r"[Dd](\d{3})(?!\d)")
+
+
+@dataclass(frozen=True, slots=True)
+class _OfficialCase:
+    d_number: str
+    case_id: str
+    source_row: int
+
+
+def _d_number(value: Any) -> str | None:
+    match = _D_NUMBER_RE.search(str(value or ""))
+    return match.group(1) if match else None
+
+
+def _int_or_zero(value: Any) -> int:
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _official_cases_dir_for_template(template_path: Path) -> Path | None:
+    template = template_path.resolve()
+    if template.parent.name != "templates":
+        return None
+    reports_dir = template.parent.parent
+    if reports_dir.name != "reports":
+        return None
+    plugin_dir = reports_dir.parent
+    if plugin_dir.name != "wifi_llapi":
+        return None
+    candidate = plugin_dir / "cases"
+    if candidate.is_dir():
+        return candidate
+    return None
+
+
+def _load_official_case_inventory(template_path: Path) -> list[_OfficialCase]:
+    cases_dir = _official_cases_dir_for_template(template_path)
+    if cases_dir is None:
+        return []
+
+    inventory: list[_OfficialCase] = []
+    for path in sorted(cases_dir.glob("D*.yaml")):
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        if not isinstance(data, dict):
+            continue
+        case_id = str(data.get("id") or path.stem)
+        d_number = _d_number(case_id) or _d_number(path.stem)
+        if d_number is None:
+            continue
+        source = data.get("source") if isinstance(data.get("source"), dict) else {}
+        inventory.append(
+            _OfficialCase(
+                d_number=d_number,
+                case_id=case_id,
+                source_row=_int_or_zero(source.get("row")),
+            )
+        )
+    return inventory
+
+
+def _align_cases_to_official_inventory(
+    source_cases: list[dict[str, Any]],
+    official_inventory: list[_OfficialCase],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if not official_inventory:
+        return source_cases, source_cases
+
+    cases_by_d_number: dict[str, dict[str, Any]] = {}
+    for case in source_cases:
+        d_number = _d_number(case.get("case_id"))
+        if d_number is not None and d_number not in cases_by_d_number:
+            cases_by_d_number[d_number] = case
+
+    report_cases: list[dict[str, Any]] = []
+    matched_cases: list[dict[str, Any]] = []
+    for official in official_inventory:
+        case = cases_by_d_number.get(official.d_number)
+        if case is None:
+            report_cases.append(
+                {
+                    "case_id": official.case_id,
+                    "source_row": official.source_row,
+                    "result_5g": "N/A",
+                    "result_6g": "N/A",
+                    "result_24g": "N/A",
+                    "diagnostic_status": "MissingResult",
+                    "comment": "No result in source JSON",
+                }
+            )
+            continue
+        aligned = {
+            **case,
+            "case_id": official.case_id,
+            "source_row": official.source_row,
+        }
+        report_cases.append(aligned)
+        matched_cases.append(aligned)
+    return report_cases, matched_cases
 
 
 def reproject_wifi_llapi_report(
@@ -77,9 +184,13 @@ def reproject_wifi_llapi_report(
     row_objects = read_wifi_llapi_template_objects(template_path)
 
     cases: list[dict[str, Any]] = source_data.get("cases", [])
+    report_cases, matched_cases = _align_cases_to_official_inventory(
+        cases,
+        _load_official_case_inventory(template_path),
+    )
 
     # Build shared summary payload
-    summary = build_wifi_llapi_summary(cases, row_objects)
+    summary = build_wifi_llapi_summary(report_cases, row_objects)
 
     # Resolve output directory anchored to template_path.parent.parent
     if out_dir is None:
@@ -103,7 +214,7 @@ def reproject_wifi_llapi_report(
 
     # Build typed case-result objects for Excel fill
     case_results_typed: list[WifiLlapiCaseResult] = []
-    for case in cases:
+    for case in matched_cases:
         cr = WifiLlapiCaseResult(
             case_id=str(case.get("case_id", "")),
             source_row=int(case.get("source_row") or 0),
@@ -150,7 +261,7 @@ def reproject_wifi_llapi_report(
 
     # Generate MD / JSON / HTML reports (these use the shared summary)
     report_paths = generate_reports(
-        case_results=cases,
+        case_results=report_cases,
         meta=report_meta,
         output_dir=artifact_dir,
         formats=("md", "json", "html"),

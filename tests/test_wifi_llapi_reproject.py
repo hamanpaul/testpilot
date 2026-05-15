@@ -232,6 +232,128 @@ def test_reproject_creates_isolated_artifacts_and_preserves_source(
     assert summary["bucket_totals"]["result_6g"]["to_be_tested"] == 1
 
 
+def test_reproject_reports_current_official_inventory_when_source_json_has_stale_cases(
+    tmp_path: Path,
+) -> None:
+    from testpilot.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
+
+    template_dir = tmp_path / "plugins" / "wifi_llapi" / "reports" / "templates"
+    template_dir.mkdir(parents=True)
+    template = template_dir / "template.xlsx"
+    _make_template_xlsx(template)
+
+    cases_dir = tmp_path / "plugins" / "wifi_llapi" / "cases"
+    cases_dir.mkdir(parents=True)
+    for case_id, row in (("D001", 4), ("D002", 5), ("D003", 6)):
+        (cases_dir / f"{case_id}.yaml").write_text(
+            "\n".join(
+                [
+                    f"id: {case_id.lower()}",
+                    "source:",
+                    f"  row: {row}",
+                    "  object: WiFi.AccessPoint.1.",
+                    f"  api: api{case_id}",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+    source_data = {
+        "meta": {"title": "stale source"},
+        "cases": [
+            {
+                **_D001,
+                "case_id": "D001",
+                "source_row": 4,
+                "result_6g": "Pass",
+                "result_24g": "Pass",
+            },
+            {**_D002, "case_id": "D002", "source_row": 5},
+            {
+                "case_id": "D999",
+                "source_row": 5,
+                "result_5g": "Pass",
+                "result_6g": "Pass",
+                "result_24g": "Pass",
+            },
+            {
+                "case_id": "D998",
+                "source_row": 98,
+                "result_5g": "Pass",
+                "result_6g": "Pass",
+                "result_24g": "Pass",
+            },
+        ],
+    }
+    source_json = tmp_path / "source.json"
+    source_json.write_text(json.dumps(source_data), encoding="utf-8")
+
+    result = reproject_wifi_llapi_report(
+        source_json=source_json,
+        template_xlsx=template,
+        out_dir=tmp_path / "out",
+        output_stem="inventory-report",
+    )
+
+    report_data = json.loads(result["json_report_path"].read_text(encoding="utf-8"))
+    summary = report_data["summary"]
+    assert summary["total_cases"] == 3
+    assert summary["pass_cases"] == 1
+    assert summary["failed_cases"] == 1
+    assert summary["other_cases"] == 1
+
+    html = result["html_report_path"].read_text(encoding="utf-8")
+    assert '<div class="label">Total Cases</div><div class="value">3</div>' in html
+    assert '<div class="label">Pass Cases</div><div class="value">1</div>' in html
+    assert '<div class="label">Failed Cases</div><div class="value">1</div>' in html
+    assert '<div class="label">Other Cases</div><div class="value">1</div>' in html
+
+    wb = load_workbook(result["report_path"], data_only=True)
+    ws = wb["Wifi_LLAPI"]
+    assert ws.cell(row=5, column=9).value == "Fail"
+    assert ws.cell(row=6, column=9).value is None
+    assert ws.cell(row=6, column=10).value is None
+    assert ws.cell(row=6, column=11).value is None
+    wb.close()
+
+
+def test_reproject_ignores_unrelated_ancestor_cases_dir(tmp_path: Path) -> None:
+    from testpilot.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
+
+    ancestor_cases = tmp_path / "cases"
+    ancestor_cases.mkdir()
+    (ancestor_cases / "D001.yaml").write_text(
+        "\n".join(
+            [
+                "id: stale-d001",
+                "source:",
+                "  row: 4",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    template_dir = tmp_path / "reports" / "templates"
+    template_dir.mkdir(parents=True)
+    template = template_dir / "template.xlsx"
+    _make_template_xlsx(template)
+
+    source_json = tmp_path / "source.json"
+    source_json.write_text(json.dumps(_SOURCE_JSON), encoding="utf-8")
+
+    result = reproject_wifi_llapi_report(
+        source_json=source_json,
+        template_xlsx=template,
+        out_dir=tmp_path / "out",
+        output_stem="ancestor-report",
+    )
+
+    report_data = json.loads(result["json_report_path"].read_text(encoding="utf-8"))
+    assert report_data["summary"]["total_cases"] == 2
+
+
 def test_reproject_raises_if_out_dir_non_empty(tmp_path: Path) -> None:
     from testpilot.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
 
