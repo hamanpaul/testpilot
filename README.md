@@ -108,7 +108,7 @@ Update the managed checkout and reinstall/sync runtime assets:
 
 ```bash
 testpilot --update
-testpilot --update v0.2.0
+testpilot --update v0.2.1
 testpilot --verify-install
 ```
 
