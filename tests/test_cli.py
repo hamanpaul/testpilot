@@ -263,7 +263,7 @@ def test_run_wifi_llapi_rejects_removed_report_source_xlsx_flag(monkeypatch):
     )
 
     assert result.exit_code != 0
-    assert "No such option: --report-source-xlsx" in result.output
+    assert re.search(r"No such option[: ]+['\"]?--report-source-xlsx['\"]?\.?", result.output)
 
 
 def test_run_without_plugin_name_shows_correct_format_guidance():
