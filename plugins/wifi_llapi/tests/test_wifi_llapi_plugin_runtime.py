@@ -1451,6 +1451,257 @@ def test_setup_env_runs_wpa_supplicant_hygiene_once_per_iface(monkeypatch):
     plugin.teardown(case, topology=topology)
 
 
+def test_env_command_succeeded_treats_iw_not_connected_as_failure():
+    plugin = _load_plugin()
+
+    assert plugin._env_command_succeeded(
+        "iw dev wl0 link",
+        {
+            "returncode": 0,
+            "stdout": "Not connected.\n",
+            "stderr": "",
+            "elapsed": 0.01,
+        },
+    ) is False
+
+
+def test_setup_env_retries_safe_custom_sta_connect_before_failing_link_check(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    original_execute = _FakeTransport.execute
+    link_attempts = {"wl0": 0}
+
+    def fake_execute(self: _FakeTransport, command: str, timeout: float = 30.0) -> dict[str, Any]:
+        if self.transport_type == "adb" and command == "iw dev wl0 link":
+            self.executed_commands.append(command)
+            link_attempts["wl0"] += 1
+            if link_attempts["wl0"] == 1:
+                return {
+                    "returncode": 0,
+                    "stdout": "Not connected.\n",
+                    "stderr": "",
+                    "elapsed": 0.01,
+                }
+            return {
+                "returncode": 0,
+                "stdout": "Connected to 2c:59:17:00:19:95 (on wl0)\nSSID: TestPilot_BTM",
+                "stderr": "",
+                "elapsed": 0.01,
+            }
+        return original_execute(self, command, timeout=timeout)
+
+    monkeypatch.setattr(_FakeTransport, "execute", fake_execute)
+
+    case = {
+        "id": "wifi-llapi-runtime-custom-connect-retry",
+        "topology": {
+            "devices": {
+                "DUT": {"transport": "serial"},
+                "STA": {"transport": "adb"},
+            }
+        },
+        "bands": ["5g"],
+        "sta_env_setup": """
+        DUT 5G baseline:
+          ubus-cli WiFi.AccessPoint.1.Enable=1
+        STA 5G setup:
+          wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+          wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+          iw dev wl0 link
+        """,
+        "verification_command": 'wl -i wl0 assoclist',
+        "steps": [{"id": "s1", "command": 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"'}],
+    }
+
+    assert plugin.setup_env(case, topology=topology) is True
+    sta = next(
+        transport for transport in recorder.transports if transport.transport_type == "adb"
+    )
+    assert link_attempts["wl0"] == 2
+    assert sta.executed_commands.count("wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect") == 2
+    assert sta.executed_commands.count("iw dev wl0 link") == 2
+    assert not case.get("_last_failure")
+    plugin.teardown(case, topology=topology)
+
+
+def test_setup_env_restarts_wpa_supplicant_when_reconnect_retries_stall(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    original_execute = _FakeTransport.execute
+    restart_calls: list[dict[str, Any]] = []
+
+    def fake_execute(self: _FakeTransport, command: str, timeout: float = 30.0) -> dict[str, Any]:
+        if self.transport_type == "adb" and command.startswith(
+            "wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf"
+        ):
+            self.executed_commands.append(command)
+            return {
+                "returncode": 0,
+                "stdout": "Successfully initialized wpa_supplicant",
+                "stderr": "",
+                "elapsed": 0.01,
+            }
+        if self.transport_type == "adb" and command == "iw dev wl0 link":
+            self.executed_commands.append(command)
+            return {
+                "returncode": 0,
+                "stdout": "Not connected.\n",
+                "stderr": "",
+                "elapsed": 0.01,
+            }
+        if self.transport_type == "adb" and command == "wpa_cli -p /var/run/wpa_supplicant -i wl0 status":
+            self.executed_commands.append(command)
+            return {
+                "returncode": 0,
+                "stdout": "wpa_state=SCANNING\naddress=2c:59:17:00:42:15",
+                "stderr": "",
+                "elapsed": 0.01,
+            }
+        if self.transport_type == "adb" and command == "wl -i wl0 status":
+            self.executed_commands.append(command)
+            return {
+                "returncode": 0,
+                "stdout": 'Not associated. Last associated with SSID: ""',
+                "stderr": "",
+                "elapsed": 0.01,
+            }
+        return original_execute(self, command, timeout=timeout)
+
+    monkeypatch.setattr(_FakeTransport, "execute", fake_execute)
+
+    def fake_restart_sta_wpa_and_reconnect(**kwargs: Any) -> bool:
+        restart_calls.append(kwargs)
+        return True
+
+    monkeypatch.setattr(plugin, "_restart_sta_wpa_and_reconnect", fake_restart_sta_wpa_and_reconnect)
+
+    case = {
+        "id": "wifi-llapi-runtime-custom-connect-restart",
+        "topology": {
+            "devices": {
+                "DUT": {"transport": "serial"},
+                "STA": {"transport": "adb"},
+            }
+        },
+        "bands": ["5g"],
+        "sta_env_setup": """
+        DUT 5G baseline:
+          ubus-cli WiFi.AccessPoint.1.Enable=1
+        STA 5G preparation:
+          iw dev wl0 set type managed
+          ifconfig wl0 up
+          printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\n' > /tmp/wpa_wl0.conf
+          wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+          sleep 3
+        STA 5G connect verify:
+          wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+          sleep 10
+          iw dev wl0 link
+        """,
+        "verification_command": 'wl -i wl0 assoclist',
+        "steps": [{"id": "s1", "command": 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"'}],
+    }
+    assert plugin.setup_env(case, topology=topology) is True
+    assert len(restart_calls) == 1
+    assert restart_calls[0]["iface"] == "wl0"
+    assert restart_calls[0]["wpa_start_cmd"] == (
+        "wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant"
+    )
+    assert restart_calls[0]["connect_cmd"] == "wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect"
+    assert not case.get("_last_failure")
+    plugin.teardown(case, topology=topology)
+
+
+def test_setup_env_reloads_custom_dut_ap_before_sta_link_check(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    original_execute = _FakeTransport.execute
+    dut_ap_reloaded = {"wl0": False}
+    events: list[str] = []
+
+    def fake_execute(self: _FakeTransport, command: str, timeout: float = 30.0) -> dict[str, Any]:
+        if self.transport_type == "serial" and command == "hostapd -ddt -B /tmp/wl0_hapd.conf":
+            self.executed_commands.append(command)
+            events.append("dut_reload_wl0")
+            dut_ap_reloaded["wl0"] = True
+            return {
+                "returncode": 0,
+                "stdout": "Configuration file: /tmp/wl0_hapd.conf",
+                "stderr": "",
+                "elapsed": 0.01,
+            }
+        if self.transport_type == "adb" and command == "iw dev wl0 link":
+            self.executed_commands.append(command)
+            events.append("sta_link_wl0")
+            if dut_ap_reloaded["wl0"]:
+                return {
+                    "returncode": 0,
+                    "stdout": "Connected to 2c:59:17:00:19:95 (on wl0)\nSSID: TestPilot_BTM",
+                    "stderr": "",
+                    "elapsed": 0.01,
+                }
+            return {
+                "returncode": 0,
+                "stdout": "Not connected.\n",
+                "stderr": "",
+                "elapsed": 0.01,
+            }
+        return original_execute(self, command, timeout=timeout)
+
+    monkeypatch.setattr(_FakeTransport, "execute", fake_execute)
+
+    case = {
+        "id": "wifi-llapi-runtime-custom-dut-ap-reload",
+        "topology": {
+            "devices": {
+                "DUT": {"transport": "serial"},
+                "STA": {"transport": "adb"},
+            }
+        },
+        "bands": ["5g"],
+        "sta_env_setup": """
+        DUT 5G AP baseline:
+          ubus-cli WiFi.SSID.4.SSID=TestPilot_BTM
+          ubus-cli WiFi.AccessPoint.1.Security.ModeEnabled=WPA3-Personal
+          ubus-cli WiFi.AccessPoint.1.Security.SAEPassphrase=testpilot6g
+          ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Required
+          ubus-cli WiFi.AccessPoint.1.Enable=1
+        STA 5G preparation:
+          iw dev wl0 set type managed
+          ifconfig wl0 up
+          printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=1\nsae_pwe=2\nnetwork={\nssid="TestPilot_BTM"\nkey_mgmt=SAE\nsae_password="testpilot6g"\nieee80211w=2\nscan_ssid=1\n}\n' > /tmp/wpa_wl0.conf
+          wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant
+          sleep 3
+        STA 5G connect verify:
+          wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect
+          sleep 10
+          iw dev wl0 link
+        """,
+        "verification_command": 'wl -i wl0 assoclist',
+        "steps": [{"id": "s1", "command": 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"'}],
+    }
+
+    assert plugin.setup_env(case, topology=topology) is True
+    dut = next(
+        transport for transport in recorder.transports if transport.transport_type == "serial"
+    )
+    sta = next(
+        transport for transport in recorder.transports if transport.transport_type == "adb"
+    )
+    assert "hostapd -ddt -B /tmp/wl0_hapd.conf" in dut.executed_commands
+    assert not any(
+        "wpa_passphrase=00000000" in command for command in dut.executed_commands
+    )
+    assert events.index("dut_reload_wl0") < events.index("sta_link_wl0")
+    plugin.teardown(case, topology=topology)
+
+
 def test_setup_env_canonicalizes_multiline_printf_for_transport(monkeypatch):
     plugin = _load_plugin()
     topology = _FakeTopology()
@@ -1646,6 +1897,43 @@ def test_ensure_selected_dut_bss_ready_reload_6g_before_bounce(monkeypatch):
     assert plugin._ensure_selected_dut_bss_ready(case) is True
     assert waits == [(60.0, "6g"), (30.0, "6g")]
     assert reloads == ["6g"]
+    assert bounces == []
+
+
+def test_ensure_selected_dut_bss_ready_reloads_generic_band_before_bounce(monkeypatch):
+    plugin = _load_plugin()
+    dut = object()
+    plugin._transports["DUT"] = dut
+    waits: list[tuple[float, str]] = []
+    reloads: list[str] = []
+    bounces: list[str] = []
+
+    case = {
+        "id": "wifi-llapi-runtime-generic-5g-bss-reload",
+        "steps": [{"id": "s1", "band": "5g", "command": "wl -i wl0 assoclist"}],
+    }
+
+    def fake_wait(*args, **kwargs):
+        waits.append((kwargs["timeout_seconds"], kwargs["band"]))
+        return len(waits) > 1
+
+    def fake_reload(case_arg, dut_arg, *, case_id, band):
+        del case_arg, dut_arg, case_id
+        reloads.append(band)
+        return True
+
+    def fake_bounce(case_arg, dut_arg, *, case_id, band):
+        del case_arg, dut_arg, case_id
+        bounces.append(band)
+        return True
+
+    monkeypatch.setattr(plugin, "_wait_for_dut_bss_ready", fake_wait)
+    monkeypatch.setattr(plugin, "_reload_dut_wifi_stack", fake_reload)
+    monkeypatch.setattr(plugin, "_bounce_dut_band", fake_bounce)
+
+    assert plugin._ensure_selected_dut_bss_ready(case) is True
+    assert waits == [(60.0, "5g"), (30.0, "5g")]
+    assert reloads == ["5g"]
     assert bounces == []
 
 

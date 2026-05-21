@@ -1387,6 +1387,9 @@ class Plugin(PluginBase):
             )
         )
         sta_wpa_hygiene_ifaces: set[str] = set()
+        last_sta_connect_command_by_iface: dict[str, str] = {}
+        last_sta_wpa_start_command_by_iface: dict[str, str] = {}
+        pending_custom_dut_ap_reload_bands: set[str] = set()
         for index, (target_name, raw_command) in enumerate(
             self._iter_env_script_commands(script),
             start=1,
@@ -1406,14 +1409,28 @@ class Plugin(PluginBase):
             command = self._canonicalize_env_command(
                 self._resolve_text(topology, raw_command)
             )
+            target_key = str(target_name).strip().upper()
+            if field_name == "sta_env_setup" and target_key == "DUT":
+                reload_band = self._custom_dut_ap_reload_band_from_command(command)
+                if reload_band:
+                    pending_custom_dut_ap_reload_bands.add(reload_band)
             if (
                 custom_wifi_gate_pending
-                and str(target_name).strip().upper() == "STA"
+                and target_key == "STA"
                 and (
                     self._is_explicit_sta_connect_step(command)
                     or self._is_sta_link_check_command(command)
                 )
             ):
+                if pending_custom_dut_ap_reload_bands:
+                    if not self._reload_custom_dut_aps(
+                        case,
+                        pending_custom_dut_ap_reload_bands,
+                    ):
+                        return False
+                    if "6g" in pending_custom_dut_ap_reload_bands:
+                        custom_6g_ocv_pending = False
+                    pending_custom_dut_ap_reload_bands.clear()
                 if custom_6g_ocv_pending:
                     dut_transport = self._transports.get("DUT")
                     if dut_transport is not None:
@@ -1423,8 +1440,8 @@ class Plugin(PluginBase):
                     return False
                 custom_wifi_gate_pending = False
             if str(target_name).strip().upper() == "STA":
-                iface = self._sta_wpa_supplicant_iface(command)
-                if iface and iface not in sta_wpa_hygiene_ifaces:
+                hygiene_iface = self._sta_wpa_supplicant_iface(command)
+                if hygiene_iface and hygiene_iface not in sta_wpa_hygiene_ifaces:
                     for offset, hygiene_command in enumerate(
                         (
                             "killall wpa_supplicant 2>/dev/null || true",
@@ -1441,9 +1458,68 @@ class Plugin(PluginBase):
                             timeout=20.0,
                         ):
                             return False
-                    sta_wpa_hygiene_ifaces.add(iface)
+                    sta_wpa_hygiene_ifaces.add(hygiene_iface)
+                if hygiene_iface and field_name == "sta_env_setup":
+                    last_sta_wpa_start_command_by_iface[hygiene_iface] = command
+                iface = self._sta_iface_from_command(command)
+                if (
+                    iface
+                    and field_name == "sta_env_setup"
+                    and self._is_safe_retryable_sta_connect_command(command)
+                ):
+                    last_sta_connect_command_by_iface[iface] = command
             result = self._execute_env_command(transport, command, timeout=45.0)
             if not self._env_command_succeeded(command, result):
+                if (
+                    field_name == "sta_env_setup"
+                    and str(target_name).strip().upper() == "STA"
+                    and self._is_sta_link_check_command(command)
+                ):
+                    retry_iface = self._sta_iface_from_command(command)
+                    retry_connect_cmd = (
+                        last_sta_connect_command_by_iface.get(retry_iface or "")
+                        if retry_iface
+                        else None
+                    )
+                    if retry_iface and retry_connect_cmd:
+                        retry_band = self._band_from_text(command)
+                        retry_case = (
+                            self._case_for_bands(case, (retry_band,))
+                            if retry_band
+                            else case
+                        )
+                        if not self._ensure_selected_dut_bss_ready(retry_case):
+                            return False
+                        verify_commands = self._sta_retry_verify_commands(
+                            iface=retry_iface,
+                            failing_command=command,
+                        )
+                        retry_ok = self._connect_with_retry(
+                            transport=transport,
+                            case_id=case_id,
+                            label=f"{field_name}[{index}].retry_{retry_iface}",
+                            connect_cmd=retry_connect_cmd,
+                            verify_cmd=verify_commands,
+                            attempts=3,
+                            sleep_seconds=10,
+                        )
+                        if not retry_ok:
+                            wpa_start_cmd = last_sta_wpa_start_command_by_iface.get(retry_iface)
+                            if (
+                                wpa_start_cmd
+                                and self._restart_sta_wpa_and_reconnect(
+                                    transport=transport,
+                                    case_id=case_id,
+                                    label=f"{field_name}[{index}].restart_{retry_iface}",
+                                    iface=retry_iface,
+                                    wpa_start_cmd=wpa_start_cmd,
+                                    connect_cmd=retry_connect_cmd,
+                                    verify_cmd=verify_commands,
+                                )
+                            ):
+                                continue
+                        if retry_ok:
+                            continue
                 if field_name == "sta_env_setup":
                     normalized_command = self._normalize_command_text(command).lower()
                     reason_code = "sta_env_setup_failed"
@@ -1493,6 +1569,90 @@ class Plugin(PluginBase):
                 ):
                     return False
         return True
+
+    @classmethod
+    def _custom_dut_ap_reload_band_from_command(cls, command: str) -> str:
+        normalized = cls._normalize_command_text(command)
+        if "?" in normalized or not normalized.startswith("ubus-cli "):
+            return ""
+        ssid_match = re.search(r"\bWiFi\.SSID\.(4|6|8)\.SSID\s*=", normalized)
+        if ssid_match is not None:
+            return {"4": "5g", "6": "6g", "8": "2.4g"}.get(ssid_match.group(1), "")
+        security_match = re.search(
+            r"\bWiFi\.AccessPoint\.(1|3|5)\.Security\.(?:ModeEnabled|SAEPassphrase|KeyPassPhrase)\s*=",
+            normalized,
+        )
+        if security_match is not None:
+            return {"1": "5g", "3": "6g", "5": "2.4g"}.get(
+                security_match.group(1),
+                "",
+            )
+        return ""
+
+    def _reload_custom_dut_aps(self, case: dict[str, Any], bands: set[str]) -> bool:
+        dut = self._transports.get("DUT")
+        if dut is None:
+            return False
+        case_id = str(case.get("id", ""))
+        for band in sorted(bands):
+            if self._reload_custom_dut_ap(dut, case_id=case_id, band=band):
+                continue
+            iface = self._sta_band_iface(band) or ""
+            self._record_runtime_failure(
+                case,
+                phase="setup_env",
+                comment=f"custom DUT {band} AP reload failed",
+                category="environment",
+                reason_code="dut_custom_ap_reload_failed",
+                device="DUT",
+                band=band,
+                command=f"hostapd -ddt -B /tmp/{iface}_hapd.conf" if iface else "",
+            )
+            return False
+        return True
+
+    def _reload_custom_dut_ap(self, dut: Any, *, case_id: str, band: str) -> bool:
+        normalized_band = self._normalize_band_name(band)
+        iface = self._sta_band_iface(normalized_band)
+        if not iface:
+            return False
+        if normalized_band == "6g":
+            self._apply_6g_ocv_fix(dut, case_id)
+            bss_command = f"wl -i {iface} bss"
+            return self._env_command_succeeded(
+                bss_command,
+                self._execute_env_command(dut, bss_command, timeout=10.0),
+            )
+
+        conf_path = f"/tmp/{iface}_hapd.conf"
+        for command in (
+            f"pid=$(pgrep -f '{conf_path}' 2>/dev/null | head -n1); if [ -n \"$pid\" ]; then kill \"$pid\" 2>/dev/null || true; fi",
+            "sleep 2",
+            f"rm -f /var/run/hostapd/{iface} /var/run/hostapd/{iface}.1",
+            f"wl -i {iface} ap 1",
+            f"wl -i {iface} up",
+            f"ifconfig {iface} up",
+            f"hostapd -ddt -B {conf_path}",
+            "sleep 2",
+            f"wl -i {iface} bss up",
+            "sleep 2",
+        ):
+            result = self._execute_env_command(dut, command, timeout=15.0)
+            if command.startswith("hostapd ") and not self._env_command_succeeded(command, result):
+                log.warning(
+                    "[%s] setup_env: %s custom DUT AP reload failed band=%s cmd=%s out=%s",
+                    self.name,
+                    case_id,
+                    normalized_band,
+                    self._preview_value(command, limit=96),
+                    self._preview_value(self._env_output_text(result)),
+                )
+                return False
+        bss_command = f"wl -i {iface} bss"
+        return self._env_command_succeeded(
+            bss_command,
+            self._execute_env_command(dut, bss_command, timeout=10.0),
+        )
 
     def _run_sta_env_setup(self, case: dict[str, Any], topology: Any) -> bool:
         return self._run_yaml_env_script(case, topology, field_name="sta_env_setup")
@@ -1633,6 +1793,48 @@ class Plugin(PluginBase):
         return bool(re.fullmatch(r"wl -i wl[012](?:\.\d+)? status", normalized))
 
     @classmethod
+    def _sta_iface_from_command(cls, command: str) -> str | None:
+        normalized = cls._normalize_command_text(command)
+        iface = cls._sta_wpa_supplicant_iface(normalized)
+        if iface:
+            return iface
+        for pattern in (
+            r"\biw\s+dev\s+(wl[012](?:\.\d+)?)\b",
+            r"\bwl\s+-i\s+(wl[012](?:\.\d+)?)\b",
+            r"\bwpa_cli\b.*\s-i\s+(wl[012](?:\.\d+)?)\b",
+            r"\bifconfig\s+(wl[012](?:\.\d+)?)\b",
+        ):
+            match = re.search(pattern, normalized, re.IGNORECASE)
+            if match is not None:
+                return match.group(1)
+        return None
+
+    @classmethod
+    def _is_safe_retryable_sta_connect_command(cls, command: str) -> bool:
+        normalized = cls._normalize_command_text(command)
+        if not cls._is_explicit_sta_connect_step(normalized):
+            return False
+        if re.search(r"(?:^|[;&|]\s*)wpa_supplicant\b", normalized, re.IGNORECASE):
+            return False
+        return True
+
+    def _sta_retry_verify_commands(
+        self,
+        *,
+        iface: str,
+        failing_command: str,
+    ) -> tuple[str, ...]:
+        verify_commands: list[str] = [failing_command]
+        for candidate in (
+            f"iw dev {iface} link",
+            f"wpa_cli -p /var/run/wpa_supplicant -i {iface} status",
+            f"wl -i {iface} status",
+        ):
+            if candidate not in verify_commands:
+                verify_commands.append(candidate)
+        return tuple(verify_commands)
+
+    @classmethod
     def _wpa3_key_sync_command(cls, command: str) -> str | None:
         normalized = cls._normalize_command_text(command)
         try:
@@ -1665,7 +1867,7 @@ class Plugin(PluginBase):
     def _sta_wpa_supplicant_iface(cls, command: str) -> str | None:
         normalized = cls._normalize_command_text(command)
         match = re.search(
-            r"\bwpa_supplicant\b.*\s-i\s+(wl[012](?:\.\d+)?)\b",
+            r"(?:^|[;&|]\s*)wpa_supplicant\b.*\s-i\s+(wl[012](?:\.\d+)?)\b",
             normalized,
             re.IGNORECASE,
         )
@@ -2066,6 +2268,47 @@ class Plugin(PluginBase):
                 attempt,
             )
         return False
+
+    def _restart_sta_wpa_and_reconnect(
+        self,
+        *,
+        transport: Any,
+        case_id: str,
+        label: str,
+        iface: str,
+        wpa_start_cmd: str,
+        connect_cmd: str,
+        verify_cmd: str | Sequence[str],
+    ) -> bool:
+        for index, command in enumerate(
+            (
+                "killall wpa_supplicant 2>/dev/null || true",
+                "rm -rf /var/run/wpa_supplicant",
+                "mkdir -p /var/run/wpa_supplicant",
+                f"iw dev {iface}.1 del 2>/dev/null || true",
+                f"iw dev {iface} disconnect 2>/dev/null || true",
+                wpa_start_cmd,
+                "sleep 3",
+            ),
+            start=1,
+        ):
+            if not self._run_required_command(
+                transport=transport,
+                case_id=case_id,
+                label=f"{label}.prep.{index}",
+                command=command,
+                timeout=20.0,
+            ):
+                return False
+        return self._connect_with_retry(
+            transport=transport,
+            case_id=case_id,
+            label=f"{label}.connect",
+            connect_cmd=connect_cmd,
+            verify_cmd=verify_cmd,
+            attempts=2,
+            sleep_seconds=10,
+        )
 
     def _wait_for_6g_sta_ap_teardown(
         self,
@@ -2517,20 +2760,18 @@ class Plugin(PluginBase):
                 poll_interval=bss_poll_interval,
             ):
                 continue
-            needs_stack_reload = self._has_custom_env_setup(case) or band == "6g"
-            if needs_stack_reload:
-                reloaded = self._reload_dut_wifi_stack(case, dut, case_id=case_id, band=band)
-                if reloaded and self._wait_for_dut_bss_ready(
-                    case,
-                    dut,
-                    case_id=case_id,
-                    band=band,
-                    index=index,
-                    command=command,
-                    timeout_seconds=30.0,
-                    poll_interval=bss_poll_interval,
-                ):
-                    continue
+            reloaded = self._reload_dut_wifi_stack(case, dut, case_id=case_id, band=band)
+            if reloaded and self._wait_for_dut_bss_ready(
+                case,
+                dut,
+                case_id=case_id,
+                band=band,
+                index=index,
+                command=command,
+                timeout_seconds=30.0,
+                poll_interval=bss_poll_interval,
+            ):
+                continue
             if not self._bounce_dut_band(case, dut, case_id=case_id, band=band):
                 return False
             if not self._wait_for_dut_bss_ready(

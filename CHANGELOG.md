@@ -10,6 +10,10 @@ preparation.
 ## [Unreleased]
 
 - Post-v0.2.1 queue starts here.
+- `wifi_llapi` env recovery now reloads custom DUT AP profiles before STA link
+  checks, retries safe STA reconnect paths, and prefers `wld_gen` stack reload
+  before AP bounce so env-fail cases can reach the test body instead of stalling
+  in `setup_env` / `verify_env`.
 
 ## [0.2.1]
 
