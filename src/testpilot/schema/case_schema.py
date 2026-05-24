@@ -214,6 +214,13 @@ def _validate_wifi_band_baseline_profile(
             field=f"profiles.{band}.sta_status_command",
         ),
     }
+    channel = raw_profile.get("channel")
+    if channel not in (None, ""):
+        profile["channel"] = _require_non_empty_string(
+            channel,
+            source=source,
+            field=f"profiles.{band}.channel",
+        )
     driver_join = raw_profile.get("sta_driver_join_command")
     if driver_join not in (None, ""):
         profile["sta_driver_join_command"] = _require_non_empty_string(

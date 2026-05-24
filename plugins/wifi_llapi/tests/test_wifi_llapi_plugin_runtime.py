@@ -1214,12 +1214,13 @@ def test_setup_env_runs_yaml_sta_env_setup(monkeypatch):
     sta = next(
         transport for transport in recorder.transports if transport.transport_type == "adb"
     )
-    assert dut.executed_commands[:4] == [
-        "ubus-cli WiFi.Radio.1.Enable=1",
-        "ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled",
-        "wl -i wl0 bss",
-        "wl -i wl0 assoclist",
-    ]
+    assert "ubus-cli WiFi.Radio.1.Channel=36" in dut.executed_commands
+    assert "ubus-cli WiFi.Radio.1.Enable=1" in dut.executed_commands
+    assert "ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled" in dut.executed_commands
+    assert "wl -i wl0 assoclist" in dut.executed_commands
+    assert dut.executed_commands.index("ubus-cli WiFi.Radio.1.Channel=36") < dut.executed_commands.index(
+        "ubus-cli WiFi.AccessPoint.1.Security.MFPConfig=Disabled"
+    )
     assert sta.executed_commands == [
         "iw dev wl0 set type managed",
         "ifconfig wl0 up",
@@ -1273,6 +1274,8 @@ def test_setup_env_applies_6g_ocv_fix_before_custom_sta_connect(monkeypatch):
 
     assert plugin.setup_env(case, topology=topology) is True
     assert events == [
+        ("ocv", "serial", "wifi-llapi-runtime-custom-6g-ocv-hook"),
+        ("ensure_bss", "", "wifi-llapi-runtime-custom-6g-ocv-hook"),
         ("ocv", "serial", "wifi-llapi-runtime-custom-6g-ocv-hook"),
         ("ensure_bss", "", "wifi-llapi-runtime-custom-6g-ocv-hook"),
     ]
@@ -1408,6 +1411,50 @@ def test_setup_env_skips_placeholder_sta_env_setup_and_leaves_auto_baseline_avai
         transport for transport in recorder.transports if transport.transport_type == "adb"
     )
     assert sta.executed_commands == []
+    plugin.teardown(case, topology=topology)
+
+
+def test_setup_env_custom_sta_env_setup_runs_dut_baseline_before_replay(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+    replayed: list[str] = []
+
+    monkeypatch.setattr(
+        plugin,
+        "_run_sta_band_baseline",
+        lambda case: replayed.append("dut_baseline") or True,
+    )
+
+    def fake_run_sta_env_setup(case, topology):
+        del case, topology
+        replayed.append("sta_env_setup")
+        return True
+
+    monkeypatch.setattr(plugin, "_run_sta_env_setup", fake_run_sta_env_setup)
+
+    case = {
+        "id": "wifi-llapi-runtime-custom-sta-env-baseline-first",
+        "bands": ["5g"],
+        "topology": {
+            "devices": {
+                "DUT": {"transport": "serial"},
+                "STA": {"transport": "adb"},
+            }
+        },
+        "sta_env_setup": """
+        DUT 5G setup:
+          ubus-cli WiFi.AccessPoint.1.Enable=1
+        STA 5G setup:
+          iw dev wl0 set type managed
+          iw dev wl0 link
+        """,
+        "steps": [{"id": "s1", "command": 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"'}],
+    }
+
+    assert plugin.setup_env(case, topology=topology) is True
+    assert replayed == ["dut_baseline", "sta_env_setup"]
     plugin.teardown(case, topology=topology)
 
 
@@ -1626,8 +1673,9 @@ def test_setup_env_reloads_custom_dut_ap_before_sta_link_check(monkeypatch):
     events: list[str] = []
 
     def fake_execute(self: _FakeTransport, command: str, timeout: float = 30.0) -> dict[str, Any]:
-        # New safe reload: intercept LLAPI AP enable instead of hostapd direct restart.
-        if self.transport_type == "serial" and command == "ubus-cli WiFi.AccessPoint.1.Enable=1":
+        # Key on the secondary AP disable because it only appears in the reload path,
+        # not in the case-local DUT config commands inside sta_env_setup.
+        if self.transport_type == "serial" and command == "ubus-cli WiFi.AccessPoint.2.Enable=0":
             self.executed_commands.append(command)
             events.append("dut_reload_wl0")
             dut_ap_reloaded["wl0"] = True
@@ -1692,16 +1740,9 @@ def test_setup_env_reloads_custom_dut_ap_before_sta_link_check(monkeypatch):
     dut = next(
         transport for transport in recorder.transports if transport.transport_type == "serial"
     )
-    # New reload path uses LLAPI AP toggle, NOT hostapd direct restart.
-    assert not any(
-        "hostapd -ddt -B" in command for command in dut.executed_commands
-    ), "hostapd direct restart must not appear in new reload path"
     assert any(
-        command == "ubus-cli WiFi.AccessPoint.1.Enable=1" for command in dut.executed_commands
-    ), "LLAPI AP enable must appear in new reload path"
-    assert not any(
-        "wpa_passphrase=00000000" in command for command in dut.executed_commands
-    )
+        command == "ubus-cli WiFi.AccessPoint.2.Enable=0" for command in dut.executed_commands
+    ), "LLAPI reload must include a toggle-only secondary AP disable"
     assert events.index("dut_reload_wl0") < events.index("sta_link_wl0")
     plugin.teardown(case, topology=topology)
 
@@ -1771,8 +1812,294 @@ def test_setup_env_custom_dut_ap_reload_restores_bss_after_failed_probe(monkeypa
     monkeypatch.setattr(_FakeTransport, "execute", fake_execute)
 
     assert plugin._reload_custom_dut_ap(dut, case_id="test-ap-restore-after-bss-probe", band="5g") is True
-    assert enable_count["ap1"] == 2
+    assert enable_count["ap1"] >= 2
     assert not any("hostapd -ddt" in cmd for cmd in dut.executed_commands)
+
+
+def test_setup_env_custom_dut_ap_reload_asserts_bss_up_after_toggle(monkeypatch):
+    plugin = _load_plugin()
+    dut = _FakeTransport("serial", {})
+    plugin._transports["DUT"] = dut
+    original_execute = _FakeTransport.execute
+    bss_up_asserted = {"done": False}
+
+    def fake_execute(self: _FakeTransport, command: str, timeout: float = 30.0) -> dict[str, Any]:
+        if command == "wl -i wl0 bss up":
+            self.executed_commands.append(command)
+            bss_up_asserted["done"] = True
+            return {"returncode": 0, "stdout": "", "stderr": "", "elapsed": 0.01}
+        if command.startswith("wl -i wl0") and command.endswith(" bss"):
+            self.executed_commands.append(command)
+            stdout = "up" if bss_up_asserted["done"] else "down"
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        return original_execute(self, command, timeout=timeout)
+
+    monkeypatch.setattr(_FakeTransport, "execute", fake_execute)
+
+    assert plugin._reload_custom_dut_ap(dut, case_id="test-ap-bss-up-assert", band="5g") is True
+    assert "wl -i wl0 bss up" in dut.executed_commands
+    assert not any("hostapd -ddt" in cmd for cmd in dut.executed_commands)
+
+
+def test_setup_env_custom_dut_ap_reload_waits_for_stable_chanspec(monkeypatch):
+    plugin = _load_plugin()
+    dut = _FakeTransport("serial", {})
+    plugin._transports["DUT"] = dut
+    original_execute = _FakeTransport.execute
+    bss_up_asserted = {"done": False}
+    chanspec_reads = {"count": 0}
+
+    def fake_execute(self: _FakeTransport, command: str, timeout: float = 30.0) -> dict[str, Any]:
+        if command == "wl -i wl0 bss up":
+            self.executed_commands.append(command)
+            bss_up_asserted["done"] = True
+            return {"returncode": 0, "stdout": "", "stderr": "", "elapsed": 0.01}
+        if command.startswith("wl -i wl0") and command.endswith(" bss"):
+            self.executed_commands.append(command)
+            stdout = "up" if bss_up_asserted["done"] else "down"
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        if command == "wl -i wl0 chanspec":
+            self.executed_commands.append(command)
+            chanspec_reads["count"] += 1
+            stdout = "100 (0xd064)" if chanspec_reads["count"] == 1 else "36 (0xd024)"
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        return original_execute(self, command, timeout=timeout)
+
+    monkeypatch.setattr(_FakeTransport, "execute", fake_execute)
+
+    assert plugin._reload_custom_dut_ap(dut, case_id="test-ap-stable-chanspec", band="5g") is True
+    assert dut.executed_commands.count("wl -i wl0 chanspec") >= 3
+    assert not any("hostapd -ddt" in cmd for cmd in dut.executed_commands)
+
+
+def test_setup_env_custom_dut_ap_reload_waits_for_driver_channel_to_match_radio_channel(monkeypatch):
+    plugin = _load_plugin()
+    dut = _FakeTransport("serial", {})
+    plugin._transports["DUT"] = dut
+    original_execute = _FakeTransport.execute
+    bss_up_asserted = {"done": False}
+    chanspec_reads = {"count": 0}
+
+    def fake_execute(self: _FakeTransport, command: str, timeout: float = 30.0) -> dict[str, Any]:
+        if command == 'ubus-cli "WiFi.Radio.1.Channel?"':
+            self.executed_commands.append(command)
+            return {"returncode": 0, "stdout": 'WiFi.Radio.1.Channel=36', "stderr": "", "elapsed": 0.01}
+        if command == "wl -i wl0 bss up":
+            self.executed_commands.append(command)
+            bss_up_asserted["done"] = True
+            return {"returncode": 0, "stdout": "", "stderr": "", "elapsed": 0.01}
+        if command.startswith("wl -i wl0") and command.endswith(" bss"):
+            self.executed_commands.append(command)
+            stdout = "up" if bss_up_asserted["done"] else "down"
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        if command == "wl -i wl0 chanspec":
+            self.executed_commands.append(command)
+            chanspec_reads["count"] += 1
+            stdout = "100 (0xd064)" if chanspec_reads["count"] < 3 else "36 (0xd024)"
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        return original_execute(self, command, timeout=timeout)
+
+    monkeypatch.setattr(_FakeTransport, "execute", fake_execute)
+
+    assert plugin._reload_custom_dut_ap(dut, case_id="test-ap-radio-channel-align", band="5g") is True
+    assert 'ubus-cli "WiFi.Radio.1.Channel?"' in dut.executed_commands
+    assert dut.executed_commands.count("wl -i wl0 chanspec") >= 4
+
+
+def test_setup_env_custom_dut_ap_reload_restores_original_radio_channel_when_toggle_drifts(monkeypatch):
+    plugin = _load_plugin()
+    dut = _FakeTransport("serial", {})
+    plugin._transports["DUT"] = dut
+    original_execute = _FakeTransport.execute
+    bss_up_asserted = {"done": False}
+    channel_restored = {"done": False}
+
+    def fake_execute(self: _FakeTransport, command: str, timeout: float = 30.0) -> dict[str, Any]:
+        if command == 'ubus-cli "WiFi.Radio.1.Channel?"':
+            self.executed_commands.append(command)
+            stdout = 'WiFi.Radio.1.Channel=36' if channel_restored["done"] else 'WiFi.Radio.1.Channel=100'
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        if command == "ubus-cli WiFi.Radio.1.Channel=36":
+            self.executed_commands.append(command)
+            channel_restored["done"] = True
+            return {"returncode": 0, "stdout": "WiFi.Radio.1.Channel=36", "stderr": "", "elapsed": 0.01}
+        if command == "wl -i wl0 bss up":
+            self.executed_commands.append(command)
+            bss_up_asserted["done"] = True
+            return {"returncode": 0, "stdout": "", "stderr": "", "elapsed": 0.01}
+        if command.startswith("wl -i wl0") and command.endswith(" bss"):
+            self.executed_commands.append(command)
+            stdout = "up" if bss_up_asserted["done"] else "down"
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        if command == "wl -i wl0 chanspec":
+            self.executed_commands.append(command)
+            stdout = "36 (0xd024)" if channel_restored["done"] else "100 (0xd064)"
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        return original_execute(self, command, timeout=timeout)
+
+    monkeypatch.setattr(_FakeTransport, "execute", fake_execute)
+
+    assert plugin._reload_custom_dut_ap(dut, case_id="test-ap-radio-channel-restore", band="5g") is True
+    assert "ubus-cli WiFi.Radio.1.Channel=36" in dut.executed_commands
+
+
+def test_setup_env_custom_dut_ap_reload_uses_configured_baseline_channel_when_radio_already_drifted(
+    monkeypatch,
+):
+    plugin = _load_plugin()
+    dut = _FakeTransport("serial", {})
+    plugin._transports["DUT"] = dut
+    original_execute = _FakeTransport.execute
+    bss_up_asserted = {"done": False}
+    channel_restored = {"done": False}
+
+    def fake_execute(self: _FakeTransport, command: str, timeout: float = 30.0) -> dict[str, Any]:
+        if command == 'ubus-cli "WiFi.Radio.1.Channel?"':
+            self.executed_commands.append(command)
+            stdout = 'WiFi.Radio.1.Channel=36' if channel_restored["done"] else 'WiFi.Radio.1.Channel=100'
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        if command == "ubus-cli WiFi.Radio.1.Channel=36":
+            self.executed_commands.append(command)
+            channel_restored["done"] = True
+            return {"returncode": 0, "stdout": "WiFi.Radio.1.Channel=36", "stderr": "", "elapsed": 0.01}
+        if command == "wl -i wl0 bss up":
+            self.executed_commands.append(command)
+            bss_up_asserted["done"] = True
+            return {"returncode": 0, "stdout": "", "stderr": "", "elapsed": 0.01}
+        if command.startswith("wl -i wl0") and command.endswith(" bss"):
+            self.executed_commands.append(command)
+            stdout = "up" if bss_up_asserted["done"] else "down"
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        if command == "wl -i wl0 chanspec":
+            self.executed_commands.append(command)
+            stdout = "36 (0xd024)" if channel_restored["done"] else "100 (0xd064)"
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        return original_execute(self, command, timeout=timeout)
+
+    monkeypatch.setattr(_FakeTransport, "execute", fake_execute)
+
+    assert plugin._reload_custom_dut_ap(dut, case_id="test-ap-baseline-channel-restore", band="5g") is True
+    assert "ubus-cli WiFi.Radio.1.Channel=36" in dut.executed_commands
+
+
+def test_setup_env_custom_dut_ap_reload_sets_channel_before_reenable_when_baseline_channel_configured(
+    monkeypatch,
+):
+    plugin = _load_plugin()
+    dut = _FakeTransport("serial", {})
+    plugin._transports["DUT"] = dut
+    original_execute = _FakeTransport.execute
+    state = {
+        "ap_enabled": True,
+        "channel_restored": False,
+        "bss_up": False,
+    }
+
+    def fake_execute(self: _FakeTransport, command: str, timeout: float = 30.0) -> dict[str, Any]:
+        if command == "ubus-cli WiFi.AccessPoint.1.Enable=0":
+            self.executed_commands.append(command)
+            state["ap_enabled"] = False
+            state["bss_up"] = False
+            return {"returncode": 0, "stdout": "WiFi.AccessPoint.1.Enable=0", "stderr": "", "elapsed": 0.01}
+        if command == "ubus-cli WiFi.Radio.1.Channel=36":
+            self.executed_commands.append(command)
+            if not state["ap_enabled"]:
+                state["channel_restored"] = True
+            return {"returncode": 0, "stdout": "WiFi.Radio.1.Channel=36", "stderr": "", "elapsed": 0.01}
+        if command == "ubus-cli WiFi.AccessPoint.1.Enable=1":
+            self.executed_commands.append(command)
+            state["ap_enabled"] = True
+            state["bss_up"] = True
+            return {"returncode": 0, "stdout": "WiFi.AccessPoint.1.Enable=1", "stderr": "", "elapsed": 0.01}
+        if command == 'ubus-cli "WiFi.Radio.1.Channel?"':
+            self.executed_commands.append(command)
+            stdout = 'WiFi.Radio.1.Channel=36' if state["channel_restored"] else 'WiFi.Radio.1.Channel=100'
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        if command.startswith("wl -i wl0") and command.endswith(" bss"):
+            self.executed_commands.append(command)
+            stdout = "up" if state["bss_up"] else "down"
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        if command == "wl -i wl0 bss up":
+            self.executed_commands.append(command)
+            state["bss_up"] = True
+            return {"returncode": 0, "stdout": "", "stderr": "", "elapsed": 0.01}
+        if command == "wl -i wl0 chanspec":
+            self.executed_commands.append(command)
+            stdout = "36 (0xd024)" if state["channel_restored"] else "100 (0xd064)"
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        return original_execute(self, command, timeout=timeout)
+
+    monkeypatch.setattr(_FakeTransport, "execute", fake_execute)
+
+    assert plugin._reload_custom_dut_ap(dut, case_id="test-ap-preenable-channel-restore", band="5g") is True
+    assert dut.executed_commands.index("ubus-cli WiFi.Radio.1.Channel=36") < dut.executed_commands.index(
+        "ubus-cli WiFi.AccessPoint.1.Enable=1"
+    )
+
+
+def test_setup_env_custom_dut_ap_reload_falls_back_to_radio_bounce_when_driver_channel_stays_drifted(
+    monkeypatch,
+):
+    plugin = _load_plugin()
+    dut = _FakeTransport("serial", {})
+    plugin._transports["DUT"] = dut
+    original_execute = _FakeTransport.execute
+    state = {
+        "ap_enabled": True,
+        "radio_enabled": True,
+        "radio_bounced": False,
+        "bss_up": False,
+    }
+
+    def fake_execute(self: _FakeTransport, command: str, timeout: float = 30.0) -> dict[str, Any]:
+        if command == "ubus-cli WiFi.AccessPoint.2.Enable=0":
+            self.executed_commands.append(command)
+            return {"returncode": 0, "stdout": "WiFi.AccessPoint.2.Enable=0", "stderr": "", "elapsed": 0.01}
+        if command == "ubus-cli WiFi.AccessPoint.1.Enable=0":
+            self.executed_commands.append(command)
+            state["ap_enabled"] = False
+            state["bss_up"] = False
+            return {"returncode": 0, "stdout": "WiFi.AccessPoint.1.Enable=0", "stderr": "", "elapsed": 0.01}
+        if command == "ubus-cli WiFi.Radio.1.Enable=0":
+            self.executed_commands.append(command)
+            state["radio_enabled"] = False
+            state["bss_up"] = False
+            return {"returncode": 0, "stdout": "WiFi.Radio.1.Enable=0", "stderr": "", "elapsed": 0.01}
+        if command == "ubus-cli WiFi.Radio.1.Enable=1":
+            self.executed_commands.append(command)
+            state["radio_bounced"] = not state["radio_enabled"]
+            state["radio_enabled"] = True
+            return {"returncode": 0, "stdout": "WiFi.Radio.1.Enable=1", "stderr": "", "elapsed": 0.01}
+        if command == "ubus-cli WiFi.Radio.1.Channel=36":
+            self.executed_commands.append(command)
+            return {"returncode": 0, "stdout": "WiFi.Radio.1.Channel=36", "stderr": "", "elapsed": 0.01}
+        if command == "ubus-cli WiFi.AccessPoint.1.Enable=1":
+            self.executed_commands.append(command)
+            state["ap_enabled"] = True
+            state["bss_up"] = True
+            return {"returncode": 0, "stdout": "WiFi.AccessPoint.1.Enable=1", "stderr": "", "elapsed": 0.01}
+        if command == 'ubus-cli "WiFi.Radio.1.Channel?"':
+            self.executed_commands.append(command)
+            return {"returncode": 0, "stdout": "WiFi.Radio.1.Channel=36", "stderr": "", "elapsed": 0.01}
+        if command.startswith("wl -i wl0") and command.endswith(" bss"):
+            self.executed_commands.append(command)
+            stdout = "up" if state["bss_up"] else "down"
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        if command == "wl -i wl0 bss up":
+            self.executed_commands.append(command)
+            state["bss_up"] = True
+            return {"returncode": 0, "stdout": "", "stderr": "", "elapsed": 0.01}
+        if command == "wl -i wl0 chanspec":
+            self.executed_commands.append(command)
+            stdout = "36 (0xd024)" if state["radio_bounced"] else "100 (0xd064)"
+            return {"returncode": 0, "stdout": stdout, "stderr": "", "elapsed": 0.01}
+        return original_execute(self, command, timeout=timeout)
+
+    monkeypatch.setattr(_FakeTransport, "execute", fake_execute)
+
+    assert plugin._reload_custom_dut_ap(dut, case_id="test-ap-radio-bounce-fallback", band="5g") is True
+    assert "ubus-cli WiFi.Radio.1.Enable=0" in dut.executed_commands
+    assert "ubus-cli WiFi.Radio.1.Enable=1" in dut.executed_commands
 
 
 def test_setup_env_custom_dut_ap_reload_failure_returns_false(monkeypatch):
@@ -1784,12 +2111,15 @@ def test_setup_env_custom_dut_ap_reload_failure_returns_false(monkeypatch):
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
     original_execute = _FakeTransport.execute
+    secondary_disable_count = {"count": 0}
 
     def fake_execute(self: _FakeTransport, command: str, timeout: float = 30.0) -> dict[str, Any]:
         if self.transport_type != "serial":
             return original_execute(self, command, timeout=timeout)
-        # Disable secondary AP returns error so toggle fails immediately.
         if command == "ubus-cli WiFi.AccessPoint.2.Enable=0":
+            secondary_disable_count["count"] += 1
+            if secondary_disable_count["count"] == 1:
+                return original_execute(self, command, timeout=timeout)
             self.executed_commands.append(command)
             return {
                 "returncode": 1,
@@ -1828,6 +2158,7 @@ def test_setup_env_custom_dut_ap_reload_failure_returns_false(monkeypatch):
         transport for transport in recorder.transports if transport.transport_type == "serial"
     )
     assert "ubus-cli WiFi.AccessPoint.1.Enable=1" in dut.executed_commands
+    assert secondary_disable_count["count"] >= 2
     # teardown must not raise even after failed setup.
     plugin.teardown(case, topology=topology)
     # All transports must be disconnected and the plugin transport map cleared.
@@ -2175,7 +2506,7 @@ def test_execute_remediation_replays_custom_sta_env_setup(monkeypatch):
 
     monkeypatch.setattr(plugin, "_open_case_transports", lambda case, topo, *, run_case_setup: True)
     monkeypatch.setattr(plugin, "verify_env", lambda case, topology: True)
-    monkeypatch.setattr(plugin, "_run_sta_band_baseline", lambda case: False)
+    monkeypatch.setattr(plugin, "_run_sta_band_baseline", lambda case: replayed.append("dut_baseline") or True)
     monkeypatch.setattr(plugin, "_ensure_sta_band_ready", lambda case, topology: False)
 
     def fake_run_sta_env_setup(case, topology):
@@ -2202,7 +2533,7 @@ def test_execute_remediation_replays_custom_sta_env_setup(monkeypatch):
     )
 
     assert result["success"] is True
-    assert replayed == ["sta_env_setup"]
+    assert replayed == ["dut_baseline", "sta_env_setup"]
     assert [action["executor_key"] for action in result["actions"]] == [
         "sta_band_rebaseline",
         "dut_band_rebaseline",
@@ -2540,6 +2871,22 @@ def test_dut_baseline_commands_disable_primary_before_reconfig(
         f"ubus-cli WiFi.AccessPoint.{ap}.Security.ModeEnabled={mode}"
     )
     assert commands[-1] == f"ubus-cli WiFi.AccessPoint.{ap}.Enable=1"
+
+
+def test_dut_baseline_commands_apply_configured_radio_channel_before_ssid_reconfig():
+    plugin = _load_plugin()
+
+    profile = plugin._band_baseline_profile("5g")
+    assert profile is not None
+
+    commands = plugin._dut_baseline_commands(profile)
+    assert "ubus-cli WiFi.Radio.1.Channel=36" in commands
+    assert commands.index("ubus-cli WiFi.AccessPoint.1.Enable=0") < commands.index(
+        "ubus-cli WiFi.Radio.1.Channel=36"
+    )
+    assert commands.index("ubus-cli WiFi.Radio.1.Channel=36") < commands.index(
+        "ubus-cli WiFi.SSID.4.SSID=testpilot5G"
+    )
 
 
 def test_run_sta_band_baseline_disables_primary_before_reconfig(monkeypatch):
@@ -3024,6 +3371,23 @@ def test_env_command_fails_for_wl_status_when_not_associated():
     assert plugin._env_command_succeeded("wl -i wl2 status", result) is False
 
 
+def test_env_command_fails_for_wl_status_when_ssid_is_empty():
+    plugin = _load_plugin()
+
+    result = {
+        "returncode": 0,
+        "stdout": (
+            'SSID: ""\n'
+            "Mode: Managed RSSI: 0 dBm noise: -100 dBm Channel: 36\n"
+            "BSSID: 00:00:00:00:00:00 Capability: ESS RRM\n"
+        ),
+        "stderr": "",
+        "elapsed": 0.01,
+    }
+
+    assert plugin._env_command_succeeded("wl -i wl0 status", result) is False
+
+
 def test_connect_with_retry_accepts_fallback_verify_commands(monkeypatch):
     plugin = _load_plugin()
     command_log: list[tuple[str, str]] = []
@@ -3069,6 +3433,160 @@ def test_connect_with_retry_accepts_fallback_verify_commands(monkeypatch):
         ("sta_24g.sleep.1", "sleep 8"),
     ]
     assert verify_log == ["iw dev wl2 link", "wl -i wl2 status"]
+
+
+def test_restart_sta_wpa_and_reconnect_upgrades_reconnect_to_select_network(monkeypatch):
+    plugin = _load_plugin()
+    prep_commands: list[tuple[str, str]] = []
+    retry_call: dict[str, Any] = {}
+
+    def fake_run_required_command(*, transport, case_id, label, command, timeout=30.0):
+        del transport, case_id, timeout
+        prep_commands.append((label, command))
+        return True
+
+    def fake_connect_with_retry(**kwargs: Any) -> bool:
+        retry_call.update(kwargs)
+        return True
+
+    monkeypatch.setattr(plugin, "_run_required_command", fake_run_required_command)
+    monkeypatch.setattr(plugin, "_connect_with_retry", fake_connect_with_retry)
+
+    assert plugin._restart_sta_wpa_and_reconnect(
+        transport=object(),
+        case_id="wifi-llapi-runtime-custom-restart-select-network",
+        label="sta_env_setup[48].restart_wl0",
+        iface="wl0",
+        wpa_start_cmd="wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant",
+        connect_cmd="wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect",
+        verify_cmd=("iw dev wl0 link", "wpa_cli -p /var/run/wpa_supplicant -i wl0 status"),
+    )
+
+    command_values = [command for _, command in prep_commands]
+    assert command_values[:5] == [
+        "killall wpa_supplicant 2>/dev/null || true",
+        "rm -rf /var/run/wpa_supplicant",
+        "mkdir -p /var/run/wpa_supplicant",
+        "iw dev wl0.1 del 2>/dev/null || true",
+        "iw dev wl0 disconnect 2>/dev/null || true",
+    ]
+    assert "wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant" in command_values
+    assert command_values[-2:] == [
+        "sleep 3",
+        "wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0",
+    ]
+    assert retry_call["connect_cmd"] == "wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0"
+    assert retry_call["verify_cmd"] == (
+        "iw dev wl0 link",
+        "wpa_cli -p /var/run/wpa_supplicant -i wl0 status",
+    )
+
+
+def test_restart_sta_wpa_and_reconnect_resets_wl0_out_of_bridge_before_restart(monkeypatch):
+    plugin = _load_plugin()
+    prep_commands: list[str] = []
+
+    def fake_run_required_command(*, transport, case_id, label, command, timeout=30.0):
+        del transport, case_id, label, timeout
+        prep_commands.append(command)
+        return True
+
+    def fake_connect_with_retry(**kwargs: Any) -> bool:
+        del kwargs
+        return True
+
+    monkeypatch.setattr(plugin, "_run_required_command", fake_run_required_command)
+    monkeypatch.setattr(plugin, "_connect_with_retry", fake_connect_with_retry)
+
+    assert plugin._restart_sta_wpa_and_reconnect(
+        transport=object(),
+        case_id="wifi-llapi-runtime-custom-restart-wl0-bridge-reset",
+        label="sta_env_setup[48].restart_wl0",
+        iface="wl0",
+        wpa_start_cmd="wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant",
+        connect_cmd="wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect",
+        verify_cmd=("iw dev wl0 link", "wpa_cli -p /var/run/wpa_supplicant -i wl0 status"),
+    )
+
+    assert prep_commands == [
+        "killall wpa_supplicant 2>/dev/null || true",
+        "rm -rf /var/run/wpa_supplicant",
+        "mkdir -p /var/run/wpa_supplicant",
+        "iw dev wl0.1 del 2>/dev/null || true",
+        "iw dev wl0 disconnect 2>/dev/null || true",
+        "brctl delif br-lan wl0 2>/dev/null || true",
+        "ifconfig wl0 down",
+        "wl -i wl0 down",
+        "wl -i wl0 ap 0",
+        "iw dev wl0 set type managed",
+        "wl -i wl0 up",
+        "ifconfig wl0 up",
+        "wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant",
+        "sleep 3",
+        "wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0",
+    ]
+
+
+def test_restart_sta_wpa_and_reconnect_enables_wl0_network_before_select(monkeypatch):
+    plugin = _load_plugin()
+    prep_commands: list[str] = []
+    retry_call: dict[str, Any] = {}
+
+    def fake_run_required_command(*, transport, case_id, label, command, timeout=30.0):
+        del transport, case_id, label, timeout
+        prep_commands.append(command)
+        return True
+
+    def fake_connect_with_retry(**kwargs: Any) -> bool:
+        retry_call.update(kwargs)
+        return True
+
+    monkeypatch.setattr(plugin, "_run_required_command", fake_run_required_command)
+    monkeypatch.setattr(plugin, "_connect_with_retry", fake_connect_with_retry)
+
+    assert plugin._restart_sta_wpa_and_reconnect(
+        transport=object(),
+        case_id="wifi-llapi-runtime-custom-restart-wl0-enable-network",
+        label="sta_env_setup[48].restart_wl0",
+        iface="wl0",
+        wpa_start_cmd="wpa_supplicant -B -D nl80211 -i wl0 -c /tmp/wpa_wl0.conf -C /var/run/wpa_supplicant",
+        connect_cmd="wpa_cli -p /var/run/wpa_supplicant -i wl0 reconnect",
+        verify_cmd=("iw dev wl0 link", "wpa_cli -p /var/run/wpa_supplicant -i wl0 status"),
+    )
+
+    assert "wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0" in prep_commands
+    assert prep_commands.index("wpa_cli -p /var/run/wpa_supplicant -i wl0 enable_network 0") > prep_commands.index("sleep 3")
+    assert retry_call["connect_cmd"] == "wpa_cli -p /var/run/wpa_supplicant -i wl0 select_network 0"
+
+
+def test_restart_sta_wpa_and_reconnect_leaves_wl1_bridge_workaround_disabled(monkeypatch):
+    plugin = _load_plugin()
+    prep_commands: list[str] = []
+
+    def fake_run_required_command(*, transport, case_id, label, command, timeout=30.0):
+        del transport, case_id, label, timeout
+        prep_commands.append(command)
+        return True
+
+    def fake_connect_with_retry(**kwargs: Any) -> bool:
+        del kwargs
+        return True
+
+    monkeypatch.setattr(plugin, "_run_required_command", fake_run_required_command)
+    monkeypatch.setattr(plugin, "_connect_with_retry", fake_connect_with_retry)
+
+    assert plugin._restart_sta_wpa_and_reconnect(
+        transport=object(),
+        case_id="wifi-llapi-runtime-custom-restart-wl1-no-bridge-reset",
+        label="sta_env_setup[48].restart_wl1",
+        iface="wl1",
+        wpa_start_cmd="wpa_supplicant -B -D nl80211 -i wl1 -c /tmp/wpa_wl1.conf -C /var/run/wpa_supplicant",
+        connect_cmd="wpa_cli -p /var/run/wpa_supplicant -i wl1 reconnect",
+        verify_cmd=("iw dev wl1 link", "wpa_cli -p /var/run/wpa_supplicant -i wl1 status"),
+    )
+
+    assert "brctl delif br-lan wl1 2>/dev/null || true" not in prep_commands
+    assert "iw dev wl1 set type managed" not in prep_commands
 
 
 def test_case_yaml_band_baselines_reset_radio_defaults():

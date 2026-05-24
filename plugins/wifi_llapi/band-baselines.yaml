@@ -3,6 +3,7 @@ profiles:
   5g:
     iface: wl0
     radio: "1"
+    channel: "36"
     ap: "1"
     secondary_ap: "2"
     ssid_index: "4"

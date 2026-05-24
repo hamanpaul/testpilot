@@ -293,9 +293,15 @@ class Plugin(PluginBase):
             f"ubus-cli WiFi.AccessPoint.{profile['secondary_ap']}.Enable=0",
             f"ubus-cli WiFi.AccessPoint.{ap}.Enable=0",
             *self._profile_command_list(profile, "dut_pre_start_commands"),
-            f"ubus-cli WiFi.SSID.{profile['ssid_index']}.SSID={profile['ssid']}",
-            f"ubus-cli WiFi.AccessPoint.{ap}.Security.ModeEnabled={profile['mode']}",
         ]
+        if channel := str(profile.get("channel", "")).strip():
+            commands.append(f"ubus-cli WiFi.Radio.{profile['radio']}.Channel={channel}")
+        commands.extend(
+            [
+                f"ubus-cli WiFi.SSID.{profile['ssid_index']}.SSID={profile['ssid']}",
+                f"ubus-cli WiFi.AccessPoint.{ap}.Security.ModeEnabled={profile['mode']}",
+            ]
+        )
         for field in profile.get("dut_secret_fields", []):
             commands.append(
                 f'ubus-cli \'WiFi.AccessPoint.{ap}.Security.{field}="{profile["key"]}"\''
@@ -592,7 +598,7 @@ class Plugin(PluginBase):
                     self.name,
                     case_id,
                 )
-            elif self._has_custom_env_setup(case) and not self._run_sta_env_setup(case, topology):
+            elif self._has_custom_env_setup(case) and not self._prepare_custom_sta_env_setup(case, topology):
                 last_failure = self._snapshot_mapping(case.get("_last_failure"))
                 if str(last_failure.get("phase", "")).strip().lower() != "setup_env":
                     self._record_runtime_failure(
@@ -1639,13 +1645,22 @@ class Plugin(PluginBase):
             )
             return False
         ap = str(profile["ap"])
+        radio = str(profile.get("radio", "")).strip() or None
+        baseline_channel = str(profile.get("channel", "")).strip() or None
+        expected_channel = baseline_channel or self._dut_radio_channel(dut, radio=radio)
         secondary_ap = str(profile["secondary_ap"])
-        toggle_commands = (
+        toggle_commands = [
             f"ubus-cli WiFi.AccessPoint.{secondary_ap}.Enable=0",
             f"ubus-cli WiFi.AccessPoint.{ap}.Enable=0",
             "sleep 2",
-            f"ubus-cli WiFi.AccessPoint.{ap}.Enable=1",
-            "sleep 3",
+        ]
+        if expected_channel and radio:
+            toggle_commands.append(f"ubus-cli WiFi.Radio.{radio}.Channel={expected_channel}")
+        toggle_commands.extend(
+            [
+                f"ubus-cli WiFi.AccessPoint.{ap}.Enable=1",
+                "sleep 3",
+            ]
         )
         for command in toggle_commands:
             result = self._execute_env_command(dut, command, timeout=15.0)
@@ -1666,11 +1681,48 @@ class Plugin(PluginBase):
                 )
                 return False
         bss_command = f"wl -i {iface} bss"
-        bss_result = self._execute_env_command(dut, bss_command, timeout=10.0)
-        if self._env_command_succeeded(bss_command, bss_result):
+        if (
+            expected_channel
+            and radio
+            and not self._restore_dut_radio_channel(
+                dut,
+                case_id=case_id,
+                band=normalized_band,
+                radio=radio,
+                channel=expected_channel,
+            )
+        ):
+            return self._restore_custom_dut_ap_after_reload_failure(
+                dut,
+                case_id=case_id,
+                band=normalized_band,
+                profile=profile,
+            )
+        bss_result = self._ensure_dut_bss_up(dut, iface=iface)
+        if self._env_command_succeeded(bss_command, bss_result) and self._wait_for_dut_ap_stable(
+            dut,
+            case_id=case_id,
+            band=normalized_band,
+            iface=iface,
+            radio=radio,
+            expected_channel=expected_channel,
+        ):
+            return True
+        if (
+            expected_channel
+            and radio
+            and self._bounce_dut_radio_for_custom_ap_reload(
+                dut,
+                case_id=case_id,
+                band=normalized_band,
+                iface=iface,
+                profile=profile,
+                expected_channel=expected_channel,
+            )
+        ):
             return True
         log.warning(
-            "[%s] setup_env: %s custom DUT AP still down after toggle band=%s out=%s",
+            "[%s] setup_env: %s custom DUT AP not stable after toggle band=%s out=%s",
             self.name,
             case_id,
             normalized_band,
@@ -1681,6 +1733,167 @@ class Plugin(PluginBase):
             case_id=case_id,
             band=normalized_band,
             profile=profile,
+        )
+
+    def _ensure_dut_bss_up(self, dut: Any, *, iface: str) -> dict[str, Any]:
+        bss_command = f"wl -i {iface} bss"
+        bss_result = self._execute_env_command(dut, bss_command, timeout=10.0)
+        if self._env_command_succeeded(bss_command, bss_result):
+            return bss_result
+        self._execute_env_command(dut, f"wl -i {iface} bss up", timeout=10.0)
+        self._execute_env_command(dut, "sleep 2", timeout=5.0)
+        return self._execute_env_command(dut, bss_command, timeout=10.0)
+
+    def _wait_for_dut_ap_stable(
+        self,
+        dut: Any,
+        *,
+        case_id: str,
+        band: str,
+        iface: str,
+        radio: str | None = None,
+        expected_channel: str | None = None,
+        attempts: int = 4,
+        sleep_seconds: int = 2,
+    ) -> bool:
+        chanspec_command = f"wl -i {iface} chanspec"
+        target_channel = expected_channel or self._dut_radio_channel(dut, radio=radio)
+        previous = ""
+        for attempt in range(1, max(2, attempts) + 1):
+            result = self._execute_env_command(dut, chanspec_command, timeout=10.0)
+            if int(result.get("returncode", 1)) != 0:
+                return False
+            current = self._env_output_text(result).strip()
+            if not current:
+                return False
+            current_channel = self._dut_primary_channel_from_chanspec(current)
+            if target_channel and current_channel != target_channel:
+                previous = ""
+                if attempt < max(2, attempts):
+                    self._execute_env_command(
+                        dut,
+                        f"sleep {sleep_seconds}",
+                        timeout=max(5.0, float(sleep_seconds + 2)),
+                    )
+                continue
+            if current == previous:
+                return True
+            previous = current
+            if attempt < max(2, attempts):
+                self._execute_env_command(
+                    dut,
+                    f"sleep {sleep_seconds}",
+                    timeout=max(5.0, float(sleep_seconds + 2)),
+                )
+        log.warning(
+            "[%s] setup_env: %s custom DUT AP still settling band=%s iface=%s chanspec=%s",
+            self.name,
+            case_id,
+            band,
+            iface,
+            self._preview_value(previous),
+        )
+        return False
+
+    def _dut_radio_channel(self, dut: Any, *, radio: str | None) -> str | None:
+        normalized_radio = str(radio or "").strip()
+        if not normalized_radio:
+            return None
+        command = f'ubus-cli "WiFi.Radio.{normalized_radio}.Channel?"'
+        result = self._execute_env_command(dut, command, timeout=10.0)
+        if int(result.get("returncode", 1)) != 0:
+            return None
+        return self._dut_primary_channel_from_chanspec(self._env_output_text(result))
+
+    @staticmethod
+    def _dut_primary_channel_from_chanspec(output: str) -> str | None:
+        text = str(output or "").strip()
+        if not text:
+            return None
+        if match := re.search(r"Channel=(\d+)", text):
+            return match.group(1)
+        if match := re.match(r"(\d+)\b", text):
+            return match.group(1)
+        if match := re.search(r"channel\s+(\d+)\b", text, re.IGNORECASE):
+            return match.group(1)
+        return None
+
+    def _restore_dut_radio_channel(
+        self,
+        dut: Any,
+        *,
+        case_id: str,
+        band: str,
+        radio: str,
+        channel: str,
+    ) -> bool:
+        current_channel = self._dut_radio_channel(dut, radio=radio)
+        if not channel or not current_channel or current_channel == channel:
+            return True
+        command = f"ubus-cli WiFi.Radio.{radio}.Channel={channel}"
+        result = self._execute_env_command(dut, command, timeout=15.0)
+        if not self._env_command_succeeded(command, result):
+            log.warning(
+                "[%s] setup_env: %s failed to restore DUT %s radio channel=%s out=%s",
+                self.name,
+                case_id,
+                band,
+                channel,
+                self._preview_value(self._env_output_text(result)),
+            )
+            return False
+        self._execute_env_command(dut, "sleep 2", timeout=5.0)
+        return True
+
+    def _bounce_dut_radio_for_custom_ap_reload(
+        self,
+        dut: Any,
+        *,
+        case_id: str,
+        band: str,
+        iface: str,
+        profile: dict[str, Any],
+        expected_channel: str,
+    ) -> bool:
+        radio = str(profile.get("radio", "")).strip()
+        ap = str(profile.get("ap", "")).strip()
+        secondary_ap = str(profile.get("secondary_ap", "")).strip()
+        if not radio or not ap or not secondary_ap:
+            return False
+        bounce_commands = (
+            f"ubus-cli WiFi.AccessPoint.{secondary_ap}.Enable=0",
+            f"ubus-cli WiFi.AccessPoint.{ap}.Enable=0",
+            f"ubus-cli WiFi.Radio.{radio}.Enable=0",
+            "sleep 2",
+            f"ubus-cli WiFi.Radio.{radio}.Channel={expected_channel}",
+            f"ubus-cli WiFi.Radio.{radio}.Enable=1",
+            f"ubus-cli WiFi.AccessPoint.{ap}.Enable=1",
+            "sleep 5",
+        )
+        for command in bounce_commands:
+            result = self._execute_env_command(dut, command, timeout=15.0)
+            if self._env_command_succeeded(command, result):
+                continue
+            log.warning(
+                "[%s] setup_env: %s custom DUT radio bounce failed band=%s cmd=%s out=%s",
+                self.name,
+                case_id,
+                band,
+                self._preview_value(command, limit=96),
+                self._preview_value(self._env_output_text(result)),
+            )
+            return False
+        bss_command = f"wl -i {iface} bss"
+        bss_result = self._ensure_dut_bss_up(dut, iface=iface)
+        if not self._env_command_succeeded(bss_command, bss_result):
+            return False
+        return self._wait_for_dut_ap_stable(
+            dut,
+            case_id=case_id,
+            band=band,
+            iface=iface,
+            radio=radio,
+            expected_channel=expected_channel,
         )
 
     def _restore_custom_dut_ap_after_reload_failure(
@@ -1715,8 +1928,15 @@ class Plugin(PluginBase):
         if not iface:
             return False
         bss_command = f"wl -i {iface} bss"
-        bss_result = self._execute_env_command(dut, bss_command, timeout=10.0)
+        bss_result = self._ensure_dut_bss_up(dut, iface=iface)
         bss_ok = self._env_command_succeeded(bss_command, bss_result)
+        stable_ok = bss_ok and self._wait_for_dut_ap_stable(
+            dut,
+            case_id=case_id,
+            band=band,
+            iface=iface,
+            radio=str(profile.get("radio", "")).strip() or None,
+        )
         if not bss_ok:
             log.warning(
                 "[%s] setup_env: %s custom DUT AP restore left band=%s bss down out=%s",
@@ -1725,10 +1945,30 @@ class Plugin(PluginBase):
                 band,
                 self._preview_value(self._env_output_text(bss_result)),
             )
-        return restored and bss_ok
+        return restored and bss_ok and stable_ok
 
     def _run_sta_env_setup(self, case: dict[str, Any], topology: Any) -> bool:
         return self._run_yaml_env_script(case, topology, field_name="sta_env_setup")
+
+    def _custom_sta_env_setup_bands(self, case: dict[str, Any], topology: Any) -> tuple[str, ...]:
+        script = case.get("sta_env_setup")
+        if not isinstance(script, str) or not script.strip():
+            return ()
+        seen: list[str] = []
+        for target_name, raw_command in self._iter_env_script_commands(script):
+            if str(target_name).strip().upper() != "STA":
+                continue
+            command = self._canonicalize_env_command(self._resolve_text(topology, raw_command))
+            band = self._band_from_text(command)
+            if band and band not in seen:
+                seen.append(band)
+        return tuple(seen)
+
+    def _prepare_custom_sta_env_setup(self, case: dict[str, Any], topology: Any) -> bool:
+        if bands := self._custom_sta_env_setup_bands(case, topology):
+            if not self._run_sta_band_baseline(self._case_for_bands(case, bands)):
+                return False
+        return self._run_sta_env_setup(case, topology)
 
     @classmethod
     def _env_output_text(cls, result: dict[str, Any]) -> str:
@@ -1820,6 +2060,8 @@ class Plugin(PluginBase):
         if re.fullmatch(r"wl -i wl[012](?:\.\d+)? status", lowered_command):
             if "not associated" in lowered_output:
                 return False
+            if 'ssid: ""' in lowered_output:
+                return False
             return any(
                 marker in lowered_output
                 for marker in (
@@ -1906,6 +2148,30 @@ class Plugin(PluginBase):
             if candidate not in verify_commands:
                 verify_commands.append(candidate)
         return tuple(verify_commands)
+
+    @classmethod
+    def _sta_restart_connect_command(cls, connect_cmd: str) -> str:
+        normalized = cls._normalize_command_text(connect_cmd)
+        match = re.fullmatch(
+            r"(?P<prefix>\bwpa_cli\b(?:\s+-p\s+\S+)?\s+-i\s+\S+)\s+reconnect\b",
+            normalized,
+            re.IGNORECASE,
+        )
+        if match is not None:
+            return f"{match.group('prefix')} select_network 0"
+        return normalized
+
+    @classmethod
+    def _sta_enable_network_command(cls, connect_cmd: str) -> str | None:
+        normalized = cls._normalize_command_text(connect_cmd)
+        match = re.fullmatch(
+            r"(?P<prefix>\bwpa_cli\b(?:\s+-p\s+\S+)?\s+-i\s+\S+)\s+select_network\s+0\b",
+            normalized,
+            re.IGNORECASE,
+        )
+        if match is None:
+            return None
+        return f"{match.group('prefix')} enable_network 0"
 
     @classmethod
     def _wpa3_key_sync_command(cls, command: str) -> str | None:
@@ -2353,18 +2619,27 @@ class Plugin(PluginBase):
         connect_cmd: str,
         verify_cmd: str | Sequence[str],
     ) -> bool:
-        for index, command in enumerate(
-            (
-                "killall wpa_supplicant 2>/dev/null || true",
-                "rm -rf /var/run/wpa_supplicant",
-                "mkdir -p /var/run/wpa_supplicant",
-                f"iw dev {iface}.1 del 2>/dev/null || true",
-                f"iw dev {iface} disconnect 2>/dev/null || true",
-                wpa_start_cmd,
-                "sleep 3",
-            ),
-            start=1,
-        ):
+        prep_commands = [
+            "killall wpa_supplicant 2>/dev/null || true",
+            "rm -rf /var/run/wpa_supplicant",
+            "mkdir -p /var/run/wpa_supplicant",
+            f"iw dev {iface}.1 del 2>/dev/null || true",
+            f"iw dev {iface} disconnect 2>/dev/null || true",
+        ]
+        if iface == "wl0":
+            prep_commands.extend(
+                (
+                    "brctl delif br-lan wl0 2>/dev/null || true",
+                    "ifconfig wl0 down",
+                    "wl -i wl0 down",
+                    "wl -i wl0 ap 0",
+                    "iw dev wl0 set type managed",
+                    "wl -i wl0 up",
+                    "ifconfig wl0 up",
+                )
+            )
+        prep_commands.extend((wpa_start_cmd, "sleep 3"))
+        for index, command in enumerate(prep_commands, start=1):
             if not self._run_required_command(
                 transport=transport,
                 case_id=case_id,
@@ -2373,11 +2648,22 @@ class Plugin(PluginBase):
                 timeout=20.0,
             ):
                 return False
+        restart_connect_cmd = self._sta_restart_connect_command(connect_cmd)
+        enable_network_cmd = self._sta_enable_network_command(restart_connect_cmd)
+        if iface == "wl0" and enable_network_cmd:
+            if not self._run_required_command(
+                transport=transport,
+                case_id=case_id,
+                label=f"{label}.prep.enable_network",
+                command=enable_network_cmd,
+                timeout=20.0,
+            ):
+                return False
         return self._connect_with_retry(
             transport=transport,
             case_id=case_id,
             label=f"{label}.connect",
-            connect_cmd=connect_cmd,
+            connect_cmd=restart_connect_cmd,
             verify_cmd=verify_cmd,
             attempts=2,
             sleep_seconds=10,
@@ -4260,13 +4546,15 @@ class Plugin(PluginBase):
                         success = bool(self._verify_sta_band_connectivity(scoped_case))
                 elif executor_key == "sta_band_rebaseline":
                     if custom_env_setup:
-                        success = bool(self._run_sta_env_setup(case, topology))
+                        success = bool(self._prepare_custom_sta_env_setup(case, topology))
                         custom_env_reapplied = custom_env_reapplied or success
                     else:
                         success = bool(self._ensure_sta_band_ready(scoped_case, topology))
                 elif executor_key == "dut_band_rebaseline":
                     if custom_env_setup:
-                        success = True if custom_env_reapplied else bool(self._run_sta_env_setup(case, topology))
+                        success = True if custom_env_reapplied else bool(
+                            self._prepare_custom_sta_env_setup(case, topology)
+                        )
                         custom_env_reapplied = custom_env_reapplied or success
                     else:
                         success = bool(self._run_sta_band_baseline(scoped_case))
