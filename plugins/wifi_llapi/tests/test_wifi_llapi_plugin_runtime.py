@@ -2109,7 +2109,6 @@ def test_setup_env_recovers_dut_bss_down_in_ap_only_custom_setup(monkeypatch):
     _install_fake_factory(monkeypatch, recorder)
     original_execute = _FakeTransport.execute
     bss_checks = 0
-    recovery_hostapd_calls: list[str] = []
 
     def fake_execute(self: _FakeTransport, command: str, timeout: float = 30.0) -> dict[str, Any]:
         nonlocal bss_checks
@@ -2119,15 +2118,6 @@ def test_setup_env_recovers_dut_bss_down_in_ap_only_custom_setup(monkeypatch):
             return {
                 "returncode": 0,
                 "stdout": "down" if bss_checks == 1 else "up",
-                "stderr": "",
-                "elapsed": 0.01,
-            }
-        if self.transport_type == "serial" and command == "hostapd -ddt -B /tmp/wl2_hapd.conf":
-            self.executed_commands.append(command)
-            recovery_hostapd_calls.append(command)
-            return {
-                "returncode": 0,
-                "stdout": "Configuration file: /tmp/wl2_hapd.conf",
                 "stderr": "",
                 "elapsed": 0.01,
             }
@@ -2155,8 +2145,11 @@ def test_setup_env_recovers_dut_bss_down_in_ap_only_custom_setup(monkeypatch):
     dut = next(
         transport for transport in recorder.transports if transport.transport_type == "serial"
     )
-    assert recovery_hostapd_calls == ["hostapd -ddt -B /tmp/wl2_hapd.conf"]
     assert dut.executed_commands.count("wl -i wl2 bss") >= 2
+    assert "ubus-cli WiFi.AccessPoint.6.Enable=0" in dut.executed_commands
+    assert "ubus-cli WiFi.AccessPoint.5.Enable=0" in dut.executed_commands
+    assert "ubus-cli WiFi.AccessPoint.5.Enable=1" in dut.executed_commands
+    assert not any("hostapd -ddt" in command for command in dut.executed_commands)
     assert not case.get("_last_failure")
     plugin.teardown(case, topology=topology)
 
