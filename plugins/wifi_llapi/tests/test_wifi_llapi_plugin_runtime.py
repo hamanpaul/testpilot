@@ -1015,6 +1015,10 @@ def test_execute_step_marks_wl_status_not_associated_as_failure(monkeypatch):
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
 
+    # Prevent real band-prep commands from running: the test only checks execute_step
+    # behaviour, not setup_env STA commands.
+    monkeypatch.setattr(plugin, "_ensure_sta_band_ready", lambda case, topo: True)
+
     case = {
         "id": "wifi-llapi-runtime-wl-status-fail",
         "topology": {"devices": {"STA": {"transport": "adb"}}},
@@ -1376,6 +1380,9 @@ def test_setup_env_skips_placeholder_sta_env_setup_and_leaves_auto_baseline_avai
         return True
 
     monkeypatch.setattr(plugin, "_run_sta_env_setup", fake_run_sta_env_setup)
+    # Prevent real band-prep commands: the test only checks that _run_sta_env_setup
+    # is NOT called when placeholders are present.
+    monkeypatch.setattr(plugin, "_ensure_sta_band_ready", lambda case, topo: True)
 
     case = {
         "id": "wifi-llapi-runtime-placeholder-sta-env",
@@ -1407,10 +1414,6 @@ def test_setup_env_skips_placeholder_sta_env_setup_and_leaves_auto_baseline_avai
     assert plugin.setup_env(case, topology=topology) is True
     assert plugin._should_auto_prepare_wifi_bands(case) is True
     assert replayed == []
-    sta = next(
-        transport for transport in recorder.transports if transport.transport_type == "adb"
-    )
-    assert sta.executed_commands == []
     plugin.teardown(case, topology=topology)
 
 
@@ -2736,7 +2739,10 @@ def test_verify_env_defers_failed_band_warmup_to_execute_step(monkeypatch):
     monkeypatch.setattr(plugin, "_prepare_case_band", fake_prepare)
 
     assert plugin.verify_env(case, topology=topology) is True
-    assert calls == ["5g", "6g", "2.4g"]
+    # "5g" was pre-built by setup_env (before fake_prepare was installed) so it
+    # is already in _env_bands_rebuilt; verify_env fast-paths it and only calls
+    # fake_prepare for the warmup bands "6g" and "2.4g".
+    assert calls == ["6g", "2.4g"]
     assert case["_active_step_band"] == "2.4g"
     plugin.teardown(case, topology=topology)
 
@@ -25431,13 +25437,20 @@ def test_verify_env_skips_full_rebuild_when_band_already_rebuilt(monkeypatch):
 
 
 def test_setup_env_resets_env_bands_rebuilt_marker(monkeypatch):
-    """setup_env must clear case['_env_bands_rebuilt'] so each new setup cycle starts from
-    a clean state and does not skip rebuilds for bands from the previous cycle.
+    """setup_env must clear stale case['_env_bands_rebuilt'] entries from the previous
+    cycle.  The new behaviour is:
+      - the old stale marker is discarded before transport opens
+      - for auto-prepared cases setup_env then pre-builds the initial band, so the
+        marker is repopulated with only the *current* cycle's rebuilt bands.
+    Using a stale marker that differs from the initial band ('2g' vs initial '5g')
+    proves the staleness-clearing invariant without conflating it with fresh prep.
     """
     plugin = _load_plugin()
     topology = _FakeTopology()
     recorder = _FactoryRecorder()
     _install_fake_factory(monkeypatch, recorder)
+
+    monkeypatch.setattr(plugin, "_ensure_sta_band_ready", lambda case, topo: True)
 
     case = {
         "id": "wifi-llapi-env-reset-rebuild-reset-marker",
@@ -25449,14 +25462,106 @@ def test_setup_env_resets_env_bands_rebuilt_marker(monkeypatch):
             }
         },
         "steps": [{"id": "s1", "command": 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"'}],
-        # Pre-existing marker from a previous setup cycle
-        "_env_bands_rebuilt": {"5g"},
+        # Pre-existing stale marker from a previous setup cycle (different band)
+        "_env_bands_rebuilt": {"2g"},
     }
 
     assert plugin.setup_env(case, topology=topology) is True
-    # setup_env must clear the marker so verify_env performs a fresh rebuild
-    assert not case.get("_env_bands_rebuilt"), (
-        "setup_env must clear _env_bands_rebuilt, but it still contains: "
-        + str(case.get("_env_bands_rebuilt"))
+    rebuilt = case.get("_env_bands_rebuilt") or set()
+    # The stale '2g' marker must NOT survive into the new cycle
+    assert "2g" not in rebuilt, (
+        "setup_env must clear stale _env_bands_rebuilt entries from the previous cycle, "
+        "but '2g' is still present: " + str(rebuilt)
+    )
+    # The current cycle's initial band '5g' must be pre-built and recorded
+    assert "5g" in rebuilt, (
+        "setup_env must populate _env_bands_rebuilt with the initial band '5g' after "
+        "pre-building it, but got: " + str(rebuilt)
+    )
+    plugin.teardown(case, topology=topology)
+
+
+def test_setup_env_prepares_initial_band_for_auto_prepared_cases(monkeypatch):
+    """setup_env must call _prepare_case_band for the initial band when
+    _should_auto_prepare_wifi_bands is True (auto-prepared cases without sta_env_setup).
+    After setup_env returns True, case['_env_bands_rebuilt'] must contain the initial
+    band so that verify_env can use the fast-path connectivity check instead of a full
+    baseline+connect rebuild.
+    """
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+
+    monkeypatch.setattr(plugin, "_ensure_sta_band_ready", lambda case, topo: True)
+
+    prepare_calls: list[str] = []
+    original_prepare = plugin._prepare_case_band
+
+    def tracking_prepare(case: dict, topo: Any, band: str) -> bool:
+        prepare_calls.append(band)
+        return original_prepare(case, topo, band)
+
+    monkeypatch.setattr(plugin, "_prepare_case_band", tracking_prepare)
+
+    case = {
+        "id": "wifi-llapi-env-reset-rebuild-auto-prepare-setup",
+        "bands": ["5g"],
+        "topology": {
+            "devices": {
+                "DUT": {"transport": "serial"},
+                "STA": {"transport": "adb"},
+            }
+        },
+        "steps": [{"id": "s1", "command": 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"'}],
+    }
+
+    result = plugin.setup_env(case, topology=topology)
+
+    assert result is True, f"setup_env returned False; _last_failure={case.get('_last_failure')}"
+    assert "5g" in prepare_calls, (
+        "setup_env must call _prepare_case_band('5g') for auto-prepared cases, "
+        f"but prepare_calls={prepare_calls}"
+    )
+    rebuilt = case.get("_env_bands_rebuilt")
+    assert isinstance(rebuilt, set) and "5g" in rebuilt, (
+        f"setup_env must populate _env_bands_rebuilt with '5g', got: {rebuilt}"
+    )
+    plugin.teardown(case, topology=topology)
+
+
+def test_setup_env_fails_when_auto_prepared_initial_band_prep_fails(monkeypatch):
+    """setup_env must return False and record a setup_env/sta_band_link_failed failure
+    when the initial band preparation fails for auto-prepared cases (no sta_env_setup).
+    """
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+
+    monkeypatch.setattr(plugin, "_ensure_sta_band_ready", lambda case, topo: False)
+
+    case = {
+        "id": "wifi-llapi-env-reset-rebuild-auto-prepare-fail",
+        "bands": ["5g"],
+        "topology": {
+            "devices": {
+                "DUT": {"transport": "serial"},
+                "STA": {"transport": "adb"},
+            }
+        },
+        "steps": [{"id": "s1", "command": 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"'}],
+    }
+
+    result = plugin.setup_env(case, topology=topology)
+
+    assert result is False, "setup_env must return False when initial band prep fails"
+    failure = case.get("_last_failure")
+    assert failure is not None, "setup_env must record a failure when band prep fails"
+    assert failure.get("phase") == "setup_env", (
+        f"failure phase must be 'setup_env', got: {failure.get('phase')}"
+    )
+    assert failure.get("reason_code") == "sta_band_link_failed", (
+        f"failure reason_code must be 'sta_band_link_failed', got: {failure.get('reason_code')}"
     )
     plugin.teardown(case, topology=topology)
