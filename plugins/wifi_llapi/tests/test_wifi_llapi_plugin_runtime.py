@@ -25436,6 +25436,56 @@ def test_verify_env_skips_full_rebuild_when_band_already_rebuilt(monkeypatch):
     plugin.teardown(case, topology=topology)
 
 
+def test_verify_env_prebuilt_band_failure_keeps_detailed_last_failure(monkeypatch):
+    plugin = _load_plugin()
+    topology = _FakeTopology()
+    recorder = _FactoryRecorder()
+    _install_fake_factory(monkeypatch, recorder)
+
+    monkeypatch.setattr(plugin, "_prepare_case_band", lambda case, topo, band: True)
+
+    def fake_verify_sta_band_connectivity(case):
+        case["_last_failure"] = {
+            "case_id": case["id"],
+            "attempt_index": 1,
+            "phase": "verify_env",
+            "comment": "STA 5g link check failed",
+            "category": "environment",
+            "reason_code": "sta_band_link_failed",
+            "device": "STA",
+            "band": "5g",
+            "command": "iw dev wl0 link",
+            "output": "Not connected.",
+            "evidence": [],
+            "metadata": {},
+        }
+        return False
+
+    monkeypatch.setattr(plugin, "_verify_sta_band_connectivity", fake_verify_sta_band_connectivity)
+
+    case = {
+        "id": "wifi-llapi-env-reset-rebuild-preserve-last-failure",
+        "bands": ["5g"],
+        "topology": {
+            "devices": {
+                "DUT": {"transport": "serial"},
+                "STA": {"transport": "adb"},
+            }
+        },
+        "steps": [{"id": "s1", "command": 'ubus-cli "WiFi.AccessPoint.1.AssociatedDevice.*.MACAddress?"'}],
+    }
+
+    plugin._open_case_transports(case, topology, run_case_setup=False)
+    plugin._sta_env_verified = True
+    case["_env_bands_rebuilt"] = {"5g"}
+
+    assert plugin.verify_env(case, topology=topology) is False
+    assert case["_last_failure"]["reason_code"] == "sta_band_link_failed"
+    assert case["_last_failure"]["command"] == "iw dev wl0 link"
+    assert case["_last_failure"]["output"] == "Not connected."
+    plugin.teardown(case, topology=topology)
+
+
 def test_setup_env_resets_env_bands_rebuilt_marker(monkeypatch):
     """setup_env must clear stale case['_env_bands_rebuilt'] entries from the previous
     cycle.  The new behaviour is:

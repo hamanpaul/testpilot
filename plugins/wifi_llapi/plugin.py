@@ -3779,20 +3779,23 @@ class Plugin(PluginBase):
                 # prior verify_env pass or _prepare_case_band call).  Skip the expensive
                 # baseline+connect rebuild and only verify current connectivity.
                 case["_active_step_band"] = normalized_initial
-                if not self._verify_sta_band_connectivity(
-                    self._case_for_bands(case, (normalized_initial,))
-                ):
-                    selected_bands = self._selected_sta_bands(case)
-                    self._record_runtime_failure(
-                        case,
-                        phase="verify_env",
-                        comment="STA band connectivity check failed (band pre-built)",
-                        category="environment",
-                        reason_code="sta_band_not_ready",
-                        device="STA",
-                        band=selected_bands[0] if len(selected_bands) == 1 else "",
-                        metadata={"bands": list(selected_bands)},
-                    )
+                scoped_case = self._case_for_bands(case, (normalized_initial,))
+                if not self._verify_sta_band_connectivity(scoped_case):
+                    last_failure = self._snapshot_mapping(scoped_case.get("_last_failure"))
+                    if str(last_failure.get("phase", "")).strip().lower() == "verify_env":
+                        case["_last_failure"] = last_failure
+                    else:
+                        selected_bands = self._selected_sta_bands(case)
+                        self._record_runtime_failure(
+                            case,
+                            phase="verify_env",
+                            comment="STA band connectivity check failed (band pre-built)",
+                            category="environment",
+                            reason_code="sta_band_not_ready",
+                            device="STA",
+                            band=selected_bands[0] if len(selected_bands) == 1 else "",
+                            metadata={"bands": list(selected_bands)},
+                        )
                     log.warning(
                         "[%s] verify_env: %s STA band connectivity check failed (band pre-built)",
                         self.name,
