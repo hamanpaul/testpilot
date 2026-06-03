@@ -784,17 +784,50 @@ def test_realistic_runtime_covers_hooks_and_report_outputs(tmp_path: Path, monke
 
     meta = wb["_meta"]
     assert meta["B2"].value == "FW-IT-REALISTIC-1"
+    summary_ws = wb["Summary"]
+    assert summary_ws["A1"].value == "Summary Policy"
+    assert summary_ws["B1"].value == "wifi_llapi_summary_v1"
+    assert summary_ws["A4"].value == "5G"
+    assert summary_ws["B4"].value == "WiFi.AccessPoint"
+    assert summary_ws["C4"].value == 1
+    assert summary_ws["F4"].value == 1
     wb.close()
+
+    json_payload = json.loads(json_report_path.read_text(encoding="utf-8"))
+    hybrid_summary = json_payload["summary"]
+    assert hybrid_summary["policy_version"] == "wifi_llapi_summary_v1"
+    assert any(
+        row["band_key"] == "result_5g"
+        and row["category"] == "WiFi.AccessPoint"
+        and row["total_items"] == 1
+        and row["fail"] == 1
+        for row in hybrid_summary["band_category"]
+    )
+    assert any(
+        row["band_key"] == "result_6g"
+        and row["category"] == "WiFi.Radio"
+        and row["total_items"] == 1
+        and row["pass"] == 1
+        for row in hybrid_summary["band_category"]
+    )
 
     report_text = md_report_path.read_text(encoding="utf-8")
     assert "## Timing" in report_text
     assert "## Suite summary" in report_text
+    assert "## WiFi LLAPI Hybrid summary" in report_text
+    assert "WiFi.AccessPoint" in report_text
+    assert "WiFi.Radio" in report_text
     assert "## Per-case timing" in report_text
     assert "| pass_cases | failed_cases | other_cases | pass_rate |" in report_text
     assert "| 0 | 1 | 1 | `0.00%` |" in report_text
     assert "| environment buildup |" in report_text
     assert f"| {FAIL_CASE_ID} |" in report_text
     assert f"| {PASS_CASE_ID} |" in report_text
+
+    html_text = html_report_path.read_text(encoding="utf-8")
+    assert "WiFi LLAPI Hybrid Summary" in html_text
+    assert "WiFi.AccessPoint" in html_text
+    assert "WiFi.Radio" in html_text
 
     transports = state["transports"]
     assert any(cmd.startswith("verify:") for cmd in transports["DUT"].history)

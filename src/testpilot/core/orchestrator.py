@@ -75,7 +75,10 @@ from testpilot.reporting.wifi_llapi_excel import (
     fill_skip_markers,
     finalize_report_metadata,
     generate_report_filename,
+    read_wifi_llapi_template_objects,
+    write_summary_sheet,
 )
+from testpilot.reporting.wifi_llapi_summary import build_wifi_llapi_summary
 from testpilot.schema.case_schema import load_case, validate_wifi_llapi_case
 
 log = logging.getLogger(__name__)
@@ -826,7 +829,7 @@ class Orchestrator:
             ),
         )
 
-        # -- md / json reports ------------------------------------------------
+        # -- md / json / html reports -----------------------------------------
         run_finished_monotonic = time.monotonic()
         run_finished_at_iso = datetime.now().astimezone().isoformat(timespec="seconds")
         timing_rows: list[dict[str, Any]] = [
@@ -853,6 +856,11 @@ class Orchestrator:
                 }
             )
 
+        case_dicts = [asdict(cr) for cr in case_results]
+        template_objects = read_wifi_llapi_template_objects(template_path)
+        wifi_llapi_summary = build_wifi_llapi_summary(case_dicts, template_objects)
+        write_summary_sheet(report_path, wifi_llapi_summary)
+
         report_meta: dict[str, Any] = {
             "title": artifact_name,
             "date": run_date.isoformat(),
@@ -863,8 +871,8 @@ class Orchestrator:
             "timing": timing_rows,
             "output_stem": artifact_name,
             "alignment_summary": alignment_prep.alignment_summary,
+            "wifi_llapi_summary": wifi_llapi_summary,
         }
-        case_dicts = [asdict(cr) for cr in case_results]
         report_paths = generate_reports(
             case_results=case_dicts,
             meta=report_meta,
