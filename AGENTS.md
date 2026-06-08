@@ -1,6 +1,6 @@
 # TestPilot Development Guidelines
 
-policy_version: 1.0.0
+policy_version: 1.0.1
 
 ## Scope
 

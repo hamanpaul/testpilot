@@ -9,6 +9,7 @@ preparation.
 
 ## [Unreleased]
 
+- **Sync policy 1.0.1**: bump `policy_version` 1.0.0 → 1.0.1 (`.project-policy.yml` + four agent instruction files); repin the external policy engine SHA to `hamanpaul/paulsha-conventions@4ff59b6c35a46a87af3c3e641975743ee8fa0858` (includes R-17 / R-18) across `.project-policy.yml` `workflow_ref`, `policy-check.yml`, and `release.yml`; update `tests/test_release_governance.py` expected `policy_version` accordingly.
 - Post-v0.2.1 queue starts here.
 - `wifi_llapi` env recovery now reloads custom DUT AP profiles before STA link
   checks, retries safe STA reconnect paths, and prefers `wld_gen` stack reload

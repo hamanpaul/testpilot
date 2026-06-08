@@ -1,6 +1,6 @@
 # TestPilot Agent Instructions
 
-policy_version: 1.0.0
+policy_version: 1.0.1
 
 Follow `AGENTS.md` as the canonical project-specific instruction source.
 
