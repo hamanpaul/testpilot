@@ -49,7 +49,7 @@ def test_project_policy_declares_help_sync_markers() -> None:
 
     policy = _read_policy()
     assert policy["policy_profile"] == "flat"
-    assert policy["policy_version"] == "1.0.1"
+    assert policy["policy_version"] == "1.0.3"
     markers = {entry["marker"] for entry in policy["cli"]}
 
     assert {
@@ -68,7 +68,7 @@ def test_agent_instruction_files_are_synchronized() -> None:
     for relative_path in ("CLAUDE.md", "GEMINI.md", ".github/copilot-instructions.md"):
         content = (ROOT / relative_path).read_text(encoding="utf-8")
         assert "Follow `AGENTS.md`" in content
-        assert "policy_version: 1.0.1" in content
+        assert "policy_version: 1.0.3" in content
         assert "VERSION" in content
         assert "testpilot wifi_llapi" in content
         assert ".project-policy.yml" in content
