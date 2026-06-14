@@ -130,6 +130,23 @@ class PluginBase(ABC):
             "actions": [],
         }
 
+    # -- optional case-level hooks --------------------------------------------
+
+    def validate_case(self, case: dict[str, Any]) -> None:
+        """case 載入後的 plugin 專屬驗證；違規時 raise。default no-op。"""
+        del case
+        return None
+
+    def execution_policy(self, case: dict[str, Any]) -> dict[str, Any]:
+        """plugin 宣告自身執行約束（concurrency/mode/runner 等）。default 中性（無約束）。"""
+        del case
+        return {}
+
+    def register_cli(self, subparsers: Any) -> None:
+        """plugin 註冊自己的 CLI 子命令。default 不註冊。"""
+        del subparsers
+        return None
+
     # -- optional overridable reporter -----------------------------------------
 
     def create_reporter(self) -> Any:
