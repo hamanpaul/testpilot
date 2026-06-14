@@ -37,3 +37,9 @@ line-length = 100
 [tool.pytest.ini_options]
 testpaths = ["tests", "plugins/wifi_llapi/tests", "plugins/brcm_fw_upgrade/tests"]
 pythonpath = ["src"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.0",
+    "pytest-cov>=7.1.0",
+]
