@@ -5,7 +5,7 @@ import pytest
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 
-from testpilot.reporting.wifi_llapi_excel import (
+from plugins.wifi_llapi.reporting.wifi_llapi_excel import (
     COMMENT_HEADER,
     DEFAULT_CLEAR_COLUMNS,
     DEFAULT_TEMPLATE_MAX_COLUMN,
@@ -691,7 +691,7 @@ def test_write_summary_sheet_uses_payload_policy_version(tmp_path: Path) -> None
 
 def test_write_summary_sheet_fallback_policy_version(tmp_path: Path) -> None:
     """When payload lacks 'policy_version', SUMMARY_POLICY_VERSION is written."""
-    from testpilot.reporting.wifi_llapi_summary import SUMMARY_POLICY_VERSION
+    from plugins.wifi_llapi.reporting.wifi_llapi_summary import SUMMARY_POLICY_VERSION
 
     p = tmp_path / "template.xlsx"
     _create_template_with_summary(p)
@@ -708,7 +708,7 @@ def test_write_summary_sheet_fallback_policy_version(tmp_path: Path) -> None:
 def test_write_summary_sheet_closes_on_save_error(tmp_path: Path, monkeypatch) -> None:
     """wb.close() must be called even when wb.save() raises."""
     from unittest.mock import MagicMock
-    from testpilot.reporting import wifi_llapi_excel
+    from plugins.wifi_llapi.reporting import wifi_llapi_excel
 
     fake_wb = MagicMock()
     fake_wb.sheetnames = []

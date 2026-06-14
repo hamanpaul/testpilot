@@ -15,7 +15,7 @@ from openpyxl import Workbook, load_workbook
 import pytest
 
 from testpilot.core.orchestrator import Orchestrator
-from testpilot.reporting.wifi_llapi_excel import ensure_template_report
+from plugins.wifi_llapi.reporting.wifi_llapi_excel import ensure_template_report
 
 FIXTURE_DIR = ROOT / 'tests' / 'fixtures' / 'wifi_llapi_delta'
 ZERO_DELTA_COMMENT = 'fail 原因為 0，數值無變化'
@@ -320,7 +320,7 @@ def test_invalid_delta_schema_case_is_blocked_before_execution(tmp_path: Path) -
         'invalid_delta_schema: delta_* operators require at least one phase=trigger step'
     )
 
-    prep = orch._prepare_wifi_llapi_alignment(
+    prep = plugin.create_reporter()._prepare_alignment(
         plugin=plugin,
         case_ids=CASE_IDS + ['wifi-llapi-delta-invalid-blocked'],
         template_path=template_path,

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from testpilot.reporting.wifi_llapi_excel import TemplateBuildResult, write_template_manifest
+from plugins.wifi_llapi.reporting.wifi_llapi_excel import TemplateBuildResult, write_template_manifest
 
 
 def test_write_template_manifest_prefers_repo_relative_paths(tmp_path: Path) -> None:
@@ -54,7 +54,7 @@ def test_write_template_manifest_falls_back_to_manifest_relative_paths(
     )
 
     monkeypatch.setattr(
-        "testpilot.reporting.wifi_llapi_excel._find_git_root",
+        "plugins.wifi_llapi.reporting.wifi_llapi_excel._find_git_root",
         lambda start: None,
     )
     write_template_manifest(manifest_path, result)
@@ -89,10 +89,10 @@ def test_write_template_manifest_normalizes_windows_style_relative_paths(
         return "..\\shared\\wifi_llapi_template.xlsx"
 
     monkeypatch.setattr(
-        "testpilot.reporting.wifi_llapi_excel._find_git_root",
+        "plugins.wifi_llapi.reporting.wifi_llapi_excel._find_git_root",
         lambda start: None,
     )
-    monkeypatch.setattr("testpilot.reporting.wifi_llapi_excel.os.path.relpath", _fake_relpath)
+    monkeypatch.setattr("plugins.wifi_llapi.reporting.wifi_llapi_excel.os.path.relpath", _fake_relpath)
 
     write_template_manifest(manifest_path, result)
 

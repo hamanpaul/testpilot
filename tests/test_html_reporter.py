@@ -126,7 +126,7 @@ class TestHtmlReporter:
         ]
         meta = {
             **_META,
-            "wifi_llapi_summary": {
+            "plugin_summary": {
                 "policy_version": "wifi_llapi_summary_v1",
                 "band_category": [],
                 "bucket_totals": {},
@@ -482,7 +482,7 @@ _PRECOMPUTED_SUMMARY: dict[str, Any] = {
 def test_html_reporter_renders_hybrid_summary(tmp_path: Path) -> None:
     meta_with_summary: dict[str, Any] = {
         **_META,
-        "wifi_llapi_summary": _PRECOMPUTED_SUMMARY,
+        "plugin_summary": _PRECOMPUTED_SUMMARY,
     }
     out = tmp_path / "report.html"
     HtmlReporter().generate(_CASES, meta_with_summary, out)

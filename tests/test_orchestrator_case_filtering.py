@@ -106,8 +106,9 @@ def test_load_wifi_llapi_case_pairs_rejects_results_reference_on_run_path(tmp_pa
     )
 
     orch = _make_orchestrator()
+    reporter = orch.loader.load("wifi_llapi").create_reporter()
 
     fake_plugin = type("_FakePlugin", (), {"cases_dir": cases_dir})()
 
     with pytest.raises(CaseValidationError, match=r"#31 cleanup.*results_reference"):
-        orch._load_wifi_llapi_case_pairs(plugin=fake_plugin, case_ids=None)
+        reporter._load_case_pairs(plugin=fake_plugin, case_ids=None)

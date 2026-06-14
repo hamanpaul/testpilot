@@ -8,7 +8,7 @@ import pytest
 import yaml
 from openpyxl import Workbook
 
-from testpilot.reporting.wifi_llapi_inventory import (
+from plugins.wifi_llapi.reporting.wifi_llapi_inventory import (
     audit_wifi_llapi_inventory,
     build_wifi_llapi_inventory_reconcile_plan,
     apply_wifi_llapi_inventory_reconcile_plan,

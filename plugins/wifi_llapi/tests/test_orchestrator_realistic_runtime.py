@@ -13,7 +13,7 @@ from openpyxl import Workbook, load_workbook
 import pytest
 
 from testpilot.core.orchestrator import Orchestrator
-from testpilot.reporting.wifi_llapi_excel import ensure_template_report
+from plugins.wifi_llapi.reporting.wifi_llapi_excel import ensure_template_report
 
 FAIL_CASE_ID = "wifi-llapi-D004-evaluate-fail"
 PASS_CASE_ID = "wifi-llapi-D005-evaluate-pass"

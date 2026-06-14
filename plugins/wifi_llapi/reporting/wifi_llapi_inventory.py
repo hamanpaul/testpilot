@@ -8,8 +8,8 @@ import shutil
 import subprocess
 from typing import Any, Literal
 
-from testpilot.reporting.wifi_llapi_align import build_template_index
-from testpilot.reporting.wifi_llapi_excel import normalize_text
+from plugins.wifi_llapi.reporting.wifi_llapi_align import build_template_index
+from plugins.wifi_llapi.reporting.wifi_llapi_excel import normalize_text
 from testpilot.schema.case_schema import load_case, validate_wifi_llapi_case
 
 _FILE_D_PATTERN = re.compile(r"^D(?P<row>\d{3})(?P<suffix>.*)$")

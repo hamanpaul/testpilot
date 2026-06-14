@@ -62,11 +62,11 @@ def _pass_rate(case_counts: Mapping[str, int]) -> float | None:
     return int(case_counts.get("pass_cases", 0)) / denominator
 
 
-def _precomputed_wifi_llapi_summary(
+def _precomputed_plugin_summary(
     meta: Mapping[str, Any],
 ) -> dict[str, Any] | None:
-    """Return the precomputed wifi_llapi summary from *meta* when present."""
-    val = meta.get("wifi_llapi_summary")
+    """Return the plugin-provided precomputed summary from *meta* when present."""
+    val = meta.get("plugin_summary")
     if isinstance(val, dict):
         return dict(val)
     return None
@@ -76,8 +76,8 @@ def _summary_payload(
     case_results: Sequence[Mapping[str, Any]],
     meta: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Return generic suite counts plus optional precomputed wifi_llapi details."""
-    precomputed = _precomputed_wifi_llapi_summary(meta)
+    """Return generic suite counts plus optional plugin-provided summary details."""
+    precomputed = _precomputed_plugin_summary(meta)
     if precomputed is not None:
         return {**_summarise(case_results), **precomputed}
     return _summarise(case_results)
@@ -237,7 +237,7 @@ class MarkdownReporter:
         self._write_header(lines, meta)
         self._write_timing(lines, meta, case_results)
         self._write_suite_summary(lines, summary)
-        self._write_wifi_llapi_hybrid_summary(lines, summary)
+        self._write_hybrid_summary(lines, summary)
         self._write_summary_table(lines, case_results)
         self._write_per_case_timing(lines, case_results)
         self._write_case_details(lines, case_results)
@@ -260,7 +260,7 @@ class MarkdownReporter:
         lines.append("")
 
     @staticmethod
-    def _write_wifi_llapi_hybrid_summary(
+    def _write_hybrid_summary(
         lines: list[str],
         summary: Mapping[str, Any],
     ) -> None:

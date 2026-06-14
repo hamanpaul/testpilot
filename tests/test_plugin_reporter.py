@@ -72,12 +72,12 @@ class TestPluginBaseDefaults:
 
 class TestWifiLlapiReporter:
     def test_create_reporter_returns_markdown(self) -> None:
-        from testpilot.reporting.reporter import MarkdownReporter
+        from plugins.wifi_llapi.reporting.reporter import WifiLlapiReporter
 
         loader = PluginLoader(_ROOT / "plugins")
         plugin = loader.load("wifi_llapi")
         reporter = plugin.create_reporter()
-        assert isinstance(reporter, MarkdownReporter)
+        assert isinstance(reporter, WifiLlapiReporter)
 
     def test_report_formats_includes_md_and_json(self) -> None:
         loader = PluginLoader(_ROOT / "plugins")

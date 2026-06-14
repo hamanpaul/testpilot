@@ -17,7 +17,7 @@ from typing import Any
 
 import yaml
 
-from testpilot.reporting.wifi_llapi_excel import (
+from plugins.wifi_llapi.reporting.wifi_llapi_excel import (
     ReportMeta,
     WifiLlapiCaseResult,
     create_run_report_from_template,
@@ -26,7 +26,7 @@ from testpilot.reporting.wifi_llapi_excel import (
     read_wifi_llapi_template_objects,
     validate_wifi_llapi_report_template,
 )
-from testpilot.reporting.wifi_llapi_summary import (
+from plugins.wifi_llapi.reporting.wifi_llapi_summary import (
     SUMMARY_POLICY_VERSION,
     build_wifi_llapi_summary,
     extract_fail_reason,
@@ -255,7 +255,7 @@ def reproject_wifi_llapi_report(
         "template_path": str(template_path),
         "reprojected_at": reprojected_at,
         "summary_policy_version": SUMMARY_POLICY_VERSION,
-        "wifi_llapi_summary": summary,
+        "plugin_summary": summary,
         "output_stem": output_stem,
     }
 

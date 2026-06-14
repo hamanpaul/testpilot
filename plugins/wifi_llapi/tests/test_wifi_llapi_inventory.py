@@ -5,7 +5,7 @@ from pathlib import Path
 import yaml
 from openpyxl import Workbook
 
-from testpilot.reporting.wifi_llapi_inventory import audit_wifi_llapi_inventory
+from plugins.wifi_llapi.reporting.wifi_llapi_inventory import audit_wifi_llapi_inventory
 
 
 def _write_template(path: Path) -> None:

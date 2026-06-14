@@ -10,7 +10,7 @@ from openpyxl import Workbook
 import yaml
 
 from testpilot.core.orchestrator import Orchestrator
-from testpilot.reporting.wifi_llapi_excel import ensure_template_report
+from plugins.wifi_llapi.reporting.wifi_llapi_excel import ensure_template_report
 
 FAIL_CASE_ID = "wifi-llapi-D004-retry-fail"
 PASS_CASE_ID = "wifi-llapi-D005-pass-after-fail"
@@ -61,6 +61,7 @@ from pathlib import Path
 from typing import Any
 
 from testpilot.core.plugin_base import PluginBase
+from plugins.wifi_llapi.reporting.reporter import WifiLlapiReporter
 
 
 CASES = [
@@ -111,6 +112,9 @@ class Plugin(PluginBase):
 
     def discover_cases(self) -> list[dict[str, Any]]:
         return [dict(c) for c in CASES]
+
+    def create_reporter(self) -> WifiLlapiReporter:
+        return WifiLlapiReporter()
 
     def setup_env(self, case: dict[str, Any], topology: Any) -> bool:
         return True

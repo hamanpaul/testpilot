@@ -24,7 +24,7 @@ from pathlib import Path
 
 import pytest
 
-from testpilot.reporting.wifi_llapi_summary import build_wifi_llapi_summary
+from plugins.wifi_llapi.reporting.wifi_llapi_summary import build_wifi_llapi_summary
 
 _GOLDEN_PATH = Path(__file__).parent / "golden" / "wifi_llapi_report_baseline.json"
 

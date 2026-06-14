@@ -5,7 +5,7 @@ import pytest
 import yaml
 from openpyxl import Workbook, load_workbook
 
-from testpilot.reporting.wifi_llapi_align import (
+from plugins.wifi_llapi.reporting.wifi_llapi_align import (
     AlignmentConflictError,
     AlignResult,
     TemplateIndex,
@@ -17,7 +17,7 @@ from testpilot.reporting.wifi_llapi_align import (
     write_skipped_cases_report,
 )
 
-from testpilot.reporting.wifi_llapi_excel import create_run_report_from_template, fill_blocked_markers, fill_skip_markers
+from plugins.wifi_llapi.reporting.wifi_llapi_excel import create_run_report_from_template, fill_blocked_markers, fill_skip_markers
 from testpilot.schema.case_schema import load_case
 
 

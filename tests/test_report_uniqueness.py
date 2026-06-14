@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from testpilot.reporting.wifi_llapi_excel import generate_report_filename
+from plugins.wifi_llapi.reporting.wifi_llapi_excel import generate_report_filename
 
 
 class TestReportFilenameUniqueness:

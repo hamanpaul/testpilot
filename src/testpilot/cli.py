@@ -24,7 +24,7 @@ from testpilot.core.azure_auth import (
 )
 from testpilot.core.orchestrator import Orchestrator
 from testpilot.core.testbed_bootstrap import stage_plugin_testbed
-from testpilot.reporting.wifi_llapi_excel import ensure_template_report
+from plugins.wifi_llapi.reporting.wifi_llapi_excel import ensure_template_report
 from testpilot.yaml_command_audit import (
     DEFAULT_AUDIT_FIELDS,
     build_yaml_command_audit_report,
@@ -1049,7 +1049,7 @@ def reproject_summary(
     checked-in template workbook, writes a new report folder without rerunning
     DUT/STA tests or modifying source run folder.
     """
-    from testpilot.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
+    from plugins.wifi_llapi.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
 
     root: Path = ctx.obj["root"]
     resolved_template = (

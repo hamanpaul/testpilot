@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from testpilot.reporting.wifi_llapi_summary import (
+from plugins.wifi_llapi.reporting.wifi_llapi_summary import (
     BAND_KEYS,
     BAND_LABELS,
     CATEGORIES,

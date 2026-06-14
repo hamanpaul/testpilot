@@ -10,7 +10,7 @@ from uuid import uuid4
 from openpyxl import load_workbook
 import yaml
 
-from testpilot.reporting.wifi_llapi_excel import (
+from plugins.wifi_llapi.reporting.wifi_llapi_excel import (
     DATA_START_ROW,
     DEFAULT_SHEET_NAME,
     EMPTY_STREAK_STOP,

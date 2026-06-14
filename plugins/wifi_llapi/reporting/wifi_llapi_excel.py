@@ -410,7 +410,7 @@ def _truncate_comment(text: str | None, limit: int = 200) -> str:
 
 
 def _summary_bucket_for(item: WifiLlapiCaseResult, band_key: str) -> str:
-    from testpilot.reporting.wifi_llapi_summary import classify_band_result  # noqa: PLC0415
+    from plugins.wifi_llapi.reporting.wifi_llapi_summary import classify_band_result  # noqa: PLC0415
 
     case_context = {
         "result_5g": item.result_5g,
@@ -913,7 +913,7 @@ def write_summary_sheet(
     - Row 4+: one row per entry in ``summary_payload["band_category"]``
     """
     # Deferred to avoid circular dependency: wifi_llapi_excel ← wifi_llapi_summary.
-    from testpilot.reporting.wifi_llapi_summary import SUMMARY_POLICY_VERSION  # noqa: PLC0415
+    from plugins.wifi_llapi.reporting.wifi_llapi_summary import SUMMARY_POLICY_VERSION  # noqa: PLC0415
 
     path = Path(report_xlsx)
     wb = load_workbook(path)

@@ -10,7 +10,7 @@ import pytest
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 
-from testpilot.reporting.wifi_llapi_summary import (
+from plugins.wifi_llapi.reporting.wifi_llapi_summary import (
     SUMMARY_POLICY_VERSION,
     extract_fail_reason,
 )
@@ -154,7 +154,7 @@ def _make_template_xlsx(path: Path) -> None:
 def test_reproject_creates_isolated_artifacts_and_preserves_source(
     tmp_path: Path,
 ) -> None:
-    from testpilot.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
+    from plugins.wifi_llapi.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
 
     template = tmp_path / "template.xlsx"
     _make_template_xlsx(template)
@@ -235,7 +235,7 @@ def test_reproject_creates_isolated_artifacts_and_preserves_source(
 def test_reproject_reports_current_official_inventory_when_source_json_has_stale_cases(
     tmp_path: Path,
 ) -> None:
-    from testpilot.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
+    from plugins.wifi_llapi.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
 
     template_dir = tmp_path / "plugins" / "wifi_llapi" / "reports" / "templates"
     template_dir.mkdir(parents=True)
@@ -319,7 +319,7 @@ def test_reproject_reports_current_official_inventory_when_source_json_has_stale
 
 
 def test_reproject_ignores_unrelated_ancestor_cases_dir(tmp_path: Path) -> None:
-    from testpilot.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
+    from plugins.wifi_llapi.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
 
     ancestor_cases = tmp_path / "cases"
     ancestor_cases.mkdir()
@@ -355,7 +355,7 @@ def test_reproject_ignores_unrelated_ancestor_cases_dir(tmp_path: Path) -> None:
 
 
 def test_reproject_raises_if_out_dir_non_empty(tmp_path: Path) -> None:
-    from testpilot.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
+    from plugins.wifi_llapi.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
 
     template = tmp_path / "template.xlsx"
     _make_template_xlsx(template)
@@ -376,7 +376,7 @@ def test_reproject_raises_if_out_dir_non_empty(tmp_path: Path) -> None:
 
 def test_reproject_raises_on_non_dict_source_json(tmp_path: Path) -> None:
     """Source JSON that is an array (not an object) must raise TypeError/ValueError."""
-    from testpilot.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
+    from plugins.wifi_llapi.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
 
     template = tmp_path / "template.xlsx"
     _make_template_xlsx(template)
@@ -397,7 +397,7 @@ def test_reproject_default_out_dir_anchored_to_template_parent(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Default out_dir must be under template_path.parent.parent, not CWD."""
-    from testpilot.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
+    from plugins.wifi_llapi.reporting.wifi_llapi_reproject import reproject_wifi_llapi_report
 
     # Place template in a subdirectory mirroring the real layout
     template_dir = tmp_path / "plugins" / "wifi_llapi" / "reports" / "templates"

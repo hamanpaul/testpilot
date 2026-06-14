@@ -10,7 +10,11 @@ SRC_ROOT = PROJECT_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from testpilot.reporting.wifi_llapi_inventory import (
+PLUGINS_ROOT = PROJECT_ROOT / "plugins"
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from plugins.wifi_llapi.reporting.wifi_llapi_inventory import (
     apply_wifi_llapi_inventory_reconcile_plan,
     build_wifi_llapi_inventory_reconcile_plan,
 )

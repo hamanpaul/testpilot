@@ -7,7 +7,8 @@ import pytest
 
 from testpilot.core.orchestrator import Orchestrator
 from testpilot.core.plugin_loader import PluginLoader
-from testpilot.reporting.wifi_llapi_align import AlignResult
+from plugins.wifi_llapi.reporting.reporter import WifiLlapiReporter
+from plugins.wifi_llapi.reporting.wifi_llapi_align import AlignResult
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -521,7 +522,7 @@ def test_runtime_prep_blocks_invalid_delta_schema_before_alignment(
     tmp_path: Path,
 ) -> None:
     plugin = _load_plugin()
-    orch = object.__new__(Orchestrator)
+    reporter = WifiLlapiReporter()
     valid_path = tmp_path / "D001_valid.yaml"
     invalid_path = tmp_path / "D002_invalid.yaml"
     valid = _delta_nonzero_case()
@@ -540,12 +541,12 @@ def test_runtime_prep_blocks_invalid_delta_schema_before_alignment(
     loaded_cases = {valid_path: {"id": "D-valid-loaded"}}
 
     monkeypatch.setattr(
-        orch,
-        "_load_wifi_llapi_case_pairs",
+        reporter,
+        "_load_case_pairs",
         lambda **kwargs: [(valid_path, valid), (invalid_path, invalid)],
     )
     monkeypatch.setitem(
-        Orchestrator._prepare_wifi_llapi_alignment.__globals__,
+        WifiLlapiReporter._prepare_alignment.__globals__,
         "build_template_index",
         lambda template_path: object(),
     )
@@ -566,27 +567,27 @@ def test_runtime_prep_blocks_invalid_delta_schema_before_alignment(
         )
 
     monkeypatch.setitem(
-        Orchestrator._prepare_wifi_llapi_alignment.__globals__,
+        WifiLlapiReporter._prepare_alignment.__globals__,
         "align_case",
         fake_align_case,
     )
     monkeypatch.setitem(
-        Orchestrator._prepare_wifi_llapi_alignment.__globals__,
+        WifiLlapiReporter._prepare_alignment.__globals__,
         "_resolve_collisions",
         lambda results: None,
     )
     monkeypatch.setitem(
-        Orchestrator._prepare_wifi_llapi_alignment.__globals__,
+        WifiLlapiReporter._prepare_alignment.__globals__,
         "apply_alignment_mutations",
         lambda results: None,
     )
     monkeypatch.setitem(
-        Orchestrator._prepare_wifi_llapi_alignment.__globals__,
+        WifiLlapiReporter._prepare_alignment.__globals__,
         "load_case",
         lambda path, validator=None: loaded_cases[path],
     )
 
-    prep = orch._prepare_wifi_llapi_alignment(
+    prep = reporter._prepare_alignment(
         plugin=plugin,
         case_ids=None,
         template_path=tmp_path / "wifi_llapi_template.xlsx",
@@ -615,7 +616,7 @@ def test_runtime_prep_blocks_malformed_delta_schema_before_alignment(
     tmp_path: Path,
 ) -> None:
     plugin = _load_plugin()
-    orch = object.__new__(Orchestrator)
+    reporter = WifiLlapiReporter()
     valid_path = tmp_path / "D001_valid.yaml"
     invalid_path = tmp_path / "D002_invalid.yaml"
     valid = _delta_nonzero_case()
@@ -630,12 +631,12 @@ def test_runtime_prep_blocks_malformed_delta_schema_before_alignment(
     loaded_cases = {valid_path: {"id": "D-valid-loaded"}}
 
     monkeypatch.setattr(
-        orch,
-        "_load_wifi_llapi_case_pairs",
+        reporter,
+        "_load_case_pairs",
         lambda **kwargs: [(valid_path, valid), (invalid_path, invalid)],
     )
     monkeypatch.setitem(
-        Orchestrator._prepare_wifi_llapi_alignment.__globals__,
+        WifiLlapiReporter._prepare_alignment.__globals__,
         "build_template_index",
         lambda template_path: object(),
     )
@@ -656,27 +657,27 @@ def test_runtime_prep_blocks_malformed_delta_schema_before_alignment(
         )
 
     monkeypatch.setitem(
-        Orchestrator._prepare_wifi_llapi_alignment.__globals__,
+        WifiLlapiReporter._prepare_alignment.__globals__,
         "align_case",
         fake_align_case,
     )
     monkeypatch.setitem(
-        Orchestrator._prepare_wifi_llapi_alignment.__globals__,
+        WifiLlapiReporter._prepare_alignment.__globals__,
         "_resolve_collisions",
         lambda results: None,
     )
     monkeypatch.setitem(
-        Orchestrator._prepare_wifi_llapi_alignment.__globals__,
+        WifiLlapiReporter._prepare_alignment.__globals__,
         "apply_alignment_mutations",
         lambda results: None,
     )
     monkeypatch.setitem(
-        Orchestrator._prepare_wifi_llapi_alignment.__globals__,
+        WifiLlapiReporter._prepare_alignment.__globals__,
         "load_case",
         lambda path, validator=None: loaded_cases[path],
     )
 
-    prep = orch._prepare_wifi_llapi_alignment(
+    prep = reporter._prepare_alignment(
         plugin=plugin,
         case_ids=None,
         template_path=tmp_path / "wifi_llapi_template.xlsx",

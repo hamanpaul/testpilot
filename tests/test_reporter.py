@@ -301,7 +301,7 @@ def test_json_reporter_uses_precomputed_wifi_llapi_summary(
 ) -> None:
     meta_with_summary: dict[str, Any] = {
         **_META,
-        "wifi_llapi_summary": _PRECOMPUTED_SUMMARY,
+        "plugin_summary": _PRECOMPUTED_SUMMARY,
     }
     out = tmp_path / "report.json"
     JsonReporter().generate(_CASES, meta_with_summary, out)
@@ -322,7 +322,7 @@ def test_json_reporter_uses_precomputed_wifi_llapi_summary(
 def test_markdown_reporter_renders_hybrid_summary(tmp_path: Path) -> None:
     meta_with_summary: dict[str, Any] = {
         **_META,
-        "wifi_llapi_summary": _PRECOMPUTED_SUMMARY,
+        "plugin_summary": _PRECOMPUTED_SUMMARY,
     }
     out = tmp_path / "report.md"
     MarkdownReporter().generate(_CASES, meta_with_summary, out)

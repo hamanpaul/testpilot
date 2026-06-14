@@ -182,9 +182,9 @@ class Plugin(PluginBase):
     # -- reporter overrides ----------------------------------------------------
 
     def create_reporter(self) -> Any:
-        from testpilot.reporting.reporter import MarkdownReporter
+        from plugins.wifi_llapi.reporting.reporter import WifiLlapiReporter
 
-        return MarkdownReporter()
+        return WifiLlapiReporter()
 
     def report_formats(self) -> list[str]:
         return ["xlsx", "md", "json"]

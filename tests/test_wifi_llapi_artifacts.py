@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from testpilot.reporting.wifi_llapi_artifacts import resolve_trace_run_dir
+from plugins.wifi_llapi.reporting.wifi_llapi_artifacts import resolve_trace_run_dir
 
 
 def test_resolve_trace_run_dir_accepts_artifact_directory(tmp_path: Path) -> None:
